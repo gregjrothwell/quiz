@@ -8,6 +8,8 @@ interface PodiumTileProps {
   state: TileState;
   disabled: boolean;
   onPick: (index: number) => void;
+  /** Position in the stagger, so the podiums light up in sequence. */
+  order: number;
 }
 
 const CLASS_FOR_STATE: Record<TileState, string> = {
@@ -19,13 +21,14 @@ const CLASS_FOR_STATE: Record<TileState, string> = {
 };
 
 /** One lit answer podium. The lamp strip along its base carries the verdict. */
-export function PodiumTile({ index, text, state, disabled, onPick }: PodiumTileProps) {
+export function PodiumTile({ index, text, state, disabled, onPick, order }: PodiumTileProps) {
   const letter = LETTERS[index] ?? '?';
 
   return (
     <button
       type="button"
       className={`tile ${CLASS_FOR_STATE[state]}`.trim()}
+      style={{ animationDelay: `${order * 70}ms` }}
       disabled={disabled}
       aria-pressed={state === 'picked'}
       onClick={() => onPick(index)}

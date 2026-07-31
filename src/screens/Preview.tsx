@@ -117,7 +117,6 @@ export function Preview() {
           onAnswer={noop}
           onReveal={noop}
           onNext={noop}
-          onSkip={noop}
         />
       ),
     },
@@ -140,7 +139,6 @@ export function Preview() {
           onAnswer={noop}
           onReveal={noop}
           onNext={noop}
-          onSkip={noop}
         />
       ),
     },
@@ -160,7 +158,6 @@ export function Preview() {
           onAnswer={noop}
           onReveal={noop}
           onNext={noop}
-          onSkip={noop}
         />
       ),
     },

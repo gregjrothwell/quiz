@@ -963,3 +963,144 @@ input {
     color: var(--ink-soft);
   }
 }
+
+/* ── Show business ──────────────────────────────────────────────────────────
+   The bits that make it feel like a quiz rather than a form: an oversized round
+   numeral behind the stage, podiums that light up in sequence, a sweep across
+   the correct answer, and a clock that gets nervous near the end.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.ghost-numeral {
+  position: absolute;
+  top: 50%;
+  right: 2%;
+  transform: translateY(-50%);
+  font-family: var(--display);
+  font-size: 46rem;
+  line-height: 0.7;
+  color: rgb(233 185 73 / 0.028);
+  pointer-events: none;
+  user-select: none;
+  z-index: -1;
+  display: none;
+}
+
+@media (min-width: 64rem) {
+  .ghost-numeral {
+    display: block;
+  }
+}
+
+/* Podiums light up left to right rather than all at once. */
+.tile {
+  animation: rise 380ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* A band of light crossing the correct answer as it is announced. */
+.tile--correct::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    rgb(53 210 154 / 0.28) 48%,
+    transparent 76%
+  );
+  transform: translateX(-100%);
+  animation: sweep 900ms cubic-bezier(0.3, 0.7, 0.3, 1) 120ms 1;
+  pointer-events: none;
+}
+
+@keyframes sweep {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* Last few seconds: the clock leans on you. */
+.timer--low {
+  animation: nervous 640ms ease-in-out infinite;
+}
+
+@keyframes nervous {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.07);
+  }
+}
+
+.timer--low .timer__count {
+  color: var(--wrong);
+}
+
+/* The leader's row gets a slow travelling shine. */
+@media (prefers-reduced-motion: no-preference) {
+  .standing--leader::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      100deg,
+      transparent 35%,
+      rgb(255 217 122 / 0.12) 50%,
+      transparent 65%
+    );
+    transform: translateX(-100%);
+    animation: sweep 3.4s ease-in-out 1.2s infinite;
+    pointer-events: none;
+  }
+}
+
+/* Room code plates breathe while the lobby waits. */
+@media (prefers-reduced-motion: no-preference) {
+  .roomcode__char {
+    animation: glow 3.6s ease-in-out infinite;
+  }
+
+  .roomcode__char:nth-child(2) {
+    animation-delay: 0.25s;
+  }
+  .roomcode__char:nth-child(3) {
+    animation-delay: 0.5s;
+  }
+  .roomcode__char:nth-child(4) {
+    animation-delay: 0.75s;
+  }
+}
+
+@keyframes glow {
+  0%,
+  100% {
+    text-shadow: 0 0 22px rgb(255 217 122 / 0.32);
+    border-color: var(--brass-dim);
+  }
+  50% {
+    text-shadow: 0 0 40px rgb(255 217 122 / 0.72);
+    border-color: var(--brass);
+  }
+}
+
+/* Overhead lighting rig: a warm bar across the very top of the stage. */
+.stage__inner::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(233 185 73 / 0.5) 22%,
+    rgb(255 217 122 / 0.85) 50%,
+    rgb(233 185 73 / 0.5) 78%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+.stage__inner {
+  position: relative;
+}

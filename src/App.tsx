@@ -193,7 +193,6 @@ function Game() {
             onAnswer={handleAnswer}
             onReveal={() => void dispatch({ type: 'reveal' }).catch(report)}
             onNext={() => void dispatch({ type: 'next', at: Date.now() }).catch(report)}
-            onSkip={() => void dispatch({ type: 'skip' }).catch(report)}
           />
         )) ||
         (room.phase === 'scoreboard' && (

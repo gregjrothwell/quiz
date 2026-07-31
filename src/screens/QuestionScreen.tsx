@@ -13,7 +13,6 @@ interface QuestionScreenProps {
   onAnswer: (optionIndex: number) => void;
   onReveal: () => void;
   onNext: () => void;
-  onSkip: () => void;
 }
 
 /**
@@ -30,7 +29,6 @@ export function QuestionScreen({
   onAnswer,
   onReveal,
   onNext,
-  onSkip,
 }: QuestionScreenProps) {
   const question = currentQuestion(room);
   const optionCount = question?.options.length ?? 0;
@@ -62,15 +60,11 @@ export function QuestionScreen({
         if (revealed) onNext();
         else onReveal();
       }
-      if (key === 's') {
-        event.preventDefault();
-        onSkip();
-      }
     };
 
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [revealed, myAnswer, optionCount, isQuizmaster, onAnswer, onReveal, onNext, onSkip]);
+  }, [revealed, myAnswer, optionCount, isQuizmaster, onAnswer, onReveal, onNext]);
 
   // Placed after the hooks above: an early return before them would change the
   // hook order between renders.
@@ -88,6 +82,11 @@ export function QuestionScreen({
 
   return (
     <>
+      {/* Oversized round numeral behind the stage, as a title card would carry. */}
+      <span className="ghost-numeral" aria-hidden="true">
+        {room.index + 1}
+      </span>
+
       <header className="qhead">
         <div className="qhead__meta">
           <p className="display" style={{ fontSize: 'clamp(1.4rem, 5vw, 2.2rem)' }}>
@@ -120,6 +119,7 @@ export function QuestionScreen({
             state={stateFor(index)}
             disabled={revealed || Boolean(myAnswer)}
             onPick={onAnswer}
+            order={index}
           />
         ))}
       </div>
@@ -133,9 +133,6 @@ export function QuestionScreen({
             <span>
               <kbd>Space</kbd>
               {revealed ? 'standings' : 'reveal'}
-            </span>
-            <span>
-              <kbd>S</kbd>skip
             </span>
           </>
         ) : null}
@@ -167,9 +164,14 @@ export function QuestionScreen({
             <span className="tally">
               {answeredCount} / {playerCount} answered
             </span>
-            <button type="button" className="btn btn--ghost" onClick={onSkip}>
-              Skip
-            </button>
+            {/*
+              Skip is deliberately not exposed. The rules cannot restrict writes
+              to the quizmaster without storing their uid, so a button here is a
+              button anyone in DevTools can press — and one player who dislikes a
+              question should not be able to void it for the room. The engine
+              action stays (and stays tested) in case it is wanted behind a
+              proper permission model later.
+            */}
             {revealed ? (
               <button type="button" className="btn btn--primary" onClick={onNext}>
                 Standings

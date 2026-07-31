@@ -21,7 +21,7 @@ export function ArcTimer({ secondsLeft, remainingMs, totalMs }: ArcTimerProps) {
 
   return (
     <div
-      className="timer"
+      className={low ? 'timer timer--low' : 'timer'}
       role="timer"
       aria-live="off"
       aria-label={`${secondsLeft} seconds remaining`}
