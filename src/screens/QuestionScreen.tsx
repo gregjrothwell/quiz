@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { ArcTimer } from '../components/ArcTimer';
 import { PodiumTile, type TileState } from '../components/PodiumTile';
 import { QUESTION_DURATION_MS, currentQuestion, type RoomState } from '../engine/state';
@@ -32,12 +33,48 @@ export function QuestionScreen({
   onSkip,
 }: QuestionScreenProps) {
   const question = currentQuestion(room);
-  if (!question) return <p className="notice">This round has no question at that position.</p>;
+  const optionCount = question?.options.length ?? 0;
 
   const myAnswer = youUid ? room.answers[youUid] : undefined;
   const answeredCount = Object.keys(room.answers).length;
   const playerCount = Object.keys(room.players).length;
   const myDelta = youUid ? (room.lastDeltas[youUid] ?? 0) : 0;
+
+  // Desktop is the primary surface, so the whole round is playable from the
+  // keyboard: A–D or 1–4 to answer, space to advance, S to skip.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      const key = event.key.toLowerCase();
+
+      const letter = ['a', 'b', 'c', 'd'].indexOf(key);
+      const digit = ['1', '2', '3', '4'].indexOf(key);
+      const pick = letter >= 0 ? letter : digit;
+      if (pick >= 0 && !revealed && !myAnswer && pick < optionCount) {
+        event.preventDefault();
+        onAnswer(pick);
+        return;
+      }
+
+      if (!isQuizmaster) return;
+      if (key === ' ' || key === 'enter') {
+        event.preventDefault();
+        if (revealed) onNext();
+        else onReveal();
+      }
+      if (key === 's') {
+        event.preventDefault();
+        onSkip();
+      }
+    };
+
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [revealed, myAnswer, optionCount, isQuizmaster, onAnswer, onReveal, onNext, onSkip]);
+
+  // Placed after the hooks above: an early return before them would change the
+  // hook order between renders.
+  if (!question) return <p className="notice">This round has no question at that position.</p>;
 
   const stateFor = (index: number): TileState => {
     if (revealed) {
@@ -86,6 +123,23 @@ export function QuestionScreen({
           />
         ))}
       </div>
+
+      <p className="legend" aria-hidden="true">
+        <span>
+          <kbd>A</kbd>–<kbd>D</kbd> answer
+        </span>
+        {isQuizmaster ? (
+          <>
+            <span>
+              <kbd>Space</kbd>
+              {revealed ? 'standings' : 'reveal'}
+            </span>
+            <span>
+              <kbd>S</kbd>skip
+            </span>
+          </>
+        ) : null}
+      </p>
 
       <div className="row row--between">
         <p className="tally">

@@ -2,8 +2,8 @@
   {
     "id": "general-knowledge",
     "title": "General Knowledge",
-    "blurb": "A bit of everything. The safe opener.",
-    "count": 1393
+    "blurb": "Proper general knowledge. The safe opener.",
+    "count": 295
   },
   {
     "id": "geography",
@@ -16,6 +16,12 @@
     "title": "History",
     "blurb": "Everything that already happened.",
     "count": 244
+  },
+  {
+    "id": "mixed-bag",
+    "title": "Odds & Ends",
+    "blurb": "Books, anime and everything unfiled.",
+    "count": 149
   },
   {
     "id": "music",
@@ -46,5 +52,11 @@
     "title": "Best of British",
     "blurb": "Questions that land better on this side of the Atlantic.",
     "count": 133
+  },
+  {
+    "id": "video-games",
+    "title": "Video Games",
+    "blurb": "Consoles, classics and boss fights.",
+    "count": 949
   }
 ]

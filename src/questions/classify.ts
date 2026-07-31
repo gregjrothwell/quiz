@@ -245,6 +245,11 @@ export function isWellFormed(question: Question): boolean {
 }
 
 const CATEGORY_TO_PACK: ReadonlyArray<readonly [RegExp, PackId]> = [
+  // Matched explicitly. Falling through to general-knowledge made that pack
+  // 68% video-game questions, so picking "General Knowledge" mostly served
+  // something else entirely.
+  [/^general knowledge$/i, 'general-knowledge'],
+  [/^entertainment: video games$/i, 'video-games'],
   [/^entertainment: music$/i, 'music'],
   [/^entertainment: (film|television)$/i, 'tv-and-film'],
   [/^sports$/i, 'sport'],
@@ -258,7 +263,9 @@ export function packForCategory(category: string): PackId {
   for (const [pattern, packId] of CATEGORY_TO_PACK) {
     if (pattern.test(category)) return packId;
   }
-  return 'general-knowledge';
+  // Anything with no themed home of its own, rather than being passed off as
+  // general knowledge.
+  return 'mixed-bag';
 }
 
 export interface SortResult {

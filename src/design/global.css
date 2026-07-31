@@ -841,3 +841,125 @@ input {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ── Desktop ────────────────────────────────────────────────────────────────
+   The team plays on laptops, so the wide layout gets the attention: a bigger
+   stage, a heavier question, and visible keyboard hints — the round can be run
+   entirely from the keyboard without reaching for the mouse.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.tile__key {
+  display: none;
+}
+
+@media (min-width: 64rem) {
+  .stage__inner {
+    max-width: 76rem;
+  }
+
+  .prompt {
+    font-size: clamp(2.2rem, 3.4vw, 3.1rem);
+    letter-spacing: -0.02em;
+  }
+
+  .tile {
+    padding: 1.35rem 1.5rem;
+  }
+
+  .tile__letter {
+    font-size: 2.3rem;
+    width: 2.5rem;
+  }
+
+  .tile__text {
+    font-size: 1.32rem;
+  }
+
+  /* Keyboard hint, revealed on hover so it never competes with the answer. */
+  .tile__key {
+    display: block;
+    margin-left: auto;
+    font-family: var(--display);
+    font-size: 0.82rem;
+    letter-spacing: 0.14em;
+    color: var(--ink-dim);
+    border: 1px solid var(--edge);
+    border-radius: 3px;
+    padding: 0.1rem 0.45rem;
+    opacity: 0;
+    transition: opacity 140ms ease;
+  }
+
+  .tile:hover:not(:disabled) .tile__key {
+    opacity: 1;
+  }
+
+  .roomcode__char {
+    font-size: 6rem;
+    width: 5rem;
+  }
+
+  .standing {
+    padding: 0.95rem 1.25rem;
+  }
+
+  .standing__score {
+    font-size: 1.85rem;
+  }
+
+  .riser--first {
+    min-height: 14rem;
+  }
+
+  .riser--second {
+    min-height: 10.5rem;
+  }
+
+  .riser--third {
+    min-height: 8.5rem;
+  }
+}
+
+/* A slow drift on the spotlight, so a screen left on the lobby is never static. */
+@media (min-width: 64rem) and (prefers-reduced-motion: no-preference) {
+  .stage::before {
+    animation: drift 26s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes drift {
+  from {
+    transform: translate3d(-1.5%, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(1.5%, 1%, 0) scale(1.04);
+  }
+}
+
+/* Keyboard legend, desktop only. */
+.legend {
+  display: none;
+}
+
+@media (min-width: 64rem) {
+  .legend {
+    display: flex;
+    gap: 1.1rem;
+    flex-wrap: wrap;
+    align-items: center;
+    color: var(--ink-dim);
+    font-size: 0.82rem;
+  }
+
+  .legend kbd {
+    font-family: var(--display);
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    border: 1px solid var(--edge);
+    border-bottom-width: 2px;
+    border-radius: 3px;
+    padding: 0.05rem 0.4rem;
+    margin-right: 0.3rem;
+    color: var(--ink-soft);
+  }
+}

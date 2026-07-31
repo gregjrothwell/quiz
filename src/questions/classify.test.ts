@@ -236,15 +236,37 @@ describe('packForCategory', () => {
     expect(packs).toEqual(['tv-and-film', 'tv-and-film']);
   });
 
-  test('falls back to general knowledge for unmapped categories', () => {
+  test('sends unmapped categories to the catch-all, not general knowledge', () => {
     // #given a category with no dedicated pack
     const category = 'Entertainment: Board Games';
 
     // #when it is mapped
     const pack = packForCategory(category);
 
-    // #then it lands in general-knowledge
-    expect(pack).toBe('general-knowledge');
+    // #then it lands in mixed-bag, so General Knowledge stays general knowledge
+    expect(pack).toBe('mixed-bag');
+  });
+
+  test('keeps video games out of general knowledge', () => {
+    // #given the single largest source category
+    const pack = packForCategory('Entertainment: Video Games');
+
+    // #when it is mapped
+    const result = pack;
+
+    // #then it has its own pack rather than swamping general knowledge
+    expect(result).toBe('video-games');
+  });
+
+  test('maps General Knowledge to itself', () => {
+    // #given the real general knowledge category
+    const pack = packForCategory('General Knowledge');
+
+    // #when it is mapped
+    const result = pack;
+
+    // #then it lands where a player would expect
+    expect(result).toBe('general-knowledge');
   });
 });
 

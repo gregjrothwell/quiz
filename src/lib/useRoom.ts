@@ -274,11 +274,23 @@ export function useRoom(): UseRoom {
 
   const leave = useCallback(async (): Promise<void> => {
     if (!code || !uid) return;
-    await rtdbRemove(presenceRef(code, uid));
-    await updateDoc(roomDoc(code), { [`players.${uid}`]: deleteField() });
+    const leavingCode = code;
+    const leavingUid = uid;
+
+    // Drop out locally first, so leaving always works.
     setCode(null);
     setPersisted(null);
     setAnswers({});
+
+    // The two cleanup writes are best-effort. Once the local listeners are gone
+    // the rules can stop recognising this client as a member and refuse them,
+    // which used to surface as a permission error on an action that had already
+    // succeeded. Nothing is leaked by a failure here: the RTDB onDisconnect
+    // handler drops presence anyway, and the quizmaster reaps stale players.
+    await rtdbRemove(presenceRef(leavingCode, leavingUid)).catch(() => undefined);
+    await updateDoc(roomDoc(leavingCode), {
+      [`players.${leavingUid}`]: deleteField(),
+    }).catch(() => undefined);
   }, [code, uid]);
 
   const submitAnswer = useCallback(

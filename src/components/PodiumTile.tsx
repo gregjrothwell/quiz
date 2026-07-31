@@ -34,6 +34,11 @@ export function PodiumTile({ index, text, state, disabled, onPick }: PodiumTileP
         {letter}
       </span>
       <span className="tile__text">{text}</span>
+      {disabled ? null : (
+        <span className="tile__key" aria-hidden="true">
+          {letter} / {index + 1}
+        </span>
+      )}
     </button>
   );
 }
