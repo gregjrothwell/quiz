@@ -1,0 +1,58 @@
+rules_version = '2';
+
+// The quizmaster is derived, not stored: it is whoever has been in the room
+// longest. Rules cannot compute that cheaply, so they enforce the weaker but
+// sufficient invariant that every writer must be a signed-in member of the room.
+// The engine enforces game legality; these rules stop outsiders touching a room
+// and stop anyone editing someone else's answer.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /rooms/{code} {
+      function signedIn() {
+        return request.auth != null;
+      }
+
+      function isMember() {
+        return signedIn()
+          && resource.data.players.keys().hasAny([request.auth.uid]);
+      }
+
+      // Anyone signed in can look up a room to join it.
+      allow get, list: if signedIn();
+
+      // Creating a room requires putting yourself in it as the only player.
+      allow create: if signedIn()
+        && request.resource.data.players.keys().hasOnly([request.auth.uid])
+        && request.resource.data.code == code
+        && request.resource.data.phase == 'lobby';
+
+      // Members drive the game. Joining is also an update, so allow a writer who
+      // is a member either before or after the write.
+      allow update: if signedIn()
+        && (isMember() || request.resource.data.players.keys().hasAny([request.auth.uid]));
+
+      // Rooms are disposable; nobody needs to delete one mid-quiz.
+      allow delete: if false;
+
+      match /answers/{uid} {
+        // Everyone in the room reads answers so the reveal can render.
+        allow read: if signedIn();
+
+        // You may only write your own answer, and only with a sane shape.
+        allow create, update: if signedIn()
+          && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['optionIndex', 'elapsedMs', 'questionIndex'])
+          && request.resource.data.optionIndex is int
+          && request.resource.data.optionIndex >= 0
+          && request.resource.data.optionIndex < 10
+          && request.resource.data.elapsedMs is int
+          && request.resource.data.elapsedMs >= 0
+          && request.resource.data.questionIndex is int
+          && request.resource.data.questionIndex >= 0;
+
+        allow delete: if signedIn() && request.auth.uid == uid;
+      }
+    }
+  }
+}

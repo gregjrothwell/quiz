@@ -1,0 +1,50 @@
+[
+  {
+    "id": "general-knowledge",
+    "title": "General Knowledge",
+    "blurb": "A bit of everything. The safe opener.",
+    "count": 1393
+  },
+  {
+    "id": "geography",
+    "title": "Geography",
+    "blurb": "Places, borders and capitals.",
+    "count": 249
+  },
+  {
+    "id": "history",
+    "title": "History",
+    "blurb": "Everything that already happened.",
+    "count": 244
+  },
+  {
+    "id": "music",
+    "title": "Music",
+    "blurb": "Chart history, bands and one-hit wonders.",
+    "count": 350
+  },
+  {
+    "id": "science",
+    "title": "Science",
+    "blurb": "Nature, numbers and machines.",
+    "count": 250
+  },
+  {
+    "id": "sport",
+    "title": "Sport",
+    "blurb": "Pitches, tracks and podiums.",
+    "count": 81
+  },
+  {
+    "id": "tv-and-film",
+    "title": "TV & Film",
+    "blurb": "The box and the big screen.",
+    "count": 248
+  },
+  {
+    "id": "uk-leaning",
+    "title": "Best of British",
+    "blurb": "Questions that land better on this side of the Atlantic.",
+    "count": 133
+  }
+]
