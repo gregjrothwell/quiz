@@ -25,6 +25,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { get, getDatabase, ref, remove, set } from 'firebase/database';
 import {
+  Timestamp,
   collection,
   deleteDoc,
   doc,
@@ -33,7 +34,10 @@ import {
   getFirestore,
   limit,
   query,
+  serverTimestamp,
   setDoc,
+  updateDoc,
+  type Firestore,
 } from 'firebase/firestore';
 
 /**
@@ -52,6 +56,68 @@ const ANY_SEASON = 'rules-check';
  * inconclusive check rather than a passing one.
  */
 const PROBE_ROOM = 'rules-check-room';
+
+/**
+ * A second probe room, this one owned by the checker, because the vault's time
+ * gate can only be exercised against a room with a genuinely open question.
+ *
+ * Rooms cannot be deleted — deliberately, see firestore.rules — so this is a
+ * fixed code reused on every run rather than a fresh room each time, which
+ * would litter the project with one document per preflight. It is outside the
+ * room-code alphabet, so nobody can reach it from the app.
+ */
+const LIVE_ROOM = 'rules-check-live';
+
+/** Seeded by `npm run seed-vault`. Its answer is 'The right one'. */
+const PROBE_QUESTION = 'rules-check-q';
+
+/** Matches the gate in firestore.rules and QUESTION_DURATION_MS. */
+const GATE_MS = 20_000;
+
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Puts a real question in front of a room owned by this client, so the reveal
+ * checks have something legitimate to ask about. Returns when the server has
+ * stamped `openedAt`, which is the moment the gate's twenty seconds start.
+ */
+async function openProbeQuestion(db: Firestore, uid: string): Promise<void> {
+  const room = doc(db, 'rooms', LIVE_ROOM);
+  const player = { name: 'Rules check', joinedAt: Date.now() };
+
+  const base = {
+    code: LIVE_ROOM,
+    players: { [uid]: player },
+    packId: null,
+    packTitle: null,
+    questions: [
+      {
+        id: PROBE_QUESTION,
+        prompt: 'Does the vault open on time?',
+        options: ['The right one', 'A wrong one', 'Another wrong one', 'A third wrong one'],
+        correctIndex: null,
+        category: 'General Knowledge',
+        difficulty: 'easy',
+      },
+    ],
+    index: 0,
+    questionOpenedAt: null,
+    scores: { [uid]: 0 },
+    lastDeltas: {},
+    skipped: [],
+    gameId: 'rules-check',
+  };
+
+  const existing = await getDoc(room);
+  if (!existing.exists()) {
+    await setDoc(room, { ...base, phase: 'lobby', questions: [] });
+  }
+
+  // Back to the lobby first, so `openedAt` is genuinely being written by a
+  // transition *into* a question — the only shape the rules will stamp.
+  await updateDoc(room, { ...base, phase: 'lobby', questions: [] });
+  await updateDoc(room, { ...base, phase: 'question', openedAt: serverTimestamp() });
+}
 
 function required(name: string): string {
   const value = process.env[name];
@@ -99,7 +165,13 @@ async function main(): Promise<void> {
   const db = getFirestore(app);
   const rtdb = getDatabase(app);
 
-  console.log(`Project ${config.projectId}, signed in anonymously as ${uid.slice(0, 8)}…\n`);
+  console.log(`Project ${config.projectId}, signed in anonymously as ${uid.slice(0, 8)}…`);
+  console.log('The last check waits out a real twenty-second gate, so give it a minute.\n');
+
+  // Opened up front so the deny checks below have a genuinely live question to
+  // ask about — a reveal refused because nothing is in play would look exactly
+  // like a reveal refused by the time gate, and prove nothing.
+  await openProbeQuestion(db, uid);
 
   const presence = ref(rtdb, `presence/${PROBE_ROOM}/${uid}`);
   const ownSeasonRow = doc(db, 'seasons', ANY_SEASON, 'players', uid);
@@ -188,6 +260,84 @@ async function main(): Promise<void> {
         setDoc(doc(db, 'seasons', ANY_SEASON, 'players', 'not-my-uid'), validSeasonRow),
     },
     {
+      label: 'Firestore   · read the vault',
+      expect: 'deny',
+      hint: 'firestore.rules is missing the /vault block — every answer in the '
+        + 'game is readable, and the packs no longer carry them precisely so '
+        + 'that this document is the only copy',
+      run: () => getDoc(doc(db, 'vault', PROBE_QUESTION)),
+    },
+    {
+      label: 'Firestore   · write the vault',
+      expect: 'deny',
+      hint: 'firestore.seed.rules is still published. Publish firestore.rules — '
+        + 'until you do, anybody can overwrite the answers',
+      run: () => setDoc(doc(db, 'vault', PROBE_QUESTION), { a: 'tampered' }),
+    },
+    {
+      label: 'Firestore   · list the vault',
+      expect: 'deny',
+      hint: 'firestore.rules grants `list` on /vault — one query returns every '
+        + 'answer in the game',
+      run: () => getDocs(query(collection(db, 'vault'), limit(1))),
+    },
+    {
+      label: 'Firestore   · reveal an answer while the clock is running',
+      expect: 'deny',
+      hint: 'firestore.rules is missing the reveal time gate — the answer can be '
+        + 'had before anybody has finished answering, which is the whole point '
+        + 'of the vault',
+      run: () =>
+        setDoc(doc(db, 'rooms', LIVE_ROOM, 'reveal', PROBE_QUESTION), {
+          answer: 'The right one',
+        }),
+    },
+    {
+      label: 'Firestore   · backdate a question to open the gate early',
+      expect: 'deny',
+      hint: 'firestore.rules is missing `openedAt == request.time` — a member '
+        + 'can claim a question opened ten minutes ago and unlock it at once',
+      run: () =>
+        updateDoc(doc(db, 'rooms', LIVE_ROOM), {
+          index: 1,
+          openedAt: Timestamp.fromMillis(Date.now() - 600_000),
+        }),
+    },
+    {
+      label: 'Firestore   · ask about a question that is not in play',
+      expect: 'deny',
+      hint: 'firestore.rules does not pin the reveal to the current question — '
+        + 'one open question leaks the answers to all the others',
+      run: () =>
+        setDoc(doc(db, 'rooms', LIVE_ROOM, 'reveal', 'some-other-question'), {
+          answer: 'The right one',
+        }),
+    },
+    {
+      // The path a round reads before it picks its questions. If this is
+      // denied, every round silently falls back to repeating whatever it likes.
+      label: 'Firestore   · read and write a pack’s question history',
+      expect: 'allow',
+      hint: 'firestore.rules is missing the seasons/{season}/asked block — '
+        + 'rounds will stop avoiding questions the season has already served',
+      run: async () => {
+        const reference = doc(db, 'seasons', ANY_SEASON, 'asked', 'rules-check-pack');
+        await setDoc(reference, { ids: ['a', 'b'], at: Date.now() });
+        return deleteDoc(reference);
+      },
+    },
+    {
+      label: 'Firestore   · write an unbounded question history',
+      expect: 'deny',
+      hint: 'firestore.rules is missing the size cap on seasons/{season}/asked — '
+        + 'a document every round reads can be inflated without limit',
+      run: () =>
+        setDoc(doc(db, 'seasons', ANY_SEASON, 'asked', 'rules-check-pack'), {
+          ids: Array.from({ length: 1_200 }, (_, i) => `q${i}`),
+          at: Date.now(),
+        }),
+    },
+    {
       label: 'Realtime DB · write presence',
       expect: 'allow',
       hint: 'publish database.rules.json — closed tabs will never be cleaned up',
@@ -217,6 +367,26 @@ async function main(): Promise<void> {
       expect: 'deny',
       hint: 'database.rules.json is missing its root deny',
       run: () => get(ref(rtdb, '/')),
+    },
+    {
+      // Last, because it waits out a real twenty-second gate. This is the
+      // direction that ruins a quiz night rather than merely leaking one: if
+      // the vault never opens, no question can be scored and the round stops
+      // dead at the first reveal.
+      label: 'Firestore   · reveal an answer once the clock has run out',
+      expect: 'allow',
+      hint: 'the reveal cannot complete — check the /vault block is published '
+        + 'and that `npm run seed-vault` has been run',
+      run: async () => {
+        // Re-opened rather than reusing the question the deny checks poked at,
+        // so this proves the gate opens on its own terms.
+        await openProbeQuestion(db, uid);
+        await sleep(GATE_MS + 1_500);
+        const reveal = doc(db, 'rooms', LIVE_ROOM, 'reveal', PROBE_QUESTION);
+        await setDoc(reveal, { answer: 'The right one' });
+        // Deletable by design, so the next run can prove this again.
+        return deleteDoc(reveal);
+      },
     },
   ];
 

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { SoundToggle } from './SoundToggle';
 
 /**
  * The studio: a back wall of light columns and an overhead halo from the
@@ -17,6 +18,7 @@ export function Stage({ children }: { children: ReactNode }) {
         <i />
         <i />
       </div>
+      <SoundToggle />
       <div className="stage__inner">{children}</div>
     </div>
   );

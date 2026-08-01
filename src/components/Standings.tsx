@@ -25,7 +25,7 @@ export function Standings({ players, scores, deltas, youUid }: StandingsProps) {
   return (
     <ol className="standings">
       <AnimatePresence initial={false}>
-        {rows.map((entry) => {
+        {rows.map((entry, order) => {
           const player = players[entry.uid];
           if (!player) return null;
 
@@ -44,6 +44,10 @@ export function Standings({ players, scores, deltas, youUid }: StandingsProps) {
               key={entry.uid}
               layout
               className={classes}
+              // Opacity only, and no transform: the entrance is a CSS animation
+              // while `layout` drives transforms from JS, and two owners of the
+              // same property is how a row ends up stranded mid-flight.
+              style={{ animationDelay: `${order * 60}ms` }}
               transition={{ type: 'spring', stiffness: 420, damping: 34 }}
             >
               <span className="standing__bar" style={{ width }} aria-hidden="true" />
@@ -53,7 +57,12 @@ export function Standings({ players, scores, deltas, youUid }: StandingsProps) {
                 {entry.uid === youUid ? <span className="plate__role"> you</span> : null}
               </span>
               <span className="standing__score">
-                <ScoreTicker value={entry.score} />
+                {/*
+                  Counting from the score before this question means the number
+                  climbs by exactly what was just won, at the same moment the
+                  row slides past the people it overtook.
+                */}
+                <ScoreTicker value={entry.score} from={entry.score - delta} />
                 {delta > 0 ? <span className="standing__delta">+{delta}</span> : null}
               </span>
             </motion.li>

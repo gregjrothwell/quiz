@@ -13,7 +13,7 @@ const QUESTIONS: QuizQuestion[] = [
     id: 'q1',
     prompt: 'Which river flows through London?',
     options: ['Severn', 'Thames', 'Mersey', 'Tyne'],
-    correctIndex: 1,
+    correctIndex: null,
     category: 'Geography',
     difficulty: 'easy',
   },
@@ -21,14 +21,39 @@ const QUESTIONS: QuizQuestion[] = [
     id: 'q2',
     prompt: 'Which element has the symbol Fe?',
     options: ['Iron', 'Lead', 'Tin', 'Zinc'],
-    correctIndex: 0,
+    correctIndex: null,
     category: 'Science & Nature',
     difficulty: 'easy',
   },
 ];
 
-function apply(state: RoomState, ...actions: Action[]): RoomState {
-  return actions.reduce(reduce, state);
+/**
+ * What the vault holds for each fixture question. The room never carries this
+ * while a question is open, so a test that reveals has to supply it exactly as
+ * the real reveal does — see src/lib/vault.ts.
+ */
+const VAULT: Record<string, number> = { q1: 1, q2: 0 };
+
+/** The reveal action for whichever question the room is currently on. */
+function revealNow(state: RoomState): Action {
+  const question = state.questions[state.index];
+  const correctIndex = VAULT[question?.id ?? ''];
+  if (correctIndex === undefined) throw new Error('fixture has no vault entry');
+  return { type: 'reveal', correctIndex };
+}
+
+/**
+ * Folds actions over a room. An action may be given as a function of the state
+ * so far, which is how a reveal names the answer for whichever question is
+ * actually in play at that point in the sequence.
+ */
+type Step = Action | ((state: RoomState) => Action);
+
+function apply(state: RoomState, ...steps: Step[]): RoomState {
+  return steps.reduce(
+    (current, step) => reduce(current, typeof step === 'function' ? step(current) : step),
+    state,
+  );
 }
 
 /** A room with two players, a loaded pack, and the first question open. */
@@ -285,7 +310,7 @@ describe('reveal', () => {
     });
 
     // #when the question is revealed
-    const result = reduce(room, { type: 'reveal' });
+    const result = reduce(room, revealNow(room));
 
     // #then the player banks the maximum score
     expect(result.scores['guest']).toBe(1000);
@@ -301,7 +326,7 @@ describe('reveal', () => {
     });
 
     // #when the question is revealed
-    const result = reduce(room, { type: 'reveal' });
+    const result = reduce(room, revealNow(room));
 
     // #then no points are awarded
     expect(result.scores['guest']).toBe(0);
@@ -312,7 +337,7 @@ describe('reveal', () => {
     const room = playingRoom();
 
     // #when it is revealed
-    const result = reduce(room, { type: 'reveal' });
+    const result = reduce(room, revealNow(room));
 
     // #then the phase advances and the timer is cleared
     expect({ phase: result.phase, openedAt: result.questionOpenedAt }).toEqual({
@@ -339,7 +364,7 @@ describe('skip', () => {
     const room = apply(
       playingRoom(),
       { type: 'answer', uid: 'guest', optionIndex: 1, elapsedMs: 0 },
-      { type: 'reveal' },
+      revealNow,
     );
 
     // #when the quizmaster skips it retrospectively
@@ -369,7 +394,7 @@ describe('skip', () => {
 describe('next', () => {
   test('moves from reveal to the scoreboard', () => {
     // #given a revealed question
-    const room = reduce(playingRoom(), { type: 'reveal' });
+    const room = reduce(playingRoom(), revealNow(playingRoom()));
 
     // #when the quizmaster advances
     const result = reduce(room, { type: 'next', at: 6_000 });
@@ -382,7 +407,7 @@ describe('next', () => {
     // #given the scoreboard after the first question
     const room = apply(
       playingRoom(),
-      { type: 'reveal' },
+      revealNow,
       { type: 'next', at: 6_000 },
     );
 
@@ -397,10 +422,10 @@ describe('next', () => {
     // #given the scoreboard following the final question
     const room = apply(
       playingRoom(),
-      { type: 'reveal' },
+      revealNow,
       { type: 'next', at: 6_000 },
       { type: 'next', at: 7_000 },
-      { type: 'reveal' },
+      revealNow,
       { type: 'next', at: 9_000 },
     );
 
@@ -416,7 +441,7 @@ describe('next', () => {
     const room = apply(
       playingRoom(),
       { type: 'answer', uid: 'guest', optionIndex: 1, elapsedMs: 1000 },
-      { type: 'reveal' },
+      revealNow,
       { type: 'next', at: 6_000 },
     );
 
@@ -434,7 +459,7 @@ describe('reset', () => {
     const room = apply(
       playingRoom(),
       { type: 'answer', uid: 'guest', optionIndex: 1, elapsedMs: 0 },
-      { type: 'reveal' },
+      revealNow,
     );
 
     // #when the room is reset for another round

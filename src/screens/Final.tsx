@@ -1,6 +1,8 @@
+import { ScoreTicker } from '../components/ScoreTicker';
 import { Standings } from '../components/Standings';
 import { standings } from '../engine/scoring';
 import type { RoomState } from '../engine/state';
+import { useCue } from '../lib/sound';
 
 interface FinalProps {
   room: RoomState;
@@ -42,6 +44,10 @@ export function Final({
   const podium = RISER_SLOTS.map((slot) => ({ ...slot, entry: rows[slot.row] }));
   const hasPodium = rows.length > 0;
 
+  // Keyed on the game so a second round in the same room gets its own fanfare,
+  // and a re-render on the final screen does not.
+  useCue('fanfare', room.gameId ?? 'no-game', hasPodium);
+
   return (
     <>
       <header>
@@ -65,7 +71,9 @@ export function Final({
               <div key={height} className={`riser riser--${height}`}>
                 <span className="riser__pos">{entry.position}</span>
                 <span className="riser__name">{player.name}</span>
-                <span className="riser__score">{entry.score.toLocaleString('en-GB')}</span>
+                <span className="riser__score">
+                  <ScoreTicker value={entry.score} from={0} />
+                </span>
               </div>
             );
           })}

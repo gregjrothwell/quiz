@@ -1,6 +1,11 @@
 import { describe, expect, test } from 'vitest';
 import { buildQuizQuestions, rampPlan, resolveQuizmaster, selectQuestions, shuffle } from './state';
-import type { Difficulty, Question } from '../questions/types';
+import {
+  sealQuestion,
+  type Difficulty,
+  type Question,
+  type SealedQuestion,
+} from '../questions/types';
 
 /** Deterministic pseudo-random source so shuffles are reproducible in tests. */
 function seededRng(seed: number): () => number {
@@ -11,7 +16,7 @@ function seededRng(seed: number): () => number {
   };
 }
 
-const POOL: Question[] = [
+const SOURCE: Question[] = [
   {
     id: 'a',
     question: 'Which river flows through London?',
@@ -37,6 +42,13 @@ const POOL: Question[] = [
     difficulty: 'medium',
   },
 ];
+
+/**
+ * What the app actually loads. Written as source questions and sealed here
+ * rather than declared sealed, so the fixtures still say which answer is right
+ * and the tests below can assert that the sealed form does not.
+ */
+const POOL = SOURCE.map(sealQuestion);
 
 describe('resolveQuizmaster', () => {
   test('picks the longest-present player', () => {
@@ -104,16 +116,68 @@ describe('shuffle', () => {
   });
 });
 
+describe('sealQuestion', () => {
+  test('keeps every option but not which one is right', () => {
+    // #given a source question whose answer is known
+    const source = SOURCE[0];
+    if (!source) throw new Error('fixture missing');
+
+    // #when it is sealed for publication
+    const sealed = sealQuestion(source);
+
+    // #then all four options survive
+    expect([...sealed.options].sort()).toEqual(['Mersey', 'Severn', 'Thames', 'Tyne']);
+    // #and nothing on the published shape names the answer
+    expect(Object.keys(sealed)).not.toContain('correct');
+    expect(JSON.stringify(sealed)).not.toContain('"correct"');
+  });
+
+  test('orders the options independently of which is correct', () => {
+    // #given two questions whose correct answer sorts differently
+    const first = sealQuestion({
+      id: 'x',
+      question: 'q',
+      correct: 'Alpha',
+      incorrect: ['Bravo', 'Charlie', 'Delta'],
+      category: 'c',
+      difficulty: 'easy',
+    });
+    const second = sealQuestion({
+      id: 'y',
+      question: 'q',
+      correct: 'Delta',
+      incorrect: ['Alpha', 'Bravo', 'Charlie'],
+      category: 'c',
+      difficulty: 'easy',
+    });
+
+    // #when their published option orders are compared
+    // #then they are identical, so position leaks nothing about correctness
+    expect(first.options).toEqual(second.options);
+  });
+});
+
 describe('buildQuizQuestions', () => {
-  test('points correctIndex at the correct option after shuffling', () => {
-    // #given a pool of questions
+  test('carries no answer, because no device has one yet', () => {
+    // #given a pool of sealed questions
     const built = buildQuizQuestions(POOL, 3, 'mixed', seededRng(42));
 
-    // #when each built question is checked against its source
-    const resolved = built.map((question) => question.options[question.correctIndex]);
+    // #when the built questions are inspected
+    const answers = built.map((question) => question.correctIndex);
 
-    // #then every correctIndex resolves to the right answer text
-    expect(resolved.sort()).toEqual(['15', 'Iron', 'Thames']);
+    // #then every one is still sealed — the vault fills these in at the reveal
+    expect(answers).toEqual([null, null, null]);
+  });
+
+  test('keeps every option of the question it was built from', () => {
+    // #given a pool of sealed questions
+    const built = buildQuizQuestions(POOL, 3, 'mixed', seededRng(42));
+
+    // #when the options of the Thames question are collected
+    const thames = built.find((question) => question.prompt.includes('London'));
+
+    // #then shuffling changed the order without losing or inventing an option
+    expect([...(thames?.options ?? [])].sort()).toEqual(['Mersey', 'Severn', 'Thames', 'Tyne']);
   });
 
   test('takes only the requested number of questions', () => {
@@ -162,18 +226,20 @@ describe('buildQuizQuestions', () => {
 });
 
 /** A pool with a known spread: `easy` easy, `medium` medium, `hard` hard. */
-function spread(counts: Record<Difficulty, number>): Question[] {
-  const pool: Question[] = [];
+function spread(counts: Record<Difficulty, number>): SealedQuestion[] {
+  const pool: SealedQuestion[] = [];
   for (const level of ['easy', 'medium', 'hard'] as const) {
     for (let i = 0; i < counts[level]; i += 1) {
-      pool.push({
-        id: `${level}-${i}`,
-        question: `A ${level} question numbered ${i}?`,
-        correct: 'Yes',
-        incorrect: ['No', 'Maybe', 'Perhaps'],
-        category: 'General Knowledge',
-        difficulty: level,
-      });
+      pool.push(
+        sealQuestion({
+          id: `${level}-${i}`,
+          question: `A ${level} question numbered ${i}?`,
+          correct: 'Yes',
+          incorrect: ['No', 'Maybe', 'Perhaps'],
+          category: 'General Knowledge',
+          difficulty: level,
+        }),
+      );
     }
   }
   return pool;
@@ -286,5 +352,71 @@ describe('selectQuestions', () => {
 
     // #then more than one level is served
     expect(levels.size).toBeGreaterThan(1);
+  });
+});
+
+describe('selectQuestions with a season history', () => {
+  test('prefers questions the season has not served', () => {
+    // #given a pool of thirty, twenty of which have been asked before
+    const pool = spread({ easy: 30, medium: 0, hard: 0 });
+    const asked = new Set(pool.slice(0, 20).map((question) => question.id));
+
+    // #when a round of ten is selected
+    const picked = selectQuestions(pool, 10, 'mixed', seededRng(5), asked);
+
+    // #then none of them are repeats, because ten fresh ones existed
+    expect(picked.filter((question) => asked.has(question.id))).toEqual([]);
+  });
+
+  test('still fills a round when a thin pack has too few fresh questions', () => {
+    // #given a pack of twelve with all but four already served
+    const pool = spread({ easy: 12, medium: 0, hard: 0 });
+    const asked = new Set(pool.slice(0, 8).map((question) => question.id));
+
+    // #when ten are requested
+    const picked = selectQuestions(pool, 10, 'mixed', seededRng(5), asked);
+
+    // #then the round is full length rather than truncated to the four fresh ones
+    expect(picked).toHaveLength(10);
+  });
+
+  test('uses every fresh question before falling back on a repeat', () => {
+    // #given a pack of twelve with all but four already served
+    const pool = spread({ easy: 12, medium: 0, hard: 0 });
+    const fresh = pool.slice(8);
+    const asked = new Set(pool.slice(0, 8).map((question) => question.id));
+
+    // #when ten are requested
+    const picked = selectQuestions(pool, 10, 'mixed', seededRng(5), asked);
+    const ids = new Set(picked.map((question) => question.id));
+
+    // #then all four unseen questions are in the round
+    expect(fresh.every((question) => ids.has(question.id))).toBe(true);
+  });
+
+  test('a ramped round still climbs when it has to reuse questions', () => {
+    // #given a pack whose fresh questions cannot fill a ramp on their own
+    const pool = spread({ easy: 6, medium: 6, hard: 6 });
+    const asked = new Set(pool.slice(0, 12).map((question) => question.id));
+
+    // #when a ramped round of twelve is built
+    const picked = selectQuestions(pool, 12, 'ramp', seededRng(9), asked);
+    const ranks = picked.map((question) => ['easy', 'medium', 'hard'].indexOf(question.difficulty));
+
+    // #then it is full length and never steps back down a level
+    expect(picked).toHaveLength(12);
+    expect([...ranks].sort((a, b) => a - b)).toEqual(ranks);
+  });
+
+  test('an empty history behaves exactly as before', () => {
+    // #given a pool and no history at all
+    const pool = spread({ easy: 20, medium: 0, hard: 0 });
+
+    // #when a round is selected with and without an empty set
+    const withArg = selectQuestions(pool, 8, 'mixed', seededRng(3), new Set());
+    const without = selectQuestions(pool, 8, 'mixed', seededRng(3));
+
+    // #then the selection is identical
+    expect(withArg.map((q) => q.id)).toEqual(without.map((q) => q.id));
   });
 });

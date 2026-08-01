@@ -1,5 +1,6 @@
 import { Standings } from '../components/Standings';
 import type { RoomState } from '../engine/state';
+import { useCue } from '../lib/sound';
 
 interface ScoreboardProps {
   room: RoomState;
@@ -26,6 +27,9 @@ export function Scoreboard({ room, youUid, isQuizmaster, onNext }: ScoreboardPro
   const skippedLast = room.skipped.includes(room.questions[room.index]?.id ?? '');
   const nextNumber = room.index + 2;
   const nextOrdinal = ORDINALS[nextNumber - 1] ?? String(nextNumber);
+
+  // The sting belongs to the title card, so it only sounds when one is shown.
+  useCue('sting', room.index, !isLast);
 
   return (
     <>

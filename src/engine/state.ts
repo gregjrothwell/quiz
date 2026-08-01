@@ -1,4 +1,9 @@
-import { DIFFICULTIES, type Difficulty, type PackId, type Question } from '../questions/types';
+import {
+  DIFFICULTIES,
+  type Difficulty,
+  type PackId,
+  type SealedQuestion,
+} from '../questions/types';
 
 export type Phase = 'lobby' | 'question' | 'reveal' | 'scoreboard' | 'finished';
 
@@ -29,7 +34,15 @@ export interface QuizQuestion {
   id: string;
   prompt: string;
   options: string[];
-  correctIndex: number;
+  /**
+   * Null until the question is revealed.
+   *
+   * Nobody's device knows this while the clock is running — not even the
+   * quizmaster's. The packs ship without answers, and the answer is fetched
+   * from the vault at reveal by a write the security rules refuse until the
+   * question's twenty seconds are up. See docs/HANDOVER.md.
+   */
+  correctIndex: number | null;
   category: string;
   difficulty: Difficulty;
 }
@@ -154,9 +167,9 @@ export function rampPlan(count: number): Record<Difficulty, number> {
 }
 
 function bucketByDifficulty(
-  pool: readonly Question[],
+  pool: readonly SealedQuestion[],
   rng: Rng,
-): Record<Difficulty, Question[]> {
+): Record<Difficulty, SealedQuestion[]> {
   return {
     easy: shuffle(pool.filter((question) => question.difficulty === 'easy'), rng),
     medium: shuffle(pool.filter((question) => question.difficulty === 'medium'), rng),
@@ -170,10 +183,10 @@ function bucketByDifficulty(
  * still yields a full-length round rather than a truncated one. The final sort
  * is stable, so the shuffle within each level survives it.
  */
-function buildRamp(pool: readonly Question[], count: number, rng: Rng): Question[] {
+function buildRamp(pool: readonly SealedQuestion[], count: number, rng: Rng): SealedQuestion[] {
   const buckets = bucketByDifficulty(pool, rng);
   const plan = rampPlan(count);
-  const picked: Question[] = [];
+  const picked: SealedQuestion[] = [];
 
   for (const level of DIFFICULTIES) {
     picked.push(...buckets[level].splice(0, plan[level]));
@@ -194,42 +207,90 @@ function buildRamp(pool: readonly Question[], count: number, rng: Rng): Question
 }
 
 /**
+ * Splits a pool into questions this season has not seen and questions it has.
+ *
+ * Random selection with no memory repeats far sooner than pack sizes suggest:
+ * drawing 15 from Sport's 125 every week means about two of last week's
+ * questions come round again, every week. Big packs hide it — the same sum over
+ * Video Games' 999 is a quarter of a question — so the fix has to be selection,
+ * not more questions.
+ */
+function partitionByAsked(
+  pool: readonly SealedQuestion[],
+  asked: ReadonlySet<string>,
+): { fresh: SealedQuestion[]; repeats: SealedQuestion[] } {
+  const fresh: SealedQuestion[] = [];
+  const repeats: SealedQuestion[] = [];
+
+  for (const question of pool) {
+    (asked.has(question.id) ? repeats : fresh).push(question);
+  }
+
+  return { fresh, repeats };
+}
+
+/**
  * Chooses which questions a round is made of, in the order they will be asked.
  * Returns fewer than `count` only when the pool genuinely cannot supply them.
+ *
+ * `asked` is what the season has already served. Those questions go to the back
+ * of the queue rather than being removed: a thin pack that cannot fill a round
+ * from fresh questions alone still gets a full-length round, with repeats only
+ * where there was no alternative. Removing them outright would mean Sport
+ * quietly serving eight-question rounds by mid-season.
  */
 export function selectQuestions(
-  pool: readonly Question[],
+  pool: readonly SealedQuestion[],
   count: number,
   level: Level = 'mixed',
   rng: Rng = Math.random,
-): Question[] {
+  asked: ReadonlySet<string> = new Set(),
+): SealedQuestion[] {
   const wanted = Math.max(0, count);
   if (wanted === 0) return [];
-  if (level === 'ramp') return buildRamp(pool, wanted, rng);
 
-  const eligible = level === 'mixed' ? pool : pool.filter((q) => q.difficulty === level);
-  return shuffle(eligible, rng).slice(0, wanted);
+  const eligible = level === 'mixed' || level === 'ramp'
+    ? pool
+    : pool.filter((q) => q.difficulty === level);
+
+  const { fresh, repeats } = partitionByAsked(eligible, asked);
+
+  // A ramp has to be built from the whole set it will draw on, or topping up
+  // afterwards would append hard questions to the end of an already-sorted
+  // round and break the climb.
+  if (level === 'ramp') {
+    const preferred = fresh.length >= wanted ? fresh : [...fresh, ...repeats];
+    return buildRamp(preferred, wanted, rng);
+  }
+
+  const picked = shuffle(fresh, rng).slice(0, wanted);
+  if (picked.length >= wanted) return picked;
+
+  return [...picked, ...shuffle(repeats, rng).slice(0, wanted - picked.length)];
 }
 
 /**
  * Picks the questions for a round and freezes their answer order.
  * Returns fewer than `count` if the pool cannot fill it.
+ *
+ * The options are shuffled out of the pack's fixed order so that two rounds
+ * drawing the same question do not put the same text on the same lectern. It
+ * makes no difference to secrecy — the pack's order says nothing either — but
+ * it stops the display order becoming a fingerprint anyone could learn.
  */
 export function buildQuizQuestions(
-  pool: readonly Question[],
+  pool: readonly SealedQuestion[],
   count: number,
   level: Level = 'mixed',
   rng: Rng = Math.random,
+  asked: ReadonlySet<string> = new Set(),
 ): QuizQuestion[] {
-  return selectQuestions(pool, count, level, rng).map((question) => {
-    const options = shuffle([question.correct, ...question.incorrect], rng);
-    return {
-      id: question.id,
-      prompt: question.question,
-      options,
-      correctIndex: options.indexOf(question.correct),
-      category: question.category,
-      difficulty: question.difficulty,
-    };
-  });
+  return selectQuestions(pool, count, level, rng, asked).map((question) => ({
+    id: question.id,
+    prompt: question.question,
+    options: shuffle(question.options, rng),
+    correctIndex: null,
+    category: question.category,
+    difficulty: question.difficulty,
+  }));
 }

@@ -33,6 +33,12 @@ export const PACK_IDS = [
 
 export type PackId = (typeof PACK_IDS)[number];
 
+/**
+ * A question as harvested, with its answer. **Only the build scripts ever see
+ * this shape.** Nothing under `src/` outside this file may name `correct`: the
+ * whole point of the vault is that a player's device never holds the answer,
+ * and a type that cannot travel is the cheapest way to keep that true.
+ */
 export interface Question {
   id: string;
   question: string;
@@ -42,11 +48,38 @@ export interface Question {
   difficulty: Difficulty;
 }
 
+/**
+ * A question as published. The four options are there; which one is right is
+ * not, and is not derivable — the options are written in a fixed sorted order
+ * so their position carries no signal either.
+ *
+ * The answer lives in the `vault` collection in Firestore, which no client can
+ * read. See docs/HANDOVER.md.
+ */
+export interface SealedQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  category: string;
+  difficulty: Difficulty;
+}
+
+/** Puts the options in an order that says nothing about which one is right. */
+export function sealQuestion(question: Question): SealedQuestion {
+  return {
+    id: question.id,
+    question: question.question,
+    options: [question.correct, ...question.incorrect].sort((a, b) => a.localeCompare(b)),
+    category: question.category,
+    difficulty: question.difficulty,
+  };
+}
+
 export interface Pack {
   id: PackId;
   title: string;
   blurb: string;
-  questions: Question[];
+  questions: SealedQuestion[];
 }
 
 export const PACK_META: Record<PackId, { title: string; blurb: string }> = {

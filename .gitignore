@@ -8,3 +8,6 @@ dist/
 .vite/
 coverage/
 .cache/
+
+# Service-account key for `npm run seed-vault`. Never commit one.
+.secrets/

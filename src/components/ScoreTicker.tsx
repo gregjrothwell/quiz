@@ -7,13 +7,26 @@ function easeOut(t: number): number {
   return 1 - (1 - t) ** 3;
 }
 
+interface ScoreTickerProps {
+  value: number;
+  /**
+   * Where to start counting from on the very first render.
+   *
+   * Without it a ticker that mounts already holding its final number just
+   * prints it, which is what the standings screen did: it is a fresh mount
+   * every question, so the scores arrived fully updated and the count-up only
+   * ever ran for players whose row happened to survive a re-render.
+   */
+  from?: number;
+}
+
 /**
  * Counts up to `value` rather than snapping to it — the small piece of theatre
  * that makes a score reveal feel like a score reveal.
  */
-export function ScoreTicker({ value }: { value: number }) {
-  const [shown, setShown] = useState(value);
-  const fromRef = useRef(value);
+export function ScoreTicker({ value, from }: ScoreTickerProps) {
+  const [shown, setShown] = useState(from ?? value);
+  const fromRef = useRef(from ?? value);
   const frameRef = useRef<number>(0);
 
   useEffect(() => {

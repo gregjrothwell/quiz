@@ -16,6 +16,7 @@ import { sortIntoPacks } from '../src/questions/classify';
 import {
   DIFFICULTIES,
   PACK_META,
+  sealQuestion,
   type Difficulty,
   type DifficultyCounts,
   type Pack,
@@ -33,6 +34,12 @@ const OUT_DIR = join(import.meta.dirname, '..', 'public', 'packs');
  */
 const CACHE_DIR = join(import.meta.dirname, '..', '.cache');
 const POOL_CACHE = join(CACHE_DIR, 'pool.json');
+
+/**
+ * The answers, kept out of `public/` and out of git. See `writeVault`.
+ * Shared with scripts/seed-vault.ts, which uploads it.
+ */
+export const VAULT_CACHE = join(CACHE_DIR, 'vault.json');
 
 /**
  * Page sizes, tried largest first.
@@ -221,6 +228,29 @@ function countByDifficulty(questions: readonly Question[]): DifficultyCounts {
   return counts;
 }
 
+/**
+ * The other half of a sealed pack: question id to the text of its answer.
+ *
+ * Written under `.cache/`, which is gitignored — committing this file, or
+ * publishing it under `public/`, would undo the entire point of sealing the
+ * packs. `npm run seed-vault` uploads it to Firestore, where the rules make it
+ * unreadable to every client but still visible to the rules themselves.
+ *
+ * Keyed by question id and drawn from the packs rather than the raw pool, so it
+ * holds answers for exactly the questions that shipped and no others.
+ */
+async function writeVault(packs: ReadonlyMap<string, Question[]>): Promise<void> {
+  const answers: Record<string, string> = {};
+  for (const questions of packs.values()) {
+    for (const question of questions) answers[question.id] = question.correct;
+  }
+
+  await mkdir(CACHE_DIR, { recursive: true });
+  await writeFile(VAULT_CACHE, `${JSON.stringify(answers)}\n`, 'utf8');
+  console.log(`\nVault written: ${Object.keys(answers).length} answers → ${VAULT_CACHE}`);
+  console.log('Run `npm run seed-vault` to publish them to Firestore.');
+}
+
 async function writePacks(pool: Question[]): Promise<void> {
   const { packs, dropped } = sortIntoPacks(pool);
   await mkdir(OUT_DIR, { recursive: true });
@@ -229,7 +259,14 @@ async function writePacks(pool: Question[]): Promise<void> {
 
   for (const [packId, questions] of [...packs.entries()].sort()) {
     const meta = PACK_META[packId];
-    const pack: Pack = { id: packId, title: meta.title, blurb: meta.blurb, questions };
+    // Sealed on the way out. The published pack lists the options and says
+    // nothing about which is right; the answers go to the vault instead.
+    const pack: Pack = {
+      id: packId,
+      title: meta.title,
+      blurb: meta.blurb,
+      questions: questions.map(sealQuestion),
+    };
     await writeFile(join(OUT_DIR, `${packId}.json`), `${JSON.stringify(pack)}\n`, 'utf8');
     written.push({
       id: packId,
@@ -242,6 +279,7 @@ async function writePacks(pool: Question[]): Promise<void> {
 
   await writeFile(join(OUT_DIR, 'index.json'), `${JSON.stringify(written, null, 2)}\n`, 'utf8');
   await writeFile(join(OUT_DIR, 'ATTRIBUTION.md'), ATTRIBUTION, 'utf8');
+  await writeVault(packs);
 
   console.log(`\nHarvested ${pool.length} unique questions.`);
   console.log(`Dropped ${dropped.malformed} malformed, ${dropped.usOnly} US-only.\n`);

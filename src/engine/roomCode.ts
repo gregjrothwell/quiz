@@ -32,3 +32,23 @@ export function isValidRoomCode(input: string): boolean {
   if (input.length !== ROOM_CODE_LENGTH) return false;
   return [...input].every((character) => ALPHABET.includes(character));
 }
+
+/**
+ * The code carried by a join link, or null if the hash is not one.
+ *
+ * Kept deliberately strict: an invalid code returns null rather than
+ * half-filling the field, because a partly-populated box someone then types
+ * into is how you end up joining a room nobody meant to be in.
+ */
+export function codeFromHash(hash: string): string | null {
+  const match = /^#\/j\/([^/?]+)$/.exec(hash);
+  if (!match?.[1]) return null;
+
+  const code = normaliseRoomCode(decodeURIComponent(match[1]));
+  return isValidRoomCode(code) ? code : null;
+}
+
+/** The link a QR code points at, for a phone joining without typing. */
+export function joinLink(origin: string, basePath: string, code: string): string {
+  return `${origin}${basePath}#/j/${code}`;
+}

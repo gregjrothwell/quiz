@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { QrCode } from '../components/QrCode';
+import { joinLink } from '../engine/roomCode';
 import { LEVELS, resolveQuizmaster, type Level, type RoomState } from '../engine/state';
 import type { PackId, PackSummary } from '../questions/types';
 
@@ -53,20 +55,35 @@ export function Lobby({
   const selected = packs.find((pack) => pack.id === packId);
   const available = selected ? availableFor(selected, level) : 0;
   const effectiveCount = Math.min(count, available);
+  const link = joinLink(window.location.origin, import.meta.env.BASE_URL, room.code);
 
   return (
     <>
       <header className="row row--between">
-        <div>
-          <p className="eyebrow">Room code</p>
-          <div className="roomcode" aria-label={`Room code ${room.code}`}>
-            {[...room.code].map((character, position) => (
-              <span className="roomcode__char" key={`${character}-${position}`} aria-hidden="true">
-                {character}
-              </span>
-            ))}
+        <div className="entry">
+          <div>
+            <p className="eyebrow">Room code</p>
+            <div className="roomcode" aria-label={`Room code ${room.code}`}>
+              {[...room.code].map((character, position) => (
+                <span className="roomcode__char" key={`${character}-${position}`} aria-hidden="true">
+                  {character}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/*
+            For the people joining from a phone. The code still has to be
+            readable aloud over Teams — that is the path that always works —
+            but pointing a camera at a screen beats typing four characters
+            into a browser you are holding one-handed.
+          */}
+          <div className="entry__qr">
+            <QrCode value={link} label={`Join room ${room.code}`} />
+            <p className="entry__hint">Point a phone at this</p>
           </div>
         </div>
+
         <button type="button" className="btn btn--ghost" onClick={onLeave}>
           Leave
         </button>

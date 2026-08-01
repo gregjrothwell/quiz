@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Stage } from './components/Stage';
 import { standings } from './engine/scoring';
-import { buildQuizQuestions, type Level } from './engine/state';
+import { codeFromHash } from './engine/roomCode';
+import { buildQuizQuestions, currentQuestion, type Level } from './engine/state';
 import { isFirebaseConfigured } from './firebase';
-import { recordGame } from './lib/season';
+import { loadAsked, recordAsked, recordGame } from './lib/season';
+import { play } from './lib/sound';
 import { loadPackQuestions, usePackIndex } from './lib/usePacks';
 import { useQuestionClock } from './lib/useQuestionClock';
 import { useRoom } from './lib/useRoom';
+import { openTheVault } from './lib/vault';
 import type { PackId } from './questions/types';
 import { Final } from './screens/Final';
 import { Landing } from './screens/Landing';
@@ -57,6 +60,13 @@ export function App() {
   if (!isFirebaseConfigured) return <SetupNotice />;
   return <Game />;
 }
+
+/**
+ * Read once, at module scope. A join link is consumed on arrival: reading it
+ * per render would refill the code box after somebody had cleared it, and the
+ * hash is never rewritten while the app runs.
+ */
+const linkedCode = codeFromHash(window.location.hash);
 
 function Game() {
   const {
@@ -119,15 +129,26 @@ function Game() {
       loadPackQuestions(packId)
         .then(async (pool) => {
           const pack = packs.find((entry) => entry.id === packId);
+          // A history this round cannot read is a round that repeats a
+          // question, which is a far smaller problem than a round that will not
+          // start — so this failure is swallowed rather than reported.
+          const asked = await loadAsked(packId).catch(() => new Set<string>());
+          const questions = buildQuizQuestions(pool, count, level, Math.random, asked);
+
           await dispatch([
             {
               type: 'selectPack',
               packId,
               packTitle: pack?.title ?? packId,
-              questions: buildQuizQuestions(pool, count, level),
+              questions,
             },
             { type: 'start', at: Date.now(), gameId: crypto.randomUUID() },
           ]);
+
+          // After the round is safely under way, for the same reason.
+          await recordAsked(packId, questions.map((question) => question.id)).catch(
+            () => undefined,
+          );
         })
         .catch(report)
         .finally(() => setBusy(false));
@@ -137,17 +158,52 @@ function Game() {
 
   const handleAnswer = useCallback(
     (optionIndex: number) => {
+      // Cued on the tap rather than on the write landing: the point of the
+      // sound is to confirm the press, and a round-trip to Firestore is long
+      // enough for the delay to read as a missed input.
+      play('lock');
       submitAnswer(optionIndex, clock.elapsedMs).catch(report);
     },
     [submitAnswer, clock.elapsedMs, report],
   );
 
+  /**
+   * Which question this device is already revealing, so the expiry effect and
+   * the button cannot both fire the same reveal. Cleared on failure, because a
+   * reveal that errored is exactly the one worth pressing again.
+   */
+  const revealingRef = useRef<string | null>(null);
+
+  const handleReveal = useCallback(async (): Promise<void> => {
+    if (!room || room.phase !== 'question') return;
+
+    const question = currentQuestion(room);
+    if (!question) return;
+
+    const key = `${room.gameId ?? ''}:${room.index}`;
+    if (revealingRef.current === key) return;
+    revealingRef.current = key;
+
+    try {
+      // The answer is not in the room, the pack or this bundle. It comes back
+      // from the vault, and only once the server agrees the clock has run out.
+      const correctIndex = await openTheVault(room.code, question);
+      await dispatch({ type: 'reveal', correctIndex });
+    } catch (cause) {
+      // Rethrown rather than reported here so the caller owns the error, which
+      // keeps this callback free of state updates and the expiry effect below
+      // free of a synchronous setState.
+      revealingRef.current = null;
+      throw cause;
+    }
+  }, [room, dispatch]);
+
   // The quizmaster's device closes the question when the clock runs out, so a
   // round keeps moving even if nobody remembers to press Reveal.
   useEffect(() => {
     if (!isQuizmaster || phase !== 'question' || !clock.expired) return;
-    dispatch({ type: 'reveal' }).catch(report);
-  }, [isQuizmaster, phase, clock.expired, dispatch, report]);
+    void handleReveal().catch(report);
+  }, [isQuizmaster, phase, clock.expired, handleReveal, report]);
 
   // Each device banks its own season row. Doing it per-client rather than having
   // the quizmaster write everybody's is what lets the rules restrict the write
@@ -207,6 +263,7 @@ function Game() {
         <Landing
           busy={busy || connection === 'connecting'}
           error={problem}
+          initialCode={linkedCode ?? ''}
           onCreate={handleCreate}
           onJoin={handleJoin}
           onSeason={() => setShowSeason(true)}
@@ -250,7 +307,7 @@ function Game() {
             clock={clock}
             revealed={room.phase === 'reveal'}
             onAnswer={handleAnswer}
-            onReveal={() => void dispatch({ type: 'reveal' }).catch(report)}
+            onReveal={() => void handleReveal().catch(report)}
             onNext={() => void dispatch({ type: 'next', at: Date.now() }).catch(report)}
           />
         )) ||

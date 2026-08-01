@@ -14,7 +14,12 @@ export type Action =
   | { type: 'selectPack'; packId: PackId; packTitle: string; questions: QuizQuestion[] }
   | { type: 'start'; at: number; gameId: string }
   | { type: 'answer'; uid: string; optionIndex: number; elapsedMs: number }
-  | { type: 'reveal' }
+  /**
+   * `correctIndex` arrives from the vault, not from the room. Only the client
+   * that ran the reveal knows it, and writing it into the question is how
+   * everybody else finds out.
+   */
+  | { type: 'reveal'; correctIndex: number }
   | { type: 'skip' }
   | { type: 'next'; at: number }
   | { type: 'reset' };
@@ -38,7 +43,7 @@ export function reduce(state: RoomState, action: Action): RoomState {
     case 'answer':
       return answer(state, action.uid, action.optionIndex, action.elapsedMs);
     case 'reveal':
-      return reveal(state);
+      return reveal(state, action.correctIndex);
     case 'skip':
       return skip(state);
     case 'next':
@@ -118,20 +123,39 @@ function answer(state: RoomState, uid: string, optionIndex: number, elapsedMs: n
   return { ...state, answers: { ...state.answers, [uid]: { optionIndex, elapsedMs } } };
 }
 
-function reveal(state: RoomState): RoomState {
+function reveal(state: RoomState, correctIndex: number): RoomState {
   if (state.phase !== 'question') return state;
 
   const question = currentQuestion(state);
   if (!question) return state;
+  // A vault answer that does not name one of this question's lecterns means the
+  // room and the vault disagree about what is being asked. Scoring anything on
+  // that basis would mark the whole room wrong, so the reveal is refused and
+  // the question stays open instead.
+  if (correctIndex < 0 || correctIndex >= question.options.length) return state;
 
-  const deltas = tallyQuestion({ question, answers: state.answers });
+  const deltas = tallyQuestion({ correctIndex, answers: state.answers });
 
   const scores = { ...state.scores };
   for (const [uid, delta] of Object.entries(deltas)) {
     scores[uid] = (scores[uid] ?? 0) + delta;
   }
 
-  return { ...state, phase: 'reveal', questionOpenedAt: null, lastDeltas: deltas, scores };
+  // Written back into the question so every other client learns the answer from
+  // the room update they are already listening to, rather than each paying for
+  // its own read of the vault's reveal document.
+  const questions = state.questions.map((entry, index) =>
+    index === state.index ? { ...entry, correctIndex } : entry,
+  );
+
+  return {
+    ...state,
+    phase: 'reveal',
+    questions,
+    questionOpenedAt: null,
+    lastDeltas: deltas,
+    scores,
+  };
 }
 
 /**

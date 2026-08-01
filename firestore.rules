@@ -13,6 +13,21 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ── The vault ───────────────────────────────────────────────────────────
+    //
+    // Every question's answer, and not one word of it is readable by anybody.
+    // `allow read: if false` is absolute for clients — but *rules* can still
+    // see it, because `get()` inside a rule is not subject to the rules on the
+    // document it reads. That asymmetry is the entire mechanism: no device can
+    // look an answer up, and the reveal rule below can still check one.
+    //
+    // Seeded once from `.cache/vault.json` by `npm run seed-vault`, which needs
+    // firestore.seed.rules published for as long as it runs. `npm run
+    // check-rules` fails loudly if the seeding ruleset is still live.
+    match /vault/{questionId} {
+      allow read, write: if false;
+    }
+
     match /rooms/{code} {
       // Comfortably past an office round, tight enough that a malformed write
       // cannot inflate the document every client re-reads on every transition.
@@ -52,6 +67,30 @@ service cloud.firestore {
       // state the client cannot render or the free tier cannot afford. The phase
       // list matters: App.tsx matches phases exhaustively, so an unrecognised one
       // renders an empty screen for everybody in the room.
+      // Whether this write is what puts a new question in front of the room, as
+      // opposed to any other write while one happens to be open — a player
+      // joining mid-question is also an update with `phase: 'question'`.
+      function opensAQuestion() {
+        return request.resource.data.phase == 'question'
+          && (resource.data.phase != 'question'
+              || resource.data.index != request.resource.data.index);
+      }
+
+      // `openedAt` is the server's own record of when the current question went
+      // live, and the vault's time gate is measured from it. Opening a question
+      // must stamp it with `request.time` — which only `serverTimestamp()`
+      // satisfies — and every other write must leave it exactly as it was.
+      //
+      // Without the second half, a member could hold a question open, rewrite
+      // `openedAt` into the past, and unlock the answer while the clock was
+      // still running. `get` with a default covers a room created before this
+      // field existed, and a lobby that has never had a question at all.
+      function openedAtOk() {
+        return opensAQuestion()
+          ? request.resource.data.openedAt == request.time
+          : request.resource.data.get('openedAt', null) == resource.data.get('openedAt', null);
+      }
+
       function wellFormed() {
         return request.resource.data.code == code
           && request.resource.data.phase in
@@ -92,7 +131,8 @@ service cloud.firestore {
       // worst case to mischief rather than an unplayable or expensive room.
       allow update: if signedIn()
         && (isMember() || request.resource.data.players.keys().hasAny([request.auth.uid]))
-        && wellFormed();
+        && wellFormed()
+        && openedAtOk();
 
       // Rooms are disposable; nobody needs to delete one mid-quiz.
       allow delete: if false;
@@ -126,6 +166,70 @@ service cloud.firestore {
 
         allow delete: if signedIn() && request.auth.uid == uid;
       }
+
+      // ── The reveal ────────────────────────────────────────────────────────
+      //
+      // How the answer gets out of the vault, and the only way it ever does.
+      //
+      // Nobody can read the vault, so nobody can look an answer up. What they
+      // can do is *assert* one — write `{ answer: "Metropolitan Line" }` here —
+      // and this rule judges it against the vault. Trying all four options
+      // finds the answer in four attempts, which would be a fine way to cheat
+      // if the same rule did not refuse every one of them until:
+      //
+      //   1. the question named in the path is the one actually in play, and
+      //   2. the server itself has seen twenty seconds pass since it opened.
+      //
+      // The first stops a member holding question one open and quietly asking
+      // about the other fourteen. The second means nobody — in this room or in
+      // a decoy of their own — can ask before the answering window has already
+      // closed, because `openedAt` can only be written as `request.time`.
+      //
+      // What this does not stop is written down in docs/HANDOVER.md. The short
+      // version: the questions come from a public database, so a determined
+      // attacker was always going to win. This kills the ten-second one.
+      match /reveal/{questionId} {
+        function room() {
+          return get(/databases/$(database)/documents/rooms/$(code)).data;
+        }
+
+        // Both calls read the same document, and Firestore caches identical
+        // document accesses within one rule evaluation, so this costs one read.
+        function windowClosed() {
+          return room().openedAt is timestamp
+            && request.time > room().openedAt + duration.value(20, 's');
+        }
+
+        function isTheQuestionInPlay() {
+          return room().questions.size() > room().index
+            && room().questions[room().index].id == questionId;
+        }
+
+        // Everyone reads the reveal, so a client that missed the room update
+        // can still find out what the answer was.
+        allow read: if signedIn();
+
+        allow create: if signedIn()
+          && request.resource.data.keys().hasOnly(['answer'])
+          && request.resource.data.answer is string
+          && isTheQuestionInPlay()
+          && windowClosed()
+          && request.resource.data.answer
+               == get(/databases/$(database)/documents/vault/$(questionId)).data.a;
+
+        // Never rewritten: a settled reveal must not change under the room's
+        // feet, and an answer that was true when it was written stays true.
+        allow update: if false;
+
+        // Deleting one is allowed, and buys nothing. Re-running the four-way
+        // guess afterwards is subject to the same gate as the first time, so it
+        // cannot uncover anything earlier than it already could. What it costs
+        // is that a member can wipe a reveal mid-round out of mischief — the
+        // same class of nuisance as rewriting the phase, which the quizmaster
+        // being derived rather than stored already permits. In exchange the
+        // preflight can exercise this path on every run instead of once ever.
+        allow delete: if signedIn();
+      }
     }
 
     // Season standings. Unlike room scores, these can be locked down properly:
@@ -135,6 +239,31 @@ service cloud.firestore {
     // the same trust model as the rest of the game. The bounds below only keep
     // a self-report within the range a real season could produce, so one edited
     // row cannot make the whole table meaningless.
+    // What each pack has already served this season, so a round can prefer
+    // questions nobody has seen. Not secret — it is a list of ids, and the
+    // answers are in the vault — but it is worth bounding, because every client
+    // starting a round writes it and an unbounded array on a document read at
+    // the top of every game is exactly the shape this project keeps avoiding.
+    match /seasons/{season}/asked/{packId} {
+      function signedIn() {
+        return request.auth != null;
+      }
+
+      allow read: if signedIn();
+
+      allow create, update: if signedIn()
+        && request.resource.data.keys().hasOnly(['ids', 'at'])
+        && request.resource.data.ids is list
+        // Matches ASKED_LIMIT in src/lib/season.ts, with room to spare so a
+        // client one deploy behind is not locked out of writing its history.
+        && request.resource.data.ids.size() <= 600
+        && request.resource.data.at is number;
+
+      // Clearing a pack's history is the only way to start it fresh without a
+      // new season, and it costs nothing worse than some repeated questions.
+      allow delete: if signedIn();
+    }
+
     match /seasons/{season}/players/{uid} {
       // A round is at most 25 questions at 1,000 points, so 100k leaves room for
       // a long season's best game and still rejects a fantasy number.

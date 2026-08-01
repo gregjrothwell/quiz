@@ -6,10 +6,13 @@ Built to replace Polly in Teams.
 - **Live:** https://gregjrothwell.github.io/quiz/
 - **Repo:** https://github.com/gregjrothwell/quiz (public, `master`, deploys from `gh-pages`)
 - **Firebase project:** `quiz-d686e` (Firestore + Realtime Database in europe-west1 + Anonymous auth)
-- **Status:** shipped, played, and security-reviewed. 103 tests, clean types and
-  lint, no `any` or `@ts-ignore`. Both rulesets tightened, published and verified.
-- **Next:** nothing blocking. The largest thing still open is App Check; the
-  review outcome and the rest of the list are at the bottom of this file.
+- **Status:** shipped and played. 117 tests, clean types and lint, no `any` or
+  `@ts-ignore`. The **answer vault is live**: 3,947 answers seeded, both
+  rulesets published, preflight passing.
+- **Next:** nothing blocking. `sync-harness 10` re-run after the vault landed:
+  ten clients, all ten joined, all ten saw the round start within 84 ms, none
+  dropped — so `openedAtOk` gating every room write did not break joining, which
+  was the real risk of that change.
 
 > ### Check the rules are published before you play
 >
@@ -21,13 +24,145 @@ Built to replace Polly in Teams.
 > npm run check-rules
 > ```
 >
-> Thirty seconds, cleans up after itself. Since the security review it checks
-> both directions: that the app's paths still work, **and that the tightened
-> rules still refuse what they are meant to refuse.** A hand-paste can fail
-> permissively, and that direction is silent — everything works, and nobody
-> finds out `list` is still open until somebody enumerates every room.
+> About a minute — it now waits out a real twenty-second vault gate — and it
+> cleans up after itself. It checks both directions: that the app's paths still
+> work, **and that the tightened rules still refuse what they are meant to
+> refuse.** A hand-paste can fail permissively, and that direction is silent:
+> everything works, and nobody finds out `list` is still open until somebody
+> enumerates every room.
 >
-> All 13 checks pass as of the security review.
+> 22 checks — thirteen from the security review, seven for the vault, two for
+> the question history. The vault seven include the one that catches
+> `firestore.seed.rules` being left published, which would leave every answer in
+> the game overwritable by anybody.
+
+---
+
+## Turning the vault on
+
+**Done on `quiz-d686e` — 3,947 answers, verified by the preflight.** Kept here
+because it has to be repeated for any new project, and after any re-harvest that
+changes question ids.
+
+The packs under `public/packs/` do not contain answers. Until the vault holds
+them, a round reaches its first reveal and stops with "the vault would not
+confirm an answer" — so if that message ever appears, this is the page.
+
+**With a service account — the way to do it:**
+
+```bash
+npm run seed-vault
+```
+
+That is the whole procedure. `GOOGLE_APPLICATION_CREDENTIALS` in `.env.local`
+points at a key from **Project settings → Service accounts → Generate new
+private key**, kept under `.secrets/` which is gitignored. The admin SDK
+bypasses the rules, so nothing needs publishing, the game stays up while it
+runs, and there is no window in which the vault is writable by anyone.
+
+It can also *read* the vault — which no client can, and which is the clearest
+demonstration that the admin SDK bypasses the rules rather than merely having
+generous ones. So a top-up writes only what is new and says so: `412 added, 0
+changed, 3947 already correct`. A **changed** count above zero is worth looking
+at — ids are a hash of the question text, so it means the source revised the
+answer to a question we are already asking.
+
+> **The key is a real credential and the rules do not constrain it.** It can
+> read and rewrite the vault, every room and the whole season table. Treat it
+> like a password: keep it under `.secrets/`, never paste it anywhere it will be
+> stored, and revoke it in **Project settings → Service accounts → Manage
+> service account permissions → Keys** if it is ever exposed. Revoking is
+> instant and generating a replacement takes a minute; the only thing that
+> changes on this machine is the file's contents.
+
+**Without one**, the script falls back to anonymous auth, which needs the rules
+swapped around it:
+
+1. Publish **`firestore.seed.rules`**. It allows vault writes and denies
+   everything else, so nobody can play while it is live.
+2. `npm run seed-vault` — rewrites every answer, since it cannot read to diff.
+3. Publish **`firestore.rules`** again. The preflight check named *"write the
+   vault"* is the one that fails if this step is skipped.
+
+Kept for anyone who would rather not hold a key. It is strictly worse: downtime,
+a window where the answers are writable by any anonymous visitor, and a manual
+step that has to be got right twice.
+
+If `.cache/vault.json` is missing — it is gitignored, like the pool it comes
+from — regenerate both with `npm run fetch-questions -- --resort`. That reads
+the cached pool and needs no network.
+
+### Adding questions later
+
+Ids are `sha1(prompt)`, so they are content-addressed and stable across
+harvests. That makes a top-up additive rather than a rebuild:
+
+- **`--resort` needs no re-seed at all.** Re-tuning the classification rules
+  moves questions between packs; the vault is keyed by id, so nothing changes.
+- **New questions need seeding**, but only the new ones — the service-account
+  path works that out for itself.
+- A prompt whose wording changes upstream arrives as a new id. The old entry is
+  orphaned, which is harmless.
+
+### How it works
+
+The asymmetry the whole thing rests on: **`get()` inside a security rule is not
+subject to the rules on the document it reads.** So `vault/{questionId}` can be
+`allow read: if false` — invisible to every client, forever — while the rules
+themselves still consult it.
+
+That means nobody can *look up* an answer. What they can do is **assert** one:
+
+```
+create /rooms/{code}/reveal/{questionId} = { answer: "Metropolitan Line" }
+```
+
+and the rule permits the write only if that string matches the vault. Four
+options, four attempts, and you have the answer — which would be a fine way to
+cheat, except the same rule refuses every attempt until **both**:
+
+- the question named in the path is the one the room is actually on, and
+- the server has seen twenty seconds pass since it opened.
+
+The first stops a member holding question one open and quietly asking about the
+other fourteen. The second holds because `openedAt` can only ever be written as
+`request.time` — `serverTimestamp()` and nothing else — so a question cannot be
+claimed to have opened earlier than it did, in this room or in a decoy of
+somebody's own.
+
+`src/lib/vault.ts` fires all four candidates at once, so the reveal costs one
+round trip rather than four.
+
+### What it costs
+
+| | |
+|---|---|
+| **Money** | Nothing. Two rule `get()`s per reveal (both hit the same cached room read), about 40 extra reads and 60 extra writes per game, against 50k reads and 20k writes a day. |
+| **The early reveal** | Gone. The quizmaster can no longer cut a question short — no device holds the answer before the clock runs out, including theirs. The button shows `Reveal in Ns` and the round auto-reveals on expiry. This is the real price. |
+| **A round in progress** | Unchanged otherwise. The answer is written into the room at reveal, so the other clients learn it from the update they were already listening to rather than paying for their own read. |
+
+### What it does *not* stop
+
+Be precise about this, because it is easy to oversell:
+
+- **The questions are Open Trivia DB's, and OpenTDB is public.** Anybody willing
+  to spend twenty-five minutes harvesting it has a permanent offline answer key.
+  Nothing in this design touches that, and nothing can, short of writing our own
+  questions.
+- **A pre-warmed decoy room.** The room holds every question id from the moment
+  the round starts, so a script could open fifteen decoy rooms during the lobby,
+  wait out one twenty-second gate in parallel, and have the whole round about
+  twenty-five seconds in. Closing this needs the future question ids withheld
+  until each one opens, which costs the quizmaster role its ability to change
+  hands mid-round — a worse trade than the hole. Written down rather than fixed.
+- **Self-reported `elapsedMs`.** Unchanged. Someone can still claim they
+  answered in three milliseconds.
+
+What it *does* kill is the ten-second cheat: open DevTools, read `correctIndex`
+off the room snapshot, or fetch `packs/music.json` and search for the prompt.
+Both of those worked until now, and both were one keystroke away from anybody
+curious. Now cheating takes a bespoke script and premeditation — the same bar as
+harvesting OpenTDB, which was always the real ceiling.
 
 ---
 
@@ -43,8 +178,8 @@ scripts/        Build-time question harvest, and the multi-client test harnesses
 ```
 
 Commands: `npm run dev` (serves at `/quiz/`, port 5273), `test`, `typecheck`, `lint`,
-`build`, `deploy`, `fetch-questions [-- --resort]`, `check-rules`, `sync-harness [n]`,
-`host-room`.
+`build`, `deploy`, `fetch-questions [-- --resort]`, `seed-vault`, `check-rules`,
+`sync-harness [n]`, `host-room`.
 
 ---
 
@@ -71,6 +206,14 @@ happened once.
 | **The round title card lives on the standings screen** | Between questions there's no clock running, so a beat of theatre costs nobody answering time. Over the question it would eat the first seconds of a twenty-second window. |
 | **An empty presence tree never reaps anybody** (`reapAbsent`) | Reading "nobody is present" as "everybody has left" is what turned a missing Realtime Database ruleset into an unplayable game: every presence write failed, the quizmaster's reaper deleted every player including itself, `resolveQuizmaster` then returned null, and the role flickered to whoever rejoined next while the room stopped responding to anyone. Presence only tidies away closed tabs; if it is unavailable the right answer is a ghost in the lobby, not an empty room. |
 | **A phase transition never writes the `players` map** (`toUpdate`) | `dispatch` folds actions over the *writer's* snapshot, and `handleStart` awaits a pack fetch between taking that snapshot and writing it — so everyone who joined during the fetch was erased. Measured with `npm run sync-harness`: five of ten players silently deleted. Membership changes only ever go through single-field `players.{uid}` writes, so no transition needs the map. `scores` is written as field paths for the same reason. |
+| **Published packs carry `options`, never `correct`** (`sealQuestion`) | The harvest-time `Question` type still has the answer; the published `SealedQuestion` does not, and nothing under `src/` outside `types.ts` may name `correct`. The options are sorted, not left in `[correct, ...incorrect]` order, or the answer would simply be index 0. Two questions with different answers produce identical orderings — there is a test. |
+| **`correctIndex` is `number \| null`** | Null while a question is live, because *no device knows it* — not even the quizmaster's. The reveal fills it in from the vault and writes it into the room, which is how everyone else finds out without paying for a read. |
+| **`tallyQuestion` is given the answer rather than reading it off the question** | Same reason. Scoring is the first code in the round that gets to see it. |
+| **Entrance animations use `animation-fill-mode: backwards`, not `both`** | `both` keeps the final keyframe in the cascade *above* normal declarations, so `to { opacity: 1 }` silently beat every state the lecterns change into. `.tile--dim` had never dimmed anything since it was written. `backwards` still hides a tile through its stagger delay — the only reason a fill mode is needed — and then gets out of the way. Watch for this on any element that both animates in and has variant states. |
+| **Sound is on by default** (`src/lib/sound.ts`) | It only ever plays after a deliberate click — creating a room, joining, answering — so it can't ambush anybody on page load, and muted-by-default means nobody discovers it exists. The toggle is top-right on every screen and the choice persists. Every cue is synthesised from oscillators: six stings as files would have been most of a bundle the handover already calls heavy, and an asset that 404s behind a proxy is a silent round with nothing on screen to explain it. |
+| **A round prefers questions the season hasn't served** (`selectQuestions`, `seasons/{season}/asked/{packId}`) | Random selection with no memory repeats far sooner than pack sizes suggest: 15 drawn from Sport's 125 every week means about **two of last week's questions come round again, every week**. Over Video Games' 999 the same sum is a quarter of a question, which is why the big packs hid it. Season-scoped, not per-room — the complaint is about the sitting before, and a room lasts one sitting. |
+| **Asked questions go to the back of the queue, not out of the pool** | Removing them outright would have Sport quietly serving eight-question rounds by mid-season. A thin pack still gets a full-length round, with repeats only where there was no alternative. |
+| **The history is capped at 400 ids per pack** | Not "all of them". The point is that last month's questions don't come round again, not that a pack is exhausted before anything repeats — and an unbounded array on a document read at the top of every game is the shape this project keeps avoiding. 400 is roughly six months of a weekly round. |
 | **Fonts are self-hosted** (`src/design/fonts.css`) | The display faces carry the whole look; a network that blocks `fonts.googleapis.com` would drop it to Impact with no warning. Archivo is variable — Google's CSS lists it once per weight but serves the same file each time, so it's declared once instead of shipping 105 kB of duplicates. |
 
 ---
@@ -79,7 +222,7 @@ happened once.
 
 **Verified against the live Firebase:** anonymous sign-in, room creation, pack
 selection, round start, question render, answer write, reveal and scoring, and
-leaving a room. Engine covered by 103 tests including six full three-question
+leaving a room. Engine covered by 117 tests including six full three-question
 games (quizmaster disconnect, skip, reset, ties).
 
 **Verified in the browser, on fixtures only:** every screen at 1280px and 390px,
@@ -97,6 +240,31 @@ at the narrow width.
   browser can be watched as an ordinary player while somebody else runs the game.
 
 **Not verified — start here:**
+
+0. **`host-room` since the vault landed.** It now waits out the twenty-second
+   gate and asks the vault itself before revealing, and that path has not been
+   run. `sync-harness` covers joining and phase sync; this is the one that would
+   catch a mistake in the terminal harness's own reveal.
+
+**Verified — the vault, end to end.** The rules were written from documented
+semantics and, at the time of writing, nothing had executed. It has now: seeded
+against the live project and confirmed by `npm run check-rules`. Seven
+of its checks pin one assumption each, so a future failure names which one
+broke rather than just "the vault doesn't work":
+
+| Check | Assumption it pins |
+|---|---|
+| read the vault → denied | `allow read: if false` is published |
+| write the vault → denied | `firestore.seed.rules` is *not* still published |
+| list the vault → denied | no `list` on the collection |
+| reveal while the clock runs → denied | the twenty-second gate exists |
+| backdate `openedAt` → denied | `openedAt == request.time` is enforced |
+| ask about another question → denied | the reveal is pinned to the question in play |
+| reveal after the clock → **allowed** | the gate actually opens, and the vault is seeded |
+
+That last one is the one that ruins a quiz night rather than merely leaking
+one, which is why it waits out a real twenty seconds instead of being
+assumed.
 
 0. **The season table against live Firestore.** `recordGame` has never run
    against a real project, and the transaction's repeat-write guard has only been
@@ -124,12 +292,13 @@ at the narrow width.
   member.** Deliberate — see the quizmaster row above. Fine among colleagues, not
   fine for strangers. The room code is the only thing standing between a room and
   the internet, which is why `list` is no longer granted.
-- **The game is trivially cheatable by anyone who opens DevTools.** Correct
-  answers ship in the room document and `elapsedMs` is self-reported, so a
-  perfect 1,000 on every question is about ten lines in the console. Unfixable
-  without server-side logic; see the security review below.
-- **~242 kB gzipped**, nearly all Firebase, plus 67 kB of fonts. Code-splitting is
-  the fix if it matters.
+- **Cheating now takes a script rather than a console.** The answers left the
+  packs and the room document — see [the vault](#turning-the-vault-on) for what
+  that does and does not buy. `elapsedMs` is still self-reported, so a
+  fast-but-wrong answer is honest and a slow-but-claimed-instant one is not.
+- **~252 kB gzipped**, nearly all Firebase, plus 67 kB of fonts. The lobby QR
+  code added about 10 kB of that (`qrcode-generator`, MIT, no dependencies) —
+  more than it looked like it would. Code-splitting is the fix if it matters.
 - **Season standings follow the browser, not the person.** Anonymous auth gives a
   durable uid with no sign-up, which is the whole appeal and the whole limitation.
   The sharp edge is **iOS Safari, which evicts site storage after about a week
@@ -186,6 +355,10 @@ page-size ladder costs a few extra requests per category).
 - **`#/preview` renders every screen with fixed data; `#/preview/4` renders one.**
   Isolate by re-render, never by hiding siblings — a `display:none` ancestor stops
   motion animations mid-flight and looks like a rendering bug.
+- **`firestore.seed.rules` is not the ruleset to play on.** It exists only for
+  the one-off vault seed and denies everything else while it is live. If rooms
+  suddenly stop working entirely, check which ruleset is published — and run
+  `npm run check-rules`, which now catches exactly this.
 - **Firestore rules and RTDB rules are in the repo but published by hand** in the
   console. If room writes start failing with permission errors, check they're still
   live — an unpublished ruleset was the cause of the first "nothing happens" bug.
@@ -256,14 +429,13 @@ and `check-rules` confirmed the semantics, which between them cover it.
   join it. This is not fixable: joining reads the document first, so `get` cannot
   require membership. 707,281 codes is a sane guess-space now that they cannot be
   harvested in one query — that was the entire value of dropping `list`.
-- **Correct answers ship in the room document**, and **`elapsedMs` is measured on
-  the answering device**. Together these mean a perfect score is about ten lines
-  in the console. Fixing either needs a server: correct answers withheld until
-  reveal, or answers timed against server time. A Cloud Function is the answer if
-  this ever leaves the office. Bounding `elapsedMs` against `questionOpenedAt` in
-  the rules was considered and rejected — it costs a document read per answer and
-  would silently reject honest answers from anyone on a slow connection, which is
-  worse than the cheat.
+- **`elapsedMs` is measured on the answering device**, and still is. Correct
+  answers no longer ship anywhere — that half was fixed by the vault, without a
+  Cloud Function and without leaving the free tier, which the review had
+  assumed impossible. Bounding `elapsedMs` against the question's open time in
+  the rules was considered again and rejected for the same reason as before: it
+  costs a document read per answer and would silently reject honest answers
+  from anyone on a slow connection, which is worse than the cheat.
 - **Any member can still rewrite the phase, scores, questions and other players.**
   It follows directly from the quizmaster being derived rather than stored, and
   the reasoning for that is in the table near the top. `wellFormed` now keeps the

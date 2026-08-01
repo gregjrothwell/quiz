@@ -4,14 +4,23 @@ import { isValidRoomCode, normaliseRoomCode, ROOM_CODE_LENGTH } from '../engine/
 interface LandingProps {
   busy: boolean;
   error: string | null;
+  /** Carried in from a join link, so a phone only has to supply a name. */
+  initialCode?: string;
   onCreate: (name: string) => void;
   onJoin: (code: string, name: string) => void;
   onSeason: () => void;
 }
 
-export function Landing({ busy, error, onCreate, onJoin, onSeason }: LandingProps) {
+export function Landing({
+  busy,
+  error,
+  initialCode = '',
+  onCreate,
+  onJoin,
+  onSeason,
+}: LandingProps) {
   const [name, setName] = useState('');
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(initialCode);
 
   const trimmedName = name.trim();
   const canCreate = trimmedName.length > 0 && !busy;
@@ -87,7 +96,9 @@ export function Landing({ busy, error, onCreate, onJoin, onSeason }: LandingProp
             />
           </label>
           <p id="code-hint" className="muted" style={{ fontSize: '0.85rem', margin: 0 }}>
-            Ask the quizmaster to read it out.
+            {initialCode
+              ? 'Filled in from the link — just add your name.'
+              : 'Ask the quizmaster to read it out, or scan the code on their screen.'}
           </p>
 
           <button

@@ -20,6 +20,7 @@ import {
   getFirestore,
   onSnapshot,
   setDoc,
+  serverTimestamp,
   updateDoc,
   type DocumentData,
   type Firestore,
@@ -52,7 +53,12 @@ function toPersisted(state: RoomState): PersistedRoom {
   return persisted as unknown as PersistedRoom;
 }
 
-/** Mirrors useRoom.toUpdate: never write `players`, merge `scores` per player. */
+/**
+ * Mirrors useRoom.toUpdate: never write `players`, merge `scores` per player,
+ * and let the server stamp `openedAt` when a question opens — the rules reject
+ * anything else, so a harness that skipped it would fail on permissions rather
+ * than measuring what it came to measure.
+ */
 function toUpdate(state: RoomState): Record<string, unknown> {
   const update: Record<string, unknown> = { ...toPersisted(state) };
   delete update.players;
@@ -60,6 +66,7 @@ function toUpdate(state: RoomState): Record<string, unknown> {
   for (const [uid, score] of Object.entries(state.scores)) {
     update[`scores.${uid}`] = score;
   }
+  if (state.phase === 'question') update.openedAt = serverTimestamp();
   return update;
 }
 
@@ -67,7 +74,7 @@ const QUESTIONS: QuizQuestion[] = Array.from({ length: 3 }, (_, i) => ({
   id: `q${i}`,
   prompt: `Harness question ${i + 1}?`,
   options: ['A', 'B', 'C', 'D'],
-  correctIndex: 0,
+  correctIndex: null,
   category: 'General Knowledge',
   difficulty: 'easy',
 }));
@@ -146,7 +153,12 @@ async function dispatch(
   // `LEGACY_WRITE=1` restores the write that caused the bug — the whole document
   // including `players` — so the difference can be demonstrated rather than
   // asserted.
-  const payload = process.env.LEGACY_WRITE === '1' ? toPersisted(next) : toUpdate(next);
+  const payload: Record<string, unknown> =
+    process.env.LEGACY_WRITE === '1'
+      ? // Still stamped, or the legacy write would be refused on permissions and
+        // demonstrate nothing about the bug it exists to show.
+        { ...toPersisted(next), ...(next.phase === 'question' ? { openedAt: serverTimestamp() } : {}) }
+      : toUpdate(next);
   await updateDoc(doc(client.db, 'rooms', code), payload as Partial<DocumentData>);
 }
 

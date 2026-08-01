@@ -55,6 +55,33 @@ presence write is rejected and nobody is ever cleaned up when they close a tab.
 The app detects this and says so on screen rather than misbehaving, but the
 lobby will accumulate ghosts until the rules are published.
 
+### 4. Seed the answer vault
+
+The question packs ship **without answers** — that is deliberate, and it is what
+stops the quiz being cheatable from the browser console. The answers live in a
+Firestore collection no client can read. Until it is seeded, a round will reach
+its first reveal and stop.
+
+Generate a service-account key — **Project settings → Service accounts →
+Generate new private key** — save it under `.secrets/` (gitignored), and point
+`GOOGLE_APPLICATION_CREDENTIALS` at it in `.env.local`. Then:
+
+```bash
+npm run seed-vault
+```
+
+The admin SDK bypasses the security rules, so nothing needs publishing and the
+game stays up while it runs. It also reads the vault, so adding questions later
+writes only what is new.
+
+Without a key the script falls back to anonymous auth, which needs
+`firestore.seed.rules` published while it runs and `firestore.rules` published
+again afterwards. It works, but it takes the game down and leaves the answers
+briefly writable by anyone — the key is worth the five minutes.
+
+There is more on how this works, and on what it does and does not prevent, in
+[docs/HANDOVER.md](docs/HANDOVER.md).
+
 ---
 
 ## Running it
@@ -76,15 +103,17 @@ The app is served under `/quiz/`, so the local URL is
 | `npm run build` | Typecheck then production build |
 | `npm run fetch-questions` | Re-harvest question packs (~25 min, throttled) |
 | `npm run fetch-questions -- --resort` | Re-sort the cached pool without re-fetching |
+| `npm run seed-vault` | Upload the answers to Firestore. One-off — see step 4 above |
 | `npm run check-rules` | Confirm both rulesets are actually published (they are pasted in by hand) |
 | `npm run sync-harness 10` | Put 10 real clients in one room and measure how fast each sees a round start |
 | `npm run host-room` | Host a room from the terminal, so a browser can be watched as an ordinary player |
 
-The last three talk to the live Firebase project. The two harnesses exist because
+The last four talk to the live Firebase project. The two harnesses exist because
 a single browser cannot show what a room full of people does — they are how the
-presence and join-race bugs were found. `check-rules` is a thirty-second
-preflight worth running before a quiz, since an unpublished ruleset has broken
-the game twice.
+presence and join-race bugs were found. `check-rules` is a minute-long preflight
+worth running before a quiz, since an unpublished ruleset has broken the game
+twice. It waits out a real twenty-second vault gate, which is why it is no
+longer instant.
 
 ### Seeing the design without a Firebase project
 
@@ -118,6 +147,15 @@ Questions come from the [Open Trivia Database](https://opentdb.com) (CC BY-SA
 4.0) and are **committed to this repo as JSON**, not fetched at runtime. That
 means no third-party domain to reach mid-quiz, no rate limit, and no API key in
 the bundle.
+
+**The committed packs list the four options and do not say which is right.** The
+answers go to a Firestore collection that no client can read — not the players',
+not the quizmaster's. The security rules can still see it, which is what lets a
+reveal check an answer without ever handing one out, and they refuse to do even
+that until the question's twenty seconds are up. So opening DevTools, or
+fetching `packs/music.json` and searching for the prompt, no longer finds
+anything. See [docs/HANDOVER.md](docs/HANDOVER.md) for the mechanism and for an
+honest account of what it does not stop.
 
 `scripts/fetch-questions.ts` harvests the verified pool, then filters it:
 
@@ -199,6 +237,15 @@ us during development; CSS `animation-fill-mode: both` cannot fail the same way.
   can't restrict phase and score writes to the quizmaster without storing the
   quizmaster's id — which would reintroduce the disconnect race above. Fine among
   colleagues; not fine for strangers.
+- **Nobody can reveal a question early**, including the quizmaster. No device
+  holds the answer until the clock runs out, so there is nothing to reveal. A
+  round that everyone answers in five seconds still spends twenty on each
+  question.
+- **Answer times are self-reported.** The vault fixed which answer is right; it
+  did nothing about how fast someone claims to have picked it.
+- **Repeats are reduced, not eliminated.** A round prefers questions the season
+  hasn't served, but a thin pack still reuses one rather than serving a short
+  round. Sport, at 125 questions, is the one where you would notice.
 - **Bundle is ~242 kB gzipped**, nearly all Firebase, plus 67 kB of self-hosted
   fonts. Fine on an office network; code-splitting would be the fix if it ever
   matters.

@@ -14,6 +14,7 @@
     "lint": "eslint .",
     "fetch-questions": "tsx scripts/fetch-questions.ts",
     "check-rules": "tsx --env-file=.env.local scripts/check-rules.ts",
+    "seed-vault": "tsx --env-file=.env.local scripts/seed-vault.ts",
     "sync-harness": "tsx --env-file=.env.local scripts/sync-harness.ts",
     "host-room": "tsx --env-file=.env.local scripts/host-room.ts",
     "deploy": "npm run build && gh-pages -d dist"
@@ -21,6 +22,7 @@
   "dependencies": {
     "firebase": "^11.1.0",
     "motion": "^11.15.0",
+    "qrcode-generator": "^2.0.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
@@ -32,6 +34,7 @@
     "@vitejs/plugin-react": "^6.0.4",
     "eslint": "^10.8.0",
     "eslint-plugin-react-hooks": "^7.1.1",
+    "firebase-admin": "^14.2.0",
     "gh-pages": "^6.2.0",
     "globals": "^15.14.0",
     "tsx": "^4.19.2",
@@ -39,5 +42,8 @@
     "typescript-eslint": "^8.65.0",
     "vite": "^8.1.5",
     "vitest": "^4.1.10"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
   }
 }

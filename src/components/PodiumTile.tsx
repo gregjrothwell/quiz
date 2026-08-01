@@ -1,6 +1,12 @@
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'] as const;
 
-export type TileState = 'idle' | 'picked' | 'correct' | 'wrong' | 'dim';
+/**
+ * `hushed` is the drum roll — every lectern but your own pick, blacked out
+ * while the verdict is held back. `gone` is what the also-rans become once it
+ * lands: dropped away rather than merely dimmed, so the two survivors carry the
+ * whole screen.
+ */
+export type TileState = 'idle' | 'picked' | 'correct' | 'wrong' | 'dim' | 'hushed' | 'gone';
 
 interface PodiumTileProps {
   index: number;
@@ -18,6 +24,8 @@ const CLASS_FOR_STATE: Record<TileState, string> = {
   correct: 'tile--correct',
   wrong: 'tile--wrong',
   dim: 'tile--dim',
+  hushed: 'tile--hushed',
+  gone: 'tile--gone',
 };
 
 export const TILE_LETTERS = LETTERS;

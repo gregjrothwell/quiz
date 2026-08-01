@@ -13,6 +13,7 @@ import {
   doc,
   getDoc,
   onSnapshot,
+  serverTimestamp,
   setDoc,
   updateDoc,
   type DocumentData,
@@ -121,7 +122,7 @@ function toPersisted(state: RoomState): PersistedRoom {
  * so a new field on RoomState still fails to compile until someone decides how
  * it persists.
  */
-function toUpdate(state: RoomState): Record<string, unknown> {
+function toUpdate(state: RoomState, previous: RoomState | null): Record<string, unknown> {
   const persisted = toPersisted(state);
   const update: Record<string, unknown> = { ...persisted };
 
@@ -132,7 +133,29 @@ function toUpdate(state: RoomState): Record<string, unknown> {
     update[`scores.${uid}`] = score;
   }
 
+  // `openedAt` is the server's own record of when the question went live, and
+  // the vault's time gate is measured from it. It is written with
+  // `serverTimestamp()` and the rules require exactly that, so no client can
+  // claim a question opened earlier than it did and unlock the answer early.
+  // See src/lib/vault.ts.
+  if (opensAQuestion(state, previous)) update.openedAt = serverTimestamp();
+
   return update;
+}
+
+/**
+ * Whether this transition puts a *new* question in front of the room, as
+ * opposed to any other write while one is open.
+ *
+ * The distinction matters because a player joining mid-question is also an
+ * update to a room whose phase is `question`, and restamping `openedAt` for
+ * that would hand everybody an extra twenty seconds — and, worse, would let a
+ * steady trickle of joins hold the vault shut indefinitely.
+ */
+function opensAQuestion(next: RoomState, previous: RoomState | null): boolean {
+  if (next.phase !== 'question') return false;
+  if (!previous || previous.phase !== 'question') return true;
+  return previous.index !== next.index;
 }
 
 export function useRoom(): UseRoom {
@@ -262,7 +285,7 @@ export function useRoom(): UseRoom {
       const next = actions.reduce(reduce, room);
       if (next === room) return;
 
-      await updateDoc(roomDoc(code), toUpdate(next) as Partial<DocumentData>);
+      await updateDoc(roomDoc(code), toUpdate(next, room) as Partial<DocumentData>);
     },
     [room, code],
   );

@@ -1,15 +1,9 @@
 import { describe, expect, test } from 'vitest';
 import { BASE_POINTS, SPEED_POINTS, scoreAnswer, standings, tallyQuestion } from './scoring';
-import { QUESTION_DURATION_MS, type QuizQuestion } from './state';
+import { QUESTION_DURATION_MS } from './state';
 
-const question: QuizQuestion = {
-  id: 'q1',
-  prompt: 'Which river flows through London?',
-  options: ['Severn', 'Thames', 'Mersey', 'Tyne'],
-  correctIndex: 1,
-  category: 'Geography',
-  difficulty: 'easy',
-};
+/** Whichever lectern the vault named when the question closed. */
+const correctIndex = 1;
 
 describe('scoreAnswer', () => {
   test('awards the maximum for an instant correct answer', () => {
@@ -88,7 +82,7 @@ describe('tallyQuestion', () => {
     };
 
     // #when the question is tallied
-    const deltas = tallyQuestion({ question, answers });
+    const deltas = tallyQuestion({ correctIndex, answers });
 
     // #then only the correct answer scores, at full speed value
     expect(deltas).toEqual({ fast: 1000, slow: 0 });
@@ -99,7 +93,7 @@ describe('tallyQuestion', () => {
     const answers = {};
 
     // #when the question is tallied
-    const deltas = tallyQuestion({ question, answers });
+    const deltas = tallyQuestion({ correctIndex, answers });
 
     // #then the result is empty, distinguishing silence from a wrong answer
     expect(deltas).toEqual({});

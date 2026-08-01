@@ -1,11 +1,13 @@
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   limit,
   orderBy,
   query,
   runTransaction,
+  setDoc,
 } from 'firebase/firestore';
 import { firestore } from '../firebase';
 
@@ -91,6 +93,57 @@ export async function recordGame(result: GameResult): Promise<void> {
     };
 
     transaction.set(reference, next);
+  });
+}
+
+/**
+ * How many question ids to remember per pack.
+ *
+ * Deliberately not "all of them". The point is to stop last month's questions
+ * coming round again, not to guarantee a pack is exhausted before anything
+ * repeats — and a list that grows without limit eventually costs more to carry
+ * than the repetition costs to sit through. 400 covers roughly six months of a
+ * weekly round and still leaves every pack something fresh to draw on.
+ */
+const ASKED_LIMIT = 400;
+
+function askedDoc(packId: string) {
+  return doc(firestore(), 'seasons', SEASON, 'asked', packId);
+}
+
+/**
+ * Which questions this season has already served from a pack.
+ *
+ * Season-scoped rather than per-room, because a room lasts one sitting and the
+ * complaint — "we had this one last week" — is about the sitting before. Read
+ * only by whoever is starting a round, so it costs one document read per game
+ * rather than one per player.
+ *
+ * A failure here is deliberately swallowed by the caller: a round that repeats
+ * a question is a much smaller problem than a round that will not start.
+ */
+export async function loadAsked(packId: string): Promise<Set<string>> {
+  const snapshot = await getDoc(askedDoc(packId));
+  if (!snapshot.exists()) return new Set();
+
+  const { ids } = snapshot.data() as { ids?: unknown };
+  return new Set(Array.isArray(ids) ? ids.filter((id): id is string => typeof id === 'string') : []);
+}
+
+/**
+ * Records what a round served, newest first, capped at {@link ASKED_LIMIT}.
+ *
+ * Written whole rather than appended with `arrayUnion` because the cap has to
+ * be applied somewhere, and `arrayUnion` has no notion of oldest. Ordering the
+ * array newest-first means the cap drops the questions nobody remembers anyway.
+ */
+export async function recordAsked(packId: string, ids: readonly string[]): Promise<void> {
+  const previous = await loadAsked(packId);
+  const merged = [...ids, ...[...previous].filter((id) => !ids.includes(id))];
+
+  await setDoc(askedDoc(packId), {
+    ids: merged.slice(0, ASKED_LIMIT),
+    at: Date.now(),
   });
 }
 

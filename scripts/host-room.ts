@@ -18,13 +18,15 @@ import {
   doc,
   getFirestore,
   onSnapshot,
+  serverTimestamp,
   setDoc,
   updateDoc,
   type DocumentData,
 } from 'firebase/firestore';
 import { reduce, type Action } from '../src/engine/reducer';
-import { createRoom, type QuizQuestion, type RoomState } from '../src/engine/state';
+import { createRoom, currentQuestion, type QuizQuestion, type RoomState } from '../src/engine/state';
 import { randomRoomCode } from '../src/engine/roomCode';
+import { resolveAnswer } from '../src/lib/vault';
 
 /** Reads a required value from .env.local, so a missing one fails with a name. */
 function required(name: string): string {
@@ -53,7 +55,7 @@ const QUESTIONS: QuizQuestion[] = Array.from({ length: 3 }, (_, i) => ({
   id: `hq${i}`,
   prompt: `Harness question ${i + 1}: which is the first option?`,
   options: ['The first one', 'The second one', 'The third one', 'The fourth one'],
-  correctIndex: 0,
+  correctIndex: null,
   category: 'General Knowledge',
   difficulty: 'easy',
 }));
@@ -95,7 +97,15 @@ async function main(): Promise<void> {
     if (!current0) return;
     const current: RoomState = { ...current0, code, answers: {} };
     const next = actions.reduce(reduce, current);
-    await updateDoc(reference, toPersisted(next) as Partial<DocumentData>);
+    const update: Record<string, unknown> = { ...toPersisted(next) };
+    // The vault's time gate is measured from the server's own record of when a
+    // question went live, and the rules insist this field *is* that record.
+    if (next.phase === 'question' && current.index !== next.index) {
+      update.openedAt = serverTimestamp();
+    } else if (next.phase === 'question' && current.phase !== 'question') {
+      update.openedAt = serverTimestamp();
+    }
+    await updateDoc(reference, update as Partial<DocumentData>);
   };
 
   // Wait for a browser to join.
@@ -118,9 +128,15 @@ async function main(): Promise<void> {
     { type: 'start', at: Date.now(), gameId: `host-${Date.now()}` },
   ]);
 
-  await sleep(15_000);
-  console.log(`${stamp()}  >>> WRITING reveal`);
-  await dispatch([{ type: 'reveal' }]);
+  // Past the twenty-second gate, so the vault will answer.
+  await sleep(21_000);
+  console.log(`${stamp()}  >>> ASKING the vault`);
+  const open = view.latest;
+  const asked = open ? currentQuestion({ ...open, code, answers: {} }) : null;
+  if (!asked) throw new Error('No open question to reveal');
+  const correctIndex = await resolveAnswer(db, code, asked);
+  console.log(`${stamp()}  >>> WRITING reveal (answer ${correctIndex})`);
+  await dispatch([{ type: 'reveal', correctIndex }]);
 
   await sleep(8000);
   console.log(`${stamp()}  >>> WRITING next (to standings)`);

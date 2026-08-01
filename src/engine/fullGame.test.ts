@@ -1,8 +1,15 @@
 import { describe, expect, test } from 'vitest';
 import { reduce, type Action } from './reducer';
 import { standings } from './scoring';
-import { buildQuizQuestions, createRoom, resolveQuizmaster, type RoomState } from './state';
-import type { Question } from '../questions/types';
+import {
+  buildQuizQuestions,
+  createRoom,
+  currentQuestion,
+  resolveQuizmaster,
+  type QuizQuestion,
+  type RoomState,
+} from './state';
+import { sealQuestion, type Question } from '../questions/types';
 
 /**
  * Plays whole games end to end through the reducer.
@@ -12,7 +19,7 @@ import type { Question } from '../questions/types';
  * rather than discovering a scoring bug live in front of the team.
  */
 
-const POOL: Question[] = [
+const SOURCE: Question[] = [
   {
     id: 'a',
     question: 'Which river flows through London?',
@@ -38,6 +45,23 @@ const POOL: Question[] = [
     difficulty: 'medium',
   },
 ];
+
+const POOL = SOURCE.map(sealQuestion);
+
+/**
+ * Stands in for the Firestore vault: question id to the text of the right
+ * answer. Modelled as a lookup by *text* rather than by index because that is
+ * what really happens — the room holds a shuffled set of options and nothing
+ * else, and the reveal turns the vault's answer back into a lectern number.
+ */
+const VAULT = new Map(SOURCE.map((question) => [question.id, question.correct]));
+
+function vaultIndex(question: QuizQuestion): number {
+  const answer = VAULT.get(question.id);
+  const index = question.options.indexOf(answer ?? '');
+  if (index < 0) throw new Error(`No vault entry for ${question.id}`);
+  return index;
+}
 
 function seededRng(seed: number): () => number {
   let value = seed;
@@ -66,17 +90,22 @@ function startedGame(): RoomState {
 
 /** Answers the open question for one player, correctly or otherwise. */
 function answerAs(state: RoomState, uid: string, correct: boolean, elapsedMs: number): Action {
-  const question = state.questions[state.index];
+  const question = currentQuestion(state);
   if (!question) throw new Error('No open question to answer');
-  const optionIndex = correct
-    ? question.correctIndex
-    : (question.correctIndex + 1) % question.options.length;
+  const right = vaultIndex(question);
+  const optionIndex = correct ? right : (right + 1) % question.options.length;
   return { type: 'answer', uid, optionIndex, elapsedMs };
 }
 
 /** Advances reveal → scoreboard → next question (or finished). */
+function revealNow(state: RoomState): Action {
+  const question = currentQuestion(state);
+  if (!question) throw new Error('No open question to reveal');
+  return { type: 'reveal', correctIndex: vaultIndex(question) };
+}
+
 function advance(state: RoomState): RoomState {
-  return apply(state, { type: 'reveal' }, { type: 'next', at: 0 }, { type: 'next', at: 0 });
+  return apply(state, revealNow(state), { type: 'next', at: 0 }, { type: 'next', at: 0 });
 }
 
 describe('a full three-question game', () => {
@@ -135,7 +164,7 @@ describe('a full three-question game', () => {
     game = apply(game, answerAs(game, 'greg', true, 0));
     game = advance(game);
 
-    game = apply(game, answerAs(game, 'greg', true, 0), { type: 'reveal' }, { type: 'skip' });
+    game = apply(game, answerAs(game, 'greg', true, 0), revealNow(game), { type: 'skip' });
     game = apply(game, { type: 'next', at: 0 });
 
     game = apply(game, answerAs(game, 'greg', true, 0));

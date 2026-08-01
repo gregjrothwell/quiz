@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react';
-import type { DifficultyCounts, PackId, PackSummary, Question } from '../questions/types';
+import type {
+  DifficultyCounts,
+  PackId,
+  PackSummary,
+  SealedQuestion,
+} from '../questions/types';
 
 export type { PackSummary };
 
@@ -49,9 +54,14 @@ export function usePackIndex(): { packs: PackSummary[]; error: string | null } {
   return { packs, error };
 }
 
-export async function loadPackQuestions(id: PackId): Promise<Question[]> {
+/**
+ * The published packs carry the options but not the answer — see
+ * `SealedQuestion`. A quizmaster's device loads one of these to build a round
+ * and is no better informed than anybody else's.
+ */
+export async function loadPackQuestions(id: PackId): Promise<SealedQuestion[]> {
   const response = await fetch(packUrl(`${id}.json`));
   if (!response.ok) throw new Error(`Could not load the ${id} pack (${response.status})`);
-  const pack = (await response.json()) as { questions: Question[] };
+  const pack = (await response.json()) as { questions: SealedQuestion[] };
   return pack.questions;
 }

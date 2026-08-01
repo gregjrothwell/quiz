@@ -207,6 +207,89 @@ input {
   );
 }
 
+/* ── Ways into the room ─────────────────────────────────────────────────────
+   The code read aloud, and the same thing as a QR for anybody on a phone.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.entry {
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(0.9rem, 3vw, 1.75rem);
+  flex-wrap: wrap;
+}
+
+.entry__qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.qr {
+  width: clamp(4.5rem, 13vw, 6.25rem);
+  height: auto;
+  border-radius: 4px;
+  border: 3px solid #eef6ff;
+  background: #eef6ff;
+  box-shadow: 0 0 26px -6px rgb(41 214 255 / 0.5);
+}
+
+.entry__hint {
+  margin: 0;
+  font-family: var(--tech);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+/* ── Sound switch ───────────────────────────────────────────────────────────
+   Parked against the rig bar at the top right, on every screen. Deliberately
+   quiet furniture: it has to be findable the moment somebody's colleague walks
+   past, and invisible the rest of the time.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.sound {
+  position: absolute;
+  top: calc(var(--gutter) * 0.5);
+  right: calc(var(--gutter) * 0.5);
+  z-index: 5;
+  width: 2.25rem;
+  height: 2.25rem;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink-dim);
+  transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+.sound:hover {
+  color: var(--cyan);
+  border-color: var(--edge);
+  background: rgb(41 214 255 / 0.08);
+}
+
+.sound svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sound:not(.sound--off) {
+  color: var(--cyan-dim);
+}
+
+.sound--off .sound__cross {
+  stroke: var(--ink-dim);
+}
+
 /*
  * The gloss floor. The reflection is a duplicate of the row above it, flipped,
  * and the fade is painted as an overlay rather than applied as a mask: a mask
@@ -872,6 +955,37 @@ input {
   opacity: 0.3;
 }
 
+/*
+ * The drum roll. Every lectern but your own pick loses its lamp and sinks a
+ * little, so the set is dark at the moment the verdict arrives. Kept as its own
+ * state rather than reusing `--dim`, which has to stay readable during the
+ * question while this deliberately does not.
+ */
+.tile--hushed {
+  opacity: 0.16;
+  transform: scale(0.985);
+  border-color: rgb(18 64 95 / 0.5);
+  box-shadow: none;
+}
+
+.tile--hushed::after {
+  background: none;
+  box-shadow: none;
+}
+
+/* Once the verdict lands the also-rans drop away rather than merely dimming. */
+.tile--gone {
+  opacity: 0.1;
+  transform: translateY(6px) scale(0.97);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.tile--gone::after {
+  background: none;
+  box-shadow: none;
+}
+
 .tile:disabled {
   cursor: default;
 }
@@ -1118,6 +1232,38 @@ input {
   background: linear-gradient(90deg, var(--panel), rgb(7 26 46 / 0.45));
   position: relative;
   overflow: hidden;
+  /*
+   * Opacity only. `layout` on the same element animates transforms from JS, and
+   * a CSS animation touching transform too leaves rows stranded mid-slide.
+   */
+  animation: settle 340ms ease backwards;
+}
+
+@keyframes settle {
+  from {
+    opacity: 0;
+  }
+}
+
+/*
+ * A slow sheen along the leader's row. Runs indefinitely on purpose: the point
+ * is that the top of the table is visibly lit for as long as somebody is on it,
+ * not that it flashes once when they get there.
+ */
+.standing--leader::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 35%,
+    rgb(255 212 121 / 0.16) 50%,
+    transparent 65%
+  );
+  transform: translateX(-100%);
+  animation: sweep 2600ms cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 .standing--you {
@@ -1284,7 +1430,8 @@ input {
   border-radius: 8px 8px 0 0;
   background: linear-gradient(180deg, var(--panel-hi), var(--panel) 60%, #020a13);
   text-align: center;
-  animation: rise 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  /* `backwards` for the same reason as `.tile` — see the note there. */
+  animation: rise 520ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
 }
 
 .riser::after {
@@ -1316,6 +1463,22 @@ input {
 .riser--first::after {
   background: linear-gradient(90deg, transparent, var(--amber), transparent);
   box-shadow: 0 0 22px 3px rgb(255 178 38 / 0.9);
+}
+
+/*
+ * A band of light across the winner's riser, held back until the riser itself
+ * has finished arriving — the podium builds third, second, first, and the sweep
+ * is the full stop on that sequence rather than something competing with it.
+ */
+.riser--first::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 8px 8px 0 0;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent 25%, rgb(255 212 121 / 0.35) 50%, transparent 75%);
+  transform: translateX(-100%);
+  animation: sweep 1100ms cubic-bezier(0.3, 0.7, 0.3, 1) 900ms 1 backwards;
 }
 
 .riser__pos {
@@ -1394,6 +1557,119 @@ input {
   font-variant-numeric: tabular-nums;
 }
 
+/*
+ * Held invisible through the drum roll rather than unmounted, so the delta has
+ * a zero to count up from — and so the row does not change height underneath
+ * the buttons at the moment the verdict lands.
+ */
+.verdict {
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 220ms ease, transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.verdict--in {
+  opacity: 1;
+  transform: none;
+}
+
+.verdict[data-tone='correct'] {
+  color: var(--correct);
+  text-shadow: 0 0 18px rgb(31 221 138 / 0.55);
+}
+
+.verdict[data-tone='wrong'] {
+  color: var(--wrong);
+}
+
+.verdict[data-tone='silent'] {
+  color: var(--ink-dim);
+}
+
+/* ── The desk ───────────────────────────────────────────────────────────────
+   The strip under the lecterns: your own state on the left, the room's commit
+   count and the transport on the right. Lit along the top edge like the rig
+   bar over the stage, so it reads as part of the set.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.transport {
+  position: relative;
+  margin-top: auto;
+  padding: 1rem 0 0.25rem;
+}
+
+.transport::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(41 214 255 / 0.35) 30%,
+    rgb(41 214 255 / 0.35) 70%,
+    transparent
+  );
+}
+
+.onair {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.onair__lamp {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--wrong);
+  box-shadow: 0 0 10px 1px rgb(255 46 77 / 0.9);
+  animation: onair-pulse 2200ms ease-in-out infinite;
+}
+
+@keyframes onair-pulse {
+  50% {
+    opacity: 0.35;
+    box-shadow: 0 0 4px 0 rgb(255 46 77 / 0.5);
+  }
+}
+
+/* ── Answer pips ────────────────────────────────────────────────────────────
+   How much of the room has committed, without saying to what. Watching the
+   lamps fill is most of the tension in a live round; which lectern anybody
+   chose is the one thing that cannot leak before the reveal.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.pips {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0 0.35rem;
+}
+
+.pip {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  border: 1px solid var(--edge);
+  background: rgb(4 16 31 / 0.9);
+  transition: background-color 220ms ease, border-color 220ms ease, box-shadow 260ms ease,
+    transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.pip--in {
+  border-color: var(--cyan);
+  background: var(--cyan);
+  box-shadow: 0 0 12px 1px rgb(41 214 255 / 0.75);
+  transform: scale(1.15);
+}
+
 /* ── Entrances ──────────────────────────────────────────────────────────────
    Done in CSS rather than JS on purpose. These animations are the only thing
    standing between the content and `opacity: 0`, and a JS animation that fails
@@ -1429,8 +1705,16 @@ input {
   animation: lift 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
+/*
+ * `backwards`, not `both`. A filled-forwards animation keeps its final keyframe
+ * in the cascade *above* normal declarations, so `to { opacity: 1 }` quietly
+ * beat every state the lecterns are supposed to change into — `.tile--dim`
+ * never dimmed anything, and neither did the reveal states that came later.
+ * `backwards` still holds the tile invisible through its stagger delay, which
+ * is the only reason a fill mode is needed here, and then gets out of the way.
+ */
 .tile {
-  animation: rise 380ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation: rise 380ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
 }
 
 .card__round,

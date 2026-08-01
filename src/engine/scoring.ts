@@ -1,4 +1,4 @@
-import { QUESTION_DURATION_MS, type Answer, type QuizQuestion } from './state';
+import { QUESTION_DURATION_MS, type Answer } from './state';
 
 /** Awarded for any correct answer, regardless of speed. */
 export const BASE_POINTS = 500;
@@ -37,16 +37,21 @@ export function scoreAnswer({
  * "got it wrong" apart from "ran out of time".
  */
 export function tallyQuestion(params: {
-  question: QuizQuestion;
+  /**
+   * Passed in rather than read off the question. Until the reveal, no device
+   * holds it — the answer comes back from the vault at the moment the question
+   * closes, and scoring is the first thing that gets to see it.
+   */
+  correctIndex: number;
   answers: Record<string, Answer>;
   durationMs?: number;
 }): Record<string, number> {
-  const { question, answers, durationMs = QUESTION_DURATION_MS } = params;
+  const { correctIndex, answers, durationMs = QUESTION_DURATION_MS } = params;
   const deltas: Record<string, number> = {};
 
   for (const [uid, answer] of Object.entries(answers)) {
     deltas[uid] = scoreAnswer({
-      correct: answer.optionIndex === question.correctIndex,
+      correct: answer.optionIndex === correctIndex,
       elapsedMs: answer.elapsedMs,
       durationMs,
     });
