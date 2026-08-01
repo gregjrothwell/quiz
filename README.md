@@ -1,8 +1,11 @@
-# The Round
+# Vibe Quiz
 
 A real-time quiz for playing with colleagues over Teams. One **quizmaster** creates
-a room and drives the round; everyone else joins as **quizzers** on their phones
-and answers against the clock. Fastest correct answer takes the most points.
+a room and drives the round; everyone else joins as **quizzers** from their own
+desk and answers against the clock. Fastest correct answer takes the most points.
+
+Built for laptops — the whole round can be run from the keyboard — and it works
+on a phone if someone joins from one.
 
 Built to replace Polly. Static site on GitHub Pages, Firebase for the live room.
 
@@ -86,8 +89,8 @@ the game twice.
 ### Seeing the design without a Firebase project
 
 `#/preview` renders every screen with fixed data, and `#/preview/4` renders one on
-its own. Useful for reviewing the look, or checking a layout on a phone, without
-needing a room and four other people.
+its own. Useful for reviewing the look, or checking a layout at another width,
+without needing a room and four other people.
 
 ---
 

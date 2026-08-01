@@ -1,7 +1,7 @@
 @import './fonts.css';
 
 /* ── The studio ──────────────────────────────────────────────────────────────
-   A modern television quiz set, played on a phone. A back wall of light
+   A modern television quiz set, played at a desk. A back wall of light
    columns, an overhead LED halo, beams from the rig, and a gloss floor that
    reflects whatever is standing on it. Cyan and amber are the house lighting;
    green and red are the verdict.
@@ -215,9 +215,9 @@ input {
  * brightest exactly where it should have faded out.
  */
 /*
- * Hidden on phones. The reflection is pure decoration and costs about 100px of
- * vertical space, which on the surface almost everyone actually plays on is
- * better spent on the answers.
+ * Hidden on narrow screens. The reflection is pure decoration and costs about
+ * 100px of vertical space, which a phone is better off spending on the answers.
+ * The desk is the primary surface and keeps it.
  */
 .floor {
   display: none;
@@ -1522,8 +1522,10 @@ input {
 }
 
 /* ── Desktop ────────────────────────────────────────────────────────────────
-   Everyone plays on their own device, but the laptop gets the bigger stage and
-   the keyboard hints: the whole round can be run without reaching for a mouse.
+   The primary surface. The laptop gets the bigger stage, the floor reflection
+   and the keyboard hints — the whole round can be run without reaching for a
+   mouse. Everything above this point is the phone fallback, which still has to
+   work for anyone who joins from one.
    ──────────────────────────────────────────────────────────────────────────── */
 
 @media (min-width: 44rem) {

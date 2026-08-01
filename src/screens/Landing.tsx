@@ -20,20 +20,21 @@ export function Landing({ busy, error, onCreate, onJoin, onSeason }: LandingProp
   return (
     <>
       <header>
-        <p className="eyebrow">Tonight, on your device</p>
+        <p className="eyebrow">The office quiz</p>
         <div className="chrome-wrap">
           <h1 className="wordmark chrome">
-            The
+            Vibe
             <br />
-            Round
+            Quiz
           </h1>
         </div>
         <hr className="wordmark__rule" />
       </header>
 
       <p className="lede">
-        One quizmaster, everyone else on their phones. Whoever creates the room runs the show —
-        pick a set, start the clock, and the fastest correct answer takes the points.
+        Whoever creates the room runs the show — pick a set, set the level, and start the clock.
+        Everyone else plays along at their own desk, and the fastest correct answer takes the
+        points.
       </p>
 
       <div className="split split--two">

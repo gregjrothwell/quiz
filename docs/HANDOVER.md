@@ -1,4 +1,4 @@
-# Handover — The Round
+# Handover — Vibe Quiz
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -7,6 +7,8 @@ Built to replace Polly in Teams.
 - **Repo:** https://github.com/gregjrothwell/quiz (public, `master`, deploys from `gh-pages`)
 - **Firebase project:** `quiz-d686e` (Firestore + Realtime Database in europe-west1 + Anonymous auth)
 - **Status:** shipped and played. 103 tests, clean types and lint, no `any` or `@ts-ignore`.
+- **Next:** a full security review before this is played at work — brief at the
+  bottom of this file.
 
 > ### Check the rules are published before you play
 >
@@ -76,7 +78,7 @@ games (quizmaster disconnect, skip, reset, ties).
 
 **Verified in the browser, on fixtures only:** every screen at 1280px and 390px,
 the level picker disabling a level its pack can't fill, and no horizontal scroll
-on a phone.
+at the narrow width.
 
 **Verified with real concurrent clients** — this was the long-standing gap:
 
@@ -179,8 +181,78 @@ page-size ladder costs a few extra requests per category).
 
 ---
 
+## NEXT SESSION: the security review
+
+**This is the outstanding piece of work.** The brief is to go over the app the
+way a lead developer would before it gets played at work, and fix what a review
+would fairly call a problem. Everything below is a head start, not a substitute
+for looking properly.
+
+### Already verified clean
+
+- `npm audit` — 0 vulnerabilities, production and dev.
+- **No `.env` file has ever been committed.** Only `.env.example` appears in the
+  history; `.env.local` is gitignored.
+- No `dangerouslySetInnerHTML`, no `innerHTML`, no `eval` anywhere in `src/`.
+  Every player-supplied string goes through React's escaping.
+- No `any`, no `@ts-ignore`, no `@ts-expect-error`.
+- The only secret-shaped value in the bundle is the Firebase Web API key, which
+  is public by design. GitHub's secret scanner flags it; it is a false positive.
+  Referrer restrictions are being applied in the Google Cloud console.
+
+### Findings to deal with, worst first
+
+1. **`allow get, list: if signedIn()` on `/rooms/{code}` lets anyone read every
+   room.** The site is public and anonymous sign-in is open, so this is
+   effectively world-readable: room contents, player names, scores, the
+   questions, and `correctIndex` for every one of them. `list` is the sharp
+   part — the app only ever calls `getDoc` on a code somebody read out, and
+   never queries the collection, so **dropping `list` costs nothing and stops
+   bulk enumeration.** Do this one first; it is a one-word change.
+2. **Correct answers are in the room document.** Any member can read
+   `questions[].correctIndex` before the reveal. Genuinely hard to fix without
+   server-side logic, and worth stating as accepted rather than pretending
+   otherwise — but it should be a deliberate note, not a surprise.
+3. **Any member can rewrite anything on the room.** Phase, scores, questions,
+   and the removal of other players are all reachable from the console by anyone
+   in the room. Already documented under Known limits, and it follows from the
+   derived-quizmaster decision; expect a reviewer to raise it, and have the
+   reasoning ready.
+4. **The room document does not validate `players` at all.** The update rule
+   checks membership but nothing about shape or size, so a member can write an
+   arbitrarily large or malformed `players` map. The season rules show the
+   pattern to copy — they validate types, ranges and key sets properly.
+5. **Answers are readable before the reveal.** `/rooms/{code}/answers` allows
+   read to any signed-in user, so you can see what everybody picked while the
+   question is still open.
+6. **Season rows are self-reported.** The rules stop you writing someone else's
+   row but not inflating your own. Fine among colleagues; say so out loud.
+7. **No App Check and no rate limiting.** Anonymous accounts can be created at
+   will against the project. App Check is the real answer if this ever matters.
+
+Room codes are 4 characters from a 29-character alphabet — 707,281 combinations.
+That is a reasonable guess-space, and completely irrelevant while `list` is
+allowed, which is why finding 1 comes first.
+
+### Suggested order
+
+Findings 1 and 4 are small rule changes with real value. 2, 3, 5 and 6 are
+mostly about deciding and documenting the trust model rather than changing code —
+the app is played among colleagues, and the honest answer may be "accepted". 7 is
+a bigger piece and probably out of scope.
+
+`npm run check-rules` should still pass after any rules change. It only covers
+the paths the app needs, so extend it if the rules gain new ones.
+
+---
+
 ## If you're picking this up cold
 
-Fastest way to be useful: get two browsers into the same room and play a full
-round. That's the one gap the test suite can't close, and it exercises presence,
-the reaper, handover, and the answer subcollection all at once.
+Fastest way to be useful: `npm run check-rules`, then `npm run sync-harness 10`.
+Between them they confirm the rules are published and that ten clients stay in
+sync — the two things that have actually broken in play.
+
+The remaining untested path is a **quizmaster dropping out mid-round** and the
+role passing to somebody else. It is covered in the engine but has never been
+watched happen with real clients. `npm run host-room` plus a browser is the way
+to try it.

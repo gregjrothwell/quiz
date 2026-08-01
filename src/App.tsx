@@ -22,9 +22,9 @@ function SetupNotice() {
       <header>
         <p className="eyebrow">Setup needed</p>
         <h1 className="wordmark">
-          The
+          Vibe
           <br />
-          Round
+          Quiz
         </h1>
         <hr className="wordmark__rule" />
       </header>
