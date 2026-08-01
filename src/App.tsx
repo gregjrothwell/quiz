@@ -271,7 +271,34 @@ function Game() {
             onLeave={() => void leave().catch(report)}
             onSeason={() => setShowSeason(true)}
           />
-        ))}
+        )) || (
+          /*
+            A phase this build does not recognise. The rules now reject one, but
+            without this the chain above falls through to `false` and the whole
+            room stares at an empty screen with no way out — which is what any
+            member writing a junk phase from the console used to cause, and what a
+            client left open across a deploy that adds a phase would hit anyway.
+          */
+          <div className="stack">
+            <p className="eyebrow">Out of step</p>
+            <p className="lede">
+              This room is in a state this version of the quiz doesn&rsquo;t know how to show.
+              Reload to pick up the latest version, or leave and rejoin.
+            </p>
+            <div className="btn-row">
+              <button type="button" className="btn" onClick={() => window.location.reload()}>
+                Reload
+              </button>
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={() => void leave().catch(report)}
+              >
+                Leave
+              </button>
+            </div>
+          </div>
+        )}
     </Stage>
   );
 }

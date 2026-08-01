@@ -3,12 +3,22 @@ rules_version = '2';
 // The quizmaster is derived, not stored: it is whoever has been in the room
 // longest. Rules cannot compute that cheaply, so they enforce the weaker but
 // sufficient invariant that every writer must be a signed-in member of the room.
-// The engine enforces game legality; these rules stop outsiders touching a room
-// and stop anyone editing someone else's answer.
+// The engine enforces game legality; these rules stop outsiders touching a room,
+// bound what a member can write, and stop anyone editing someone else's answer.
+//
+// **The room code is the capability.** Anyone holding a code can read the room,
+// and has to be able to — joining reads the document before writing to it. That
+// only holds up while a code has to be read out rather than harvested, which is
+// why `list` is deliberately absent below.
 service cloud.firestore {
   match /databases/{database}/documents {
 
     match /rooms/{code} {
+      // Comfortably past an office round, tight enough that a malformed write
+      // cannot inflate the document every client re-reads on every transition.
+      function maxPlayers() { return 60; }
+      function maxQuestions() { return 50; }
+
       function signedIn() {
         return request.auth != null;
       }
@@ -18,28 +28,89 @@ service cloud.firestore {
           && resource.data.players.keys().hasAny([request.auth.uid]);
       }
 
-      // Anyone signed in can look up a room to join it.
-      allow get, list: if signedIn();
+      // `joinedAt` is `Date.now()`. Checked as `is number` rather than `is int`
+      // on purpose: the exact wire type is the SDK's choice, and a room nobody
+      // can join is a far worse failure than a float slipping past a bound that
+      // exists only to keep garbage out.
+      function playerOk(player) {
+        return player.keys().hasOnly(['name', 'joinedAt'])
+          && player.name is string
+          && player.name.size() > 0
+          && player.name.size() <= 40
+          && player.joinedAt is number;
+      }
 
-      // Creating a room requires putting yourself in it as the only player.
+      // The writer's own entry is the only one a rule can check without
+      // iterating the map, which rules cannot do. A member can still write a
+      // neighbour's entry — see the `update` rule.
+      function ownEntryOk() {
+        return !request.resource.data.players.keys().hasAny([request.auth.uid])
+          || playerOk(request.resource.data.players[request.auth.uid]);
+      }
+
+      // Invariants every write preserves, so no member can leave the room in a
+      // state the client cannot render or the free tier cannot afford. The phase
+      // list matters: App.tsx matches phases exhaustively, so an unrecognised one
+      // renders an empty screen for everybody in the room.
+      function wellFormed() {
+        return request.resource.data.code == code
+          && request.resource.data.phase in
+               ['lobby', 'question', 'reveal', 'scoreboard', 'finished']
+          && request.resource.data.players.keys().size() <= maxPlayers()
+          && request.resource.data.scores.keys().size() <= maxPlayers()
+          && request.resource.data.questions.size() <= maxQuestions()
+          && ownEntryOk();
+      }
+
+      // Anyone signed in can look up a room in order to join it.
+      //
+      // `list` is not granted. The app never queries the collection, so allowing
+      // it costs nothing to drop and would otherwise let any anonymous visitor
+      // enumerate every live room — its players, its scores, its questions and
+      // every `correctIndex` — and write to all of them. A four-character code is
+      // only a reasonable secret while it cannot be harvested in one query.
+      allow get: if signedIn();
+
+      // Creating a room means putting yourself in it as the only player, in a
+      // lobby with no questions yet.
       allow create: if signedIn()
         && request.resource.data.players.keys().hasOnly([request.auth.uid])
-        && request.resource.data.code == code
-        && request.resource.data.phase == 'lobby';
+        // `hasOnly` is satisfied by the empty map, which would mint a room with
+        // no members and so no derivable quizmaster.
+        && request.resource.data.players.keys().size() == 1
+        && request.resource.data.phase == 'lobby'
+        && request.resource.data.questions.size() == 0
+        && wellFormed();
 
       // Members drive the game. Joining is also an update, so allow a writer who
       // is a member either before or after the write.
+      //
+      // A member can still overwrite the phase, the scores, the questions and
+      // other players: the quizmaster is derived rather than stored, so there is
+      // no uid here to compare against. That is accepted for a room of colleagues
+      // and written down in docs/HANDOVER.md. `wellFormed` is what keeps the
+      // worst case to mischief rather than an unplayable or expensive room.
       allow update: if signedIn()
-        && (isMember() || request.resource.data.players.keys().hasAny([request.auth.uid]));
+        && (isMember() || request.resource.data.players.keys().hasAny([request.auth.uid]))
+        && wellFormed();
 
       // Rooms are disposable; nobody needs to delete one mid-quiz.
       allow delete: if false;
 
       match /answers/{uid} {
         // Everyone in the room reads answers so the reveal can render.
+        //
+        // Restricting this to members would cost a document read per rule
+        // evaluation — on a listener, per snapshot — and buy almost nothing:
+        // reaching this path needs the room code, and anyone with the code can
+        // simply join. Members seeing each other's answers before the reveal is
+        // inherent without server-side logic, and is accepted rather than fixed.
         allow read: if signedIn();
 
         // You may only write your own answer, and only with a sane shape.
+        // `elapsedMs` is measured on the answering device and cannot be checked
+        // here; the bounds keep nonsense out of the document, they are not an
+        // anti-cheat. See docs/HANDOVER.md.
         allow create, update: if signedIn()
           && request.auth.uid == uid
           && request.resource.data.keys().hasOnly(['optionIndex', 'elapsedMs', 'questionIndex'])
@@ -48,8 +119,10 @@ service cloud.firestore {
           && request.resource.data.optionIndex < 10
           && request.resource.data.elapsedMs is int
           && request.resource.data.elapsedMs >= 0
+          && request.resource.data.elapsedMs <= 600000
           && request.resource.data.questionIndex is int
-          && request.resource.data.questionIndex >= 0;
+          && request.resource.data.questionIndex >= 0
+          && request.resource.data.questionIndex < 100;
 
         allow delete: if signedIn() && request.auth.uid == uid;
       }
@@ -59,12 +132,24 @@ service cloud.firestore {
     // a player writes only their own row, so the rules enforce exactly the
     // invariant the app relies on. The values themselves are still self-
     // reported — nothing here stops someone inflating their own total, which is
-    // the same trust model as the rest of the game.
+    // the same trust model as the rest of the game. The bounds below only keep
+    // a self-report within the range a real season could produce, so one edited
+    // row cannot make the whole table meaningless.
     match /seasons/{season}/players/{uid} {
+      // A round is at most 25 questions at 1,000 points, so 100k leaves room for
+      // a long season's best game and still rejects a fantasy number.
+      function maxBest() { return 100000; }
+      function maxPoints() { return 100000000; }
+      function maxPlayed() { return 10000; }
+
       function signedIn() {
         return request.auth != null;
       }
 
+      // The whole table is readable by any signed-in visitor, which anonymous
+      // auth makes effectively public. It holds display names and scores only,
+      // and a shared leaderboard has to be shared — but it is a deliberate
+      // choice, not an oversight. See docs/HANDOVER.md.
       allow read: if signedIn();
 
       allow create, update: if signedIn()
@@ -76,16 +161,27 @@ service cloud.firestore {
         && request.resource.data.name.size() <= 40
         && request.resource.data.played is int
         && request.resource.data.played >= 0
+        && request.resource.data.played <= maxPlayed()
         && request.resource.data.wins is int
         && request.resource.data.wins >= 0
+        // You cannot have won more rounds than you played, or scored more in one
+        // game than you have scored in total.
+        && request.resource.data.wins <= request.resource.data.played
         && request.resource.data.points is int
         && request.resource.data.points >= 0
+        && request.resource.data.points <= maxPoints()
         && request.resource.data.best is int
         && request.resource.data.best >= 0
+        && request.resource.data.best <= maxBest()
+        && request.resource.data.best <= request.resource.data.points
         && request.resource.data.lastGame is string
-        && request.resource.data.lastPlayed is int;
+        && request.resource.data.lastGame.size() <= 64
+        && request.resource.data.lastPlayed is number;
 
-      allow delete: if false;
+      // Removing your own row is the only way anybody can take a display name
+      // back off a shared board without console access. Someone else's row still
+      // needs the console — the app has no moderator.
+      allow delete: if signedIn() && request.auth.uid == uid;
     }
   }
 }
