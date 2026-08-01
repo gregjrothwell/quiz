@@ -47,6 +47,11 @@ production defaults deny everything and no room will open.
 - `firestore.rules` → paste into Firestore → Rules → Publish
 - `database.rules.json` → paste into Realtime Database → Rules → Publish
 
+**Both, not just the first.** If the Realtime Database rules are missing, every
+presence write is rejected and nobody is ever cleaned up when they close a tab.
+The app detects this and says so on screen rather than misbehaving, but the
+lobby will accumulate ghosts until the rules are published.
+
 ---
 
 ## Running it
@@ -66,8 +71,14 @@ The app is served under `/quiz/`, so the local URL is
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint |
 | `npm run build` | Typecheck then production build |
-| `npm run fetch-questions` | Re-harvest question packs (~10 min, throttled) |
+| `npm run fetch-questions` | Re-harvest question packs (~25 min, throttled) |
 | `npm run fetch-questions -- --resort` | Re-sort the cached pool without re-fetching |
+| `npm run sync-harness 10` | Put 10 real clients in one room and measure how fast each sees a round start |
+| `npm run host-room` | Host a room from the terminal, so a browser can be watched as an ordinary player |
+
+The last two talk to the live Firebase project and exist because a single browser
+cannot show what a room full of people does. They are how the presence and
+join-race bugs were found.
 
 ### Seeing the design without a Firebase project
 

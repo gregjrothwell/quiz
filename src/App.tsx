@@ -65,6 +65,7 @@ function Game() {
     connection,
     error,
     isQuizmaster,
+    presenceWorking,
     createAndJoin,
     join,
     leave,
@@ -217,6 +218,18 @@ function Game() {
   return (
     <Stage>
       {problem ? <p className="notice">{problem}</p> : null}
+
+      {/*
+        Presence is a tidying mechanism, not part of the game. Saying so plainly
+        beats the previous behaviour, where a failed presence write was a console
+        warning nobody would see and the room quietly filled with ghosts.
+      */}
+      {presenceWorking ? null : (
+        <p className="muted" style={{ fontSize: '0.85rem', margin: 0 }}>
+          Can&rsquo;t track who&rsquo;s still here, so anyone who closes their tab will stay in the
+          list. The round plays normally.
+        </p>
+      )}
 
       {(room.phase === 'lobby' && (
         <Lobby

@@ -19,6 +19,7 @@ import {
 } from 'firebase/firestore';
 import { firebaseAuth, firestore, realtimeDb } from '../firebase';
 import { reduce, type Action } from '../engine/reducer';
+import { reapAbsent } from '../engine/presence';
 import {
   createRoom,
   resolveQuizmaster,
@@ -27,14 +28,6 @@ import {
   type RoomState,
 } from '../engine/state';
 import { randomRoomCode } from '../engine/roomCode';
-
-/**
- * How long a player must be continuously absent from presence before anyone
- * removes them. Absorbs brief reconnects — without it, a dropped WiFi packet
- * ejects someone mid-question and, worse, can hand the quizmaster role away and
- * back again.
- */
-const STALE_GRACE_MS = 8_000;
 
 /**
  * Fields the engine owns but that are not persisted on the room document.
@@ -52,6 +45,11 @@ export interface UseRoom {
   connection: ConnectionState;
   error: string | null;
   isQuizmaster: boolean;
+  /**
+   * False when this device cannot write its presence entry, which means players
+   * who close a tab will linger in the lobby. The game itself is unaffected.
+   */
+  presenceWorking: boolean;
   createAndJoin: (name: string) => Promise<string>;
   join: (code: string, name: string) => Promise<void>;
   leave: () => Promise<void>;
@@ -103,6 +101,40 @@ function toPersisted(state: RoomState): PersistedRoom {
   };
 }
 
+/**
+ * What a phase transition is allowed to write.
+ *
+ * Two things are deliberately not written wholesale:
+ *
+ * `players` is omitted entirely. A dispatch folds actions over the *writer's*
+ * snapshot, so writing the whole map back stamps their view of who is in the
+ * room over everyone else's — anybody who joined in the moment between that
+ * snapshot and the write is erased. With two people it is a rare race; with ten
+ * joining as the code is read out it is close to guaranteed. Membership is only
+ * ever changed through single-field writes (`players.{uid}`), so no phase
+ * transition needs to touch the map at all.
+ *
+ * `scores` is expanded into one field path per player so the write merges
+ * instead of replacing. A late joiner's zero then survives a round starting.
+ *
+ * Derived from {@link toPersisted} by destructuring rather than listed afresh,
+ * so a new field on RoomState still fails to compile until someone decides how
+ * it persists.
+ */
+function toUpdate(state: RoomState): Record<string, unknown> {
+  const persisted = toPersisted(state);
+  const update: Record<string, unknown> = { ...persisted };
+
+  delete update.players;
+  delete update.scores;
+
+  for (const [uid, score] of Object.entries(persisted.scores)) {
+    update[`scores.${uid}`] = score;
+  }
+
+  return update;
+}
+
 export function useRoom(): UseRoom {
   const [uid, setUid] = useState<string | null>(null);
   const [persisted, setPersisted] = useState<PersistedRoom | null>(null);
@@ -111,8 +143,11 @@ export function useRoom(): UseRoom {
   const [connection, setConnection] = useState<ConnectionState>('connecting');
   const [error, setError] = useState<string | null>(null);
 
+  const [presenceWorking, setPresenceWorking] = useState(true);
+
   const nameRef = useRef<string>('');
   const absentSinceRef = useRef<Record<string, number>>({});
+  const playersRef = useRef<Record<string, Player>>({});
 
   // Anonymous auth gives every browser a durable uid with no sign-up, which is
   // also what makes an accountless cross-session leaderboard possible later.
@@ -171,7 +206,14 @@ export function useRoom(): UseRoom {
     const unsubscribe = onValue(connected, (snapshot) => {
       if (snapshot.val() !== true) return;
       void onDisconnect(own).remove();
-      void rtdbSet(own, { name: nameRef.current, at: Date.now() });
+      // Reported rather than swallowed. When the Realtime Database rules are
+      // missing or unpublished this write fails for everyone, and as a bare
+      // `void` it surfaced only as a console warning — presence silently stopped
+      // working and the room filled with ghosts with nothing on screen to say so.
+      rtdbSet(own, { name: nameRef.current, at: Date.now() }).then(
+        () => setPresenceWorking(true),
+        () => setPresenceWorking(false),
+      );
     });
 
     return () => {
@@ -197,6 +239,12 @@ export function useRoom(): UseRoom {
   const quizmasterUid = room ? resolveQuizmaster(room.players) : null;
   const isQuizmaster = Boolean(uid && quizmasterUid === uid);
 
+  // Read by the reaper's Realtime Database callback, which must not have `room`
+  // in its dependencies — see the reaper effect below.
+  useEffect(() => {
+    playersRef.current = room?.players ?? {};
+  }, [room]);
+
   /**
    * Applies an engine action and persists the result. The quizmaster drives
    * every phase transition, so the reducer runs on exactly one device and the
@@ -214,7 +262,7 @@ export function useRoom(): UseRoom {
       const next = actions.reduce(reduce, room);
       if (next === room) return;
 
-      await updateDoc(roomDoc(code), toPersisted(next) as Partial<DocumentData>);
+      await updateDoc(roomDoc(code), toUpdate(next) as Partial<DocumentData>);
     },
     [room, code],
   );
@@ -308,34 +356,30 @@ export function useRoom(): UseRoom {
 
   // Reap players whose presence has been gone longer than the grace window. Only
   // the quizmaster does this, so several clients cannot race the same removal.
+  //
+  // `playersRef` rather than `room` in the dependency list: `room` is a fresh
+  // object on every snapshot, so depending on it tore down and re-established
+  // this Realtime Database listener on every phase change and every answer.
   useEffect(() => {
-    if (!code || !room || !isQuizmaster) return;
+    if (!code || !isQuizmaster) return;
 
     const presence = rtdbRef(realtimeDb(), `presence/${code}`);
 
     return onValue(presence, (snapshot) => {
-      const present = new Set(Object.keys((snapshot.val() as Record<string, unknown>) ?? {}));
-      const now = Date.now();
-      const absentSince = absentSinceRef.current;
+      const { remove, absentSince } = reapAbsent({
+        players: playersRef.current,
+        present: new Set(Object.keys((snapshot.val() as Record<string, unknown>) ?? {})),
+        absentSince: absentSinceRef.current,
+        now: Date.now(),
+      });
 
-      for (const playerUid of Object.keys(room.players)) {
-        if (present.has(playerUid)) {
-          delete absentSince[playerUid];
-          continue;
-        }
+      absentSinceRef.current = absentSince;
 
-        const since = absentSince[playerUid];
-        if (since === undefined) {
-          absentSince[playerUid] = now;
-          continue;
-        }
-        if (now - since < STALE_GRACE_MS) continue;
-
-        delete absentSince[playerUid];
+      for (const playerUid of remove) {
         void updateDoc(roomDoc(code), { [`players.${playerUid}`]: deleteField() });
       }
     });
-  }, [code, room, isQuizmaster]);
+  }, [code, isQuizmaster]);
 
   return {
     uid,
@@ -343,6 +387,7 @@ export function useRoom(): UseRoom {
     connection,
     error,
     isQuizmaster,
+    presenceWorking,
     createAndJoin,
     join,
     leave,

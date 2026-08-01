@@ -6,11 +6,18 @@ Built to replace Polly in Teams.
 - **Live:** https://gregjrothwell.github.io/quiz/
 - **Repo:** https://github.com/gregjrothwell/quiz (public, `master`, deploys from `gh-pages`)
 - **Firebase project:** `quiz-d686e` (Firestore + Realtime Database in europe-west1 + Anonymous auth)
-- **Status:** shipped and played. 96 tests, clean types and lint, no `any` or `@ts-ignore`.
+- **Status:** shipped and played. 103 tests, clean types and lint, no `any` or `@ts-ignore`.
 
-> **Before the season table will work, republish `firestore.rules` in the console.**
-> It gained a `seasons/{season}/players/{uid}` block. Rules are published by hand
-> here — see Gotchas.
+> ### Publish `database.rules.json` in the Realtime Database console
+>
+> As of the last live test, **every presence write is rejected with
+> `permission_denied`**, which means the deployed Realtime Database ruleset does
+> not match the one in this repo. The game now survives this — it says so on
+> screen and plays on — but until the rules are published, players who close a
+> tab stay in the lobby forever. This is one paste into the RTDB console.
+>
+> The Firestore rules gained a `seasons/{season}/players/{uid}` block too. Both
+> rulesets are published by hand — see Gotchas.
 
 ---
 
@@ -22,11 +29,11 @@ src/lib/        Firebase wiring (useRoom), pack loading, the question clock.
 src/screens/    One component per phase + a design gallery (Preview).
 src/questions/  Pack types and the classification rules, with tests.
 src/design/     One stylesheet, design tokens at the top.
-scripts/        Build-time question harvest.
+scripts/        Build-time question harvest, and the multi-client test harnesses.
 ```
 
 Commands: `npm run dev` (serves at `/quiz/`, port 5273), `test`, `typecheck`, `lint`,
-`build`, `deploy`, `fetch-questions [-- --resort]`.
+`build`, `deploy`, `fetch-questions [-- --resort]`, `sync-harness [n]`, `host-room`.
 
 ---
 
@@ -51,6 +58,8 @@ happened once.
 | **`start` carries a `gameId`, and the season row stores `lastGame`** | Without it, reloading the final screen banks the same game again. The check happens inside the Firestore transaction, so it survives a reload rather than just a re-render. |
 | **The ladder shows each question's level, not your score on it** | Per-question scores would mean accumulating a history no other device has, for a number the standings show two seconds later. The level is already in the room, and it makes a ramped round visibly steepen. |
 | **The round title card lives on the standings screen** | Between questions there's no clock running, so a beat of theatre costs nobody answering time. Over the question it would eat the first seconds of a twenty-second window. |
+| **An empty presence tree never reaps anybody** (`reapAbsent`) | Reading "nobody is present" as "everybody has left" is what turned a missing Realtime Database ruleset into an unplayable game: every presence write failed, the quizmaster's reaper deleted every player including itself, `resolveQuizmaster` then returned null, and the role flickered to whoever rejoined next while the room stopped responding to anyone. Presence only tidies away closed tabs; if it is unavailable the right answer is a ghost in the lobby, not an empty room. |
+| **A phase transition never writes the `players` map** (`toUpdate`) | `dispatch` folds actions over the *writer's* snapshot, and `handleStart` awaits a pack fetch between taking that snapshot and writing it — so everyone who joined during the fetch was erased. Measured with `npm run sync-harness`: five of ten players silently deleted. Membership changes only ever go through single-field `players.{uid}` writes, so no transition needs the map. `scores` is written as field paths for the same reason. |
 | **Fonts are self-hosted** (`src/design/fonts.css`) | The display faces carry the whole look; a network that blocks `fonts.googleapis.com` would drop it to Impact with no warning. Archivo is variable — Google's CSS lists it once per weight but serves the same file each time, so it's declared once instead of shipping 105 kB of duplicates. |
 
 ---
@@ -59,23 +68,32 @@ happened once.
 
 **Verified against the live Firebase:** anonymous sign-in, room creation, pack
 selection, round start, question render, answer write, reveal and scoring, and
-leaving a room. Engine covered by 96 tests including six full three-question
+leaving a room. Engine covered by 103 tests including six full three-question
 games (quizmaster disconnect, skip, reset, ties).
 
 **Verified in the browser, on fixtures only:** every screen at 1280px and 390px,
 the level picker disabling a level its pack can't fill, and no horizontal scroll
 on a phone.
 
+**Verified with real concurrent clients** — this was the long-standing gap:
+
+- `npm run sync-harness [n]` brings up *n* independent anonymous clients against
+  the live project and reports how fast each sees a phase change and whether
+  anyone was dropped. Ten players see a round start within ~85 ms, none dropped.
+  `LEGACY_WRITE=1` restores the whole-document write so the players-clobber bug
+  can be watched happening rather than taken on trust.
+- `npm run host-room` hosts a room from the terminal and drives a round, so the
+  browser can be watched as an ordinary player while somebody else runs the game.
+
 **Not verified — start here:**
 
-0. **The season table against live Firestore.** The rules block is new and
-   unpublished, `recordGame` has never run against a real project, and the
-   transaction's repeat-write guard has only been reasoned about, not watched.
-   This is the least-proven thing in the repo.
+0. **The season table against live Firestore.** `recordGame` has never run
+   against a real project, and the transaction's repeat-write guard has only been
+   reasoned about, not watched. This is the least-proven thing in the repo.
 
-1. **Multiple people at once.** Everything was driven from a single browser. Presence
-   cleanup, the stale-player reaper, and quizmaster handover have never run with
-   real concurrent clients.
+1. **Quizmaster handover with real clients.** The reaper and the join race are now
+   covered by `sync-harness`, but a quizmaster actually dropping out mid-round and
+   the role passing to somebody else has still only been tested in the engine.
 2. **Keyboard shortcuts in a live round.** A–D/1–4 to answer, Space to reveal or
    advance. Compiles and the legend renders; keys never pressed in a real game.
 3. **A ramped round in play.** `selectQuestions` is unit-tested, but nobody has

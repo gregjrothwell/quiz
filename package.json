@@ -13,6 +13,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "fetch-questions": "tsx scripts/fetch-questions.ts",
+    "sync-harness": "tsx --env-file=.env.local scripts/sync-harness.ts",
+    "host-room": "tsx --env-file=.env.local scripts/host-room.ts",
     "deploy": "npm run build && gh-pages -d dist"
   },
   "dependencies": {
