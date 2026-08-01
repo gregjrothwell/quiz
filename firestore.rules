@@ -54,5 +54,38 @@ service cloud.firestore {
         allow delete: if signedIn() && request.auth.uid == uid;
       }
     }
+
+    // Season standings. Unlike room scores, these can be locked down properly:
+    // a player writes only their own row, so the rules enforce exactly the
+    // invariant the app relies on. The values themselves are still self-
+    // reported — nothing here stops someone inflating their own total, which is
+    // the same trust model as the rest of the game.
+    match /seasons/{season}/players/{uid} {
+      function signedIn() {
+        return request.auth != null;
+      }
+
+      allow read: if signedIn();
+
+      allow create, update: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(
+             ['name', 'played', 'wins', 'points', 'best', 'lastGame', 'lastPlayed'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 40
+        && request.resource.data.played is int
+        && request.resource.data.played >= 0
+        && request.resource.data.wins is int
+        && request.resource.data.wins >= 0
+        && request.resource.data.points is int
+        && request.resource.data.points >= 0
+        && request.resource.data.best is int
+        && request.resource.data.best >= 0
+        && request.resource.data.lastGame is string
+        && request.resource.data.lastPlayed is int;
+
+      allow delete: if false;
+    }
   }
 }

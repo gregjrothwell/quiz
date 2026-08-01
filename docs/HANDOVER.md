@@ -6,7 +6,11 @@ Built to replace Polly in Teams.
 - **Live:** https://gregjrothwell.github.io/quiz/
 - **Repo:** https://github.com/gregjrothwell/quiz (public, `master`, deploys from `gh-pages`)
 - **Firebase project:** `quiz-d686e` (Firestore + Realtime Database in europe-west1 + Anonymous auth)
-- **Status:** shipped and played. 85 tests, clean types and lint, no `any` or `@ts-ignore`.
+- **Status:** shipped and played. 96 tests, clean types and lint, no `any` or `@ts-ignore`.
+
+> **Before the season table will work, republish `firestore.rules` in the console.**
+> It gained a `seasons/{season}/players/{uid}` block. Rules are published by hand
+> here — see Gotchas.
 
 ---
 
@@ -42,6 +46,12 @@ happened once.
 | **`ukScore` reads prompt + correct answer only; `isUsOnly` reads everything** | A *British wrong answer* doesn't make a question British — that padded the UK pack with things like "Who wrote Jurassic Park?". Aggressive stripping is fine for US content; loose tagging isn't for UK. |
 | **Pack categories are matched exactly, with a `mixed-bag` catch-all** | A fallback to `general-knowledge` made that pack 68% video-game questions, so picking "General Knowledge" mostly served something else. |
 | **Skip is removed from the UI** | The rules can't restrict writes to the quizmaster without storing their uid, so the button was reachable from DevTools by any member. One player shouldn't be able to void a question for the room. The engine action and its tests remain for a future permission model. |
+| **The harvest never filters by difficulty, and pages down through `[50, 20, 5, 1]`** | OpenTDB answers a request for more questions than it holds with `response_code: 1` and an *empty* array — it does not return the remainder. Asking per category *and* per difficulty split the pool into three times as many buckets, most under 50, so every bucket short of a full page was silently dropped and twelve categories came back completely empty. Fixing it took the pool from 2,815 to 3,996. Difficulty is read off each question instead. |
+| **Each client writes its own season row** | The room's scores can't be restricted to the quizmaster (see above), but a season row can: `request.auth.uid == uid`. The cost is that someone who closes the tab before the final screen isn't recorded. |
+| **`start` carries a `gameId`, and the season row stores `lastGame`** | Without it, reloading the final screen banks the same game again. The check happens inside the Firestore transaction, so it survives a reload rather than just a re-render. |
+| **The ladder shows each question's level, not your score on it** | Per-question scores would mean accumulating a history no other device has, for a number the standings show two seconds later. The level is already in the room, and it makes a ramped round visibly steepen. |
+| **The round title card lives on the standings screen** | Between questions there's no clock running, so a beat of theatre costs nobody answering time. Over the question it would eat the first seconds of a twenty-second window. |
+| **Fonts are self-hosted** (`src/design/fonts.css`) | The display faces carry the whole look; a network that blocks `fonts.googleapis.com` would drop it to Impact with no warning. Archivo is variable — Google's CSS lists it once per weight but serves the same file each time, so it's declared once instead of shipping 105 kB of duplicates. |
 
 ---
 
@@ -49,19 +59,27 @@ happened once.
 
 **Verified against the live Firebase:** anonymous sign-in, room creation, pack
 selection, round start, question render, answer write, reveal and scoring, and
-leaving a room. Engine covered by 85 tests including six full three-question
+leaving a room. Engine covered by 96 tests including six full three-question
 games (quizmaster disconnect, skip, reset, ties).
 
+**Verified in the browser, on fixtures only:** every screen at 1280px and 390px,
+the level picker disabling a level its pack can't fill, and no horizontal scroll
+on a phone.
+
 **Not verified — start here:**
+
+0. **The season table against live Firestore.** The rules block is new and
+   unpublished, `recordGame` has never run against a real project, and the
+   transaction's repeat-write guard has only been reasoned about, not watched.
+   This is the least-proven thing in the repo.
 
 1. **Multiple people at once.** Everything was driven from a single browser. Presence
    cleanup, the stale-player reaper, and quizmaster handover have never run with
    real concurrent clients.
 2. **Keyboard shortcuts in a live round.** A–D/1–4 to answer, Space to reveal or
    advance. Compiles and the legend renders; keys never pressed in a real game.
-3. **The new visual effects animating.** The browser pane's screenshots became
-   unreliable late on, so the last round of polish was verified by inspecting
-   computed styles and the deployed CSS, not by watching it.
+3. **A ramped round in play.** `selectQuestions` is unit-tested, but nobody has
+   watched a fifteen-question ladder actually climb in a live room.
 4. **Reachability from the work network.** `github.io` is confirmed fine.
    `firestore.googleapis.com` and `*.firebasedatabase.app` are the same stack
    `rgblife/estimation-room` uses successfully there, but that's inference, not a test.
@@ -72,25 +90,39 @@ games (quizmaster disconnect, skip, reset, ties).
 
 - **Any room member can write scores.** Deliberate — see the quizmaster row above.
   Fine among colleagues, not fine for strangers.
-- **~236 kB gzipped**, nearly all Firebase. Code-splitting is the fix if it matters.
-- **Leaderboards are per-game.** Anonymous auth already gives each browser a stable
-  uid, so season standings are a small addition. A short transfer code would let
-  the same identity move to a second device.
-- **`uk-leaning` is 133 questions.** The open datasets run ~4:1 US-marked to
+- **~242 kB gzipped**, nearly all Firebase, plus 67 kB of fonts. Code-splitting is
+  the fix if it matters.
+- **Season standings follow the browser, not the person.** Anonymous auth gives a
+  durable uid with no sign-up, which is the whole appeal and the whole limitation.
+  The sharp edge is **iOS Safari, which evicts site storage after about a week
+  without a visit** — a weekly quiz survives, a fortnight off doesn't. A short
+  transfer code would let one identity move to a second device; that's the obvious
+  next step and it's small now the collection exists.
+- **Season numbers are self-reported.** The rules stop you writing someone else's
+  row but not your own. Same trust model as the rest of the game.
+- **`uk-leaning` is 201 questions.** The open datasets run ~4:1 US-marked to
   UK-marked; a keyword filter can only surface what's there.
   [OpenTriviaQA](https://github.com/uberspot/OpenTriviaQA) (~45k, same CC BY-SA
   licence) is the obvious next source — it needs cp1252 transcoding, which is the
   only reason it isn't in already.
+- **Three OpenTDB categories are genuinely empty**: Musicals & Theatres,
+  Celebrities and Gadgets have no *verified* questions, only pending ones. Note
+  that `api_count.php` counts pending questions too, so its totals overstate what
+  the API will actually serve — don't size a harvest from them.
 
 ---
 
 ## Question pipeline
 
-2,815 questions from [Open Trivia DB](https://opentdb.com) (CC BY-SA 4.0),
+3,996 questions from [Open Trivia DB](https://opentdb.com) (CC BY-SA 4.0),
 **committed as JSON** — no runtime API, no key in the bundle, no rate limit.
 
-Packs: Video Games 949, Music 350, General Knowledge 295, Science 250, Geography
-249, History 244, TV & Film 248, Odds & Ends 149, Best of British 133, Sport 81.
+Packs: Video Games 999, Odds & Ends 640, Music 399, Science 399, TV & Film 397,
+General Knowledge 345, History 340, Geography 299, Best of British 201, Sport 125.
+
+Every pack now has a real hard bucket — before the page-size fix, Sport, TV & Film
+and Odds & Ends had none at all, which is why difficulty was worth making
+selectable only after that was fixed.
 
 The harvested pool is cached at `.cache/pool.json` (gitignored). **Tuning the
 classification rules costs a re-sort, not a re-fetch:**
@@ -99,7 +131,8 @@ classification rules costs a re-sort, not a re-fetch:**
 npm run fetch-questions -- --resort
 ```
 
-A full re-harvest is ~10 minutes (OpenTDB allows one request per 5s).
+A full re-harvest is ~25 minutes (OpenTDB allows one request per 5s, and the
+page-size ladder costs a few extra requests per category).
 
 ---
 
@@ -118,6 +151,10 @@ A full re-harvest is ~10 minutes (OpenTDB allows one request per 5s).
 - **Firestore rules and RTDB rules are in the repo but published by hand** in the
   console. If room writes start failing with permission errors, check they're still
   live — an unpublished ruleset was the cause of the first "nothing happens" bug.
+  **`firestore.rules` has an unpublished `seasons/` block right now.**
+- **`src/design/global.css` is the whole stylesheet and the class names are load-bearing.**
+  `Preview` (`#/preview`) renders every screen on fixtures, so it is the fastest way
+  to check a CSS change against all of them without a room.
 
 ---
 

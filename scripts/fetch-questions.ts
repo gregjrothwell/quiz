@@ -13,7 +13,15 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { sortIntoPacks } from '../src/questions/classify';
-import { PACK_META, type Difficulty, type Pack, type PackId, type Question } from '../src/questions/types';
+import {
+  DIFFICULTIES,
+  PACK_META,
+  type Difficulty,
+  type DifficultyCounts,
+  type Pack,
+  type PackSummary,
+  type Question,
+} from '../src/questions/types';
 
 const API = 'https://opentdb.com';
 const OUT_DIR = join(import.meta.dirname, '..', 'public', 'packs');
@@ -25,8 +33,22 @@ const OUT_DIR = join(import.meta.dirname, '..', 'public', 'packs');
  */
 const CACHE_DIR = join(import.meta.dirname, '..', '.cache');
 const POOL_CACHE = join(CACHE_DIR, 'pool.json');
-const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard'];
-const PAGE_SIZE = 50;
+
+/**
+ * Page sizes, tried largest first.
+ *
+ * OpenTDB answers a request for more questions than it can supply with
+ * `response_code: 1` and an *empty* array — it does not return the remainder.
+ * So a single fixed page size silently discards the tail of every category, and
+ * discards a whole bucket outright whenever it holds fewer than one page.
+ *
+ * Asking per difficulty as well as per category made that far worse: it split
+ * the pool into three times as many buckets, most of them under 50, and cost
+ * roughly a quarter of the available questions — every category with no bucket
+ * over 50 came back completely empty. Difficulty is read from each question
+ * instead, and the ladder below drains what a fixed page size leaves behind.
+ */
+const PAGE_SIZES = [50, 20, 5, 1] as const;
 
 /** OpenTDB allows one request per IP per 5 seconds. */
 const THROTTLE_MS = 5_200;
@@ -100,14 +122,10 @@ async function requestToken(): Promise<string> {
  * Session tokens make OpenTDB stop repeating questions it has already served,
  * which is how we page through a category rather than drawing the same 50 twice.
  */
-async function fetchPage(
-  categoryId: number,
-  difficulty: Difficulty,
-  token: string,
-): Promise<ApiResponse> {
+async function fetchPage(categoryId: number, amount: number, token: string): Promise<ApiResponse> {
   const url =
-    `${API}/api.php?amount=${PAGE_SIZE}&category=${categoryId}` +
-    `&difficulty=${difficulty}&type=multiple&encode=base64&token=${token}`;
+    `${API}/api.php?amount=${amount}&category=${categoryId}` +
+    `&type=multiple&encode=base64&token=${token}`;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
     await sleep(THROTTLE_MS);
@@ -120,7 +138,7 @@ async function fetchPage(
     await sleep(backoff);
   }
 
-  throw new Error(`Rate limited ${MAX_RETRIES} times on category ${categoryId}/${difficulty}`);
+  throw new Error(`Rate limited ${MAX_RETRIES} times on category ${categoryId}`);
 }
 
 function toQuestion(raw: ApiQuestion): Question | null {
@@ -138,62 +156,88 @@ function toQuestion(raw: ApiQuestion): Question | null {
   };
 }
 
+/**
+ * Drains one category. Pages at the largest size until the API stops supplying
+ * one, then steps down the ladder — a "not enough questions" answer means the
+ * remainder is smaller than the page, not that the category is finished.
+ */
+async function harvestCategory(
+  categoryId: number,
+  token: string,
+  collect: (question: Question) => void,
+): Promise<number> {
+  let harvested = 0;
+
+  for (const amount of PAGE_SIZES) {
+    for (;;) {
+      const page = await fetchPage(categoryId, amount, token);
+
+      // The token has served every question this category has.
+      if (page.response_code === RESPONSE.tokenEmpty) return harvested;
+
+      // Fewer than `amount` left. A smaller page may still find them.
+      if (page.response_code === RESPONSE.noResults) break;
+
+      if (page.response_code !== RESPONSE.success) {
+        console.warn(`  ! category ${categoryId} returned code ${page.response_code}, skipping`);
+        return harvested;
+      }
+
+      for (const raw of page.results) {
+        const question = toQuestion(raw);
+        if (question) {
+          collect(question);
+          harvested += 1;
+        }
+      }
+    }
+  }
+
+  return harvested;
+}
+
 async function harvest(): Promise<Question[]> {
   const categories = await fetchCategories();
   const token = await requestToken();
   const byId = new Map<string, Question>();
 
-  console.log(`Harvesting ${categories.length} categories × ${DIFFICULTIES.length} difficulties.`);
-  console.log(`Throttled to one request every ${THROTTLE_MS / 1000}s — expect roughly 10 minutes.\n`);
+  console.log(`Harvesting ${categories.length} categories.`);
+  console.log(`Throttled to one request every ${THROTTLE_MS / 1000}s — expect 20-30 minutes.\n`);
 
   for (const category of categories) {
-    for (const difficulty of DIFFICULTIES) {
-      let pageCount = 0;
-
-      // Page until the token reports it has served everything it has.
-      for (;;) {
-        const page = await fetchPage(category.id, difficulty, token);
-
-        if (page.response_code === RESPONSE.tokenEmpty || page.response_code === RESPONSE.noResults) {
-          break;
-        }
-        if (page.response_code !== RESPONSE.success) {
-          console.warn(
-            `  ! ${category.name}/${difficulty} returned code ${page.response_code}, skipping`,
-          );
-          break;
-        }
-
-        for (const raw of page.results) {
-          const question = toQuestion(raw);
-          // Keyed by id so a question served twice collapses to one entry.
-          if (question) byId.set(question.id, question);
-        }
-
-        pageCount += 1;
-        if (page.results.length < PAGE_SIZE) break;
-      }
-
-      if (pageCount > 0) {
-        process.stdout.write(`  ${category.name} / ${difficulty}: ${pageCount} page(s)\n`);
-      }
-    }
+    // Keyed by id so a question served twice collapses to one entry.
+    const found = await harvestCategory(category.id, token, (question) => {
+      byId.set(question.id, question);
+    });
+    process.stdout.write(`  ${category.name.padEnd(38)} ${String(found).padStart(5)}\n`);
   }
 
   return [...byId.values()];
+}
+
+function countByDifficulty(questions: readonly Question[]): DifficultyCounts {
+  const counts: DifficultyCounts = { easy: 0, medium: 0, hard: 0 };
+  for (const question of questions) counts[question.difficulty] += 1;
+  return counts;
 }
 
 async function writePacks(pool: Question[]): Promise<void> {
   const { packs, dropped } = sortIntoPacks(pool);
   await mkdir(OUT_DIR, { recursive: true });
 
-  const written: { id: PackId; title: string; blurb: string; count: number }[] = [];
+  const written: PackSummary[] = [];
 
   for (const [packId, questions] of [...packs.entries()].sort()) {
     const meta = PACK_META[packId];
     const pack: Pack = { id: packId, title: meta.title, blurb: meta.blurb, questions };
     await writeFile(join(OUT_DIR, `${packId}.json`), `${JSON.stringify(pack)}\n`, 'utf8');
-    written.push({ id: packId, title: meta.title, blurb: meta.blurb, count: questions.length });
+    written.push({
+      id: packId,
+      title: meta.title,
+      blurb: meta.blurb,
+      count: questions.length,
+      counts: countByDifficulty(questions),
+    });
   }
 
   await writeFile(join(OUT_DIR, 'index.json'), `${JSON.stringify(written, null, 2)}\n`, 'utf8');
@@ -202,7 +246,8 @@ async function writePacks(pool: Question[]): Promise<void> {
   console.log(`\nHarvested ${pool.length} unique questions.`);
   console.log(`Dropped ${dropped.malformed} malformed, ${dropped.usOnly} US-only.\n`);
   for (const pack of written) {
-    console.log(`  ${pack.id.padEnd(20)} ${String(pack.count).padStart(5)}`);
+    const spread = DIFFICULTIES.map((level) => `${level[0]}${pack.counts[level]}`).join(' ');
+    console.log(`  ${pack.id.padEnd(20)} ${String(pack.count).padStart(5)}   ${spread}`);
   }
 }
 

@@ -12,7 +12,7 @@ export type Action =
   | { type: 'join'; uid: string; name: string; at: number }
   | { type: 'leave'; uid: string }
   | { type: 'selectPack'; packId: PackId; packTitle: string; questions: QuizQuestion[] }
-  | { type: 'start'; at: number }
+  | { type: 'start'; at: number; gameId: string }
   | { type: 'answer'; uid: string; optionIndex: number; elapsedMs: number }
   | { type: 'reveal' }
   | { type: 'skip' }
@@ -34,7 +34,7 @@ export function reduce(state: RoomState, action: Action): RoomState {
     case 'selectPack':
       return selectPack(state, action.packId, action.packTitle, action.questions);
     case 'start':
-      return start(state, action.at);
+      return start(state, action.at, action.gameId);
     case 'answer':
       return answer(state, action.uid, action.optionIndex, action.elapsedMs);
     case 'reveal':
@@ -84,7 +84,7 @@ function selectPack(
   return { ...state, packId, packTitle, questions };
 }
 
-function start(state: RoomState, at: number): RoomState {
+function start(state: RoomState, at: number, gameId: string): RoomState {
   if (state.phase !== 'lobby') return state;
   if (state.questions.length === 0) return state;
 
@@ -93,6 +93,7 @@ function start(state: RoomState, at: number): RoomState {
     phase: 'question',
     index: 0,
     questionOpenedAt: at,
+    gameId,
     answers: {},
     lastDeltas: {},
     // Everyone starts on zero, including anyone who joined after a previous game.
@@ -199,5 +200,7 @@ function reset(state: RoomState): RoomState {
     lastDeltas: {},
     scores: Object.fromEntries(Object.keys(state.players).map((uid) => [uid, 0])),
     skipped: [],
+    // Cleared so the next round mints its own id and counts separately.
+    gameId: null,
   };
 }

@@ -6,9 +6,10 @@ interface LandingProps {
   error: string | null;
   onCreate: (name: string) => void;
   onJoin: (code: string, name: string) => void;
+  onSeason: () => void;
 }
 
-export function Landing({ busy, error, onCreate, onJoin }: LandingProps) {
+export function Landing({ busy, error, onCreate, onJoin, onSeason }: LandingProps) {
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
 
@@ -19,12 +20,14 @@ export function Landing({ busy, error, onCreate, onJoin }: LandingProps) {
   return (
     <>
       <header>
-        <p className="eyebrow">Office quiz</p>
-        <h1 className="wordmark">
-          The
-          <br />
-          Round
-        </h1>
+        <p className="eyebrow">Tonight, on your device</p>
+        <div className="chrome-wrap">
+          <h1 className="wordmark chrome">
+            The
+            <br />
+            Round
+          </h1>
+        </div>
         <hr className="wordmark__rule" />
       </header>
 
@@ -95,6 +98,12 @@ export function Landing({ busy, error, onCreate, onJoin }: LandingProps) {
             Join the round
           </button>
         </section>
+      </div>
+
+      <div className="btn-row">
+        <button type="button" className="btn btn--ghost" onClick={onSeason}>
+          Season table
+        </button>
       </div>
 
       {error ? <p className="notice">{error}</p> : null}

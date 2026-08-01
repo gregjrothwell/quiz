@@ -53,14 +53,14 @@ function apply(state: RoomState, ...actions: Action[]): RoomState {
 
 /** A three-player room with all three questions loaded and the first one open. */
 function startedGame(): RoomState {
-  const questions = buildQuizQuestions(POOL, 3, seededRng(11));
+  const questions = buildQuizQuestions(POOL, 3, 'mixed', seededRng(11));
   return apply(
     createRoom('HKQ7'),
     { type: 'join', uid: 'greg', name: 'Greg', at: 100 },
     { type: 'join', uid: 'sam', name: 'Sam', at: 200 },
     { type: 'join', uid: 'priya', name: 'Priya', at: 300 },
     { type: 'selectPack', packId: 'general-knowledge', packTitle: 'General Knowledge', questions },
-    { type: 'start', at: 1_000 },
+    { type: 'start', at: 1_000, gameId: 'game-1' },
   );
 }
 

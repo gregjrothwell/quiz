@@ -3,60 +3,110 @@
     "id": "general-knowledge",
     "title": "General Knowledge",
     "blurb": "Proper general knowledge. The safe opener.",
-    "count": 295
+    "count": 345,
+    "counts": {
+      "easy": 161,
+      "medium": 124,
+      "hard": 60
+    }
   },
   {
     "id": "geography",
     "title": "Geography",
     "blurb": "Places, borders and capitals.",
-    "count": 249
+    "count": 299,
+    "counts": {
+      "easy": 85,
+      "medium": 141,
+      "hard": 73
+    }
   },
   {
     "id": "history",
     "title": "History",
     "blurb": "Everything that already happened.",
-    "count": 244
+    "count": 340,
+    "counts": {
+      "easy": 75,
+      "medium": 173,
+      "hard": 92
+    }
   },
   {
     "id": "mixed-bag",
     "title": "Odds & Ends",
     "blurb": "Books, anime and everything unfiled.",
-    "count": 149
+    "count": 640,
+    "counts": {
+      "easy": 184,
+      "medium": 288,
+      "hard": 168
+    }
   },
   {
     "id": "music",
     "title": "Music",
     "blurb": "Chart history, bands and one-hit wonders.",
-    "count": 350
+    "count": 399,
+    "counts": {
+      "easy": 106,
+      "medium": 219,
+      "hard": 74
+    }
   },
   {
     "id": "science",
     "title": "Science",
     "blurb": "Nature, numbers and machines.",
-    "count": 250
+    "count": 399,
+    "counts": {
+      "easy": 119,
+      "medium": 171,
+      "hard": 109
+    }
   },
   {
     "id": "sport",
     "title": "Sport",
     "blurb": "Pitches, tracks and podiums.",
-    "count": 81
+    "count": 125,
+    "counts": {
+      "easy": 39,
+      "medium": 62,
+      "hard": 24
+    }
   },
   {
     "id": "tv-and-film",
     "title": "TV & Film",
     "blurb": "The box and the big screen.",
-    "count": 248
+    "count": 397,
+    "counts": {
+      "easy": 140,
+      "medium": 189,
+      "hard": 68
+    }
   },
   {
     "id": "uk-leaning",
     "title": "Best of British",
     "blurb": "Questions that land better on this side of the Atlantic.",
-    "count": 133
+    "count": 201,
+    "counts": {
+      "easy": 54,
+      "medium": 103,
+      "hard": 44
+    }
   },
   {
     "id": "video-games",
     "title": "Video Games",
     "blurb": "Consoles, classics and boss fights.",
-    "count": 949
+    "count": 999,
+    "counts": {
+      "easy": 308,
+      "medium": 482,
+      "hard": 209
+    }
   }
 ]

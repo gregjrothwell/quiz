@@ -1,6 +1,12 @@
 import { useEffect } from 'react';
 import { ArcTimer } from '../components/ArcTimer';
-import { PodiumTile, type TileState } from '../components/PodiumTile';
+import { Ladder } from '../components/Ladder';
+import {
+  PodiumTile,
+  TILE_LETTERS,
+  tileClassName,
+  type TileState,
+} from '../components/PodiumTile';
 import { QUESTION_DURATION_MS, currentQuestion, type RoomState } from '../engine/state';
 import type { QuestionClock } from '../lib/useQuestionClock';
 
@@ -80,21 +86,32 @@ export function QuestionScreen({
     return myAnswer.optionIndex === index ? 'picked' : 'dim';
   };
 
+  const tiles = question.options.map((option, index) => (
+    <PodiumTile
+      key={`${question.id}-${index}`}
+      index={index}
+      text={option}
+      state={stateFor(index)}
+      disabled={revealed || Boolean(myAnswer)}
+      onPick={onAnswer}
+      order={index}
+    />
+  ));
+
   return (
     <>
-      {/* Oversized round numeral behind the stage, as a title card would carry. */}
-      <span className="ghost-numeral" aria-hidden="true">
-        {room.index + 1}
-      </span>
-
       <header className="qhead">
         <div className="qhead__meta">
-          <p className="display" style={{ fontSize: 'clamp(1.4rem, 5vw, 2.2rem)' }}>
+          <p className="display" style={{ fontSize: 'clamp(1.3rem, 5vw, 1.9rem)' }}>
             Question {room.index + 1}
             <span className="muted"> / {room.questions.length}</span>
           </p>
+        </div>
+        <div className="qhead__tags">
           <span className="chip">{question.category}</span>
-          <span className="chip">{question.difficulty}</span>
+          <span className={question.difficulty === 'hard' ? 'chip chip--hard' : 'chip'}>
+            {question.difficulty}
+          </span>
         </div>
         {revealed ? null : (
           <ArcTimer
@@ -105,23 +122,36 @@ export function QuestionScreen({
         )}
       </header>
 
-      {/* Keyed on the question so the CSS entrance replays for each new one. */}
-      <h1 key={question.id} className="prompt">
-        {question.prompt}
-      </h1>
+      <div className="qgrid">
+        <div className="stack">
+          {/* Keyed on the question so the CSS entrance replays for each new one. */}
+          <h1 key={question.id} className="prompt">
+            {question.prompt}
+          </h1>
 
-      <div className="podium">
-        {question.options.map((option, index) => (
-          <PodiumTile
-            key={`${question.id}-${index}`}
-            index={index}
-            text={option}
-            state={stateFor(index)}
-            disabled={revealed || Boolean(myAnswer)}
-            onPick={onAnswer}
-            order={index}
-          />
-        ))}
+          <div className="podium">{tiles}</div>
+
+          {/*
+            The floor reflection is a second copy of the podium rather than a
+            CSS trick, because there is no way to mirror rendered content in CSS
+            alone. It is inert: hidden from assistive technology and from the
+            keyboard, so it cannot be answered by accident.
+          */}
+          <div className="floor" aria-hidden="true">
+            <div className="reflection">
+              <div className="podium">
+                {question.options.map((option, index) => (
+                  <span className={tileClassName(stateFor(index))} key={`${question.id}-mirror-${index}`}>
+                    <span className="tile__letter">{TILE_LETTERS[index] ?? '?'}</span>
+                    <span className="tile__text">{option}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <Ladder questions={room.questions} current={room.index} />
       </div>
 
       <p className="legend" aria-hidden="true">
@@ -129,12 +159,10 @@ export function QuestionScreen({
           <kbd>A</kbd>–<kbd>D</kbd> answer
         </span>
         {isQuizmaster ? (
-          <>
-            <span>
-              <kbd>Space</kbd>
-              {revealed ? 'standings' : 'reveal'}
-            </span>
-          </>
+          <span>
+            <kbd>Space</kbd>
+            {revealed ? 'standings' : 'reveal'}
+          </span>
         ) : null}
       </p>
 

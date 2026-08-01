@@ -1,0 +1,44 @@
+/* ── Typefaces ───────────────────────────────────────────────────────────────
+   Self-hosted rather than pulled from fonts.googleapis.com. The display faces
+   carry the whole studio look, so a network that blocks Google Fonts — a real
+   possibility on the work network this is played on — would otherwise drop the
+   entire design to Impact and Helvetica with no warning.
+
+   Latin subset only. Archivo is a variable font: Google's CSS lists it once per
+   weight but serves the same file each time, so it is declared once here across
+   the whole range rather than shipped four times for 105 kB of duplicates.
+
+   Anton, Chakra Petch and Archivo are all SIL Open Font License 1.1.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+@font-face {
+  font-family: 'Anton';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/anton-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Chakra Petch';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('./fonts/chakra-petch-600.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Chakra Petch';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./fonts/chakra-petch-700.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('./fonts/archivo-variable.woff2') format('woff2');
+}

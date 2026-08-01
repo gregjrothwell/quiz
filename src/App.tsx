@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Stage } from './components/Stage';
-import { buildQuizQuestions } from './engine/state';
+import { standings } from './engine/scoring';
+import { buildQuizQuestions, type Level } from './engine/state';
 import { isFirebaseConfigured } from './firebase';
+import { recordGame } from './lib/season';
 import { loadPackQuestions, usePackIndex } from './lib/usePacks';
 import { useQuestionClock } from './lib/useQuestionClock';
 import { useRoom } from './lib/useRoom';
@@ -12,6 +14,7 @@ import { Lobby } from './screens/Lobby';
 import { Preview } from './screens/Preview';
 import { QuestionScreen } from './screens/QuestionScreen';
 import { Scoreboard } from './screens/Scoreboard';
+import { Season } from './screens/Season';
 
 function SetupNotice() {
   return (
@@ -72,6 +75,12 @@ function Game() {
 
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [showSeason, setShowSeason] = useState(false);
+
+  // Which game this device has already banked, so a re-render on the final
+  // screen cannot bank it twice. The season document carries the same guard for
+  // anything this ref cannot see, such as a reload.
+  const bankedRef = useRef<string | null>(null);
 
   const phase = room?.phase ?? 'lobby';
   const clock = useQuestionClock(phase === 'question', room?.index ?? 0);
@@ -103,7 +112,7 @@ function Game() {
   );
 
   const handleStart = useCallback(
-    (packId: PackId, count: number) => {
+    (packId: PackId, count: number, level: Level) => {
       setBusy(true);
       setActionError(null);
       loadPackQuestions(packId)
@@ -114,9 +123,9 @@ function Game() {
               type: 'selectPack',
               packId,
               packTitle: pack?.title ?? packId,
-              questions: buildQuizQuestions(pool, count),
+              questions: buildQuizQuestions(pool, count, level),
             },
-            { type: 'start', at: Date.now() },
+            { type: 'start', at: Date.now(), gameId: crypto.randomUUID() },
           ]);
         })
         .catch(report)
@@ -139,6 +148,34 @@ function Game() {
     dispatch({ type: 'reveal' }).catch(report);
   }, [isQuizmaster, phase, clock.expired, dispatch, report]);
 
+  // Each device banks its own season row. Doing it per-client rather than having
+  // the quizmaster write everybody's is what lets the rules restrict the write
+  // to its owner — the room's own scores cannot be protected that way.
+  useEffect(() => {
+    if (!room || !uid || room.phase !== 'finished') return;
+
+    const { gameId } = room;
+    if (!gameId || bankedRef.current === gameId) return;
+
+    const player = room.players[uid];
+    if (!player) return;
+
+    bankedRef.current = gameId;
+
+    const rows = standings(room.scores).filter((entry) => room.players[entry.uid]);
+    const leadScore = rows[0]?.score ?? 0;
+    const mine = rows.find((entry) => entry.uid === uid);
+
+    recordGame({
+      uid,
+      name: player.name,
+      gameId,
+      score: room.scores[uid] ?? 0,
+      // A round where nobody scored is not a win for everybody.
+      won: leadScore > 0 && mine?.position === 1,
+    }).catch(report);
+  }, [room, uid, report]);
+
   if (connection === 'error') {
     return (
       <Stage>
@@ -155,6 +192,14 @@ function Game() {
 
   const problem = actionError ?? packsError;
 
+  if (showSeason) {
+    return (
+      <Stage>
+        <Season youUid={uid} onBack={() => setShowSeason(false)} />
+      </Stage>
+    );
+  }
+
   if (!room) {
     return (
       <Stage>
@@ -163,6 +208,7 @@ function Game() {
           error={problem}
           onCreate={handleCreate}
           onJoin={handleJoin}
+          onSeason={() => setShowSeason(true)}
         />
       </Stage>
     );
@@ -210,6 +256,7 @@ function Game() {
             isQuizmaster={isQuizmaster}
             onPlayAgain={() => void dispatch({ type: 'reset' }).catch(report)}
             onLeave={() => void leave().catch(report)}
+            onSeason={() => setShowSeason(true)}
           />
         ))}
     </Stage>

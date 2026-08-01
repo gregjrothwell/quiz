@@ -38,7 +38,7 @@ function playingRoom(): RoomState {
     { type: 'join', uid: 'host', name: 'Greg', at: 100 },
     { type: 'join', uid: 'guest', name: 'Sam', at: 200 },
     { type: 'selectPack', packId: 'geography', packTitle: 'Geography', questions: QUESTIONS },
-    { type: 'start', at: 1_000 },
+    { type: 'start', at: 1_000, gameId: 'game-1' },
   );
 }
 
@@ -153,7 +153,7 @@ describe('start', () => {
     const room = reduce(createRoom('ABCD'), { type: 'join', uid: 'host', name: 'Greg', at: 100 });
 
     // #when a start is attempted
-    const result = reduce(room, { type: 'start', at: 1_000 });
+    const result = reduce(room, { type: 'start', at: 1_000, gameId: 'game-1' });
 
     // #then the room stays in the lobby
     expect(result.phase).toBe('lobby');
@@ -169,6 +169,27 @@ describe('start', () => {
       index: 0,
       openedAt: 1_000,
     });
+  });
+
+  test('stamps the round with the game id it was started with', () => {
+    // #given a started round
+    const room = playingRoom();
+
+    // #then the id the season table banks against is recorded
+    expect(room.gameId).toBe('game-1');
+  });
+
+  test('a second round carries its own game id', () => {
+    // #given a room that has played a round and been reset
+    const replayed = apply(
+      playingRoom(),
+      { type: 'reset' },
+      { type: 'selectPack', packId: 'geography', packTitle: 'Geography', questions: QUESTIONS },
+      { type: 'start', at: 5_000, gameId: 'game-2' },
+    );
+
+    // #then the new round is distinguishable from the first, so both can count
+    expect(replayed.gameId).toBe('game-2');
   });
 });
 

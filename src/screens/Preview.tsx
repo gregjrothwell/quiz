@@ -51,15 +51,31 @@ const PACKS: PackSummary[] = [
     title: 'Best of British',
     blurb: 'Questions that land better here.',
     count: 133,
+    // Deliberately thin at the top: this is the fixture that shows the level
+    // picker disabling a level the pack cannot fill.
+    counts: { easy: 31, medium: 86, hard: 16 },
   },
   {
     id: 'general-knowledge',
     title: 'General Knowledge',
     blurb: 'A bit of everything.',
     count: 1393,
+    counts: { easy: 147, medium: 99, hard: 49 },
   },
-  { id: 'music', title: 'Music', blurb: 'Chart history and one-hit wonders.', count: 350 },
-  { id: 'sport', title: 'Sport', blurb: 'Pitches, tracks and podiums.', count: 81 },
+  {
+    id: 'music',
+    title: 'Music',
+    blurb: 'Chart history and one-hit wonders.',
+    count: 350,
+    counts: { easy: 100, medium: 200, hard: 50 },
+  },
+  {
+    id: 'sport',
+    title: 'Sport',
+    blurb: 'Pitches, tracks and podiums.',
+    count: 81,
+    counts: { easy: 40, medium: 41, hard: 0 },
+  },
 ];
 
 function mockRoom(overrides: Partial<RoomState> = {}): RoomState {
@@ -75,6 +91,7 @@ function mockRoom(overrides: Partial<RoomState> = {}): RoomState {
 }
 
 const CLOCK = { elapsedMs: 6_000, remainingMs: 14_000, secondsLeft: 14, expired: false };
+
 const noop = (): void => undefined;
 
 function selectedIndex(): number | null {
@@ -89,7 +106,7 @@ export function Preview() {
   const screens: { title: string; node: ReactNode }[] = [
     {
       title: 'Landing',
-      node: <Landing busy={false} error={null} onCreate={noop} onJoin={noop} />,
+      node: <Landing busy={false} error={null} onCreate={noop} onJoin={noop} onSeason={noop} />,
     },
     {
       title: 'Lobby · quizmaster',
@@ -181,6 +198,7 @@ export function Preview() {
           isQuizmaster
           onPlayAgain={noop}
           onLeave={noop}
+          onSeason={noop}
         />
       ),
     },

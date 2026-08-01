@@ -112,20 +112,26 @@ the bundle.
 
 Current packs:
 
-| Pack | Questions |
-|---|---|
-| General Knowledge | 1,393 |
-| Music | 350 |
-| Science | 250 |
-| Geography | 249 |
-| TV & Film | 248 |
-| History | 244 |
-| Best of British | 133 |
-| Sport | 81 |
+| Pack | Questions | Easy / Medium / Hard |
+|---|---|---|
+| Video Games | 999 | 308 / 482 / 209 |
+| Odds & Ends | 640 | 184 / 288 / 168 |
+| Music | 399 | 106 / 219 / 74 |
+| Science | 399 | 119 / 171 / 109 |
+| TV & Film | 397 | 140 / 189 / 68 |
+| General Knowledge | 345 | 161 / 124 / 60 |
+| History | 340 | 75 / 173 / 92 |
+| Geography | 299 | 85 / 141 / 73 |
+| Best of British | 201 | 54 / 103 / 44 |
+| Sport | 125 | 39 / 62 / 24 |
+
+The quizmaster picks a level as well as a pack, so those columns matter: a level
+a pack cannot fill is disabled in the lobby rather than quietly serving a shorter
+round. "The Ladder" builds from easy to hard across the round and uses all three.
 
 **On the British pack:** the open datasets are roughly 4:1 US-marked to
 UK-marked, so a keyword filter can only surface what is actually there — it can't
-manufacture British questions. 133 is enough for six or seven rounds without
+manufacture British questions. 201 is enough for ten rounds without
 repeats. If it wears thin,
 [OpenTriviaQA](https://github.com/uberspot/OpenTriviaQA) is ~45k questions under
 the same licence and would slot into the same pipeline; it needs cp1252
@@ -176,8 +182,13 @@ us during development; CSS `animation-fill-mode: both` cannot fail the same way.
   can't restrict phase and score writes to the quizmaster without storing the
   quizmaster's id — which would reintroduce the disconnect race above. Fine among
   colleagues; not fine for strangers.
-- **Bundle is ~236 kB gzipped**, nearly all Firebase. Fine on an office network;
-  code-splitting would be the fix if it ever matters.
-- **Leaderboards are per-game.** Anonymous auth already gives each browser a
-  stable id, so season standings are a small addition when wanted — see the plan
-  for the accountless approach.
+- **Bundle is ~242 kB gzipped**, nearly all Firebase, plus 67 kB of self-hosted
+  fonts. Fine on an office network; code-splitting would be the fix if it ever
+  matters.
+- **Season standings follow the browser, not the person.** Anonymous auth gives
+  every browser a durable id with no sign-up, which is the appeal and the
+  limitation: cleared site data, a private window or a second device all start a
+  fresh record. iOS Safari evicts site storage after roughly a week without a
+  visit, so a phone player who misses a fortnight comes back as a stranger.
+- **Season numbers are self-reported.** The rules stop you writing someone
+  else's row, but not your own.

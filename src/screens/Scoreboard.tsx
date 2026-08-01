@@ -8,19 +8,52 @@ interface ScoreboardProps {
   onNext: () => void;
 }
 
+const ORDINALS = [
+  'One',
+  'Two',
+  'Three',
+  'Four',
+  'Five',
+  'Six',
+  'Seven',
+  'Eight',
+  'Nine',
+  'Ten',
+] as const;
+
 export function Scoreboard({ room, youUid, isQuizmaster, onNext }: ScoreboardProps) {
   const isLast = room.index + 1 >= room.questions.length;
   const skippedLast = room.skipped.includes(room.questions[room.index]?.id ?? '');
+  const nextNumber = room.index + 2;
+  const nextOrdinal = ORDINALS[nextNumber - 1] ?? String(nextNumber);
 
   return (
     <>
+      {/*
+        The title card lives here rather than over the question. Between rounds
+        there is no clock running, so a beat of theatre costs nobody any
+        answering time — laid over the question it would eat the first seconds
+        of a twenty-second window.
+      */}
+      {isLast ? null : (
+        <div className="card">
+          <span className="card__ghost" aria-hidden="true">
+            {nextNumber}
+          </span>
+          <div className="chrome-wrap">
+            <h1 className="display chrome card__round">Round {nextOrdinal}</h1>
+          </div>
+          <p className="card__topic">{room.packTitle ?? 'Next up'}</p>
+        </div>
+      )}
+
       <header>
         <p className="eyebrow">
           After {room.index + 1} of {room.questions.length}
         </p>
-        <h1 className="display" style={{ fontSize: 'clamp(2.2rem, 9vw, 4rem)' }}>
+        <h2 className="display" style={{ fontSize: 'clamp(1.8rem, 7vw, 3rem)' }}>
           Standings
-        </h1>
+        </h2>
       </header>
 
       {skippedLast ? <p className="notice">That question was thrown out — no points awarded.</p> : null}

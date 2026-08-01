@@ -8,6 +8,7 @@ interface FinalProps {
   isQuizmaster: boolean;
   onPlayAgain: () => void;
   onLeave: () => void;
+  onSeason: () => void;
 }
 
 /**
@@ -22,7 +23,14 @@ const RISER_SLOTS = [
   { row: 2, height: 'third' },
 ] as const;
 
-export function Final({ room, youUid, isQuizmaster, onPlayAgain, onLeave }: FinalProps) {
+export function Final({
+  room,
+  youUid,
+  isQuizmaster,
+  onPlayAgain,
+  onLeave,
+  onSeason,
+}: FinalProps) {
   const rows = standings(room.scores).filter((entry) => room.players[entry.uid]);
   const leaders = rows.filter((entry) => entry.position === 1);
   const winnerName =
@@ -74,6 +82,9 @@ export function Final({ room, youUid, isQuizmaster, onPlayAgain, onLeave }: Fina
         ) : (
           <p className="muted">Waiting to see if the quizmaster starts another…</p>
         )}
+        <button type="button" className="btn btn--ghost" onClick={onSeason}>
+          Season table
+        </button>
         <button type="button" className="btn btn--ghost" onClick={onLeave}>
           Leave
         </button>

@@ -1,39 +1,44 @@
-/* ── Broadcast studio ────────────────────────────────────────────────────────
-   A darkened stage with a single overhead spotlight. Brass for anything the
-   audience should look at, and a condensed display face for anything shouted.
+@import './fonts.css';
+
+/* ── The studio ──────────────────────────────────────────────────────────────
+   A modern television quiz set, played on a phone. A back wall of light
+   columns, an overhead LED halo, beams from the rig, and a gloss floor that
+   reflects whatever is standing on it. Cyan and amber are the house lighting;
+   green and red are the verdict.
+
    Deliberately not: purple gradients, glass cards, or Inter.
    ──────────────────────────────────────────────────────────────────────────── */
 
 :root {
-  /* Stage */
-  --void: #04060d;
-  --deep: #0a0f22;
-  --lit: #16204a;
-  --riser: #101731;
-  --edge: #26304f;
+  /* Set */
+  --night: #010610;
+  --studio: #04101f;
+  --panel: #071a2e;
+  --panel-hi: #0b2743;
+  --edge: #12405f;
 
-  /* Brass — the house accent */
-  --brass: #e9b949;
-  --brass-bright: #ffd97a;
-  --brass-dim: #8a6f2a;
+  /* House lighting */
+  --cyan: #29d6ff;
+  --cyan-dim: #0e7ea3;
+  --amber: #ffb226;
+  --amber-bright: #ffd479;
 
   /* Verdicts */
-  --correct: #35d29a;
-  --correct-dim: #165f47;
-  --wrong: #e0484d;
-  --wrong-dim: #6b2124;
+  --correct: #1fdd8a;
+  --wrong: #ff2e4d;
 
   /* Ink */
-  --ink: #f4f1e6;
-  --ink-soft: #b9bed0;
-  --ink-dim: #6f778f;
+  --ink: #eef6ff;
+  --ink-soft: #9fb8cf;
+  --ink-dim: #5d7794;
 
-  --display: 'Bebas Neue', 'Archivo Expanded', Impact, sans-serif;
+  --shout: 'Anton', Impact, sans-serif;
+  --tech: 'Chakra Petch', 'Rajdhani', ui-monospace, monospace;
   --body: 'Archivo', 'Helvetica Neue', sans-serif;
 
   --gutter: clamp(1rem, 4vw, 3rem);
-  --radius: 4px;
-  --shadow-lift: 0 18px 40px -18px rgb(0 0 0 / 0.9);
+  --radius: 6px;
+  --shadow-lift: 0 22px 44px -22px rgb(0 0 0 / 0.95);
 }
 
 *,
@@ -50,7 +55,7 @@ body,
 }
 
 body {
-  background: var(--void);
+  background: var(--night);
   color: var(--ink);
   font-family: var(--body);
   font-size: 16px;
@@ -69,6 +74,15 @@ input {
   font: inherit;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 /* ── Stage ──────────────────────────────────────────────────────────────── */
 
 .stage {
@@ -78,36 +92,94 @@ input {
   flex-direction: column;
   overflow: hidden;
   isolation: isolate;
+  background: radial-gradient(120% 80% at 50% -10%, #0d3552 0%, #061a2d 42%, var(--night) 78%);
 }
 
-/* The spotlight: a soft pool of light behind the content. */
+/* Back wall: a row of vertical light columns, fading out towards the floor. */
 .stage::before {
   content: '';
   position: absolute;
-  inset: -30% -10% auto -10%;
-  height: 130%;
-  background:
-    radial-gradient(58% 48% at 50% 8%, var(--lit) 0%, transparent 68%),
-    radial-gradient(90% 70% at 50% 0%, var(--deep) 0%, var(--void) 72%);
-  z-index: -2;
+  inset: 0 0 40% 0;
+  z-index: -3;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 38px,
+    rgb(41 214 255 / 0.1) 38px 42px,
+    transparent 42px 78px,
+    rgb(255 178 38 / 0.07) 78px 82px
+  );
+  -webkit-mask: linear-gradient(180deg, #000 0%, transparent 92%);
+  mask: linear-gradient(180deg, #000 0%, transparent 92%);
 }
 
-/* A faint vertical sheen, like a studio floor catching the light. */
+/* The overhead LED halo, most of it above the top of the screen. */
 .stage::after {
   content: '';
   position: absolute;
+  z-index: -2;
+  pointer-events: none;
+  left: 50%;
+  top: -235px;
+  width: 130%;
+  height: 330px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  border: 3px solid rgb(41 214 255 / 0.4);
+  box-shadow:
+    0 0 70px 12px rgb(41 214 255 / 0.18),
+    inset 0 0 70px 8px rgb(41 214 255 / 0.12);
+  background: radial-gradient(60% 60% at 50% 100%, rgb(41 214 255 / 0.13), transparent 70%);
+}
+
+/*
+ * Beams from the lighting rig. `screen` blending is what makes them read as
+ * light falling through haze rather than four grey wedges laid on top.
+ */
+.beams {
+  position: absolute;
   inset: 0;
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    transparent 55%,
-    rgb(4 6 13 / 0.75) 100%
-  );
   z-index: -1;
   pointer-events: none;
+  overflow: hidden;
+  mix-blend-mode: screen;
+  opacity: 0.7;
+}
+
+.beams i {
+  position: absolute;
+  top: -14%;
+  width: 16%;
+  height: 95%;
+  filter: blur(18px);
+  background: linear-gradient(180deg, rgb(41 214 255 / 0.36), transparent 72%);
+  clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%);
+}
+
+.beams i:nth-child(1) {
+  left: 4%;
+  transform: rotate(9deg);
+}
+
+.beams i:nth-child(2) {
+  left: 26%;
+  transform: rotate(3deg);
+  background: linear-gradient(180deg, rgb(255 178 38 / 0.3), transparent 72%);
+}
+
+.beams i:nth-child(3) {
+  left: 56%;
+  transform: rotate(-4deg);
+}
+
+.beams i:nth-child(4) {
+  left: 80%;
+  transform: rotate(-10deg);
+  background: linear-gradient(180deg, rgb(255 178 38 / 0.26), transparent 72%);
 }
 
 .stage__inner {
+  position: relative;
   flex: 1;
   width: 100%;
   max-width: 68rem;
@@ -118,43 +190,136 @@ input {
   gap: clamp(1rem, 3vh, 2rem);
 }
 
+/* Warm bar across the very top, like the front truss of a lighting rig. */
+.stage__inner::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(41 214 255 / 0.5) 22%,
+    rgb(255 212 121 / 0.9) 50%,
+    rgb(41 214 255 / 0.5) 78%,
+    transparent
+  );
+}
+
+/*
+ * The gloss floor. The reflection is a duplicate of the row above it, flipped,
+ * and the fade is painted as an overlay rather than applied as a mask: a mask
+ * is defined in the element's own coordinate space and then flipped along with
+ * it, so the gradient ends up running the wrong way and the reflection is
+ * brightest exactly where it should have faded out.
+ */
+/*
+ * Hidden on phones. The reflection is pure decoration and costs about 100px of
+ * vertical space, which on the surface almost everyone actually plays on is
+ * better spent on the answers.
+ */
+.floor {
+  display: none;
+}
+
+@media (min-width: 44rem) {
+  .floor {
+    display: block;
+    position: relative;
+    overflow: hidden;
+    max-height: 6.5rem;
+    margin-top: 0.9rem;
+    padding-top: 0.35rem;
+    border-top: 1px solid rgb(41 214 255 / 0.35);
+    box-shadow: 0 -1px 30px -4px rgb(41 214 255 / 0.45);
+  }
+}
+
+.floor::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgb(1 6 16 / 0.3) 0%, rgb(1 6 16 / 0.8) 58%, var(--night) 100%);
+}
+
+.reflection {
+  transform: scaleY(-1);
+  opacity: 0.55;
+  filter: blur(1.2px);
+  pointer-events: none;
+}
+
 /* ── Typography ─────────────────────────────────────────────────────────── */
 
 .display {
-  font-family: var(--display);
+  font-family: var(--shout);
   font-weight: 400;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.005em;
   line-height: 0.92;
   text-transform: uppercase;
   margin: 0;
 }
 
+/*
+ * Chrome and gold are painted through the text with background-clip, which
+ * rules out text-shadow — a shadow would be clipped away with everything else.
+ * The glow is a drop-shadow filter on the wrapper instead.
+ */
+.chrome {
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #d6ecfb 34%,
+    #6f9dbd 50%,
+    #ffffff 58%,
+    #cfe3f2 78%,
+    #8fb3cc 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.gold {
+  background: linear-gradient(180deg, #fff3d0 0%, #ffd479 30%, #c88a12 52%, #ffe6a8 64%, #ffb226 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.chrome-wrap {
+  filter: drop-shadow(0 0 26px rgb(41 214 255 / 0.45)) drop-shadow(0 3px 0 rgb(0 0 0 / 0.55));
+}
+
 .wordmark {
-  font-family: var(--display);
-  font-size: clamp(3.5rem, 14vw, 8rem);
-  letter-spacing: 0.06em;
-  line-height: 0.85;
+  font-family: var(--shout);
+  font-size: clamp(3rem, 12vw, 6rem);
+  letter-spacing: 0.005em;
+  line-height: 0.9;
   text-transform: uppercase;
   margin: 0;
-  color: var(--ink);
-  text-shadow: 0 0 60px rgb(233 185 73 / 0.28);
 }
 
 .wordmark__rule {
   width: clamp(4rem, 18vw, 9rem);
   height: 3px;
   margin: 0.9rem 0 0;
-  background: linear-gradient(90deg, var(--brass), transparent);
+  background: linear-gradient(90deg, var(--cyan), transparent);
   border: 0;
 }
 
 .eyebrow {
-  font-family: var(--display);
-  font-size: clamp(0.9rem, 2.4vw, 1.15rem);
-  letter-spacing: 0.32em;
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: clamp(0.8rem, 2.2vw, 0.95rem);
+  letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: var(--brass);
+  color: var(--cyan);
   margin: 0;
+  text-shadow: 0 0 18px rgb(41 214 255 / 0.6);
 }
 
 .lede {
@@ -176,15 +341,16 @@ input {
 }
 
 .field__label {
-  font-family: var(--display);
-  font-size: 0.95rem;
+  font-family: var(--tech);
+  font-weight: 600;
+  font-size: 0.8rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--ink-dim);
 }
 
 .input {
-  background: rgb(4 6 13 / 0.6);
+  background: rgb(1 6 16 / 0.7);
   border: 1px solid var(--edge);
   border-radius: var(--radius);
   padding: 0.85rem 1rem;
@@ -195,35 +361,38 @@ input {
 
 .input:focus-visible {
   outline: none;
-  border-color: var(--brass);
-  box-shadow: 0 0 0 3px rgb(233 185 73 / 0.16);
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgb(41 214 255 / 0.2);
 }
 
 .input--code {
-  font-family: var(--display);
+  font-family: var(--tech);
+  font-weight: 700;
   font-size: 2.4rem;
   letter-spacing: 0.42em;
   text-align: center;
   text-transform: uppercase;
   padding: 0.6rem 0 0.6rem 0.42em;
+  color: var(--amber-bright);
 }
 
 .btn {
-  font-family: var(--display);
-  font-size: 1.15rem;
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: 1rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   padding: 0.85rem 1.75rem;
   border-radius: var(--radius);
-  border: 1px solid var(--brass-dim);
-  background: linear-gradient(180deg, rgb(233 185 73 / 0.16), rgb(233 185 73 / 0.06));
-  color: var(--brass-bright);
+  border: 1px solid var(--cyan-dim);
+  background: linear-gradient(180deg, rgb(41 214 255 / 0.16), rgb(41 214 255 / 0.05));
+  color: #bff0ff;
   transition: transform 120ms ease, box-shadow 160ms ease, border-color 160ms ease;
 }
 
 .btn:hover:not(:disabled) {
-  border-color: var(--brass);
-  box-shadow: 0 0 24px -4px rgb(233 185 73 / 0.4);
+  border-color: var(--cyan);
+  box-shadow: 0 0 26px -4px rgb(41 214 255 / 0.5);
   transform: translateY(-1px);
 }
 
@@ -237,10 +406,15 @@ input {
 }
 
 .btn--primary {
-  background: linear-gradient(180deg, var(--brass-bright), var(--brass));
-  border-color: var(--brass-bright);
+  background: linear-gradient(180deg, var(--amber-bright), var(--amber));
+  border-color: var(--amber-bright);
   color: #241a02;
-  font-weight: 400;
+  box-shadow: 0 0 30px -8px rgb(255 178 38 / 0.8);
+}
+
+.btn--primary:hover:not(:disabled) {
+  border-color: #fff3d0;
+  box-shadow: 0 0 34px -4px rgb(255 178 38 / 0.9);
 }
 
 .btn--ghost {
@@ -264,7 +438,7 @@ input {
 /* ── Panels ─────────────────────────────────────────────────────────────── */
 
 .panel {
-  background: linear-gradient(180deg, var(--riser), rgb(10 15 34 / 0.5));
+  background: linear-gradient(180deg, var(--panel-hi), rgb(7 26 46 / 0.5));
   border: 1px solid var(--edge);
   border-radius: var(--radius);
   padding: clamp(1rem, 3vw, 1.6rem);
@@ -286,59 +460,84 @@ input {
 
 .roomcode {
   display: inline-flex;
-  gap: 0.5rem;
+  gap: 0.45rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, #02080f, #040f1b);
+  border: 1px solid var(--edge);
+  box-shadow: inset 0 0 30px rgb(0 0 0 / 0.9), 0 0 34px -10px rgb(41 214 255 / 0.55);
 }
 
 .roomcode__char {
-  font-family: var(--display);
-  font-size: clamp(2.75rem, 12vw, 5.5rem);
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: clamp(2.2rem, 9vw, 3.6rem);
   line-height: 1;
-  width: clamp(2.4rem, 11vw, 4.5rem);
+  letter-spacing: 0.06em;
+  width: 1.05em;
   text-align: center;
-  padding: 0.35rem 0 0.2rem;
-  color: var(--brass-bright);
-  background: linear-gradient(180deg, rgb(233 185 73 / 0.12), transparent);
-  border: 1px solid var(--brass-dim);
-  border-radius: var(--radius);
-  text-shadow: 0 0 28px rgb(255 217 122 / 0.45);
+  color: var(--amber-bright);
+  text-shadow: 0 0 6px var(--amber), 0 0 22px rgb(255 178 38 / 0.75);
 }
 
-/* ── Player plates ──────────────────────────────────────────────────────── */
+/* ── Contender nameplates ───────────────────────────────────────────────── */
 
 .plates {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.6rem;
+  gap: 0.7rem;
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
 .plate {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  background: var(--riser);
+  padding: 0.65rem 1.1rem 0.75rem;
+  border-radius: 8px 8px 3px 3px;
+  background: linear-gradient(180deg, var(--panel-hi), var(--panel));
   border: 1px solid var(--edge);
-  border-radius: var(--radius);
-  padding: 0.5rem 0.9rem;
+  border-bottom: none;
+  box-shadow: 0 16px 30px -18px #000, inset 0 1px 0 rgb(255 255 255 / 0.07);
+}
+
+.plate::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  box-shadow: 0 0 16px 2px rgb(41 214 255 / 0.7);
 }
 
 .plate--host {
-  border-color: var(--brass-dim);
-  background: linear-gradient(180deg, rgb(233 185 73 / 0.12), var(--riser));
+  background: linear-gradient(180deg, #2b1f06, #160f02);
+}
+
+.plate--host::after {
+  background: linear-gradient(90deg, transparent, var(--amber), transparent);
+  box-shadow: 0 0 18px 3px rgb(255 178 38 / 0.8);
 }
 
 .plate__name {
-  font-weight: 600;
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .plate__role {
-  font-family: var(--display);
-  font-size: 0.75rem;
-  letter-spacing: 0.18em;
+  font-family: var(--tech);
+  font-weight: 600;
+  font-size: 0.66rem;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--brass);
+  color: var(--amber);
 }
 
 .plate__tick {
@@ -355,28 +554,43 @@ input {
 }
 
 .pack {
+  position: relative;
   text-align: left;
-  background: var(--riser);
+  background: linear-gradient(180deg, var(--panel-hi), var(--panel));
   border: 1px solid var(--edge);
-  border-radius: var(--radius);
-  padding: 0.9rem 1rem;
+  border-radius: 8px 8px 3px 3px;
+  padding: 0.9rem 1rem 1rem;
   transition: border-color 140ms ease, transform 140ms ease;
 }
 
+.pack::after {
+  content: '';
+  position: absolute;
+  inset: auto 0.7rem 0.3rem 0.7rem;
+  height: 3px;
+  border-radius: 3px;
+  background: rgb(41 214 255 / 0.25);
+}
+
 .pack:hover {
-  border-color: var(--brass-dim);
+  border-color: var(--cyan-dim);
   transform: translateY(-2px);
 }
 
 .pack[aria-pressed='true'] {
-  border-color: var(--brass);
-  background: linear-gradient(180deg, rgb(233 185 73 / 0.14), var(--riser));
+  border-color: var(--amber);
+  background: linear-gradient(180deg, #3a2a08, #140e02);
+}
+
+.pack[aria-pressed='true']::after {
+  background: var(--amber);
+  box-shadow: 0 0 18px 2px rgb(255 178 38 / 0.9);
 }
 
 .pack__title {
-  font-family: var(--display);
-  font-size: 1.4rem;
-  letter-spacing: 0.06em;
+  font-family: var(--shout);
+  font-size: 1.35rem;
+  letter-spacing: 0.01em;
   text-transform: uppercase;
   display: block;
 }
@@ -389,65 +603,168 @@ input {
 }
 
 .pack__count {
-  color: var(--brass);
-  font-size: 0.78rem;
+  font-family: var(--tech);
+  font-weight: 700;
+  color: var(--cyan);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
   font-variant-numeric: tabular-nums;
 }
 
-/* ── Question ───────────────────────────────────────────────────────────── */
+/* ── Level picker ───────────────────────────────────────────────────────── */
 
-.qhead {
+.picker {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  gap: 0.8rem;
+  flex-wrap: wrap;
 }
 
+.pick {
+  position: relative;
+  flex: 1 1 11rem;
+  min-width: 10rem;
+  text-align: left;
+  padding: 0.9rem 1.1rem 1rem;
+  border-radius: 8px 8px 3px 3px;
+  border: 1px solid var(--edge);
+  background: linear-gradient(180deg, var(--panel-hi), var(--panel));
+  transition: border-color 140ms ease, transform 140ms ease;
+}
+
+.pick::after {
+  content: '';
+  position: absolute;
+  inset: auto 0.7rem 0.3rem 0.7rem;
+  height: 3px;
+  border-radius: 3px;
+  background: rgb(41 214 255 / 0.25);
+}
+
+.pick:hover:not(:disabled) {
+  border-color: var(--cyan-dim);
+  transform: translateY(-2px);
+}
+
+.pick[aria-pressed='true'] {
+  border-color: var(--amber);
+  background: linear-gradient(180deg, #3a2a08, #140e02);
+}
+
+.pick[aria-pressed='true']::after {
+  background: var(--amber);
+  box-shadow: 0 0 18px 2px rgb(255 178 38 / 0.9);
+}
+
+.pick:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.pick b {
+  font-family: var(--shout);
+  font-weight: 400;
+  font-size: 1.2rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  display: block;
+}
+
+.pick span {
+  display: block;
+  color: var(--ink-dim);
+  font-size: 0.8rem;
+  margin-top: 0.1rem;
+}
+
+.pick i {
+  display: block;
+  font-style: normal;
+  font-family: var(--tech);
+  font-weight: 700;
+  color: var(--cyan);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  margin-top: 0.4rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Question head ──────────────────────────────────────────────────────── */
+
 /*
- * `flex: 1` with `min-width: 0` keeps the timer on the header line and lets the
- * category chips wrap inside this block instead. Without it the meta block grows
- * to the full width and shoves the timer onto its own row, which costs a phone
- * screen about 80px of the answer area.
+ * Grid rather than a wrapping flex row. On a phone a flex row drops the timer
+ * onto a line of its own and costs about 90px of answer area; here the timer
+ * spans both rows and the category chips tuck under the question number.
  */
+.qhead {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.55rem 1rem;
+  padding: 0.7rem 1rem;
+  border-radius: var(--radius);
+  background: linear-gradient(90deg, rgb(11 39 67 / 0.95), rgb(4 16 31 / 0.6));
+  border: 1px solid var(--edge);
+  border-left: 4px solid var(--cyan);
+  box-shadow: 0 0 30px -12px rgb(41 214 255 / 0.7);
+}
+
 .qhead__meta {
+  grid-column: 1;
+  grid-row: 1;
   display: flex;
   align-items: baseline;
   gap: 0.75rem;
   flex-wrap: wrap;
-  flex: 1 1 auto;
   min-width: 0;
 }
 
+.qhead__tags {
+  grid-column: 1;
+  grid-row: 2;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .chip {
-  font-family: var(--display);
-  font-size: 0.8rem;
-  letter-spacing: 0.2em;
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--ink-soft);
-  border: 1px solid var(--edge);
-  border-radius: 999px;
-  padding: 0.2rem 0.7rem;
+  color: #a9e8ff;
+  background: rgb(41 214 255 / 0.12);
+  border: 1px solid rgb(41 214 255 / 0.4);
+  border-radius: 3px;
+  padding: 0.28rem 0.7rem;
+}
+
+.chip--hard {
+  color: #ff97a8;
+  background: rgb(255 46 77 / 0.12);
+  border-color: rgb(255 46 77 / 0.5);
 }
 
 .prompt {
   font-family: var(--body);
-  font-weight: 600;
-  font-size: clamp(1.35rem, 4.4vw, 2.6rem);
-  line-height: 1.18;
-  letter-spacing: -0.015em;
+  font-weight: 700;
+  font-size: clamp(1.4rem, 4.4vw, 2.6rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
   margin: 0;
   text-wrap: balance;
+  text-shadow: 0 2px 24px rgb(0 0 0 / 0.9);
 }
 
-/* ── Podium answer tiles ────────────────────────────────────────────────── */
+/* ── Lecterns ───────────────────────────────────────────────────────────── */
 
 .podium {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.85rem;
   grid-template-columns: 1fr;
 }
 
-@media (min-width: 40rem) {
+@media (min-width: 44rem) {
   .podium {
     grid-template-columns: 1fr 1fr;
   }
@@ -458,108 +775,134 @@ input {
   display: flex;
   align-items: center;
   gap: 1rem;
+  width: 100%;
   text-align: left;
-  padding: 1rem 1.15rem;
-  border-radius: var(--radius);
+  padding: 1.15rem 1.3rem 1.3rem;
+  border-radius: 12px 12px 4px 4px;
   border: 1px solid var(--edge);
-  background: linear-gradient(180deg, var(--riser), rgb(8 12 26 / 0.9));
-  box-shadow: var(--shadow-lift);
-  transition:
-    border-color 160ms ease,
-    box-shadow 200ms ease,
-    transform 160ms ease,
-    opacity 200ms ease;
+  background: linear-gradient(180deg, var(--panel-hi) 0%, var(--panel) 55%, #030c17 100%);
+  box-shadow: var(--shadow-lift), inset 0 1px 0 rgb(255 255 255 / 0.08);
   overflow: hidden;
+  transition: border-color 160ms ease, box-shadow 200ms ease, transform 160ms ease,
+    opacity 200ms ease;
 }
 
 .tile:hover:not(:disabled):not(.tile--dim) {
-  border-color: var(--brass-dim);
+  border-color: var(--cyan-dim);
   transform: translateY(-2px);
 }
 
-/* The lamp strip along the bottom edge of each podium. */
+/* The lit front edge of the lectern. */
 .tile::after {
   content: '';
   position: absolute;
-  inset: auto 0 0 0;
-  height: 2px;
-  background: var(--edge);
+  inset: auto 0.8rem 0.35rem 0.8rem;
+  height: 4px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, transparent, rgb(41 214 255 / 0.45), transparent);
   transition: background 200ms ease, box-shadow 200ms ease;
 }
 
 .tile__letter {
-  font-family: var(--display);
-  font-size: 1.9rem;
-  line-height: 1;
-  width: 2.1rem;
+  width: 2.9rem;
+  height: 2.9rem;
   flex: 0 0 auto;
-  text-align: center;
-  color: var(--ink-dim);
-  transition: color 160ms ease;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-family: var(--shout);
+  font-size: 1.4rem;
+  line-height: 1;
+  color: #02121c;
+  background: linear-gradient(180deg, #e8fbff, #7fd9f5 45%, #1a9dc4 55%, #bdeeff);
+  box-shadow: 0 0 20px -4px rgb(41 214 255 / 0.9), inset 0 0 0 1px rgb(0 0 0 / 0.3);
+  transition: background 160ms ease;
 }
 
 .tile__text {
-  font-weight: 500;
-  font-size: clamp(1rem, 2.6vw, 1.2rem);
+  font-weight: 600;
+  font-size: clamp(1rem, 2.6vw, 1.18rem);
 }
 
 .tile--picked {
-  border-color: var(--brass);
-  background: linear-gradient(180deg, rgb(233 185 73 / 0.18), var(--riser));
+  border-color: var(--amber);
+  background: linear-gradient(180deg, #3a2a08, #1a1204 55%, #0a0700 100%);
+  box-shadow: 0 0 40px -12px rgb(255 178 38 / 0.9), var(--shadow-lift);
 }
 
 .tile--picked .tile__letter {
-  color: var(--brass-bright);
+  background: linear-gradient(180deg, #fff4d6, #ffd479 45%, #c88a12 55%, #ffe6a8);
 }
 
 .tile--picked::after {
-  background: var(--brass);
-  box-shadow: 0 0 18px 2px rgb(233 185 73 / 0.6);
+  background: linear-gradient(90deg, transparent, var(--amber), transparent);
+  box-shadow: 0 0 20px 3px rgb(255 178 38 / 0.9);
 }
 
 .tile--correct {
   border-color: var(--correct);
-  background: linear-gradient(180deg, rgb(53 210 154 / 0.2), var(--riser));
+  background: linear-gradient(180deg, #0a3d2a, #04281c 55%, #01120c 100%);
+  box-shadow: 0 0 56px -10px rgb(31 221 138 / 0.95), var(--shadow-lift);
 }
 
 .tile--correct .tile__letter {
-  color: var(--correct);
+  background: linear-gradient(180deg, #dcfff0, #6bf0b6 45%, #12a86a 55%, #b6ffdf);
 }
 
 .tile--correct::after {
-  background: var(--correct);
-  box-shadow: 0 0 22px 3px rgb(53 210 154 / 0.7);
+  background: linear-gradient(90deg, transparent, var(--correct), transparent);
+  box-shadow: 0 0 24px 4px rgb(31 221 138 / 1);
 }
 
 .tile--wrong {
-  border-color: var(--wrong-dim);
+  border-color: rgb(255 46 77 / 0.7);
+  background: linear-gradient(180deg, #3a0a15, #20060c 55%, #0d0205 100%);
 }
 
 .tile--wrong .tile__letter {
-  color: var(--wrong);
+  background: linear-gradient(180deg, #ffdde3, #ff8497 45%, #c0102c 55%, #ffb9c4);
 }
 
 .tile--wrong::after {
-  background: var(--wrong);
+  background: linear-gradient(90deg, transparent, var(--wrong), transparent);
+  box-shadow: 0 0 20px 3px rgb(255 46 77 / 0.85);
 }
 
 .tile--dim {
-  opacity: 0.38;
+  opacity: 0.3;
 }
 
 .tile:disabled {
   cursor: default;
 }
 
-/* ── Arc timer ──────────────────────────────────────────────────────────── */
+/* Keyboard hints are meaningless on a phone. */
+.tile__key {
+  display: none;
+}
+
+/* ── Countdown ring ─────────────────────────────────────────────────────── */
 
 .timer {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  position: relative;
   display: grid;
   place-items: center;
-  position: relative;
-  width: clamp(3.5rem, 12vw, 5rem);
+  width: clamp(3.6rem, 12vw, 5.4rem);
   aspect-ratio: 1;
   flex: 0 0 auto;
+  border-radius: 50%;
+  box-shadow: 0 0 34px -4px rgb(255 178 38 / 0.7);
+}
+
+.timer::before {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, #0a2337, #02080f);
+  border: 1px solid rgb(255 178 38 / 0.35);
 }
 
 .timer__svg {
@@ -570,28 +913,186 @@ input {
 
 .timer__track {
   fill: none;
-  stroke: var(--edge);
-  stroke-width: 4;
+  stroke: rgb(255 255 255 / 0.07);
+  stroke-width: 5;
 }
 
 .timer__sweep {
   fill: none;
-  stroke: var(--brass);
-  stroke-width: 4;
+  stroke: var(--amber);
+  stroke-width: 5;
   stroke-linecap: round;
+  filter: drop-shadow(0 0 4px rgb(255 178 38 / 0.9));
   transition: stroke 400ms linear;
 }
 
 .timer__sweep--low {
   stroke: var(--wrong);
+  filter: drop-shadow(0 0 5px rgb(255 46 77 / 0.95));
 }
 
 .timer__count {
-  font-family: var(--display);
-  font-size: clamp(1.4rem, 4.5vw, 2rem);
+  position: relative;
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: clamp(1.3rem, 4.5vw, 1.9rem);
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  color: var(--ink);
+  color: var(--amber-bright);
+  text-shadow: 0 0 10px var(--amber), 0 0 28px rgb(255 178 38 / 0.8);
+}
+
+.timer--low {
+  box-shadow: 0 0 40px -4px rgb(255 46 77 / 0.85);
+}
+
+.timer--low .timer__count {
+  color: #ffc2cc;
+  text-shadow: 0 0 10px var(--wrong), 0 0 30px rgb(255 46 77 / 0.9);
+}
+
+/* ── The ladder ─────────────────────────────────────────────────────────── */
+
+.qgrid {
+  display: grid;
+  gap: 1.2rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 58rem) {
+  .qgrid {
+    grid-template-columns: 1fr 8.5rem;
+  }
+}
+
+.ladder__cap {
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: 0.66rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  text-align: center;
+  margin: 0 0 0.5rem;
+}
+
+/*
+ * Vertical ladder on a laptop, horizontal pip strip on a phone. Fifteen
+ * full-width rows under the answers is more ladder than a phone can afford, so
+ * the per-question scores are the first thing to go.
+ */
+.ladder {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rung {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex: 1 1 auto;
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  padding: 0.28rem 0.3rem;
+  border-radius: 3px;
+  border: 1px solid rgb(18 64 95 / 0.55);
+  color: var(--ink-dim);
+  background: rgb(4 16 31 / 0.6);
+  font-variant-numeric: tabular-nums;
+}
+
+.rung__score {
+  display: none;
+}
+
+.rung--done {
+  color: #8fd8f0;
+  border-color: rgb(41 214 255 / 0.3);
+  background: rgb(41 214 255 / 0.08);
+}
+
+.rung--live {
+  color: #02121c;
+  border-color: var(--amber-bright);
+  background: linear-gradient(90deg, var(--amber-bright), var(--amber));
+  box-shadow: 0 0 22px -2px rgb(255 178 38 / 0.9);
+}
+
+@media (min-width: 58rem) {
+  .ladder {
+    flex-direction: column-reverse;
+    flex-wrap: nowrap;
+    gap: 0.3rem;
+  }
+
+  .rung {
+    justify-content: space-between;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+  }
+
+  .rung__score {
+    display: inline;
+  }
+}
+
+/* ── Round title card ───────────────────────────────────────────────────── */
+
+.card {
+  position: relative;
+  text-align: center;
+  padding: clamp(2rem, 7vw, 4rem) 1rem;
+  overflow: hidden;
+  border-top: 1px solid rgb(41 214 255 / 0.25);
+  border-bottom: 1px solid rgb(41 214 255 / 0.25);
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 50% 0 auto 0;
+  height: 2px;
+  transform: translateY(-50%);
+  background: linear-gradient(90deg, transparent, var(--cyan), var(--amber), var(--cyan), transparent);
+  box-shadow: 0 0 40px 6px rgb(41 214 255 / 0.55);
+  opacity: 0.55;
+}
+
+.card__ghost {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--shout);
+  font-size: clamp(12rem, 40vw, 24rem);
+  line-height: 0.7;
+  color: rgb(41 214 255 / 0.055);
+  pointer-events: none;
+  user-select: none;
+}
+
+.card__round {
+  position: relative;
+  font-size: clamp(2.2rem, 8vw, 5rem);
+}
+
+.card__topic {
+  position: relative;
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: clamp(0.85rem, 2.6vw, 1.35rem);
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--amber-bright);
+  margin: 0.9rem 0 0;
+  text-shadow: 0 0 20px rgb(255 178 38 / 0.7);
 }
 
 /* ── Standings ──────────────────────────────────────────────────────────── */
@@ -610,27 +1111,29 @@ input {
   grid-template-columns: 2.6rem 1fr auto;
   align-items: center;
   gap: 0.9rem;
-  padding: 0.7rem 1rem;
+  padding: 0.75rem 1rem;
   border: 1px solid var(--edge);
-  border-radius: var(--radius);
-  background: var(--riser);
+  border-left: 3px solid var(--cyan-dim);
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--panel), rgb(7 26 46 / 0.45));
   position: relative;
   overflow: hidden;
 }
 
 .standing--you {
-  border-color: var(--brass-dim);
+  border-left-color: var(--amber);
 }
 
 .standing--leader {
-  border-color: var(--brass);
-  background: linear-gradient(90deg, rgb(233 185 73 / 0.14), var(--riser));
+  border-color: var(--amber);
+  border-left-color: var(--amber);
+  background: linear-gradient(90deg, #20180a, rgb(7 26 46 / 0.45));
 }
 
 .standing__bar {
   position: absolute;
   inset: 0 auto 0 0;
-  background: linear-gradient(90deg, rgb(233 185 73 / 0.16), transparent);
+  background: linear-gradient(90deg, rgb(41 214 255 / 0.16), transparent);
   z-index: 0;
   transition: width 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -648,11 +1151,15 @@ input {
 }
 
 .standing__pos {
-  font-family: var(--display);
-  font-size: 1.7rem;
+  font-family: var(--shout);
+  font-size: 1.6rem;
   line-height: 1;
-  color: var(--brass);
+  color: var(--cyan);
   font-variant-numeric: tabular-nums;
+}
+
+.standing--leader .standing__pos {
+  color: var(--amber);
 }
 
 .standing__name {
@@ -663,55 +1170,93 @@ input {
 }
 
 .standing__score {
-  font-family: var(--display);
-  font-size: 1.5rem;
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: 1.4rem;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
+  color: var(--amber-bright);
+  text-shadow: 0 0 12px rgb(255 178 38 / 0.5);
 }
 
 .standing__delta {
-  font-family: var(--display);
-  font-size: 0.95rem;
-  letter-spacing: 0.08em;
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
   color: var(--correct);
   margin-left: 0.5rem;
 }
 
-/* ── Entrances ──────────────────────────────────────────────────────────── */
+/* ── Season table ───────────────────────────────────────────────────────── */
 
-/*
- * Done in CSS rather than JS on purpose. These animations are the only thing
- * standing between the content and `opacity: 0`, and a JS animation that fails
- * to start — as delayed ones do under React StrictMode's double mount — leaves
- * the screen blank. `both` fill mode means even a cancelled animation settles on
- * the visible end state, and the reduced-motion rule at the end of this file
- * collapses the duration instead of skipping it.
- */
-@keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(1.75rem);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+/* Wide tables scroll inside their own box rather than the page. */
+.season-wrap {
+  overflow-x: auto;
 }
 
-@keyframes lift {
-  from {
-    opacity: 0;
-    transform: translateY(0.85rem);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+.season {
+  width: 100%;
+  min-width: 30rem;
+  border-collapse: separate;
+  border-spacing: 0 0.35rem;
+  font-variant-numeric: tabular-nums;
 }
 
-.prompt {
-  animation: lift 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+.season th {
+  font-family: var(--tech);
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  color: var(--cyan);
+  text-align: left;
+  padding: 0 0.9rem 0.4rem;
+}
+
+.season td {
+  font-family: var(--tech);
+  font-weight: 600;
+  padding: 0.75rem 0.9rem;
+  background: linear-gradient(90deg, var(--panel), rgb(7 26 46 / 0.45));
+  border-top: 1px solid rgb(18 64 95 / 0.6);
+  border-bottom: 1px solid rgb(18 64 95 / 0.6);
+}
+
+.season td:first-child {
+  border-left: 3px solid var(--cyan);
+  border-radius: 3px 0 0 3px;
+  font-family: var(--shout);
+  font-size: 1.25rem;
+  color: var(--cyan);
+  width: 3rem;
+}
+
+.season td:last-child {
+  border-right: 1px solid rgb(18 64 95 / 0.6);
+  border-radius: 0 3px 3px 0;
+  color: var(--amber-bright);
+  text-shadow: 0 0 12px rgb(255 178 38 / 0.6);
+}
+
+.season tr[data-you] td {
+  background: linear-gradient(90deg, #20180a, rgb(7 26 46 / 0.45));
+}
+
+.season tr[data-you] td:first-child {
+  border-left-color: var(--amber);
+  color: var(--amber);
+}
+
+.you {
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-left: 0.6rem;
 }
 
 /* ── Final podium ───────────────────────────────────────────────────────── */
@@ -720,72 +1265,86 @@ input {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   align-items: end;
-  gap: 0.6rem;
+  gap: 0.7rem;
   /* As a flex child this sizes to content, so max-width alone does nothing. */
   width: 100%;
-  max-width: 34rem;
+  max-width: 40rem;
   margin: 0 auto;
 }
 
 .riser {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
-  padding: 1rem 0.5rem 0.9rem;
+  gap: 0.35rem;
+  padding: 1.1rem 0.6rem;
   border: 1px solid var(--edge);
   border-bottom: none;
-  border-radius: var(--radius) var(--radius) 0 0;
-  background: linear-gradient(180deg, var(--riser), rgb(8 12 26 / 0.4));
+  border-radius: 8px 8px 0 0;
+  background: linear-gradient(180deg, var(--panel-hi), var(--panel) 60%, #020a13);
   text-align: center;
   animation: rise 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.riser::after {
+  content: '';
+  position: absolute;
+  inset: auto 0.6rem 0.4rem 0.6rem;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
 }
 
 /* Third, then second, then the winner — the reveal builds to the middle. */
 .riser--third {
   animation-delay: 60ms;
+  min-height: 8.5rem;
 }
 
 .riser--second {
   animation-delay: 260ms;
+  min-height: 10.5rem;
 }
 
 .riser--first {
   animation-delay: 460ms;
+  min-height: 14rem;
+  border-color: var(--amber);
+  background: linear-gradient(180deg, #3d2c07, #1a1204 60%, #080500);
 }
 
-.riser--first {
-  min-height: 11rem;
-  border-color: var(--brass);
-  background: linear-gradient(180deg, rgb(233 185 73 / 0.2), rgb(8 12 26 / 0.4));
-}
-
-.riser--second {
-  min-height: 8.5rem;
-}
-
-.riser--third {
-  min-height: 7rem;
+.riser--first::after {
+  background: linear-gradient(90deg, transparent, var(--amber), transparent);
+  box-shadow: 0 0 22px 3px rgb(255 178 38 / 0.9);
 }
 
 .riser__pos {
-  font-family: var(--display);
-  font-size: clamp(2rem, 8vw, 3.2rem);
+  font-family: var(--shout);
+  font-size: clamp(1.8rem, 8vw, 2.6rem);
   line-height: 1;
-  color: var(--brass);
+  color: var(--cyan);
+}
+
+.riser--first .riser__pos {
+  color: var(--amber);
 }
 
 .riser__name {
-  font-weight: 600;
+  font-family: var(--tech);
+  font-weight: 700;
   font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   overflow-wrap: anywhere;
 }
 
 .riser__score {
-  font-family: var(--display);
-  font-size: 1.2rem;
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: 1.1rem;
   font-variant-numeric: tabular-nums;
-  color: var(--ink-soft);
+  color: var(--cyan);
+  text-shadow: 0 0 14px rgb(41 214 255 / 0.7);
 }
 
 /* ── Utility ────────────────────────────────────────────────────────────── */
@@ -826,174 +1385,61 @@ input {
 }
 
 .tally {
-  font-family: var(--display);
-  font-size: 1.1rem;
-  letter-spacing: 0.12em;
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--ink-soft);
   font-variant-numeric: tabular-nums;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* ── Desktop ────────────────────────────────────────────────────────────────
-   The team plays on laptops, so the wide layout gets the attention: a bigger
-   stage, a heavier question, and visible keyboard hints — the round can be run
-   entirely from the keyboard without reaching for the mouse.
+/* ── Entrances ──────────────────────────────────────────────────────────────
+   Done in CSS rather than JS on purpose. These animations are the only thing
+   standing between the content and `opacity: 0`, and a JS animation that fails
+   to start — as delayed ones do under React StrictMode's double mount — leaves
+   the screen blank. `both` fill mode means even a cancelled animation settles
+   on the visible end state, and the reduced-motion rule below collapses the
+   duration rather than skipping the animation.
    ──────────────────────────────────────────────────────────────────────────── */
 
-.tile__key {
-  display: none;
-}
-
-@media (min-width: 64rem) {
-  .stage__inner {
-    max-width: 76rem;
-  }
-
-  .prompt {
-    font-size: clamp(2.2rem, 3.4vw, 3.1rem);
-    letter-spacing: -0.02em;
-  }
-
-  .tile {
-    padding: 1.35rem 1.5rem;
-  }
-
-  .tile__letter {
-    font-size: 2.3rem;
-    width: 2.5rem;
-  }
-
-  .tile__text {
-    font-size: 1.32rem;
-  }
-
-  /* Keyboard hint, revealed on hover so it never competes with the answer. */
-  .tile__key {
-    display: block;
-    margin-left: auto;
-    font-family: var(--display);
-    font-size: 0.82rem;
-    letter-spacing: 0.14em;
-    color: var(--ink-dim);
-    border: 1px solid var(--edge);
-    border-radius: 3px;
-    padding: 0.1rem 0.45rem;
-    opacity: 0;
-    transition: opacity 140ms ease;
-  }
-
-  .tile:hover:not(:disabled) .tile__key {
-    opacity: 1;
-  }
-
-  .roomcode__char {
-    font-size: 6rem;
-    width: 5rem;
-  }
-
-  .standing {
-    padding: 0.95rem 1.25rem;
-  }
-
-  .standing__score {
-    font-size: 1.85rem;
-  }
-
-  .riser--first {
-    min-height: 14rem;
-  }
-
-  .riser--second {
-    min-height: 10.5rem;
-  }
-
-  .riser--third {
-    min-height: 8.5rem;
-  }
-}
-
-/* A slow drift on the spotlight, so a screen left on the lobby is never static. */
-@media (min-width: 64rem) and (prefers-reduced-motion: no-preference) {
-  .stage::before {
-    animation: drift 26s ease-in-out infinite alternate;
-  }
-}
-
-@keyframes drift {
+@keyframes rise {
   from {
-    transform: translate3d(-1.5%, 0, 0) scale(1);
+    opacity: 0;
+    transform: translateY(1.75rem);
   }
   to {
-    transform: translate3d(1.5%, 1%, 0) scale(1.04);
+    opacity: 1;
+    transform: none;
   }
 }
 
-/* Keyboard legend, desktop only. */
-.legend {
-  display: none;
-}
-
-@media (min-width: 64rem) {
-  .legend {
-    display: flex;
-    gap: 1.1rem;
-    flex-wrap: wrap;
-    align-items: center;
-    color: var(--ink-dim);
-    font-size: 0.82rem;
+@keyframes lift {
+  from {
+    opacity: 0;
+    transform: translateY(0.85rem);
   }
-
-  .legend kbd {
-    font-family: var(--display);
-    font-size: 0.85rem;
-    letter-spacing: 0.1em;
-    border: 1px solid var(--edge);
-    border-bottom-width: 2px;
-    border-radius: 3px;
-    padding: 0.05rem 0.4rem;
-    margin-right: 0.3rem;
-    color: var(--ink-soft);
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 
-/* ── Show business ──────────────────────────────────────────────────────────
-   The bits that make it feel like a quiz rather than a form: an oversized round
-   numeral behind the stage, podiums that light up in sequence, a sweep across
-   the correct answer, and a clock that gets nervous near the end.
-   ──────────────────────────────────────────────────────────────────────────── */
-
-.ghost-numeral {
-  position: absolute;
-  top: 50%;
-  right: 2%;
-  transform: translateY(-50%);
-  font-family: var(--display);
-  font-size: 46rem;
-  line-height: 0.7;
-  color: rgb(233 185 73 / 0.028);
-  pointer-events: none;
-  user-select: none;
-  z-index: -1;
-  display: none;
+.prompt {
+  animation: lift 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-@media (min-width: 64rem) {
-  .ghost-numeral {
-    display: block;
-  }
-}
-
-/* Podiums light up left to right rather than all at once. */
 .tile {
   animation: rise 380ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.card__round,
+.card__topic {
+  animation: lift 460ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.card__topic {
+  animation-delay: 160ms;
 }
 
 /* A band of light crossing the correct answer as it is announced. */
@@ -1001,12 +1447,7 @@ input {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    100deg,
-    transparent 20%,
-    rgb(53 210 154 / 0.28) 48%,
-    transparent 76%
-  );
+  background: linear-gradient(100deg, transparent 20%, rgb(31 221 138 / 0.3) 48%, transparent 76%);
   transform: translateX(-100%);
   animation: sweep 900ms cubic-bezier(0.3, 0.7, 0.3, 1) 120ms 1;
   pointer-events: none;
@@ -1033,30 +1474,19 @@ input {
   }
 }
 
-.timer--low .timer__count {
-  color: var(--wrong);
-}
-
-/* The leader's row gets a slow travelling shine. */
 @media (prefers-reduced-motion: no-preference) {
+  /* The leader's row gets a slow travelling shine. */
   .standing--leader::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(
-      100deg,
-      transparent 35%,
-      rgb(255 217 122 / 0.12) 50%,
-      transparent 65%
-    );
+    background: linear-gradient(100deg, transparent 35%, rgb(255 212 121 / 0.14) 50%, transparent 65%);
     transform: translateX(-100%);
     animation: sweep 3.4s ease-in-out 1.2s infinite;
     pointer-events: none;
   }
-}
 
-/* Room code plates breathe while the lobby waits. */
-@media (prefers-reduced-motion: no-preference) {
+  /* Room code plates breathe while the lobby waits. */
   .roomcode__char {
     animation: glow 3.6s ease-in-out infinite;
   }
@@ -1075,32 +1505,138 @@ input {
 @keyframes glow {
   0%,
   100% {
-    text-shadow: 0 0 22px rgb(255 217 122 / 0.32);
-    border-color: var(--brass-dim);
+    text-shadow: 0 0 6px var(--amber), 0 0 20px rgb(255 178 38 / 0.5);
   }
   50% {
-    text-shadow: 0 0 40px rgb(255 217 122 / 0.72);
-    border-color: var(--brass);
+    text-shadow: 0 0 10px var(--amber), 0 0 38px rgb(255 178 38 / 0.95);
   }
 }
 
-/* Overhead lighting rig: a warm bar across the very top of the stage. */
-.stage__inner::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 2px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgb(233 185 73 / 0.5) 22%,
-    rgb(255 217 122 / 0.85) 50%,
-    rgb(233 185 73 / 0.5) 78%,
-    transparent
-  );
-  pointer-events: none;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
-.stage__inner {
-  position: relative;
+/* ── Desktop ────────────────────────────────────────────────────────────────
+   Everyone plays on their own device, but the laptop gets the bigger stage and
+   the keyboard hints: the whole round can be run without reaching for a mouse.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+@media (min-width: 44rem) {
+  .qhead {
+    grid-template-columns: auto 1fr auto;
+  }
+
+  .qhead__tags {
+    grid-column: 2;
+    grid-row: 1;
+    justify-content: flex-end;
+  }
+
+  .timer {
+    grid-column: 3;
+    grid-row: 1;
+  }
+}
+
+@media (min-width: 64rem) {
+  .stage__inner {
+    max-width: 76rem;
+  }
+
+  .prompt {
+    font-size: clamp(2.1rem, 3.4vw, 3rem);
+  }
+
+  .tile {
+    padding: 1.35rem 1.5rem 1.5rem;
+  }
+
+  .tile__letter {
+    width: 3.2rem;
+    height: 3.2rem;
+    font-size: 1.6rem;
+  }
+
+  .tile__text {
+    font-size: 1.3rem;
+  }
+
+  /* Keyboard hint, revealed on hover so it never competes with the answer. */
+  .tile__key {
+    display: block;
+    margin-left: auto;
+    font-family: var(--tech);
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    color: var(--ink-dim);
+    border: 1px solid var(--edge);
+    border-radius: 3px;
+    padding: 0.12rem 0.5rem;
+    opacity: 0;
+    transition: opacity 140ms ease;
+  }
+
+  .tile:hover:not(:disabled) .tile__key {
+    opacity: 1;
+  }
+
+  .standing {
+    padding: 0.95rem 1.25rem;
+  }
+
+  .standing__score {
+    font-size: 1.7rem;
+  }
+}
+
+/* Keyboard legend, desktop only. */
+.legend {
+  display: none;
+}
+
+@media (min-width: 64rem) {
+  .legend {
+    display: flex;
+    gap: 1.1rem;
+    flex-wrap: wrap;
+    align-items: center;
+    color: var(--ink-dim);
+    font-size: 0.82rem;
+    margin: 0;
+  }
+
+  .legend kbd {
+    font-family: var(--tech);
+    font-weight: 700;
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    border: 1px solid var(--edge);
+    border-bottom-width: 2px;
+    border-radius: 3px;
+    padding: 0.05rem 0.4rem;
+    margin-right: 0.3rem;
+    color: var(--ink-soft);
+  }
+}
+
+/* A slow drift on the beams, so a screen left on the lobby is never static. */
+@media (min-width: 64rem) and (prefers-reduced-motion: no-preference) {
+  .beams {
+    animation: drift 26s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes drift {
+  from {
+    transform: translate3d(-1.5%, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(1.5%, 1%, 0) scale(1.04);
+  }
 }

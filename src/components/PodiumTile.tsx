@@ -20,6 +20,16 @@ const CLASS_FOR_STATE: Record<TileState, string> = {
   dim: 'tile--dim',
 };
 
+export const TILE_LETTERS = LETTERS;
+
+/**
+ * Shared with the floor reflection, which renders the same lecterns inert so
+ * the mirror image carries the same lighting as the real thing.
+ */
+export function tileClassName(state: TileState): string {
+  return `tile ${CLASS_FOR_STATE[state]}`.trim();
+}
+
 /** One lit answer podium. The lamp strip along its base carries the verdict. */
 export function PodiumTile({ index, text, state, disabled, onPick, order }: PodiumTileProps) {
   const letter = LETTERS[index] ?? '?';
@@ -27,7 +37,7 @@ export function PodiumTile({ index, text, state, disabled, onPick, order }: Podi
   return (
     <button
       type="button"
-      className={`tile ${CLASS_FOR_STATE[state]}`.trim()}
+      className={tileClassName(state)}
       style={{ animationDelay: `${order * 70}ms` }}
       disabled={disabled}
       aria-pressed={state === 'picked'}

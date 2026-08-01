@@ -99,6 +99,7 @@ function toPersisted(state: RoomState): PersistedRoom {
     scores: state.scores,
     lastDeltas: state.lastDeltas,
     skipped: state.skipped,
+    gameId: state.gameId,
   };
 }
 

@@ -1,5 +1,23 @@
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
+export const DIFFICULTIES = ['easy', 'medium', 'hard'] as const;
+
+/** How many questions a pack holds at each level. */
+export type DifficultyCounts = Record<Difficulty, number>;
+
+/**
+ * What the lobby needs to describe a pack without downloading it. The
+ * per-difficulty counts are what let the picker disable a level a pack cannot
+ * fill, rather than silently serving a shorter round.
+ */
+export interface PackSummary {
+  id: PackId;
+  title: string;
+  blurb: string;
+  count: number;
+  counts: DifficultyCounts;
+}
+
 export const PACK_IDS = [
   'general-knowledge',
   'uk-leaning',
