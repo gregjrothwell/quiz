@@ -8,16 +8,18 @@ Built to replace Polly in Teams.
 - **Firebase project:** `quiz-d686e` (Firestore + Realtime Database in europe-west1 + Anonymous auth)
 - **Status:** shipped and played. 103 tests, clean types and lint, no `any` or `@ts-ignore`.
 
-> ### Publish `database.rules.json` in the Realtime Database console
+> ### Check the rules are published before you play
 >
-> As of the last live test, **every presence write is rejected with
-> `permission_denied`**, which means the deployed Realtime Database ruleset does
-> not match the one in this repo. The game now survives this — it says so on
-> screen and plays on — but until the rules are published, players who close a
-> tab stay in the lobby forever. This is one paste into the RTDB console.
+> Both rulesets are pasted into the console by hand, and an unpublished one has
+> broken the game twice — first Firestore, then the Realtime Database, where
+> every presence write was rejected and the room filled with ghosts.
 >
-> The Firestore rules gained a `seasons/{season}/players/{uid}` block too. Both
-> rulesets are published by hand — see Gotchas.
+> ```bash
+> npm run check-rules
+> ```
+>
+> Thirty seconds, read-only against Firestore, cleans up after itself. Both
+> rulesets confirmed live as of the last run.
 
 ---
 
@@ -33,7 +35,8 @@ scripts/        Build-time question harvest, and the multi-client test harnesses
 ```
 
 Commands: `npm run dev` (serves at `/quiz/`, port 5273), `test`, `typecheck`, `lint`,
-`build`, `deploy`, `fetch-questions [-- --resort]`, `sync-harness [n]`, `host-room`.
+`build`, `deploy`, `fetch-questions [-- --resort]`, `check-rules`, `sync-harness [n]`,
+`host-room`.
 
 ---
 
