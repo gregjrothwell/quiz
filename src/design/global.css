@@ -536,6 +536,14 @@ input {
 @media (min-width: 46rem) {
   .split--two {
     grid-template-columns: 1fr 1fr;
+    /*
+     * Each panel sized to its own content rather than stretched to match its
+     * neighbour. The two never hold the same amount — one is a button, the
+     * other is a button with a code field above it — so stretching left the
+     * shorter one with a stretch of empty panel under its button, which reads
+     * as something that failed to finish loading.
+     */
+    align-items: start;
   }
 }
 
@@ -1532,6 +1540,7 @@ input {
 .stack--loose {
   gap: 1.5rem;
 }
+
 
 .grow {
   flex: 1;

@@ -88,8 +88,12 @@ export function Landing({
           <h2 className="display" style={{ fontSize: '1.6rem' }}>
             Run the show
           </h2>
+          {/*
+            Deliberately not a restatement of the lede above, which already
+            says what running the show involves.
+          */}
           <p className="muted" style={{ fontSize: '0.85rem', margin: 0 }}>
-            You&rsquo;ll be the quizmaster: pick the set, set the level, start the clock.
+            You&rsquo;ll be the quizmaster, and everyone else joins with your code.
           </p>
           <button
             type="button"
