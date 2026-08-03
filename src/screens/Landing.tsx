@@ -24,7 +24,19 @@ export function Landing({
 
   const trimmedName = name.trim();
   const canCreate = trimmedName.length > 0 && !busy;
-  const canJoin = canCreate && isValidRoomCode(code);
+  const codeReady = isValidRoomCode(code);
+  const canJoin = canCreate && codeReady;
+
+  /**
+   * A disabled button with no explanation reads as a broken one.
+   *
+   * The name field now sits above both panels so it reads as shared, which is
+   * the real fix. This is the belt to that pair of braces: somebody who fills
+   * the code first still gets told what is missing rather than left guessing at
+   * a dead button. Scanning the QR makes that order more likely, since the code
+   * arrives already filled.
+   */
+  const blocker = codeReady && trimmedName.length === 0 ? 'name' : null;
 
   return (
     <>
@@ -46,23 +58,39 @@ export function Landing({
         points.
       </p>
 
+      {/*
+        Above both panels, not inside one.
+        It used to live in the panel whose button reads "Start a new room",
+        which made it look like part of creating a room — so somebody joining
+        filled in the code, found the button dead, and had nothing telling them
+        a name was the missing piece. It is needed either way, so it sits above
+        either way, in both the two-column and the stacked layout.
+      */}
+      <section className="panel stack">
+        <h2 className="display" style={{ fontSize: '1.6rem' }}>
+          Your name
+        </h2>
+        <label className="field">
+          <span className="field__label">Shown on the leaderboard — needed either way</span>
+          <input
+            className="input"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            placeholder="e.g. Greg"
+            maxLength={24}
+            autoComplete="given-name"
+          />
+        </label>
+      </section>
+
       <div className="split split--two">
         <section className="panel stack">
           <h2 className="display" style={{ fontSize: '1.6rem' }}>
-            Your name
+            Run the show
           </h2>
-          <label className="field">
-            <span className="field__label">Shown on the leaderboard</span>
-            <input
-              className="input"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="e.g. Greg"
-              maxLength={24}
-              autoComplete="given-name"
-            />
-          </label>
-
+          <p className="muted" style={{ fontSize: '0.85rem', margin: 0 }}>
+            You&rsquo;ll be the quizmaster: pick the set, set the level, start the clock.
+          </p>
           <button
             type="button"
             className="btn btn--primary"
@@ -71,9 +99,6 @@ export function Landing({
           >
             Start a new room
           </button>
-          <p className="muted" style={{ fontSize: '0.85rem', margin: 0 }}>
-            You&rsquo;ll be the quizmaster.
-          </p>
         </section>
 
         <section className="panel stack">
@@ -95,10 +120,16 @@ export function Landing({
               aria-describedby="code-hint"
             />
           </label>
-          <p id="code-hint" className="muted" style={{ fontSize: '0.85rem', margin: 0 }}>
-            {initialCode
-              ? 'Filled in from the link — just add your name.'
-              : 'Ask the quizmaster to read it out, or scan the code on their screen.'}
+          <p
+            id="code-hint"
+            className={blocker ? 'nudge' : 'muted'}
+            style={{ fontSize: '0.85rem', margin: 0 }}
+          >
+            {blocker === 'name'
+              ? 'Now put your name in the box above — you need one to join.'
+              : initialCode
+                ? 'Filled in from the link — just add your name.'
+                : 'Ask the quizmaster to read it out, or scan the code on their screen.'}
           </p>
 
           <button

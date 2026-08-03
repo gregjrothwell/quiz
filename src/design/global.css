@@ -1547,6 +1547,17 @@ input {
   color: var(--ink-soft);
 }
 
+/*
+ * Not an error — a missing step. Amber rather than the verdict red of
+ * `.notice`, because "you still need to do this" and "something went wrong"
+ * should not look the same.
+ */
+.nudge {
+  border-left: 2px solid var(--amber);
+  padding-left: 0.85rem;
+  color: var(--amber-bright);
+}
+
 .tally {
   font-family: var(--tech);
   font-weight: 700;
