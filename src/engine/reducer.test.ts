@@ -473,3 +473,44 @@ describe('reset', () => {
     }).toEqual({ phase: 'lobby', players: 2, scores: { host: 0, guest: 0 } });
   });
 });
+
+describe('reveal only scores people in the room', () => {
+  test('ignores an answer from a uid the room does not list', () => {
+    // #given an open question answered correctly by a member and by somebody
+    // who is not in the room — which the answers subcollection permits, since
+    // nothing checks membership on the way in
+    const room = playingRoom();
+    const withStranger: RoomState = {
+      ...room,
+      answers: {
+        guest: { optionIndex: 1, elapsedMs: 0 },
+        stranger: { optionIndex: 1, elapsedMs: 0 },
+      },
+    };
+
+    // #when the question is revealed
+    const result = reduce(withStranger, revealNow(withStranger));
+
+    // #then only the member is scored, so no score can exist for somebody the
+    // standings would never show — the shape of the room 6SVG bug
+    expect(result.lastDeltas).toEqual({ guest: 1000 });
+    expect(result.scores['stranger']).toBeUndefined();
+  });
+
+  test('still scores a member normally', () => {
+    // #given only members answering
+    const room = playingRoom();
+    const answered = reduce(room, {
+      type: 'answer',
+      uid: 'guest',
+      optionIndex: 1,
+      elapsedMs: 0,
+    });
+
+    // #when revealed
+    const result = reduce(answered, revealNow(answered));
+
+    // #then nothing about the ordinary path changed
+    expect(result.scores['guest']).toBe(1000);
+  });
+});

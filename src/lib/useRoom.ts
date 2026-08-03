@@ -261,13 +261,20 @@ export function useRoom(): UseRoom {
 
   const room = useMemo<RoomState | null>(() => {
     if (!code || !persisted) return null;
+    // Two filters, for two different stale readings:
+    //
     // Only answers for the question in play count, so a document left over from
     // the previous question is ignored rather than scored again.
+    //
+    // And only answers from people the room lists. Nothing checks membership on
+    // the way in, so a client can write an answer to a room it is not a member
+    // of — which used to leave the "how many have answered" pips reading more
+    // than the number of players.
     const live: Record<string, Answer> = {};
     for (const [answerUid, answer] of Object.entries(answers as Record<string, AnswerDoc>)) {
-      if (answer.questionIndex === persisted.index) {
-        live[answerUid] = { optionIndex: answer.optionIndex, elapsedMs: answer.elapsedMs };
-      }
+      if (answer.questionIndex !== persisted.index) continue;
+      if (!persisted.players[answerUid]) continue;
+      live[answerUid] = { optionIndex: answer.optionIndex, elapsedMs: answer.elapsedMs };
     }
     return toRoomState(code, persisted, live);
   }, [code, persisted, answers]);

@@ -27,8 +27,18 @@ import { firestore } from '../firebase';
  * game.
  */
 
-/** Bump to start a new season. Old rows stay put under their own id. */
-export const SEASON = 'season-1';
+/**
+ * Bump to start a new season. Old rows stay put under their own id.
+ *
+ * `season-1` was development and testing. `season-2` is the first one played
+ * with the office, started 3 August 2026 — bumping rather than deleting because
+ * it gives an empty board just the same, keeps the old rows recoverable if a
+ * number ever needs checking, and needs no destructive write against live data.
+ *
+ * A new season also starts with an empty question history (`asked/{packId}`
+ * lives under the season), so the first rounds can serve anything.
+ */
+export const SEASON = 'season-2';
 
 /** More than an office will fill, small enough to stay one cheap read. */
 const TABLE_LIMIT = 50;

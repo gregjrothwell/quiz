@@ -134,7 +134,24 @@ function reveal(state: RoomState, correctIndex: number): RoomState {
   // the question stays open instead.
   if (correctIndex < 0 || correctIndex >= question.options.length) return state;
 
-  const deltas = tallyQuestion({ correctIndex, answers: state.answers });
+  // Only people who are actually in the room score.
+  //
+  // Answers arrive through a subcollection that nothing checks membership on,
+  // so a client can write one for a room it is not a member of — which is how a
+  // reaped player kept banking points nobody could see: `standings` filters on
+  // `players`, so the score existed in the document and appeared on no screen.
+  // `answer` in this same reducer has always refused a non-member; this is the
+  // reveal agreeing with it, so a score can never exist for somebody the room
+  // does not list.
+  //
+  // Safe for anybody merely passing through that state: a client that finds
+  // itself missing puts itself back within a second, and a reveal cannot happen
+  // until twenty seconds after the question opened.
+  const eligible = Object.fromEntries(
+    Object.entries(state.answers).filter(([uid]) => state.players[uid]),
+  );
+
+  const deltas = tallyQuestion({ correctIndex, answers: eligible });
 
   const scores = { ...state.scores };
   for (const [uid, delta] of Object.entries(deltas)) {

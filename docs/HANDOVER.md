@@ -269,6 +269,8 @@ happened once.
 | **`start` carries a `gameId`, and the season row stores `lastGame`** | Without it, reloading the final screen banks the same game again. The check happens inside the Firestore transaction, so it survives a reload rather than just a re-render. |
 | **The ladder shows each question's level, not your score on it** | Per-question scores would mean accumulating a history no other device has, for a number the standings show two seconds later. The level is already in the room, and it makes a ramped round visibly steepen. |
 | **The round title card lives on the standings screen** | Between questions there's no clock running, so a beat of theatre costs nobody answering time. Over the question it would eat the first seconds of a twenty-second window. |
+| **Only members score at the reveal** (`reduce`'s `reveal`) | Answers arrive through a subcollection nothing checks membership on, so a client can write one for a room it is not a member of. `standings` filters on `players`, so such a score exists in the document and appears on no screen — which is what made the 6SVG bug invisible rather than obvious. `answer` in the same reducer had always refused a non-member; this is the reveal agreeing with it. Safe because a client that finds itself missing puts itself back within a second, and no reveal can happen inside twenty. |
+| **A new season is a bump, not a delete** (`SEASON` in `src/lib/season.ts`) | `season-1` was development; `season-2` is the office league, started 3 August 2026. Bumping empties the board just as a wipe would, keeps the old rows recoverable if a number ever needs checking, and needs no destructive write against live data. Note it also resets the question history, which lives under the season. |
 | **Nobody is reaped outside the lobby** (`reapAbsent`) | Reaping exists so a closed tab stops loitering before a round starts. Mid-round it is all cost: `standings` filters on `players`, so a removed player vanishes from *every* device, and `recordGame` skips a uid that is not in `players`, so their game never reaches the season. Presence is not evidence of leaving — it runs over the Realtime Database, a different connection from the Firestore one carrying the game, so a backgrounded tab or a closed lid drops it while the round plays on perfectly. **This actually happened**: room 6SVG, a player with 4,300 points who answered the final question, invisible on every screen and with no season row. |
 | **A client that finds itself missing puts itself back** (`useRoom`) | The other half of the same bug. Membership could be taken from a live client and nothing ever restored it — and the failure was near-silent, because answers are not membership-checked, so the player carried on playing and scoring while being invisible. The rejoin preserves `joinedAt`, or a reaped quizmaster would return at the back of the queue and lose the role, and it never resets a score that is already on the board. |
 | **`joinedAt` is remembered from the room, not just from writing to it** | Creating a room does not go through `writeSelfIntoRoom`, so a creator had no remembered place in the queue and came back from a reap stamped with the current time. Caught by testing the fix rather than by reading it. |
@@ -367,13 +369,11 @@ assumed.
 - **~252 kB gzipped**, nearly all Firebase, plus 67 kB of fonts. The lobby QR
   code added about 10 kB of that (`qrcode-generator`, MIT, no dependencies) —
   more than it looked like it would. Code-splitting is the fix if it matters.
-- **A player removed from `players` keeps playing and keeps scoring.** Answers
-  are not membership-checked, and the reveal tallies whoever answered. That is
-  now recoverable rather than fatal — the client puts itself back — but it is
-  why the 6SVG bug was so quiet: nothing anywhere said "you are not in this
-  room", the player just stopped appearing on other people's screens. If a
-  score ever shows up in a room document for a uid that is not a member, this
-  is the shape of it.
+- **A non-member can still write an answer document.** Nothing checks
+  membership on the way in — the room code is the capability, as everywhere
+  else. It no longer *scores*, and no longer inflates the answered count, but
+  the write itself is still possible and the rules still permit it. What that
+  costs now is a stray document, not somebody's game.
 - **Season standings follow the browser, not the person.** Anonymous auth gives a
   durable uid with no sign-up, which is the whole appeal and the whole limitation.
   The sharp edge is **iOS Safari, which evicts site storage after about a week
