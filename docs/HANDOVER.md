@@ -9,8 +9,11 @@ Built to replace Polly in Teams.
 - **Status:** shipped and played. 117 tests, clean types and lint, no `any` or
   `@ts-ignore`. The **answer vault is live**: 3,947 answers seeded, both
   rulesets published, preflight passing.
-- **Next:** nothing blocking. `sync-harness 10` re-run after the vault landed:
-  ten clients, all ten joined, all ten saw the round start within 84 ms, none
+- **Next:** [a configurable answer window](#next-a-configurable-answer-window) —
+  designed, not started. Read that section before touching the twenty-second
+  literal anywhere, because one of the places it lives is the security rules.
+- Nothing is blocking. `sync-harness 10` was re-run after the vault landed: ten
+  clients, all ten joined, all ten saw the round start within 84 ms, none
   dropped — so `openedAtOk` gating every room write did not break joining, which
   was the real risk of that change.
 
@@ -163,6 +166,68 @@ off the room snapshot, or fetch `packs/music.json` and search for the prompt.
 Both of those worked until now, and both were one keystroke away from anybody
 curious. Now cheating takes a bespoke script and premeditation — the same bar as
 harvesting OpenTDB, which was always the real ceiling.
+
+---
+
+## Next: a configurable answer window
+
+**Designed, not started.** Twenty seconds is currently hardcoded. Letting the
+quizmaster choose is worth more than a settings toggle usually is, because it
+mostly cancels the vault's real cost: a round everybody answers in five seconds
+still burns twenty, and at a ten-second setting that stops mattering.
+
+About half a day. Suggested options are 10 / 20 / 30 seconds as a picker beside
+the level one, rather than free text.
+
+### The mechanical two-thirds
+
+Scoring is already built for it — `scoreAnswer` and `tallyQuestion` both take
+`durationMs` and merely *default* to the constant. The rest is threading a room
+field through what still hardcodes it:
+
+| Place | What it does today |
+|---|---|
+| `src/engine/state.ts` | `QUESTION_DURATION_MS` — becomes a `RoomState` field |
+| `src/engine/reducer.ts` | rejects answers past the window |
+| `src/lib/useQuestionClock.ts` | counts down from the constant |
+| `src/screens/QuestionScreen.tsx` | `ArcTimer` total |
+| `src/screens/Lobby.tsx` | needs the picker |
+| `src/lib/vault.ts` | `REVEAL_GATE_MS`, which must agree with the rules |
+
+### The part that needs care
+
+**The answer window is enforced in the security rules**, not just the client:
+
+```
+request.time > room().openedAt + duration.value(20, 's')
+```
+
+That literal has to become a read from the room document — and doing that opens
+a hole which must close in the same change. **If a member can lower the duration
+while a question is open, they open the vault early while everybody else still
+believes they have twenty seconds.** That is a silent cheat, which is exactly
+the class the vault exists to kill.
+
+The fix is the pattern already sitting next to it: the duration must be
+immutable except on the write that opens a question, so `openedAtOk()` becomes
+`timingOk()` covering both fields. Then the worst anyone can do is set a
+five-second round *before* it starts, which everyone can see on the timer —
+vandalism, not cheating.
+
+Two traps:
+
+- **Rooms created before the change have no duration field.** The rule needs
+  `room().get('durationSecs', 20)` rather than a bare read, or every in-flight
+  room breaks the moment the rules are published.
+- **Rules and bundle must ship together.** Publishing the rules first leaves the
+  deployed client failing every write, which is what happened for about an hour
+  when the vault landed.
+
+### What falls out of it for free
+
+`npm run check-rules` currently sits through a real twenty seconds to prove the
+gate opens. Give its probe room a three-second window and most of that minute
+comes back.
 
 ---
 
@@ -494,4 +559,11 @@ sync — the two things that have actually broken in play.
 The remaining untested path is a **quizmaster dropping out mid-round** and the
 role passing to somebody else. It is covered in the engine but has never been
 watched happen with real clients. `npm run host-room` plus a browser is the way
-to try it.
+to try it — and that harness has itself not been run since the vault landed, so
+it now exercises the twenty-second gate and the vault lookup on the way through.
+
+**The next piece of work** is [a configurable answer
+window](#next-a-configurable-answer-window). It is written up rather than
+started, and the write-up is worth reading before touching the twenty-second
+literal, because one of the places it lives is `firestore.rules` — and changing
+it there naively hands anybody in the room a silent way to open the vault early.
