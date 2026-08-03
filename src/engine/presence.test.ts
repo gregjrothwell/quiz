@@ -18,6 +18,7 @@ describe('reapAbsent', () => {
       present: new Set(),
       absentSince: { host: 0, sam: 0, priya: 0 },
       now: STALE_GRACE_MS * 10,
+      phase: 'lobby' as const,
     });
 
     // #then nobody is removed — an empty tree means presence is broken, and
@@ -35,6 +36,7 @@ describe('reapAbsent', () => {
       present: new Set(['host']),
       absentSince: { sam: 0 },
       now: STALE_GRACE_MS,
+      phase: 'lobby' as const,
     });
 
     // #then only that player is reaped
@@ -51,6 +53,7 @@ describe('reapAbsent', () => {
       present: new Set(['host']),
       absentSince: { sam: 0 },
       now: STALE_GRACE_MS - 1,
+      phase: 'lobby' as const,
     });
 
     // #then they stay in the room
@@ -67,6 +70,7 @@ describe('reapAbsent', () => {
       present: new Set(['host']),
       absentSince: {},
       now: 5_000,
+      phase: 'lobby' as const,
     });
 
     // #then they are given the full grace period, not removed immediately
@@ -86,6 +90,7 @@ describe('reapAbsent', () => {
       present: new Set(['host', 'sam']),
       absentSince: { sam: 0 },
       now: STALE_GRACE_MS * 2,
+      phase: 'lobby' as const,
     });
 
     // #then their absence clock is cleared so a later blip starts afresh
@@ -102,6 +107,7 @@ describe('reapAbsent', () => {
       present: new Set(),
       absentSince: {},
       now: 1_000,
+      phase: 'lobby' as const,
     });
 
     // #then there is nothing to remove
@@ -118,9 +124,67 @@ describe('reapAbsent', () => {
       present: new Set(['host']),
       absentSince: { sam: 0 },
       now: STALE_GRACE_MS + 1,
+      phase: 'lobby' as const,
     });
 
     // #then presence being available means the absence is believed
     expect(result.remove).toEqual(['sam']);
+  });
+});
+
+describe('reapAbsent outside the lobby', () => {
+  const absentPlayers = {
+    greg: { name: 'Greg', joinedAt: 100 },
+    tom: { name: 'Tom', joinedAt: 200 },
+  };
+
+  test.each(['question', 'reveal', 'scoreboard', 'finished'] as const)(
+    'never removes anybody during %s',
+    (phase) => {
+      // #given a player whose presence has been gone far longer than the grace
+      const result = reapAbsent({
+        players: absentPlayers,
+        present: new Set(['greg']),
+        absentSince: { tom: 0 },
+        now: STALE_GRACE_MS * 10,
+        phase,
+      });
+
+      // #then they stay in the room
+      expect(result.remove).toEqual([]);
+    },
+  );
+
+  test('keeps a mid-round player who would have been reaped in the lobby', () => {
+    // #given the identical reading, once in the lobby and once mid-round
+    const reading = {
+      players: absentPlayers,
+      present: new Set(['greg']),
+      absentSince: { tom: 0 },
+      now: STALE_GRACE_MS * 10,
+    };
+
+    // #when each is evaluated
+    const inLobby = reapAbsent({ ...reading, phase: 'lobby' });
+    const midRound = reapAbsent({ ...reading, phase: 'question' });
+
+    // #then only the lobby tidies up — this is the bug from room 6SVG, where a
+    // player was removed mid-round and lost their score and their season row
+    expect(inLobby.remove).toEqual(['tom']);
+    expect(midRound.remove).toEqual([]);
+  });
+
+  test('drops the absence clock outside the lobby so a stale reading cannot reap on return', () => {
+    // #given somebody noticed absent long ago, while a round was running
+    const result = reapAbsent({
+      players: absentPlayers,
+      present: new Set(['greg']),
+      absentSince: { tom: 0 },
+      now: STALE_GRACE_MS * 10,
+      phase: 'scoreboard',
+    });
+
+    // #then the clock is cleared, so the lobby starts them fresh
+    expect(result.absentSince).toEqual({});
   });
 });

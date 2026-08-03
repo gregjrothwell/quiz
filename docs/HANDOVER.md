@@ -269,6 +269,9 @@ happened once.
 | **`start` carries a `gameId`, and the season row stores `lastGame`** | Without it, reloading the final screen banks the same game again. The check happens inside the Firestore transaction, so it survives a reload rather than just a re-render. |
 | **The ladder shows each question's level, not your score on it** | Per-question scores would mean accumulating a history no other device has, for a number the standings show two seconds later. The level is already in the room, and it makes a ramped round visibly steepen. |
 | **The round title card lives on the standings screen** | Between questions there's no clock running, so a beat of theatre costs nobody answering time. Over the question it would eat the first seconds of a twenty-second window. |
+| **Nobody is reaped outside the lobby** (`reapAbsent`) | Reaping exists so a closed tab stops loitering before a round starts. Mid-round it is all cost: `standings` filters on `players`, so a removed player vanishes from *every* device, and `recordGame` skips a uid that is not in `players`, so their game never reaches the season. Presence is not evidence of leaving — it runs over the Realtime Database, a different connection from the Firestore one carrying the game, so a backgrounded tab or a closed lid drops it while the round plays on perfectly. **This actually happened**: room 6SVG, a player with 4,300 points who answered the final question, invisible on every screen and with no season row. |
+| **A client that finds itself missing puts itself back** (`useRoom`) | The other half of the same bug. Membership could be taken from a live client and nothing ever restored it — and the failure was near-silent, because answers are not membership-checked, so the player carried on playing and scoring while being invisible. The rejoin preserves `joinedAt`, or a reaped quizmaster would return at the back of the queue and lose the role, and it never resets a score that is already on the board. |
+| **`joinedAt` is remembered from the room, not just from writing to it** | Creating a room does not go through `writeSelfIntoRoom`, so a creator had no remembered place in the queue and came back from a reap stamped with the current time. Caught by testing the fix rather than by reading it. |
 | **An empty presence tree never reaps anybody** (`reapAbsent`) | Reading "nobody is present" as "everybody has left" is what turned a missing Realtime Database ruleset into an unplayable game: every presence write failed, the quizmaster's reaper deleted every player including itself, `resolveQuizmaster` then returned null, and the role flickered to whoever rejoined next while the room stopped responding to anyone. Presence only tidies away closed tabs; if it is unavailable the right answer is a ghost in the lobby, not an empty room. |
 | **A phase transition never writes the `players` map** (`toUpdate`) | `dispatch` folds actions over the *writer's* snapshot, and `handleStart` awaits a pack fetch between taking that snapshot and writing it — so everyone who joined during the fetch was erased. Measured with `npm run sync-harness`: five of ten players silently deleted. Membership changes only ever go through single-field `players.{uid}` writes, so no transition needs the map. `scores` is written as field paths for the same reason. |
 | **Published packs carry `options`, never `correct`** (`sealQuestion`) | The harvest-time `Question` type still has the answer; the published `SealedQuestion` does not, and nothing under `src/` outside `types.ts` may name `correct`. The options are sorted, not left in `[correct, ...incorrect]` order, or the answer would simply be index 0. Two questions with different answers produce identical orderings — there is a test. |
@@ -364,6 +367,13 @@ assumed.
 - **~252 kB gzipped**, nearly all Firebase, plus 67 kB of fonts. The lobby QR
   code added about 10 kB of that (`qrcode-generator`, MIT, no dependencies) —
   more than it looked like it would. Code-splitting is the fix if it matters.
+- **A player removed from `players` keeps playing and keeps scoring.** Answers
+  are not membership-checked, and the reveal tallies whoever answered. That is
+  now recoverable rather than fatal — the client puts itself back — but it is
+  why the 6SVG bug was so quiet: nothing anywhere said "you are not in this
+  room", the player just stopped appearing on other people's screens. If a
+  score ever shows up in a room document for a uid that is not a member, this
+  is the shape of it.
 - **Season standings follow the browser, not the person.** Anonymous auth gives a
   durable uid with no sign-up, which is the whole appeal and the whole limitation.
   The sharp edge is **iOS Safari, which evicts site storage after about a week

@@ -25,6 +25,7 @@ import {
   createRoom,
   resolveQuizmaster,
   type Answer,
+  type Phase,
   type Player,
   type RoomState,
 } from '../engine/state';
@@ -171,6 +172,18 @@ export function useRoom(): UseRoom {
   const nameRef = useRef<string>('');
   const absentSinceRef = useRef<Record<string, number>>({});
   const playersRef = useRef<Record<string, Player>>({});
+  const phaseRef = useRef<Phase>('lobby');
+
+  /**
+   * This client's place in the queue, remembered so that coming back from a
+   * reap does not cost the quizmaster their role — `resolveQuizmaster` picks
+   * the longest-present player, and a fresh `joinedAt` would send them to the
+   * back.
+   */
+  const joinedAtRef = useRef<number | null>(null);
+
+  /** Guards against stacking rejoin writes while one is already in flight. */
+  const rejoiningRef = useRef(false);
 
   // Anonymous auth gives every browser a durable uid with no sign-up, which is
   // also what makes an accountless cross-session leaderboard possible later.
@@ -266,7 +279,17 @@ export function useRoom(): UseRoom {
   // in its dependencies — see the reaper effect below.
   useEffect(() => {
     playersRef.current = room?.players ?? {};
-  }, [room]);
+    phaseRef.current = room?.phase ?? 'lobby';
+
+    // Remember our place in the queue every time we see ourselves in the room,
+    // rather than only when we write ourselves in. Creating a room never goes
+    // through `writeSelfIntoRoom`, so a creator who was reaped used to come
+    // back stamped with the current time — losing the quizmaster role to
+    // whoever had been there second longest.
+    const mine = uid ? room?.players[uid] : undefined;
+    if (mine) joinedAtRef.current = mine.joinedAt;
+  }, [room, uid]);
+
 
   /**
    * Applies an engine action and persists the result. The quizmaster drives
@@ -296,16 +319,59 @@ export function useRoom(): UseRoom {
       const snapshot = await getDoc(roomDoc(targetCode));
       if (!snapshot.exists()) throw new Error(`Room ${targetCode} does not exist`);
 
-      const existing = (snapshot.data() as PersistedRoom).players[targetUid];
-      // Preserve the original joinedAt on a reconnect, or a returning quizmaster
-      // would drop to the back of the queue and lose the role.
+      const data = snapshot.data() as PersistedRoom;
+      const existing = data.players[targetUid];
+
+      // Preserve the original joinedAt on a reconnect, or a returning
+      // quizmaster would drop to the back of the queue and lose the role.
+      // `joinedAtRef` covers the case where the entry is gone entirely — a
+      // rejoin after being reaped — where there is nothing left to read it off.
+      const restored = joinedAtRef.current;
+      const entry = existing ?? (restored === null ? player : { name, joinedAt: restored });
+
       await updateDoc(roomDoc(targetCode), {
-        [`players.${targetUid}`]: existing ?? player,
-        [`scores.${targetUid}`]: (snapshot.data() as PersistedRoom).scores[targetUid] ?? 0,
+        [`players.${targetUid}`]: entry,
+        // Never reset a score that is already on the board. Somebody rejoining
+        // mid-round has been earning points all along — the reveal tallies
+        // whoever answered, member or not — and zeroing them here would turn a
+        // recovered player into a punished one.
+        [`scores.${targetUid}`]: data.scores[targetUid] ?? 0,
       });
+
+      joinedAtRef.current = entry.joinedAt;
     },
     [],
   );
+
+  /**
+   * Put ourselves back if we are missing from a room we are still in.
+   *
+   * Membership can be taken away from a client that is alive and playing: the
+   * quizmaster's reaper removes anybody whose Realtime Database presence has
+   * been gone for a few seconds, and presence runs over a different connection
+   * from Firestore. A backgrounded tab, a closed lid or a brief drop is enough.
+   *
+   * Nothing used to bring them back, and the failure was near-silent. Answers
+   * are not checked for membership, so they carried on playing and carried on
+   * scoring — but `standings` filters on `players`, so they vanished from every
+   * device's leaderboard, and `recordGame` skipped them, so the game never
+   * reached their season row. Observed in room 6SVG: 4,300 points, answered the
+   * final question, no season row.
+   *
+   * Leaving is unaffected: `leave` clears the code first, so this cannot fire
+   * afterwards and re-add somebody who meant to go.
+   */
+  useEffect(() => {
+    if (!code || !uid || !room) return;
+    if (room.players[uid] || rejoiningRef.current) return;
+
+    rejoiningRef.current = true;
+    void writeSelfIntoRoom(code, uid, nameRef.current)
+      .catch(() => undefined)
+      .finally(() => {
+        rejoiningRef.current = false;
+      });
+  }, [code, uid, room, writeSelfIntoRoom]);
 
   const createAndJoin = useCallback(
     async (name: string): Promise<string> => {
@@ -380,20 +446,24 @@ export function useRoom(): UseRoom {
   // Reap players whose presence has been gone longer than the grace window. Only
   // the quizmaster does this, so several clients cannot race the same removal.
   //
-  // `playersRef` rather than `room` in the dependency list: `room` is a fresh
-  // object on every snapshot, so depending on it tore down and re-established
-  // this Realtime Database listener on every phase change and every answer.
+  // `playersRef` and `phaseRef` rather than `room` in the dependency list:
+  // `room` is a fresh object on every snapshot, so depending on it tore down and
+  // re-established this Realtime Database listener on every phase change and
+  // every answer.
   useEffect(() => {
     if (!code || !isQuizmaster) return;
 
     const presence = rtdbRef(realtimeDb(), `presence/${code}`);
 
     return onValue(presence, (snapshot) => {
+      // The lobby-only policy lives in `reapAbsent`, with the rest of the
+      // reaping rules and its tests, rather than here.
       const { remove, absentSince } = reapAbsent({
         players: playersRef.current,
         present: new Set(Object.keys((snapshot.val() as Record<string, unknown>) ?? {})),
         absentSince: absentSinceRef.current,
         now: Date.now(),
+        phase: phaseRef.current,
       });
 
       absentSinceRef.current = absentSince;
