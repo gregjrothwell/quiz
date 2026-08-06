@@ -1,8 +1,9 @@
 import type { PackId } from '../questions/types';
 import { tallyQuestion } from './scoring';
 import {
-  QUESTION_DURATION_MS,
   currentQuestion,
+  isDurationAllowed,
+  questionDurationMs,
   type Player,
   type QuizQuestion,
   type RoomState,
@@ -12,7 +13,13 @@ export type Action =
   | { type: 'join'; uid: string; name: string; at: number }
   | { type: 'leave'; uid: string }
   | { type: 'selectPack'; packId: PackId; packTitle: string; questions: QuizQuestion[] }
-  | { type: 'start'; at: number; gameId: string }
+  /**
+   * `durationSecs` is settled here and nowhere else. The security rules pin it
+   * for as long as a question is open, so the one write that may change it is
+   * the write that opens one — and starting a round is the only such write a
+   * quizmaster makes deliberately.
+   */
+  | { type: 'start'; at: number; gameId: string; durationSecs: number }
   | { type: 'answer'; uid: string; optionIndex: number; elapsedMs: number }
   /**
    * `correctIndex` arrives from the vault, not from the room. Only the client
@@ -39,7 +46,7 @@ export function reduce(state: RoomState, action: Action): RoomState {
     case 'selectPack':
       return selectPack(state, action.packId, action.packTitle, action.questions);
     case 'start':
-      return start(state, action.at, action.gameId);
+      return start(state, action.at, action.gameId, action.durationSecs);
     case 'answer':
       return answer(state, action.uid, action.optionIndex, action.elapsedMs);
     case 'reveal':
@@ -89,14 +96,18 @@ function selectPack(
   return { ...state, packId, packTitle, questions };
 }
 
-function start(state: RoomState, at: number, gameId: string): RoomState {
+function start(state: RoomState, at: number, gameId: string, durationSecs: number): RoomState {
   if (state.phase !== 'lobby') return state;
   if (state.questions.length === 0) return state;
+  // A window the rules would refuse is refused here instead, where it costs a
+  // dead Start button rather than a round that stops at its first reveal.
+  if (!isDurationAllowed(durationSecs)) return state;
 
   return {
     ...state,
     phase: 'question',
     index: 0,
+    durationSecs,
     questionOpenedAt: at,
     gameId,
     answers: {},
@@ -118,7 +129,7 @@ function answer(state: RoomState, uid: string, optionIndex: number, elapsedMs: n
 
   // Answers arriving after the window closed are ignored rather than scored at
   // zero, so a laggy client is not punished differently from a silent one.
-  if (elapsedMs > QUESTION_DURATION_MS) return state;
+  if (elapsedMs > questionDurationMs(state)) return state;
 
   return { ...state, answers: { ...state.answers, [uid]: { optionIndex, elapsedMs } } };
 }
@@ -146,12 +157,20 @@ function reveal(state: RoomState, correctIndex: number): RoomState {
   //
   // Safe for anybody merely passing through that state: a client that finds
   // itself missing puts itself back within a second, and a reveal cannot happen
-  // until twenty seconds after the question opened.
+  // until the room's answer window has closed — five seconds even at the floor
+  // the rules allow.
   const eligible = Object.fromEntries(
     Object.entries(state.answers).filter(([uid]) => state.players[uid]),
   );
 
-  const deltas = tallyQuestion({ correctIndex, answers: eligible });
+  // The room's own window, not the default. Speed points decay across it, so
+  // scoring a ten-second round on a twenty-second curve would cap everybody at
+  // three-quarters of the speed bonus no matter how fast they were.
+  const deltas = tallyQuestion({
+    correctIndex,
+    answers: eligible,
+    durationMs: questionDurationMs(state),
+  });
 
   const scores = { ...state.scores };
   for (const [uid, delta] of Object.entries(deltas)) {

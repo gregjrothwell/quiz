@@ -1,10 +1,33 @@
 import { useState } from 'react';
 import { QrCode } from '../components/QrCode';
 import { joinLink } from '../engine/roomCode';
-import { LEVELS, resolveQuizmaster, type Level, type RoomState } from '../engine/state';
+import {
+  DEFAULT_DURATION_SECS,
+  DURATION_CHOICES,
+  LEVELS,
+  resolveQuizmaster,
+  type Level,
+  type RoomState,
+} from '../engine/state';
 import type { PackId, PackSummary } from '../questions/types';
 
 const ROUND_LENGTHS = [10, 15, 20, 25] as const;
+
+/**
+ * Why the window is worth choosing rather than fixing: the vault cannot open
+ * before it closes, so a round everybody answers in five seconds still costs the
+ * full window on every question.
+ */
+// Named as a ladder up from the default rather than around a middle, because
+// ten is now both the default and the shortest — the picker only ever buys a
+// round more time. Deliberately avoids "Standard", which is the level picker's
+// middle option and sits directly above this one: two adjacent tiles reading
+// the same word, lit differently, is a way to pick the wrong thing.
+const DURATION_META: Record<number, { title: string; blurb: string }> = {
+  10: { title: 'Brisk', blurb: 'The house pace' },
+  15: { title: 'Steady', blurb: 'A beat to think' },
+  20: { title: 'Generous', blurb: 'For a harder set' },
+};
 
 const LEVEL_META: Record<Level, { title: string; blurb: string }> = {
   mixed: { title: 'As it comes', blurb: 'Whatever the pack deals' },
@@ -30,7 +53,7 @@ interface LobbyProps {
   isQuizmaster: boolean;
   packs: PackSummary[];
   busy: boolean;
-  onStart: (packId: PackId, count: number, level: Level) => void;
+  onStart: (packId: PackId, count: number, level: Level, durationSecs: number) => void;
   onLeave: () => void;
 }
 
@@ -46,6 +69,7 @@ export function Lobby({
   const [packId, setPackId] = useState<PackId | null>(null);
   const [count, setCount] = useState<number>(15);
   const [level, setLevel] = useState<Level>('ramp');
+  const [durationSecs, setDurationSecs] = useState<number>(DEFAULT_DURATION_SECS);
 
   const quizmasterUid = resolveQuizmaster(room.players);
   const quizmasterName = quizmasterUid ? room.players[quizmasterUid]?.name : undefined;
@@ -154,6 +178,38 @@ export function Lobby({
           </div>
 
           <div className="stack">
+            <p className="eyebrow">Time to answer</p>
+            <div className="picker">
+              {DURATION_CHOICES.map((option) => {
+                const meta = DURATION_META[option];
+                return (
+                  <button
+                    type="button"
+                    key={option}
+                    className="pick"
+                    aria-pressed={option === durationSecs}
+                    onClick={() => setDurationSecs(option)}
+                  >
+                    <b>{meta?.title ?? `${option}s`}</b>
+                    <span>{meta?.blurb}</span>
+                    <i>{option} seconds</i>
+                  </button>
+                );
+              })}
+            </div>
+            {/*
+              Worth saying, because it is the one thing about this game that
+              surprises people who have played Polly: nobody can cut a question
+              short, including the quizmaster. The answer is not on any device
+              until the window has closed. See docs/HANDOVER.md.
+            */}
+            <p className="muted" style={{ fontSize: '0.85rem', margin: 0 }}>
+              Every question runs the full {durationSecs} seconds — the answer is locked away
+              until then, so it can&rsquo;t be revealed early.
+            </p>
+          </div>
+
+          <div className="stack">
             <p className="eyebrow">Questions this round</p>
             <div className="btn-row">
               {ROUND_LENGTHS.map((option) => (
@@ -179,7 +235,7 @@ export function Lobby({
             type="button"
             className="btn btn--primary"
             disabled={!packId || busy || playerEntries.length === 0 || effectiveCount === 0}
-            onClick={() => packId && onStart(packId, effectiveCount, level)}
+            onClick={() => packId && onStart(packId, effectiveCount, level, durationSecs)}
           >
             {busy ? 'Loading questions…' : 'Start the show'}
           </button>

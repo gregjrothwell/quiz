@@ -22,6 +22,7 @@ import { firebaseAuth, firestore, realtimeDb } from '../firebase';
 import { reduce, type Action } from '../engine/reducer';
 import { reapAbsent } from '../engine/presence';
 import {
+  LEGACY_DURATION_SECS,
   createRoom,
   resolveQuizmaster,
   type Answer,
@@ -78,7 +79,17 @@ interface AnswerDoc extends Answer {
 
 function toRoomState(code: string, data: DocumentData, answers: Record<string, Answer>): RoomState {
   const persisted = data as PersistedRoom;
-  return { ...persisted, code, answers };
+  return {
+    ...persisted,
+    code,
+    answers,
+    // A room started before the window was selectable has no field, and the
+    // rules fall back to the same twenty with `get('durationSecs', 20)`. Not
+    // the lobby's default, which is ten and has nothing to do with this — see
+    // LEGACY_DURATION_SECS. Filled in here, at the one place a document becomes
+    // state, so nothing downstream has to defend against a missing number.
+    durationSecs: persisted.durationSecs ?? LEGACY_DURATION_SECS,
+  };
 }
 
 /**
@@ -95,6 +106,7 @@ function toPersisted(state: RoomState): PersistedRoom {
     packTitle: state.packTitle,
     questions: state.questions,
     index: state.index,
+    durationSecs: state.durationSecs,
     questionOpenedAt: state.questionOpenedAt,
     scores: state.scores,
     lastDeltas: state.lastDeltas,
@@ -150,8 +162,8 @@ function toUpdate(state: RoomState, previous: RoomState | null): Record<string, 
  *
  * The distinction matters because a player joining mid-question is also an
  * update to a room whose phase is `question`, and restamping `openedAt` for
- * that would hand everybody an extra twenty seconds — and, worse, would let a
- * steady trickle of joins hold the vault shut indefinitely.
+ * that would hand everybody a fresh window — and, worse, would let a steady
+ * trickle of joins hold the vault shut indefinitely.
  */
 function opensAQuestion(next: RoomState, previous: RoomState | null): boolean {
   if (next.phase !== 'question') return false;

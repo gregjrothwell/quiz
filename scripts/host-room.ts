@@ -9,6 +9,11 @@
  * see what a non-quizmaster's screen actually does while somebody else runs the
  * game, which no single-browser session can show.
  *
+ * Takes the answer window in seconds, so the configurable one can be watched
+ * rather than assumed:
+ *
+ *   npm run host-room -- 10
+ *
  * Not part of the build or the test suite: it talks to the live project.
  */
 
@@ -24,7 +29,14 @@ import {
   type DocumentData,
 } from 'firebase/firestore';
 import { reduce, type Action } from '../src/engine/reducer';
-import { createRoom, currentQuestion, type QuizQuestion, type RoomState } from '../src/engine/state';
+import {
+  DEFAULT_DURATION_SECS,
+  createRoom,
+  currentQuestion,
+  isDurationAllowed,
+  type QuizQuestion,
+  type RoomState,
+} from '../src/engine/state';
 import { randomRoomCode } from '../src/engine/roomCode';
 import { resolveAnswer } from '../src/lib/vault';
 
@@ -50,6 +62,19 @@ function toPersisted(state: RoomState): PersistedRoom {
   delete persisted.answers;
   return persisted as unknown as PersistedRoom;
 }
+
+const DURATION_SECS = Number(process.argv[2] ?? DEFAULT_DURATION_SECS);
+if (!isDurationAllowed(DURATION_SECS)) {
+  throw new Error(`${process.argv[2]} is not a window the rules will accept`);
+}
+
+/**
+ * The vault opens strictly *after* the window, and the server measures it from
+ * its own clock rather than this one. A second of slack covers the difference,
+ * which is the same margin the browser gets for free by starting its countdown
+ * only once it has seen the write land.
+ */
+const GATE_SLACK_MS = 1_000;
 
 const QUESTIONS: QuizQuestion[] = Array.from({ length: 3 }, (_, i) => ({
   id: `hq${i}`,
@@ -125,11 +150,11 @@ async function main(): Promise<void> {
   console.log(`${stamp()}  >>> WRITING start`);
   await dispatch([
     { type: 'selectPack', packId: 'general-knowledge', packTitle: 'GK', questions: QUESTIONS },
-    { type: 'start', at: Date.now(), gameId: `host-${Date.now()}` },
+    { type: 'start', at: Date.now(), gameId: `host-${Date.now()}`, durationSecs: DURATION_SECS },
   ]);
 
-  // Past the twenty-second gate, so the vault will answer.
-  await sleep(21_000);
+  // Past this room's own gate, so the vault will answer.
+  await sleep(DURATION_SECS * 1000 + GATE_SLACK_MS);
   console.log(`${stamp()}  >>> ASKING the vault`);
   const open = view.latest;
   const asked = open ? currentQuestion({ ...open, code, answers: {} }) : null;

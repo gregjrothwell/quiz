@@ -37,7 +37,7 @@ export function Scoreboard({ room, youUid, isQuizmaster, onNext }: ScoreboardPro
         The title card lives here rather than over the question. Between rounds
         there is no clock running, so a beat of theatre costs nobody any
         answering time — laid over the question it would eat the first seconds
-        of a twenty-second window.
+        of the answering window, which now goes as low as ten.
       */}
       {isLast ? null : (
         <div className="card">

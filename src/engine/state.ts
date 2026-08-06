@@ -7,8 +7,42 @@ import {
 
 export type Phase = 'lobby' | 'question' | 'reveal' | 'scoreboard' | 'finished';
 
-/** How long players get to answer, in milliseconds. */
-export const QUESTION_DURATION_MS = 20_000;
+/** What the lobby starts on, and what a freshly created room carries. */
+export const DEFAULT_DURATION_SECS = 10;
+
+/**
+ * What a room with **no** `durationSecs` is read as, which is a different
+ * question from what the lobby defaults to and must not be changed to follow
+ * it.
+ *
+ * It matches the literal in firestore.rules — `get('durationSecs', 20)` — and
+ * the two have to agree exactly. A room created before the window was
+ * selectable carries no field, so if this said ten while the rules said twenty,
+ * that room's clients would count down to zero, auto-reveal, and be refused by
+ * a vault that was not open for another ten seconds — the round stopping dead
+ * on "the vault would not confirm an answer".
+ */
+export const LEGACY_DURATION_SECS = 20;
+
+/** What the lobby offers. Free text would be a worse control for no more use. */
+export const DURATION_CHOICES = [10, 15, 20] as const;
+
+/**
+ * What the *rules* accept, which is deliberately wider than what the lobby
+ * offers. Any member can restart a question — writing the room back to a
+ * non-question phase and forward again restamps `openedAt`, which was harmless
+ * while the gate was a fixed twenty seconds because it could only ever push the
+ * vault further away. A selectable window turns that same move into a way to
+ * pull the gate closer, so the floor is what bounds it: the worst anybody can
+ * do is a five-second question, with the whole room watching the timer restart.
+ *
+ * The ceiling is only there to keep a nonsense value out of a document every
+ * client re-reads.
+ */
+export const MIN_DURATION_SECS = 5;
+export const MAX_DURATION_SECS = 120;
+
+export const DEFAULT_QUESTION_DURATION_MS = DEFAULT_DURATION_SECS * 1000;
 
 export interface Player {
   name: string;
@@ -40,7 +74,7 @@ export interface QuizQuestion {
    * Nobody's device knows this while the clock is running — not even the
    * quizmaster's. The packs ship without answers, and the answer is fetched
    * from the vault at reveal by a write the security rules refuse until the
-   * question's twenty seconds are up. See docs/HANDOVER.md.
+   * room's answer window is up. See docs/HANDOVER.md.
    */
   correctIndex: number | null;
   category: string;
@@ -59,6 +93,17 @@ export interface RoomState {
   packTitle: string | null;
   questions: QuizQuestion[];
   index: number;
+  /**
+   * How long each question in this round stays open, in seconds. Chosen in the
+   * lobby and fixed for the round.
+   *
+   * Read from the room rather than a constant because the security rules read it
+   * too — the vault refuses to confirm an answer until the server has seen this
+   * many seconds pass since the question opened, so a client that disagreed with
+   * the document would either reveal into a closed gate or leave the room
+   * waiting after its own timer had run out.
+   */
+  durationSecs: number;
   /** When the current question opened, for speed scoring. Null outside 'question'. */
   questionOpenedAt: number | null;
   /** Answers to the current question only, keyed by player uid. */
@@ -87,6 +132,7 @@ export function createRoom(code: string): RoomState {
     packTitle: null,
     questions: [],
     index: 0,
+    durationSecs: DEFAULT_DURATION_SECS,
     questionOpenedAt: null,
     answers: {},
     scores: {},
@@ -98,6 +144,20 @@ export function createRoom(code: string): RoomState {
 
 export function currentQuestion(state: RoomState): QuizQuestion | null {
   return state.questions[state.index] ?? null;
+}
+
+/** This room's answer window in milliseconds, which is what everything measures in. */
+export function questionDurationMs(state: RoomState): number {
+  return state.durationSecs * 1000;
+}
+
+/**
+ * Whether a window is one the rules will accept. Checked before a round starts
+ * rather than trusted, so a value that would be refused by the server fails in
+ * the lobby instead of at the first reveal, with the room already watching.
+ */
+export function isDurationAllowed(secs: number): boolean {
+  return Number.isInteger(secs) && secs >= MIN_DURATION_SECS && secs <= MAX_DURATION_SECS;
 }
 
 /**

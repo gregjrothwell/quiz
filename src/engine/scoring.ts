@@ -1,4 +1,4 @@
-import { QUESTION_DURATION_MS, type Answer } from './state';
+import { DEFAULT_QUESTION_DURATION_MS, type Answer } from './state';
 
 /** Awarded for any correct answer, regardless of speed. */
 export const BASE_POINTS = 500;
@@ -21,7 +21,7 @@ export interface ScoreInput {
 export function scoreAnswer({
   correct,
   elapsedMs,
-  durationMs = QUESTION_DURATION_MS,
+  durationMs = DEFAULT_QUESTION_DURATION_MS,
 }: ScoreInput): number {
   if (!correct) return 0;
   if (durationMs <= 0) return BASE_POINTS + SPEED_POINTS;
@@ -46,7 +46,7 @@ export function tallyQuestion(params: {
   answers: Record<string, Answer>;
   durationMs?: number;
 }): Record<string, number> {
-  const { correctIndex, answers, durationMs = QUESTION_DURATION_MS } = params;
+  const { correctIndex, answers, durationMs = DEFAULT_QUESTION_DURATION_MS } = params;
   const deltas: Record<string, number> = {};
 
   for (const [uid, answer] of Object.entries(answers)) {

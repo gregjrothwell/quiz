@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { BASE_POINTS, SPEED_POINTS, scoreAnswer, standings, tallyQuestion } from './scoring';
-import { QUESTION_DURATION_MS } from './state';
+import { DEFAULT_QUESTION_DURATION_MS } from './state';
 
 /** Whichever lectern the vault named when the question closed. */
 const correctIndex = 1;
@@ -19,7 +19,7 @@ describe('scoreAnswer', () => {
 
   test('awards only the base for a correct answer at the buzzer', () => {
     // #given a correct answer landing exactly as the window closes
-    const input = { correct: true, elapsedMs: QUESTION_DURATION_MS };
+    const input = { correct: true, elapsedMs: DEFAULT_QUESTION_DURATION_MS };
 
     // #when it is scored
     const score = scoreAnswer(input);
@@ -30,7 +30,7 @@ describe('scoreAnswer', () => {
 
   test('awards half the speed bonus at the midpoint', () => {
     // #given a correct answer at half time
-    const input = { correct: true, elapsedMs: QUESTION_DURATION_MS / 2 };
+    const input = { correct: true, elapsedMs: DEFAULT_QUESTION_DURATION_MS / 2 };
 
     // #when it is scored
     const score = scoreAnswer(input);
@@ -52,7 +52,7 @@ describe('scoreAnswer', () => {
 
   test('clamps an elapsed time beyond the window', () => {
     // #given a correct answer recorded after the window somehow
-    const input = { correct: true, elapsedMs: QUESTION_DURATION_MS * 10 };
+    const input = { correct: true, elapsedMs: DEFAULT_QUESTION_DURATION_MS * 10 };
 
     // #when it is scored
     const score = scoreAnswer(input);

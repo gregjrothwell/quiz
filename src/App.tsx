@@ -2,7 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Stage } from './components/Stage';
 import { standings } from './engine/scoring';
 import { codeFromHash } from './engine/roomCode';
-import { buildQuizQuestions, currentQuestion, type Level } from './engine/state';
+import {
+  DEFAULT_QUESTION_DURATION_MS,
+  buildQuizQuestions,
+  currentQuestion,
+  questionDurationMs,
+  type Level,
+} from './engine/state';
 import { isFirebaseConfigured } from './firebase';
 import { loadAsked, recordAsked, recordGame } from './lib/season';
 import { play } from './lib/sound';
@@ -94,7 +100,11 @@ function Game() {
   const bankedRef = useRef<string | null>(null);
 
   const phase = room?.phase ?? 'lobby';
-  const clock = useQuestionClock(phase === 'question', room?.index ?? 0);
+  const clock = useQuestionClock(
+    phase === 'question',
+    room?.index ?? 0,
+    room ? questionDurationMs(room) : DEFAULT_QUESTION_DURATION_MS,
+  );
 
   const report = useCallback((cause: unknown) => {
     setActionError(cause instanceof Error ? cause.message : 'Something went wrong');
@@ -123,7 +133,7 @@ function Game() {
   );
 
   const handleStart = useCallback(
-    (packId: PackId, count: number, level: Level) => {
+    (packId: PackId, count: number, level: Level, durationSecs: number) => {
       setBusy(true);
       setActionError(null);
       loadPackQuestions(packId)
@@ -142,7 +152,7 @@ function Game() {
               packTitle: pack?.title ?? packId,
               questions,
             },
-            { type: 'start', at: Date.now(), gameId: crypto.randomUUID() },
+            { type: 'start', at: Date.now(), gameId: crypto.randomUUID(), durationSecs },
           ]);
 
           // After the round is safely under way, for the same reason.

@@ -76,6 +76,34 @@ service cloud.firestore {
               || resource.data.index != request.resource.data.index);
       }
 
+      // The answer window, in seconds. Chosen in the lobby, and read by the
+      // reveal rule below rather than hardcoded there, so a ten-second round
+      // does not sit through a twenty-second gate.
+      //
+      // Bounds, not the lobby's own three options, and the floor is the point.
+      // Any member can restart a question — write the room to a non-question
+      // phase and back again and `openedAt` is restamped — which was harmless
+      // while the gate was a fixed twenty seconds, because restarting could only
+      // ever push the vault further away. A window that is read from the
+      // document turns that same move into a way to pull the gate *closer*, so
+      // what stops it being a silent cheat is that it cannot go below five
+      // seconds and cannot happen without the whole room watching the timer
+      // jump. Vandalism, and loud.
+      function minDuration() { return 5; }
+      function maxDuration() { return 120; }
+
+      // `is number`, not `is int`, for the same reason as `joinedAt` above: the
+      // wire type is the SDK's choice, and a round that cannot be revealed is a
+      // far worse failure than a float slipping past a bound. The reveal rule
+      // multiplies this out in milliseconds rather than handing it to
+      // `duration.value`, which takes an int and would reject a double outright
+      // — denying every reveal in the room and stopping the round dead.
+      function durationOk() {
+        return request.resource.data.get('durationSecs', 20) is number
+          && request.resource.data.get('durationSecs', 20) >= minDuration()
+          && request.resource.data.get('durationSecs', 20) <= maxDuration();
+      }
+
       // `openedAt` is the server's own record of when the current question went
       // live, and the vault's time gate is measured from it. Opening a question
       // must stamp it with `request.time` — which only `serverTimestamp()`
@@ -83,12 +111,22 @@ service cloud.firestore {
       //
       // Without the second half, a member could hold a question open, rewrite
       // `openedAt` into the past, and unlock the answer while the clock was
-      // still running. `get` with a default covers a room created before this
-      // field existed, and a lobby that has never had a question at all.
-      function openedAtOk() {
+      // still running. `get` with a default covers a room created before these
+      // fields existed, and a lobby that has never had a question at all.
+      //
+      // The window is pinned by the same rule and for a sharper reason. If a
+      // member could lower `durationSecs` while a question was open, they would
+      // open the vault early while everybody else still believed they had the
+      // time the timer was showing them — a silent cheat, which is the exact
+      // class the vault exists to kill. Both fields therefore move only on the
+      // write that opens a question, so the worst that remains is choosing a
+      // short window *before* the round starts, which everyone can see.
+      function timingOk() {
         return opensAQuestion()
           ? request.resource.data.openedAt == request.time
-          : request.resource.data.get('openedAt', null) == resource.data.get('openedAt', null);
+          : request.resource.data.get('openedAt', null) == resource.data.get('openedAt', null)
+            && request.resource.data.get('durationSecs', 20)
+                 == resource.data.get('durationSecs', 20);
       }
 
       function wellFormed() {
@@ -98,6 +136,7 @@ service cloud.firestore {
           && request.resource.data.players.keys().size() <= maxPlayers()
           && request.resource.data.scores.keys().size() <= maxPlayers()
           && request.resource.data.questions.size() <= maxQuestions()
+          && durationOk()
           && ownEntryOk();
       }
 
@@ -132,7 +171,7 @@ service cloud.firestore {
       allow update: if signedIn()
         && (isMember() || request.resource.data.players.keys().hasAny([request.auth.uid]))
         && wellFormed()
-        && openedAtOk();
+        && timingOk();
 
       // Rooms are disposable; nobody needs to delete one mid-quiz.
       allow delete: if false;
@@ -178,12 +217,14 @@ service cloud.firestore {
       // if the same rule did not refuse every one of them until:
       //
       //   1. the question named in the path is the one actually in play, and
-      //   2. the server itself has seen twenty seconds pass since it opened.
+      //   2. the server itself has seen the room's answer window pass since it
+      //      opened.
       //
       // The first stops a member holding question one open and quietly asking
       // about the other fourteen. The second means nobody — in this room or in
       // a decoy of their own — can ask before the answering window has already
-      // closed, because `openedAt` can only be written as `request.time`.
+      // closed, because `openedAt` can only be written as `request.time` and
+      // `durationSecs` cannot move while a question is open.
       //
       // What this does not stop is written down in docs/HANDOVER.md. The short
       // version: the questions come from a public database, so a determined
@@ -195,9 +236,19 @@ service cloud.firestore {
 
         // Both calls read the same document, and Firestore caches identical
         // document accesses within one rule evaluation, so this costs one read.
+        //
+        // Compared in milliseconds rather than with `duration.value`, which
+        // takes an int: `durationSecs` arrives from a client SDK that decides
+        // for itself whether a whole number goes on the wire as an integer or a
+        // double, and handing it a double would error the rule and deny every
+        // reveal in the room. Plain arithmetic does not care which it got.
+        //
+        // The default keeps rooms that were already in flight when this shipped
+        // working on the twenty seconds their clients still expect.
         function windowClosed() {
           return room().openedAt is timestamp
-            && request.time > room().openedAt + duration.value(20, 's');
+            && request.time.toMillis()
+                 > room().openedAt.toMillis() + room().get('durationSecs', 20) * 1000;
         }
 
         function isTheQuestionInPlay() {

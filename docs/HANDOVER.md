@@ -6,16 +6,17 @@ Built to replace Polly in Teams.
 - **Live:** https://gregjrothwell.github.io/quiz/
 - **Repo:** https://github.com/gregjrothwell/quiz (public, `master`, deploys from `gh-pages`)
 - **Firebase project:** `quiz-d686e` (Firestore + Realtime Database in europe-west1 + Anonymous auth)
-- **Status:** shipped and played. 117 tests, clean types and lint, no `any` or
+- **Status:** shipped and played. 132 tests, clean types and lint, no `any` or
   `@ts-ignore`. The **answer vault is live**: 3,947 answers seeded, both
   rulesets published, preflight passing.
-- **Next:** [a configurable answer window](#next-a-configurable-answer-window) —
-  designed, not started. Read that section before touching the twenty-second
-  literal anywhere, because one of the places it lives is the security rules.
-- Nothing is blocking. `sync-harness 10` was re-run after the vault landed: ten
-  clients, all ten joined, all ten saw the round start within 84 ms, none
-  dropped — so `openedAtOk` gating every room write did not break joining, which
-  was the real risk of that change.
+- **Next:** nothing queued. [The answer window is now
+  selectable](#the-configurable-answer-window) — 10 / 15 / 20 seconds, chosen in
+  the lobby, defaulting to 10.
+- Nothing is blocking. `sync-harness 10` was re-run after the answer window
+  landed: ten clients, all ten joined, all ten saw the round start within 65 ms,
+  none dropped — so `durationOk` and `timingOk` gating every room write did not
+  break joining, which was the real risk of that change, exactly as it was when
+  the vault added `openedAtOk`.
 
 > ### Check the rules are published before you play
 >
@@ -27,17 +28,17 @@ Built to replace Polly in Teams.
 > npm run check-rules
 > ```
 >
-> About a minute — it now waits out a real twenty-second vault gate — and it
-> cleans up after itself. It checks both directions: that the app's paths still
-> work, **and that the tightened rules still refuse what they are meant to
-> refuse.** A hand-paste can fail permissively, and that direction is silent:
-> everything works, and nobody finds out `list` is still open until somebody
-> enumerates every room.
+> Around fifteen seconds — it waits out a real five-second vault gate, which is
+> the shortest window the rules accept — and it cleans up after itself. It
+> checks both directions: that the app's paths still work, **and that the
+> tightened rules still refuse what they are meant to refuse.** A hand-paste can
+> fail permissively, and that direction is silent: everything works, and nobody
+> finds out `list` is still open until somebody enumerates every room.
 >
-> 22 checks — thirteen from the security review, seven for the vault, two for
-> the question history. The vault seven include the one that catches
-> `firestore.seed.rules` being left published, which would leave every answer in
-> the game overwritable by anybody.
+> 24 checks — thirteen from the security review, seven for the vault, two for
+> the question history, two for the answer window. The vault seven include the
+> one that catches `firestore.seed.rules` being left published, which would
+> leave every answer in the game overwritable by anybody.
 
 ---
 
@@ -125,13 +126,15 @@ options, four attempts, and you have the answer — which would be a fine way to
 cheat, except the same rule refuses every attempt until **both**:
 
 - the question named in the path is the one the room is actually on, and
-- the server has seen twenty seconds pass since it opened.
+- the server has seen the room's answer window pass since it opened.
 
 The first stops a member holding question one open and quietly asking about the
 other fourteen. The second holds because `openedAt` can only ever be written as
 `request.time` — `serverTimestamp()` and nothing else — so a question cannot be
 claimed to have opened earlier than it did, in this room or in a decoy of
-somebody's own.
+somebody's own. The window itself is `durationSecs` on the room, pinned while a
+question is open and floored at five seconds; see [the configurable answer
+window](#the-configurable-answer-window) for why both of those are load-bearing.
 
 `src/lib/vault.ts` fires all four candidates at once, so the reveal costs one
 round trip rather than four.
@@ -141,7 +144,7 @@ round trip rather than four.
 | | |
 |---|---|
 | **Money** | Nothing. Two rule `get()`s per reveal (both hit the same cached room read), about 40 extra reads and 60 extra writes per game, against 50k reads and 20k writes a day. |
-| **The early reveal** | Gone. The quizmaster can no longer cut a question short — no device holds the answer before the clock runs out, including theirs. The button shows `Reveal in Ns` and the round auto-reveals on expiry. This is the real price. |
+| **The early reveal** | Gone. The quizmaster can no longer cut a question short — no device holds the answer before the clock runs out, including theirs. The button shows `Reveal in Ns` and the round auto-reveals on expiry. This is the real price, and it is most of the reason the window is now selectable: it can be *chosen* short even though it cannot be cut short. |
 | **A round in progress** | Unchanged otherwise. The answer is written into the room at reveal, so the other clients learn it from the update they were already listening to rather than paying for their own read. |
 
 ### What it does *not* stop
@@ -154,10 +157,11 @@ Be precise about this, because it is easy to oversell:
   questions.
 - **A pre-warmed decoy room.** The room holds every question id from the moment
   the round starts, so a script could open fifteen decoy rooms during the lobby,
-  wait out one twenty-second gate in parallel, and have the whole round about
-  twenty-five seconds in. Closing this needs the future question ids withheld
-  until each one opens, which costs the quizmaster role its ability to change
-  hands mid-round — a worse trade than the hole. Written down rather than fixed.
+  wait out one gate in parallel, and have the whole round about half a minute
+  in. Its own rooms, so it can set them all to the five-second floor and be
+  quicker about it. Closing this needs the future question ids withheld until
+  each one opens, which costs the quizmaster role its ability to change hands
+  mid-round — a worse trade than the hole. Written down rather than fixed.
 - **Self-reported `elapsedMs`.** Unchanged. Someone can still claim they
   answered in three milliseconds.
 
@@ -169,65 +173,131 @@ harvesting OpenTDB, which was always the real ceiling.
 
 ---
 
-## Next: a configurable answer window
+## The configurable answer window
 
-**Designed, not started.** Twenty seconds is currently hardcoded. Letting the
-quizmaster choose is worth more than a settings toggle usually is, because it
-mostly cancels the vault's real cost: a round everybody answers in five seconds
-still burns twenty, and at a ten-second setting that stops mattering.
+**Shipped.** The quizmaster picks 10, 15 or 20 seconds in the lobby, and it is
+fixed for the round. It earns its place more than a settings toggle usually
+would, because it mostly cancels the vault's real cost: a round everybody
+answers in five seconds still burned twenty, and at ten that stops mattering.
 
-About half a day. Suggested options are 10 / 20 / 30 seconds as a picker beside
-the level one, rather than free text.
+**Ten is the default**, and also the shortest on offer — the picker only ever
+buys a round *more* time, from a floor that is the new normal. The rules accept
+anything from 5 to 120, so another option is a one-line change.
 
-### The mechanical two-thirds
+> ### `DEFAULT_DURATION_SECS` and `LEGACY_DURATION_SECS` are not the same number
+>
+> They were, briefly, and merging them back would be a silent breakage.
+>
+> - **`DEFAULT_DURATION_SECS` (10)** is what the lobby starts on. Change it
+>   freely; it is a UI preference.
+> - **`LEGACY_DURATION_SECS` (20)** is what a room carrying *no* `durationSecs`
+>   is read as. It has to match the literal in `firestore.rules` —
+>   `get('durationSecs', 20)` — exactly.
+>
+> If the fallback said ten while the rules said twenty, a room created before
+> this shipped would count its clients down to zero, auto-reveal, and be refused
+> by a vault that stayed shut for another ten seconds. The round would stop dead
+> on "the vault would not confirm an answer", and only for rooms that were
+> already in flight — the hardest kind of bug to reproduce afterwards.
+>
+> Three tests in `src/engine/state.test.ts` read `firestore.rules` and fail if
+> the two files drift. They cover the fallback, the 5–120 bounds, and that every
+> option the lobby offers is one the rules would accept. Unlike
+> `npm run check-rules` they need no network, so drift fails in the run that
+> caused it rather than at the next preflight.
 
-Scoring is already built for it — `scoreAnswer` and `tallyQuestion` both take
-`durationMs` and merely *default* to the constant. The rest is threading a room
-field through what still hardcodes it:
+The window lives on the room as `durationSecs`, and **the security rules read it
+from there** — the client and the vault have to agree about when the answer is
+due, so there is deliberately no second copy of the number anywhere. The old
+`REVEAL_GATE_MS` in `src/lib/vault.ts` was exported and used by nothing; it is
+gone rather than parameterised.
 
-| Place | What it does today |
+### Where it is read
+
+| Place | What it does |
 |---|---|
-| `src/engine/state.ts` | `QUESTION_DURATION_MS` — becomes a `RoomState` field |
-| `src/engine/reducer.ts` | rejects answers past the window |
-| `src/lib/useQuestionClock.ts` | counts down from the constant |
+| `src/engine/state.ts` | `durationSecs` on `RoomState`, plus the default and the bounds |
+| `src/engine/reducer.ts` | `start` fixes it; `answer` rejects past it; `reveal` scores against it |
+| `src/lib/useRoom.ts` | fills the default in at the Firestore boundary, so nothing downstream sees `undefined` |
+| `src/lib/useQuestionClock.ts` | counts down from it |
 | `src/screens/QuestionScreen.tsx` | `ArcTimer` total |
-| `src/screens/Lobby.tsx` | needs the picker |
-| `src/lib/vault.ts` | `REVEAL_GATE_MS`, which must agree with the rules |
+| `src/screens/Lobby.tsx` | the picker |
+| `firestore.rules` | the reveal gate, and the two rules that keep it honest |
 
-### The part that needs care
+**`reveal` passing `durationMs` to `tallyQuestion` was a real fix, not
+threading.** `scoreAnswer` and `tallyQuestion` always took the parameter, but
+nothing ever passed it — so speed points decayed across a hardcoded twenty
+seconds. A ten-second round would have capped everyone at three-quarters of the
+speed bonus however fast they answered. There is a test pinning both numbers.
 
-**The answer window is enforced in the security rules**, not just the client:
+### The hole this opened, and the floor that closes it
 
-```
-request.time > room().openedAt + duration.value(20, 's')
-```
+Two rules keep the window honest, and the second one is not in the original
+design note.
 
-That literal has to become a read from the room document — and doing that opens
-a hole which must close in the same change. **If a member can lower the duration
-while a question is open, they open the vault early while everybody else still
-believes they have twenty seconds.** That is a silent cheat, which is exactly
-the class the vault exists to kill.
+**`timingOk()` pins it while a question is open.** If a member could lower
+`durationSecs` mid-question they would open the vault early while every other
+screen still showed the time it had promised — silent, which is the exact class
+of cheat the vault exists to kill. So `durationSecs` and `openedAt` both move
+only on the write that opens a question, which is the pattern `openedAtOk()`
+already used for `openedAt` alone.
 
-The fix is the pattern already sitting next to it: the duration must be
-immutable except on the write that opens a question, so `openedAtOk()` becomes
-`timingOk()` covering both fields. Then the worst anyone can do is set a
-five-second round *before* it starts, which everyone can see on the timer —
-vandalism, not cheating.
+**The bounds are what stop the restart trick.** Any member can already write the
+room out of `question` and back into it, which restamps `openedAt`. That was
+harmless while the gate was a fixed twenty seconds, because restarting could
+only ever push the vault *further away*. Reading the window from the document
+turns that same move into a way to pull the gate closer — so the rules bound
+`durationSecs` to **5–120 seconds** regardless of what the lobby offers. The
+worst anybody can now do is a five-second question, with the whole room watching
+the timer jump. Vandalism, and loud.
 
-Two traps:
+Both have a deny check in `npm run check-rules`.
 
-- **Rooms created before the change have no duration field.** The rule needs
-  `room().get('durationSecs', 20)` rather than a bare read, or every in-flight
-  room breaks the moment the rules are published.
-- **Rules and bundle must ship together.** Publishing the rules first leaves the
-  deployed client failing every write, which is what happened for about an hour
-  when the vault landed.
+### Three things that will bite
 
-### What falls out of it for free
+- **`duration.value()` takes an `int`, and this number comes from a client
+  SDK.** The gate is written as plain millisecond arithmetic —
+  `request.time.toMillis() > room().openedAt.toMillis() + secs * 1000` — rather
+  than `duration.value(secs, 's')`, because the SDK decides for itself whether a
+  whole number goes on the wire as an integer or a double, and handing a double
+  to `duration.value` errors the rule and denies **every reveal in the room**.
+  Same lesson as `joinedAt is number` further up the file; this one fails much
+  louder.
+- **Rooms that predate the field have no `durationSecs`.** Both rule reads are
+  `get('durationSecs', 20)` and `toRoomState` fills in `LEGACY_DURATION_SECS`,
+  which is the same twenty and deliberately *not* the lobby's default — see the
+  box above.
+- **Anything that resets the probe room must not set `durationSecs` on the way
+  back to the lobby.** `openProbeQuestion` writes the room to `lobby` and then
+  into `question`, and only the second write may carry the window — the first is
+  not a write that opens a question, so `timingOk()` refuses it. This is not
+  hypothetical: it is what the preflight did on the first run after the new
+  ruleset went live, and it failed before a single check had run. The rule was
+  right and the helper was wrong, which is the good version of that failure.
+- **The preflight needs two windows, not one short one.** The obvious speedup —
+  give the probe room a three-second window — breaks the *deny* checks: roughly
+  a dozen network round-trips separate them from the write that opened the
+  question, so the gate would have closed on its own before they ran, and a
+  reveal refused for the wrong reason proves nothing. `openProbeQuestion` now
+  takes a window: the deny checks get 120 seconds, and the question is re-opened
+  on 5 immediately before the allow check. That is where the minute came back.
 
-`npm run check-rules` currently sits through a real twenty seconds to prove the
-gate opens. Give its probe room a three-second window and most of that minute
-comes back.
+### Publish the rules first, then deploy
+
+**This is the opposite of what the vault needed, and the opposite of what the
+old version of this section said.** The vault's rules required `openedAt ==
+request.time`, which the then-deployed client never wrote, so publishing first
+broke every question-opening write for about an hour.
+
+Nothing here is like that. Both new reads are defaulted, and an update carries
+the existing `durationSecs` through untouched even from a client that has never
+heard of it — so **the new rules are fully backwards-compatible with the old
+bundle.** The reverse order is the broken one: a new client writing
+`durationSecs: 10` against the old fixed gate auto-reveals at ten seconds, gets
+refused for another ten, and the round stalls on "the vault would not confirm an
+answer".
+
+So: publish `firestore.rules`, run `npm run check-rules`, then `npm run deploy`.
 
 ---
 
@@ -244,7 +314,7 @@ scripts/        Build-time question harvest, and the multi-client test harnesses
 
 Commands: `npm run dev` (serves at `/quiz/`, port 5273), `test`, `typecheck`, `lint`,
 `build`, `deploy`, `fetch-questions [-- --resort]`, `seed-vault`, `check-rules`,
-`sync-harness [n]`, `host-room`.
+`sync-harness [n]`, `host-room [-- secs]`.
 
 ---
 
@@ -268,8 +338,8 @@ happened once.
 | **Each client writes its own season row** | The room's scores can't be restricted to the quizmaster (see above), but a season row can: `request.auth.uid == uid`. The cost is that someone who closes the tab before the final screen isn't recorded. |
 | **`start` carries a `gameId`, and the season row stores `lastGame`** | Without it, reloading the final screen banks the same game again. The check happens inside the Firestore transaction, so it survives a reload rather than just a re-render. |
 | **The ladder shows each question's level, not your score on it** | Per-question scores would mean accumulating a history no other device has, for a number the standings show two seconds later. The level is already in the room, and it makes a ramped round visibly steepen. |
-| **The round title card lives on the standings screen** | Between questions there's no clock running, so a beat of theatre costs nobody answering time. Over the question it would eat the first seconds of a twenty-second window. |
-| **Only members score at the reveal** (`reduce`'s `reveal`) | Answers arrive through a subcollection nothing checks membership on, so a client can write one for a room it is not a member of. `standings` filters on `players`, so such a score exists in the document and appears on no screen — which is what made the 6SVG bug invisible rather than obvious. `answer` in the same reducer had always refused a non-member; this is the reveal agreeing with it. Safe because a client that finds itself missing puts itself back within a second, and no reveal can happen inside twenty. |
+| **The round title card lives on the standings screen** | Between questions there's no clock running, so a beat of theatre costs nobody answering time. Over the question it would eat the first seconds of the answering window, which matters more now one can be ten seconds long. |
+| **Only members score at the reveal** (`reduce`'s `reveal`) | Answers arrive through a subcollection nothing checks membership on, so a client can write one for a room it is not a member of. `standings` filters on `players`, so such a score exists in the document and appears on no screen — which is what made the 6SVG bug invisible rather than obvious. `answer` in the same reducer had always refused a non-member; this is the reveal agreeing with it. Safe because a client that finds itself missing puts itself back within a second, and no reveal can happen inside the answer window — five seconds even at the floor the rules allow, and ten at the shortest the lobby offers. |
 | **A new season is a bump, not a delete** (`SEASON` in `src/lib/season.ts`) | `season-1` was development; `season-2` is the office league, started 3 August 2026. Bumping empties the board just as a wipe would, keeps the old rows recoverable if a number ever needs checking, and needs no destructive write against live data. Note it also resets the question history, which lives under the season. |
 | **Nobody is reaped outside the lobby** (`reapAbsent`) | Reaping exists so a closed tab stops loitering before a round starts. Mid-round it is all cost: `standings` filters on `players`, so a removed player vanishes from *every* device, and `recordGame` skips a uid that is not in `players`, so their game never reaches the season. Presence is not evidence of leaving — it runs over the Realtime Database, a different connection from the Firestore one carrying the game, so a backgrounded tab or a closed lid drops it while the round plays on perfectly. **This actually happened**: room 6SVG, a player with 4,300 points who answered the final question, invisible on every screen and with no season row. |
 | **A client that finds itself missing puts itself back** (`useRoom`) | The other half of the same bug. Membership could be taken from a live client and nothing ever restored it — and the failure was near-silent, because answers are not membership-checked, so the player carried on playing and scoring while being invisible. The rejoin preserves `joinedAt`, or a reaped quizmaster would return at the back of the queue and lose the role, and it never resets a score that is already on the board. |
@@ -284,6 +354,11 @@ happened once.
 | **A round prefers questions the season hasn't served** (`selectQuestions`, `seasons/{season}/asked/{packId}`) | Random selection with no memory repeats far sooner than pack sizes suggest: 15 drawn from Sport's 125 every week means about **two of last week's questions come round again, every week**. Over Video Games' 999 the same sum is a quarter of a question, which is why the big packs hid it. Season-scoped, not per-room — the complaint is about the sitting before, and a room lasts one sitting. |
 | **Asked questions go to the back of the queue, not out of the pool** | Removing them outright would have Sport quietly serving eight-question rounds by mid-season. A thin pack still gets a full-length round, with repeats only where there was no alternative. |
 | **The history is capped at 400 ids per pack** | Not "all of them". The point is that last month's questions don't come round again, not that a pack is exhausted before anything repeats — and an unbounded array on a document read at the top of every game is the shape this project keeps avoiding. 400 is roughly six months of a weekly round. |
+| **The answer window is chosen on `start` and nowhere else** | The rules only permit it to change on a write that opens a question, because a member who could lower it mid-question would open the vault early while everyone else's timer still said otherwise. Confining it to `start` in the engine means the client never even attempts a write the server would refuse. |
+| **The rules bound the window to 5–120s, not to the lobby's three options** | The bound exists to stop a *restart* — writing the room out of `question` and back in restamps `openedAt`, which was harmless at a fixed twenty seconds because it could only delay the vault. What matters is the floor, not matching the picker; pinning the rules to the lobby's three values would also mean the preflight could not use a short probe window, and would need republishing every time an option changed. |
+| **The reveal gate is millisecond arithmetic, not `duration.value()`** | `duration.value` takes an `int`, and `durationSecs` arrives from a client SDK that decides for itself whether a whole number is an integer or a double on the wire. A double would error the rule and deny every reveal in the room — the same trap as `joinedAt is number`, but with a far worse failure. |
+| **`tallyQuestion` is given the room's window** | It always took the parameter and nothing ever passed it, so speed points decayed across a hardcoded twenty seconds. Harmless while every round *was* twenty; at the ten-second default it would cap everybody at 750 of a possible 1000 no matter how fast they were. |
+| **`fullGame.test.ts` pins its window at 20 instead of taking the default** | Its games answer as late as twelve seconds in. On the ten-second default those answers stop being recorded, and the games would still pass while quietly testing a round nobody answered. |
 | **Fonts are self-hosted** (`src/design/fonts.css`) | The display faces carry the whole look; a network that blocks `fonts.googleapis.com` would drop it to Impact with no warning. Archivo is variable — Google's CSS lists it once per weight but serves the same file each time, so it's declared once instead of shipping 105 kB of duplicates. |
 
 ---
@@ -311,10 +386,16 @@ at the narrow width.
 
 **Not verified — start here:**
 
-0. **`host-room` since the vault landed.** It now waits out the twenty-second
-   gate and asks the vault itself before revealing, and that path has not been
-   run. `sync-harness` covers joining and phase sync; this is the one that would
-   catch a mistake in the terminal harness's own reveal.
+0. **`host-room` since the vault landed.** It waits out the gate and asks the
+   vault itself before revealing, and that path has still not been run.
+   `sync-harness` covers joining and phase sync; this is the one that would
+   catch a mistake in the terminal harness's own reveal. It now takes the window
+   as an argument, so `npm run host-room -- 10` both exercises the configurable
+   window and halves the wait:
+
+   ```bash
+   npm run host-room -- 10
+   ```
 
 **Verified — the vault, end to end.** The rules were written from documented
 semantics and, at the time of writing, nothing had executed. It has now: seeded
@@ -327,14 +408,17 @@ broke rather than just "the vault doesn't work":
 | read the vault → denied | `allow read: if false` is published |
 | write the vault → denied | `firestore.seed.rules` is *not* still published |
 | list the vault → denied | no `list` on the collection |
-| reveal while the clock runs → denied | the twenty-second gate exists |
+| reveal while the clock runs → denied | the gate exists |
 | backdate `openedAt` → denied | `openedAt == request.time` is enforced |
 | ask about another question → denied | the reveal is pinned to the question in play |
+| shorten the window mid-question → denied | `timingOk()` pins `durationSecs` too |
+| open a question on a one-second window → denied | the 5–120s bound is published |
 | reveal after the clock → **allowed** | the gate actually opens, and the vault is seeded |
 
 That last one is the one that ruins a quiz night rather than merely leaking
-one, which is why it waits out a real twenty seconds instead of being
-assumed.
+one, which is why it waits out a real gate instead of being assumed. It runs on
+the five-second floor, which also makes it the check that fails if the published
+rules are still using a fixed twenty.
 
 0. **The season table against live Firestore.** `recordGame` has never run
    against a real project, and the transaction's repeat-write guard has only been
@@ -568,12 +652,11 @@ sync — the two things that have actually broken in play.
 
 The remaining untested path is a **quizmaster dropping out mid-round** and the
 role passing to somebody else. It is covered in the engine but has never been
-watched happen with real clients. `npm run host-room` plus a browser is the way
-to try it — and that harness has itself not been run since the vault landed, so
-it now exercises the twenty-second gate and the vault lookup on the way through.
+watched happen with real clients. `npm run host-room -- 10` plus a browser is
+the way to try it — and that harness has itself not been run since the vault
+landed, so it exercises the gate and the vault lookup on the way through.
 
-**The next piece of work** is [a configurable answer
-window](#next-a-configurable-answer-window). It is written up rather than
-started, and the write-up is worth reading before touching the twenty-second
-literal, because one of the places it lives is `firestore.rules` — and changing
-it there naively hands anybody in the room a silent way to open the vault early.
+Nothing is queued after that. If you are changing anything about the answer
+window, [read its section first](#the-configurable-answer-window): the number
+lives in `firestore.rules` as well as the client, and two of the three rules
+around it exist to close holes that are not obvious from the client side.

@@ -71,17 +71,41 @@ const LIVE_ROOM = 'rules-check-live';
 /** Seeded by `npm run seed-vault`. Its answer is 'The right one'. */
 const PROBE_QUESTION = 'rules-check-q';
 
-/** Matches the gate in firestore.rules and QUESTION_DURATION_MS. */
-const GATE_MS = 20_000;
+/**
+ * The gate is no longer a fixed twenty seconds — it is `durationSecs` on the
+ * room — so the probe picks its own, and the two windows exist for opposite
+ * reasons.
+ *
+ * The deny checks need a window long enough to still be open when they run:
+ * roughly a dozen network round-trips separate them from the write that opened
+ * the question, and a reveal refused because the gate had already *closed*
+ * would look exactly like one refused because the gate works.
+ *
+ * The allow check is the one that has to sit and wait, and this is where the
+ * minute goes. It re-opens the question with the shortest window the rules
+ * accept, which is also what proves the gate is being read from the document
+ * rather than assumed — against the old ruleset this check waits five seconds
+ * and is then refused for the remaining fifteen, which is exactly the failure
+ * that should be loud.
+ */
+const LONG_WINDOW_SECS = 120;
+const SHORT_WINDOW_SECS = 5;
+
+/** The server measures the gate on its own clock, so leave it a moment. */
+const GATE_SLACK_MS = 1_500;
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * Puts a real question in front of a room owned by this client, so the reveal
  * checks have something legitimate to ask about. Returns when the server has
- * stamped `openedAt`, which is the moment the gate's twenty seconds start.
+ * stamped `openedAt`, which is the moment the gate starts.
  */
-async function openProbeQuestion(db: Firestore, uid: string): Promise<void> {
+async function openProbeQuestion(
+  db: Firestore,
+  uid: string,
+  durationSecs: number,
+): Promise<void> {
   const room = doc(db, 'rooms', LIVE_ROOM);
   const player = { name: 'Rules check', joinedAt: Date.now() };
 
@@ -115,8 +139,20 @@ async function openProbeQuestion(db: Firestore, uid: string): Promise<void> {
 
   // Back to the lobby first, so `openedAt` is genuinely being written by a
   // transition *into* a question — the only shape the rules will stamp.
+  //
+  // `durationSecs` is deliberately absent from this write and present on the
+  // next one. The rules refuse to let it move except on a write that opens a
+  // question, and this reset is not one — setting it here fails the very
+  // invariant these checks exist to prove, which is exactly what happened the
+  // first time the new ruleset went live. Left out of `base` rather than
+  // deleted afterwards, so it cannot drift back in.
   await updateDoc(room, { ...base, phase: 'lobby', questions: [] });
-  await updateDoc(room, { ...base, phase: 'question', openedAt: serverTimestamp() });
+  await updateDoc(room, {
+    ...base,
+    phase: 'question',
+    durationSecs,
+    openedAt: serverTimestamp(),
+  });
 }
 
 function required(name: string): string {
@@ -166,12 +202,13 @@ async function main(): Promise<void> {
   const rtdb = getDatabase(app);
 
   console.log(`Project ${config.projectId}, signed in anonymously as ${uid.slice(0, 8)}…`);
-  console.log('The last check waits out a real twenty-second gate, so give it a minute.\n');
+  console.log(`The last check waits out a real ${SHORT_WINDOW_SECS}-second gate.\n`);
 
   // Opened up front so the deny checks below have a genuinely live question to
   // ask about — a reveal refused because nothing is in play would look exactly
-  // like a reveal refused by the time gate, and prove nothing.
-  await openProbeQuestion(db, uid);
+  // like a reveal refused by the time gate, and prove nothing. On a long window,
+  // because a dozen round-trips happen before the last of them runs.
+  await openProbeQuestion(db, uid, LONG_WINDOW_SECS);
 
   const presence = ref(rtdb, `presence/${PROBE_ROOM}/${uid}`);
   const ownSeasonRow = doc(db, 'seasons', ANY_SEASON, 'players', uid);
@@ -304,6 +341,37 @@ async function main(): Promise<void> {
         }),
     },
     {
+      // The hole the configurable window opens, and the reason `timingOk`
+      // covers two fields instead of one. Lowering the duration under a live
+      // question would open the vault early while every other screen in the
+      // room still showed the time they were promised — silent, which is the
+      // one property that separates a cheat from vandalism.
+      label: 'Firestore   · shorten the window while a question is open',
+      expect: 'deny',
+      hint: 'firestore.rules does not pin `durationSecs` while a question is '
+        + 'open — any member can drop it and take the answer out of the vault '
+        + 'before anybody else has finished answering',
+      run: () => updateDoc(doc(db, 'rooms', LIVE_ROOM), { durationSecs: SHORT_WINDOW_SECS }),
+    },
+    {
+      // The floor. Restarting a question has always been possible — writing the
+      // room out of `question` and back in restamps `openedAt` — and was
+      // harmless while the gate was fixed, because it could only ever delay the
+      // vault. Reading the window from the document makes that same move a way
+      // to shorten the gate, and this bound is what stops it going to zero.
+      label: 'Firestore   · open a question with a one-second window',
+      expect: 'deny',
+      hint: 'firestore.rules is missing the bounds on `durationSecs` — a member '
+        + 'can restart a question with a window short enough to have the answer '
+        + 'out of the vault before anyone notices the timer moved',
+      run: () =>
+        updateDoc(doc(db, 'rooms', LIVE_ROOM), {
+          index: 1,
+          durationSecs: 1,
+          openedAt: serverTimestamp(),
+        }),
+    },
+    {
       label: 'Firestore   · ask about a question that is not in play',
       expect: 'deny',
       hint: 'firestore.rules does not pin the reveal to the current question — '
@@ -369,19 +437,25 @@ async function main(): Promise<void> {
       run: () => get(ref(rtdb, '/')),
     },
     {
-      // Last, because it waits out a real twenty-second gate. This is the
-      // direction that ruins a quiz night rather than merely leaking one: if
-      // the vault never opens, no question can be scored and the round stops
-      // dead at the first reveal.
+      // Last, because it waits out a real gate. This is the direction that
+      // ruins a quiz night rather than merely leaking one: if the vault never
+      // opens, no question can be scored and the round stops dead at the first
+      // reveal.
+      //
+      // It is also what proves the window is read from the room rather than
+      // hardcoded. Re-opened on the *short* window, so against a ruleset that
+      // still assumes twenty seconds this waits five and is then refused —
+      // which is the whole point of running it.
       label: 'Firestore   · reveal an answer once the clock has run out',
       expect: 'allow',
-      hint: 'the reveal cannot complete — check the /vault block is published '
-        + 'and that `npm run seed-vault` has been run',
+      hint: 'the reveal cannot complete — check the /vault block is published, '
+        + 'that `npm run seed-vault` has been run, and that the reveal gate '
+        + 'reads `durationSecs` off the room rather than a fixed twenty seconds',
       run: async () => {
         // Re-opened rather than reusing the question the deny checks poked at,
         // so this proves the gate opens on its own terms.
-        await openProbeQuestion(db, uid);
-        await sleep(GATE_MS + 1_500);
+        await openProbeQuestion(db, uid, SHORT_WINDOW_SECS);
+        await sleep(SHORT_WINDOW_SECS * 1000 + GATE_SLACK_MS);
         const reveal = doc(db, 'rooms', LIVE_ROOM, 'reveal', PROBE_QUESTION);
         await setDoc(reveal, { answer: 'The right one' });
         // Deletable by design, so the next run can prove this again.

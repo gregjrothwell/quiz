@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { QUESTION_DURATION_MS } from '../engine/state';
 
 export interface QuestionClock {
   elapsedMs: number;
@@ -21,8 +20,18 @@ interface Reading {
  * Deliberately local: comparing against the quizmaster's `questionOpenedAt`
  * would fold their clock offset into every player's speed score, and office
  * laptops disagree about the time by more than the speed bonus is worth.
+ *
+ * `durationMs` comes from the room, so every device counts down the same window
+ * the security rules will hold the vault shut for. It is measured from when this
+ * device *saw* the question open, which is necessarily after the server stamped
+ * it — so a local clock always expires a little after the gate does, never
+ * before, and the auto-reveal never arrives early.
  */
-export function useQuestionClock(isOpen: boolean, questionIndex: number): QuestionClock {
+export function useQuestionClock(
+  isOpen: boolean,
+  questionIndex: number,
+  durationMs: number,
+): QuestionClock {
   const [reading, setReading] = useState<Reading>({ questionIndex, elapsedMs: 0 });
 
   useEffect(() => {
@@ -45,7 +54,7 @@ export function useQuestionClock(isOpen: boolean, questionIndex: number): Questi
   // interval tick lands.
   const elapsedMs =
     isOpen && reading.questionIndex === questionIndex ? Math.max(0, reading.elapsedMs) : 0;
-  const remainingMs = Math.max(0, QUESTION_DURATION_MS - elapsedMs);
+  const remainingMs = Math.max(0, durationMs - elapsedMs);
 
   return {
     elapsedMs,

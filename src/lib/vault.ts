@@ -15,16 +15,17 @@ import type { QuizQuestion } from '../engine/state';
  *
  * and the rule allows the write only if that string matches the vault. Trying
  * all four options therefore finds the answer in at most four attempts — which
- * would be a fine way to cheat, except the same rule refuses the write until
- * twenty seconds after the server itself saw the question open. Nobody can ask
+ * would be a fine way to cheat, except the same rule refuses the write until the
+ * room's own answer window has elapsed on the server's clock. Nobody can ask
  * before the window has closed, in this room or in one of their own, and the
  * question id does not exist anywhere until the question opens.
  *
+ * There is deliberately no gate constant here. The window is `durationSecs` on
+ * the room document, and the rules read it from there — a copy in this file
+ * could only ever drift out of agreement with the thing actually enforcing it.
+ *
  * See docs/HANDOVER.md for what this does and does not buy.
  */
-
-/** Matches `QUESTION_DURATION_MS` and the gate in firestore.rules. */
-export const REVEAL_GATE_MS = 20_000;
 
 function revealDoc(db: Firestore, code: string, questionId: string) {
   return doc(db, 'rooms', code, 'reveal', questionId);

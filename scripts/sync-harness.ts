@@ -26,7 +26,7 @@ import {
   type Firestore,
 } from 'firebase/firestore';
 import { reduce, type Action } from '../src/engine/reducer';
-import { createRoom, type RoomState } from '../src/engine/state';
+import { DEFAULT_DURATION_SECS, createRoom, type RoomState } from '../src/engine/state';
 import { randomRoomCode } from '../src/engine/roomCode';
 import type { QuizQuestion } from '../src/engine/state';
 
@@ -222,7 +222,7 @@ async function main(): Promise<void> {
     code,
     [
       { type: 'selectPack', packId: 'general-knowledge', packTitle: 'GK', questions: QUESTIONS },
-      { type: 'start', at: Date.now(), gameId: 'harness-game' },
+      { type: 'start', at: Date.now(), gameId: 'harness-game', durationSecs: DEFAULT_DURATION_SECS },
     ],
     staleView,
   );

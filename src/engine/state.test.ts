@@ -1,5 +1,17 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
-import { buildQuizQuestions, rampPlan, resolveQuizmaster, selectQuestions, shuffle } from './state';
+import {
+  DURATION_CHOICES,
+  LEGACY_DURATION_SECS,
+  MAX_DURATION_SECS,
+  MIN_DURATION_SECS,
+  buildQuizQuestions,
+  isDurationAllowed,
+  rampPlan,
+  resolveQuizmaster,
+  selectQuestions,
+  shuffle,
+} from './state';
 import {
   sealQuestion,
   type Difficulty,
@@ -418,5 +430,45 @@ describe('selectQuestions with a season history', () => {
 
     // #then the selection is identical
     expect(withArg.map((q) => q.id)).toEqual(without.map((q) => q.id));
+  });
+});
+
+/**
+ * The answer window is enforced in two places that cannot import each other:
+ * this module, and firestore.rules — which is pasted into the Firebase console
+ * by hand. `npm run check-rules` proves the *published* ruleset behaves, but it
+ * needs the network and a project. These read the repo copy, so a change that
+ * puts the two out of step fails in the test run that made it.
+ */
+describe('the answer window agrees with the security rules', () => {
+  const RULES = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8');
+
+  test('the fallback for a room with no window matches the rules', () => {
+    // #given the rules' default, written as `get('durationSecs', <n>)`
+    const defaults = [...RULES.matchAll(/get\('durationSecs',\s*(\d+)\)/g)].map(([, n]) =>
+      Number(n),
+    );
+
+    // #then every one of them is the legacy fallback this module applies —
+    // not the lobby's default, which is a different number and unrelated
+    expect(defaults.length).toBeGreaterThan(0);
+    expect([...new Set(defaults)]).toEqual([LEGACY_DURATION_SECS]);
+  });
+
+  test('the bounds match the rules', () => {
+    // #given the floor and ceiling the rules enforce
+    const floor = /function minDuration\(\) \{ return (\d+); \}/.exec(RULES)?.[1];
+    const ceiling = /function maxDuration\(\) \{ return (\d+); \}/.exec(RULES)?.[1];
+
+    // #then they are the ones this module checks against before a round starts
+    expect({ floor: Number(floor), ceiling: Number(ceiling) }).toEqual({
+      floor: MIN_DURATION_SECS,
+      ceiling: MAX_DURATION_SECS,
+    });
+  });
+
+  test('every window the lobby offers is one the rules accept', () => {
+    // #then no option can start a round the vault would refuse to open
+    expect(DURATION_CHOICES.filter((secs) => !isDurationAllowed(secs))).toEqual([]);
   });
 });

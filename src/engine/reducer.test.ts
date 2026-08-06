@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'vitest';
 import { reduce, type Action } from './reducer';
 import {
-  QUESTION_DURATION_MS,
+  DEFAULT_DURATION_SECS,
+  DEFAULT_QUESTION_DURATION_MS,
   createRoom,
   resolveQuizmaster,
   type QuizQuestion,
@@ -34,12 +35,17 @@ const QUESTIONS: QuizQuestion[] = [
  */
 const VAULT: Record<string, number> = { q1: 1, q2: 0 };
 
-/** The reveal action for whichever question the room is currently on. */
-function revealNow(state: RoomState): Action {
+/** What the vault would answer for whichever question the room is currently on. */
+function vaultIndexOf(state: RoomState): number {
   const question = state.questions[state.index];
   const correctIndex = VAULT[question?.id ?? ''];
   if (correctIndex === undefined) throw new Error('fixture has no vault entry');
-  return { type: 'reveal', correctIndex };
+  return correctIndex;
+}
+
+/** The reveal action for whichever question the room is currently on. */
+function revealNow(state: RoomState): Action {
+  return { type: 'reveal', correctIndex: vaultIndexOf(state) };
 }
 
 /**
@@ -63,7 +69,7 @@ function playingRoom(): RoomState {
     { type: 'join', uid: 'host', name: 'Greg', at: 100 },
     { type: 'join', uid: 'guest', name: 'Sam', at: 200 },
     { type: 'selectPack', packId: 'geography', packTitle: 'Geography', questions: QUESTIONS },
-    { type: 'start', at: 1_000, gameId: 'game-1' },
+    { type: 'start', at: 1_000, gameId: 'game-1', durationSecs: DEFAULT_DURATION_SECS },
   );
 }
 
@@ -178,7 +184,12 @@ describe('start', () => {
     const room = reduce(createRoom('ABCD'), { type: 'join', uid: 'host', name: 'Greg', at: 100 });
 
     // #when a start is attempted
-    const result = reduce(room, { type: 'start', at: 1_000, gameId: 'game-1' });
+    const result = reduce(room, {
+      type: 'start',
+      at: 1_000,
+      gameId: 'game-1',
+      durationSecs: DEFAULT_DURATION_SECS,
+    });
 
     // #then the room stays in the lobby
     expect(result.phase).toBe('lobby');
@@ -210,11 +221,140 @@ describe('start', () => {
       playingRoom(),
       { type: 'reset' },
       { type: 'selectPack', packId: 'geography', packTitle: 'Geography', questions: QUESTIONS },
-      { type: 'start', at: 5_000, gameId: 'game-2' },
+      { type: 'start', at: 5_000, gameId: 'game-2', durationSecs: DEFAULT_DURATION_SECS },
     );
 
     // #then the new round is distinguishable from the first, so both can count
     expect(replayed.gameId).toBe('game-2');
+  });
+});
+
+describe('the answer window', () => {
+  /** A room playing a round on a window other than the default. */
+  function briskRoom(durationSecs = 10): RoomState {
+    return apply(
+      createRoom('ABCD'),
+      { type: 'join', uid: 'host', name: 'Greg', at: 100 },
+      { type: 'join', uid: 'guest', name: 'Sam', at: 200 },
+      { type: 'selectPack', packId: 'geography', packTitle: 'Geography', questions: QUESTIONS },
+      { type: 'start', at: 1_000, gameId: 'game-1', durationSecs },
+    );
+  }
+
+  test('a new room starts on the default window', () => {
+    // #given a freshly created room
+    const room = createRoom('ABCD');
+
+    // #then it carries the same default the security rules fall back to
+    expect(room.durationSecs).toBe(DEFAULT_DURATION_SECS);
+  });
+
+  test('starting a round fixes the window the quizmaster chose', () => {
+    // #given a round started on ten seconds
+    const room = briskRoom(10);
+
+    // #then the room carries it, which is what every client and the rules read
+    expect(room.durationSecs).toBe(10);
+  });
+
+  test('refuses a window the security rules would reject', () => {
+    // #given a lobby with a loaded pack
+    const room = apply(
+      createRoom('ABCD'),
+      { type: 'join', uid: 'host', name: 'Greg', at: 100 },
+      { type: 'selectPack', packId: 'geography', packTitle: 'Geography', questions: QUESTIONS },
+    );
+
+    // #when a round is started below the floor the rules enforce
+    const result = reduce(room, {
+      type: 'start',
+      at: 1_000,
+      gameId: 'game-1',
+      durationSecs: 1,
+    });
+
+    // #then it stays in the lobby rather than starting a round the vault would
+    // refuse to open at its first reveal
+    expect(result.phase).toBe('lobby');
+  });
+
+  test('moving to the next question leaves the window alone', () => {
+    // #given a ten-second round past its first question
+    const room = apply(
+      briskRoom(10),
+      revealNow,
+      { type: 'next', at: 2_000 },
+      { type: 'next', at: 3_000 },
+    );
+
+    // #then the second question runs on the same window as the first — the
+    // rules only allow it to move on a write that opens a question, and this
+    // one must not take that liberty
+    expect({ phase: room.phase, index: room.index, durationSecs: room.durationSecs }).toEqual({
+      phase: 'question',
+      index: 1,
+      durationSecs: 10,
+    });
+  });
+
+  test('accepts an answer that would have been late on the default window', () => {
+    // #given a thirty-second round — longer than anything the lobby offers, but
+    // well inside what the rules accept, which is the point: the engine reads
+    // the window off the room rather than off the picker
+    const room = briskRoom(30);
+
+    // #when an answer arrives after twenty seconds but inside thirty
+    const result = reduce(room, {
+      type: 'answer',
+      uid: 'guest',
+      optionIndex: 1,
+      elapsedMs: 25_000,
+    });
+
+    // #then it counts, because the window is the room's and not the constant
+    expect(result.answers['guest']?.elapsedMs).toBe(25_000);
+  });
+
+  test('rejects an answer past a shortened window', () => {
+    // #given a ten-second round
+    const room = briskRoom(10);
+
+    // #when an answer arrives at fifteen seconds, which the old fixed window
+    // would have accepted
+    const result = reduce(room, {
+      type: 'answer',
+      uid: 'guest',
+      optionIndex: 1,
+      elapsedMs: 15_000,
+    });
+
+    // #then it is not recorded
+    expect(result.answers['guest']).toBeUndefined();
+  });
+
+  test('scores speed against the room’s window rather than the default', () => {
+    // #given two identical rounds differing only in their window, each answered
+    // at the halfway point of the shorter one
+    const answered = (durationSecs: number, elapsedMs: number): number =>
+      apply(
+        briskRoom(durationSecs),
+        (state) => ({
+          type: 'answer',
+          uid: 'guest',
+          optionIndex: vaultIndexOf(state),
+          elapsedMs,
+        }),
+        revealNow,
+      ).scores['guest'] ?? 0;
+
+    // #when one is answered five seconds into a ten-second window, and the
+    // other five seconds into the default twenty
+    // #then the first scores the full half of the speed bonus and the second
+    // scores three-quarters — the curve is stretched across the real window
+    expect({ brisk: answered(10, 5_000), standard: answered(20, 5_000) }).toEqual({
+      brisk: 750,
+      standard: 875,
+    });
   });
 });
 
@@ -255,7 +395,7 @@ describe('answer', () => {
       type: 'answer',
       uid: 'guest',
       optionIndex: 1,
-      elapsedMs: QUESTION_DURATION_MS + 1,
+      elapsedMs: DEFAULT_QUESTION_DURATION_MS + 1,
     });
 
     // #then it is not recorded

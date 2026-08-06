@@ -8,7 +8,7 @@ import {
   type TileState,
 } from '../components/PodiumTile';
 import { ScoreTicker } from '../components/ScoreTicker';
-import { QUESTION_DURATION_MS, currentQuestion, type RoomState } from '../engine/state';
+import { currentQuestion, questionDurationMs, type RoomState } from '../engine/state';
 import { play, useCue } from '../lib/sound';
 import type { QuestionClock } from '../lib/useQuestionClock';
 
@@ -165,7 +165,7 @@ export function QuestionScreen({
           <ArcTimer
             secondsLeft={clock.secondsLeft}
             remainingMs={clock.remainingMs}
-            totalMs={QUESTION_DURATION_MS}
+            totalMs={questionDurationMs(room)}
           />
         )}
       </header>
@@ -296,7 +296,7 @@ export function QuestionScreen({
                 /*
                   Revealing early is no longer possible, and that is the price
                   of the vault: the rules refuse to confirm an answer until the
-                  server agrees the question's twenty seconds are up, and no
+                  server agrees the room's answer window is up, and no
                   device — this one included — holds it before then. The button
                   stays visible as a retry for a reveal that errored, since the
                   clock running out fires one automatically.
