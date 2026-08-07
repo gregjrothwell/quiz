@@ -2,9 +2,8 @@
 
 /* ── The studio ──────────────────────────────────────────────────────────────
    A modern television quiz set, played at a desk. A back wall of light
-   columns, an overhead LED halo, beams from the rig, and a gloss floor that
-   reflects whatever is standing on it. Cyan and amber are the house lighting;
-   green and red are the verdict.
+   columns, an overhead LED halo, and beams from the rig. Cyan and amber are the
+   house lighting; green and red are the verdict.
 
    Deliberately not: purple gradients, glass cards, or Inter.
    ──────────────────────────────────────────────────────────────────────────── */
@@ -291,49 +290,17 @@ input {
 }
 
 /*
- * The gloss floor. The reflection is a duplicate of the row above it, flipped,
- * and the fade is painted as an overlay rather than applied as a mask: a mask
- * is defined in the element's own coordinate space and then flipped along with
- * it, so the gradient ends up running the wrong way and the reflection is
- * brightest exactly where it should have faded out.
+ * The gloss floor lived here — `.floor` clipping a `.reflection` that flipped a
+ * second copy of the podium. Removed rather than retuned, and it is worth
+ * saying why so nobody rebuilds it: the only part of a tile worth reflecting is
+ * the letter chip and its label, and those sit mid-tile. Any clip tall enough
+ * to reach them showed readable upside-down text, which looks like a rendering
+ * fault rather than a reflection; any clip short enough to avoid that reflected
+ * flat panel edges and read as a stray empty box. There is no value in between.
+ *
+ * A convincing version would need something worth reflecting at the base of the
+ * tile — the lamp strip alone, say — rather than the whole lectern.
  */
-/*
- * Hidden on narrow screens. The reflection is pure decoration and costs about
- * 100px of vertical space, which a phone is better off spending on the answers.
- * The desk is the primary surface and keeps it.
- */
-.floor {
-  display: none;
-}
-
-@media (min-width: 44rem) {
-  .floor {
-    display: block;
-    position: relative;
-    overflow: hidden;
-    max-height: 6.5rem;
-    margin-top: 0.9rem;
-    padding-top: 0.35rem;
-    border-top: 1px solid rgb(41 214 255 / 0.35);
-    box-shadow: 0 -1px 30px -4px rgb(41 214 255 / 0.45);
-  }
-}
-
-.floor::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  background: linear-gradient(180deg, rgb(1 6 16 / 0.3) 0%, rgb(1 6 16 / 0.8) 58%, var(--night) 100%);
-}
-
-.reflection {
-  transform: scaleY(-1);
-  opacity: 0.55;
-  filter: blur(1.2px);
-  pointer-events: none;
-}
 
 /* ── Typography ─────────────────────────────────────────────────────────── */
 
@@ -1826,10 +1793,10 @@ input {
 }
 
 /* ── Desktop ────────────────────────────────────────────────────────────────
-   The primary surface. The laptop gets the bigger stage, the floor reflection
-   and the keyboard hints — the whole round can be run without reaching for a
-   mouse. Everything above this point is the phone fallback, which still has to
-   work for anyone who joins from one.
+   The primary surface. The laptop gets the bigger stage and the keyboard hints
+   — the whole round can be run without reaching for a mouse. Everything above
+   this point is the phone fallback, which still has to work for anyone who
+   joins from one.
    ──────────────────────────────────────────────────────────────────────────── */
 
 @media (min-width: 44rem) {

@@ -1,12 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArcTimer } from '../components/ArcTimer';
 import { Ladder } from '../components/Ladder';
-import {
-  PodiumTile,
-  TILE_LETTERS,
-  tileClassName,
-  type TileState,
-} from '../components/PodiumTile';
+import { PodiumTile, type TileState } from '../components/PodiumTile';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { currentQuestion, questionDurationMs, type RoomState } from '../engine/state';
 import { play, useCue } from '../lib/sound';
@@ -177,26 +172,16 @@ export function QuestionScreen({
             {question.prompt}
           </h1>
 
-          <div className="podium">{tiles}</div>
-
           {/*
-            The floor reflection is a second copy of the podium rather than a
-            CSS trick, because there is no way to mirror rendered content in CSS
-            alone. It is inert: hidden from assistive technology and from the
-            keyboard, so it cannot be answered by accident.
+            There was a gloss-floor reflection here — a flipped second copy of
+            the podium. Removed rather than tuned: the only part of a tile worth
+            reflecting is the letter chip and its label, which sit mid-tile, so
+            any setting that showed them rendered legible upside-down text and
+            read as a rendering fault. Clipping tighter to avoid that reflected
+            nothing but flat panel edges, which read as a stray empty box. There
+            is no value between the two that looks like a floor.
           */}
-          <div className="floor" aria-hidden="true">
-            <div className="reflection">
-              <div className="podium">
-                {question.options.map((option, index) => (
-                  <span className={tileClassName(stateFor(index))} key={`${question.id}-mirror-${index}`}>
-                    <span className="tile__letter">{TILE_LETTERS[index] ?? '?'}</span>
-                    <span className="tile__text">{option}</span>
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
+          <div className="podium">{tiles}</div>
         </div>
 
         <Ladder questions={room.questions} current={room.index} />

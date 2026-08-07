@@ -28,13 +28,12 @@ const CLASS_FOR_STATE: Record<TileState, string> = {
   gone: 'tile--gone',
 };
 
-export const TILE_LETTERS = LETTERS;
-
 /**
- * Shared with the floor reflection, which renders the same lecterns inert so
- * the mirror image carries the same lighting as the real thing.
+ * Not exported. It was, along with a `TILE_LETTERS` alias, so the floor
+ * reflection could build inert copies of the lecterns with the same lighting.
+ * That reflection is gone, and a tile's class name is nobody else's business.
  */
-export function tileClassName(state: TileState): string {
+function tileClassName(state: TileState): string {
   return `tile ${CLASS_FOR_STATE[state]}`.trim();
 }
 
