@@ -1,5 +1,12 @@
 import { describe, expect, test } from 'vitest';
-import { isUsOnly, ukScore, isWellFormed, packForCategory, sortIntoPacks } from './classify';
+import {
+  capPack,
+  isUsOnly,
+  isWellFormed,
+  packForCategory,
+  sortIntoPacks,
+  ukScore,
+} from './classify';
 import type { Question } from './types';
 
 function makeQuestion(overrides: Partial<Question> = {}): Question {
@@ -10,6 +17,7 @@ function makeQuestion(overrides: Partial<Question> = {}): Question {
     incorrect: ['Lead', 'Tin', 'Zinc'],
     category: 'Science & Nature',
     difficulty: 'easy',
+    source: 'opentdb',
     ...overrides,
   };
 }
@@ -298,7 +306,44 @@ describe('sortIntoPacks', () => {
     const { dropped } = sortIntoPacks(pool);
 
     // #then each drop reason is counted independently
-    expect(dropped).toEqual({ malformed: 1, usOnly: 1 });
+    expect(dropped).toEqual({ malformed: 1, usOnly: 1, capped: 0, offTopicSport: 0 });
+  });
+
+  test('drops a sport question naming no sport followed in Britain', () => {
+    // #given a question the source filed under sport that is not about sport at
+    // #all — the `sports` file opens with one about Aristotle and metaphysics
+    const pool = [
+      makeQuestion({
+        category: 'Sports',
+        question: 'Which science did Aristotle define as the knowledge of immaterial being?',
+        correct: 'Metaphysics',
+        incorrect: ['Psychology', 'Logic', 'Philosophy'],
+      }),
+    ];
+
+    // #when the pool is sorted
+    const { packs, dropped } = sortIntoPacks(pool);
+
+    // #then it is dropped rather than filed under sport or moved to mixed-bag
+    expect([dropped.offTopicSport, packs.size]).toEqual([1, 0]);
+  });
+
+  test('keeps a sport question about a sport followed in Britain', () => {
+    // #given a football question
+    const pool = [
+      makeQuestion({
+        category: 'Sports',
+        question: 'Which club has won the most FA Cup finals?',
+        correct: 'Arsenal',
+        incorrect: ['Chelsea', 'Everton', 'Leeds'],
+      }),
+    ];
+
+    // #when the pool is sorted
+    const { packs } = sortIntoPacks(pool);
+
+    // #then it reaches the sport pack
+    expect(packs.get('sport')).toHaveLength(1);
   });
 
   test('returns no packs for an empty pool', () => {
@@ -310,5 +355,78 @@ describe('sortIntoPacks', () => {
 
     // #then no packs are created
     expect(packs.size).toBe(0);
+  });
+
+  test('counts what the cap removed', () => {
+    // #given more questions in one pack than the cap allows
+    const pool = Array.from({ length: 5 }, (_, i) =>
+      makeQuestion({ id: `q${i}`, question: `Which element is number ${i} on the table?` }),
+    );
+
+    // #when the pool is sorted with a cap below that
+    const { dropped } = sortIntoPacks(pool, 1, 3);
+
+    // #then the overflow is reported rather than silently discarded
+    expect(dropped.capped).toBe(2);
+  });
+});
+
+describe('capPack', () => {
+  /** Imported questions are all marked medium; only the rated half has levels. */
+  function imported(id: string): Question {
+    return makeQuestion({ id, difficulty: 'medium', source: 'opentriviaqa' });
+  }
+
+  function rated(id: string, difficulty: Question['difficulty']): Question {
+    return makeQuestion({ id, difficulty, source: 'opentdb' });
+  }
+
+  test('keeps every rated question when trimming', () => {
+    // #given a pack whose imported questions alone would fill the cap
+    const pool = [
+      ...Array.from({ length: 8 }, (_, i) => imported(`i${i}`)),
+      rated('r1', 'easy'),
+      rated('r2', 'hard'),
+    ];
+
+    // #when it is capped below its size
+    const kept = capPack(pool, 4);
+
+    // #then no rated question is among the ones dropped
+    expect(kept.filter((q) => q.source === 'opentdb')).toHaveLength(2);
+  });
+
+  test('leaves a pack under the cap untouched', () => {
+    // #given fewer questions than the cap
+    const pool = [imported('a'), imported('b')];
+
+    // #when it is capped
+    const kept = capPack(pool, 10);
+
+    // #then the same array comes back rather than a reordered copy
+    expect(kept).toBe(pool);
+  });
+
+  test('picks the same questions on every run', () => {
+    // #given a pack that has to be trimmed
+    const pool = Array.from({ length: 20 }, (_, i) => imported(`i${i}`));
+
+    // #when it is capped twice
+    const first = capPack(pool, 5).map((q) => q.id);
+    const second = capPack(pool, 5).map((q) => q.id);
+
+    // #then the selection is stable, so a re-harvest orphans no vault entries
+    expect(first).toEqual(second);
+  });
+
+  test('drops rated questions only once the cap is below their count', () => {
+    // #given more rated questions than the cap
+    const pool = [rated('r1', 'easy'), rated('r2', 'medium'), rated('r3', 'hard')];
+
+    // #when it is capped below that
+    const kept = capPack(pool, 2);
+
+    // #then the cap still wins — it bounds the download regardless of source
+    expect(kept).toHaveLength(2);
   });
 });

@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "fetch-questions": "tsx scripts/fetch-questions.ts",
+    "fetch-otqa": "tsx scripts/opentriviaqa.ts",
     "check-rules": "tsx --env-file=.env.local scripts/check-rules.ts",
     "seed-vault": "tsx --env-file=.env.local scripts/seed-vault.ts",
     "sync-harness": "tsx --env-file=.env.local scripts/sync-harness.ts",

@@ -6,10 +6,16 @@ Built to replace Polly in Teams.
 - **Live:** https://gregjrothwell.github.io/quiz/
 - **Repo:** https://github.com/gregjrothwell/quiz (public, `master`, deploys from `gh-pages`)
 - **Firebase project:** `quiz-d686e` (Firestore + Realtime Database in europe-west1 + Anonymous auth)
-- **Status:** shipped and played. 132 tests, clean types and lint, no `any` or
+- **Status:** shipped and played. 157 tests, clean types and lint, no `any` or
   `@ts-ignore`. The **answer vault is live**: 3,947 answers seeded, both
   rulesets published, preflight passing.
-- **Next:** nothing queued. [The answer window is now
+- **⚠️ The packs on disk are ahead of the vault.** A second question source has
+  landed and the packs now hold 14,152 questions against 3,947 seeded answers.
+  **Run `npm run seed-vault` before the next deploy** — see [the second
+  source](#the-second-question-source). Deploying first means every imported
+  question reaches its reveal and stops on "the vault would not confirm an
+  answer".
+- **Next:** nothing queued after the re-seed. [The answer window is
   selectable](#the-configurable-answer-window) — 10 / 15 / 20 seconds, chosen in
   the lobby, defaulting to 10.
 - Nothing is blocking. `sync-harness 10` was re-run after the answer window
@@ -313,8 +319,13 @@ scripts/        Build-time question harvest, and the multi-client test harnesses
 ```
 
 Commands: `npm run dev` (serves at `/quiz/`, port 5273), `test`, `typecheck`, `lint`,
-`build`, `deploy`, `fetch-questions [-- --resort]`, `seed-vault`, `check-rules`,
-`sync-harness [n]`, `host-room [-- secs]`.
+`build`, `deploy`, `fetch-questions [-- --resort]`, `fetch-otqa`, `seed-vault`,
+`check-rules`, `sync-harness [n]`, `host-room [-- secs]`.
+
+`npm test` covers `src/` plus the pure parts of `scripts/` — the OpenTriviaQA
+parser and its encoding fallback, which corrupt questions silently when wrong.
+Anything under `scripts/` that touches the network or the live project stays out
+of the suite deliberately; `npm test` must keep running offline.
 
 ---
 
@@ -466,11 +477,16 @@ rules are still using a fixed twenty.
   next step and it's small now the collection exists.
 - **Season numbers are self-reported.** The rules stop you writing someone else's
   row but not your own. Same trust model as the rest of the game.
-- **`uk-leaning` is 201 questions.** The open datasets run ~4:1 US-marked to
-  UK-marked; a keyword filter can only surface what's there.
-  [OpenTriviaQA](https://github.com/uberspot/OpenTriviaQA) (~45k, same CC BY-SA
-  licence) is the obvious next source — it needs cp1252 transcoding, which is the
-  only reason it isn't in already.
+- **The source corpora file their own questions unreliably.** OpenTriviaQA's
+  `sports` file opens with a question about Aristotle and metaphysics. The
+  positive sport filter catches that particular class; nothing checks the other
+  packs, so a stray is possible anywhere. This is the same failure the project
+  already hit once, when a `general-knowledge` fallback made that pack 68% video
+  games.
+- **The Trivia API is licence-incompatible.** 14,400 questions with real
+  difficulty ratings, which would solve the levelling problem — but it is CC
+  BY-**NC**, and NonCommercial cannot be folded into a ShareAlike work. Ruled out
+  rather than overlooked.
 - **Three OpenTDB categories are genuinely empty**: Musicals & Theatres,
   Celebrities and Gadgets have no *verified* questions, only pending ones. Note
   that `api_count.php` counts pending questions too, so its totals overstate what
@@ -480,25 +496,149 @@ rules are still using a fixed twenty.
 
 ## Question pipeline
 
-3,996 questions from [Open Trivia DB](https://opentdb.com) (CC BY-SA 4.0),
-**committed as JSON** — no runtime API, no key in the bundle, no rate limit.
+14,152 questions from two sources, both CC BY-SA 4.0 and **committed as JSON** —
+no runtime API, no key in the bundle, no rate limit:
 
-Packs: Video Games 999, Odds & Ends 640, Music 399, Science 399, TV & Film 397,
-General Knowledge 345, History 340, Geography 299, Best of British 201, Sport 125.
+- [Open Trivia DB](https://opentdb.com) — 3,996 questions, each with a
+  difficulty rating
+- [OpenTriviaQA](https://github.com/uberspot/OpenTriviaQA) — ~39,000 usable
+  questions, no difficulty rating, capped into the packs
 
-Every pack now has a real hard bucket — before the page-size fix, Sport, TV & Film
-and Odds & Ends had none at all, which is why difficulty was worth making
-selectable only after that was fixed.
+Packs: General Knowledge / Geography / History / Odds & Ends / Music / Science /
+TV & Film / Best of British 1,500 each, Video Games 1,396, Sport 756.
 
-The harvested pool is cached at `.cache/pool.json` (gitignored). **Tuning the
-classification rules costs a re-sort, not a re-fetch:**
+The pools are cached at `.cache/pool.json` and `.cache/opentriviaqa.json`, both
+gitignored. **Tuning the classification rules costs a re-sort, not a re-fetch:**
 
 ```bash
 npm run fetch-questions -- --resort
 ```
 
-A full re-harvest is ~25 minutes (OpenTDB allows one request per 5s, and the
-page-size ladder costs a few extra requests per category).
+A full OpenTDB re-harvest is ~25 minutes (one request per 5s, and the page-size
+ladder costs a few extra requests per category). The second source is a separate
+command because it is twenty seconds rather than twenty-five minutes:
+
+```bash
+npm run fetch-otqa
+```
+
+`--resort` never touches the network, so it uses whatever is already cached; if
+`.cache/opentriviaqa.json` is missing it says so and rebuilds from OpenTDB alone.
+
+---
+
+## The second question source
+
+**Shipped.** Sport was 125 questions — a fifteen-question round is 12% of the
+pack, so by the second month of a weekly quiz it is visibly repeating. Every
+thin pack is now several times deeper.
+
+| Pack | Was | Now |
+|---|---|---|
+| Sport | 125 | **756** |
+| Best of British | 201 | 1,500 |
+| Geography | 299 | 1,500 |
+| History | 340 | 1,500 |
+| General Knowledge | 345 | 1,500 |
+| TV & Film | 397 | 1,500 |
+| Music / Science | 399 | 1,500 |
+| Odds & Ends | 640 | 1,500 |
+| Video Games | 999 | 1,396 |
+
+> ### Seed the vault before you deploy, not after
+>
+> This is the opposite order from [the answer window](#publish-the-rules-first-then-deploy),
+> and getting it wrong is the failure that ruins a quiz night rather than merely
+> leaking one.
+>
+> New packs against the old vault means every imported question reaches its
+> first reveal and stops dead on "the vault would not confirm an answer" — the
+> rules cannot confirm an answer they have never been told. The reverse costs
+> nothing: a vault holding answers to questions no pack serves yet is inert.
+>
+> ```bash
+> npm run seed-vault && npm run deploy
+> ```
+>
+> The seed is additive and works out for itself what is new, so re-running it is
+> free. 13,431 answers against a free tier of 20,000 writes a day — which is
+> most of why the packs are capped where they are.
+
+### Why the packs are capped at 1,500
+
+`loadPackQuestions` downloads the **whole pack** to pick fifteen questions, so a
+pack is a download at the top of every round on the quizmaster's device. The
+full import would put 10,000 questions and about 2 MB into Odds & Ends alone.
+The cap holds every pack near 380 kB, against the 237 kB Video Games already
+shipped, and keeps the vault seedable inside one day's free-tier writes.
+
+`capPack` keeps the **rated** questions when it trims. Only the OpenTDB half
+carries a difficulty, so trimming those first would thin the only questions the
+easy and hard levels can draw on, to make room for questions neither level will
+ever serve. Within a source it orders by id — a hash of the prompt, so
+arbitrary but stable; a selection that reshuffled on every harvest would orphan
+vault entries for nothing.
+
+### The difficulty rating that is not there
+
+**Imported questions are all marked `medium`, and that is an admission, not a
+design.** OpenTriviaQA carries no difficulty, and three ways of inferring one
+were measured against a hand-labelled sample of 120 questions. None beat the
+baseline of labelling everything hard:
+
+| Approach | Agreement | Baseline |
+|---|---|---|
+| Surface features — prompt length, years, numeric answers | no signal (21–28% band) | 22% |
+| Word-frequency obscurity of the answer | 56% | 53% |
+| Correcting OpenTDB's systematic offset | 53% | 53% |
+
+The same exercise measured something worth keeping: **OpenTDB's own labels agree
+with a UK-office judgement only 39% of the time**, and it under-rates by about
+0.4 of a step. Its "easy" means easy *within that category's fandom* — the pool
+contains "Which game did Sonic first appear in? → Rad Mobile" and "the metric
+prefix atto- → one quintillionth", both rated easy. The gap is worst exactly
+where you would expect: anime +0.71 steps, video games +0.68, general knowledge
++0.33, science 0.00.
+
+What this costs, by level — and it is much less than it sounds, because
+**`mixed` is the default**:
+
+| Level | Effect |
+|---|---|
+| `mixed` (default) | Fully fixed — draws on everything |
+| `medium` | Fully fixed |
+| `ramp` | Mostly; its easy and hard slots still come from the rated pool |
+| `easy` / `hard` | **Unchanged.** A hard Sport round still draws on 15 questions |
+
+Two things would actually work, if this ever matters enough: hand-rating a
+capped set, or a build-time LLM pass validated against a hand-labelled gold set.
+Both were costed; neither is queued.
+
+### Four things that will bite
+
+- **`toPattern` appends `s?`, and that is load-bearing.** Every term list in
+  `classify.ts` is matched with a word boundary at each end, so `\bsuper bowl\b`
+  misses "Super Bowls" and `\bteam\b` misses "teams". Questions are asked in the
+  plural at least as often as the singular, so without it an intact-looking list
+  quietly catches half of what it names. American football got through the sport
+  filter twice before this was spotted.
+- **`TextDecoder('windows-1252')` is not cp1252 in Node.** Every label —
+  `windows-1252`, `cp1252`, `x-cp1252` — decodes as Latin-1, mapping 0x80–0x9F
+  to C1 control characters rather than to punctuation. That range is exactly
+  where cp1252 keeps curly quotes, dashes and ellipses, which a trivia corpus is
+  full of. `decodeCp1252` does the 32-entry mapping by hand. The failure is
+  silent: the string is valid, just full of invisible control characters.
+- **The encoding is per file, not per corpus.** Twelve of the twenty-two files
+  are cp1252 and ten are UTF-8. Decoding everything as cp1252 — which the old
+  version of this note assumed — turns every accented character in the other ten
+  into "RenÃ©e", which is also silent. Strict UTF-8 first, cp1252 on the throw.
+- **Sport is the one pack filtered *positively*.** It has to name a sport with a
+  following in Britain or it is dropped. The source's `sports` file is
+  overwhelmingly American and stripping it by exclusion was a losing game: three
+  passes of adding leagues, franchises and positional vocabulary each caught more
+  and each left a long tail. Inverting it is shorter, stricter, and costs volume
+  the pool can afford. It is the same shape as `uk-leaning`, which has always
+  been a positive filter.
 
 ---
 

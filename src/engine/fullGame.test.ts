@@ -27,6 +27,7 @@ const SOURCE: Question[] = [
     incorrect: ['Severn', 'Mersey', 'Tyne'],
     category: 'Geography',
     difficulty: 'easy',
+    source: 'opentdb',
   },
   {
     id: 'b',
@@ -35,6 +36,7 @@ const SOURCE: Question[] = [
     incorrect: ['Lead', 'Tin', 'Zinc'],
     category: 'Science & Nature',
     difficulty: 'easy',
+    source: 'opentdb',
   },
   {
     id: 'c',
@@ -43,6 +45,7 @@ const SOURCE: Question[] = [
     incorrect: ['11', '13', '17'],
     category: 'Sports',
     difficulty: 'medium',
+    source: 'opentdb',
   },
 ];
 

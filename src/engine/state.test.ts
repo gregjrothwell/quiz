@@ -36,6 +36,7 @@ const SOURCE: Question[] = [
     incorrect: ['Severn', 'Mersey', 'Tyne'],
     category: 'Geography',
     difficulty: 'easy',
+    source: 'opentdb',
   },
   {
     id: 'b',
@@ -44,6 +45,7 @@ const SOURCE: Question[] = [
     incorrect: ['Lead', 'Tin', 'Zinc'],
     category: 'Science & Nature',
     difficulty: 'easy',
+    source: 'opentdb',
   },
   {
     id: 'c',
@@ -52,6 +54,7 @@ const SOURCE: Question[] = [
     incorrect: ['11', '13', '17'],
     category: 'Sports',
     difficulty: 'medium',
+    source: 'opentdb',
   },
 ];
 
@@ -153,6 +156,7 @@ describe('sealQuestion', () => {
       incorrect: ['Bravo', 'Charlie', 'Delta'],
       category: 'c',
       difficulty: 'easy',
+      source: 'opentdb',
     });
     const second = sealQuestion({
       id: 'y',
@@ -161,6 +165,7 @@ describe('sealQuestion', () => {
       incorrect: ['Alpha', 'Bravo', 'Charlie'],
       category: 'c',
       difficulty: 'easy',
+      source: 'opentdb',
     });
 
     // #when their published option orders are compared
@@ -250,6 +255,7 @@ function spread(counts: Record<Difficulty, number>): SealedQuestion[] {
           incorrect: ['No', 'Maybe', 'Perhaps'],
           category: 'General Knowledge',
           difficulty: level,
+          source: 'opentdb',
         }),
       );
     }

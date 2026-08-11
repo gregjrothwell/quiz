@@ -46,7 +46,17 @@ export interface Question {
   incorrect: string[];
   category: string;
   difficulty: Difficulty;
+  /**
+   * Which corpus it came from. Only the Open Trivia DB half carries a real
+   * difficulty rating, so a pack that has to be trimmed keeps those first —
+   * dropping them would empty the easy and hard buckets and leave the level
+   * picker offering rounds it cannot fill. Never published: `sealQuestion`
+   * builds its result field by field, so this stays in the build scripts.
+   */
+  source: QuestionSource;
 }
+
+export type QuestionSource = 'opentdb' | 'opentriviaqa';
 
 /**
  * A question as published. The four options are there; which one is right is
