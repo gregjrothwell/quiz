@@ -370,7 +370,7 @@ describe('answer', () => {
     expect(result.answers['guest']).toEqual({ optionIndex: 1, elapsedMs: 2_000 });
   });
 
-  test('keeps the first answer when a player answers twice', () => {
+  test('replaces the answer when a player changes their mind', () => {
     // #given a player who has already answered
     const room = reduce(playingRoom(), {
       type: 'answer',
@@ -379,11 +379,49 @@ describe('answer', () => {
       elapsedMs: 2000,
     });
 
-    // #when they try to change it
+    // #when they pick something else
     const result = reduce(room, { type: 'answer', uid: 'guest', optionIndex: 2, elapsedMs: 3000 });
 
-    // #then the original answer stands
-    expect(result.answers['guest']?.optionIndex).toBe(1);
+    // #then the new pick stands
+    expect(result.answers['guest']?.optionIndex).toBe(2);
+  });
+
+  test('charges the later time when a player changes their mind', () => {
+    // #given a player who answered almost instantly
+    const room = reduce(playingRoom(), {
+      type: 'answer',
+      uid: 'guest',
+      optionIndex: 1,
+      elapsedMs: 500,
+    });
+
+    // #when they change it much later in the window
+    const result = reduce(room, { type: 'answer', uid: 'guest', optionIndex: 2, elapsedMs: 9000 });
+
+    // #then the speed bonus is measured from the change, not the first guess —
+    // #otherwise a quick guess banks the points and the revision is free
+    expect(result.answers['guest']?.elapsedMs).toBe(9000);
+  });
+
+  test('keeps the existing answer when a change arrives after the window', () => {
+    // #given a player who answered inside the window
+    const room = reduce(playingRoom(), {
+      type: 'answer',
+      uid: 'guest',
+      optionIndex: 1,
+      elapsedMs: 2000,
+    });
+
+    // #when a change arrives after the clock ran out
+    const result = reduce(room, {
+      type: 'answer',
+      uid: 'guest',
+      optionIndex: 3,
+      elapsedMs: 99_000,
+    });
+
+    // #then it is ignored and the answer they gave in time stands
+    expect(result.answers['guest']).toEqual({ optionIndex: 1, elapsedMs: 2000 });
   });
 
   test('ignores an answer arriving after the window closed', () => {

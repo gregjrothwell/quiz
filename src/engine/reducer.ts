@@ -117,11 +117,19 @@ function start(state: RoomState, at: number, gameId: string, durationSecs: numbe
   };
 }
 
+/**
+ * Records a pick, replacing whatever the player chose before.
+ *
+ * Changing your mind is allowed until the clock runs out, and it costs you the
+ * speed bonus: `elapsedMs` is whatever the clock reads at the moment of the new
+ * pick, not the moment of the first. Keeping the first would let a player lock
+ * in a guess at half a second, bank the speed points for it, and then revise at
+ * leisure — which would make the speed score meaningless. Overwriting makes the
+ * trade honest and visible: you can change, and it costs you.
+ */
 function answer(state: RoomState, uid: string, optionIndex: number, elapsedMs: number): RoomState {
   if (state.phase !== 'question') return state;
   if (!state.players[uid]) return state;
-  // First answer stands — no changing your mind once committed.
-  if (state.answers[uid]) return state;
 
   const question = currentQuestion(state);
   if (!question) return state;

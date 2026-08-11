@@ -93,7 +93,9 @@ export function QuestionScreen({
       const letter = ['a', 'b', 'c', 'd'].indexOf(key);
       const digit = ['1', '2', '3', '4'].indexOf(key);
       const pick = letter >= 0 ? letter : digit;
-      if (pick >= 0 && !revealed && !myAnswer && pick < optionCount) {
+      // Gated on the clock rather than on having answered, so a key can change a
+      // pick as well as make one — and so a late press cannot write past expiry.
+      if (pick >= 0 && !revealed && !clock.expired && pick < optionCount) {
         event.preventDefault();
         onAnswer(pick);
         return;
@@ -110,7 +112,7 @@ export function QuestionScreen({
 
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [revealed, myAnswer, optionCount, isQuizmaster, clock.expired, onAnswer, onReveal, onNext]);
+  }, [revealed, optionCount, isQuizmaster, clock.expired, onAnswer, onReveal, onNext]);
 
   // Placed after the hooks above: an early return before them would change the
   // hook order between renders.
@@ -126,7 +128,10 @@ export function QuestionScreen({
       return 'gone';
     }
     if (!myAnswer) return 'idle';
-    return myAnswer.optionIndex === index ? 'picked' : 'dim';
+    // Only the pick itself is marked. The others stay `idle` rather than `dim`
+    // because they are still live — you can change your mind until the clock
+    // stops, and dimming a tile you can still press reads as "unavailable".
+    return myAnswer.optionIndex === index ? 'picked' : 'idle';
   };
 
   const tiles = question.options.map((option, index) => (
@@ -135,7 +140,10 @@ export function QuestionScreen({
       index={index}
       text={option}
       state={stateFor(index)}
-      disabled={revealed || Boolean(myAnswer)}
+      // The clock closes the lecterns, not the first press. Expiry matters on
+      // its own now: it used to be covered incidentally, because having answered
+      // disabled the tiles and everyone had answered or run out of time.
+      disabled={revealed || clock.expired}
       onPick={onAnswer}
       order={index}
     />
@@ -224,7 +232,10 @@ export function QuestionScreen({
               ) : null}
             </span>
           ) : myAnswer ? (
-            'Locked in'
+            // Not "Locked in" any more, and worth saying rather than leaving to
+            // be discovered: every other quiz app takes the first answer and
+            // keeps it, so nobody will try a second lectern unless told they can.
+            'You can still change it'
           ) : clock.expired ? (
             'Time’s up'
           ) : (

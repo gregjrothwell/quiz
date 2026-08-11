@@ -24,6 +24,7 @@ import { reapAbsent } from '../engine/presence';
 import {
   LEGACY_DURATION_SECS,
   createRoom,
+  questionDurationMs,
   resolveQuizmaster,
   type Answer,
   type Phase,
@@ -450,11 +451,26 @@ export function useRoom(): UseRoom {
     }).catch(() => undefined);
   }, [code, uid]);
 
+  /**
+   * Writes this device's pick, overwriting any earlier one for the same
+   * question — a player may change their mind until the clock runs out.
+   *
+   * The security rules already allowed this: `answers/{uid}` grants `create,
+   * update` with no immutability check, so nothing needed republishing. The only
+   * thing that ever stopped a second write was the client refusing to make one.
+   *
+   * The window is enforced on the way in rather than at scoring time. The live
+   * `room.answers` is built straight from the subcollection and filtered only on
+   * question and membership — the reducer's own `elapsedMs` guard never runs on
+   * this path — so a write that lands after the clock would otherwise be scored.
+   * That gap existed before, hidden by the one-answer-only rule that happened to
+   * stop anyone writing late.
+   */
   const submitAnswer = useCallback(
     async (optionIndex: number, elapsedMs: number): Promise<void> => {
       if (!code || !uid || !room) return;
       if (room.phase !== 'question') return;
-      if (room.answers[uid]) return;
+      if (elapsedMs > questionDurationMs(room)) return;
 
       const answer: AnswerDoc = { optionIndex, elapsedMs, questionIndex: room.index };
       await setDoc(doc(answersCollection(code), uid), answer);

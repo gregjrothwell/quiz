@@ -6,7 +6,7 @@ Built to replace Polly in Teams.
 - **Live:** https://gregjrothwell.github.io/quiz/
 - **Repo:** https://github.com/gregjrothwell/quiz (public, `master`, deploys from `gh-pages`)
 - **Firebase project:** `quiz-d686e` (Firestore + Realtime Database in europe-west1 + Anonymous auth)
-- **Status:** shipped and played. 157 tests, clean types and lint, no `any` or
+- **Status:** shipped and played. 159 tests, clean types and lint, no `any` or
   `@ts-ignore`. The **answer vault is live**: 3,947 answers seeded, both
   rulesets published, preflight passing.
 - **⚠️ The packs on disk are ahead of the vault.** A second question source has
@@ -365,6 +365,9 @@ happened once.
 | **A round prefers questions the season hasn't served** (`selectQuestions`, `seasons/{season}/asked/{packId}`) | Random selection with no memory repeats far sooner than pack sizes suggest: 15 drawn from Sport's 125 every week means about **two of last week's questions come round again, every week**. Over Video Games' 999 the same sum is a quarter of a question, which is why the big packs hid it. Season-scoped, not per-room — the complaint is about the sitting before, and a room lasts one sitting. |
 | **Asked questions go to the back of the queue, not out of the pool** | Removing them outright would have Sport quietly serving eight-question rounds by mid-season. A thin pack still gets a full-length round, with repeats only where there was no alternative. |
 | **The history is capped at 400 ids per pack** | Not "all of them". The point is that last month's questions don't come round again, not that a pack is exhausted before anything repeats — and an unbounded array on a document read at the top of every game is the shape this project keeps avoiding. 400 is roughly six months of a weekly round. |
+| **A player may change their answer until the clock stops** (`answer` in `reduce`) | The rules always allowed it — `answers/{uid}` grants `create, update` with no immutability check — so the only thing stopping a second write was the client refusing to make one. `elapsedMs` is re-measured on the change, so changing your mind costs the speed bonus. Keeping the first time would let somebody lock a guess in at half a second, bank the points, and revise at leisure. |
+| **`submitAnswer` checks the window, and that check is new** | The live `room.answers` is built straight from the subcollection, filtered only on question and membership — the reducer's `answer` case never runs in the browser, so its `elapsedMs` guard never ran either. Nothing enforced the window on the way in; the one-answer-only rule hid that by stopping anyone writing twice. Removing the lock exposed it, so the guard moved to where the write happens. |
+| **The lecterns disable on `clock.expired`, not on having answered** | Same gap from the UI side. Expiry used to be covered incidentally — you had either answered, which disabled them, or run out of time with the reveal close behind. Now it has to be stated. |
 | **The answer window is chosen on `start` and nowhere else** | The rules only permit it to change on a write that opens a question, because a member who could lower it mid-question would open the vault early while everyone else's timer still said otherwise. Confining it to `start` in the engine means the client never even attempts a write the server would refuse. |
 | **The rules bound the window to 5–120s, not to the lobby's three options** | The bound exists to stop a *restart* — writing the room out of `question` and back in restamps `openedAt`, which was harmless at a fixed twenty seconds because it could only delay the vault. What matters is the floor, not matching the picker; pinning the rules to the lobby's three values would also mean the preflight could not use a short probe window, and would need republishing every time an option changed. |
 | **The reveal gate is millisecond arithmetic, not `duration.value()`** | `duration.value` takes an `int`, and `durationSecs` arrives from a client SDK that decides for itself whether a whole number is an integer or a double on the wire. A double would error the rule and deny every reveal in the room — the same trap as `joinedAt is number`, but with a far worse failure. |
@@ -396,6 +399,13 @@ at the narrow width.
   browser can be watched as an ordinary player while somebody else runs the game.
 
 **Not verified — start here:**
+
+0. **Changing an answer, against a live room.** The engine and the UI are
+   covered — three reducer tests, and the preview shows the unpicked lecterns
+   staying live — but a second write landing on `answers/{uid}` in Firestore has
+   not been watched. The rules permit it and always did, so the risk is not
+   permission but the write racing the reveal. `npm run host-room -- 20` gives a
+   long enough window to answer, change, and watch which one scores.
 
 0. **`host-room` since the vault landed.** It waits out the gate and asks the
    vault itself before revealing, and that path has still not been run.
