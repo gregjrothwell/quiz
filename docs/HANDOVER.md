@@ -307,6 +307,37 @@ So: publish `firestore.rules`, run `npm run check-rules`, then `npm run deploy`.
 
 ---
 
+## Next session — start here
+
+Written 11 August 2026, straight after deploying the second question source and
+the change-your-answer round.
+
+1. **Check the game actually plays.** Firestore reads were exhausted on the 11th
+   (see the `seed-vault` box below), so the deploy went out unplayed. First job
+   is a real round on the live site — it is the one thing today's work never got
+   to do end to end with the quota up.
+2. **Take stock of Firestore.** A count of rooms, season rows and orphaned vault
+   entries was attempted and never completed, because the read quota was already
+   gone. Worth knowing: rooms are never deleted, so the collection only grows,
+   and every one of them holds players' names.
+3. **Fix `npm run host-room`.** Broken, and it predates all of this work:
+   `src/lib/vault.ts` imports `../firebase`, which reads `import.meta.env` at
+   module scope — Vite-only, so it throws under `tsx` before the script starts.
+   Deferring the config read would fix it, but `firebase.ts` is load-bearing and
+   its documented failure is a blank app, so give it its own change and test it
+   properly. It is the harness for quizmaster handover and the live reveal.
+4. **Watch the read budget.** A game is roughly 800–1,500 reads, and changing an
+   answer now costs a write that fans out to every client — so a round where
+   people fidget costs more than it used to. The console's usage alerts are on;
+   App Check is still the real fix and still not done.
+5. **Difficulty is still unsolved**, deliberately. Imported questions are all
+   `medium` and the reasons are written up under [the second
+   source](#the-difficulty-rating-that-is-not-there). Do not reach for another
+   heuristic without measuring it against a hand-labelled set first — three have
+   been tried and none beat calling everything hard.
+
+---
+
 ## Where things are
 
 ```
@@ -555,6 +586,21 @@ thin pack is now several times deeper.
 | Music / Science | 399 | 1,500 |
 | Odds & Ends | 640 | 1,500 |
 | Video Games | 999 | 1,396 |
+
+> ### `seed-vault` costs a full-vault read every time you run it
+>
+> The diff that makes it additive — "412 added, 0 changed, 3947 already correct"
+> — is computed by reading every answer already up there. At 13,500 answers that
+> is **13,500 reads a run**, against a free tier of 50,000 a day.
+>
+> Four runs on 11 August 2026 exhausted the day's reads and took the game down
+> until the quota reset: two seeding, and two more confirming the seed had
+> landed. Confirming is the expensive habit to break — the run that writes
+> nothing costs exactly as much as the run that writes everything.
+>
+> Seed once, read the count it prints, and believe it. If something really does
+> need checking, `npm run check-rules` proves the vault path for about 24
+> operations rather than 13,500.
 
 > ### Seed the vault before you deploy, not after
 >
