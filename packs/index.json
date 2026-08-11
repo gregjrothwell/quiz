@@ -16,8 +16,8 @@
     "blurb": "Places, borders and capitals.",
     "count": 1500,
     "counts": {
-      "easy": 78,
-      "medium": 1354,
+      "easy": 79,
+      "medium": 1353,
       "hard": 68
     }
   },
@@ -39,8 +39,8 @@
     "count": 1500,
     "counts": {
       "easy": 182,
-      "medium": 1154,
-      "hard": 164
+      "medium": 1153,
+      "hard": 165
     }
   },
   {
@@ -69,10 +69,10 @@
     "id": "sport",
     "title": "Sport",
     "blurb": "Pitches, tracks and podiums.",
-    "count": 756,
+    "count": 776,
     "counts": {
       "easy": 33,
-      "medium": 708,
+      "medium": 728,
       "hard": 15
     }
   },
@@ -82,8 +82,8 @@
     "blurb": "The box and the big screen.",
     "count": 1500,
     "counts": {
-      "easy": 133,
-      "medium": 1300,
+      "easy": 135,
+      "medium": 1298,
       "hard": 67
     }
   },
@@ -102,11 +102,11 @@
     "id": "video-games",
     "title": "Video Games",
     "blurb": "Consoles, classics and boss fights.",
-    "count": 1396,
+    "count": 1400,
     "counts": {
       "easy": 308,
-      "medium": 881,
-      "hard": 207
+      "medium": 884,
+      "hard": 208
     }
   }
 ]
