@@ -367,6 +367,7 @@ happened once.
 | **The history is capped at 400 ids per pack** | Not "all of them". The point is that last month's questions don't come round again, not that a pack is exhausted before anything repeats — and an unbounded array on a document read at the top of every game is the shape this project keeps avoiding. 400 is roughly six months of a weekly round. |
 | **A player may change their answer until the clock stops** (`answer` in `reduce`) | The rules always allowed it — `answers/{uid}` grants `create, update` with no immutability check — so the only thing stopping a second write was the client refusing to make one. `elapsedMs` is re-measured on the change, so changing your mind costs the speed bonus. Keeping the first time would let somebody lock a guess in at half a second, bank the points, and revise at leisure. |
 | **`submitAnswer` checks the window, and that check is new** | The live `room.answers` is built straight from the subcollection, filtered only on question and membership — the reducer's `answer` case never runs in the browser, so its `elapsedMs` guard never ran either. Nothing enforced the window on the way in; the one-answer-only rule hid that by stopping anyone writing twice. Removing the lock exposed it, so the guard moved to where the write happens. |
+| **`submitAnswer` ignores a press on the lectern already chosen** | It is not a change, and writing it again would restamp `elapsedMs` to the later moment — costing speed points for a tap that altered nothing. Easy to do by accident: a double-tap on a phone, or pressing again to confirm. It also stops a fidgety player fanning a write out to every other client for free, which matters because a change now costs a write where the old one-answer rule capped it at one per question. |
 | **The lecterns disable on `clock.expired`, not on having answered** | Same gap from the UI side. Expiry used to be covered incidentally — you had either answered, which disabled them, or run out of time with the reveal close behind. Now it has to be stated. |
 | **The answer window is chosen on `start` and nowhere else** | The rules only permit it to change on a write that opens a question, because a member who could lower it mid-question would open the vault early while everyone else's timer still said otherwise. Confining it to `start` in the engine means the client never even attempts a write the server would refuse. |
 | **The rules bound the window to 5–120s, not to the lobby's three options** | The bound exists to stop a *restart* — writing the room out of `question` and back in restamps `openedAt`, which was harmless at a fixed twenty seconds because it could only delay the vault. What matters is the floor, not matching the picker; pinning the rules to the lobby's three values would also mean the preflight could not use a short probe window, and would need republishing every time an option changed. |
@@ -626,6 +627,17 @@ Both were costed; neither is queued.
 
 ### Four things that will bite
 
+- **Team names go in the list with their city, not on their own.** Nearly every
+  American franchise nickname is also an ordinary English word, and the filter
+  reads the distractors too, so a bare entry takes out a wide swathe of
+  perfectly good questions. `vikings` cost us Lindisfarne and the Danelaw,
+  `raiders` cost us Raiders of the Lost Ark, `pirates` the Disneyland ride,
+  `cubs` the answer to what a baby shark is called, and `mariners` the Ancient
+  Mariner — about 370 questions between them, none about American sport. The
+  packs are cap-bound so none of this showed up as a size change; it silently
+  swapped good questions for arbitrary ones. Only genuinely unambiguous
+  nicknames — `yankees`, `dodgers`, `lakers`, `knicks`, `celtics`, `49ers` —
+  belong in the list bare.
 - **`toPattern` appends `s?`, and that is load-bearing.** Every term list in
   `classify.ts` is matched with a word boundary at each end, so `\bsuper bowl\b`
   misses "Super Bowls" and `\bteam\b` misses "teams". Questions are asked in the

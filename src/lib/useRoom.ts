@@ -472,6 +472,13 @@ export function useRoom(): UseRoom {
       if (room.phase !== 'question') return;
       if (elapsedMs > questionDurationMs(room)) return;
 
+      // Pressing the lectern you already chose is not a change, and writing it
+      // again would restamp `elapsedMs` to the later moment — quietly costing
+      // speed points for a tap that altered nothing. Easy to do by accident: a
+      // double-tap on a phone, or pressing again to confirm. It also keeps a
+      // fidgety player from fanning a write out to every other client for free.
+      if (room.answers[uid]?.optionIndex === optionIndex) return;
+
       const answer: AnswerDoc = { optionIndex, elapsedMs, questionIndex: room.index };
       await setDoc(doc(answersCollection(code), uid), answer);
     },
