@@ -360,7 +360,22 @@ Two decisions in it are load-bearing:
   one. A tight race stays tight and ends sooner, because there is nothing to
   watch.
 
-Two things follow from the replay that are easy to undo by accident:
+**`room.answers` is a new object on every snapshot.** `useRoom` rebuilds it from
+scratch each time the subcollection listener fires, so anything memoised on its
+identity recomputes whenever anybody's answer changes. The replay learned this
+the hard way: memoised that way, a player changing their answer during the
+reveal rescheduled every timer from zero, sending each chip back off the screen
+to land again and pushing the verdict late. The timeline is now frozen on the
+first render that has answers and not recomputed after — deliberately including
+the case where a genuinely new answer arrives, because the replay is a retelling
+of the question as it closed.
+
+Frozen with a `useState` adjusted during render rather than a ref, which
+`react-hooks/refs` rejects, or an effect, which `react-hooks/set-state-in-effect`
+rejects. The "no replay" case is a shared constant rather than a fresh `[]`, or
+the scheduling effect's dependencies change on every clock tick.
+
+Three things follow from the replay that are easy to undo by accident:
 
 - **The lecterns stay lit while it runs.** The old drum roll blacked out every
   tile but your own pick, which would make three of the four lecterns places

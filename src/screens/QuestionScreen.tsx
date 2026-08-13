@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ArcTimer } from '../components/ArcTimer';
 import { Ladder } from '../components/Ladder';
 import { PodiumTile, type TileArrival, type TileState } from '../components/PodiumTile';
 import { ScoreTicker } from '../components/ScoreTicker';
-import { replayDurationMs, replayTimeline } from '../engine/replay';
+import { replayDurationMs, replayTimeline, type Arrival } from '../engine/replay';
 import { currentQuestion, questionDurationMs, type RoomState } from '../engine/state';
 import { play, useCue } from '../lib/sound';
 import type { QuestionClock } from '../lib/useQuestionClock';
@@ -18,6 +18,13 @@ const HUSH_MS = 700;
 
 /** The clock only becomes audible for the closing seconds. */
 const TICKING_FROM_SECONDS = 5;
+
+/**
+ * Shared so that "no replay" is the same array every render. A fresh `[]` would
+ * change the scheduling effect's dependencies on every clock tick, tearing its
+ * timers down and rebuilding them once a second for the whole question.
+ */
+const NO_ARRIVALS: Arrival[] = [];
 
 interface QuestionScreenProps {
   room: RoomState;
@@ -70,7 +77,34 @@ export function QuestionScreen({
    * opens.
    */
   const reducedMotion = useReducedMotion();
-  const arrivals = useMemo(() => replayTimeline(room.answers), [room.answers]);
+
+  /**
+   * The timeline is fixed the moment there is one, and not recomputed after.
+   *
+   * `useRoom` rebuilds `room.answers` from scratch on every snapshot of the
+   * subcollection, so anything memoised on its identity is recomputed whenever
+   * that listener fires — which reschedules the timers below from zero, sending
+   * every chip back off the screen to land again and pushing the verdict late. A
+   * player tapping right on the buzzer is enough to fire it.
+   *
+   * Frozen on the first render that has answers rather than on the first render
+   * of the reveal, because a client that joined mid-question may still be
+   * waiting on that listener when the question closes — freezing an empty
+   * timeline would cost them the replay entirely.
+   */
+  const replayKey = `${room.gameId ?? ''}:${room.index}`;
+  const [frozen, setFrozen] = useState<{ key: string; arrivals: Arrival[] }>({
+    key: '',
+    arrivals: [],
+  });
+
+  // Adjusted during render rather than in an effect: React re-renders before
+  // committing, so no frame is ever painted from the stale timeline.
+  if (revealed && frozen.key !== replayKey && Object.keys(room.answers).length > 0) {
+    setFrozen({ key: replayKey, arrivals: replayTimeline(room.answers) });
+  }
+
+  const arrivals = revealed && frozen.key === replayKey ? frozen.arrivals : NO_ARRIVALS;
   const heldMs = replayDurationMs(arrivals, HUSH_MS);
 
   const [settledIndex, setSettledIndex] = useState<number | null>(null);

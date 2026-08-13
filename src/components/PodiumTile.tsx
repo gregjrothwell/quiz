@@ -32,7 +32,16 @@ interface PodiumTileProps {
   arrivals?: TileArrival[];
 }
 
-const NAME_LIST = new Intl.ListFormat('en-GB', { style: 'long', type: 'conjunction' });
+/**
+ * Deliberately not `Intl.ListFormat`, which would have to be constructed
+ * somewhere — and constructed at module scope on a browser that lacks it, the
+ * throw takes the whole app down to a blank page rather than costing one
+ * screen-reader sentence.
+ */
+function sentence(names: string[]): string {
+  if (names.length < 2) return names[0] ?? 'nobody';
+  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}
 
 /**
  * One decimal place. The speed bonus decays continuously, so the tenth is the
@@ -96,7 +105,7 @@ export function PodiumTile({
             rather than a name arriving every few hundred milliseconds.
           */}
           <span className="sr-only">
-            Picked by {NAME_LIST.format(arrivals.map((arrival) => arrival.name))}
+            Picked by {sentence(arrivals.map((arrival) => arrival.name))}
           </span>
           {arrivals.map((arrival) => (
             <span
