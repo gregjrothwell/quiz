@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { QrCode } from '../components/QrCode';
+import { RoomLink } from '../components/RoomLink';
 import { joinLink } from '../engine/roomCode';
 import {
   DEFAULT_DURATION_SECS,
@@ -97,14 +98,14 @@ export function Lobby({
           </div>
 
           {/*
-            For the people joining from a phone. The code still has to be
-            readable aloud over Teams — that is the path that always works —
-            but pointing a camera at a screen beats typing four characters
-            into a browser you are holding one-handed.
+            The same link the copy button hands out, for a second device that
+            isn't in the chat — someone playing on their phone while the call is
+            on their laptop. It stays because it costs nothing, but it is the
+            third-choice route now, behind the link and the spoken code.
           */}
           <div className="entry__qr">
             <QrCode value={link} label={`Join room ${room.code}`} />
-            <p className="entry__hint">Point a phone at this</p>
+            <p className="entry__hint">Or point a phone at this</p>
           </div>
         </div>
 
@@ -112,6 +113,8 @@ export function Lobby({
           Leave
         </button>
       </header>
+
+      <RoomLink link={link} />
 
       <section className="stack">
         <p className="eyebrow">In the room · {playerEntries.length}</p>

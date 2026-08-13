@@ -207,7 +207,8 @@ input {
 }
 
 /* ── Ways into the room ─────────────────────────────────────────────────────
-   The code read aloud, and the same thing as a QR for anybody on a phone.
+   A link to paste into the chat, the code read aloud, and the same link as a
+   QR for anybody joining on a second device.
    ──────────────────────────────────────────────────────────────────────────── */
 
 .entry {
@@ -240,6 +241,47 @@ input {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--ink-dim);
+}
+
+.share {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.share__row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+/* `min-width: 0` so a long deployed URL shrinks the box instead of pushing the
+   copy button off the row. */
+.share__link {
+  flex: 1 1 20rem;
+  min-width: 0;
+  font-family: var(--tech);
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+.share__copy {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* Holds its line whether or not a message is showing, so confirming a copy
+   doesn't shunt the lobby down the page. */
+.share__status {
+  margin: 0;
+  min-height: 1.3em;
+  font-size: 0.85rem;
+  color: var(--ink-dim);
+}
+
+.share__status--copied {
+  color: var(--cyan);
 }
 
 /* ── Sound switch ───────────────────────────────────────────────────────────

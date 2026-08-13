@@ -133,7 +133,7 @@ export function Landing({
               ? 'Now put your name in the box above — you need one to join.'
               : initialCode
                 ? 'Filled in from the link — just add your name.'
-                : 'Ask the quizmaster to read it out, or scan the code on their screen.'}
+                : 'Use the quizmaster’s link if they’ve shared one, or ask them to read the code out.'}
           </p>
 
           <button
