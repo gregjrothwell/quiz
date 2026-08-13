@@ -7,17 +7,18 @@ Built to replace Polly in Teams.
 - **Repo:** https://github.com/gregjrothwell/quiz (public, `master`, deploys from `gh-pages`)
 - **Firebase project:** `quiz-d686e` (Firestore + Realtime Database in europe-west1 + Anonymous auth)
 - **Status:** shipped and played. 159 tests, clean types and lint, no `any` or
-  `@ts-ignore`. The **answer vault is live**: 3,947 answers seeded, both
-  rulesets published, preflight passing.
-- **⚠️ The packs on disk are ahead of the vault.** A second question source has
-  landed and the packs now hold 14,152 questions against 3,947 seeded answers.
-  **Run `npm run seed-vault` before the next deploy** — see [the second
-  source](#the-second-question-source). Deploying first means every imported
-  question reaches its reveal and stops on "the vault would not confirm an
-  answer".
-- **Next:** nothing queued after the re-seed. [The answer window is
+  `@ts-ignore`. The **answer vault is live and covers the packs**: 13,593
+  answers seeded against the 13,452 the packs need plus the 4 harness entries,
+  both rulesets published, preflight passing.
+- **The vault is ahead of the packs, not behind** — verified 13 August 2026 by
+  the count below. The 137 surplus documents are orphans from earlier harvests:
+  ids hash the question text, so a revised question leaves its old answer in
+  place, unread and harmless. All 14,176 pack questions across the ten packs
+  resolve to an answer.
+- **Next:** nothing queued. [The answer window is
   selectable](#the-configurable-answer-window) — 10 / 15 / 20 seconds, chosen in
-  the lobby, defaulting to 10.
+  the lobby, defaulting to 10. The lobby also hands out a join link to paste
+  into the chat — see [ways into the room](#ways-into-the-room).
 - Nothing is blocking. `sync-harness 10` was re-run after the answer window
   landed: ten clients, all ten joined, all ten saw the round start within 65 ms,
   none dropped — so `durationOk` and `timingOk` gating every room write did not
@@ -50,9 +51,9 @@ Built to replace Polly in Teams.
 
 ## Turning the vault on
 
-**Done on `quiz-d686e` — 3,947 answers, verified by the preflight.** Kept here
-because it has to be repeated for any new project, and after any re-harvest that
-changes question ids.
+**Done on `quiz-d686e` — 13,593 answers, verified by the preflight and recounted
+on 13 August 2026.** Kept here because it has to be repeated for any new
+project, and after any re-harvest that changes question ids.
 
 The packs under `public/packs/` do not contain answers. Until the vault holds
 them, a round reaches its first reveal and stops with "the vault would not
@@ -113,6 +114,31 @@ harvests. That makes a top-up additive rather than a rebuild:
   path works that out for itself.
 - A prompt whose wording changes upstream arrives as a new id. The old entry is
   orphaned, which is harmless.
+
+### Checking the vault without paying for it
+
+**Do not run `seed-vault` to find out whether the vault needs seeding.** It
+reads every document to work out what is new — 13,500 reads against a free tier
+of 50,000 a day — and it costs that whether it writes anything or not. Four runs
+in one afternoon took the day's reads with them and left the game unplayable;
+see `b24358f`.
+
+An aggregate count bills about one read per *thousand* index entries, so the
+same question costs tens of reads instead of thousands:
+
+```ts
+const live = (await db.collection('vault').count().get()).data().count;
+```
+
+Compare it against `Object.keys(.cache/vault.json).length`, and spot-check ten
+ids from that file with `db.getAll(...)` to confirm the *contents* match and not
+just the total — a count alone cannot tell a correct vault from one holding the
+right number of wrong answers. Around 24 reads all in. That is the check that
+produced the numbers at the top of this file on 13 August 2026.
+
+Expect the live count to run *ahead* of the local one. Orphans from revised
+questions accumulate and are never cleaned up, so ahead is the healthy state;
+only *behind* means a re-seed is due.
 
 ### How it works
 
@@ -307,19 +333,53 @@ So: publish `firestore.rules`, run `npm run check-rules`, then `npm run deploy`.
 
 ---
 
+## Ways into the room
+
+Three routes to the same place, in the order they are worth reaching for:
+
+1. **The link**, copied from the lobby and pasted into the Teams chat. One tap
+   and the joiner lands on the landing screen with the code already filled, so
+   all they supply is a name.
+2. **The code read aloud**, four characters from an alphabet that omits every
+   pair people confuse — I/1/L, O/0, Z/2. This is the route that always works.
+3. **The QR**, for a player on their phone with the call on their laptop. It
+   carries the same link, and always did — the QR was never a picture of the
+   four characters, which is worth saying because it is the natural assumption
+   and it made the QR look far less useful than it was.
+
+All three go through `codeFromHash` in `src/engine/roomCode.ts`, which is
+strict on purpose: an invalid code returns null rather than half-filling the
+field, because a partly-populated box someone then types into is how you join a
+room nobody meant to be in.
+
+The copy button degrades rather than lying. `navigator.clipboard` needs a
+secure context and a permission the browser can refuse, and on an insecure
+origin it is absent outright — which throws where the others reject. All of it
+lands in one fallback: select the text, say so, and let the reader use their own
+copy shortcut. A copy button that silently fails is worse than no button,
+because the next paste is whatever was on the clipboard already.
+
+**Nothing here needs rules or a re-seed** — it is client-side routing over a
+room code that already existed.
+
+---
+
 ## Next session — start here
 
-Written 11 August 2026, straight after deploying the second question source and
-the change-your-answer round.
+Written 11 August 2026, revised 13 August after the join link went out.
 
-1. **Check the game actually plays.** Firestore reads were exhausted on the 11th
-   (see the `seed-vault` box below), so the deploy went out unplayed. First job
-   is a real round on the live site — it is the one thing today's work never got
-   to do end to end with the quota up.
-2. **Take stock of Firestore.** A count of rooms, season rows and orphaned vault
-   entries was attempted and never completed, because the read quota was already
-   gone. Worth knowing: rooms are never deleted, so the collection only grows,
-   and every one of them holds players' names.
+1. **Check the game actually plays.** Still the first job, and still never done:
+   the 11th's deploy went out unplayed because the read quota was gone, and the
+   13th's went out without a round either. The vault is no longer a suspect —
+   it is seeded and covers every pack question, confirmed by the cheap count —
+   so what is untested is the reveal path on the live site with a real player,
+   not the data behind it.
+2. **Take stock of Firestore.** Half done. The vault side is counted: 13,593
+   documents against 13,452 packs plus 4 harness, so 137 orphans, and they are
+   expected rather than a fault. Rooms and season rows are still uncounted.
+   Worth knowing: rooms are never deleted, so the collection only grows, and
+   every one of them holds players' names — which now also means every join link
+   ever pasted into a chat still resolves to a real room.
 3. **Fix `npm run host-room`.** Broken, and it predates all of this work:
    `src/lib/vault.ts` imports `../firebase`, which reads `import.meta.env` at
    module scope — Vite-only, so it throws under `tsx` before the script starts.
@@ -538,7 +598,7 @@ rules are still using a fixed twenty.
 
 ## Question pipeline
 
-14,152 questions from two sources, both CC BY-SA 4.0 and **committed as JSON** —
+14,176 questions from two sources, both CC BY-SA 4.0 and **committed as JSON** —
 no runtime API, no key in the bundle, no rate limit:
 
 - [Open Trivia DB](https://opentdb.com) — 3,996 questions, each with a
@@ -547,7 +607,9 @@ no runtime API, no key in the bundle, no rate limit:
   questions, no difficulty rating, capped into the packs
 
 Packs: General Knowledge / Geography / History / Odds & Ends / Music / Science /
-TV & Film / Best of British 1,500 each, Video Games 1,396, Sport 756.
+TV & Film / Best of British 1,500 each, Video Games 1,400, Sport 776 — counted
+from `public/packs/` on 13 August 2026, after the US-nickname filter fix in
+`eafcfce` gave Sport its 20 back.
 
 The pools are cached at `.cache/pool.json` and `.cache/opentriviaqa.json`, both
 gitignored. **Tuning the classification rules costs a re-sort, not a re-fetch:**
@@ -577,7 +639,7 @@ thin pack is now several times deeper.
 
 | Pack | Was | Now |
 |---|---|---|
-| Sport | 125 | **756** |
+| Sport | 125 | **776** |
 | Best of British | 201 | 1,500 |
 | Geography | 299 | 1,500 |
 | History | 340 | 1,500 |
@@ -585,7 +647,7 @@ thin pack is now several times deeper.
 | TV & Film | 397 | 1,500 |
 | Music / Science | 399 | 1,500 |
 | Odds & Ends | 640 | 1,500 |
-| Video Games | 999 | 1,396 |
+| Video Games | 999 | 1,400 |
 
 > ### `seed-vault` costs a full-vault read every time you run it
 >
@@ -599,8 +661,10 @@ thin pack is now several times deeper.
 > nothing costs exactly as much as the run that writes everything.
 >
 > Seed once, read the count it prints, and believe it. If something really does
-> need checking, `npm run check-rules` proves the vault path for about 24
-> operations rather than 13,500.
+> need checking, there are two cheap ways and neither is this script:
+> [an aggregate count](#checking-the-vault-without-paying-for-it) answers "is it
+> seeded?" for about 24 reads, and `npm run check-rules` proves the vault *path*
+> works for about 24 operations.
 
 > ### Seed the vault before you deploy, not after
 >
