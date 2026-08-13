@@ -1012,6 +1012,66 @@ input {
   display: none;
 }
 
+/* ── The rosettes ───────────────────────────────────────────────────────────
+   What the scoreboard cannot say: who was quickest, who climbed, who was alone
+   in being right, and who was alone in being wrong.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.awards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+}
+
+.award {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--edge);
+  border-top: 3px solid var(--cyan-dim);
+  border-radius: 3px;
+  background: linear-gradient(180deg, var(--panel), rgb(7 26 46 / 0.45));
+  animation: settle 340ms ease backwards;
+}
+
+.award__title {
+  margin: 0;
+  font-family: var(--tech);
+  font-weight: 600;
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.award__who {
+  margin: 0;
+  font-family: var(--shout);
+  font-size: clamp(1.15rem, 3.4vw, 1.5rem);
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.award__detail {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+
+/* Your own, picked out the same way your name is on the scoreboard. */
+.award--yours {
+  border-top-color: var(--amber);
+  background: linear-gradient(180deg, #241a04, rgb(20 12 2 / 0.5));
+}
+
+.award--yours .award__who {
+  color: var(--amber-bright);
+}
+
 /* ── The replay ─────────────────────────────────────────────────────────────
    Who picked this lectern, landing in the order they got there. Pushed to the
    trailing edge so the lectern reads the same as it did while the clock ran and

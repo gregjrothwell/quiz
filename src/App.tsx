@@ -10,6 +10,7 @@ import {
   type Level,
 } from './engine/state';
 import { isFirebaseConfigured } from './firebase';
+import { useGameLog } from './lib/useGameLog';
 import { loadAsked, recordAsked, recordGame } from './lib/season';
 import { play } from './lib/sound';
 import { loadPackQuestions, usePackIndex } from './lib/usePacks';
@@ -104,6 +105,11 @@ function Game() {
   // screen cannot bank it twice. The season document carries the same guard for
   // anything this ref cannot see, such as a reload.
   const bankedRef = useRef<string | null>(null);
+
+  // Built as the game runs, because nothing else keeps a record of it — see
+  // useGameLog. Held here rather than in Final so it survives that screen
+  // mounting, which happens after the last question has already gone.
+  const gameLog = useGameLog(room);
 
   const phase = room?.phase ?? 'lobby';
   const clock = useQuestionClock(
@@ -364,6 +370,7 @@ function Game() {
             room={room}
             youUid={uid}
             isQuizmaster={isQuizmaster}
+            log={gameLog}
             onPlayAgain={() => void dispatch({ type: 'reset' }).catch(report)}
             onLeave={() => void leave().catch(report)}
             onSeason={() => setShowSeason(true)}

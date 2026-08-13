@@ -1,5 +1,7 @@
+import { Awards } from '../components/Awards';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { Standings } from '../components/Standings';
+import { awardsFor, type QuestionRecord } from '../engine/awards';
 import { standings } from '../engine/scoring';
 import type { RoomState } from '../engine/state';
 import { useCue } from '../lib/sound';
@@ -8,6 +10,12 @@ interface FinalProps {
   room: RoomState;
   youUid: string | null;
   isQuizmaster: boolean;
+  /**
+   * This device's record of the game, which only exists in memory — see
+   * `useGameLog`. Short of the full round on a client that reloaded or joined
+   * late, and the awards are withheld rather than shown from a partial view.
+   */
+  log: QuestionRecord[];
   onPlayAgain: () => void;
   onLeave: () => void;
   onSeason: () => void;
@@ -29,11 +37,21 @@ export function Final({
   room,
   youUid,
   isQuizmaster,
+  log,
   onPlayAgain,
   onLeave,
   onSeason,
 }: FinalProps) {
   const rows = standings(room.scores).filter((entry) => room.players[entry.uid]);
+
+  /*
+    Only from a complete log. Every client works the awards out for itself from
+    what it saw, so a device that missed questions would name different winners
+    to the one beside it — and two screens disagreeing about who was fastest is
+    worse than neither of them saying.
+  */
+  const sawItAll = log.length === room.questions.length && room.questions.length > 0;
+  const awards = sawItAll ? awardsFor(log, Object.keys(room.players)) : [];
   const leaders = rows.filter((entry) => entry.position === 1);
   const winnerName =
     leaders.length > 1
@@ -81,6 +99,8 @@ export function Final({
       ) : null}
 
       <Standings players={room.players} scores={room.scores} youUid={youUid} />
+
+      <Awards awards={awards} players={room.players} youUid={youUid} />
 
       <div className="btn-row">
         {isQuizmaster ? (

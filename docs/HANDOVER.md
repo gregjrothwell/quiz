@@ -333,6 +333,42 @@ So: publish `firestore.rules`, run `npm run check-rules`, then `npm run deploy`.
 
 ---
 
+## The awards
+
+Four rosettes under the final standings: fastest finger, comeback of the night,
+the only one who knew, and boldly wrong. `src/engine/awards.ts` computes them and
+is pure and tested; `src/components/Awards.tsx` owns the wording, the same split
+as the lobby and its level names.
+
+**The game keeps no record of itself, which is the whole difficulty.** The
+answers subcollection holds one document *per player* and overwrites it every
+question, and `useRoom` filters it to the current index — so `room.answers` is
+only ever the question in play, and `lastDeltas` only the last one. By the final
+screen, who answered what and how fast is gone.
+
+`useGameLog` therefore accumulates it on each client as the game runs, in memory
+only. Every client already receives every reveal, so this costs no reads, no
+writes and no rules change, and identical input on every device means identical
+awards. **The cost is that a reload loses it**, which is why `Final` only shows
+awards when `log.length === room.questions.length`: a device that missed
+questions would name different winners to the one beside it, and two screens
+disagreeing about who was fastest is worse than neither saying.
+
+Two rules the tests pin down, both about not lying:
+
+- **An award nothing earned is left out, not shown empty.** A round nobody ever
+  got right has no fastest finger, and inventing one from the wrong answers
+  would be a confident lie.
+- **Joint winners are sorted.** Ties would otherwise list by object key order,
+  which differs between clients.
+
+`contrarian` counts wrong answers *nobody else picked*. Being wrong with the
+crowd is a bad question; being wrong alone is a decision. Note this needs three
+or more players to mean anything — with two, every wrong answer is also a lonely
+one.
+
+---
+
 ## The replay
 
 The reveal always had a beat between the clock stopping and the verdict landing

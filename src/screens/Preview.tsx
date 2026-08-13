@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { QuestionRecord } from '../engine/awards';
 import { createRoom, type QuizQuestion, type RoomState } from '../engine/state';
 import type { PackSummary } from '../lib/usePacks';
 import { Final } from './Final';
@@ -91,6 +92,36 @@ function mockRoom(overrides: Partial<RoomState> = {}): RoomState {
 }
 
 const CLOCK = { elapsedMs: 6_000, remainingMs: 14_000, secondsLeft: 14, expired: false };
+
+/**
+ * A two-question game built to earn all four rosettes: Greg in on the buzzer and
+ * the only one who knew it, Sam overhauling him on the last question, and Alex
+ * out on his own on a wrong answer.
+ */
+const AWARDED_GAME: QuestionRecord[] = [
+  {
+    index: 0,
+    correctIndex: 0,
+    answers: {
+      greg: { optionIndex: 0, elapsedMs: 900 },
+      sam: { optionIndex: 1, elapsedMs: 2_000 },
+      priya: { optionIndex: 1, elapsedMs: 2_400 },
+      alex: { optionIndex: 3, elapsedMs: 3_000 },
+    },
+    deltas: { greg: 955, sam: 0, priya: 0, alex: 0 },
+  },
+  {
+    index: 1,
+    correctIndex: 0,
+    answers: {
+      sam: { optionIndex: 0, elapsedMs: 1_500 },
+      priya: { optionIndex: 0, elapsedMs: 4_000 },
+      greg: { optionIndex: 2, elapsedMs: 2_000 },
+      alex: { optionIndex: 2, elapsedMs: 5_000 },
+    },
+    deltas: { sam: 1_000, priya: 800, greg: 0, alex: 0 },
+  },
+];
 
 const noop = (): void => undefined;
 
@@ -204,6 +235,27 @@ export function Preview() {
           room={mockRoom({ phase: 'finished', index: 1 })}
           youUid="greg"
           isQuizmaster
+          log={[]}
+          onPlayAgain={noop}
+          onLeave={noop}
+          onSeason={noop}
+        />
+      ),
+    },
+    {
+      title: 'Final · with the awards',
+      node: (
+        <Final
+          room={mockRoom({
+            phase: 'finished',
+            index: 1,
+            // Matched to the log below, so the podium and the rosettes are
+            // telling the same story rather than two unrelated ones.
+            scores: { sam: 1_000, greg: 955, priya: 800, alex: 0 },
+          })}
+          youUid="greg"
+          isQuizmaster
+          log={AWARDED_GAME}
           onPlayAgain={noop}
           onLeave={noop}
           onSeason={noop}
