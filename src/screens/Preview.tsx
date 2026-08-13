@@ -165,7 +165,15 @@ export function Preview() {
         <QuestionScreen
           room={mockRoom({
             phase: 'reveal',
-            answers: { greg: { optionIndex: 2, elapsedMs: 4_100 } },
+            // Spread on purpose, so the gallery shows the replay doing its job:
+            // a pile-on to one lectern early, and Priya arriving alone on the
+            // right answer six seconds later.
+            answers: {
+              sam: { optionIndex: 2, elapsedMs: 2_300 },
+              greg: { optionIndex: 2, elapsedMs: 4_100 },
+              alex: { optionIndex: 3, elapsedMs: 5_200 },
+              priya: { optionIndex: 0, elapsedMs: 8_900 },
+            },
             lastDeltas: { sam: 880 },
           })}
           youUid="greg"

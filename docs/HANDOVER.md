@@ -333,6 +333,47 @@ So: publish `firestore.rules`, run `npm run check-rules`, then `npm run deploy`.
 
 ---
 
+## The replay
+
+The reveal always had a beat between the clock stopping and the verdict landing
+— `HUSH_MS`, 700ms of blacked-out lecterns. It is now spent replaying the
+question: every player's name lands on the lectern they picked, in the order
+they got there, carrying the time they took. The verdict follows the last
+arrival.
+
+**It costs nothing.** Every device already holds `room.answers` — who picked
+what and how long each took — because that is what the scoring runs on. The
+replay reads the same object. No extra reads, no extra writes, no rules change,
+nothing new in the room document.
+
+`src/engine/replay.ts` is the whole of the timing, and it is pure and tested.
+Two decisions in it are load-bearing:
+
+- **Ties break on uid.** Two answers on the same millisecond would otherwise
+  replay in object-key order, which differs between devices — and the room would
+  watch two versions of who got there first.
+- **The spread is normalised against `fullSpreadFromMs` (2.5s), not against the
+  answers alone.** Normalising against the answers would stretch a photo finish
+  across the full window: four people within 200ms of each other would arrive
+  over more than a second, misrepresenting a scoreline that those 200ms decided.
+  Dividing by at least 2.5s compresses a long tail but never exaggerates a short
+  one. A tight race stays tight and ends sooner, because there is nothing to
+  watch.
+
+Two things follow from the replay that are easy to undo by accident:
+
+- **The lecterns stay lit while it runs.** The old drum roll blacked out every
+  tile but your own pick, which would make three of the four lecterns places
+  nobody could be seen landing on. The blackout is still there for a question
+  nobody answered, where there is nothing to replay and the beat falls back to
+  `HUSH_MS`.
+- **`prefers-reduced-motion` is handled in JS, not only in CSS.** The stylesheet
+  flattens animations, but the replay is a sequence timed with `setTimeout` —
+  motion the stylesheet cannot reach. `useReducedMotion` skips it and goes
+  straight to the settled state.
+
+---
+
 ## Ways into the room
 
 Three routes to the same place, in the order they are worth reaching for:

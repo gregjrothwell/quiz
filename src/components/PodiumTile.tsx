@@ -8,6 +8,14 @@ const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'] as const;
  */
 export type TileState = 'idle' | 'picked' | 'correct' | 'wrong' | 'dim' | 'hushed' | 'gone';
 
+/** One player shown landing on this lectern during the reveal replay. */
+export interface TileArrival {
+  uid: string;
+  name: string;
+  elapsedMs: number;
+  isYou: boolean;
+}
+
 interface PodiumTileProps {
   index: number;
   text: string;
@@ -16,6 +24,23 @@ interface PodiumTileProps {
   onPick: (index: number) => void;
   /** Position in the stagger, so the podiums light up in sequence. */
   order: number;
+  /**
+   * Who picked this lectern, in the order they got there. Empty until the
+   * reveal — which lectern anybody chose is the one thing that must not leak
+   * while the clock is running.
+   */
+  arrivals?: TileArrival[];
+}
+
+const NAME_LIST = new Intl.ListFormat('en-GB', { style: 'long', type: 'conjunction' });
+
+/**
+ * One decimal place. The speed bonus decays continuously, so the tenth is the
+ * smallest difference worth showing — and a chip reading `1.24s` is a number to
+ * read rather than a time to glance at.
+ */
+function seconds(elapsedMs: number): string {
+  return `${(elapsedMs / 1000).toFixed(1)}s`;
 }
 
 const CLASS_FOR_STATE: Record<TileState, string> = {
@@ -38,7 +63,15 @@ function tileClassName(state: TileState): string {
 }
 
 /** One lit answer podium. The lamp strip along its base carries the verdict. */
-export function PodiumTile({ index, text, state, disabled, onPick, order }: PodiumTileProps) {
+export function PodiumTile({
+  index,
+  text,
+  state,
+  disabled,
+  onPick,
+  order,
+  arrivals = [],
+}: PodiumTileProps) {
   const letter = LETTERS[index] ?? '?';
 
   return (
@@ -54,6 +87,30 @@ export function PodiumTile({ index, text, state, disabled, onPick, order }: Podi
         {letter}
       </span>
       <span className="tile__text">{text}</span>
+
+      {arrivals.length > 0 ? (
+        <span className="tile__crowd">
+          {/*
+            The chips are a race being watched, not a list being read. Announced
+            once as a sentence instead, so a screen reader gets the outcome
+            rather than a name arriving every few hundred milliseconds.
+          */}
+          <span className="sr-only">
+            Picked by {NAME_LIST.format(arrivals.map((arrival) => arrival.name))}
+          </span>
+          {arrivals.map((arrival) => (
+            <span
+              key={arrival.uid}
+              className={arrival.isYou ? 'tile__pick tile__pick--you' : 'tile__pick'}
+              aria-hidden="true"
+            >
+              {arrival.name}
+              <i>{seconds(arrival.elapsedMs)}</i>
+            </span>
+          ))}
+        </span>
+      ) : null}
+
       {disabled ? null : (
         <span className="tile__key" aria-hidden="true">
           {letter} / {index + 1}

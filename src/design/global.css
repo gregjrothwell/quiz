@@ -1012,6 +1012,68 @@ input {
   display: none;
 }
 
+/* ── The replay ─────────────────────────────────────────────────────────────
+   Who picked this lectern, landing in the order they got there. Pushed to the
+   trailing edge so the lectern reads the same as it did while the clock ran and
+   only gains a crowd.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.tile__crowd {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.3rem;
+  margin-left: auto;
+  padding-left: 0.5rem;
+  max-width: 55%;
+}
+
+.tile__pick {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--edge);
+  background: rgb(1 6 16 / 0.65);
+  font-family: var(--tech);
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  animation: pick-in 260ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+.tile__pick i {
+  font-style: normal;
+  font-size: 0.66rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-dim);
+}
+
+/* Your own chip, so you can find yourself without reading every name. */
+.tile__pick--you {
+  border-color: var(--amber);
+  color: var(--amber-bright);
+}
+
+.tile__pick--you i {
+  color: var(--amber);
+}
+
+/* Lands rather than fades — the drop is what makes it read as an arrival. */
+@keyframes pick-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem) scale(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* ── Countdown ring ─────────────────────────────────────────────────────── */
 
 .timer {

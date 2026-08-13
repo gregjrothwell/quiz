@@ -1,16 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArcTimer } from '../components/ArcTimer';
 import { Ladder } from '../components/Ladder';
-import { PodiumTile, type TileState } from '../components/PodiumTile';
+import { PodiumTile, type TileArrival, type TileState } from '../components/PodiumTile';
 import { ScoreTicker } from '../components/ScoreTicker';
+import { replayDurationMs, replayTimeline } from '../engine/replay';
 import { currentQuestion, questionDurationMs, type RoomState } from '../engine/state';
 import { play, useCue } from '../lib/sound';
 import type { QuestionClock } from '../lib/useQuestionClock';
+import { useReducedMotion } from '../lib/useReducedMotion';
 
 /**
- * The beat between the clock stopping and the verdict landing. Long enough to
- * be a drum roll, short enough that fifteen of them don't add two minutes to a
- * round.
+ * The beat between the clock stopping and the verdict landing, when there is no
+ * replay to fill it. Long enough to be a drum roll, short enough that fifteen of
+ * them don't add two minutes to a round.
  */
 const HUSH_MS = 700;
 
@@ -56,22 +58,50 @@ export function QuestionScreen({
 
   /**
    * The verdict is worth nothing if it arrives at the same instant the clock
-   * stops — the pause is the whole moment. So for the first {@link HUSH_MS} of
-   * a reveal every lectern but your own pick goes dark, and only then does the
-   * answer land.
+   * stops — the pause is the whole moment.
    *
-   * Held as *which question has settled* rather than a boolean, so the state is
+   * The pause used to be blank. It is now the replay: every device already holds
+   * who picked what and how long each of them took, so the reveal spends that
+   * beat retelling the question instead of waiting out a drum roll. The verdict
+   * lands when the last player has arrived.
+   *
+   * Both are held as *which question* rather than as booleans, so the state is
    * derived on the way out and nothing has to reset it when the next question
    * opens.
    */
+  const reducedMotion = useReducedMotion();
+  const arrivals = useMemo(() => replayTimeline(room.answers), [room.answers]);
+  const heldMs = replayDurationMs(arrivals, HUSH_MS);
+
   const [settledIndex, setSettledIndex] = useState<number | null>(null);
-  const settled = revealed && settledIndex === room.index;
+  const [landed, setLanded] = useState<{ index: number; count: number }>({ index: -1, count: 0 });
+
+  const settled = revealed && (reducedMotion || settledIndex === room.index);
+  const shown = !revealed
+    ? []
+    : reducedMotion
+      ? arrivals
+      : landed.index === room.index
+        ? arrivals.slice(0, landed.count)
+        : [];
 
   useEffect(() => {
-    if (!revealed) return;
-    const timer = setTimeout(() => setSettledIndex(room.index), HUSH_MS);
-    return () => clearTimeout(timer);
-  }, [revealed, room.index]);
+    // Nothing to schedule: the whole sequence is already at its end state.
+    if (!revealed || reducedMotion) return;
+
+    const timers = arrivals.map((arrival, position) =>
+      window.setTimeout(
+        () => setLanded({ index: room.index, count: position + 1 }),
+        arrival.atMs,
+      ),
+    );
+    const settle = window.setTimeout(() => setSettledIndex(room.index), heldMs);
+
+    return () => {
+      for (const timer of timers) window.clearTimeout(timer);
+      window.clearTimeout(settle);
+    };
+  }, [revealed, reducedMotion, room.index, arrivals, heldMs]);
 
   useCue('hush', room.index, revealed);
   useCue(gotItRight ? 'correct' : 'wrong', room.index, revealed && settled);
@@ -120,9 +150,16 @@ export function QuestionScreen({
 
   const stateFor = (index: number): TileState => {
     if (revealed) {
-      // The drum roll: the set goes dark and your own pick is the only thing
-      // still lit, so the green landing somewhere else is a visible defeat.
-      if (!settled) return myAnswer?.optionIndex === index ? 'picked' : 'hushed';
+      if (!settled) {
+        // Every lectern stays readable while the replay runs — watching the room
+        // arrive on all four is the point, and a blacked-out tile is one nobody
+        // can be seen landing on. Your own pick still carries its light, so you
+        // can follow your own fortunes without hunting for your name.
+        if (arrivals.length > 0) return myAnswer?.optionIndex === index ? 'picked' : 'idle';
+        // Nothing to replay, so the beat is the drum roll it always was: the set
+        // goes dark and your own pick is the only thing still lit.
+        return myAnswer?.optionIndex === index ? 'picked' : 'hushed';
+      }
       if (index === question.correctIndex) return 'correct';
       if (myAnswer?.optionIndex === index) return 'wrong';
       return 'gone';
@@ -134,12 +171,23 @@ export function QuestionScreen({
     return myAnswer.optionIndex === index ? 'picked' : 'idle';
   };
 
+  const crowdFor = (optionIndex: number): TileArrival[] =>
+    shown
+      .filter((arrival) => arrival.optionIndex === optionIndex)
+      .map((arrival) => ({
+        uid: arrival.uid,
+        name: room.players[arrival.uid]?.name ?? 'Someone',
+        elapsedMs: arrival.elapsedMs,
+        isYou: arrival.uid === youUid,
+      }));
+
   const tiles = question.options.map((option, index) => (
     <PodiumTile
       key={`${question.id}-${index}`}
       index={index}
       text={option}
       state={stateFor(index)}
+      arrivals={crowdFor(index)}
       // The clock closes the lecterns, not the first press. Expiry matters on
       // its own now: it used to be covered incidentally, because having answered
       // disabled the tiles and everyone had answered or run out of time.
