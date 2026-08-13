@@ -26,6 +26,14 @@ import { QuestionScreen } from './screens/QuestionScreen';
 import { Scoreboard } from './screens/Scoreboard';
 import { Season } from './screens/Season';
 
+/**
+ * How long to wait before asking the vault again, and how many times. The gate
+ * it is waiting on is the server agreeing the answer window has passed, which
+ * resolves in a second or two — so this is a short flurry rather than a poll.
+ */
+const REVEAL_RETRY_MS = 1_500;
+const MAX_REVEAL_RETRIES = 8;
+
 interface ActionError {
   message: string;
   /** The room state it was raised against; null on the landing screen. */
@@ -246,10 +254,42 @@ function Game() {
 
   // The quizmaster's device closes the question when the clock runs out, so a
   // round keeps moving even if nobody remembers to press Reveal.
+  //
+  // A refused reveal used to stall the round outright. The vault turns one down
+  // until the server agrees the answer window has passed, which is routine and
+  // self-correcting — but nothing here retried it. This effect only re-fires
+  // when `handleReveal` changes identity, and that needs a room update; in a
+  // room where everybody has already answered, nothing is writing, so nothing
+  // ever arrived to trigger it. Seen live on 13 August 2026: question one sat on
+  // "the vault would not confirm an answer" for minutes until Reveal was pressed
+  // by hand.
+  //
+  // Capped rather than open-ended. A vault that genuinely lacks the answer would
+  // otherwise be asked forever, and every attempt is a write against a read
+  // budget this game has already exhausted once. After the cap the quizmaster's
+  // own Reveal button is still there, which is how it was rescued before.
+  const revealKey = `${room?.gameId ?? ''}:${room?.index ?? -1}`;
+  const [retry, setRetry] = useState({ key: revealKey, n: 0 });
+
+  // Adjusted during render so a new question starts with its full allowance
+  // rather than inheriting the last one's exhausted count.
+  if (retry.key !== revealKey) setRetry({ key: revealKey, n: 0 });
+
   useEffect(() => {
     if (!isQuizmaster || phase !== 'question' || !clock.expired) return;
-    void handleReveal().catch(report);
-  }, [isQuizmaster, phase, clock.expired, handleReveal, report]);
+
+    let timer = 0;
+    void handleReveal().catch((cause: unknown) => {
+      report(cause);
+      if (retry.n >= MAX_REVEAL_RETRIES) return;
+      timer = window.setTimeout(
+        () => setRetry((current) => ({ ...current, n: current.n + 1 })),
+        REVEAL_RETRY_MS,
+      );
+    });
+
+    return () => window.clearTimeout(timer);
+  }, [isQuizmaster, phase, clock.expired, handleReveal, report, retry.n]);
 
   // Each device banks its own season row. Doing it per-client rather than having
   // the quizmaster write everybody's is what lets the rules restrict the write

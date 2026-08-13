@@ -465,7 +465,13 @@ room code that already existed.
 
 Written 11 August 2026, revised 13 August after the join link went out.
 
-1. **A refused reveal can stall the round, and nothing retries it.** Seen live
+1. ~~**A refused reveal can stall the round, and nothing retries it.**~~ **Fixed**
+   — the auto-reveal now retries eight times at 1.5s intervals, reset per
+   question, with the quizmaster's Reveal button still there after that. The
+   retry firing has not been watched, because a vault refusal cannot be
+   summoned on demand; the success path is unchanged. Original finding:
+
+   Seen live
    on 13 August 2026: question one stopped on "the vault would not confirm an
    answer" and stayed there for minutes. The auto-reveal effect only re-fires
    when `handleReveal` changes identity, which needs a room update — and in a
