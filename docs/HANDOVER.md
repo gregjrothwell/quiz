@@ -354,6 +354,11 @@ awards when `log.length === room.questions.length`: a device that missed
 questions would name different winners to the one beside it, and two screens
 disagreeing about who was fastest is worse than neither saying.
 
+**Confirmed on the live site**, 13 August 2026: a full ten-question game with
+four players finished with all four rosettes on the final screen, which also
+proves `useGameLog` caught every question — one short and nothing would have
+shown at all.
+
 Two rules the tests pin down, both about not lying:
 
 - **An award nothing earned is left out, not shown empty.** A round nobody ever
@@ -460,7 +465,21 @@ room code that already existed.
 
 Written 11 August 2026, revised 13 August after the join link went out.
 
-1. ~~**Check the game actually plays.**~~ **Done** — played on the morning of 13
+1. **A refused reveal can stall the round, and nothing retries it.** Seen live
+   on 13 August 2026: question one stopped on "the vault would not confirm an
+   answer" and stayed there for minutes. The auto-reveal effect only re-fires
+   when `handleReveal` changes identity, which needs a room update — and in a
+   room where everybody has already answered, nothing is writing, so nothing
+   arrives to trigger the retry. It recovered the moment the Reveal button was
+   pressed, and the rest of the ten questions ran clean.
+
+   The quizmaster can always rescue it by pressing Reveal, and the notice now
+   says to, so this is not urgent — but a round that needs rescuing is a round
+   that looks broken to everybody else. A timed retry on a failed reveal is the
+   obvious fix, and it predates the replay and the awards. **This is the first
+   job.**
+
+2. ~~**Check the game actually plays.**~~ **Done** — played on the morning of 13
    August 2026, on the `b24358f` build. That clears the second question source,
    the change-your-answer round and the vault reveal all at once: they had been
    deployed but never played, and they work.
@@ -469,23 +488,23 @@ Written 11 August 2026, revised 13 August after the join link went out.
    part. A real round surfaced in one sitting what neither the tests nor the
    ten-client harness could see, because both check whether the game *works*
    rather than what it *says* while it works.
-2. **Take stock of Firestore.** Half done. The vault side is counted: 13,593
+3. **Take stock of Firestore.** Half done. The vault side is counted: 13,593
    documents against 13,452 packs plus 4 harness, so 137 orphans, and they are
    expected rather than a fault. Rooms and season rows are still uncounted.
    Worth knowing: rooms are never deleted, so the collection only grows, and
    every one of them holds players' names — which now also means every join link
    ever pasted into a chat still resolves to a real room.
-3. **Fix `npm run host-room`.** Broken, and it predates all of this work:
+4. **Fix `npm run host-room`.** Broken, and it predates all of this work:
    `src/lib/vault.ts` imports `../firebase`, which reads `import.meta.env` at
    module scope — Vite-only, so it throws under `tsx` before the script starts.
    Deferring the config read would fix it, but `firebase.ts` is load-bearing and
    its documented failure is a blank app, so give it its own change and test it
    properly. It is the harness for quizmaster handover and the live reveal.
-4. **Watch the read budget.** A game is roughly 800–1,500 reads, and changing an
+5. **Watch the read budget.** A game is roughly 800–1,500 reads, and changing an
    answer now costs a write that fans out to every client — so a round where
    people fidget costs more than it used to. The console's usage alerts are on;
    App Check is still the real fix and still not done.
-5. **Difficulty is still unsolved**, deliberately. Imported questions are all
+6. **Difficulty is still unsolved**, deliberately. Imported questions are all
    `medium` and the reasons are written up under [the second
    source](#the-difficulty-rating-that-is-not-there). Do not reach for another
    heuristic without measuring it against a hand-labelled set first — three have
