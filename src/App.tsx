@@ -25,6 +25,12 @@ import { QuestionScreen } from './screens/QuestionScreen';
 import { Scoreboard } from './screens/Scoreboard';
 import { Season } from './screens/Season';
 
+interface ActionError {
+  message: string;
+  /** The room state it was raised against; null on the landing screen. */
+  step: string | null;
+}
+
 function SetupNotice() {
   return (
     <Stage>
@@ -91,7 +97,7 @@ function Game() {
   const { packs, error: packsError } = usePackIndex();
 
   const [busy, setBusy] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<ActionError | null>(null);
   const [showSeason, setShowSeason] = useState(false);
 
   // Which game this device has already banked, so a re-render on the final
@@ -106,9 +112,33 @@ function Game() {
     room ? questionDurationMs(room) : DEFAULT_QUESTION_DURATION_MS,
   );
 
-  const report = useCallback((cause: unknown) => {
-    setActionError(cause instanceof Error ? cause.message : 'Something went wrong');
-  }, []);
+  /**
+   * Which state of the room an action was attempted against. A failure
+   * describes the room as it was, so once the room moves past that point the
+   * notice is describing something that is no longer true.
+   *
+   * The vault is why this matters. Its refusal is routine and self-correcting —
+   * the rules will not open it until the server agrees the window has passed, so
+   * a reveal fired on a client clock running a moment ahead is refused, and the
+   * message says exactly that: give it a moment and try again. The retry lands
+   * on the next room update. Before this, that one refusal left "the vault would
+   * not confirm an answer" pinned above every screen for the rest of the game,
+   * including over the questions it then revealed perfectly well.
+   *
+   * Derived rather than cleared in an effect, so there is no window where the
+   * room has moved on and the stale notice is still painted.
+   */
+  const roomStep = room ? `${room.gameId ?? ''}:${room.index}:${room.phase}` : null;
+
+  const report = useCallback(
+    (cause: unknown) => {
+      setActionError({
+        message: cause instanceof Error ? cause.message : 'Something went wrong',
+        step: roomStep,
+      });
+    },
+    [roomStep],
+  );
 
   const handleCreate = useCallback(
     (name: string) => {
@@ -257,7 +287,7 @@ function Game() {
     );
   }
 
-  const problem = actionError ?? packsError;
+  const problem = (actionError?.step === roomStep ? actionError.message : null) ?? packsError;
 
   if (showSeason) {
     return (

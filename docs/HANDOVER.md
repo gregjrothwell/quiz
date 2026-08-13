@@ -368,12 +368,15 @@ room code that already existed.
 
 Written 11 August 2026, revised 13 August after the join link went out.
 
-1. **Check the game actually plays.** Still the first job, and still never done:
-   the 11th's deploy went out unplayed because the read quota was gone, and the
-   13th's went out without a round either. The vault is no longer a suspect —
-   it is seeded and covers every pack question, confirmed by the cheap count —
-   so what is untested is the reveal path on the live site with a real player,
-   not the data behind it.
+1. ~~**Check the game actually plays.**~~ **Done** — played on the morning of 13
+   August 2026, on the `b24358f` build. That clears the second question source,
+   the change-your-answer round and the vault reveal all at once: they had been
+   deployed but never played, and they work.
+
+   It also found the stale-notice bug fixed in this commit, which is the useful
+   part. A real round surfaced in one sitting what neither the tests nor the
+   ten-client harness could see, because both check whether the game *works*
+   rather than what it *says* while it works.
 2. **Take stock of Firestore.** Half done. The vault side is counted: 13,593
    documents against 13,452 packs plus 4 harness, so 137 orphans, and they are
    expected rather than a fault. Rooms and season rows are still uncounted.
@@ -786,6 +789,14 @@ Both were costed; neither is queued.
 - **`#/preview` renders every screen with fixed data; `#/preview/4` renders one.**
   Isolate by re-render, never by hiding siblings — a `display:none` ancestor stops
   motion animations mid-flight and looks like a rendering bug.
+- **An error notice must be tied to the state it was raised against.** `App.tsx`
+  stamps every `report()` with the room's `gameId:index:phase` and renders it
+  only while that still matches, because the failures worth showing here are
+  transient by design — the vault refuses a reveal until the server agrees the
+  clock has run out, and says so. Held as a plain `string`, one such refusal
+  stayed on screen for the rest of the game. Derive the staleness; do not clear
+  it in an effect, which trips `react-hooks/set-state-in-effect` and leaves a
+  frame where the room has moved on and the old notice is still painted.
 - **`firestore.seed.rules` is not the ruleset to play on.** It exists only for
   the one-off vault seed and denies everything else while it is live. If rooms
   suddenly stop working entirely, check which ruleset is published — and run
