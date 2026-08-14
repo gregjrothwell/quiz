@@ -593,7 +593,40 @@ again on 14 August after the chair and the sticky desk.
    and `Preview` renders every screen from fixtures, so a skin can be reviewed
    whole without a room or four other people.
 
-1. ~~**A refused reveal can stall the round, and nothing retries it.**~~ **Fixed**
+1. **The remembered name was not seen prefilling on the live site.** Reported by
+   Greg on 14 August 2026, immediately after the deploy. **Not investigated** —
+   reported at the very end of a session with no room left to look, and written
+   down here rather than chased. Treat everything below as unconfirmed.
+
+   What he saw: prefilling on his MacBook Pro, not on his work machine. His own
+   read is that testing across two machines makes him an edge case and ordinary
+   players use one, so he is content to leave it until somebody who isn't him
+   reports the same thing. That is a reasonable call and this item is not
+   urgent — but it is also **not evidence the feature works**, so do not close it
+   on the strength of it.
+
+   Two boring explanations to rule out before assuming a bug, in this order:
+
+   - **A second machine is a second browser, and nothing crosses.** The name
+     lives in that browser's `localStorage`, exactly like the sound preference,
+     and the anonymous auth uid it belongs to is per-browser too. A work machine
+     has never seen either. This is the same limitation the season table already
+     carries and is documented under Known limits — if this is all it is, there
+     is nothing to fix and the honest answer is that the feature does what it
+     says, which is remember *this browser's* name.
+   - **Nothing is stored until a room is joined or created.** `adoptName` runs on
+     join and on create, not on typing. So the *first* visit from any browser
+     after this shipped shows an empty box no matter what, and it only prefills
+     from the second visit onward. A quick look at the live site by somebody who
+     had not yet joined a room on that machine would show precisely what was
+     reported.
+
+   If both are ruled out and it still does not prefill, the next suspects are the
+   storage write throwing silently — it is wrapped and deliberately quiet — and
+   whether the deployed build is the one being loaded. `vibequiz.name` in the
+   browser's storage inspector settles the first question in seconds.
+
+2. ~~**A refused reveal can stall the round, and nothing retries it.**~~ **Fixed**
    — the auto-reveal now retries eight times at 1.5s intervals, reset per
    question, with the quizmaster's Reveal button still there after that. The
    retry firing has not been watched, because a vault refusal cannot be
@@ -613,7 +646,7 @@ again on 14 August after the chair and the sticky desk.
    obvious fix, and it predates the replay and the awards. **This is the first
    job.**
 
-2. ~~**Check the game actually plays.**~~ **Done** — played on the morning of 13
+3. ~~**Check the game actually plays.**~~ **Done** — played on the morning of 13
    August 2026, on the `b24358f` build. That clears the second question source,
    the change-your-answer round and the vault reveal all at once: they had been
    deployed but never played, and they work.
@@ -622,23 +655,23 @@ again on 14 August after the chair and the sticky desk.
    part. A real round surfaced in one sitting what neither the tests nor the
    ten-client harness could see, because both check whether the game *works*
    rather than what it *says* while it works.
-3. **Take stock of Firestore.** Half done. The vault side is counted: 13,593
+4. **Take stock of Firestore.** Half done. The vault side is counted: 13,593
    documents against 13,452 packs plus 4 harness, so 137 orphans, and they are
    expected rather than a fault. Rooms and season rows are still uncounted.
    Worth knowing: rooms are never deleted, so the collection only grows, and
    every one of them holds players' names — which now also means every join link
    ever pasted into a chat still resolves to a real room.
-4. **Fix `npm run host-room`.** Broken, and it predates all of this work:
+5. **Fix `npm run host-room`.** Broken, and it predates all of this work:
    `src/lib/vault.ts` imports `../firebase`, which reads `import.meta.env` at
    module scope — Vite-only, so it throws under `tsx` before the script starts.
    Deferring the config read would fix it, but `firebase.ts` is load-bearing and
    its documented failure is a blank app, so give it its own change and test it
    properly. It is the harness for quizmaster handover and the live reveal.
-5. **Watch the read budget.** A game is roughly 800–1,500 reads, and changing an
+6. **Watch the read budget.** A game is roughly 800–1,500 reads, and changing an
    answer now costs a write that fans out to every client — so a round where
    people fidget costs more than it used to. The console's usage alerts are on;
    App Check is still the real fix and still not done.
-6. **Difficulty is still unsolved**, deliberately. Imported questions are all
+7. **Difficulty is still unsolved**, deliberately. Imported questions are all
    `medium` and the reasons are written up under [the second
    source](#the-difficulty-rating-that-is-not-there). Do not reach for another
    heuristic without measuring it against a hand-labelled set first — three have
