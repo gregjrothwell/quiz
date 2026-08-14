@@ -1669,9 +1669,10 @@ input {
    ──────────────────────────────────────────────────────────────────────────── */
 
 /* Phones, where the row has no width to spare: a fourth column, tight against
-   the third riser. */
+   the third riser. Wide enough for a name rather than for the chair — the chair
+   is happy at 3rem, and "Bartholomew" broken across three lines is not. */
 .finale--seated {
-  grid-template-columns: repeat(3, 1fr) minmax(3.2rem, 4.75rem);
+  grid-template-columns: repeat(3, 1fr) minmax(4.5rem, 5.75rem);
 }
 
 /*
@@ -1709,6 +1710,13 @@ input {
   padding-bottom: 0.4rem;
   text-align: center;
   color: var(--ink-dim);
+  /*
+    Wider than the chair on a screen with room to give. A tie for last puts two
+    names on one seat joined with an ampersand, and the label is what needs the
+    width — the chair itself is drawn to its own max-width below.
+  */
+  width: 100%;
+  max-width: 8.5rem;
   /*
     After the podium has finished building and the winner's light has swept
     across it. The chair is the full stop, and a punchline delivered over the
@@ -1752,12 +1760,25 @@ input {
 }
 
 .seat__name {
+  /*
+    Allowed to overhang the column, which on a phone is barely wider than the
+    chair — but only this far. Without the cap a name with no space in it has
+    nothing to wrap on and simply keeps going out of the stage.
+  */
+  max-width: 7rem;
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.72rem;
+  font-size: 0.66rem;
+  line-height: 1.25;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  overflow-wrap: anywhere;
+  letter-spacing: 0.04em;
+  /*
+    `anywhere` only as the last resort it is meant to be. Preferring a break
+    between the two names of a shared last place over a break through the middle
+    of either of them is the whole difference between a label and BARTHOLOM/EW.
+  */
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .seat__score {
