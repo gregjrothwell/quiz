@@ -6,7 +6,7 @@ Built to replace Polly in Teams.
 - **Live:** https://gregjrothwell.github.io/quiz/
 - **Repo:** https://github.com/gregjrothwell/quiz (public, `master`, deploys from `gh-pages`)
 - **Firebase project:** `quiz-d686e` (Firestore + Realtime Database in europe-west1 + Anonymous auth)
-- **Status:** shipped and played. 159 tests, clean types and lint, no `any` or
+- **Status:** shipped and played. 192 tests, clean types and lint, no `any` or
   `@ts-ignore`. The **answer vault is live and covers the packs**: 13,593
   answers seeded against the 13,452 the packs need plus the 4 harness entries,
   both rulesets published, preflight passing.
@@ -15,7 +15,9 @@ Built to replace Polly in Teams.
   ids hash the question text, so a revised question leaves its old answer in
   place, unread and harmless. All 14,176 pack questions across the ten packs
   resolve to an answer.
-- **Next:** nothing queued. [The answer window is
+- **Next:** nothing queued. [The closing seconds now carry a
+  clock](#the-clock) — nine seconds of gameshow music in place of the two-tone
+  tick, deployed and heard on 14 August 2026. [The answer window is
   selectable](#the-configurable-answer-window) — 10 / 15 / 20 seconds, chosen in
   the lobby, defaulting to 10. The lobby also hands out a join link to paste
   into the chat — see [ways into the room](#ways-into-the-room).
@@ -430,6 +432,98 @@ Three things follow from the replay that are easy to undo by accident:
 
 ---
 
+## The clock
+
+The last nine seconds of every question carry a gameshow clock: a walking bass
+in A minor over a swung ride cymbal, brass marking every third second, and a
+gong on zero. It replaces the two-tone tick, which told you time was passing
+but never that it was running out. `tick` and `tock` are gone from the `Cue`
+union entirely.
+
+**Composed backwards from the buzzer.** `CLOCK` in `src/lib/sound.ts` is indexed
+by *seconds remaining*, not seconds elapsed. That is the whole design and the
+reason it survives a configurable answer window: 10, 15 and 20 all land the
+identical closing cadence and differ only in how much walk they get in front,
+and a window shorter than the lead — the rules allow five — starts further down
+the table and still finishes on the same note. Nothing is stretched to fit, so
+there is no duration that sounds wrong.
+
+**Scheduled in one call, against the audio clock.** `startClock(remainingMs)`
+schedules every oscillator to the buzzer in a single pass. The old tick fired
+from a React effect on `secondsLeft`, which rides the 100ms interval in
+`useQuestionClock` — so each tick landed up to a tenth of a second late. Nobody
+can hear that on a lone beep and everybody can hear it on a pulse. Offsets are
+computed from the real `remainingMs` rather than from whenever the call
+happened, so the music stays locked to the timer face no matter what the render
+loop is doing.
+
+The cost is that it commits to an ending, so **anything that ends the question
+early has to come and cancel it**: `stopClock` is called on reveal, on unmount,
+and by `setMuted`. Muting cannot wait for the next note not to play, because the
+next note is already scheduled.
+
+**The gong is a cue, not part of the bed.** It fires on the reveal that already
+existed (`useCue('gong', ...)`), which is deliberate: scheduled as the bed's
+last cell it would sit exactly where `stopClock` runs, and the auto-reveal on
+expiry would cancel it before it sounded. It replaces the old `hush` cue
+outright. Its partials sit at deliberately non-whole-number ratios because a
+struck plate does not vibrate in octaves — **there is a test guarding that**,
+since tidying them into neat multiples would silently turn the gong back into a
+bass note with nothing to show it had happened.
+
+It is tuned to A, so it resolves the iv–V–i the walk has been climbing. The bed
+ends on a leading tone that never resolves; the gong is the chord it wanted.
+
+### Why it is not the Countdown music
+
+Because that is a specific Alan Hawkshaw composition, copyright Channel 4, and
+one of the most lucrative commissions in British television precisely because it
+earns a royalty every time the clock runs. There is no open-source version and
+there will not be one; every free download of it is an unlicensed rip, and a
+re-recording is a derivative of the composition and needs the same licence.
+
+What is protected is the **melody**. What is not protectable — and what does
+most of the work of sounding like teatime television — is the furniture: the
+walking bass, the swing, the section voicings, the chromatic approach into the
+V, the gong. Those are ideas, and the harmony is a turnaround that sits under
+half the standards written before 1960. All of it is used here deliberately and
+none of it is anybody's property.
+
+**Do not "improve" this by moving the melody closer to theirs.** Musical
+infringement turns on whether an ordinary listener recognises the tune, so a
+deliberate near-miss is the shape of case that loses — "we changed a few notes"
+is the classic losing defence. Risk on that axis is not linear: it is near-zero
+until it is total. Every other axis was already spent.
+
+Freesound has genuinely CC0 clock ticks if anyone reaches for samples, but they
+buy nothing this does not already synthesise, and they would put an asset on the
+critical path of a round for the first time. The one genuinely public-domain
+British option is the Westminster Quarters (1793, Big Ben) — it was built and
+rendered, it counts down naturally in quarters to the hour bell, and it was
+passed over rather than rejected. Parliament's *recordings* carry their own
+copyright; the tune does not, and this project synthesises.
+
+### What has and hasn't been checked
+
+Verified: the arithmetic (six tests, including that every answer length lands
+the same cadence and that a 3.4s window truncates correctly), the gong's
+inharmonicity, and the real Web Audio path driven headless in the browser —
+no errors, restart-while-running and double-stop both safe, 65 oscillators for a
+full bed.
+
+**Heard, and it works.** Confirmed by ear on 14 August 2026, which closes the
+one gap none of the above could: the bed and the gong sound right, and the
+balance set by eye on a waveform — 0.194 against 0.323 at peak — turned out to
+be right by ear too. That was the likeliest thing to need tuning and it did not.
+
+Two things the ear test did not settle, because neither shows up on one device:
+whether several laptops in a room phase audibly against each other (see [known
+limits](#known-limits)), and how it holds up over fifteen questions rather than
+one. Round fatigue is the reason the bed is nine seconds and not the whole
+window, but nobody has yet sat through a full round of it.
+
+---
+
 ## Ways into the room
 
 Three routes to the same place, in the order they are worth reaching for:
@@ -522,7 +616,7 @@ Written 11 August 2026, revised 13 August after the join link went out.
 
 ```
 src/engine/     Pure TS game rules — no React, no Firebase. All the logic worth testing.
-src/lib/        Firebase wiring (useRoom), pack loading, the question clock.
+src/lib/        Firebase wiring (useRoom), pack loading, the question clock, the house audio.
 src/screens/    One component per phase + a design gallery (Preview).
 src/questions/  Pack types and the classification rules, with tests.
 src/design/     One stylesheet, design tokens at the top.
@@ -572,7 +666,12 @@ happened once.
 | **`correctIndex` is `number \| null`** | Null while a question is live, because *no device knows it* — not even the quizmaster's. The reveal fills it in from the vault and writes it into the room, which is how everyone else finds out without paying for a read. |
 | **`tallyQuestion` is given the answer rather than reading it off the question** | Same reason. Scoring is the first code in the round that gets to see it. |
 | **Entrance animations use `animation-fill-mode: backwards`, not `both`** | `both` keeps the final keyframe in the cascade *above* normal declarations, so `to { opacity: 1 }` silently beat every state the lecterns change into. `.tile--dim` had never dimmed anything since it was written. `backwards` still hides a tile through its stagger delay — the only reason a fill mode is needed — and then gets out of the way. Watch for this on any element that both animates in and has variant states. |
-| **Sound is on by default** (`src/lib/sound.ts`) | It only ever plays after a deliberate click — creating a room, joining, answering — so it can't ambush anybody on page load, and muted-by-default means nobody discovers it exists. The toggle is top-right on every screen and the choice persists. Every cue is synthesised from oscillators: six stings as files would have been most of a bundle the handover already calls heavy, and an asset that 404s behind a proxy is a silent round with nothing on screen to explain it. |
+| **Sound is on by default** (`src/lib/sound.ts`) | It only ever plays after a deliberate click — creating a room, joining, answering — so it can't ambush anybody on page load, and muted-by-default means nobody discovers it exists. The toggle is top-right on every screen and the choice persists. Every cue is synthesised from oscillators: the stings as files would have been most of a bundle the handover already calls heavy, and an asset that 404s behind a proxy is a silent round with nothing on screen to explain it. That reasoning got stronger with the clock — nine seconds of music is the one cue where a 404 would be unmissable, and it still ships as zero bytes. |
+| **The clock table is indexed by seconds *remaining*** (`CLOCK`) | It is composed backwards from the buzzer, which is what makes one piece of music fit every answer window without being stretched. Reindexing it forwards would mean a 10s and a 20s round ending differently, and a 5s imported room ending mid-phrase. See [the clock](#the-clock). |
+| **The bed is scheduled in one call, not a note at a time** (`startClock`) | Per-note firing rides the 100ms render interval, so every note lands up to a tenth of a second late — inaudible on a beep, ruinous on a pulse. The cost is that it commits to an ending, so `stopClock` must be called on reveal, on unmount, and on mute. |
+| **The gong is a reveal cue, not the bed's last note** | Scheduled as part of the bed it would sit exactly where `stopClock` runs, and the auto-reveal on expiry would cancel it before it sounded. As a cue on the existing reveal trigger it cannot be cancelled by the stop that clears the bed. |
+| **The gong's partials are not whole multiples of its fundamental** | A struck plate does not vibrate in octaves; that inharmonicity is the entire difference between a gong and a low note. There is a test, because rounding them to neat ratios is exactly the kind of tidy-up that looks like an improvement and silently destroys the cue. |
+| **The clock is an original composition, and must stay one** | The Countdown music is Alan Hawkshaw's, copyright Channel 4. Melody is what's protected; the walk, swing, voicings and gong are not. Moving the tune closer is the one change that converts near-zero legal risk into total — see [why it is not the Countdown music](#why-it-is-not-the-countdown-music). |
 | **A round prefers questions the season hasn't served** (`selectQuestions`, `seasons/{season}/asked/{packId}`) | Random selection with no memory repeats far sooner than pack sizes suggest: 15 drawn from Sport's 125 every week means about **two of last week's questions come round again, every week**. Over Video Games' 999 the same sum is a quarter of a question, which is why the big packs hid it. Season-scoped, not per-room — the complaint is about the sitting before, and a room lasts one sitting. |
 | **Asked questions go to the back of the queue, not out of the pool** | Removing them outright would have Sport quietly serving eight-question rounds by mid-season. A thin pack still gets a full-length round, with repeats only where there was no alternative. |
 | **The history is capped at 400 ids per pack** | Not "all of them". The point is that last month's questions don't come round again, not that a pack is exhausted before anything repeats — and an unbounded array on a document read at the top of every game is the shape this project keeps avoiding. 400 is roughly six months of a weekly round. |
@@ -593,8 +692,9 @@ happened once.
 
 **Verified against the live Firebase:** anonymous sign-in, room creation, pack
 selection, round start, question render, answer write, reveal and scoring, and
-leaving a room. Engine covered by 117 tests including six full three-question
-games (quizmaster disconnect, skip, reset, ties).
+leaving a room. Engine covered by 140 tests including six full three-question
+games (quizmaster disconnect, skip, reset, ties). 192 across the repo, the
+balance being the question pipeline and the clock's arithmetic.
 
 **Verified in the browser, on fixtures only:** every screen at 1280px and 390px,
 the level picker disabling a level its pack can't fill, and no horizontal scroll
@@ -660,14 +760,19 @@ rules are still using a fixed twenty.
    throwaway season id, so the *rules* side is covered; the transaction's
    repeat-write guard still is not.
 
-1. **Quizmaster handover with real clients.** The reaper and the join race are now
+1. ~~**Whether the clock sounds right.**~~ **Done** — heard on 14 August 2026
+   and it works, including the bed-to-gong balance that had been set by eye
+   rather than by ear. What one pair of ears cannot cover is several laptops
+   phasing against each other, or fifteen questions of it in a row; both are
+   noted under [the clock](#the-clock).
+2. **Quizmaster handover with real clients.** The reaper and the join race are now
    covered by `sync-harness`, but a quizmaster actually dropping out mid-round and
    the role passing to somebody else has still only been tested in the engine.
-2. **Keyboard shortcuts in a live round.** A–D/1–4 to answer, Space to reveal or
+3. **Keyboard shortcuts in a live round.** A–D/1–4 to answer, Space to reveal or
    advance. Compiles and the legend renders; keys never pressed in a real game.
-3. **A ramped round in play.** `selectQuestions` is unit-tested, but nobody has
+4. **A ramped round in play.** `selectQuestions` is unit-tested, but nobody has
    watched a fifteen-question ladder actually climb in a live room.
-4. **Reachability from the work network.** `github.io` is confirmed fine.
+5. **Reachability from the work network.** `github.io` is confirmed fine.
    `firestore.googleapis.com` and `*.firebasedatabase.app` are the same stack
    `rgblife/estimation-room` uses successfully there, but that's inference, not a test.
 
@@ -683,9 +788,18 @@ rules are still using a fixed twenty.
   packs and the room document — see [the vault](#turning-the-vault-on) for what
   that does and does not buy. `elapsedMs` is still self-reported, so a
   fast-but-wrong answer is honest and a slow-but-claimed-instant one is not.
-- **~252 kB gzipped**, nearly all Firebase, plus 67 kB of fonts. The lobby QR
+- **~256 kB gzipped**, nearly all Firebase, plus 67 kB of fonts. The lobby QR
   code added about 10 kB of that (`qrcode-generator`, MIT, no dependencies) —
   more than it looked like it would. Code-splitting is the fix if it matters.
+  The clock added 0.9 kB, being oscillators rather than audio.
+- **Devices in the same room will phase against each other.** Each one schedules
+  its own clock from when *it* saw the question open, and those moments differ by
+  the spread of the Firestore snapshot. This was already true of the tick and
+  nobody remarked on it; nine seconds of music makes it far more noticeable. It
+  cannot be fixed by syncing to `questionOpenedAt` without folding the
+  quizmaster's clock offset back into every device — the thing
+  `useQuestionClock` exists to avoid. If it grates in a real room, the honest
+  fix is fewer laptops with the volume up, not a shared clock.
 - **A non-member can still write an answer document.** Nothing checks
   membership on the way in — the room code is the capability, as everywhere
   else. It no longer *scores*, and no longer inflates the answered count, but
