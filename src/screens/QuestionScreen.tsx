@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArcTimer } from '../components/ArcTimer';
 import { Ladder } from '../components/Ladder';
 import { PodiumTile, type TileArrival, type TileState } from '../components/PodiumTile';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { replayDurationMs, replayTimeline, type Arrival } from '../engine/replay';
 import { currentQuestion, questionDurationMs, type RoomState } from '../engine/state';
-import { play, useCue } from '../lib/sound';
+import { CLOCK_LEAD_SECONDS, startClock, stopClock, useCue } from '../lib/sound';
 import type { QuestionClock } from '../lib/useQuestionClock';
 import { useReducedMotion } from '../lib/useReducedMotion';
 
@@ -16,8 +16,7 @@ import { useReducedMotion } from '../lib/useReducedMotion';
  */
 const HUSH_MS = 700;
 
-/** The clock only becomes audible for the closing seconds. */
-const TICKING_FROM_SECONDS = 5;
+const CLOCK_LEAD_MS = CLOCK_LEAD_SECONDS * 1000;
 
 /**
  * Shared so that "no replay" is the same array every render. A fresh `[]` would
@@ -137,15 +136,39 @@ export function QuestionScreen({
     };
   }, [revealed, reducedMotion, room.index, arrivals, heldMs]);
 
-  useCue('hush', room.index, revealed);
+  useCue('gong', room.index, revealed);
   useCue(gotItRight ? 'correct' : 'wrong', room.index, revealed && settled);
 
-  // The clock leans on you audibly as well as visually for the last few seconds.
-  const { secondsLeft } = clock;
+  /**
+   * The clock leans on you audibly as well as visually for the closing seconds.
+   *
+   * Started once per question and then left alone: the bed schedules itself all
+   * the way to the buzzer, so re-firing it on a later render would stack a
+   * second copy a fraction of a beat behind the first. The ref is what makes
+   * that safe, since the effect re-runs every time the clock reading changes.
+   */
+  const { remainingMs } = clock;
+  const clockKey = `${room.gameId ?? ''}:${room.index}`;
+  const startedClockRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (revealed || secondsLeft <= 0 || secondsLeft > TICKING_FROM_SECONDS) return;
-    play(secondsLeft % 2 === 0 ? 'tick' : 'tock');
-  }, [revealed, secondsLeft]);
+    if (revealed || startedClockRef.current === clockKey) return;
+    if (remainingMs <= 0 || remainingMs > CLOCK_LEAD_MS) return;
+    startedClockRef.current = clockKey;
+    startClock(remainingMs);
+  }, [revealed, clockKey, remainingMs]);
+
+  // Nothing else stops it. A reveal that arrives early, a question that ends
+  // while this screen is being torn down, and StrictMode's remount in
+  // development all land here — and clearing the ref on the way out is what
+  // lets the effect above start a fresh bed rather than count itself done.
+  useEffect(() => {
+    if (revealed) stopClock();
+    return () => {
+      startedClockRef.current = null;
+      stopClock();
+    };
+  }, [revealed]);
 
   // Desktop is the primary surface, so the whole round is playable from the
   // keyboard: A–D or 1–4 to answer, space to advance, S to skip.
