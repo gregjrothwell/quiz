@@ -557,7 +557,41 @@ room code that already existed.
 
 ## Next session — start here
 
-Written 11 August 2026, revised 13 August after the join link went out.
+Written 11 August 2026, revised 13 August after the join link went out, and
+again on 14 August after the chair and the sticky desk.
+
+0. **An alternate skin: the British pub quiz.** Greg's idea, and the first thing
+   to weigh up next session. Today the app is one look — a broadcast studio, and
+   a committed one: beams, risers, chrome wordmark, a walking bass and a gong.
+   The pub quiz is the opposite register and would be genuinely funny beside it:
+   a laminated answer sheet, biro, a chalkboard, a folded paper table-number,
+   carpet you can hear. Pick it at the lobby, everyone in the room gets it.
+
+   **Is it too much complexity?** It depends entirely on where the line is
+   drawn, and there are two very different jobs wearing the same name:
+
+   - **A skin — a second set of tokens and a body class.** Cheap and worth
+     doing. `src/design/global.css` already keeps its tokens at the top, and
+     nearly everything downstream reads them. Scope it to colour, type and
+     texture, and it is one stylesheet plus a stored preference — the same shape
+     as the remembered name, and it could reuse that module's pattern outright.
+   - **A second theatre — different components, layout and sounds.** Expensive,
+     and it is the one to be careful of. It means every screen exists twice,
+     every future change lands twice, and the preview gallery doubles. Do not
+     start here.
+
+   The trap between them is the parts that are *drawn* rather than styled: the
+   chair, the arc timer, the QR plate, the risers, and the whole audio bed — all
+   of which encode the studio in their geometry, not their colour. A gong is not
+   a pub sound. Decide up front whether those get pub equivalents or simply
+   carry over, because that single decision is the difference between a weekend
+   and a rewrite. Recommendation: ship the token-level skin first, play a round
+   on it, and only then judge whether the drawn pieces are worth a second set.
+
+   Two things already lean the right way: the sound module is a table of cues
+   behind `play(cue)`, so a second set of voices is data rather than structure;
+   and `Preview` renders every screen from fixtures, so a skin can be reviewed
+   whole without a room or four other people.
 
 1. ~~**A refused reveal can stall the round, and nothing retries it.**~~ **Fixed**
    — the auto-reveal now retries eight times at 1.5s intervals, reset per
@@ -616,7 +650,9 @@ Written 11 August 2026, revised 13 August after the join link went out.
 
 ```
 src/engine/     Pure TS game rules — no React, no Firebase. All the logic worth testing.
-src/lib/        Firebase wiring (useRoom), pack loading, the question clock, the house audio.
+src/lib/        Firebase wiring (useRoom), pack loading, the question clock, the house audio,
+                and the remembered name — the one other thing kept in localStorage besides
+                the sound preference, and written to the same pattern.
 src/screens/    One component per phase + a design gallery (Preview).
 src/questions/  Pack types and the classification rules, with tests.
 src/design/     One stylesheet, design tokens at the top.
@@ -655,6 +691,9 @@ happened once.
 | **`start` carries a `gameId`, and the season row stores `lastGame`** | Without it, reloading the final screen banks the same game again. The check happens inside the Firestore transaction, so it survives a reload rather than just a re-render. |
 | **The ladder shows each question's level, not your score on it** | Per-question scores would mean accumulating a history no other device has, for a number the standings show two seconds later. The level is already in the room, and it makes a ramped round visibly steepen. |
 | **The round title card lives on the standings screen** | Between questions there's no clock running, so a beat of theatre costs nobody answering time. Over the question it would eat the first seconds of the answering window, which matters more now one can be ten seconds long. |
+| **`.stage` is `overflow: clip`, with `overflow: hidden` declared above it** | Both keep the beams and the halo in their box, but `hidden` *also* makes `.stage` a scroll container — so a `position: sticky` descendant sticks to a box as tall as the page, which never scrolls. That is why the desk sat below the fold on a fifteen-question round. The duplicate declaration is the fallback: a browser too old for `clip` drops that line, loses the sticky desk and keeps the beams contained, which is the right way round to fail. |
+| **The answer lamps carry names; they used to be anonymous dots** | The dots were defended on the grounds that watching the room commit is the tension of a live round. It is — but a dot cannot be chased, and the question actually being asked is *who are we waiting for*. What must not leak is **which lectern** somebody picked, and that is untouched. Both sides are already streamed to every device, so it costs no reads. Ordered by arrival and never re-sorted, so no name moves while it is being read. |
+| **The chair's label may overhang its column, but only to a cap** | A tie for last joins two names with an ampersand into a column barely wider than the chair. A span sizes to its content, so letting it overhang solves the common case — but a name with no space in it has nothing to wrap on and would run out of the side of the stage silently, since `.stage` clips rather than scrolls. The cap is what bounds it; `break-word` rather than `anywhere` is what stops BARTHOLOM/EW. |
 | **Only members score at the reveal** (`reduce`'s `reveal`) | Answers arrive through a subcollection nothing checks membership on, so a client can write one for a room it is not a member of. `standings` filters on `players`, so such a score exists in the document and appears on no screen — which is what made the 6SVG bug invisible rather than obvious. `answer` in the same reducer had always refused a non-member; this is the reveal agreeing with it. Safe because a client that finds itself missing puts itself back within a second, and no reveal can happen inside the answer window — five seconds even at the floor the rules allow, and ten at the shortest the lobby offers. |
 | **A new season is a bump, not a delete** (`SEASON` in `src/lib/season.ts`) | `season-1` was development; `season-2` is the office league, started 3 August 2026. Bumping empties the board just as a wipe would, keeps the old rows recoverable if a number ever needs checking, and needs no destructive write against live data. Note it also resets the question history, which lives under the season. |
 | **Nobody is reaped outside the lobby** (`reapAbsent`) | Reaping exists so a closed tab stops loitering before a round starts. Mid-round it is all cost: `standings` filters on `players`, so a removed player vanishes from *every* device, and `recordGame` skips a uid that is not in `players`, so their game never reaches the season. Presence is not evidence of leaving — it runs over the Realtime Database, a different connection from the Firestore one carrying the game, so a backgrounded tab or a closed lid drops it while the round plays on perfectly. **This actually happened**: room 6SVG, a player with 4,300 points who answered the final question, invisible on every screen and with no season row. |
@@ -698,7 +737,17 @@ balance being the question pipeline and the clock's arithmetic.
 
 **Verified in the browser, on fixtures only:** every screen at 1280px and 390px,
 the level picker disabling a level its pack can't fill, and no horizontal scroll
-at the narrow width.
+at the narrow width. Added 14 August: the remembered name prefilled with **Start
+a new room** live on arrival and an empty box on a first visit; both podium
+fixtures with the chair; the desk pinned at every scroll position on a
+fifteen-question, ten-player round; and the chair's label at its worst case — 24
+characters with no space in them — measured against the podium row height to
+confirm it cannot push the risers around.
+
+**Not verified in a real room:** everything from 14 August. The name persists
+across a reload on one browser, but has not been watched surviving a week, and
+the iOS Safari eviction window above applies to it. Nobody has yet lost a round
+badly enough to sit in the chair in anger.
 
 **Verified with real concurrent clients** — this was the long-standing gap:
 
@@ -810,7 +859,16 @@ rules are still using a fixed twenty.
   The sharp edge is **iOS Safari, which evicts site storage after about a week
   without a visit** — a weekly quiz survives, a fortnight off doesn't. A short
   transfer code would let one identity move to a second device; that's the obvious
-  next step and it's small now the collection exists.
+  next step and it's small now the collection exists. The remembered name has
+  exactly the same lifetime and for the same reason, which is deliberate: it is
+  stored beside the uid rather than fetched from the season row, so the two can
+  never disagree about who this browser is.
+- **The answer lamps have no cap, so a very large room makes a tall desk.** Ten
+  names wrap to two rows on a phone, which is about 20% of the screen and was
+  judged worth it. Twenty names would be four rows and would start to crowd the
+  lecterns. It degrades rather than breaks — the strip grows and the question
+  scrolls under it — but if the office ever fields that many, the fix is to name
+  only who is *outstanding* and collapse the rest to a count.
 - **Season numbers are self-reported.** The rules stop you writing someone else's
   row but not your own. Same trust model as the rest of the game.
 - **The source corpora file their own questions unreliably.** OpenTriviaQA's
