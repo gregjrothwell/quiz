@@ -89,7 +89,20 @@ input {
   min-height: 100%;
   display: flex;
   flex-direction: column;
+  /*
+   * `clip`, not `hidden`, and the difference is load-bearing. Both keep the
+   * beams and the overhead halo from spilling out, but `hidden` also makes this
+   * a scroll container — and a sticky descendant then sticks to *this* box,
+   * which is as tall as the page and never scrolls. That is what left the desk
+   * pinned to the bottom of a long question instead of the bottom of the screen.
+   * `clip` does the clipping without claiming the scrollport.
+   *
+   * Declared twice on purpose. A browser too old for `clip` drops that line and
+   * keeps `hidden`, which loses the sticky desk but keeps the beams in their
+   * box — the right way round to fail.
+   */
   overflow: hidden;
+  overflow: clip;
   isolation: isolate;
   background: radial-gradient(120% 80% at 50% -10%, #0d3552 0%, #061a2d 42%, var(--night) 78%);
 }
@@ -1649,6 +1662,132 @@ input {
   text-shadow: 0 0 14px rgb(41 214 255 / 0.7);
 }
 
+/* ── The chair ──────────────────────────────────────────────────────────────
+   Last place, at the end of the podium and on the floor. Narrower than a riser
+   and given no panel of its own: three people are standing on something and
+   this one is sat next to them, which only reads if the risers keep the light.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+/* Phones, where the row has no width to spare: a fourth column, tight against
+   the third riser. Wide enough for a name rather than for the chair — the chair
+   is happy at 3rem, and "Bartholomew" broken across three lines is not. */
+.finale--seated {
+  grid-template-columns: repeat(3, 1fr) minmax(4.5rem, 5.75rem);
+}
+
+/*
+ * Anywhere with room, the chair goes out to the far right — over the end of the
+ * scores below rather than merely to the right of the podium. The podium is
+ * 40rem in the middle of a much wider screen, so a chair tucked against it
+ * reads as a fourth place on the same stage; out at the edge, level with where
+ * the standings reach, it reads as somebody sat off to one side of the whole
+ * thing.
+ *
+ * The two flanking columns are equal, which is what keeps the three risers dead
+ * centre while only one of the two has anything in it.
+ */
+@media (min-width: 56rem) {
+  .finale--seated {
+    max-width: none;
+    grid-template-columns: minmax(4rem, 1fr) repeat(3, minmax(0, 12.6rem)) minmax(4rem, 1fr);
+  }
+
+  /* Auto-placement would start the risers in the empty left-hand column. */
+  .finale--seated > :first-child {
+    grid-column: 2;
+  }
+
+  .finale--seated .seat {
+    justify-self: end;
+  }
+}
+
+.seat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding-bottom: 0.4rem;
+  text-align: center;
+  color: var(--ink-dim);
+  /*
+    Wider than the chair on a screen with room to give. A tie for last puts two
+    names on one seat joined with an ampersand, and the label is what needs the
+    width — the chair itself is drawn to its own max-width below.
+  */
+  width: 100%;
+  max-width: 8.5rem;
+  /*
+    After the podium has finished building and the winner's light has swept
+    across it. The chair is the full stop, and a punchline delivered over the
+    top of the applause is not one.
+  */
+  animation: roll 620ms cubic-bezier(0.2, 0.8, 0.2, 1) 1400ms backwards;
+}
+
+/* Arriving from off to the right, because a chair on castors does not hop. */
+@keyframes roll {
+  from {
+    opacity: 0;
+    transform: translateX(2.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.seat__chair {
+  width: 100%;
+  max-width: 5.5rem;
+  height: auto;
+  filter: drop-shadow(0 0 10px rgb(41 214 255 / 0.25));
+}
+
+/*
+ * Two inks, because at this size a single one turns the pair into a tangle of
+ * lines. The chair is furniture and hangs back; the person in it is the point
+ * and comes forward, drawn as a filled pictogram rather than an outline so the
+ * limbs still read where they cross the seat.
+ */
+.seat__frame {
+  stroke: var(--ink-dim);
+}
+
+.seat__sitter {
+  fill: var(--ink-soft);
+  stroke: var(--ink-soft);
+}
+
+.seat__name {
+  /*
+    Allowed to overhang the column, which on a phone is barely wider than the
+    chair — but only this far. Without the cap a name with no space in it has
+    nothing to wrap on and simply keeps going out of the stage.
+  */
+  max-width: 7rem;
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: 0.66rem;
+  line-height: 1.25;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  /*
+    `anywhere` only as the last resort it is meant to be. Preferring a break
+    between the two names of a shared last place over a break through the middle
+    of either of them is the whole difference between a label and BARTHOLOM/EW.
+  */
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.seat__score {
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── Utility ────────────────────────────────────────────────────────────── */
 
 .row {
@@ -1699,6 +1838,9 @@ input {
 }
 
 .tally {
+  /* The desk is a column now, and a paragraph's default margins are two
+     unwanted lines of it on a phone. */
+  margin: 0;
   font-family: var(--tech);
   font-weight: 700;
   font-size: 1rem;
@@ -1738,15 +1880,30 @@ input {
 }
 
 /* ── The desk ───────────────────────────────────────────────────────────────
-   The strip under the lecterns: your own state on the left, the room's commit
-   count and the transport on the right. Lit along the top edge like the rig
-   bar over the stage, so it reads as part of the set.
+   The strip under the lecterns: your own state on the left, who the room is
+   waiting on and the transport on the right. Lit along the top edge like the
+   rig bar over the stage, so it reads as part of the set.
+
+   Stuck to the bottom of the screen rather than the bottom of the page. A
+   fifteen-question round is taller than a laptop, and everything the person
+   running it needs mid-question lives on this strip — the count, and the button
+   that ends the question. Both used to be a scroll away, which is a scroll
+   taken while the clock is running and the room is watching.
    ──────────────────────────────────────────────────────────────────────────── */
 
 .transport {
-  position: relative;
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
   margin-top: auto;
-  padding: 1rem 0 0.25rem;
+  padding: 0.85rem 0 max(0.6rem, env(safe-area-inset-bottom));
+  /*
+    Transparent at the hairline so the rig bar keeps its glow, solid by the time
+    it reaches the controls. Anything scrolling underneath fades out rather than
+    running into the text.
+  */
+  background: linear-gradient(180deg, rgb(2 10 19 / 0), rgb(2 10 19 / 0.92) 14%, rgb(2 10 19 / 0.98));
+  backdrop-filter: blur(7px);
 }
 
 .transport::before {
@@ -1791,34 +1948,52 @@ input {
   }
 }
 
-/* ── Answer pips ────────────────────────────────────────────────────────────
-   How much of the room has committed, without saying to what. Watching the
-   lamps fill is most of the tension in a live round; which lectern anybody
-   chose is the one thing that cannot leak before the reveal.
+/* ── Answer lamps ───────────────────────────────────────────────────────────
+   Who has committed, without saying to what. Watching them light up one by one
+   is most of the tension in a live round; which lectern anybody chose is the
+   one thing that cannot leak before the reveal.
    ──────────────────────────────────────────────────────────────────────────── */
 
-.pips {
-  display: inline-flex;
+.lamps {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.3rem;
-  padding: 0 0.35rem;
+  margin-bottom: 0.55rem;
 }
 
-.pip {
-  width: 0.55rem;
-  height: 0.55rem;
-  border-radius: 50%;
+.lamp {
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
   border: 1px solid var(--edge);
   background: rgb(4 16 31 / 0.9);
-  transition: background-color 220ms ease, border-color 220ms ease, box-shadow 260ms ease,
-    transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  white-space: nowrap;
+  transition: color 220ms ease, background-color 220ms ease, border-color 220ms ease,
+    box-shadow 260ms ease, transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.pip--in {
+.lamp--in {
   border-color: var(--cyan);
   background: var(--cyan);
-  box-shadow: 0 0 12px 1px rgb(41 214 255 / 0.75);
-  transform: scale(1.15);
+  color: #02121c;
+  box-shadow: 0 0 12px 1px rgb(41 214 255 / 0.6);
+  transform: scale(1.04);
+}
+
+/* Your own name, so you can find yourself in a row of ten without reading it. */
+.lamp--you {
+  border-color: var(--amber);
+}
+
+.lamp--in.lamp--you {
+  background: var(--amber-bright);
+  box-shadow: 0 0 12px 1px rgb(255 178 38 / 0.6);
 }
 
 /* ── Entrances ──────────────────────────────────────────────────────────────

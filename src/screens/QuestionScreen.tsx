@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { AnswerLamps } from '../components/AnswerLamps';
 import { ArcTimer } from '../components/ArcTimer';
 import { Ladder } from '../components/Ladder';
 import { PodiumTile, type TileArrival, type TileState } from '../components/PodiumTile';
@@ -55,8 +56,6 @@ export function QuestionScreen({
   const optionCount = question?.options.length ?? 0;
 
   const myAnswer = youUid ? room.answers[youUid] : undefined;
-  const answeredCount = Object.keys(room.answers).length;
-  const playerCount = Object.keys(room.players).length;
   const myDelta = youUid ? (room.lastDeltas[youUid] ?? 0) : 0;
   const gotItRight = Boolean(myAnswer && myAnswer.optionIndex === question?.correctIndex);
   const verdictTone = gotItRight ? 'correct' : myAnswer ? 'wrong' : 'silent';
@@ -318,101 +317,92 @@ export function QuestionScreen({
         its top edge like the rig bar above the stage, so the controls read as
         part of the set rather than as a form at the bottom of a page.
       */}
-      <div className="transport row row--between">
+      <div className="transport">
         {/*
+          Above the controls rather than beside them, because this row wraps: a
+          full office is ten names, and they need the width of the strip on a
+          phone rather than whatever the button leaves over.
+        */}
+        {revealed ? null : (
+          <AnswerLamps players={room.players} answers={room.answers} youUid={youUid} />
+        )}
+
+        <div className="row row--between">
+          {/*
           Mounted for the whole reveal rather than swapped in when the verdict
           lands, so the delta has somewhere to count up from: ScoreTicker only
           animates on a change, and a ticker that mounts already holding its
           final number just prints it.
         */}
-        <p className="tally">
-          {revealed ? (
-            <span className={settled ? 'verdict verdict--in' : 'verdict'} data-tone={verdictTone}>
-              {verdictLabel}
-              {gotItRight ? (
-                <>
-                  {' · +'}
-                  <ScoreTicker value={settled ? myDelta : 0} />
-                </>
-              ) : null}
-            </span>
-          ) : myAnswer ? (
-            // Not "Locked in" any more, and worth saying rather than leaving to
-            // be discovered: every other quiz app takes the first answer and
-            // keeps it, so nobody will try a second lectern unless told they can.
-            'You can still change it'
-          ) : clock.expired ? (
-            'Time’s up'
-          ) : (
-            'Pick an answer'
-          )}
-        </p>
-
-        <div className="btn-row">
-          {/*
-            Anonymous on purpose. Watching the room commit is most of the
-            tension in a live round, but which lectern anybody picked is the one
-            thing that must not leak before the reveal.
-          */}
-          {revealed ? null : (
-            <span className="pips" title={`${answeredCount} of ${playerCount} answered`}>
-              <span className="sr-only">
-                {answeredCount} of {playerCount} answered
+          <p className="tally">
+            {revealed ? (
+              <span className={settled ? 'verdict verdict--in' : 'verdict'} data-tone={verdictTone}>
+                {verdictLabel}
+                {gotItRight ? (
+                  <>
+                    {' · +'}
+                    <ScoreTicker value={settled ? myDelta : 0} />
+                  </>
+                ) : null}
               </span>
-              {Array.from({ length: playerCount }, (_, pip) => (
-                <span
-                  key={pip}
-                  className={pip < answeredCount ? 'pip pip--in' : 'pip'}
-                  aria-hidden="true"
-                />
-              ))}
-            </span>
-          )}
+            ) : myAnswer ? (
+              // Not "Locked in" any more, and worth saying rather than leaving to
+              // be discovered: every other quiz app takes the first answer and
+              // keeps it, so nobody will try a second lectern unless told they can.
+              'You can still change it'
+            ) : clock.expired ? (
+              'Time’s up'
+            ) : (
+              'Pick an answer'
+            )}
+          </p>
 
-          {isQuizmaster ? (
-            <>
-              {/*
-                Nobody in the room needs telling who is driving, but the person
-                driving does — it is the difference between waiting for the
-                quizmaster and being the quizmaster.
-              */}
-              <span className="onair" aria-hidden="true">
-                <span className="onair__lamp" />
-                On air
-              </span>
+          <div className="btn-row">
+            {isQuizmaster ? (
+              <>
+                {/*
+                  Nobody in the room needs telling who is driving, but the person
+                  driving does — it is the difference between waiting for the
+                  quizmaster and being the quizmaster.
+                */}
+                <span className="onair" aria-hidden="true">
+                  <span className="onair__lamp" />
+                  On air
+                </span>
 
-              {/*
-                Skip is deliberately not exposed. The rules cannot restrict
-                writes to the quizmaster without storing their uid, so a button
-                here is a button anyone in DevTools can press — and one player
-                who dislikes a question should not be able to void it for the
-                room. The engine action stays (and stays tested) in case it is
-                wanted behind a proper permission model later.
-              */}
-              {revealed ? (
-                <button type="button" className="btn btn--primary" onClick={onNext}>
-                  Standings
-                </button>
-              ) : (
-                /*
-                  Revealing early is no longer possible, and that is the price
-                  of the vault: the rules refuse to confirm an answer until the
-                  server agrees the room's answer window is up, and no
-                  device — this one included — holds it before then. The button
-                  stays visible as a retry for a reveal that errored, since the
-                  clock running out fires one automatically.
-                */
-                <button
-                  type="button"
-                  className="btn btn--primary"
-                  disabled={!clock.expired}
-                  onClick={onReveal}
-                >
-                  {clock.expired ? 'Reveal' : `Reveal in ${clock.secondsLeft}s`}
-                </button>
-              )}
-            </>
-          ) : null}
+                {/*
+                  Skip is deliberately not exposed. The rules cannot restrict
+                  writes to the quizmaster without storing their uid, so a button
+                  here is a button anyone in DevTools can press — and one player
+                  who dislikes a question should not be able to void it for the
+                  room. The engine action stays (and stays tested) in case it is
+                  wanted behind a proper permission model later.
+                */}
+                {revealed ? (
+                  <button type="button" className="btn btn--primary" onClick={onNext}>
+                    Standings
+                  </button>
+                ) : (
+                  /*
+                    Revealing early is no longer possible, and that is the price
+                    of the vault: the rules refuse to confirm an answer until the
+                    server agrees the room's answer window is up, and no
+                    device — this one included — holds it before then. The button
+                    stays visible as a retry for a reveal that errored, since the
+                    clock running out fires one automatically.
+                  */
+                  <button
+                    type="button"
+                    className="btn btn--primary"
+                    disabled={!clock.expired}
+                    onClick={onReveal}
+                  >
+                    {clock.expired ? 'Reveal' : `Reveal in ${clock.secondsLeft}s`}
+                  </button>
+                )}
+              </>
+            ) : null}
+          </div>
         </div>
       </div>
     </>

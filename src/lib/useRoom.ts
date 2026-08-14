@@ -32,6 +32,7 @@ import {
   type RoomState,
 } from '../engine/state';
 import { randomRoomCode } from '../engine/roomCode';
+import { rememberName } from './rememberedName';
 
 /**
  * Fields the engine owns but that are not persisted on the room document.
@@ -393,10 +394,25 @@ export function useRoom(): UseRoom {
       });
   }, [code, uid, room, writeSelfIntoRoom]);
 
+  /**
+   * Takes on the name this device is playing under: kept in a ref for the
+   * presence writer and the rejoin path, and kept in storage so a returning
+   * player finds the box already filled in.
+   *
+   * Both happen on the attempt rather than once the write has landed. A join
+   * that fails is a failure about the room — a code typed wrong, a room already
+   * gone — not about who they are, and the name they gave is the one they are
+   * about to give again.
+   */
+  const adoptName = useCallback((name: string) => {
+    nameRef.current = name;
+    rememberName(name);
+  }, []);
+
   const createAndJoin = useCallback(
     async (name: string): Promise<string> => {
       if (!uid) throw new Error('Not signed in yet');
-      nameRef.current = name;
+      adoptName(name);
 
       // Retry on collision — 4-character codes collide occasionally.
       for (let attempt = 0; attempt < 5; attempt += 1) {
@@ -417,17 +433,17 @@ export function useRoom(): UseRoom {
 
       throw new Error('Could not find a free room code, please try again');
     },
-    [uid],
+    [uid, adoptName],
   );
 
   const join = useCallback(
     async (targetCode: string, name: string): Promise<void> => {
       if (!uid) throw new Error('Not signed in yet');
-      nameRef.current = name;
+      adoptName(name);
       await writeSelfIntoRoom(targetCode, uid, name);
       setCode(targetCode);
     },
-    [uid, writeSelfIntoRoom],
+    [uid, adoptName, writeSelfIntoRoom],
   );
 
   const leave = useCallback(async (): Promise<void> => {

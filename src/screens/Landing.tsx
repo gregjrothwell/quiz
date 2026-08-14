@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { isValidRoomCode, normaliseRoomCode, ROOM_CODE_LENGTH } from '../engine/roomCode';
+import { MAX_NAME_LENGTH, rememberedName } from '../lib/rememberedName';
 
 interface LandingProps {
   busy: boolean;
@@ -19,7 +20,11 @@ export function Landing({
   onJoin,
   onSeason,
 }: LandingProps) {
-  const [name, setName] = useState('');
+  // Read once, on mount. The box stays editable and the stored name is only ever
+  // where it starts, so `remembered` is kept separately: it is what this browser
+  // arrived believing, which is the thing worth saying out loud below.
+  const [remembered] = useState(rememberedName);
+  const [name, setName] = useState(remembered);
   const [code, setCode] = useState(initialCode);
 
   const trimmedName = name.trim();
@@ -77,10 +82,20 @@ export function Landing({
             value={name}
             onChange={(event) => setName(event.target.value)}
             placeholder="e.g. Greg"
-            maxLength={24}
+            maxLength={MAX_NAME_LENGTH}
             autoComplete="given-name"
           />
         </label>
+        {/*
+          A box that fills itself in is a box somebody stops reading, and the
+          one case that matters is the borrowed laptop — where the name already
+          sitting there belongs to whoever played on it last.
+        */}
+        {remembered ? (
+          <p className="muted" style={{ fontSize: '0.85rem', margin: 0 }}>
+            Remembered from last time — change it if you aren&rsquo;t {remembered}.
+          </p>
+        ) : null}
       </section>
 
       <div className="split split--two">
