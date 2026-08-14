@@ -46,6 +46,36 @@ const PLAYERS = {
   alex: { name: 'Alex', joinedAt: 400 },
 };
 
+/**
+ * A full round in a full office, which is the shape the screens are actually
+ * used at and the one the four-player fixtures above quietly flatter. Fifteen
+ * rungs and a long prompt is what pushed the desk below the fold on the
+ * quizmaster's laptop.
+ */
+const LONG_ROUND: QuizQuestion[] = Array.from({ length: 15 }, (_, index) => ({
+  id: `long-${index}`,
+  prompt:
+    index === 0
+      ? 'Which of these four British sitcoms, all first broadcast between 1975 and 1982, ran for the greatest number of episodes across its original run?'
+      : `Placeholder question ${index + 1}`,
+  options: [
+    'Fawlty Towers, written by John Cleese and Connie Booth',
+    'The Good Life, set in suburban Surbiton',
+    'Yes Minister, and its later sequel Yes, Prime Minister',
+    'To the Manor Born, starring Penelope Keith',
+  ],
+  correctIndex: 2,
+  category: 'Entertainment: Television',
+  difficulty: index > 9 ? 'hard' : index > 4 ? 'medium' : 'easy',
+}));
+
+const CROWD = Object.fromEntries(
+  ['Greg', 'Sam', 'Priya', 'Alex', 'Jo', 'Nadia', 'Tom', 'Rhian', 'Marcus', 'Bea'].map((name) => [
+    name.toLowerCase(),
+    { name, joinedAt: 100 },
+  ]),
+);
+
 const PACKS: PackSummary[] = [
   {
     id: 'uk-leaning',
@@ -182,6 +212,65 @@ export function Preview() {
           })}
           youUid="greg"
           isQuizmaster
+          clock={CLOCK}
+          revealed={false}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+        />
+      ),
+    },
+    {
+      title: 'Question · a full round, a full office',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'question',
+            questionOpenedAt: 1_000,
+            questions: LONG_ROUND,
+            index: 6,
+            players: CROWD,
+            answers: {
+              sam: { optionIndex: 0, elapsedMs: 2_300 },
+              priya: { optionIndex: 2, elapsedMs: 3_100 },
+              jo: { optionIndex: 2, elapsedMs: 4_800 },
+              marcus: { optionIndex: 1, elapsedMs: 5_500 },
+            },
+          })}
+          youUid="greg"
+          isQuizmaster
+          clock={CLOCK}
+          revealed={false}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+        />
+      ),
+    },
+    {
+      /*
+        The same question from the floor rather than the desk, which is the
+        view the person running the quiz never sees. It is the screen above
+        minus two things: the on-air lamp and the transport.
+      */
+      title: 'Question · what a player sees',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'question',
+            questionOpenedAt: 1_000,
+            questions: LONG_ROUND,
+            index: 6,
+            players: CROWD,
+            answers: {
+              sam: { optionIndex: 0, elapsedMs: 2_300 },
+              priya: { optionIndex: 2, elapsedMs: 3_100 },
+              jo: { optionIndex: 2, elapsedMs: 4_800 },
+              marcus: { optionIndex: 1, elapsedMs: 5_500 },
+            },
+          })}
+          youUid="nadia"
+          isQuizmaster={false}
           clock={CLOCK}
           revealed={false}
           onAnswer={noop}

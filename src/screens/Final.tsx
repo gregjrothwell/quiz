@@ -1,8 +1,9 @@
 import { Awards } from '../components/Awards';
+import { Chair } from '../components/Chair';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { Standings } from '../components/Standings';
 import { awardsFor, type QuestionRecord } from '../engine/awards';
-import { standings } from '../engine/scoring';
+import { seatedLast, standings } from '../engine/scoring';
 import type { RoomState } from '../engine/state';
 import { useCue } from '../lib/sound';
 
@@ -62,6 +63,19 @@ export function Final({
   const podium = RISER_SLOTS.map((slot) => ({ ...slot, entry: rows[slot.row] }));
   const hasPodium = rows.length > 0;
 
+  /*
+    The chair at the end of the podium. Named the same way the dead-heat winner
+    above is, because a shared last place is still last — and emptied if whoever
+    earned it has already left, on the same principle as an award going with its
+    winner rather than staying pinned to nobody.
+  */
+  const seated = seatedLast(rows);
+  const seatedName = seated
+    .map((uid) => room.players[uid]?.name)
+    .filter(Boolean)
+    .join(' & ');
+  const seatedScore = seated[0] ? (room.scores[seated[0]] ?? 0) : 0;
+
   // Keyed on the game so a second round in the same room gets its own fanfare,
   // and a re-render on the final screen does not.
   useCue('fanfare', room.gameId ?? 'no-game', hasPodium);
@@ -80,7 +94,7 @@ export function Final({
       </header>
 
       {hasPodium ? (
-        <div className="finale">
+        <div className={seatedName ? 'finale finale--seated' : 'finale'}>
           {podium.map(({ height, entry }) => {
             const player = entry ? room.players[entry.uid] : undefined;
             if (!entry || !player) return <div key={height} />;
@@ -95,6 +109,8 @@ export function Final({
               </div>
             );
           })}
+
+          {seatedName ? <Chair name={seatedName} score={seatedScore} /> : null}
         </div>
       ) : null}
 

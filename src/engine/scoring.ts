@@ -88,3 +88,32 @@ export function standings(scores: Record<string, number>): Standing[] {
     return { ...entry, position };
   });
 }
+
+/** How many the podium stands up, and so where the floor begins. */
+export const PODIUM_PLACES = 3;
+
+/**
+ * Who finished on the lowest score, for the chair at the end of the podium.
+ *
+ * One condition does all the work: the tie for last has to *start* below the
+ * podium. That is what keeps the three edge cases honest, and each of them is a
+ * real office round rather than a hypothetical.
+ *
+ * A round where nobody scored is not a round somebody lost, so a table tied on
+ * zero seats no one — the tie starts at the top. A room of three has a third
+ * place already standing on a riser, and nobody should be on a riser and in the
+ * chair at once. And a tie that reaches up into the podium is the same clash a
+ * place lower down: last is only last when everybody above it is genuinely above
+ * it.
+ *
+ * Returns everyone on that score, because a shared last place is still last.
+ */
+export function seatedLast(rows: readonly Standing[]): string[] {
+  const lowest = rows[rows.length - 1]?.score;
+  if (lowest === undefined) return [];
+
+  const first = rows.findIndex((row) => row.score === lowest);
+  if (first < PODIUM_PLACES) return [];
+
+  return rows.slice(first).map((row) => row.uid);
+}

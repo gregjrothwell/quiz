@@ -1,5 +1,12 @@
 import { describe, expect, test } from 'vitest';
-import { BASE_POINTS, SPEED_POINTS, scoreAnswer, standings, tallyQuestion } from './scoring';
+import {
+  BASE_POINTS,
+  SPEED_POINTS,
+  scoreAnswer,
+  seatedLast,
+  standings,
+  tallyQuestion,
+} from './scoring';
 import { DEFAULT_QUESTION_DURATION_MS } from './state';
 
 /** Whichever lectern the vault named when the question closed. */
@@ -132,5 +139,73 @@ describe('standings', () => {
 
     // #then there are no standings
     expect(result).toEqual([]);
+  });
+});
+
+describe('seatedLast', () => {
+  test('seats the one player below the podium', () => {
+    // #given a four-player round with a clear bottom
+    const scores = { alice: 1000, bob: 900, carol: 800, dave: 100 };
+
+    // #when the chair is filled
+    const seated = seatedLast(standings(scores));
+
+    // #then it is whoever finished last
+    expect(seated).toEqual(['dave']);
+  });
+
+  test('sits a tie for last down together', () => {
+    // #given two players level on the bottom score
+    const scores = { alice: 1000, bob: 900, carol: 800, dave: 100, erin: 100 };
+
+    // #when the chair is filled
+    const seated = seatedLast(standings(scores));
+
+    // #then both of them are in it, because a shared last is still last
+    expect(new Set(seated)).toEqual(new Set(['dave', 'erin']));
+  });
+
+  test('seats nobody when the whole room finished level', () => {
+    // #given a round nobody scored in
+    const scores = { alice: 0, bob: 0, carol: 0, dave: 0 };
+
+    // #when the chair is filled
+    const seated = seatedLast(standings(scores));
+
+    // #then there is no loser to seat
+    expect(seated).toEqual([]);
+  });
+
+  test('seats nobody in a room of three, who are all on the podium', () => {
+    // #given a round small enough that last place is already on a riser
+    const scores = { alice: 1000, bob: 900, carol: 800 };
+
+    // #when the chair is filled
+    const seated = seatedLast(standings(scores));
+
+    // #then nobody stands on a riser and sits in the chair at once
+    expect(seated).toEqual([]);
+  });
+
+  test('seats nobody when the tie for last reaches into the podium', () => {
+    // #given third, fourth and fifth all level, so the tie starts on the podium
+    const scores = { alice: 1000, bob: 900, carol: 100, dave: 100, erin: 100 };
+
+    // #when the chair is filled
+    const seated = seatedLast(standings(scores));
+
+    // #then the chair stays empty rather than seating somebody already stood up
+    expect(seated).toEqual([]);
+  });
+
+  test('seats nobody in an empty room', () => {
+    // #given no standings at all
+    const rows = standings({});
+
+    // #when the chair is filled
+    const seated = seatedLast(rows);
+
+    // #then there is nothing to seat
+    expect(seated).toEqual([]);
   });
 });
