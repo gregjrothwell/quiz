@@ -9,6 +9,10 @@ import {
   runTransaction,
   setDoc,
 } from 'firebase/firestore';
+import type { Honours } from '../engine/awards';
+import type { FormRecord } from '../engine/form';
+import { foldRecords, type PlayerRecord } from '../engine/records';
+import { cleanTeam } from '../engine/team';
 import { firestore } from '../firebase';
 
 /**
@@ -43,36 +47,58 @@ export const SEASON = 'season-2';
 /** More than an office will fill, small enough to stay one cheap read. */
 const TABLE_LIMIT = 50;
 
-export interface SeasonRow {
-  uid: string;
+export interface SeasonRow extends Honours {
+  playerId: string;
   name: string;
   played: number;
   wins: number;
   points: number;
   best: number;
+  /** Empty for the many rows that predate leagues, or a player who set none. */
+  team: string;
 }
 
-interface SeasonDoc {
-  name: string;
-  played: number;
-  wins: number;
-  points: number;
-  best: number;
-  /** The last game banked for this player, so the same one cannot count twice. */
-  lastGame: string;
-  lastPlayed: number;
-}
+/**
+ * Shared with `src/engine/records.ts`, which owns the arithmetic for folding two
+ * of these together — the one part of this file that can quietly corrupt a
+ * season, and the one part a test can reach.
+ */
+type SeasonDoc = PlayerRecord;
 
-function playerDoc(uid: string) {
-  return doc(firestore(), 'seasons', SEASON, 'players', uid);
+/**
+ * Keyed on the playerId rather than the auth uid — see `src/lib/identity.ts` for
+ * why, and note that the two are the same string for anybody who has never
+ * claimed an identity, which is what lets every existing row stand untouched.
+ */
+function playerDoc(playerId: string) {
+  return doc(firestore(), 'seasons', SEASON, 'players', playerId);
 }
 
 export interface GameResult {
-  uid: string;
+  playerId: string;
   name: string;
   gameId: string;
   score: number;
   won: boolean;
+  /**
+   * The league this player is in, if this browser knows of one.
+   *
+   * An empty string means "leave whatever the record already says", not "no
+   * team". The team lives on the season record but is remembered per browser, so
+   * a regular who set their team on a laptop and then plays from a phone would
+   * otherwise clear it by banking one game — and would have no idea they had.
+   * Taking a team *off* a record is done by editing it on the season screen.
+   */
+  team: string;
+  /**
+   * The rosettes this player took tonight, or none.
+   *
+   * None is also what a device sends when it did not see the whole game — the
+   * final screen withholds the awards in that case, and banking honours it
+   * cannot stand behind would be worse than banking none. It is not evidence
+   * nothing was won.
+   */
+  honours: Honours;
 }
 
 /**
@@ -84,7 +110,7 @@ export interface GameResult {
  * Without that, reloading the final screen would count the game again.
  */
 export async function recordGame(result: GameResult): Promise<void> {
-  const reference = playerDoc(result.uid);
+  const reference = playerDoc(result.playerId);
 
   await runTransaction(firestore(), async (transaction) => {
     const snapshot = await transaction.get(reference);
@@ -92,17 +118,75 @@ export async function recordGame(result: GameResult): Promise<void> {
 
     if (existing?.lastGame === result.gameId) return;
 
+    // The transaction already holds the row, so the rosettes cost no read of
+    // their own — the same reason `best` is worked out here rather than with a
+    // server-side sentinel it does not have.
+    // `set` is a whole-document overwrite, so anything not named here is erased
+    // by every game anybody plays. An empty incoming team therefore means "keep
+    // what is there" rather than "clear it" — see `GameResult.team`.
+    const team = cleanTeam(result.team) || cleanTeam(existing?.team);
+
     const next: SeasonDoc = {
+      ...(team ? { team } : {}),
       name: result.name,
       played: (existing?.played ?? 0) + 1,
       wins: (existing?.wins ?? 0) + (result.won ? 1 : 0),
       points: (existing?.points ?? 0) + result.score,
       best: Math.max(existing?.best ?? 0, result.score),
+      fastest: (existing?.fastest ?? 0) + result.honours.fastest,
+      comeback: (existing?.comeback ?? 0) + result.honours.comeback,
+      loneWolf: (existing?.loneWolf ?? 0) + result.honours.loneWolf,
+      contrarian: (existing?.contrarian ?? 0) + result.honours.contrarian,
       lastGame: result.gameId,
       lastPlayed: Date.now(),
     };
 
     transaction.set(reference, next);
+  });
+}
+
+/**
+ * Folds one record into another and removes the first, for a browser that has
+ * just claimed an identity.
+ *
+ * Without this, claiming leaves the record the claiming browser had built up
+ * sitting on the board forever under the same person's name — nothing writes to
+ * it again, and nothing removes it. Two rows, one human, on a table the office
+ * looks at.
+ *
+ * **Run after the claim, never before.** Writing `into` needs `ownsPlayer` to
+ * pass, which needs the claim already in place; deleting `from` keeps working
+ * either way, because a browser always satisfies the uid branch for its own uid.
+ *
+ * Idempotent, which is what makes a failure survivable: the source is deleted in
+ * the same transaction that folds it in, so running it twice does nothing the
+ * second time. A merge that fails leaves a visible duplicate rather than a
+ * corrupt total, and claiming again retries it.
+ *
+ * The arithmetic itself is `foldRecords` in `src/engine/records.ts`, where a
+ * test can reach it. This half does nothing but read two documents, call it, and
+ * write one back.
+ */
+export async function mergeRecords(from: string, into: string): Promise<boolean> {
+  if (from === into) return false;
+
+  return runTransaction(firestore(), async (transaction) => {
+    // Both reads before either write: Firestore transactions require it.
+    const source = await transaction.get(playerDoc(from));
+    if (!source.exists()) return false;
+
+    const target = await transaction.get(playerDoc(into));
+
+    transaction.set(
+      playerDoc(into),
+      foldRecords(
+        source.data() as SeasonDoc,
+        target.exists() ? (target.data() as SeasonDoc) : null,
+      ),
+    );
+
+    transaction.delete(playerDoc(from));
+    return true;
   });
 }
 
@@ -158,6 +242,41 @@ export async function recordAsked(packId: string, ids: readonly string[]): Promi
 }
 
 /**
+ * The season records of just the people in this room, for the opening titles.
+ *
+ * **Not `loadSeason`.** That reads the whole board — up to fifty documents — to
+ * answer a question about six people, and it would be read by every client
+ * rather than one. This is one `getDoc` per player, run once by whoever starts
+ * the round, and everybody else learns the result from the room update they were
+ * already receiving. Six reads for the room instead of three hundred.
+ *
+ * A player with no record yet comes back as zeroes rather than being dropped,
+ * because "has never finished a round" is itself something the titles say.
+ */
+export async function loadForm(players: { uid: string; playerId: string }[]): Promise<FormRecord[]> {
+  const snapshots = await Promise.all(
+    players.map((player) => getDoc(playerDoc(player.playerId))),
+  );
+
+  return snapshots.map((snapshot, index) => {
+    const player = players[index];
+    const data = snapshot.exists() ? (snapshot.data() as SeasonDoc) : null;
+
+    return {
+      uid: player?.uid ?? '',
+      played: data?.played ?? 0,
+      wins: data?.wins ?? 0,
+      best: data?.best ?? 0,
+      rosettes:
+        (data?.fastest ?? 0)
+        + (data?.comeback ?? 0)
+        + (data?.loneWolf ?? 0)
+        + (data?.contrarian ?? 0),
+    };
+  });
+}
+
+/**
  * The season table, highest total first. Read on demand rather than subscribed
  * to: standings do not change while you are looking at them, and a live
  * listener on every client is the kind of fan-out this app spends care avoiding.
@@ -174,12 +293,19 @@ export async function loadSeason(): Promise<SeasonRow[]> {
   return snapshot.docs.map((entry) => {
     const data = entry.data() as SeasonDoc;
     return {
-      uid: entry.id,
+      playerId: entry.id,
       name: data.name,
       played: data.played,
       wins: data.wins,
       points: data.points,
       best: data.best,
+      team: cleanTeam(data.team),
+      // Absent on every row written before honours existed, which is most of
+      // them, and zero is the honest reading of a row that never counted any.
+      fastest: data.fastest ?? 0,
+      comeback: data.comeback ?? 0,
+      loneWolf: data.loneWolf ?? 0,
+      contrarian: data.contrarian ?? 0,
     };
   });
 }

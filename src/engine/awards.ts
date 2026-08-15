@@ -150,6 +150,120 @@ function comeback(log: QuestionRecord[], playerUids: string[]): Award | null {
 }
 
 /**
+ * A player's rosettes, counted rather than listed, for banking against a season.
+ * Keyed by the award ids above so a shelf reads as the same thing the final
+ * screen just handed out.
+ */
+export interface Honours {
+  fastest: number;
+  comeback: number;
+  loneWolf: number;
+  contrarian: number;
+}
+
+export const NO_HONOURS: Honours = { fastest: 0, comeback: 0, loneWolf: 0, contrarian: 0 };
+
+const HONOUR_KEYS: Record<Award['id'], keyof Honours> = {
+  fastest: 'fastest',
+  comeback: 'comeback',
+  'lone-wolf': 'loneWolf',
+  contrarian: 'contrarian',
+};
+
+/**
+ * Whether this device watched the whole game, which is the one precondition on
+ * saying anything about it.
+ *
+ * Exported so the screen that *shows* the awards and the code that *banks* them
+ * ask the identical question. Held in two places these would drift, and the way
+ * they would drift is a device quietly banking honours off a partial log — which
+ * is permanent, unlike a screen that merely says nothing.
+ */
+export function sawWholeGame(log: QuestionRecord[], questionCount: number): boolean {
+  return questionCount > 0 && log.length === questionCount;
+}
+
+/**
+ * What one player won tonight, for a season row.
+ *
+ * Joint winners each count it. Sharing the fastest finger is still having been
+ * the fastest finger, and the alternative — a fractional rosette, or awarding it
+ * to nobody — is worse in both directions.
+ */
+export function honoursFor(
+  log: QuestionRecord[],
+  playerUids: string[],
+  uid: string,
+): Honours {
+  const honours: Honours = { ...NO_HONOURS };
+
+  for (const award of awardsFor(log, playerUids)) {
+    if (award.uids.includes(uid)) honours[HONOUR_KEYS[award.id]] += 1;
+  }
+
+  return honours;
+}
+
+/**
+ * The round as a thing that happened, rather than the players who played it.
+ *
+ * Which question, and how many people it happened to — facts, on the same
+ * principle as {@link Award}. Naming the question is the screen's job, because
+ * it is the only side that holds the prompts, and an index cannot be reworded
+ * into a lie.
+ */
+export type Highlight =
+  | { id: 'stumper'; index: number; attempts: number }
+  | { id: 'sweep'; index: number; attempts: number };
+
+/**
+ * Both readings need a room to be true of. One person wrong on their own is a
+ * guess rather than a question that beat everybody, and one person right on
+ * their own is the lone wolf above, which already has a rosette.
+ */
+const MIN_ATTEMPTS = 2;
+
+function highlight(
+  log: QuestionRecord[],
+  qualifies: (correct: number, attempts: number) => boolean,
+): { index: number; attempts: number } | null {
+  const candidates = log.flatMap((record) => {
+    const answers = Object.values(record.answers);
+    const correct = answers.filter(
+      (answer) => answer.optionIndex === record.correctIndex,
+    ).length;
+
+    if (answers.length < MIN_ATTEMPTS || !qualifies(correct, answers.length)) return [];
+    return [{ index: record.index, attempts: answers.length }];
+  });
+
+  // The one it happened to the most people, and the earliest question when that
+  // ties. Sorted rather than taken in the order the log happens to hold, because
+  // that order is a property of how this device watched the game — and two
+  // screens naming different questions is the failure the awards already avoid.
+  candidates.sort((a, b) => b.attempts - a.attempts || a.index - b.index);
+  return candidates[0] ?? null;
+}
+
+/**
+ * What the round did to the room, for a panel beside the rosettes. Costs
+ * nothing: the log is already on every device, the same free retelling the
+ * replay is built from.
+ *
+ * A highlight nothing supports is left out rather than shown empty, exactly as
+ * {@link awardsFor} does.
+ */
+export function reviewFor(log: QuestionRecord[]): Highlight[] {
+  const stumper = highlight(log, (correct) => correct === 0);
+  const sweep = highlight(log, (correct, attempts) => correct === attempts);
+
+  return [
+    stumper ? ({ id: 'stumper', ...stumper } as const) : null,
+    sweep ? ({ id: 'sweep', ...sweep } as const) : null,
+  ].filter((entry): entry is Highlight => entry !== null);
+}
+
+/**
  * Every award the game actually earned, in the order they are worth reading.
  * An award nothing supports is left out rather than shown empty — a podium with
  * a blank rosette on it is worse than one without.

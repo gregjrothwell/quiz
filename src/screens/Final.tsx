@@ -1,8 +1,9 @@
 import { Awards } from '../components/Awards';
 import { Chair } from '../components/Chair';
+import { Review } from '../components/Review';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { Standings } from '../components/Standings';
-import { awardsFor, type QuestionRecord } from '../engine/awards';
+import { awardsFor, reviewFor, sawWholeGame, type QuestionRecord } from '../engine/awards';
 import { seatedLast, standings } from '../engine/scoring';
 import type { RoomState } from '../engine/state';
 import { useCue } from '../lib/sound';
@@ -51,8 +52,9 @@ export function Final({
     to the one beside it — and two screens disagreeing about who was fastest is
     worse than neither of them saying.
   */
-  const sawItAll = log.length === room.questions.length && room.questions.length > 0;
+  const sawItAll = sawWholeGame(log, room.questions.length);
   const awards = sawItAll ? awardsFor(log, Object.keys(room.players)) : [];
+  const review = sawItAll ? reviewFor(log) : [];
   const leaders = rows.filter((entry) => entry.position === 1);
   const winnerName =
     leaders.length > 1
@@ -118,6 +120,8 @@ export function Final({
 
       <Awards awards={awards} players={room.players} youUid={youUid} />
 
+      <Review review={review} questions={room.questions} />
+
       <div className="btn-row">
         {isQuizmaster ? (
           <button type="button" className="btn btn--primary" onClick={onPlayAgain}>
@@ -133,6 +137,14 @@ export function Final({
           Leave
         </button>
       </div>
+
+      {/* Said once, here, because this is the moment there is a record worth
+          keeping — and the season table is where the code lives. Not a prompt or
+          a dialog: nobody has ever thanked a quiz for interrupting the podium. */}
+      <p className="muted" style={{ fontSize: '0.85rem' }}>
+        That’s gone onto the season table, which is tied to this browser. Grab a recovery code
+        there if you ever play from anywhere else.
+      </p>
     </>
   );
 }

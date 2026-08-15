@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ColdOpen } from './components/ColdOpen';
 import { Stage } from './components/Stage';
+import { honoursFor, sawWholeGame, NO_HONOURS } from './engine/awards';
+import { formFor } from './engine/form';
 import { standings } from './engine/scoring';
 import { codeFromHash } from './engine/roomCode';
 import {
@@ -10,8 +13,10 @@ import {
   type Level,
 } from './engine/state';
 import { isFirebaseConfigured } from './firebase';
+import { playerIdFor } from './lib/identity';
+import { rememberTeam, rememberedTeam } from './lib/rememberedTeam';
 import { useGameLog } from './lib/useGameLog';
-import { loadAsked, recordAsked, recordGame } from './lib/season';
+import { loadAsked, loadForm, recordAsked, recordGame } from './lib/season';
 import { play } from './lib/sound';
 import { loadPackQuestions, usePackIndex } from './lib/usePacks';
 import { useQuestionClock } from './lib/useQuestionClock';
@@ -114,6 +119,7 @@ function Game() {
   // anything this ref cannot see, such as a reload.
   const bankedRef = useRef<string | null>(null);
 
+
   // Built as the game runs, because nothing else keeps a record of it — see
   // useGameLog. Held here rather than in Final so it survives that screen
   // mounting, which happens after the last question has already gone.
@@ -155,9 +161,10 @@ function Game() {
   );
 
   const handleCreate = useCallback(
-    (name: string) => {
+    (name: string, team: string) => {
       setBusy(true);
       setActionError(null);
+      rememberTeam(team);
       createAndJoin(name)
         .catch(report)
         .finally(() => setBusy(false));
@@ -166,9 +173,10 @@ function Game() {
   );
 
   const handleJoin = useCallback(
-    (code: string, name: string) => {
+    (code: string, name: string, team: string) => {
       setBusy(true);
       setActionError(null);
+      rememberTeam(team);
       join(code, name)
         .catch(report)
         .finally(() => setBusy(false));
@@ -189,6 +197,36 @@ function Game() {
           const asked = await loadAsked(packId).catch(() => new Set<string>());
           const questions = buildQuizQuestions(pool, count, level, Math.random, asked);
 
+          /*
+            The opening titles, and the reason the round does not simply start
+            here. The digest is assembled once, by this device, and written into
+            the room while it is still in the lobby — every other client reads it
+            from the update it was already listening to, which is the reveal's
+            pattern. Six reads for the room rather than fifty per person.
+
+            Swallowed on failure, like the question history above: a round that
+            opens without its titles is a much smaller problem than a round that
+            will not open.
+          */
+          const roster = Object.entries(room?.players ?? {}).map(([uid, player]) => ({
+            uid,
+            playerId: player.playerId ?? uid,
+          }));
+          const facts = await loadForm(roster).then(formFor).catch(() => []);
+
+          /*
+            The titles go up and the round waits there. Starting it is a second,
+            deliberate press — see `handleBeginRound`.
+
+            The window is parked inside the digest rather than kept on this
+            device, so the round can still open on the window that was chosen if
+            the quizmaster's chair changes hands while the titles are up. It
+            cannot go on the room's own `durationSecs`, which the rules pin until
+            a question actually opens.
+
+            A room the season knows nothing about has no titles to show, and gets
+            the round it asked for on the one press it made.
+          */
           await dispatch([
             {
               type: 'selectPack',
@@ -196,7 +234,16 @@ function Game() {
               packTitle: pack?.title ?? packId,
               questions,
             },
-            { type: 'start', at: Date.now(), gameId: crypto.randomUUID(), durationSecs },
+            ...(facts.length > 0
+              ? [{ type: 'titles' as const, at: Date.now(), facts, durationSecs }]
+              : [
+                  {
+                    type: 'start' as const,
+                    at: Date.now(),
+                    gameId: crypto.randomUUID(),
+                    durationSecs,
+                  },
+                ]),
           ]);
 
           // After the round is safely under way, for the same reason.
@@ -207,7 +254,7 @@ function Game() {
         .catch(report)
         .finally(() => setBusy(false));
     },
-    [dispatch, packs, report],
+    [dispatch, packs, report, room?.players],
   );
 
   const handleAnswer = useCallback(
@@ -251,6 +298,39 @@ function Game() {
       throw cause;
     }
   }, [room, dispatch]);
+
+  const form = room?.form ?? null;
+  const showTitles = room?.phase === 'lobby' && form !== null;
+
+  /**
+   * Starts the round the titles are introducing.
+   *
+   * Nothing does this on a timer, and that is the whole point of it being here.
+   * The titles used to run for six seconds and start the round themselves, which
+   * meant pressing Start handed the beginning of the quiz to a `setTimeout` —
+   * and the beginning is the one moment a quizmaster actually wants to hold,
+   * while the room reads the card and somebody finds their drink.
+   *
+   * The room cannot get stuck behind a quizmaster who wandered off, because the
+   * role is derived from who has been present longest: if they go, somebody else
+   * inherits this button within a second.
+   */
+  const handleBeginRound = useCallback(() => {
+    if (!form) return;
+    setActionError(null);
+    void dispatch({
+      type: 'start',
+      at: Date.now(),
+      gameId: crypto.randomUUID(),
+      durationSecs: form.durationSecs,
+    }).catch(report);
+  }, [form, dispatch, report]);
+
+  const handleCancelTitles = useCallback(() => {
+    setActionError(null);
+    void dispatch({ type: 'clearTitles' }).catch(report);
+  }, [dispatch, report]);
+
 
   // The quizmaster's device closes the question when the clock runs out, so a
   // round keeps moving even if nobody remembers to press Reveal.
@@ -310,14 +390,23 @@ function Game() {
     const mine = rows.find((entry) => entry.uid === uid);
 
     recordGame({
-      uid,
+      playerId: playerIdFor(uid),
       name: player.name,
       gameId,
       score: room.scores[uid] ?? 0,
       // A round where nobody scored is not a win for everybody.
       won: leadScore > 0 && mine?.position === 1,
+      // Empty means "keep whatever the record says" rather than "no team", so a
+      // regular playing from a second device cannot silently clear their league.
+      team: rememberedTeam(),
+      // Only from a log covering the whole game. A device that joined late or
+      // reloaded before the log was kept would otherwise bank a shelf it cannot
+      // stand behind — and unlike a screen that says nothing, that is permanent.
+      honours: sawWholeGame(gameLog, room.questions.length)
+        ? honoursFor(gameLog, Object.keys(room.players), uid)
+        : NO_HONOURS,
     }).catch(report);
-  }, [room, uid, report]);
+  }, [room, uid, gameLog, report]);
 
   if (connection === 'error') {
     return (
@@ -374,7 +463,16 @@ function Game() {
         </p>
       )}
 
-      {(room.phase === 'lobby' && (
+      {(showTitles && form && (
+        <ColdOpen
+          facts={form.facts}
+          players={room.players}
+          isQuizmaster={isQuizmaster}
+          onStart={handleBeginRound}
+          onBack={handleCancelTitles}
+        />
+      )) ||
+        (room.phase === 'lobby' && (
         <Lobby
           room={room}
           youUid={uid}

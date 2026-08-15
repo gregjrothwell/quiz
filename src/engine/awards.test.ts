@@ -1,5 +1,12 @@
 import { describe, expect, test } from 'vitest';
-import { awardsFor, type Award, type QuestionRecord } from './awards';
+import {
+  awardsFor,
+  honoursFor,
+  reviewFor,
+  sawWholeGame,
+  type Award,
+  type QuestionRecord,
+} from './awards';
 import type { Answer } from './state';
 
 function answer(optionIndex: number, elapsedMs: number): Answer {
@@ -248,5 +255,199 @@ describe('awardsFor', () => {
       count: 1,
     });
     expect(find(awards, 'contrarian')).toEqual({ id: 'contrarian', uids: ['alex'], count: 1 });
+  });
+});
+
+describe('the round in review', () => {
+  test('names the question nobody got', () => {
+    // #given a question three people answered and all three got wrong
+    const log = [
+      record(0, 0, { greg: answer(0, 900), sam: answer(0, 1_200) }),
+      record(1, 3, { greg: answer(1, 900), sam: answer(2, 1_200), alex: answer(0, 1_400) }),
+    ];
+
+    // #when the round is reviewed
+    const review = reviewFor(log);
+
+    // #then the second question is the stumper, carrying how many it beat
+    expect(review).toContainEqual({ id: 'stumper', index: 1, attempts: 3 });
+  });
+
+  test('names the question everybody got', () => {
+    // #given a question every one of three answerers got right
+    const log = [
+      record(0, 2, { greg: answer(2, 900), sam: answer(2, 1_200), alex: answer(2, 1_400) }),
+      record(1, 0, { greg: answer(1, 900), sam: answer(0, 1_200) }),
+    ];
+
+    // #when the round is reviewed
+    const review = reviewFor(log);
+
+    // #then the clean sweep is the first question
+    expect(review).toContainEqual({ id: 'sweep', index: 0, attempts: 3 });
+  });
+
+  test('ignores a question only one person answered', () => {
+    // #given a lone wrong answer and a lone right one, and nothing else
+    const log = [
+      record(0, 0, { greg: answer(1, 900) }),
+      record(1, 0, { sam: answer(0, 900) }),
+    ];
+
+    // #when the round is reviewed
+    const review = reviewFor(log);
+
+    // #then neither counts — one person is not a room, and being right alone is
+    // already the lone wolf's rosette
+    expect(review).toEqual([]);
+  });
+
+  test('ignores a question nobody answered at all', () => {
+    // #given a question the whole room sat out
+    const log = [record(0, 0, {})];
+
+    // #when the round is reviewed
+    const review = reviewFor(log);
+
+    // #then it is not a question that beat anybody
+    expect(review).toEqual([]);
+  });
+
+  test('prefers the question that beat the most people', () => {
+    // #given two questions nobody got, answered by different numbers of people
+    const log = [
+      record(0, 0, { greg: answer(1, 900), sam: answer(2, 1_200) }),
+      record(1, 0, { greg: answer(1, 900), sam: answer(2, 1_200), alex: answer(3, 1_400) }),
+    ];
+
+    // #when the round is reviewed
+    const review = reviewFor(log);
+
+    // #then the one more of the room got wrong is the one worth naming
+    expect(review).toContainEqual({ id: 'stumper', index: 1, attempts: 3 });
+  });
+
+  test('settles a tie on the earliest question, whatever order the log is in', () => {
+    // #given two equally stumping questions, with the log holding them backwards
+    const log = [
+      record(4, 0, { greg: answer(1, 900), sam: answer(2, 1_200) }),
+      record(2, 0, { greg: answer(1, 900), sam: answer(2, 1_200) }),
+    ];
+
+    // #when the round is reviewed
+    const review = reviewFor(log);
+
+    // #then the earlier question wins, so two devices that assembled their logs
+    // differently still name the same one
+    expect(review).toContainEqual({ id: 'stumper', index: 2, attempts: 2 });
+  });
+
+  test('leaves out a highlight nothing earned', () => {
+    // #given a round where every question was split
+    const log = [
+      record(0, 0, { greg: answer(0, 900), sam: answer(1, 1_200) }),
+      record(1, 1, { greg: answer(0, 900), sam: answer(1, 1_200) }),
+    ];
+
+    // #when the round is reviewed
+    const review = reviewFor(log);
+
+    // #then it is empty rather than carrying two blank panels
+    expect(review).toEqual([]);
+  });
+});
+
+describe('sawWholeGame', () => {
+  test('refuses a log short of the round', () => {
+    // #given a device that has two of a three-question round
+    const log = [record(0, 0, {}), record(1, 0, {})];
+
+    // #when it asks whether it saw the whole game
+    // #then it did not, so nothing downstream may speak for it
+    expect(sawWholeGame(log, 3)).toBe(false);
+  });
+
+  test('refuses a round with no questions in it', () => {
+    // #given an empty log and an empty round
+    // #when it asks
+    // #then a game that never happened is not a game this device watched — the
+    // lengths matching is not enough on its own
+    expect(sawWholeGame([], 0)).toBe(false);
+  });
+
+  test('accepts a log covering the round', () => {
+    // #given a device with all three questions
+    const log = [record(0, 0, {}), record(1, 0, {}), record(2, 0, {})];
+
+    // #when it asks
+    // #then it may speak for the game
+    expect(sawWholeGame(log, 3)).toBe(true);
+  });
+});
+
+describe('honoursFor', () => {
+  test('counts only the rosettes this player won', () => {
+    // #given the end-to-end game above, where Greg took fastest finger and
+    // shared the lone wolf
+    const log = [
+      record(
+        0,
+        0,
+        { greg: answer(0, 800), sam: answer(1, 2_000), alex: answer(1, 2_200) },
+        { greg: 960, sam: 0, alex: 0 },
+      ),
+      record(
+        1,
+        1,
+        { sam: answer(1, 1_200), greg: answer(1, 3_000), alex: answer(3, 2_000) },
+        { sam: 900, greg: 700, alex: 0 },
+      ),
+      record(
+        2,
+        2,
+        { sam: answer(2, 1_000), greg: answer(0, 2_000), alex: answer(0, 2_500) },
+        { sam: 950, greg: 0, alex: 0 },
+      ),
+    ];
+
+    // #when Greg's honours are counted
+    const honours = honoursFor(log, ['greg', 'sam', 'alex'], 'greg');
+
+    // #then he banks his own two and none of Sam's or Alex's
+    expect(honours).toEqual({ fastest: 1, comeback: 0, loneWolf: 1, contrarian: 0 });
+  });
+
+  test('gives a joint winner the whole rosette', () => {
+    // #given two players who tied for fastest finger
+    const log = [record(0, 0, { sam: answer(0, 1_500), alex: answer(0, 1_500) })];
+
+    // #when each player's honours are counted
+    const sam = honoursFor(log, ['sam', 'alex'], 'sam');
+    const alex = honoursFor(log, ['sam', 'alex'], 'alex');
+
+    // #then both banked it — sharing it is still having been the fastest, and a
+    // fraction of a rosette is not a thing a shelf can hold
+    expect(sam.fastest).toBe(1);
+    expect(alex.fastest).toBe(1);
+  });
+
+  test('banks nothing for a player who won nothing', () => {
+    // #given a round Alex was wrong in, alongside everybody else
+    const log = [record(0, 0, { greg: answer(1, 900), alex: answer(1, 1_200) })];
+
+    // #when Alex's honours are counted
+    const honours = honoursFor(log, ['greg', 'alex'], 'alex');
+
+    // #then the shelf stays empty rather than gaining a consolation
+    expect(honours).toEqual({ fastest: 0, comeback: 0, loneWolf: 0, contrarian: 0 });
+  });
+
+  test('banks nothing from an empty log', () => {
+    // #given a device that recorded nothing
+    // #when honours are counted
+    const honours = honoursFor([], ['greg'], 'greg');
+
+    // #then there is nothing to bank, which is what a partial log must produce
+    expect(honours).toEqual({ fastest: 0, comeback: 0, loneWolf: 0, contrarian: 0 });
   });
 });

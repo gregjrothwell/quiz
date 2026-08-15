@@ -2,7 +2,7 @@
  * Room codes get read aloud across a Teams call and typed on phones, so the
  * alphabet omits every character pair people confuse: I/1/L, O/0, and Z/2.
  */
-const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXY3456789';
+export const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXY3456789';
 export const ROOM_CODE_LENGTH = 4;
 
 export function randomRoomCode(rng: () => number = Math.random): string {

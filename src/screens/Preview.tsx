@@ -1,6 +1,10 @@
 import type { ReactNode } from 'react';
+import { ColdOpen } from '../components/ColdOpen';
+import { LeagueBoard } from '../components/LeagueBoard';
+import { RecoveryPanel } from '../components/RecoveryPanel';
 import type { QuestionRecord } from '../engine/awards';
 import { createRoom, type QuizQuestion, type RoomState } from '../engine/state';
+import type { SeasonRow } from '../lib/season';
 import type { PackSummary } from '../lib/usePacks';
 import { Final } from './Final';
 import { Landing } from './Landing';
@@ -151,6 +155,53 @@ const AWARDED_GAME: QuestionRecord[] = [
     },
     deltas: { sam: 1_000, priya: 800, greg: 0, alex: 0 },
   },
+];
+
+/**
+ * A two-question game built for the review panel rather than the rosettes: the
+ * first question beat all four of them, and all four had the second. Both
+ * highlights need a whole room to be true of, so nothing here works with fewer.
+ */
+const REVIEWED_GAME: QuestionRecord[] = [
+  {
+    index: 0,
+    correctIndex: 0,
+    answers: {
+      greg: { optionIndex: 1, elapsedMs: 2_000 },
+      sam: { optionIndex: 2, elapsedMs: 2_400 },
+      priya: { optionIndex: 3, elapsedMs: 3_000 },
+      alex: { optionIndex: 1, elapsedMs: 4_000 },
+    },
+    deltas: { greg: 0, sam: 0, priya: 0, alex: 0 },
+  },
+  {
+    index: 1,
+    correctIndex: 0,
+    answers: {
+      greg: { optionIndex: 0, elapsedMs: 900 },
+      sam: { optionIndex: 0, elapsedMs: 1_500 },
+      priya: { optionIndex: 0, elapsedMs: 2_000 },
+      alex: { optionIndex: 0, elapsedMs: 2_600 },
+    },
+    deltas: { greg: 1_000, sam: 900, priya: 800, alex: 700 },
+  },
+];
+
+/**
+ * A season board with two leagues, somebody in neither, and a row from before
+ * leagues existed — which is what most of the live board still looks like.
+ */
+const SEASON_ROWS: SeasonRow[] = [
+  { playerId: 'sam', name: 'Sam', team: 'Engineering', played: 12, wins: 5, points: 41_200,
+    best: 8_150, fastest: 3, comeback: 1, loneWolf: 2, contrarian: 0 },
+  { playerId: 'greg', name: 'Greg', team: 'Engineering', played: 14, wins: 4, points: 38_900,
+    best: 7_400, fastest: 2, comeback: 2, loneWolf: 0, contrarian: 1 },
+  { playerId: 'priya', name: 'Priya', team: 'Marketing', played: 11, wins: 3, points: 33_100,
+    best: 6_900, fastest: 1, comeback: 0, loneWolf: 1, contrarian: 0 },
+  { playerId: 'alex', name: 'Alex', team: '', played: 9, wins: 1, points: 24_050,
+    best: 5_200, fastest: 0, comeback: 1, loneWolf: 0, contrarian: 3 },
+  { playerId: 'nadia', name: 'Nadia', team: 'Marketing', played: 4, wins: 0, points: 9_800,
+    best: 3_100, fastest: 0, comeback: 0, loneWolf: 0, contrarian: 0 },
 ];
 
 const noop = (): void => undefined;
@@ -345,6 +396,65 @@ export function Preview() {
           youUid="greg"
           isQuizmaster
           log={AWARDED_GAME}
+          onPlayAgain={noop}
+          onLeave={noop}
+          onSeason={noop}
+        />
+      ),
+    },
+    {
+      title: 'Season · the league board',
+      node: <LeagueBoard rows={SEASON_ROWS} youPlayerId="greg" />,
+    },
+    {
+      title: 'Cold open · the opening titles',
+      node: (
+        <ColdOpen
+          facts={[
+            { id: 'champion', uids: ['greg'], wins: 4 },
+            { id: 'best', uids: ['sam'], points: 8_150 },
+            { id: 'rosettes', uids: ['priya', 'sam'], count: 6 },
+            { id: 'newcomers', uids: ['alex'] },
+          ]}
+          players={PLAYERS}
+          isQuizmaster
+          onStart={noop}
+          onBack={noop}
+        />
+      ),
+    },
+    {
+      title: 'Cold open · a room with no history',
+      node: (
+        <ColdOpen
+          facts={[{ id: 'newcomers', uids: ['greg', 'sam', 'priya'] }]}
+          players={PLAYERS}
+          isQuizmaster={false}
+          onStart={noop}
+          onBack={noop}
+        />
+      ),
+    },
+    {
+      title: 'Recovery · a code already saved',
+      node: <RecoveryPanel uid="greg" onClaimed={noop} initialCode="ABCD3F7H" />,
+    },
+    {
+      title: 'Recovery · nothing saved yet',
+      node: <RecoveryPanel uid="greg" onClaimed={noop} initialCode={null} />,
+    },
+    {
+      title: 'Final · the round in review',
+      node: (
+        <Final
+          room={mockRoom({
+            phase: 'finished',
+            index: 1,
+            scores: { greg: 1_000, sam: 900, priya: 800, alex: 700 },
+          })}
+          youUid="greg"
+          isQuizmaster
+          log={REVIEWED_GAME}
           onPlayAgain={noop}
           onLeave={noop}
           onSeason={noop}

@@ -416,6 +416,9 @@ input {
   border: 0;
 }
 
+
+
+
 .eyebrow {
   font-family: var(--tech);
   font-weight: 700;
@@ -553,6 +556,28 @@ input {
   display: grid;
   gap: clamp(1rem, 3vw, 2rem);
   grid-template-columns: 1fr;
+}
+
+/* ── Who you are ────────────────────────────────────────────────────────────
+   Name and team side by side once there is room for them. They are one thought
+   — who is playing — and stacking them cost the landing page a screenful of
+   height the moment the team box arrived, which is what put the whole page
+   behind a scroll on an ordinary laptop.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.identity {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 46rem) {
+  /* The same breakpoint the two action panels use, so the page reflows once
+     rather than twice on the way down to a phone. */
+  .identity {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
 }
 
 @media (min-width: 46rem) {
@@ -1083,6 +1108,209 @@ input {
 
 .award--yours .award__who {
   color: var(--amber-bright);
+}
+
+/* ── The opening titles ─────────────────────────────────────────────────────
+   Who the season already knows about, before question one. Held in the lobby,
+   because the answering window is stamped the moment a question opens and a
+   beat of theatre over it would come out of the room's thinking time.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.cold-open {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 55vh;
+  justify-content: center;
+}
+
+.cold-open__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+/* `backwards`, never `both`: `both` keeps the final keyframe in the cascade
+   above normal declarations, which is what silently stopped `.tile--dim` ever
+   dimming anything. Backwards hides the row through its stagger and then gets
+   out of the way. */
+.cold-open__fact {
+  border-left: 3px solid var(--amber);
+  padding-left: 1rem;
+  animation: settle 520ms ease backwards;
+}
+
+.cold-open__label {
+  margin: 0 0 0.15rem;
+  font-family: var(--tech);
+  font-weight: 600;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+
+.cold-open__line {
+  margin: 0;
+  font-family: var(--shout);
+  font-size: clamp(1.4rem, 5.5vw, 2.4rem);
+  line-height: 1.05;
+  color: var(--ink);
+  overflow-wrap: break-word;
+}
+
+/* The stagger is the whole effect, and a reader who has asked for less motion
+   has asked for exactly this to stop. The stylesheet can reach it because the
+   sequence is CSS rather than timers — unlike the replay, which needs JS. */
+@media (prefers-reduced-motion: reduce) {
+  .cold-open__fact {
+    animation: none;
+  }
+}
+
+/* ── The league filter ──────────────────────────────────────────────────────
+   Sits on top of the whole board rather than replacing it: most rows carry no
+   team at all, so a team-only view would hide most of the season.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.league-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.chip {
+  font-family: var(--tech);
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+}
+
+.chip:hover {
+  color: var(--ink);
+  border-color: var(--cyan-dim);
+}
+
+.chip--on {
+  color: var(--ink);
+  border-color: var(--amber);
+  background: rgb(36 26 4 / 0.65);
+}
+
+/* ── The recovery panel ─────────────────────────────────────────────────────
+   How a season record stops belonging to one browser. Sits under the table
+   rather than above it: the board is what people came to look at, and this is
+   housekeeping they only want once.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.recovery {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 1rem;
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  background: linear-gradient(180deg, var(--panel), rgb(7 26 46 / 0.45));
+}
+
+/* Sized to its label rather than to the panel: a column stretches its children,
+   and a full-width button reads as the main action on a screen whose main action
+   is the board above it. */
+.recovery > .btn {
+  align-self: start;
+}
+
+.recovery__hint,
+.recovery__status {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+
+/* Reserved whether or not it says anything, so confirming a claim does not
+   shunt the board underneath it. */
+.recovery__status {
+  min-height: 1.2em;
+}
+
+.recovery__claim {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.recovery__claim .field {
+  flex: 1 1 12rem;
+}
+
+/* ── The round in review ────────────────────────────────────────────────────
+   What the round did to the room, rather than what the room did to each other:
+   the question nobody got, and the one everybody had. Wider tiles than the
+   rosettes because these carry a prompt rather than a name, and a prompt is a
+   sentence.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.review {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+  /* `min(18rem, 100%)`, not a bare `18rem`: a bare minimum is honoured even when
+     the container is narrower than it, so the track would run out of the side of
+     a small phone — and `.stage` clips rather than scrolls, so it would go
+     silently. The rosettes get away with 13rem only because that is smaller than
+     any screen we have met. */
+  grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
+}
+
+.review__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--edge);
+  border-left: 3px solid var(--cyan-dim);
+  border-radius: 3px;
+  background: linear-gradient(180deg, var(--panel), rgb(7 26 46 / 0.45));
+  animation: settle 340ms ease backwards;
+}
+
+.review__title {
+  margin: 0;
+  font-family: var(--tech);
+  font-weight: 600;
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+/* Wraps on words: a prompt is the one string here long enough to need saying,
+   and `.stage` clips rather than scrolls. */
+.review__prompt {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.35;
+  color: var(--ink);
+  overflow-wrap: break-word;
+}
+
+.review__detail {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
 }
 
 /* ── The replay ─────────────────────────────────────────────────────────────
@@ -2250,5 +2478,50 @@ input {
   }
   to {
     transform: translate3d(1.5%, 1%, 0) scale(1.04);
+  }
+}
+
+/* ── Short screens ──────────────────────────────────────────────────────────
+   A laptop is about 900px of content, and the landing screen is the one page
+   that has to hold everything at once: the wordmark, who you are, both ways
+   into a room, and the season. It had grown past that.
+
+   Keyed on the viewport's *height* rather than its width, because height is
+   what actually ran out — the page was never too narrow. A desktop monitor with
+   the room for it keeps the full-size wordmark and the generous rhythm; a
+   laptop gets the compact one and no scrollbar. Nothing is hidden or moved
+   either way, so there is only one layout to reason about.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+@media (max-height: 60rem) {
+  .stage__inner {
+    gap: clamp(0.7rem, 1.6vh, 1.1rem);
+    /* Horizontal gutter untouched — it is the width that keeps the column off
+       the beams. It is only ever the vertical padding that is in the way, and
+       at 48px top and bottom it was the largest single thing on the page that
+       was not content. */
+    padding-block: 1.5rem;
+  }
+
+  .wordmark {
+    font-size: clamp(2.6rem, 9vw, 3.6rem);
+  }
+
+  .wordmark__rule {
+    margin-top: 0.6rem;
+  }
+
+  /* Aimed to clear a 900px laptop with room to spare rather than to land on it
+     exactly. A page that fits to the pixel is a page that scrolls again the
+     moment somebody has a bookmarks bar. */
+  .panel {
+    padding: clamp(0.9rem, 3vw, 1.15rem);
+  }
+
+  /* 34rem is the comfortable measure for reading; on a screen this short the
+     comfortable measure costs a third line, and a third line costs the page.
+     Wider and two lines beats narrower and scrolling. */
+  .lede {
+    max-width: 46rem;
   }
 }

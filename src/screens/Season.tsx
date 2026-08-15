@@ -1,4 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { LeagueBoard } from '../components/LeagueBoard';
+import { RecoveryPanel } from '../components/RecoveryPanel';
+import { playerIdFor } from '../lib/identity';
 import { loadSeason, type SeasonRow } from '../lib/season';
 
 interface SeasonProps {
@@ -10,6 +13,27 @@ type Load = { state: 'loading' } | { state: 'ready'; rows: SeasonRow[] } | { sta
 
 export function Season({ youUid, onBack }: SeasonProps) {
   const [load, setLoad] = useState<Load>({ state: 'loading' });
+
+  const [reloads, setReloads] = useState(0);
+  const [claimed, setClaimed] = useState<string | null>(null);
+
+  /*
+    Which row is yours is a question about the identity, not the browser. They
+    are the same string until somebody claims a record with a recovery code, and
+    the whole point of claiming is that afterwards they are not.
+
+    Derived on every render rather than captured once. `playerIdFor` reads
+    storage, which nothing re-renders on, so holding it in state alone would go
+    stale — a screen mounted before auth landed would sit on `null` for as long
+    as it was open and never highlight anybody's row. What a claim changes is
+    passed straight back from the panel instead of being re-read.
+  */
+  const youPlayerId = youUid ? (claimed ?? playerIdFor(youUid)) : null;
+
+  const onClaimed = useCallback((playerId: string) => {
+    setClaimed(playerId);
+    setReloads((n) => n + 1);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -29,7 +53,7 @@ export function Season({ youUid, onBack }: SeasonProps) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [reloads]);
 
   return (
     <>
@@ -55,42 +79,15 @@ export function Season({ youUid, onBack }: SeasonProps) {
       ) : null}
 
       {load.state === 'ready' && load.rows.length > 0 ? (
-        <div className="season-wrap">
-          <table className="season">
-            <thead>
-              <tr>
-                <th scope="col">
-                  <span className="sr-only">Position</span>
-                </th>
-                <th scope="col">Contender</th>
-                <th scope="col">Played</th>
-                <th scope="col">Wins</th>
-                <th scope="col">Best</th>
-                <th scope="col">Points</th>
-              </tr>
-            </thead>
-            <tbody>
-              {load.rows.map((row, index) => (
-                <tr key={row.uid} data-you={row.uid === youUid ? '' : undefined}>
-                  <td>{index + 1}</td>
-                  <td>
-                    {row.name}
-                    {row.uid === youUid ? <span className="you">This device</span> : null}
-                  </td>
-                  <td>{row.played}</td>
-                  <td>{row.wins}</td>
-                  <td>{row.best.toLocaleString('en-GB')}</td>
-                  <td>{row.points.toLocaleString('en-GB')}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <LeagueBoard rows={load.rows} youPlayerId={youPlayerId} />
       ) : null}
 
+      {youUid ? <RecoveryPanel uid={youUid} onClaimed={onClaimed} /> : null}
+
       <p className="muted" style={{ fontSize: '0.85rem' }}>
-        Standings follow the browser, not the person — there is no sign-up. A new laptop, cleared
-        site data or a private window starts a fresh record.
+        There is no sign-up, so a record starts out belonging to one browser — a new laptop,
+        cleared site data or a private window begins a fresh one. A recovery code is how it
+        moves.
       </p>
     </>
   );

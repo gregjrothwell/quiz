@@ -6,7 +6,7 @@ Built to replace Polly in Teams.
 - **Live:** https://gregjrothwell.github.io/quiz/
 - **Repo:** https://github.com/gregjrothwell/quiz (public, `master`, deploys from `gh-pages`)
 - **Firebase project:** `quiz-d686e` (Firestore + Realtime Database in europe-west1 + Anonymous auth)
-- **Status:** shipped and played. 192 tests, clean types and lint, no `any` or
+- **Status:** shipped and played. 272 tests, clean types and lint, no `any` or
   `@ts-ignore`. The **answer vault is live and covers the packs**: 13,593
   answers seeded against the 13,452 the packs need plus the 4 harness entries,
   both rulesets published, preflight passing.
@@ -15,7 +15,15 @@ Built to replace Polly in Teams.
   ids hash the question text, so a revised question leaves its old answer in
   place, unread and harmless. All 14,176 pack questions across the ten packs
   resolve to an answer.
-- **Next:** nothing queued. [The closing seconds now carry a
+- **Next:** nothing queued, and the read budget has been counted — see [what it
+  all costs](#what-it-all-costs-and-how-much-room-is-left). Roughly 27 full quiz
+  nights a day against the free tier, for a weekly quiz. [The round in review](#the-round-in-review),
+  [durable identity](#durable-identity), [Form](#form--the-opening-titles) and
+  [teams](#teams--shipped-15-august-2026) are all shipped, published and
+  deployed. **What is missing is a round with other people in it** — a solo game
+  on 15 August found the one real fault so far, and the things it could not
+  reach are listed under [verified vs not](#verified-vs-not). [The closing
+  seconds carry a
   clock](#the-clock) — nine seconds of gameshow music in place of the two-tone
   tick, deployed and heard on 14 August 2026. [The answer window is
   selectable](#the-configurable-answer-window) — 10 / 15 / 20 seconds, chosen in
@@ -44,10 +52,18 @@ Built to replace Polly in Teams.
 > fail permissively, and that direction is silent: everything works, and nobody
 > finds out `list` is still open until somebody enumerates every room.
 >
-> 24 checks — thirteen from the security review, seven for the vault, two for
-> the question history, two for the answer window. The vault seven include the
-> one that catches `firestore.seed.rules` being left published, which would
-> leave every answer in the game overwritable by anybody.
+> 35 checks — thirteen from the security review, seven for the vault, two for
+> the question history, two for the answer window, nine for identity, two for
+> teams. The vault
+> seven include the one that catches `firestore.seed.rules` being left
+> published, which would leave every answer in the game overwritable by anybody.
+>
+> It now signs in **twice**, as two independent anonymous users. That is not
+> thoroughness for its own sake: the whole point of a recovery code is that a
+> *different browser* takes on an identity, and the rule branch that permits it
+> cannot be reached from the client that already owns that identity, because the
+> `playerId == uid` branch short-circuits in front of it. One client could only
+> ever have proved that branch by reasoning about it.
 
 ---
 
@@ -376,6 +392,274 @@ one.
 
 ---
 
+## Form — the opening titles
+
+**Shipped.** Before question one the room is told who it contains: the defending
+champion, the best round of the season, who has the most rosettes, and who is
+playing for the first time. Ten weeks of quizzes had left a column of numbers on
+a screen most people looked at once, and every round opened as if nobody in it
+had ever played before.
+
+`formFor` in `src/engine/form.ts` is pure and tested; `ColdOpen` owns every word,
+the same split as the awards and the review.
+
+### It costs six reads, not three hundred
+
+`loadForm` fetches one document per player in the room — read **once**, by
+whoever starts the round, and written into the room document everybody is already
+listening to. That is the reveal's pattern: one device pays, the rest learn it
+from an update they were receiving anyway.
+
+The obvious alternative is `loadSeason`, which is already there. It reads the
+whole board — up to fifty documents — to answer a question about six people, and
+every client would run it. Six against three hundred.
+
+### The quizmaster starts the round, and nothing else does
+
+**This was wrong in the first version and was found by playing a round.** The
+titles ran for six seconds and then started the round themselves, so pressing
+Start handed the beginning of the quiz to a `setTimeout`. Greg's report was
+exactly right: *you lose control over the actual moment the quiz starts.*
+
+The beginning is the one moment a quizmaster most wants to hold — while the room
+reads the card, while somebody finds their drink, while you ask whether everyone
+is ready. So the titles now wait. `Start the round` is a second, deliberate
+press, with `Back` beside it for a pack chosen in error.
+
+Two things make that safe:
+
+- **The room cannot get stuck behind a quizmaster who wandered off**, because the
+  role is derived from who has been present longest. If they close their laptop,
+  somebody else inherits the button within a second. That is also why the old
+  per-device timeout could be deleted rather than kept as a fallback.
+- **The window rides inside the digest** (`form.durationSecs`) rather than on the
+  quizmaster's device, so the round still opens on the window that was chosen if
+  the chair changes hands while the titles are up. It cannot go on the room's own
+  `durationSecs`: `timingOk()` pins that field to its previous value on every
+  write except the one that opens a question, so writing it during the titles
+  would be refused outright.
+
+A room the season knows nothing about — one full of first-timers with no records
+at all — has no titles worth showing and starts on the single press it was given.
+
+### Why the titles live in the lobby
+
+**Because the answering window is stamped by the server the moment a question
+opens.** Anything laid over question one comes straight out of the room's
+thinking time, which is the same reasoning that already put the round title card
+on the standings screen rather than over the question.
+
+So the round is introduced while the room is still in `lobby`, carrying a `form`
+digest, and `start` follows six seconds later. This deliberately avoids a **new
+phase**: the rules pin `phase` to five values, so a sixth would have cost a rules
+republish, and the whole point of the Phase 2 ruleset was to be the last one.
+
+### Three things that will bite
+
+- **The round is started by an effect, not by `await sleep(...)` in
+  `handleStart`.** `dispatch` closes over `room`, so anything awaited between
+  taking that closure and writing folds the round over a snapshot that is however
+  many seconds old — the same staleness that once let a pack fetch erase everyone
+  who joined while it ran, measured at five of ten players. Six seconds of titles
+  is a far wider window than that fetch ever was.
+- **The card is time-boxed on every device, not just cleared by `start`.** A
+  quizmaster who closes their laptop mid-sequence would otherwise leave the room
+  on a title card nobody can clear. Every client runs its own timer from
+  `form.at`, so the room falls back to a working lobby on its own.
+- **`toRoomState` defaults `form` to null, and that is load-bearing.** Every room
+  created before this has no field at all, and `undefined` is not `null` — the
+  showing condition tests against null, so leaving it undefined would read as
+  "the titles are up" in every older room.
+
+### `playerId` on the player entry, at last
+
+Phase 2 bounded it in the rules and deliberately left the client half unwritten.
+This is the feature that needed it: the digest has to map uid to season record,
+and the alternative is a `claims` read per player per game for something each
+player can simply state about itself.
+
+Written **only when it differs from the uid**, which needs a claimed recovery
+code. Unconditionally it would put a redundant copy of the uid into every entry
+in every room. The creator's entry carries it too — `createAndJoin` does not go
+through `writeSelfIntoRoom`, so without that the one person guaranteed to be in
+every room is the one whose record the titles could not find.
+
+---
+
+## Durable identity
+
+**Shipped, rules published and verified on 15 August 2026.** `npm run
+check-rules` reports 33 of 33, and `npm run sync-harness 10` had ten clients
+joined and seeing the round start within 83 ms with none dropped — which was the
+real risk, since `playerOk` gates every room write.
+
+A season row used to be keyed on the anonymous auth uid. That uid is durable per
+browser and dies with site storage: iOS Safari evicts after about a week without
+a visit, and a work machine has never had it. While the row held points that cost
+a total. Now it holds rosettes, and an eviction would erase a season of earned
+reputation silently — the feature meant to make the league feel continuous
+becoming the one that makes it feel arbitrary.
+
+**You cannot move a Firebase Auth uid between browsers.** A custom token needs a
+server, which means leaving the free tier; linking a real provider means an
+account, which is the one thing anonymous auth is here to avoid. So the uid stops
+being the identity.
+
+### The shape
+
+A **`playerId`**, which *defaults to the uid*. That default is what makes the
+whole thing free: every row written before this is keyed by a uid, which is now
+simply a playerId nobody has claimed. **There is no migration**, and a player who
+never touches any of it is on exactly the path they were on.
+
+A second browser takes on an identity by presenting a **recovery code** —
+permanent, regenerable, and revocable. It is stored beside the remembered name
+and shown on the season screen.
+
+| Collection | What it holds |
+|---|---|
+| `recovery/{CODE}` | `{ playerId }`. Readable by id, never listable, never updatable, deletable by its owner. |
+| `claims/{uid}` | `{ playerId, code }`. This browser's identity, readable only by it. |
+
+### This is the room code's pattern, not the vault's
+
+Worth being precise, because the first sketch of this design got it wrong. The
+vault is `allow read: if false` because **its document ids are public** — they
+ship inside the packs — so an answer had to be unreadable and merely checkable
+by a rule.
+
+A recovery code is the opposite: **the id itself is the secret.** So knowing it
+is the whole proof, and the code is simply read. What that needs instead is
+`list: if false`, exactly as `/rooms` has, because a capability you can
+enumerate is not one. 29⁸ is about 5×10¹¹.
+
+### Three things that will bite
+
+- **`exists()` must come before `get()`.** A `get()` on a missing document
+  returns null, and reading `.data` off null errors the rule, which denies. Drop
+  the `exists()` and every browser that has never claimed anything is locked out
+  of *its own row* — the common case, broken by a guard meant for the rare one.
+  Both calls read the same document inside one evaluation and Firestore caches
+  that, so the pair still costs one read.
+- **The `||` must put the uid case first.** Rules short-circuit, so an unclaimed
+  player pays no extra read at all and only somebody who has claimed pays one,
+  once per game. Reversed, every player in every game pays a document read for a
+  branch almost none of them need.
+- **Minting is restricted to an identity the writer already holds.** Without
+  that, anybody could read a playerId off the season table — they are the
+  document ids of a readable collection — mint a code pointing at it, claim it,
+  and write that person's row. `ownsPlayer` on `recovery` create is the whole of
+  what stops it.
+
+### Claiming folds in the record the browser already had
+
+Without this, claiming leaves the row the claiming browser had built up sitting
+on the board forever under the same person's name — nothing writes to it again
+and nothing removes it. **Two rows, one human, on a table the office looks at**,
+and it would have hit the two-machine case that motivated the whole feature.
+
+`foldRecords` in `src/engine/records.ts` is the arithmetic and is pure and
+tested; `mergeRecords` in `src/lib/season.ts` does nothing but read two
+documents, call it, and write one back. Four things about it are load-bearing:
+
+- **It runs *after* the claim, never before.** Writing the target row needs
+  `ownsPlayer` to pass, which needs the claim already in place. Deleting the
+  source works either way, because a browser always satisfies the uid branch for
+  its own uid — which is also why a claimed browser can still tidy up after
+  itself later.
+- **Only ever the browser's own uid row.** Never a previously claimed identity:
+  somebody moving between two identities is not asking for the first one's record
+  to be poured into the second, and doing it would quietly move another person's
+  history.
+- **It is idempotent**, because the source is deleted in the same transaction
+  that folds it in. A failure leaves a visible duplicate rather than a corrupt
+  total, and typing the code again retries it.
+- **`best` is a maximum, everything else a sum.** A personal best is not improved
+  by having been set on two devices. There is a test asserting the merged row
+  still satisfies every bound the rules impose, so a merge can never write a row
+  the rules would then reject.
+
+### What it does not do
+
+- **Anyone holding a code can write that row.** Same trust model as the room
+  code, deliberately. The blast radius is a leaderboard entry, and a leaked code
+  can be revoked by deleting it.
+- **Revoking strands nobody.** A browser that has already claimed carries its own
+  `claims` document, and the season rules read *that*; the recovery document is
+  consulted only when a claim is made. So deleting it stops the code being used
+  again and leaves everyone who already used it exactly where they are.
+- **Two devices of one person in one room are two players.** They share a
+  playerId, so the second banks nothing — `lastGame` is the same game id. That is
+  the right answer, and it is worth knowing before somebody reports it as a bug.
+
+### The publish order, kept because it will matter again
+
+Rules first, then deploy — same as [the answer
+window](#the-configurable-answer-window) and the opposite of the vault's.
+
+The new rules are fully backwards-compatible with any deployed bundle: every
+field added is optional and defaulted, and the season rule's uid branch is what
+an unclaimed client hits. **The reverse order is the broken one** — a new client
+writing `fastest: 1` onto a season row against the old ruleset is refused by
+`hasOnly`, and nobody's game gets banked.
+
+That compatibility was traced field by field before publishing rather than
+assumed, which is why the rules went live while the old bundle was still being
+served and nothing broke in between.
+
+---
+
+## The round in review
+
+Two panels under the rosettes, saying what the round did to the room rather than
+what the room did to each other: **the one that beat everybody** — a question at
+least two people answered and nobody got, shown with the answer they all missed —
+and **nobody missed it**, where everyone who answered was right.
+
+**It costs nothing.** `reviewFor` in `src/engine/awards.ts` reads the same
+`useGameLog` records the awards already run on, which every device already has
+because every device already receives every reveal. No reads, no writes, no rules
+change.
+
+Three decisions in it are load-bearing:
+
+- **Two answers minimum.** One person wrong on their own is a guess, not a
+  question that beat the room; one person right on their own is already the lone
+  wolf's rosette. Both readings need a room to be true of.
+- **Candidates are sorted, not taken in log order.** The log's order is a property
+  of how *this device* watched the game. Ranking by how many people a question
+  happened to, and settling ties on the lowest index, is what stops two screens
+  naming different questions — the same failure the awards' sorted joint winners
+  avoid.
+- **The engine returns an index; the screen holds the prompt.** `Highlight` is a
+  question number and a count, and `src/components/Review.tsx` owns every word.
+  Same split as the awards and the lobby's level names.
+
+### The log now survives a reload
+
+`useGameLog` mirrors itself into **session** storage, keyed by `gameId`. Session
+rather than local because the log describes the game this tab is in the middle of;
+local storage would keep a finished game's log on every device forever for
+something no later visit can use.
+
+This mattered little while the awards were decoration — the final screen already
+withholds them from a partial log, which is better than two screens disagreeing.
+It matters a great deal for what comes next, because the same log is what will be
+banked against a season, and a reloaded device would otherwise under-report
+somebody's honours permanently and silently.
+
+`parseLog` validates on the way **out** of storage as well as in, for the same
+reason `cleanName` does: what is in storage is whatever an earlier build wrote
+there, or whatever a bored player with the console open put there instead. A
+record that will not parse is dropped rather than repaired, which shortens the log
+and so withholds the awards — the safe direction.
+
+**Not yet verified in a real room.** The parsing is covered both ways by tests and
+the panels were checked on fixtures at 1280, 375 and 320 px, but nobody has
+reloaded mid-game against a live room and watched the awards survive.
+
+---
+
 ## The replay
 
 The reveal always had a beat between the clock stopping and the verdict landing
@@ -557,125 +841,159 @@ room code that already existed.
 
 ## Next session — start here
 
-Written 11 August 2026, revised 13 August after the join link went out, and
-again on 14 August after the chair and the sticky desk.
+Written 11 August 2026, revised 13 August after the join link went out, again on
+14 August after the chair and the sticky desk, and again on 15 August when the
+round in review shipped and the next two phases were agreed.
 
-0. **An alternate skin: the British pub quiz.** Greg's idea, and the first thing
-   to weigh up next session. Today the app is one look — a broadcast studio, and
-   a committed one: beams, risers, chrome wordmark, a walking bass and a gong.
-   The pub quiz is the opposite register and would be genuinely funny beside it:
-   a laminated answer sheet, biro, a chalkboard, a folded paper table-number,
-   carpet you can hear. Pick it at the lobby, everyone in the room gets it.
+> ### The three-phase plan, and why identity comes before the honours
+>
+> **Phase 1 — the round in review. Done.** See [its section](#the-round-in-review).
+>
+> **Phase 2 — durable identity. Next, and the only one that touches the rules.**
+> `seasons/{season}/players/{uid}` is keyed on the anonymous auth uid, which dies
+> with site storage: iOS Safari evicts after about a week, and a second machine
+> has never seen it. Today that costs a points total. Once rosettes and titles
+> hang off the same key, an eviction erases a season of earned reputation
+> silently — and the feature meant to make the league feel continuous becomes the
+> one that makes it feel arbitrary. It is also the same root cause as item 1
+> below.
+>
+> The shape: **a `playerId` that defaults to the uid**, so every existing
+> `season-2` row keeps working with no migration, and a second browser may
+> *claim* an existing `playerId` by presenting a permanent recovery code.
+> Verification reuses the vault's asymmetry exactly — `recovery/{CODE}` is
+> `allow read: if false`, so no client can look a code up while the rule itself
+> can `get()` it. Claiming is an assertion judged server-side, like a reveal.
+> `exists()` must precede `get()` or an unclaimed browser is locked out of its
+> own row, and the `||` must put the uid case first so the ordinary player still
+> pays zero extra reads.
+>
+> **You cannot do this any cheaper without accounts.** Moving a Firebase Auth uid
+> between browsers needs either a custom token — a server, so Blaze — or linking
+> a real provider, which is an account. Decoupling the season from the uid is the
+> only route that keeps anonymous auth's no-signup appeal, which is most of why
+> the app is pleasant to join.
+>
+> **Phase 3 — Form.** A cold open before question one built from the season rows
+> of the people actually in the room, plus honours accumulating on those rows.
+> Phase 2 publishes every rule it needs, including an optional `playerId` on each
+> player's own entry so the digest costs no extra reads.
 
-   **Is it too much complexity?** It depends entirely on where the line is
-   drawn, and there are two very different jobs wearing the same name:
+### Teams — shipped, 15 August 2026
 
-   - **A skin — a second set of tokens and a body class.** Cheap and worth
-     doing. `src/design/global.css` already keeps its tokens at the top, and
-     nearly everything downstream reads them. Scope it to colour, type and
-     texture, and it is one stylesheet plus a stored preference — the same shape
-     as the remembered name, and it could reuse that module's pattern outright.
-   - **A second theatre — different components, layout and sounds.** Expensive,
-     and it is the one to be careful of. It means every screen exists twice,
-     every future change lands twice, and the preview gallery doubles. Do not
-     start here.
+Greg's idea. **Not** teams playing together: teams as in groups at work —
+Engineering against Marketing — so the board can be read as your league rather
+than the whole office.
 
-   The trap between them is the parts that are *drawn* rather than styled: the
-   chair, the arc timer, the QR plate, the risers, and the whole audio bed — all
-   of which encode the studio in their geometry, not their colour. A gong is not
-   a pub sound. Decide up front whether those get pub equivalents or simply
-   carry over, because that single decision is the difference between a weekend
-   and a rewrite. Recommendation: ship the token-level skin first, play a round
-   on it, and only then judge whether the drawn pieces are worth a second set.
+**It needed no console step, which was the whole point of bounding `team` in the
+rules a fortnight before writing a line of it.** The season row is validated with
+`keys().hasOnly([...])`, so any new field on it is refused until the rules are
+re-pasted by hand, and that paste has broken this game twice. Publishing the
+bound early made this a client-only change.
 
-   Two things already lean the right way: the sound module is a table of cues
-   behind `play(cue)`, so a second set of voices is data rather than structure;
-   and `Preview` renders every screen from fixtures, so a skin can be reviewed
-   whole without a room or four other people.
+Set in an optional box beside the name on the landing screen, remembered per
+browser exactly as the name is, and written onto the season record when a game
+banks.
 
-1. **The remembered name was not seen prefilling on the live site.** Reported by
-   Greg on 14 August 2026, immediately after the deploy. **Not investigated** —
-   reported at the very end of a session with no room left to look, and written
-   down here rather than chased. Treat everything below as unconfirmed.
+**Free text rather than a fixed list**, because the list would have to be
+configured somewhere and every office needs a different one. The cost is
+obvious — "Engineering", "engineering" and " Engineering " are three leagues on a
+board that should show one — so grouping runs on `teamKey`, a trimmed lowercase
+key, while each row still shows the spelling it was given. Nothing cleverer than
+that: collapsing "Eng" into "Engineering" would need a dictionary, and quietly
+merging two teams somebody meant to keep apart is worse than showing both.
 
-   What he saw: prefilling on his MacBook Pro, not on his work machine. His own
-   read is that testing across two machines makes him an edge case and ordinary
-   players use one, so he is content to leave it until somebody who isn't him
-   reports the same thing. That is a reasonable call and this item is not
-   urgent — but it is also **not evidence the feature works**, so do not close it
-   on the strength of it.
+Three decisions worth keeping:
 
-   Two boring explanations to rule out before assuming a bug, in this order:
+- **The filter sits on top of the whole board rather than replacing it.** Most
+  rows carry no team at all — every row written before today, and everybody who
+  leaves the box blank — so a team-only view would hide most of the season, and
+  the office-wide table is what the league is currently for.
+- **An empty team means "keep what the record says", not "clear it".** The team
+  lives on the record but is remembered per browser, so a regular who set theirs
+  on a laptop and then played from a phone would otherwise wipe it by banking one
+  game, and would have no idea they had. Taking a team off is a deliberate edit.
+- **Filtered in the client, not in the query.** `TABLE_LIMIT` is fifty and the
+  table is read on demand, so a `where` clause would make nothing faster and
+  would need a composite index built by hand in the console.
 
-   - **A second machine is a second browser, and nothing crosses.** The name
-     lives in that browser's `localStorage`, exactly like the sound preference,
-     and the anonymous auth uid it belongs to is per-browser too. A work machine
-     has never seen either. This is the same limitation the season table already
-     carries and is documented under Known limits — if this is all it is, there
-     is nothing to fix and the honest answer is that the feature does what it
-     says, which is remember *this browser's* name.
-   - **Nothing is stored until a room is joined or created.** `adoptName` runs on
-     join and on create, not on typing. So the *first* visit from any browser
-     after this shipped shows an empty box no matter what, and it only prefills
-     from the second visit onward. A quick look at the live site by somebody who
-     had not yet joined a room on that machine would show precisely what was
-     reported.
+`LeagueBoard` is extracted from the season screen so `#/preview` can render it on
+fixtures — `Season` fetches, which is why it had never been in the gallery, and
+the board is the half with layout worth checking.
 
-   If both are ruled out and it still does not prefill, the next suspects are the
-   storage write throwing silently — it is wrapped and deliberately quiet — and
-   whether the deployed build is the one being loaded. `vibequiz.name` in the
-   browser's storage inspector settles the first question in seconds.
+---
 
-2. ~~**A refused reveal can stall the round, and nothing retries it.**~~ **Fixed**
-   — the auto-reveal now retries eight times at 1.5s intervals, reset per
-   question, with the quizmaster's Reveal button still there after that. The
-   retry firing has not been watched, because a vault refusal cannot be
-   summoned on demand; the success path is unchanged. Original finding:
+---
 
-   Seen live
-   on 13 August 2026: question one stopped on "the vault would not confirm an
-   answer" and stayed there for minutes. The auto-reveal effect only re-fires
-   when `handleReveal` changes identity, which needs a room update — and in a
-   room where everybody has already answered, nothing is writing, so nothing
-   arrives to trigger the retry. It recovered the moment the Reveal button was
-   pressed, and the rest of the ten questions ran clean.
+## What it all costs, and how much room is left
 
-   The quizmaster can always rescue it by pressing Reveal, and the notice now
-   says to, so this is not urgent — but a round that needs rescuing is a round
-   that looks broken to everybody else. A timed retry on a failed reveal is the
-   obvious fix, and it predates the replay and the awards. **This is the first
-   job.**
+**Counted 15 August 2026, and it is now one command:**
 
-3. ~~**Check the game actually plays.**~~ **Done** — played on the morning of 13
-   August 2026, on the `b24358f` build. That clears the second question source,
-   the change-your-answer round and the vault reveal all at once: they had been
-   deployed but never played, and they work.
+```bash
+npm run take-stock
+```
 
-   It also found the stale-notice bug fixed in this commit, which is the useful
-   part. A real round surfaced in one sitting what neither the tests nor the
-   ten-client harness could see, because both check whether the game *works*
-   rather than what it *says* while it works.
-4. **Take stock of Firestore.** Half done. The vault side is counted: 13,593
-   documents against 13,452 packs plus 4 harness, so 137 orphans, and they are
-   expected rather than a fault. Rooms and season rows are still uncounted.
-   Worth knowing: rooms are never deleted, so the collection only grows, and
-   every one of them holds players' names — which now also means every join link
-   ever pasted into a chat still resolves to a real room.
-5. **Fix `npm run host-room`.** Broken, and it predates all of this work:
-   `src/lib/vault.ts` imports `../firebase`, which reads `import.meta.env` at
-   module scope — Vite-only, so it throws under `tsx` before the script starts.
-   Deferring the config read would fix it, but `firebase.ts` is load-bearing and
-   its documented failure is a blank app, so give it its own change and test it
-   properly. It is the harness for quizmaster handover and the live reveal.
-6. **Watch the read budget.** A game is roughly 800–1,500 reads, and changing an
-   answer now costs a write that fans out to every client — so a round where
-   people fidget costs more than it used to. The console's usage alerts are on;
-   App Check is still the real fix and still not done.
-7. **Difficulty is still unsolved**, deliberately. Imported questions are all
-   `medium` and the reasons are written up under [the second
-   source](#the-difficulty-rating-that-is-not-there). Do not reach for another
-   heuristic without measuring it against a hand-labelled set first — three have
-   been tried and none beat calling everything hard.
+Aggregate counts, so the whole thing costs single-digit reads. **This is the
+script to reach for instead of `seed-vault`**, which reads every answer to work
+out what is new and has taken the game down for a day. It needs the service
+account, because `list` is denied to clients on `/rooms` and `/recovery` and a
+count is a query.
+
+| | |
+|---|---|
+| rooms | 76 |
+| vault answers | 13,593 |
+| `season-2` players | 20 |
+| recovery codes | 0 |
+| identity claims | 0 |
+
+The last two are zero because they shipped that morning.
+
+### Reads, for a six-player night
+
+| | |
+|---|---|
+| The round itself | ~1,500 |
+| The opening titles | ~12 — six for the digest, six for the fan-out |
+| Everyone opening the season board | ~300 — 50 rows each |
+| **A full night** | **~1,812** |
+
+**About 27 full nights a day against a 50,000-read free tier, for a weekly
+quiz.** Writes are nowhere near the limit: a game is well under 200 against
+20,000 a day.
+
+### What the season work actually added
+
+Almost nothing per game, which was the point of every design decision that
+looked fussy at the time:
+
+- **The opening titles cost twelve reads, not three hundred.** `loadForm` runs
+  once, on the quizmaster's device, and everybody else learns the result from a
+  room update they were already receiving. `loadSeason` would have been fifty
+  rows per person.
+- **`ownsPlayer` costs nothing for an unclaimed player.** Rules short-circuit and
+  the uid branch is first, so only somebody who has claimed an identity pays a
+  read — one, once per game, when their row is banked.
+- **Honours, the merge and the review are free.** Honours ride inside the
+  transaction that already reads the row; the merge is two reads on a claim,
+  which happens once ever; the review reads a log that is already in memory.
+
+**The season board is the one line worth watching**, and it is the one thing here
+that is user-driven rather than per-game: 50 reads every time somebody opens it,
+and the final screen now points them at it. At six people that is 300 a night —
+comfortable, but it is the number that would move first if the office grew. The
+cheap fixes if it ever matters are a lower `TABLE_LIMIT` or caching the table for
+a few minutes; neither is needed now.
+
+### The two slow leaks
+
+Neither is urgent, both only ever grow:
+
+- **Rooms are never deleted** and have no TTL. 76 after a couple of months, at
+  roughly one per game. Every one holds players' names.
+- **Recovery codes are never tidied**, though they are deletable by their owner,
+  which is how a leaked one is revoked. One document per person who ever asks
+  for a code, so it is far slower than rooms.
 
 ---
 
@@ -694,7 +1012,7 @@ scripts/        Build-time question harvest, and the multi-client test harnesses
 
 Commands: `npm run dev` (serves at `/quiz/`, port 5273), `test`, `typecheck`, `lint`,
 `build`, `deploy`, `fetch-questions [-- --resort]`, `fetch-otqa`, `seed-vault`,
-`check-rules`, `sync-harness [n]`, `host-room [-- secs]`.
+`check-rules`, `sync-harness [n]`, `host-room [-- secs]`, `take-stock`.
 
 `npm test` covers `src/` plus the pure parts of `scripts/` — the OpenTriviaQA
 parser and its encoding fallback, which corrupt questions silently when wrong.
@@ -756,6 +1074,33 @@ happened once.
 | **The reveal gate is millisecond arithmetic, not `duration.value()`** | `duration.value` takes an `int`, and `durationSecs` arrives from a client SDK that decides for itself whether a whole number is an integer or a double on the wire. A double would error the rule and deny every reveal in the room — the same trap as `joinedAt is number`, but with a far worse failure. |
 | **`tallyQuestion` is given the room's window** | It always took the parameter and nothing ever passed it, so speed points decayed across a hardcoded twenty seconds. Harmless while every round *was* twenty; at the ten-second default it would cap everybody at 750 of a possible 1000 no matter how fast they were. |
 | **`fullGame.test.ts` pins its window at 20 instead of taking the default** | Its games answer as late as twelve seconds in. On the ten-second default those answers stop being recorded, and the games would still pass while quietly testing a round nobody answered. |
+| **The opening titles are a lobby state, not a sixth phase** (`form` on the room) | The rules pin `phase` to five values, so a sixth costs a rules republish — and the Phase 2 ruleset was meant to be the last. A round introduced while the room is still in `lobby` needs no new phase and no console step. |
+| **Nothing starts a round on a timer** (`handleBeginRound`) | The first version ran the titles for six seconds and then started the round itself, which handed the beginning of the quiz to a `setTimeout`. Found by playing a round: the start is the one moment a quizmaster most wants to hold. The room cannot stall behind an absent quizmaster because the role is derived from who has been present longest, so the button always exists for somebody. |
+| **The chosen window rides inside the digest** (`form.durationSecs`) | It cannot go on the room's own `durationSecs`, which `timingOk()` pins to its previous value on every write except the one that opens a question — writing it during the titles is refused outright. Inside the digest it is ordinary data the rules do not inspect, and it survives the quizmaster's chair changing hands while the titles are up. |
+| **`loadForm` reads one document per player, not the season table** | `loadSeason` reads up to fifty documents to answer a question about six people, and every client would run it. One device reads six and writes a digest the rest get from an update they were already receiving — the reveal's pattern. |
+| **The landing page has a short-viewport tier, keyed on height not width** | It was never too narrow — it ran out of vertical room the moment the team box arrived, and a laptop is about 900px of content. A monitor with the room keeps the full-size wordmark and the generous rhythm; a laptop gets the compact one. Nothing is hidden or moved either way, so there is still only one layout to reason about. |
+| **That tier lives at the very end of the stylesheet** | It overrides `.stage__inner`, `.wordmark`, `.lede` and `.panel`, all of which are defined further down the file — at equal specificity the later rule wins, so a media query placed above them silently does nothing. This was got wrong twice while writing it: once the wordmark did not shrink, then moving the block to fix that quietly reverted the panel and lede overrides instead. |
+| **Name and team sit side by side above 46rem** (`.identity`) | They are one thought — who is playing — and stacking them cost the landing page exactly the height that put it behind a scroll. Same breakpoint as the two action panels, so the page reflows once on the way down to a phone rather than twice. |
+| **A team is grouped on a normalised key but shown as it was typed** (`teamKey`) | Free text means "Engineering", "engineering" and " Engineering " all exist. Keying on trimmed lowercase merges them on the board without rewriting anybody's spelling. Deliberately nothing cleverer — collapsing "Eng" into "Engineering" needs a dictionary, and merging two teams somebody meant to keep apart is worse than showing both. |
+| **An empty team never clears one that is already set** (`GameResult.team`) | The team lives on the season record but is remembered per browser. A regular who set theirs on a laptop and then played from a phone would otherwise wipe it by banking a single game, silently. Removing a team is a deliberate edit, not a side effect of playing. |
+| **Firebase is a separate build chunk** (`vite.config.ts`) | Not to make the download smaller — it is a few hundred bytes bigger. As one file every deploy changed the hash, so a returning player re-fetched the whole 260 kB including the Firebase half that had not changed, seeing nothing until it landed. Split, an ordinary deploy leaves that hash alone. Proven by building twice across a real code change; a comment-only change proves nothing, because minification strips it and the output is byte-identical. |
+| **A whole-document `set` must name every field, including ones no feature uses yet** (`PlayerRecord.team`) | Both season writers use `set`. `team` was bounded in the rules ahead of its feature, and neither writer knew about it — so the first game anybody played after teams shipped would have cleared their league, and the one after that too. Teams would have appeared to work and quietly emptied themselves overnight. Anything else added to `firestore.rules` ahead of its client needs the same treatment. |
+| **`playerId` defaults to the auth uid** (`playerIdFor`) | It is what makes the change free. Every season row already written is keyed by a uid, which the new scheme reads as a playerId nobody has claimed — so there is no migration, no backfill, and a player who never claims anything behaves byte-for-byte as they did. Nothing is even stored until a claim happens. |
+| **`exists()` precedes `get()` in `ownsPlayer`** | A `get()` on a missing document returns null and reading `.data` off null *errors* the rule, which denies. Without the guard, every browser that has never claimed anything is locked out of its own row — the common case broken by a check meant for the rare one. |
+| **`ownsPlayer` tests the uid branch first** | Rules short-circuit. First, an unclaimed player costs no extra read and only a claimed one pays, once per game. Reversed, every player in every game pays a document read for a branch almost none of them need. |
+| **A recovery code is *read*, where a vault answer is *asserted*** | Opposite problems. The vault's document ids ship inside the packs, so they are public and an answer had to be unreadable. A recovery code's id *is* the secret, so knowing it is the whole proof. What that needs is `list: if false`, which is the room code's pattern, not the vault's. |
+| **A recovery code can only be minted for an identity you already hold** | playerIds are the document ids of a readable collection — anyone can read one off the season table. Without `ownsPlayer` on create, they could mint a code pointing at it, claim it, and own that person's row. |
+| **`recovery` is deletable by its owner but never updatable** | Update is the dangerous one: it would let whoever handed a code out re-aim it at another identity afterwards. Delete is revocation, and it strands nobody — a browser that already claimed holds its own `claims` document, which is what the season rules actually read. It is also what stops `check-rules` leaving an undeletable document behind on every run. |
+| **Claiming folds the browser's own row in, and only its own** (`mergeRecords`) | Otherwise claiming leaves an abandoned row on a shared board under the same person's name, which is exactly the two-machine case the feature exists for. Only the uid row, never a previously claimed identity — that would move somebody else's history. Run after the claim, because writing the target needs `ownsPlayer` to pass. |
+| **The merge arithmetic lives in the engine, the transaction in lib** (`foldRecords`) | It is the one piece of this that can quietly corrupt a season total, and a Firestore transaction is not something a test can reach. There is a test asserting the merged row still satisfies every bound the rules impose, so a merge cannot write a row the rules would then reject. |
+| **Honours are banked only from a log covering the whole game** (`sawWholeGame`) | The final screen already withholds the awards from a partial log, but that is a screen saying nothing for one evening. Banking is permanent, so a device that reloaded mid-game would under-report somebody's shelf forever. The check is exported and shared rather than written twice, because the way two copies drift is one of them quietly banking off a partial log. |
+| **A joint award counts in full for everybody who shared it** (`honoursFor`) | Sharing the fastest finger is still having been the fastest finger. A fraction is not something a shelf can hold, and awarding it to nobody loses the thing that happened. |
+| **The season table shows a dash, not a nought, for no rosettes** | Almost every row predates honours entirely. A column of zeroes reads as a season of failure rather than a column with no history behind it. |
+| **The review returns a question index, never a prompt** (`Highlight`) | The engine has no business holding copy, and an index cannot be reworded into something the round did not do. `Review.tsx` owns the sentences, the same split as the awards and the lobby's level names. |
+| **The review ignores a question fewer than two people answered** (`MIN_ATTEMPTS`) | One wrong answer on its own is a guess rather than a question that beat the room, and one right answer on its own is the lone wolf's rosette, already awarded. Both panels are claims about a room. |
+| **Review candidates are sorted rather than taken in log order** | The order the log holds is a property of how *this device* watched the game. Two screens naming different questions is exactly the failure the awards' sorted joint winners exist to avoid, and it would show up only when two people compared screens. |
+| **The game log is in `sessionStorage`, not `localStorage`** | It describes the game this tab is in the middle of. Local storage would leave a finished game's log on every device forever, for something no later visit can read — and the log is the one thing here that is worthless the moment its game is over. |
+| **`.review` sizes its columns with `minmax(min(18rem, 100%), 1fr)`** | A bare `minmax(18rem, …)` is honoured even when the container is narrower than 18rem, so the track runs out of the side of a small phone. `.stage` clips rather than scrolls, so it would go silently. The rosettes get away with a bare `13rem` only because that is smaller than any screen we have met. |
 | **Fonts are self-hosted** (`src/design/fonts.css`) | The display faces carry the whole look; a network that blocks `fonts.googleapis.com` would drop it to Impact with no warning. Archivo is variable — Google's CSS lists it once per weight but serves the same file each time, so it's declared once instead of shipping 105 kB of duplicates. |
 
 ---
@@ -765,8 +1110,13 @@ happened once.
 **Verified against the live Firebase:** anonymous sign-in, room creation, pack
 selection, round start, question render, answer write, reveal and scoring, and
 leaving a room. Engine covered by 140 tests including six full three-question
-games (quizmaster disconnect, skip, reset, ties). 192 across the repo, the
-balance being the question pipeline and the clock's arithmetic.
+games (quizmaster disconnect, skip, reset, ties). 272 across the repo, the
+balance being the question pipeline, the clock's arithmetic, the review, the
+honours and the recovery code.
+
+> The count in this file had been stale at 192 for several commits before the
+> review landed; the suite was already at 208. Read it as "roughly this many"
+> and trust `npm test`.
 
 **Verified in the browser, on fixtures only:** every screen at 1280px and 390px,
 the level picker disabling a level its pack can't fill, and no horizontal scroll
@@ -776,6 +1126,28 @@ fixtures with the chair; the desk pinned at every scroll position on a
 fifteen-question, ten-player round; and the chair's label at its worst case — 24
 characters with no space in them — measured against the podium row height to
 confirm it cannot push the risers around.
+
+**A round has now been played on all of it, solo, on 15 August 2026.** It found
+one real fault — the titles starting the round on a timer, [now
+fixed](#the-quizmaster-starts-the-round-and-nothing-else-does) — and nothing
+else. What a solo round could not cover, and what to watch on the next one with
+other people in it:
+
+- **The titles on more than one device.** Everybody should now leave the card at
+  the same moment, because they all leave on the same room update rather than on
+  their own timers. Never watched.
+- **A recovery code actually moving a record between two browsers**, and the
+  merge folding the old row in. `check-rules` proves the rules permit it from a
+  genuinely second client; nobody has done it through the UI.
+- **Honours appearing on the season table.** They are banked from the game log,
+  which is now persisted, but a rosette has never travelled from a final screen
+  to a row.
+- **The review panel with a real room in it.** Both its highlights need at least
+  two people who answered, so a solo round can never show either.
+- **Two people in different teams on the board.** The filter is covered on
+  fixtures and the rules accept the field, but no real record has carried a team
+  yet — the first game anybody plays after the deploy of 15 August will be the
+  first to write one.
 
 **Not verified in a real room:** everything from 14 August. The name persists
 across a reload on one browser, but has not been watched surviving a week, and
@@ -870,7 +1242,19 @@ rules are still using a fixed twenty.
   packs and the room document — see [the vault](#turning-the-vault-on) for what
   that does and does not buy. `elapsedMs` is still self-reported, so a
   fast-but-wrong answer is honest and a slow-but-claimed-instant one is not.
-- **~256 kB gzipped**, nearly all Firebase, plus 67 kB of fonts. The lobby QR
+- **~262 kB gzipped across two chunks** — 114 kB of app and 148 kB of Firebase —
+  plus 67 kB of fonts. **The split is about the deploy, not the download.** As
+  one file, every deploy changed the bundle's hash, so a returning player
+  re-fetched all of it including the Firebase half that had not changed, and saw
+  nothing at all until it landed because `index.html` is a 0.7 kB shell. That was
+  the delay after each deploy, and only after each deploy — every visit
+  afterwards was cached. Split, an ordinary change leaves the Firebase chunk's
+  hash alone. **Verified by building twice across a real code change**, not
+  assumed: the app hash moved and the Firebase hash did not. `font-display: swap`
+  was already set, so the fonts were never part of it. The review, the
+  recovery panel, the identity modules and the opening titles added about 5 kB
+  between them. The
+  lobby QR
   code added about 10 kB of that (`qrcode-generator`, MIT, no dependencies) —
   more than it looked like it would. Code-splitting is the fix if it matters.
   The clock added 0.9 kB, being oscillators rather than audio.
@@ -887,15 +1271,34 @@ rules are still using a fixed twenty.
   else. It no longer *scores*, and no longer inflates the answered count, but
   the write itself is still possible and the rules still permit it. What that
   costs now is a stray document, not somebody's game.
-- **Season standings follow the browser, not the person.** Anonymous auth gives a
-  durable uid with no sign-up, which is the whole appeal and the whole limitation.
-  The sharp edge is **iOS Safari, which evicts site storage after about a week
-  without a visit** — a weekly quiz survives, a fortnight off doesn't. A short
-  transfer code would let one identity move to a second device; that's the obvious
-  next step and it's small now the collection exists. The remembered name has
-  exactly the same lifetime and for the same reason, which is deliberate: it is
+- **Season standings follow the browser until somebody saves a recovery code.**
+  Anonymous auth gives a durable uid with no sign-up, which is the whole appeal
+  and was the whole limitation — **iOS Safari evicts site storage after about a
+  week without a visit**, so a weekly quiz survived and a fortnight off did not.
+  [Durable identity](#durable-identity) is the answer to that, and it is opt-in
+  by design: a player who never saves a code is exactly where they always were,
+  and eviction still costs them everything. The remembered name has the same
+  lifetime and for the same reason, which is deliberate: it is
   stored beside the uid rather than fetched from the season row, so the two can
   never disagree about who this browser is.
+- **Honours are counted per device, so a device that missed a reveal banks
+  none.** `useGameLog` is assembled from reveals this client saw, and
+  `sawWholeGame` refuses to bank from a short log — which is the safe direction,
+  but it means a player can silently lose a night's rosettes rather than merely
+  see a screen say nothing. Session storage made this much rarer, since a reload
+  no longer loses the log; a coalesced snapshot could still do it. Not fixable
+  without letting one device write everybody's row, which is the thing the rules
+  deliberately prevent — the same trade-off as somebody closing the tab before
+  the final screen.
+- **The `recovery` collection only grows.** Same shape as rooms never being
+  deleted: each minted code is a permanent document. It is deletable by its
+  owner, which is how a leaked code is revoked, but nothing tidies up
+  automatically. One document per person who ever asks for a code, so it is a
+  much slower leak than rooms.
+- **The season board is the one read that scales with curiosity rather than with
+  play** — 50 rows every time somebody opens it, and the final screen now points
+  them there. Counted properly under [what it all
+  costs](#what-it-all-costs-and-how-much-room-is-left).
 - **The answer lamps have no cap, so a very large room makes a tall desk.** Ten
   names wrap to two rows on a phone, which is about 20% of the screen and was
   judged worth it. Twenty names would be four rows and would start to crowd the

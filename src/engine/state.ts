@@ -1,3 +1,4 @@
+import type { FormFact } from './form';
 import {
   DIFFICULTIES,
   type Difficulty,
@@ -47,6 +48,46 @@ export const DEFAULT_QUESTION_DURATION_MS = DEFAULT_DURATION_SECS * 1000;
 export interface Player {
   name: string;
   joinedAt: number;
+  /**
+   * Which season record this player is playing under, when it is not simply
+   * their uid.
+   *
+   * Written only when the two differ — which needs a claimed recovery code — so
+   * an ordinary player's entry is exactly the two fields it always was. Absent
+   * means "the same as the uid", which is what `playerIdFor` returns anyway.
+   *
+   * It lives here so the round that opens can look up everybody's season row
+   * without a `claims` read per player: the room document is already re-read on
+   * every transition, and a player stating its own identity is something the
+   * rules can check, where reading somebody else's claim is not.
+   */
+  playerId?: string;
+}
+
+/**
+ * What the season already knows about the people in this room, assembled once by
+ * whoever starts the round and written into the document everybody is already
+ * listening to — the same shape as the reveal, where one device pays for a read
+ * and the rest learn it from an update they were getting anyway.
+ */
+export interface FormDigest {
+  /** When the titles went up, by the writer's clock. */
+  at: number;
+  facts: FormFact[];
+  /**
+   * The window the round will open with, parked here until it does.
+   *
+   * It cannot be written to the room's own `durationSecs` yet: `timingOk()` in
+   * the security rules pins that field to its previous value on every write
+   * except the one that opens a question, so setting it during the titles would
+   * be refused outright. Nested inside the digest it is ordinary data the rules
+   * do not inspect.
+   *
+   * Carried rather than kept on the quizmaster's device so the round can still
+   * be started with the window that was chosen if the role changes hands while
+   * the titles are up.
+   */
+  durationSecs: number;
 }
 
 export interface Answer {
@@ -121,6 +162,8 @@ export interface RoomState {
    * first round begins.
    */
   gameId: string | null;
+  /** The opening titles, or null when a round is not being introduced. */
+  form: FormDigest | null;
 }
 
 export function createRoom(code: string): RoomState {
@@ -139,6 +182,7 @@ export function createRoom(code: string): RoomState {
     lastDeltas: {},
     skipped: [],
     gameId: null,
+    form: null,
   };
 }
 
