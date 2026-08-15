@@ -32,6 +32,7 @@ import {
   type RoomState,
 } from '../engine/state';
 import { randomRoomCode } from '../engine/roomCode';
+import { playerIdFor } from './identity';
 import { rememberName } from './rememberedName';
 
 /**
@@ -91,6 +92,12 @@ function toRoomState(code: string, data: DocumentData, answers: Record<string, A
     // LEGACY_DURATION_SECS. Filled in here, at the one place a document becomes
     // state, so nothing downstream has to defend against a missing number.
     durationSecs: persisted.durationSecs ?? LEGACY_DURATION_SECS,
+    // Every room that predates the opening titles has no field at all, and
+    // `undefined` is not `null` — `coldOpenRunning` tests against null, so
+    // leaving it undefined would read as "the titles are up" in every room
+    // created before this shipped. Defaulted here for the same reason
+    // `durationSecs` is: so nothing downstream has to defend against it.
+    form: persisted.form ?? null,
   };
 }
 
@@ -114,6 +121,7 @@ function toPersisted(state: RoomState): PersistedRoom {
     lastDeltas: state.lastDeltas,
     skipped: state.skipped,
     gameId: state.gameId,
+    form: state.form,
   };
 }
 
@@ -336,7 +344,14 @@ export function useRoom(): UseRoom {
 
   const writeSelfIntoRoom = useCallback(
     async (targetCode: string, targetUid: string, name: string): Promise<void> => {
-      const player: Player = { name, joinedAt: Date.now() };
+      // Only when it differs from the uid, which needs a claimed recovery code.
+      // Written unconditionally it would put a redundant copy of the uid into
+      // every entry in every room, and change the shape of a document that
+      // clients one deploy behind still write, for no information at all.
+      const claimed = playerIdFor(targetUid);
+      const identity = claimed === targetUid ? {} : { playerId: claimed };
+
+      const player: Player = { name, joinedAt: Date.now(), ...identity };
       const snapshot = await getDoc(roomDoc(targetCode));
       if (!snapshot.exists()) throw new Error(`Room ${targetCode} does not exist`);
 
@@ -348,7 +363,8 @@ export function useRoom(): UseRoom {
       // `joinedAtRef` covers the case where the entry is gone entirely — a
       // rejoin after being reaped — where there is nothing left to read it off.
       const restored = joinedAtRef.current;
-      const entry = existing ?? (restored === null ? player : { name, joinedAt: restored });
+      const entry =
+        existing ?? (restored === null ? player : { name, joinedAt: restored, ...identity });
 
       await updateDoc(roomDoc(targetCode), {
         [`players.${targetUid}`]: entry,
@@ -425,6 +441,11 @@ export function useRoom(): UseRoom {
           uid,
           name,
           at: Date.now(),
+          // Creating a room does not go through `writeSelfIntoRoom`, so the
+          // creator's identity has to be carried here too — otherwise the one
+          // person guaranteed to be in every room is the one whose season record
+          // the opening titles could not find.
+          playerId: playerIdFor(uid),
         });
         await setDoc(roomDoc(candidate), toPersisted(fresh));
         setCode(candidate);

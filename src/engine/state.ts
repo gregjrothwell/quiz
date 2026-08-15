@@ -1,3 +1,4 @@
+import type { FormFact } from './form';
 import {
   DIFFICULTIES,
   type Difficulty,
@@ -47,6 +48,39 @@ export const DEFAULT_QUESTION_DURATION_MS = DEFAULT_DURATION_SECS * 1000;
 export interface Player {
   name: string;
   joinedAt: number;
+  /**
+   * Which season record this player is playing under, when it is not simply
+   * their uid.
+   *
+   * Written only when the two differ — which needs a claimed recovery code — so
+   * an ordinary player's entry is exactly the two fields it always was. Absent
+   * means "the same as the uid", which is what `playerIdFor` returns anyway.
+   *
+   * It lives here so the round that opens can look up everybody's season row
+   * without a `claims` read per player: the room document is already re-read on
+   * every transition, and a player stating its own identity is something the
+   * rules can check, where reading somebody else's claim is not.
+   */
+  playerId?: string;
+}
+
+/**
+ * What the season already knows about the people in this room, assembled once by
+ * whoever starts the round and written into the document everybody is already
+ * listening to — the same shape as the reveal, where one device pays for a read
+ * and the rest learn it from an update they were getting anyway.
+ */
+export interface FormDigest {
+  /**
+   * When the titles went up, by the writer's clock.
+   *
+   * The card is shown for a fixed window measured from here, so every device
+   * leaves it at the same moment and — more importantly — a room whose
+   * quizmaster vanished mid-sequence falls back to the lobby on its own instead
+   * of sitting on a title card nobody can clear.
+   */
+  at: number;
+  facts: FormFact[];
 }
 
 export interface Answer {
@@ -121,7 +155,19 @@ export interface RoomState {
    * first round begins.
    */
   gameId: string | null;
+  /** The opening titles, or null when a round is not being introduced. */
+  form: FormDigest | null;
 }
+
+/**
+ * How long the opening titles hold the room before question one.
+ *
+ * Spent in the lobby, deliberately: the answering window starts the moment the
+ * question opens and is stamped by the server, so a beat of theatre laid over
+ * the question would come straight out of everybody's thinking time. It is the
+ * same reasoning that puts the round title card on the standings screen.
+ */
+export const COLD_OPEN_MS = 6_000;
 
 export function createRoom(code: string): RoomState {
   return {
@@ -139,6 +185,7 @@ export function createRoom(code: string): RoomState {
     lastDeltas: {},
     skipped: [],
     gameId: null,
+    form: null,
   };
 }
 

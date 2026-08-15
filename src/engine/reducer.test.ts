@@ -692,3 +692,113 @@ describe('reveal only scores people in the room', () => {
     expect(result.scores['guest']).toBe(1000);
   });
 });
+
+describe('the opening titles', () => {
+  const FACTS = [{ id: 'champion' as const, uids: ['host'], wins: 3 }];
+
+  function lobbyWithPack(): RoomState {
+    return apply(
+      createRoom('ABCD'),
+      { type: 'join', uid: 'host', name: 'Greg', at: 100 },
+      { type: 'join', uid: 'guest', name: 'Sam', at: 200 },
+      { type: 'selectPack', packId: 'geography', packTitle: 'Geography', questions: QUESTIONS },
+    );
+  }
+
+  test('go up in the lobby, before a round starts', () => {
+    // #given a lobby with a pack chosen
+    const state = lobbyWithPack();
+
+    // #when the titles are put up
+    const next = reduce(state, { type: 'titles', at: 5_000, facts: FACTS });
+
+    // #then the room carries them, still in the lobby
+    expect(next.phase).toBe('lobby');
+    expect(next.form).toEqual({ at: 5_000, facts: FACTS });
+  });
+
+  test('are refused once a question is open', () => {
+    // #given a round already under way
+    const state = playingRoom();
+
+    // #when the titles are put up
+    const next = reduce(state, { type: 'titles', at: 5_000, facts: FACTS });
+
+    // #then nothing changes — a title card over a running clock would take the
+    // time out of everybody's answering window, which is the one thing this
+    // feature must never do
+    expect(next).toBe(state);
+  });
+
+  test('are refused when there is nothing to say', () => {
+    // #given a lobby and a room the season knows nothing about
+    const state = lobbyWithPack();
+
+    // #when empty titles are put up
+    const next = reduce(state, { type: 'titles', at: 5_000, facts: [] });
+
+    // #then the round is not held up by a card with nothing on it
+    expect(next).toBe(state);
+  });
+
+  test('come down when the round starts', () => {
+    // #given a lobby showing the titles
+    const state = reduce(lobbyWithPack(), { type: 'titles', at: 5_000, facts: FACTS });
+
+    // #when the round starts
+    const next = reduce(state, {
+      type: 'start',
+      at: 11_000,
+      gameId: 'game-1',
+      durationSecs: DEFAULT_DURATION_SECS,
+    });
+
+    // #then they are cleared, or they would be back on screen at the end of the
+    // round when `reset` returns the room to the lobby
+    expect(next.form).toBeNull();
+    expect(next.phase).toBe('question');
+  });
+
+  test('are cleared by a reset', () => {
+    // #given a room that somehow reached the end still carrying titles
+    const state = { ...playingRoom(), form: { at: 5_000, facts: FACTS } };
+
+    // #when the room is reset
+    const next = reduce(state, { type: 'reset' });
+
+    // #then the lobby is a lobby again, not a title card
+    expect(next.form).toBeNull();
+  });
+});
+
+describe('join and the claimed identity', () => {
+  test('records a playerId that differs from the uid', () => {
+    // #given somebody joining on a browser that has claimed a season record
+    const state = reduce(createRoom('ABCD'), {
+      type: 'join',
+      uid: 'work-browser',
+      name: 'Greg',
+      at: 100,
+      playerId: 'greg-at-home',
+    });
+
+    // #then the room carries it, so the opening titles can find their season row
+    // without a claims lookup per player
+    expect(state.players['work-browser']?.playerId).toBe('greg-at-home');
+  });
+
+  test('leaves the entry exactly as it was when the two match', () => {
+    // #given an ordinary player, who has claimed nothing
+    const state = reduce(createRoom('ABCD'), {
+      type: 'join',
+      uid: 'greg',
+      name: 'Greg',
+      at: 100,
+      playerId: 'greg',
+    });
+
+    // #then no redundant copy of the uid goes into the document — the entry is
+    // byte-for-byte the two fields it has always been
+    expect(state.players.greg).toEqual({ name: 'Greg', joinedAt: 100 });
+  });
+});

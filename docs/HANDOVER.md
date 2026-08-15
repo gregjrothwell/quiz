@@ -6,7 +6,7 @@ Built to replace Polly in Teams.
 - **Live:** https://gregjrothwell.github.io/quiz/
 - **Repo:** https://github.com/gregjrothwell/quiz (public, `master`, deploys from `gh-pages`)
 - **Firebase project:** `quiz-d686e` (Firestore + Realtime Database in europe-west1 + Anonymous auth)
-- **Status:** shipped and played. 244 tests, clean types and lint, no `any` or
+- **Status:** shipped and played. 259 tests, clean types and lint, no `any` or
   `@ts-ignore`. The **answer vault is live and covers the packs**: 13,593
   answers seeded against the 13,452 the packs need plus the 4 harness entries,
   both rulesets published, preflight passing.
@@ -15,12 +15,11 @@ Built to replace Polly in Teams.
   ids hash the question text, so a revised question leaves its old answer in
   place, unread and harmless. All 14,176 pack questions across the ten packs
   resolve to an answer.
-- **Next:** **`npm run deploy`** — phases 1 and 2 are done and verified, the
-  rules are published, and the bundle is the only thing still behind. Then
-  [Form](#next-session--start-here), which needs no rules work at all. [The
-  round in review](#the-round-in-review) and [durable
-  identity](#durable-identity) are the two new sections. [The closing seconds
-  carry a
+- **Next:** nothing queued. All three phases are done: [the round in
+  review](#the-round-in-review), [durable identity](#durable-identity) and
+  [Form](#form--the-opening-titles). The rules are published and the bundle is
+  deployed. **Nothing has been played on yet** — see [verified vs
+  not](#verified-vs-not). [The closing seconds carry a
   clock](#the-clock) — nine seconds of gameshow music in place of the two-tone
   tick, deployed and heard on 14 August 2026. [The answer window is
   selectable](#the-configurable-answer-window) — 10 / 15 / 20 seconds, chosen in
@@ -385,6 +384,72 @@ Two rules the tests pin down, both about not lying:
 crowd is a bad question; being wrong alone is a decision. Note this needs three
 or more players to mean anything — with two, every wrong answer is also a lonely
 one.
+
+---
+
+## Form — the opening titles
+
+**Shipped.** Before question one the room is told who it contains: the defending
+champion, the best round of the season, who has the most rosettes, and who is
+playing for the first time. Ten weeks of quizzes had left a column of numbers on
+a screen most people looked at once, and every round opened as if nobody in it
+had ever played before.
+
+`formFor` in `src/engine/form.ts` is pure and tested; `ColdOpen` owns every word,
+the same split as the awards and the review.
+
+### It costs six reads, not three hundred
+
+`loadForm` fetches one document per player in the room — read **once**, by
+whoever starts the round, and written into the room document everybody is already
+listening to. That is the reveal's pattern: one device pays, the rest learn it
+from an update they were receiving anyway.
+
+The obvious alternative is `loadSeason`, which is already there. It reads the
+whole board — up to fifty documents — to answer a question about six people, and
+every client would run it. Six against three hundred.
+
+### Why the titles live in the lobby
+
+**Because the answering window is stamped by the server the moment a question
+opens.** Anything laid over question one comes straight out of the room's
+thinking time, which is the same reasoning that already put the round title card
+on the standings screen rather than over the question.
+
+So the round is introduced while the room is still in `lobby`, carrying a `form`
+digest, and `start` follows six seconds later. This deliberately avoids a **new
+phase**: the rules pin `phase` to five values, so a sixth would have cost a rules
+republish, and the whole point of the Phase 2 ruleset was to be the last one.
+
+### Three things that will bite
+
+- **The round is started by an effect, not by `await sleep(...)` in
+  `handleStart`.** `dispatch` closes over `room`, so anything awaited between
+  taking that closure and writing folds the round over a snapshot that is however
+  many seconds old — the same staleness that once let a pack fetch erase everyone
+  who joined while it ran, measured at five of ten players. Six seconds of titles
+  is a far wider window than that fetch ever was.
+- **The card is time-boxed on every device, not just cleared by `start`.** A
+  quizmaster who closes their laptop mid-sequence would otherwise leave the room
+  on a title card nobody can clear. Every client runs its own timer from
+  `form.at`, so the room falls back to a working lobby on its own.
+- **`toRoomState` defaults `form` to null, and that is load-bearing.** Every room
+  created before this has no field at all, and `undefined` is not `null` — the
+  showing condition tests against null, so leaving it undefined would read as
+  "the titles are up" in every older room.
+
+### `playerId` on the player entry, at last
+
+Phase 2 bounded it in the rules and deliberately left the client half unwritten.
+This is the feature that needed it: the digest has to map uid to season record,
+and the alternative is a `claims` read per player per game for something each
+player can simply state about itself.
+
+Written **only when it differs from the uid**, which needs a claimed recovery
+code. Unconditionally it would put a redundant copy of the uid into every entry
+in every room. The creator's entry carries it too — `createAndJoin` does not go
+through `writeSelfIntoRoom`, so without that the one person guaranteed to be in
+every room is the one whose record the titles could not find.
 
 ---
 
@@ -1018,6 +1083,10 @@ happened once.
 | **The reveal gate is millisecond arithmetic, not `duration.value()`** | `duration.value` takes an `int`, and `durationSecs` arrives from a client SDK that decides for itself whether a whole number is an integer or a double on the wire. A double would error the rule and deny every reveal in the room — the same trap as `joinedAt is number`, but with a far worse failure. |
 | **`tallyQuestion` is given the room's window** | It always took the parameter and nothing ever passed it, so speed points decayed across a hardcoded twenty seconds. Harmless while every round *was* twenty; at the ten-second default it would cap everybody at 750 of a possible 1000 no matter how fast they were. |
 | **`fullGame.test.ts` pins its window at 20 instead of taking the default** | Its games answer as late as twelve seconds in. On the ten-second default those answers stop being recorded, and the games would still pass while quietly testing a round nobody answered. |
+| **The opening titles are a lobby state, not a sixth phase** (`form` on the room) | The rules pin `phase` to five values, so a sixth costs a rules republish — and the Phase 2 ruleset was meant to be the last. A round introduced while the room is still in `lobby` needs no new phase and no console step. |
+| **The round is started by an effect, never by `await sleep(...)` in `handleStart`** | `dispatch` closes over `room`. Anything awaited between taking that closure and writing folds the round over a stale snapshot — the bug that once erased five of ten players while a pack loaded. Six seconds of titles is a far wider window than that fetch ever was. |
+| **The titles time out on every device, not just on `start`** | A quizmaster who closes their laptop mid-sequence would otherwise leave the room on a card nobody can clear. Each client runs its own timer from `form.at`, so the room falls back to a working lobby by itself. |
+| **`loadForm` reads one document per player, not the season table** | `loadSeason` reads up to fifty documents to answer a question about six people, and every client would run it. One device reads six and writes a digest the rest get from an update they were already receiving — the reveal's pattern. |
 | **A whole-document `set` must name every field, including ones no feature uses yet** (`PlayerRecord.team`) | Both season writers use `set`. `team` was bounded in the rules ahead of its feature, and neither writer knew about it — so the first game anybody played after teams shipped would have cleared their league, and the one after that too. Teams would have appeared to work and quietly emptied themselves overnight. Anything else added to `firestore.rules` ahead of its client needs the same treatment. |
 | **`playerId` defaults to the auth uid** (`playerIdFor`) | It is what makes the change free. Every season row already written is keyed by a uid, which the new scheme reads as a playerId nobody has claimed — so there is no migration, no backfill, and a player who never claims anything behaves byte-for-byte as they did. Nothing is even stored until a claim happens. |
 | **`exists()` precedes `get()` in `ownsPlayer`** | A `get()` on a missing document returns null and reading `.data` off null *errors* the rule, which denies. Without the guard, every browser that has never claimed anything is locked out of its own row — the common case broken by a check meant for the rare one. |
@@ -1044,7 +1113,7 @@ happened once.
 **Verified against the live Firebase:** anonymous sign-in, room creation, pack
 selection, round start, question render, answer write, reveal and scoring, and
 leaving a room. Engine covered by 140 tests including six full three-question
-games (quizmaster disconnect, skip, reset, ties). 244 across the repo, the
+games (quizmaster disconnect, skip, reset, ties). 259 across the repo, the
 balance being the question pipeline, the clock's arithmetic, the review, the
 honours and the recovery code.
 
@@ -1060,6 +1129,22 @@ fixtures with the chair; the desk pinned at every scroll position on a
 fifteen-question, ten-player round; and the chair's label at its worst case — 24
 characters with no space in them — measured against the podium row height to
 confirm it cannot push the risers around.
+
+**Not verified in a real room — everything from 15 August, which is a lot.** The
+review panel, the recovery code, the merge on claim and the opening titles have
+all been checked on fixtures, in tests, and against the live rules by
+`check-rules` — but **no round has been played on any of it.** The three that
+would show up first in a real game:
+
+- **The cold open holding the room for six seconds.** The timing has never been
+  watched with more than one client. What to look for is whether every device
+  leaves the card together and whether six seconds feels right or long.
+- **A recovery code actually moving a record between two browsers**, and the
+  merge folding the old row in. `check-rules` proves the rules permit it from a
+  genuinely second client; nobody has done it through the UI.
+- **Honours appearing on the season table.** They are banked from the game log,
+  which is now persisted, but a rosette has never travelled from a final screen
+  to a row.
 
 **Not verified in a real room:** everything from 14 August. The name persists
 across a reload on one browser, but has not been watched surviving a week, and
@@ -1154,8 +1239,9 @@ rules are still using a fixed twenty.
   packs and the room document — see [the vault](#turning-the-vault-on) for what
   that does and does not buy. `elapsedMs` is still self-reported, so a
   fast-but-wrong answer is honest and a slow-but-claimed-instant one is not.
-- **~260 kB gzipped**, nearly all Firebase, plus 67 kB of fonts. The review, the
-  recovery panel and the identity modules added about 4 kB between them. The
+- **~261 kB gzipped**, nearly all Firebase, plus 67 kB of fonts. The review, the
+  recovery panel, the identity modules and the opening titles added about 5 kB
+  between them. The
   lobby QR
   code added about 10 kB of that (`qrcode-generator`, MIT, no dependencies) —
   more than it looked like it would. Code-splitting is the fix if it matters.

@@ -1085,6 +1085,67 @@ input {
   color: var(--amber-bright);
 }
 
+/* ── The opening titles ─────────────────────────────────────────────────────
+   Who the season already knows about, before question one. Held in the lobby,
+   because the answering window is stamped the moment a question opens and a
+   beat of theatre over it would come out of the room's thinking time.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.cold-open {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 55vh;
+  justify-content: center;
+}
+
+.cold-open__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+/* `backwards`, never `both`: `both` keeps the final keyframe in the cascade
+   above normal declarations, which is what silently stopped `.tile--dim` ever
+   dimming anything. Backwards hides the row through its stagger and then gets
+   out of the way. */
+.cold-open__fact {
+  border-left: 3px solid var(--amber);
+  padding-left: 1rem;
+  animation: settle 520ms ease backwards;
+}
+
+.cold-open__label {
+  margin: 0 0 0.15rem;
+  font-family: var(--tech);
+  font-weight: 600;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+
+.cold-open__line {
+  margin: 0;
+  font-family: var(--shout);
+  font-size: clamp(1.4rem, 5.5vw, 2.4rem);
+  line-height: 1.05;
+  color: var(--ink);
+  overflow-wrap: break-word;
+}
+
+/* The stagger is the whole effect, and a reader who has asked for less motion
+   has asked for exactly this to stop. The stylesheet can reach it because the
+   sequence is CSS rather than timers — unlike the replay, which needs JS. */
+@media (prefers-reduced-motion: reduce) {
+  .cold-open__fact {
+    animation: none;
+  }
+}
+
 /* ── The recovery panel ─────────────────────────────────────────────────────
    How a season record stops belonging to one browser. Sits under the table
    rather than above it: the board is what people came to look at, and this is

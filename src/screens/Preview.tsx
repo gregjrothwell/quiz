@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { ColdOpen } from '../components/ColdOpen';
 import { RecoveryPanel } from '../components/RecoveryPanel';
 import type { QuestionRecord } from '../engine/awards';
 import { createRoom, type QuizQuestion, type RoomState } from '../engine/state';
@@ -380,6 +381,26 @@ export function Preview() {
           onLeave={noop}
           onSeason={noop}
         />
+      ),
+    },
+    {
+      title: 'Cold open · the opening titles',
+      node: (
+        <ColdOpen
+          facts={[
+            { id: 'champion', uids: ['greg'], wins: 4 },
+            { id: 'best', uids: ['sam'], points: 8_150 },
+            { id: 'rosettes', uids: ['priya', 'sam'], count: 6 },
+            { id: 'newcomers', uids: ['alex'] },
+          ]}
+          players={PLAYERS}
+        />
+      ),
+    },
+    {
+      title: 'Cold open · a room with no history',
+      node: (
+        <ColdOpen facts={[{ id: 'newcomers', uids: ['greg', 'sam', 'priya'] }]} players={PLAYERS} />
       ),
     },
     {

@@ -10,6 +10,7 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import type { Honours } from '../engine/awards';
+import type { FormRecord } from '../engine/form';
 import { foldRecords, type PlayerRecord } from '../engine/records';
 import { firestore } from '../firebase';
 
@@ -222,6 +223,41 @@ export async function recordAsked(packId: string, ids: readonly string[]): Promi
   await setDoc(askedDoc(packId), {
     ids: merged.slice(0, ASKED_LIMIT),
     at: Date.now(),
+  });
+}
+
+/**
+ * The season records of just the people in this room, for the opening titles.
+ *
+ * **Not `loadSeason`.** That reads the whole board — up to fifty documents — to
+ * answer a question about six people, and it would be read by every client
+ * rather than one. This is one `getDoc` per player, run once by whoever starts
+ * the round, and everybody else learns the result from the room update they were
+ * already receiving. Six reads for the room instead of three hundred.
+ *
+ * A player with no record yet comes back as zeroes rather than being dropped,
+ * because "has never finished a round" is itself something the titles say.
+ */
+export async function loadForm(players: { uid: string; playerId: string }[]): Promise<FormRecord[]> {
+  const snapshots = await Promise.all(
+    players.map((player) => getDoc(playerDoc(player.playerId))),
+  );
+
+  return snapshots.map((snapshot, index) => {
+    const player = players[index];
+    const data = snapshot.exists() ? (snapshot.data() as SeasonDoc) : null;
+
+    return {
+      uid: player?.uid ?? '',
+      played: data?.played ?? 0,
+      wins: data?.wins ?? 0,
+      best: data?.best ?? 0,
+      rosettes:
+        (data?.fastest ?? 0)
+        + (data?.comeback ?? 0)
+        + (data?.loneWolf ?? 0)
+        + (data?.contrarian ?? 0),
+    };
   });
 }
 

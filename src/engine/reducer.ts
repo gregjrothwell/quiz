@@ -1,4 +1,5 @@
 import type { PackId } from '../questions/types';
+import type { FormFact } from './form';
 import { tallyQuestion } from './scoring';
 import {
   currentQuestion,
@@ -10,7 +11,14 @@ import {
 } from './state';
 
 export type Action =
-  | { type: 'join'; uid: string; name: string; at: number }
+  | { type: 'join'; uid: string; name: string; at: number; playerId?: string }
+  /**
+   * The opening titles. Written while the room is still in the lobby, because
+   * the answering window is stamped by the server the moment a question opens —
+   * a beat of theatre laid over question one would come straight out of
+   * everybody's thinking time.
+   */
+  | { type: 'titles'; at: number; facts: FormFact[] }
   | { type: 'leave'; uid: string }
   | { type: 'selectPack'; packId: PackId; packTitle: string; questions: QuizQuestion[] }
   /**
@@ -40,7 +48,9 @@ export type Action =
 export function reduce(state: RoomState, action: Action): RoomState {
   switch (action.type) {
     case 'join':
-      return join(state, action.uid, action.name, action.at);
+      return join(state, action.uid, action.name, action.at, action.playerId);
+    case 'titles':
+      return titles(state, action.at, action.facts);
     case 'leave':
       return leave(state, action.uid);
     case 'selectPack':
@@ -60,12 +70,23 @@ export function reduce(state: RoomState, action: Action): RoomState {
   }
 }
 
-function join(state: RoomState, uid: string, name: string, at: number): RoomState {
+function join(
+  state: RoomState,
+  uid: string,
+  name: string,
+  at: number,
+  playerId?: string,
+): RoomState {
   // A rejoin must not reset joinedAt, or a reconnecting quizmaster would lose
   // the role to whoever stayed put.
   if (state.players[uid]) return state;
 
-  const player: Player = { name, joinedAt: at };
+  // Only when it differs from the uid. Written unconditionally it would put a
+  // redundant copy of the uid into every entry in every room, and — worse —
+  // change the shape of a document that clients one deploy behind still write,
+  // for no information at all.
+  const player: Player =
+    playerId && playerId !== uid ? { name, joinedAt: at, playerId } : { name, joinedAt: at };
   return {
     ...state,
     players: { ...state.players, [uid]: player },
@@ -96,6 +117,21 @@ function selectPack(
   return { ...state, packId, packTitle, questions };
 }
 
+/**
+ * Puts the opening titles up, in the lobby, before a round starts.
+ *
+ * Refused outside the lobby: mid-round it would put a title card over a question
+ * with the clock running, which is the one thing this feature must never do. A
+ * card with nothing on it is refused too — an empty title sequence is a pause
+ * the room cannot explain.
+ */
+function titles(state: RoomState, at: number, facts: FormFact[]): RoomState {
+  if (state.phase !== 'lobby') return state;
+  if (facts.length === 0) return state;
+
+  return { ...state, form: { at, facts } };
+}
+
 function start(state: RoomState, at: number, gameId: string, durationSecs: number): RoomState {
   if (state.phase !== 'lobby') return state;
   if (state.questions.length === 0) return state;
@@ -112,6 +148,10 @@ function start(state: RoomState, at: number, gameId: string, durationSecs: numbe
     gameId,
     answers: {},
     lastDeltas: {},
+    // The titles have done their job the moment the first question is up, and
+    // leaving them on the document would put them back on screen at the end of
+    // the round, when `reset` returns the room to the lobby.
+    form: null,
     // Everyone starts on zero, including anyone who joined after a previous game.
     scores: Object.fromEntries(Object.keys(state.players).map((uid) => [uid, 0])),
   };
@@ -266,6 +306,7 @@ function reset(state: RoomState): RoomState {
     questionOpenedAt: null,
     answers: {},
     lastDeltas: {},
+    form: null,
     scores: Object.fromEntries(Object.keys(state.players).map((uid) => [uid, 0])),
     skipped: [],
     // Cleared so the next round mints its own id and counts separately.

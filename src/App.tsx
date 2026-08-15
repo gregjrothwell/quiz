@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ColdOpen } from './components/ColdOpen';
 import { Stage } from './components/Stage';
 import { honoursFor, sawWholeGame, NO_HONOURS } from './engine/awards';
+import { formFor } from './engine/form';
 import { standings } from './engine/scoring';
 import { codeFromHash } from './engine/roomCode';
 import {
+  COLD_OPEN_MS,
   DEFAULT_QUESTION_DURATION_MS,
   buildQuizQuestions,
   currentQuestion,
@@ -13,7 +16,7 @@ import {
 import { isFirebaseConfigured } from './firebase';
 import { playerIdFor } from './lib/identity';
 import { useGameLog } from './lib/useGameLog';
-import { loadAsked, recordAsked, recordGame } from './lib/season';
+import { loadAsked, loadForm, recordAsked, recordGame } from './lib/season';
 import { play } from './lib/sound';
 import { loadPackQuestions, usePackIndex } from './lib/usePacks';
 import { useQuestionClock } from './lib/useQuestionClock';
@@ -116,6 +119,16 @@ function Game() {
   // anything this ref cannot see, such as a reload.
   const bankedRef = useRef<string | null>(null);
 
+  /**
+   * The round the opening titles are introducing, held until they finish.
+   *
+   * A ref rather than state because nothing renders from it, and because the
+   * effect that starts the round must read the value the quizmaster settled on
+   * when they pressed Start — not one re-derived six seconds later from whatever
+   * the lobby controls happen to say now.
+   */
+  const pendingStartRef = useRef<{ durationSecs: number; gameId: string } | null>(null);
+
   // Built as the game runs, because nothing else keeps a record of it — see
   // useGameLog. Held here rather than in Final so it survives that screen
   // mounting, which happens after the last question has already gone.
@@ -191,6 +204,34 @@ function Game() {
           const asked = await loadAsked(packId).catch(() => new Set<string>());
           const questions = buildQuizQuestions(pool, count, level, Math.random, asked);
 
+          /*
+            The opening titles, and the reason the round does not simply start
+            here. The digest is assembled once, by this device, and written into
+            the room while it is still in the lobby — every other client reads it
+            from the update it was already listening to, which is the reveal's
+            pattern. Six reads for the room rather than fifty per person.
+
+            Swallowed on failure, like the question history above: a round that
+            opens without its titles is a much smaller problem than a round that
+            will not open.
+          */
+          const roster = Object.entries(room?.players ?? {}).map(([uid, player]) => ({
+            uid,
+            playerId: player.playerId ?? uid,
+          }));
+          const facts = await loadForm(roster).then(formFor).catch(() => []);
+
+          /*
+            The round itself is started by the effect below rather than after a
+            sleep here, and the difference is not stylistic. `dispatch` closes
+            over `room`, so anything awaited between taking that closure and
+            writing folds the round over a snapshot that is however many seconds
+            old — the same staleness that once let a pack fetch erase everyone
+            who joined while it ran. Six seconds of titles is a far wider window
+            than that fetch ever was.
+          */
+          pendingStartRef.current = { durationSecs, gameId: crypto.randomUUID() };
+
           await dispatch([
             {
               type: 'selectPack',
@@ -198,8 +239,12 @@ function Game() {
               packTitle: pack?.title ?? packId,
               questions,
             },
-            { type: 'start', at: Date.now(), gameId: crypto.randomUUID(), durationSecs },
+            ...(facts.length > 0
+              ? [{ type: 'titles' as const, at: Date.now(), facts }]
+              : [{ type: 'start' as const, at: Date.now(), ...pendingStartRef.current }]),
           ]);
+
+          if (facts.length === 0) pendingStartRef.current = null;
 
           // After the round is safely under way, for the same reason.
           await recordAsked(packId, questions.map((question) => question.id)).catch(
@@ -209,7 +254,7 @@ function Game() {
         .catch(report)
         .finally(() => setBusy(false));
     },
-    [dispatch, packs, report],
+    [dispatch, packs, report, room?.players],
   );
 
   const handleAnswer = useCallback(
@@ -253,6 +298,70 @@ function Game() {
       throw cause;
     }
   }, [room, dispatch]);
+
+  /*
+    The titles come down on a timer as well as on the round starting, so a room
+    whose quizmaster closed their laptop mid-sequence returns to a working lobby
+    on its own rather than sitting on a card nobody can clear. Every device runs
+    this, not just the one that put them up.
+  */
+  const formAt = room?.form?.at ?? null;
+  const [titlesExpired, setTitlesExpired] = useState(false);
+  const [titlesKey, setTitlesKey] = useState(formAt);
+
+  // Adjusted during render so a fresh set of titles is not born expired,
+  // the same pattern as the reveal retry counter below.
+  if (titlesKey !== formAt) {
+    setTitlesKey(formAt);
+    setTitlesExpired(false);
+  }
+
+  useEffect(() => {
+    if (formAt === null) return;
+
+    // Always through a timeout, never set directly here — `react-hooks/
+    // set-state-in-effect` exists to catch exactly that, and a zero delay
+    // lands on the next tick which is all this needs.
+    const remaining = Math.max(0, formAt + COLD_OPEN_MS - Date.now());
+    const timer = window.setTimeout(() => setTitlesExpired(true), remaining);
+    return () => window.clearTimeout(timer);
+  }, [formAt]);
+
+  // No clock reading in render — `Date.now()` is impure and React is right to
+  // refuse it. Joining a room whose titles are already half over therefore shows
+  // the card for the single frame before the zero-delay timeout above lands,
+  // which is the cheapest possible price for keeping render pure.
+  const showTitles = room?.phase === 'lobby' && room.form !== null && !titlesExpired;
+
+  /*
+    The round starts when the opening titles have run.
+
+    Here rather than after an `await sleep(...)` inside `handleStart`, because
+    `dispatch` closes over `room` and six seconds is long enough for that
+    snapshot to be badly out of date — it is the same trap that once let a pack
+    fetch erase everybody who joined while it was running. This effect re-reads
+    the room on every update, so the round is folded over what is actually there.
+
+    Only the device that put the titles up finishes the job, which `pendingStartRef`
+    settles: it is set by whoever pressed Start and is null everywhere else. If
+    that device disappears mid-sequence nobody starts the round, the card times
+    out on its own, and the room falls back to a working lobby for whoever
+    inherits the quizmaster's chair.
+  */
+  useEffect(() => {
+    if (!room || room.phase !== 'lobby' || !room.form) return;
+
+    const pending = pendingStartRef.current;
+    if (!pending) return;
+
+    const remaining = room.form.at + COLD_OPEN_MS - Date.now();
+    const timer = window.setTimeout(() => {
+      pendingStartRef.current = null;
+      void dispatch({ type: 'start', at: Date.now(), ...pending }).catch(report);
+    }, Math.max(0, remaining));
+
+    return () => window.clearTimeout(timer);
+  }, [room, dispatch, report]);
 
   // The quizmaster's device closes the question when the clock runs out, so a
   // round keeps moving even if nobody remembers to press Reveal.
@@ -382,7 +491,10 @@ function Game() {
         </p>
       )}
 
-      {(room.phase === 'lobby' && (
+      {(showTitles && room.form && (
+        <ColdOpen facts={room.form.facts} players={room.players} />
+      )) ||
+        (room.phase === 'lobby' && (
         <Lobby
           room={room}
           youUid={uid}
