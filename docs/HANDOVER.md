@@ -6,7 +6,7 @@ Built to replace Polly in Teams.
 - **Live:** https://gregjrothwell.github.io/quiz/
 - **Repo:** https://github.com/gregjrothwell/quiz (public, `master`, deploys from `gh-pages`)
 - **Firebase project:** `quiz-d686e` (Firestore + Realtime Database in europe-west1 + Anonymous auth)
-- **Status:** shipped and played. 242 tests, clean types and lint, no `any` or
+- **Status:** shipped and played. 244 tests, clean types and lint, no `any` or
   `@ts-ignore`. The **answer vault is live and covers the packs**: 13,593
   answers seeded against the 13,452 the packs need plus the 4 harness entries,
   both rulesets published, preflight passing.
@@ -1018,6 +1018,7 @@ happened once.
 | **The reveal gate is millisecond arithmetic, not `duration.value()`** | `duration.value` takes an `int`, and `durationSecs` arrives from a client SDK that decides for itself whether a whole number is an integer or a double on the wire. A double would error the rule and deny every reveal in the room — the same trap as `joinedAt is number`, but with a far worse failure. |
 | **`tallyQuestion` is given the room's window** | It always took the parameter and nothing ever passed it, so speed points decayed across a hardcoded twenty seconds. Harmless while every round *was* twenty; at the ten-second default it would cap everybody at 750 of a possible 1000 no matter how fast they were. |
 | **`fullGame.test.ts` pins its window at 20 instead of taking the default** | Its games answer as late as twelve seconds in. On the ten-second default those answers stop being recorded, and the games would still pass while quietly testing a round nobody answered. |
+| **A whole-document `set` must name every field, including ones no feature uses yet** (`PlayerRecord.team`) | Both season writers use `set`. `team` was bounded in the rules ahead of its feature, and neither writer knew about it — so the first game anybody played after teams shipped would have cleared their league, and the one after that too. Teams would have appeared to work and quietly emptied themselves overnight. Anything else added to `firestore.rules` ahead of its client needs the same treatment. |
 | **`playerId` defaults to the auth uid** (`playerIdFor`) | It is what makes the change free. Every season row already written is keyed by a uid, which the new scheme reads as a playerId nobody has claimed — so there is no migration, no backfill, and a player who never claims anything behaves byte-for-byte as they did. Nothing is even stored until a claim happens. |
 | **`exists()` precedes `get()` in `ownsPlayer`** | A `get()` on a missing document returns null and reading `.data` off null *errors* the rule, which denies. Without the guard, every browser that has never claimed anything is locked out of its own row — the common case broken by a check meant for the rare one. |
 | **`ownsPlayer` tests the uid branch first** | Rules short-circuit. First, an unclaimed player costs no extra read and only a claimed one pays, once per game. Reversed, every player in every game pays a document read for a branch almost none of them need. |
@@ -1043,7 +1044,7 @@ happened once.
 **Verified against the live Firebase:** anonymous sign-in, room creation, pack
 selection, round start, question render, answer write, reveal and scoring, and
 leaving a room. Engine covered by 140 tests including six full three-question
-games (quizmaster disconnect, skip, reset, ties). 242 across the repo, the
+games (quizmaster disconnect, skip, reset, ties). 244 across the repo, the
 balance being the question pipeline, the clock's arithmetic, the review, the
 honours and the recovery code.
 
@@ -1153,7 +1154,9 @@ rules are still using a fixed twenty.
   packs and the room document — see [the vault](#turning-the-vault-on) for what
   that does and does not buy. `elapsedMs` is still self-reported, so a
   fast-but-wrong answer is honest and a slow-but-claimed-instant one is not.
-- **~256 kB gzipped**, nearly all Firebase, plus 67 kB of fonts. The lobby QR
+- **~260 kB gzipped**, nearly all Firebase, plus 67 kB of fonts. The review, the
+  recovery panel and the identity modules added about 4 kB between them. The
+  lobby QR
   code added about 10 kB of that (`qrcode-generator`, MIT, no dependencies) —
   more than it looked like it would. Code-splitting is the fix if it matters.
   The clock added 0.9 kB, being oscillators rather than audio.
@@ -1180,6 +1183,25 @@ rules are still using a fixed twenty.
   lifetime and for the same reason, which is deliberate: it is
   stored beside the uid rather than fetched from the season row, so the two can
   never disagree about who this browser is.
+- **Honours are counted per device, so a device that missed a reveal banks
+  none.** `useGameLog` is assembled from reveals this client saw, and
+  `sawWholeGame` refuses to bank from a short log — which is the safe direction,
+  but it means a player can silently lose a night's rosettes rather than merely
+  see a screen say nothing. Session storage made this much rarer, since a reload
+  no longer loses the log; a coalesced snapshot could still do it. Not fixable
+  without letting one device write everybody's row, which is the thing the rules
+  deliberately prevent — the same trade-off as somebody closing the tab before
+  the final screen.
+- **The `recovery` collection only grows.** Same shape as rooms never being
+  deleted: each minted code is a permanent document. It is deletable by its
+  owner, which is how a leaked code is revoked, but nothing tidies up
+  automatically. One document per person who ever asks for a code, so it is a
+  much slower leak than rooms.
+- **Pointing people at the season table costs reads.** `loadSeason` is capped at
+  50 documents and the final screen now nudges everybody towards it for a
+  recovery code. Six players checking the board after a round is up to 300 reads
+  on top of the game's 800–1,500. Comfortable against 50,000 a day, and worth
+  knowing before wondering where a quiet day's quota went.
 - **The answer lamps have no cap, so a very large room makes a tall desk.** Ten
   names wrap to two rows on a phone, which is about 20% of the screen and was
   judged worth it. Twenty names would be four rows and would start to crowd the
