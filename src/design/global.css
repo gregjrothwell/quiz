@@ -1146,6 +1146,42 @@ input {
   }
 }
 
+/* ── The league filter ──────────────────────────────────────────────────────
+   Sits on top of the whole board rather than replacing it: most rows carry no
+   team at all, so a team-only view would hide most of the season.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.league-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.chip {
+  font-family: var(--tech);
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+}
+
+.chip:hover {
+  color: var(--ink);
+  border-color: var(--cyan-dim);
+}
+
+.chip--on {
+  color: var(--ink);
+  border-color: var(--amber);
+  background: rgb(36 26 4 / 0.65);
+}
+
 /* ── The recovery panel ─────────────────────────────────────────────────────
    How a season record stops belonging to one browser. Sits under the table
    rather than above it: the board is what people came to look at, and this is

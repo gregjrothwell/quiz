@@ -14,6 +14,7 @@ import {
 } from './engine/state';
 import { isFirebaseConfigured } from './firebase';
 import { playerIdFor } from './lib/identity';
+import { rememberTeam, rememberedTeam } from './lib/rememberedTeam';
 import { useGameLog } from './lib/useGameLog';
 import { loadAsked, loadForm, recordAsked, recordGame } from './lib/season';
 import { play } from './lib/sound';
@@ -160,9 +161,10 @@ function Game() {
   );
 
   const handleCreate = useCallback(
-    (name: string) => {
+    (name: string, team: string) => {
       setBusy(true);
       setActionError(null);
+      rememberTeam(team);
       createAndJoin(name)
         .catch(report)
         .finally(() => setBusy(false));
@@ -171,9 +173,10 @@ function Game() {
   );
 
   const handleJoin = useCallback(
-    (code: string, name: string) => {
+    (code: string, name: string, team: string) => {
       setBusy(true);
       setActionError(null);
+      rememberTeam(team);
       join(code, name)
         .catch(report)
         .finally(() => setBusy(false));
@@ -393,6 +396,9 @@ function Game() {
       score: room.scores[uid] ?? 0,
       // A round where nobody scored is not a win for everybody.
       won: leadScore > 0 && mine?.position === 1,
+      // Empty means "keep whatever the record says" rather than "no team", so a
+      // regular playing from a second device cannot silently clear their league.
+      team: rememberedTeam(),
       // Only from a log covering the whole game. A device that joined late or
       // reloaded before the log was kept would otherwise bank a shelf it cannot
       // stand behind — and unlike a screen that says nothing, that is permanent.

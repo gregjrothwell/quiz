@@ -324,6 +324,23 @@ async function main(): Promise<void> {
         setDoc(doc(db, 'seasons', ANY_SEASON, 'players', 'not-my-uid'), validSeasonRow),
     },
     {
+      // The bound was published ahead of the feature. This is the check that it
+      // was published *correctly* — a row that cannot carry a team is a league
+      // table nobody can join, and the failure would only appear at bank time.
+      label: 'Firestore   · write a season row carrying a team',
+      expect: 'allow',
+      hint: 'firestore.rules does not list `team` in the season row keys — '
+        + 'nobody can be put in a league',
+      run: () => setDoc(ownSeasonRow, { ...validSeasonRow, team: 'Engineering' }),
+    },
+    {
+      label: 'Firestore   · write a season row with an oversized team',
+      expect: 'deny',
+      hint: 'firestore.rules is missing the length bound on `team` — a field on '
+        + 'a document the whole office reads can be inflated without limit',
+      run: () => setDoc(ownSeasonRow, { ...validSeasonRow, team: 'E'.repeat(200) }),
+    },
+    {
       label: 'Firestore   · write a season row with a fantasy rosette count',
       expect: 'deny',
       hint: 'firestore.rules is missing the honour bounds on the season row — a '

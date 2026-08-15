@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { LeagueBoard } from '../components/LeagueBoard';
 import { RecoveryPanel } from '../components/RecoveryPanel';
 import { playerIdFor } from '../lib/identity';
 import { loadSeason, type SeasonRow } from '../lib/season';
@@ -78,47 +79,7 @@ export function Season({ youUid, onBack }: SeasonProps) {
       ) : null}
 
       {load.state === 'ready' && load.rows.length > 0 ? (
-        <div className="season-wrap">
-          <table className="season">
-            <thead>
-              <tr>
-                <th scope="col">
-                  <span className="sr-only">Position</span>
-                </th>
-                <th scope="col">Contender</th>
-                <th scope="col">Played</th>
-                <th scope="col">Wins</th>
-                <th scope="col">Best</th>
-                <th scope="col">Rosettes</th>
-                <th scope="col">Points</th>
-              </tr>
-            </thead>
-            <tbody>
-              {load.rows.map((row, index) => {
-                const rosettes = row.fastest + row.comeback + row.loneWolf + row.contrarian;
-                const yours = row.playerId === youPlayerId;
-
-                return (
-                  <tr key={row.playerId} data-you={yours ? '' : undefined}>
-                    <td>{index + 1}</td>
-                    <td>
-                      {row.name}
-                      {yours ? <span className="you">You</span> : null}
-                    </td>
-                    <td>{row.played}</td>
-                    <td>{row.wins}</td>
-                    <td>{row.best.toLocaleString('en-GB')}</td>
-                    {/* A dash rather than a nought: most rows predate honours
-                        entirely, and a column of zeroes reads as a season of
-                        failure rather than a column with no history behind it. */}
-                    <td>{rosettes > 0 ? rosettes : '—'}</td>
-                    <td>{row.points.toLocaleString('en-GB')}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <LeagueBoard rows={load.rows} youPlayerId={youPlayerId} />
       ) : null}
 
       {youUid ? <RecoveryPanel uid={youUid} onClaimed={onClaimed} /> : null}

@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react';
 import { ColdOpen } from '../components/ColdOpen';
+import { LeagueBoard } from '../components/LeagueBoard';
 import { RecoveryPanel } from '../components/RecoveryPanel';
 import type { QuestionRecord } from '../engine/awards';
 import { createRoom, type QuizQuestion, type RoomState } from '../engine/state';
+import type { SeasonRow } from '../lib/season';
 import type { PackSummary } from '../lib/usePacks';
 import { Final } from './Final';
 import { Landing } from './Landing';
@@ -183,6 +185,23 @@ const REVIEWED_GAME: QuestionRecord[] = [
     },
     deltas: { greg: 1_000, sam: 900, priya: 800, alex: 700 },
   },
+];
+
+/**
+ * A season board with two leagues, somebody in neither, and a row from before
+ * leagues existed — which is what most of the live board still looks like.
+ */
+const SEASON_ROWS: SeasonRow[] = [
+  { playerId: 'sam', name: 'Sam', team: 'Engineering', played: 12, wins: 5, points: 41_200,
+    best: 8_150, fastest: 3, comeback: 1, loneWolf: 2, contrarian: 0 },
+  { playerId: 'greg', name: 'Greg', team: 'Engineering', played: 14, wins: 4, points: 38_900,
+    best: 7_400, fastest: 2, comeback: 2, loneWolf: 0, contrarian: 1 },
+  { playerId: 'priya', name: 'Priya', team: 'Marketing', played: 11, wins: 3, points: 33_100,
+    best: 6_900, fastest: 1, comeback: 0, loneWolf: 1, contrarian: 0 },
+  { playerId: 'alex', name: 'Alex', team: '', played: 9, wins: 1, points: 24_050,
+    best: 5_200, fastest: 0, comeback: 1, loneWolf: 0, contrarian: 3 },
+  { playerId: 'nadia', name: 'Nadia', team: 'Marketing', played: 4, wins: 0, points: 9_800,
+    best: 3_100, fastest: 0, comeback: 0, loneWolf: 0, contrarian: 0 },
 ];
 
 const noop = (): void => undefined;
@@ -382,6 +401,10 @@ export function Preview() {
           onSeason={noop}
         />
       ),
+    },
+    {
+      title: 'Season · the league board',
+      node: <LeagueBoard rows={SEASON_ROWS} youPlayerId="greg" />,
     },
     {
       title: 'Cold open · the opening titles',

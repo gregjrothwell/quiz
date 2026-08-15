@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { isValidRoomCode, normaliseRoomCode, ROOM_CODE_LENGTH } from '../engine/roomCode';
+import { MAX_TEAM_LENGTH } from '../engine/team';
 import { MAX_NAME_LENGTH, rememberedName } from '../lib/rememberedName';
+import { rememberedTeam } from '../lib/rememberedTeam';
 
 interface LandingProps {
   busy: boolean;
   error: string | null;
   /** Carried in from a join link, so a phone only has to supply a name. */
   initialCode?: string;
-  onCreate: (name: string) => void;
-  onJoin: (code: string, name: string) => void;
+  onCreate: (name: string, team: string) => void;
+  onJoin: (code: string, name: string, team: string) => void;
   onSeason: () => void;
 }
 
@@ -25,6 +27,7 @@ export function Landing({
   // arrived believing, which is the thing worth saying out loud below.
   const [remembered] = useState(rememberedName);
   const [name, setName] = useState(remembered);
+  const [team, setTeam] = useState(rememberedTeam);
   const [code, setCode] = useState(initialCode);
 
   const trimmedName = name.trim();
@@ -96,6 +99,24 @@ export function Landing({
             Remembered from last time — change it if you aren&rsquo;t {remembered}.
           </p>
         ) : null}
+
+        {/*
+          Optional, and second, because it is: a quiz you cannot join without
+          naming a department is a quiz people stop joining. Left blank it
+          changes nothing at all — see `GameResult.team` for why an empty box
+          never clears a team somebody set elsewhere.
+        */}
+        <label className="field">
+          <span className="field__label">Team — optional, for the league table</span>
+          <input
+            className="input"
+            value={team}
+            onChange={(event) => setTeam(event.target.value)}
+            placeholder="e.g. Engineering"
+            maxLength={MAX_TEAM_LENGTH}
+            autoComplete="organization"
+          />
+        </label>
       </section>
 
       <div className="split split--two">
@@ -114,7 +135,7 @@ export function Landing({
             type="button"
             className="btn btn--primary"
             disabled={!canCreate}
-            onClick={() => onCreate(trimmedName)}
+            onClick={() => onCreate(trimmedName, team)}
           >
             Start a new room
           </button>
@@ -155,7 +176,7 @@ export function Landing({
             type="button"
             className="btn"
             disabled={!canJoin}
-            onClick={() => onJoin(code, trimmedName)}
+            onClick={() => onJoin(code, trimmedName, team)}
           >
             Join the round
           </button>

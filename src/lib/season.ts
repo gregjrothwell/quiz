@@ -12,6 +12,7 @@ import {
 import type { Honours } from '../engine/awards';
 import type { FormRecord } from '../engine/form';
 import { foldRecords, type PlayerRecord } from '../engine/records';
+import { cleanTeam } from '../engine/team';
 import { firestore } from '../firebase';
 
 /**
@@ -53,6 +54,8 @@ export interface SeasonRow extends Honours {
   wins: number;
   points: number;
   best: number;
+  /** Empty for the many rows that predate leagues, or a player who set none. */
+  team: string;
 }
 
 /**
@@ -77,6 +80,16 @@ export interface GameResult {
   gameId: string;
   score: number;
   won: boolean;
+  /**
+   * The league this player is in, if this browser knows of one.
+   *
+   * An empty string means "leave whatever the record already says", not "no
+   * team". The team lives on the season record but is remembered per browser, so
+   * a regular who set their team on a laptop and then plays from a phone would
+   * otherwise clear it by banking one game — and would have no idea they had.
+   * Taking a team *off* a record is done by editing it on the season screen.
+   */
+  team: string;
   /**
    * The rosettes this player took tonight, or none.
    *
@@ -108,11 +121,13 @@ export async function recordGame(result: GameResult): Promise<void> {
     // The transaction already holds the row, so the rosettes cost no read of
     // their own — the same reason `best` is worked out here rather than with a
     // server-side sentinel it does not have.
+    // `set` is a whole-document overwrite, so anything not named here is erased
+    // by every game anybody plays. An empty incoming team therefore means "keep
+    // what is there" rather than "clear it" — see `GameResult.team`.
+    const team = cleanTeam(result.team) || cleanTeam(existing?.team);
+
     const next: SeasonDoc = {
-      // `set` is a whole-document overwrite, so anything this type does not name
-      // is erased by every game anybody plays. `team` is bounded in the rules
-      // ahead of its feature and must survive that — see `PlayerRecord`.
-      ...(existing?.team === undefined ? {} : { team: existing.team }),
+      ...(team ? { team } : {}),
       name: result.name,
       played: (existing?.played ?? 0) + 1,
       wins: (existing?.wins ?? 0) + (result.won ? 1 : 0),
@@ -284,6 +299,7 @@ export async function loadSeason(): Promise<SeasonRow[]> {
       wins: data.wins,
       points: data.points,
       best: data.best,
+      team: cleanTeam(data.team),
       // Absent on every row written before honours existed, which is most of
       // them, and zero is the honest reading of a row that never counted any.
       fastest: data.fastest ?? 0,
