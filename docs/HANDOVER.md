@@ -15,9 +15,72 @@ Built to replace Polly in Teams.
   ids hash the question text, so a revised question leaves its old answer in
   place, unread and harmless. All 14,176 pack questions across the ten packs
   resolve to an answer.
-- **Next:** nothing queued, and the read budget has been counted — see [what it
-  all costs](#what-it-all-costs-and-how-much-room-is-left). Roughly 27 full quiz
-  nights a day against the free tier, for a weekly quiz. [The round in review](#the-round-in-review),
+- **Next: two console steps, and they are the only things outstanding.** A
+  maintenance pass on 15 August 2026 did the code half of both and cannot do the
+  other half from here:
+  1. ~~Prune the rooms.~~ **Done, 15 August 2026: 81 rooms and 533 documents
+     deleted**, leaving 3. Season rows, the vault and the question history were
+     untouched and `check-rules` still passes. Re-run `npm run prune-rooms`
+     occasionally — quarterly is ample at one room per game.
+  2. **Enforce App Check.** It is registered, deployed and **verified minting
+     tokens on the live site, 15 August 2026** — the token in IndexedDB decodes
+     to `provider: recaptcha_v3`, `aud: projects/quiz-d686e`, 24-hour expiry.
+     What is left is the enforcement switch.
+
+     **Firebase console → Security → App Check → the `APIs` tab** — not the
+     `Apps` tab, which is where registration lives and where the debug-token
+     menu hides. **Expand the metrics view for the product, then click
+     Enforce.** It takes up to 15 minutes to take effect.
+
+     **A product only appears there once App Check metrics have populated for
+     it**, which lags real traffic by up to 24 hours. On 15 August the tab
+     showed nothing but a link to the Cloud Functions documentation, which reads
+     like a missing step and is not one — it is the empty state. Tokens were
+     already being minted and verified on the live site at the time. Wait, then
+     look again.
+
+     Requests are classified **Verified / Outdated client / Unknown origin /
+     Invalid**. Enforcement refuses everything that is not Verified, so that is
+     the number to watch — and it is why the metrics appearing is a
+     precondition rather than an obstacle.
+
+     Why it matters: anonymous auth means accounts can be minted against this
+     project without limit, and a game is ~800 reads against 50,000 a day — so
+     one room code and a script can take the quiz down for a day. That is true
+     now, not at some future scale.
+
+     Three things that are easy to get wrong:
+     - **Never add `localhost` to the reCAPTCHA allowed domains.** Firebase's
+       own documentation says so outright: the site key is public, so it would
+       let anyone run this app against this project from their machine. Local
+       work uses a registered **debug token**, which is revocable.
+     - **The harnesses are covered, and it took a different provider.**
+       `check-rules`, `sync-harness` and `host-room` talk to the live project
+       with the client SDK from Node, and reCAPTCHA cannot attest a Node
+       process. The first attempt used `ReCaptchaV3Provider` and died with
+       `document is not defined` — **every `document` reference in
+       `@firebase/app-check` is in the reCAPTCHA path**, which injects a div and
+       two script tags. `initializeAppCheck` itself is DOM-free, so
+       `scripts/appCheck.ts` uses `CustomProvider` instead and trades the debug
+       token for a real App Check token over the `exchangeDebugToken` REST
+       endpoint. Verified 15 August 2026: `check-rules` 36/36 and
+       `sync-harness 10` all joined within 62 ms, both with tokens accepted.
+
+       The exchange runs **eagerly**, once per client, rather than waiting for
+       something to need a token. `getToken` is lazy and enforcement is off, so
+       nothing would call it — and the question the preflight exists to answer
+       is whether these scripts survive enforcement being switched on. Left
+       lazy, it would have reported a clean run right up until the day it
+       mattered.
+     - **A 403 from `www.google.com/recaptcha/…` in the console is normal.**
+       Those requests are cross-origin and opaque, so the browser cannot say
+       which one it was. The token minted regardless; it is telemetry, not a
+       failure. Check the App Check metrics screen, not the browser console.
+- **The read budget has been counted** — see [what it all
+  costs](#what-it-all-costs-and-how-much-room-is-left). Roughly 27 full quiz
+  nights a day against the free tier, for a weekly quiz, **at six players** —
+  the cost is quadratic in room size, which is the part worth carrying around.
+  [The round in review](#the-round-in-review),
   [durable identity](#durable-identity), [Form](#form--the-opening-titles) and
   [teams](#teams--shipped-15-august-2026) are all shipped, published and
   deployed. **What is missing is a round with other people in it** — a solo game
@@ -52,9 +115,9 @@ Built to replace Polly in Teams.
 > fail permissively, and that direction is silent: everything works, and nobody
 > finds out `list` is still open until somebody enumerates every room.
 >
-> 35 checks — thirteen from the security review, seven for the vault, two for
-> the question history, two for the answer window, nine for identity, two for
-> teams. The vault
+> 36 checks — twelve that must be allowed and twenty-four that must be refused.
+> Count them with `grep -c "label:" scripts/check-rules.ts` rather than trusting
+> this line; it has drifted twice. The vault
 > seven include the one that catches `firestore.seed.rules` being left
 > published, which would leave every answer in the game overwritable by anybody.
 >
@@ -941,13 +1004,19 @@ count is a query.
 
 | | |
 |---|---|
-| rooms | 76 |
+| rooms | 79 — of which **1 carries `expiresAt`** |
 | vault answers | 13,593 |
 | `season-2` players | 20 |
 | recovery codes | 0 |
 | identity claims | 0 |
 
 The last two are zero because they shipped that morning.
+
+`take-stock` now also counts how many rooms carry `expiresAt`, which is the
+number that says how much of the backlog a TTL policy can actually reach — and
+the check that the field is still being written at all. The 78 without it
+predate the change and will sit there until somebody removes them from the
+console.
 
 ### Reads, for a six-player night
 
@@ -961,6 +1030,41 @@ The last two are zero because they shipped that morning.
 **About 27 full nights a day against a 50,000-read free tier, for a weekly
 quiz.** Writes are nowhere near the limit: a game is well under 200 against
 20,000 a day.
+
+### The number that matters is not 1,812, it is the shape
+
+**That figure is for six players, and the cost is quadratic in room size.**
+Every client holds an unfiltered `onSnapshot` on the answers subcollection, so
+each answer written is one changed document delivered to all *N* listeners:
+
+```
+reads ≈ Q·N²  (answers)  +  ~3·Q·N  (room-document transitions)
+```
+
+| Players | Reads, 15 questions | Games/day on the free tier |
+|---|---|---|
+| 6 | ~810 | ~61 |
+| 12 | ~2,700 | ~18 |
+| 25 | ~10,500 | ~4.7 |
+| 50 | ~39,750 | ~1.25 |
+| 100 | ~154,500 | **one game cannot finish** |
+
+Doubling the room roughly quadruples the bill. Nothing about an office quiz gets
+near this — but it is the reason "how many nights a day" is a misleading way to
+hold the budget, and the first thing to re-derive if the rooms ever get bigger.
+
+**The wall that arrives first is not Firestore, though.** The Realtime Database
+on the Spark plan caps at **100 simultaneous connections, project-wide**, and
+every player holds one for presence. That is around sixteen concurrent
+six-player rooms across the whole project, and connections are refused rather
+than degraded. Blaze raises it to 200,000.
+
+If the reads ever genuinely bind, the fix is not a rewrite: **move the answers
+fan-out to the Realtime Database**, which is already wired up, already carries
+presence, and is billed on bytes rather than per document. A 50-player game is
+~7.5 MB against a 10 GB/month allowance — roughly 35× the headroom, on the same
+free tier. It is contained to `useRoom.ts`, because `submitAnswer` and
+`room.answers` are the only surface anything else sees.
 
 ### What the season work actually added
 
@@ -978,19 +1082,73 @@ looked fussy at the time:
   transaction that already reads the row; the merge is two reads on a claim,
   which happens once ever; the review reads a log that is already in memory.
 
-**The season board is the one line worth watching**, and it is the one thing here
-that is user-driven rather than per-game: 50 reads every time somebody opens it,
-and the final screen now points them at it. At six people that is 300 a night —
-comfortable, but it is the number that would move first if the office grew. The
-cheap fixes if it ever matters are a lower `TABLE_LIMIT` or caching the table for
-a few minutes; neither is needed now.
+**The season board was the one line worth watching**, and it is the one thing
+here that is user-driven rather than per-game: 50 reads every time somebody
+opened it, and the final screen points them at it. At six people that was 300 a
+night.
+
+**It is now cached for a minute** (`TABLE_CACHE_MS` in `src/lib/season.ts`),
+which is aimed at the pattern that actually costs — one person bouncing between
+the final screen and the board and back — rather than at one person looking
+once. Both writers in that file clear the cache, so your own game and your own
+claim always show immediately; the window can only ever hide somebody else's
+row, for less than a minute. A lower `TABLE_LIMIT` is still the next lever if it
+ever matters.
 
 ### The two slow leaks
 
-Neither is urgent, both only ever grow:
+- **Rooms.** 79 after a couple of months, at roughly one per game, every one
+  holding players' names, and `allow delete: if false`. **Every room created
+  from 15 August 2026 carries an `expiresAt` timestamp** so a Firestore TTL
+  policy has something to expire against — the client half is done, and **the
+  console half is not.** Until the policy exists, nothing is being deleted.
 
-- **Rooms are never deleted** and have no TTL. 76 after a couple of months, at
-  roughly one per game. Every one holds players' names.
+  > ### Firestore TTL policies need billing enabled
+  >
+  > **Creating one on this project fails with `403: Project quiz-d686e has
+  > billing disabled`.** TTL is a Blaze feature. The Firebase and Cloud TTL
+  > documentation does not say so anywhere on the page — it is discovered at the
+  > Create Policy button. Written down here so nobody spends another afternoon
+  > looking for the setting.
+  >
+  > So the answer is **`npm run prune-rooms`**, not a policy. It does the same
+  > job from a machine that already holds the service-account key, and it is
+  > better in two ways: it deletes the `answers` and `reveal` subcollections,
+  > which a TTL sweep orphans forever, and with `--legacy` it reaches the rooms
+  > written before `expiresAt` existed, which a policy can never touch.
+  >
+  > ```bash
+  > npm run prune-rooms              # lists what it would delete, deletes nothing
+  > npm run prune-rooms -- --legacy  # also lists rooms with no expiresAt
+  > npm run prune-rooms -- --go      # actually deletes
+  > ```
+  >
+  > It is capped at 200 rooms a run and skips `rules-check-live`, which the
+  > preflight owns and recreates. Nothing runs it automatically; at one room per
+  > game that is a job for once a quarter, and `take-stock` says when it is due.
+
+  `expiresAt` is still the right field and is still written, because it is what
+  makes "past its expiry" a question the data can answer rather than a guess
+  about age. The retention lives in `ROOM_RETENTION_MS` in `useRoom.ts` and is
+  thirty days.
+
+  **If this project ever moves to Blaze**, a TTL policy becomes available and is
+  worth having as well — it is automatic where the script is not. Google Cloud
+  console → Firestore → Databases → `(default)` → Time-to-live → Create Policy,
+  collection group `rooms`, timestamp field `expiresAt`, **expiration offset 0**
+  because the thirty days are already in the field. The field name is **typed
+  in, not chosen from a list**: Firestore has no schema, so the form cannot
+  enumerate fields, and it does not need the field to exist yet either. Even
+  then, keep the script — a policy still orphans the subcollections.
+
+  No rules change was needed for `expiresAt`, which is worth knowing before
+  anybody goes looking: `wellFormed()` bounds the fields it names and does not
+  `hasOnly` the document's keys, the same reason `openedAt` can be written
+  without being declared.
+
+  79 rooms currently predate `expiresAt`. `npm run prune-rooms -- --legacy`
+  lists them; nothing has been deleted.
+
 - **Recovery codes are never tidied**, though they are deletable by their owner,
   which is how a leaked one is revoked. One document per person who ever asks
   for a code, so it is far slower than rooms.
@@ -1084,6 +1242,10 @@ happened once.
 | **A team is grouped on a normalised key but shown as it was typed** (`teamKey`) | Free text means "Engineering", "engineering" and " Engineering " all exist. Keying on trimmed lowercase merges them on the board without rewriting anybody's spelling. Deliberately nothing cleverer — collapsing "Eng" into "Engineering" needs a dictionary, and merging two teams somebody meant to keep apart is worse than showing both. |
 | **An empty team never clears one that is already set** (`GameResult.team`) | The team lives on the season record but is remembered per browser. A regular who set theirs on a laptop and then played from a phone would otherwise wipe it by banking a single game, silently. Removing a team is a deliberate edit, not a side effect of playing. |
 | **Firebase is a separate build chunk** (`vite.config.ts`) | Not to make the download smaller — it is a few hundred bytes bigger. As one file every deploy changed the hash, so a returning player re-fetched the whole 260 kB including the Firebase half that had not changed, seeing nothing until it landed. Split, an ordinary deploy leaves that hash alone. Proven by building twice across a real code change; a comment-only change proves nothing, because minification strips it and the output is byte-identical. |
+| **`motion` is a separate chunk too** (`vite.config.ts`) | Same argument, measured rather than assumed: it is 119.71 kB raw / 39.61 kB gzipped, which was 35% of the app chunk, for `MotionConfig` and the standings reorder and nothing else. Split, an ordinary deploy re-invalidates 74 kB gzipped instead of 114 kB. Matched on `framer-motion` as well as `motion`, because that is what `motion/react` re-exports and half of it lands back in the app chunk otherwise. |
+| **The season table is cached for a minute** (`TABLE_CACHE_MS`) | It is the one read here that is user-driven rather than per-game, and the final screen points every player at it. The pattern that costs is bouncing between the final screen and the board, not looking once. Both writers in `season.ts` clear the cache, so your own game and your own claim are never what the window hides. Handed out as a copy, because the cache holds the only reference and an in-place sort added later would corrupt every read after it rather than failing where it was written. |
+| **`recordAsked` is given the history rather than reading it** | `selectQuestions` has already read the same document to choose what to serve, so reading it again was the same document twice in one round start. The cost is that the read-to-write gap widens from nothing to the length of a round start, so two rooms opening the same pack in the same season inside that window would see one overwrite the other's history. What is lost is a repeated question, which is the thing this mechanism is a best effort against anyway — the caller already swallows a failure here for the same reason. |
+| **`bankedRef` is cleared when banking fails** (`App.tsx`) | It is set before the write, so a re-render cannot bank twice — but that also meant one flaky moment on the final screen lost the game permanently, because the ref said it had been banked and nothing ever looked again. Retrying is safe by construction: `recordGame` compares `lastGame` inside its transaction, so a retry that races a write which did land is a no-op. Nothing retries on a timer; the next room update or a reload is what tries again, and on a finished room the document is almost never written. |
 | **A whole-document `set` must name every field, including ones no feature uses yet** (`PlayerRecord.team`) | Both season writers use `set`. `team` was bounded in the rules ahead of its feature, and neither writer knew about it — so the first game anybody played after teams shipped would have cleared their league, and the one after that too. Teams would have appeared to work and quietly emptied themselves overnight. Anything else added to `firestore.rules` ahead of its client needs the same treatment. |
 | **`playerId` defaults to the auth uid** (`playerIdFor`) | It is what makes the change free. Every season row already written is keyed by a uid, which the new scheme reads as a playerId nobody has claimed — so there is no migration, no backfill, and a player who never claims anything behaves byte-for-byte as they did. Nothing is even stored until a claim happens. |
 | **`exists()` precedes `get()` in `ownsPlayer`** | A `get()` on a missing document returns null and reading `.data` off null *errors* the rule, which denies. Without the guard, every browser that has never claimed anything is locked out of its own row — the common case broken by a check meant for the rare one. |
@@ -1502,6 +1664,43 @@ Both were costed; neither is queued.
 
 ---
 
+## Lessons from the 15 August session
+
+Six wrong statements were made about Google's console and Firebase's product
+behaviour during one afternoon's work. Every one of them was about the
+**platform**, not the code — the codebase claims in the same session were
+checked empirically and held up. That asymmetry is the lesson, so it is written
+down here rather than quietly fixed.
+
+| What was claimed | What is true |
+|---|---|
+| "Add `localhost` to the reCAPTCHA allowed domains" | **Never do this.** Firebase's docs say so outright: the site key is public, so it lets anyone run this app against this project from their machine. Debug tokens exist for exactly this. |
+| A TTL policy on `createdAt` would work | It deletes when the field is *in the past*, so a creation stamp marks every room eligible the instant it is written. The field must be an expiry. |
+| "A TTL policy has no duration setting" | An optional **expiration offset** exists. The correction to the first error overshot into a second one. |
+| "Leave the offset blank" | The form requires a value. It is `0`. |
+| TTL was presented as a free-tier fix | **TTL requires billing enabled.** Creating one on Spark fails with a 403, which is stated on neither documentation page. |
+| Enforcement lives at a named console path | Half right, and asserted before checking. It is Security → App Check → APIs, but the product must have metrics before it can be enforced. |
+
+**The rule that would have prevented all six: never state platform behaviour
+from memory.** Fetch the documentation first, and where the documentation is
+silent — as it was on TTL and billing — say it is silent rather than filling the
+gap with a plausible guess. A confident wrong instruction about a console costs
+more than "I need to check", because it is acted on.
+
+**The second rule: a correction is not automatically right either.** Two of the
+six were corrections to earlier errors. After being wrong once about a thing,
+verify the replacement claim harder than the original, not less.
+
+**What did work**, and is worth keeping as the pattern: every claim about *this
+repo* was proved by running something. The `expiresAt` write was confirmed by
+creating a real room and reading it back. The App Check token was confirmed by
+decoding it out of IndexedDB. The Node incompatibility was found by running
+`check-rules` rather than reasoning about whether `firebase/app-check` needs a
+DOM — and the fix was found by grepping the package to see *which* code touched
+`document`. Nothing in that column had to be walked back.
+
+---
+
 ## Gotchas
 
 - **`gh` token lacks the `workflow` scope** (`gist, read:org, repo`). Anything under
@@ -1563,7 +1762,11 @@ and `check-rules` confirmed the semantics, which between them cover it.
 
 ### Verified clean, independently
 
-- `npm audit` — 0 vulnerabilities, production and dev (371 packages).
+- `npm audit` — 0 vulnerabilities, production and dev. **This drifted and was
+  put back on 15 August 2026**: two high-severity advisories had appeared in
+  dev-only transitives (`nanoid` under `vite`, `brace-expansion` under `eslint`),
+  cleared by `npm audit fix`. The production tree was never affected. Re-run it
+  before a review rather than reading this line — that is the whole lesson.
 - No `.env` has ever been committed; only `.env.example` is in the history, and
   no `AIza`-shaped literal appears in any commit.
 - No `dangerouslySetInnerHTML`, `innerHTML`, `eval`, `new Function` or
@@ -1631,10 +1834,14 @@ and `check-rules` confirmed the semantics, which between them cover it.
    presence. **If this project is ever moved to Blaze, set a budget that day** —
    the same exhaustion stops being an outage and starts being an invoice.
    App Check is the real fix either way.
-2. **Rooms are never deleted** (`allow delete: if false`) and have no TTL, so
-   every room ever created persists with its players' names in it. A scheduled
-   cleanup, or a `createdAt` field plus a TTL policy, is the fix. Right now the
-   only way to remove one is the console.
+2. ~~**Rooms are never deleted**~~ **Solved, 15 August 2026 — but not the way
+   it was planned.** Rooms carry `expiresAt` and `npm run prune-rooms` removes
+   the expired ones along with their subcollections. The intended fix was a
+   Firestore TTL policy; **TTL requires billing enabled and this is a Spark
+   project**, which is not stated on either documentation page and is discovered
+   at the Create Policy button. The item is closed once somebody actually runs
+   the script with `--go`; 79 rooms are still there. See [the two slow
+   leaks](#the-two-slow-leaks).
 3. **No Content-Security-Policy.** GitHub Pages cannot set headers, but a `<meta
    http-equiv>` CSP in `index.html` would still be worth having — `default-src
    'self'` with `connect-src` for the Firebase hosts. Left alone deliberately:

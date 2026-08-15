@@ -114,9 +114,15 @@ function Game() {
   const [actionError, setActionError] = useState<ActionError | null>(null);
   const [showSeason, setShowSeason] = useState(false);
 
-  // Which game this device has already banked, so a re-render on the final
-  // screen cannot bank it twice. The season document carries the same guard for
-  // anything this ref cannot see, such as a reload.
+  // Which game this device has already banked, or is in the middle of banking,
+  // so a re-render on the final screen cannot bank it twice. The season document
+  // carries the same guard for anything this ref cannot see, such as a reload.
+  //
+  // Cleared again if the write fails, because otherwise a single flaky moment on
+  // the final screen loses the game permanently: the ref would say it had been
+  // banked, and nothing would ever look again. Retrying is safe by construction
+  // — `recordGame` compares `lastGame` inside its transaction, so a retry that
+  // races a write which actually landed is a no-op rather than a double count.
   const bankedRef = useRef<string | null>(null);
 
 
@@ -247,9 +253,11 @@ function Game() {
           ]);
 
           // After the round is safely under way, for the same reason.
-          await recordAsked(packId, questions.map((question) => question.id)).catch(
-            () => undefined,
-          );
+          await recordAsked(
+            packId,
+            questions.map((question) => question.id),
+            asked,
+          ).catch(() => undefined);
         })
         .catch(report)
         .finally(() => setBusy(false));
@@ -405,7 +413,13 @@ function Game() {
       honours: sawWholeGame(gameLog, room.questions.length)
         ? honoursFor(gameLog, Object.keys(room.players), uid)
         : NO_HONOURS,
-    }).catch(report);
+    }).catch((cause: unknown) => {
+      // Put the game back within reach of another attempt. Nothing retries on a
+      // timer — the next room update or a reload is what tries again — so this
+      // cannot spin: on a finished room the document is almost never written.
+      bankedRef.current = null;
+      report(cause);
+    });
   }, [room, uid, gameLog, report]);
 
   if (connection === 'error') {

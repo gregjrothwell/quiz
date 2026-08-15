@@ -23,6 +23,7 @@
 
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously } from 'firebase/auth';
+import { attachDebugAppCheck } from './appCheck';
 import { get, getDatabase, ref, remove, set } from 'firebase/database';
 import {
   Timestamp,
@@ -196,6 +197,7 @@ interface Check {
 
 async function main(): Promise<void> {
   const app = initializeApp(config, 'check-rules');
+  await attachDebugAppCheck(app);
   const credential = await signInAnonymously(getAuth(app));
   const uid = credential.user.uid;
   const db = getFirestore(app);
@@ -213,6 +215,7 @@ async function main(): Promise<void> {
    * which is to say not at all.
    */
   const appB = initializeApp(config, 'check-rules-claimer');
+  await attachDebugAppCheck(appB);
   const credentialB = await signInAnonymously(getAuth(appB));
   const uidB = credentialB.user.uid;
   const dbB = getFirestore(appB);

@@ -82,6 +82,28 @@ briefly writable by anyone — the key is worth the five minutes.
 There is more on how this works, and on what it does and does not prevent, in
 [docs/HANDOVER.md](docs/HANDOVER.md).
 
+### 5. Optional: App Check
+
+Anonymous auth lets anyone mint accounts against the project, and a game is
+~800 reads against 50,000 a day — so one room code and a script can take the
+quiz down for a day. App Check is what stops that.
+
+Register a reCAPTCHA v3 site at
+[google.com/recaptcha/admin](https://www.google.com/recaptcha/admin), put the
+**secret** key into Firebase → App Check, and the **site** key into
+`.env.local` as `VITE_FIREBASE_APPCHECK_SITE_KEY`. Leave it unset and App Check
+is simply not initialised.
+
+> **Do not add `localhost` to the reCAPTCHA allowed domains.** The site key is
+> public, so that would let anyone run this app against your project from their
+> own machine. Add only your deployed domain, and use a debug token — App Check
+> → Manage debug tokens — in `VITE_FIREBASE_APPCHECK_DEBUG_TOKEN` for local
+> work. The scripts need it too: reCAPTCHA cannot attest a Node process.
+
+**Turn enforcement on last.** Register, deploy, watch the App Check metrics
+until verified requests dominate, *then* enforce. Enforcing before the deployed
+bundle is sending tokens locks every player out.
+
 ---
 
 ## Running it
@@ -107,6 +129,8 @@ The app is served under `/quiz/`, so the local URL is
 | `npm run check-rules` | Confirm both rulesets are actually published (they are pasted in by hand) |
 | `npm run sync-harness 10` | Put 10 real clients in one room and measure how fast each sees a round start |
 | `npm run host-room` | Host a room from the terminal, so a browser can be watched as an ordinary player |
+| `npm run take-stock` | Count what is in Firestore, for single-digit reads |
+| `npm run prune-rooms` | List rooms past their expiry. Add `--go` to delete them, `--legacy` to include rooms written before expiries existed |
 
 The last four talk to the live Firebase project. The two harnesses exist because
 a single browser cannot show what a room full of people does — they are how the
@@ -233,6 +257,10 @@ us during development; CSS `animation-fill-mode: both` cannot fail the same way.
 
 ## Known limits
 
+- **Rooms are cleaned up by hand.** Every room carries an `expiresAt` thirty
+  days out, and `npm run prune-rooms` removes the expired ones and their
+  subcollections. It is not automatic: Firestore's own TTL policies require
+  billing enabled, and this is a free-tier project.
 - **Any room member can write scores.** The rules require a signed-in member, but
   can't restrict phase and score writes to the quizmaster without storing the
   quizmaster's id — which would reintroduce the disconnect race above. Fine among
@@ -246,9 +274,10 @@ us during development; CSS `animation-fill-mode: both` cannot fail the same way.
 - **Repeats are reduced, not eliminated.** A round prefers questions the season
   hasn't served, but a thin pack still reuses one rather than serving a short
   round. Sport, at 125 questions, is the one where you would notice.
-- **Bundle is ~242 kB gzipped**, nearly all Firebase, plus 67 kB of self-hosted
-  fonts. Fine on an office network; code-splitting would be the fix if it ever
-  matters.
+- **Bundle is ~258 kB gzipped**, plus 8 kB of CSS and 67 kB of self-hosted
+  fonts. Split three ways — Firebase (144 kB) and `motion` (40 kB) are both
+  dependencies that never change, so an ordinary deploy only invalidates the
+  74 kB app chunk and a returning player re-fetches that alone.
 - **Season standings follow the browser, not the person.** Anonymous auth gives
   every browser a durable id with no sign-up, which is the appeal and the
   limitation: cleared site data, a private window or a second device all start a

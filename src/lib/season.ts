@@ -143,6 +143,9 @@ export async function recordGame(result: GameResult): Promise<void> {
 
     transaction.set(reference, next);
   });
+
+  // Your own game is the one you will go straight to the board to look for.
+  invalidateSeason();
 }
 
 /**
@@ -170,7 +173,7 @@ export async function recordGame(result: GameResult): Promise<void> {
 export async function mergeRecords(from: string, into: string): Promise<boolean> {
   if (from === into) return false;
 
-  return runTransaction(firestore(), async (transaction) => {
+  const merged = await runTransaction(firestore(), async (transaction) => {
     // Both reads before either write: Firestore transactions require it.
     const source = await transaction.get(playerDoc(from));
     if (!source.exists()) return false;
@@ -188,6 +191,12 @@ export async function mergeRecords(from: string, into: string): Promise<boolean>
     transaction.delete(playerDoc(from));
     return true;
   });
+
+  // A merge removes one row and rewrites another, so a cached table would show
+  // the duplicate this exists to get rid of.
+  if (merged) invalidateSeason();
+
+  return merged;
 }
 
 /**
@@ -230,9 +239,22 @@ export async function loadAsked(packId: string): Promise<Set<string>> {
  * Written whole rather than appended with `arrayUnion` because the cap has to
  * be applied somewhere, and `arrayUnion` has no notion of oldest. Ordering the
  * array newest-first means the cap drops the questions nobody remembers anyway.
+ *
+ * **`previous` is passed in rather than read here**, because the caller has
+ * already read it — `selectQuestions` needs the same set to choose what to
+ * serve, so reading it again is the same document twice in one round start. It
+ * widens the read-to-write gap from nothing to the length of a round start, so
+ * two rooms opening the same pack in the same season within that window would
+ * see one overwrite the other's history. The cost of losing that race is a
+ * repeated question, which is what this whole mechanism is a best effort
+ * against in the first place — the caller already swallows a failure here for
+ * the same reason.
  */
-export async function recordAsked(packId: string, ids: readonly string[]): Promise<void> {
-  const previous = await loadAsked(packId);
+export async function recordAsked(
+  packId: string,
+  ids: readonly string[],
+  previous: ReadonlySet<string>,
+): Promise<void> {
   const merged = [...ids, ...[...previous].filter((id) => !ids.includes(id))];
 
   await setDoc(askedDoc(packId), {
@@ -277,11 +299,47 @@ export async function loadForm(players: { uid: string; playerId: string }[]): Pr
 }
 
 /**
+ * How long a loaded table is reused before another open pays for it again.
+ *
+ * The board is {@link TABLE_LIMIT} documents, it is the one read here that is
+ * user-driven rather than per-game, and the final screen now points every
+ * player straight at it. What actually costs is one person bouncing in and out
+ * of it — final screen, board, back, board — not one person looking once. A
+ * minute covers that bounce and still guarantees the table corrects itself
+ * while the room is standing around talking about it.
+ *
+ * Anything *this* device writes clears the cache outright, so your own game and
+ * your own claim always show immediately. The window can only ever hide
+ * somebody else's row, for less than a minute, on a board nobody reads twice in
+ * that time expecting a different answer.
+ */
+const TABLE_CACHE_MS = 60_000;
+
+let cached: { rows: SeasonRow[]; at: number } | null = null;
+
+/**
+ * Drops the cached table, for a write that has just changed what it holds.
+ *
+ * Called by the two writers here rather than by their callers, so a future
+ * third writer that forgets is the only way this goes stale — and both of the
+ * current ones are in this file, where the omission is visible.
+ */
+export function invalidateSeason(): void {
+  cached = null;
+}
+
+/**
  * The season table, highest total first. Read on demand rather than subscribed
  * to: standings do not change while you are looking at them, and a live
  * listener on every client is the kind of fan-out this app spends care avoiding.
+ *
+ * Handed out as a copy. Nothing sorts or splices it today, but the cache holds
+ * the only reference, and an in-place sort added later would quietly corrupt
+ * every later read rather than failing where it was written.
  */
 export async function loadSeason(): Promise<SeasonRow[]> {
+  if (cached && Date.now() - cached.at < TABLE_CACHE_MS) return [...cached.rows];
+
   const snapshot = await getDocs(
     query(
       collection(firestore(), 'seasons', SEASON, 'players'),
@@ -290,7 +348,7 @@ export async function loadSeason(): Promise<SeasonRow[]> {
     ),
   );
 
-  return snapshot.docs.map((entry) => {
+  const rows = snapshot.docs.map((entry) => {
     const data = entry.data() as SeasonDoc;
     return {
       playerId: entry.id,
@@ -308,4 +366,7 @@ export async function loadSeason(): Promise<SeasonRow[]> {
       contrarian: data.contrarian ?? 0,
     };
   });
+
+  cached = { rows, at: Date.now() };
+  return [...rows];
 }

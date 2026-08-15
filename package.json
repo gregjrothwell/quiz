@@ -19,7 +19,8 @@
     "sync-harness": "tsx --env-file=.env.local scripts/sync-harness.ts",
     "host-room": "tsx --env-file=.env.local scripts/host-room.ts",
     "deploy": "npm run build && gh-pages -d dist",
-    "take-stock": "tsx --env-file=.env.local scripts/take-stock.ts"
+    "take-stock": "tsx --env-file=.env.local scripts/take-stock.ts",
+    "prune-rooms": "tsx --env-file=.env.local scripts/prune-rooms.ts"
   },
   "dependencies": {
     "firebase": "^11.1.0",
