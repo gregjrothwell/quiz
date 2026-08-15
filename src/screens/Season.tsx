@@ -13,18 +13,26 @@ type Load = { state: 'loading' } | { state: 'ready'; rows: SeasonRow[] } | { sta
 export function Season({ youUid, onBack }: SeasonProps) {
   const [load, setLoad] = useState<Load>({ state: 'loading' });
 
+  const [reloads, setReloads] = useState(0);
+  const [claimed, setClaimed] = useState<string | null>(null);
+
   /*
     Which row is yours is a question about the identity, not the browser. They
     are the same string until somebody claims a record with a recovery code, and
     the whole point of claiming is that afterwards they are not.
-  */
-  const [youPlayerId, setYouPlayerId] = useState(() => (youUid ? playerIdFor(youUid) : null));
-  const [reloads, setReloads] = useState(0);
 
-  const onClaimed = useCallback(() => {
-    if (youUid) setYouPlayerId(playerIdFor(youUid));
+    Derived on every render rather than captured once. `playerIdFor` reads
+    storage, which nothing re-renders on, so holding it in state alone would go
+    stale — a screen mounted before auth landed would sit on `null` for as long
+    as it was open and never highlight anybody's row. What a claim changes is
+    passed straight back from the panel instead of being re-read.
+  */
+  const youPlayerId = youUid ? (claimed ?? playerIdFor(youUid)) : null;
+
+  const onClaimed = useCallback((playerId: string) => {
+    setClaimed(playerId);
     setReloads((n) => n + 1);
-  }, [youUid]);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;

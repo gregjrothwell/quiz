@@ -14,8 +14,12 @@ import {
 
 interface RecoveryPanelProps {
   uid: string;
-  /** Re-read the board, because claiming changes whose row is yours. */
-  onClaimed: () => void;
+  /**
+   * Re-read the board, because claiming changes whose row is yours. Handed the
+   * new identity rather than leaving the screen to read it back out of storage,
+   * which nothing re-renders on.
+   */
+  onClaimed: (playerId: string) => void;
   /**
    * The code to open on, which is this browser's stored one in the app.
    *
@@ -115,11 +119,11 @@ export function RecoveryPanel({ uid, onClaimed, initialCode }: RecoveryPanelProp
 
     setStatus({ state: 'working' });
     try {
-      const { merged } = await claimIdentity(uid, candidate);
+      const { playerId, merged } = await claimIdentity(uid, candidate);
       setCode(candidate);
       setTyped('');
       setStatus({ state: 'claimed', merged });
-      onClaimed();
+      onClaimed(playerId);
     } catch (cause) {
       fail(cause);
     }

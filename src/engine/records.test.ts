@@ -109,3 +109,28 @@ describe('foldRecords', () => {
     expect(merged.fastest ?? 0).toBeLessThanOrEqual(merged.played);
   });
 });
+
+describe('foldRecords and the fields it does not own', () => {
+  test('carries a team through the fold', () => {
+    // #given a record joining one that already sits in a league
+    const source = record();
+    const target = record({ team: 'Engineering' });
+
+    // #when they are folded together
+    const merged = foldRecords(source, target);
+
+    // #then the league survives. Both writers use `set`, a whole-document
+    // overwrite, so a field dropped here is erased by the next game played
+    expect(merged.team).toBe('Engineering');
+  });
+
+  test('omits the team entirely when neither side has one', () => {
+    // #given two records from before leagues existed
+    // #when they are folded together
+    const merged = foldRecords(record(), record());
+
+    // #then the key is absent rather than explicitly undefined, which Firestore
+    // rejects outright
+    expect('team' in merged).toBe(false);
+  });
+});

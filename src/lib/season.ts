@@ -108,6 +108,10 @@ export async function recordGame(result: GameResult): Promise<void> {
     // their own — the same reason `best` is worked out here rather than with a
     // server-side sentinel it does not have.
     const next: SeasonDoc = {
+      // `set` is a whole-document overwrite, so anything this type does not name
+      // is erased by every game anybody plays. `team` is bounded in the rules
+      // ahead of its feature and must survive that — see `PlayerRecord`.
+      ...(existing?.team === undefined ? {} : { team: existing.team }),
       name: result.name,
       played: (existing?.played ?? 0) + 1,
       wins: (existing?.wins ?? 0) + (result.won ? 1 : 0),

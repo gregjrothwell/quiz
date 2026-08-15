@@ -14,6 +14,19 @@ export interface PlayerRecord {
   comeback?: number;
   loneWolf?: number;
   contrarian?: number;
+  /**
+   * Which league this record belongs to. Nothing writes it yet — the field is
+   * bounded in `firestore.rules` ahead of the feature, because the season row is
+   * validated with `hasOnly` and adding a field to it costs a hand-paste in the
+   * console.
+   *
+   * **It is carried through every write here for exactly that reason.** Both
+   * paths that write a row use `set`, which is a whole-document overwrite, so a
+   * field this type does not know about is erased by the next game anybody
+   * plays. That would have made the published bound worse than useless: teams
+   * would appear to work and quietly clear themselves overnight.
+   */
+  team?: string;
   /** The last game banked here, so the same one cannot count twice. */
   lastGame: string;
   lastPlayed: number;
@@ -48,7 +61,13 @@ export interface PlayerRecord {
 export function foldRecords(source: PlayerRecord, target: PlayerRecord | null): PlayerRecord {
   const newest = target && target.lastPlayed > source.lastPlayed ? target : source;
 
+  // The league the adopted record already sits in, falling back to the incoming
+  // one's. Spread conditionally rather than written as `undefined`, which
+  // Firestore rejects outright.
+  const team = target?.team ?? source.team;
+
   return {
+    ...(team === undefined ? {} : { team }),
     name: target?.name ?? source.name,
     played: (target?.played ?? 0) + source.played,
     wins: (target?.wins ?? 0) + source.wins,
