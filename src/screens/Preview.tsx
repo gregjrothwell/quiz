@@ -153,6 +153,36 @@ const AWARDED_GAME: QuestionRecord[] = [
   },
 ];
 
+/**
+ * A two-question game built for the review panel rather than the rosettes: the
+ * first question beat all four of them, and all four had the second. Both
+ * highlights need a whole room to be true of, so nothing here works with fewer.
+ */
+const REVIEWED_GAME: QuestionRecord[] = [
+  {
+    index: 0,
+    correctIndex: 0,
+    answers: {
+      greg: { optionIndex: 1, elapsedMs: 2_000 },
+      sam: { optionIndex: 2, elapsedMs: 2_400 },
+      priya: { optionIndex: 3, elapsedMs: 3_000 },
+      alex: { optionIndex: 1, elapsedMs: 4_000 },
+    },
+    deltas: { greg: 0, sam: 0, priya: 0, alex: 0 },
+  },
+  {
+    index: 1,
+    correctIndex: 0,
+    answers: {
+      greg: { optionIndex: 0, elapsedMs: 900 },
+      sam: { optionIndex: 0, elapsedMs: 1_500 },
+      priya: { optionIndex: 0, elapsedMs: 2_000 },
+      alex: { optionIndex: 0, elapsedMs: 2_600 },
+    },
+    deltas: { greg: 1_000, sam: 900, priya: 800, alex: 700 },
+  },
+];
+
 const noop = (): void => undefined;
 
 function selectedIndex(): number | null {
@@ -345,6 +375,24 @@ export function Preview() {
           youUid="greg"
           isQuizmaster
           log={AWARDED_GAME}
+          onPlayAgain={noop}
+          onLeave={noop}
+          onSeason={noop}
+        />
+      ),
+    },
+    {
+      title: 'Final · the round in review',
+      node: (
+        <Final
+          room={mockRoom({
+            phase: 'finished',
+            index: 1,
+            scores: { greg: 1_000, sam: 900, priya: 800, alex: 700 },
+          })}
+          youUid="greg"
+          isQuizmaster
+          log={REVIEWED_GAME}
           onPlayAgain={noop}
           onLeave={noop}
           onSeason={noop}

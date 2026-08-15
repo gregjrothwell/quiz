@@ -6,7 +6,7 @@ Built to replace Polly in Teams.
 - **Live:** https://gregjrothwell.github.io/quiz/
 - **Repo:** https://github.com/gregjrothwell/quiz (public, `master`, deploys from `gh-pages`)
 - **Firebase project:** `quiz-d686e` (Firestore + Realtime Database in europe-west1 + Anonymous auth)
-- **Status:** shipped and played. 192 tests, clean types and lint, no `any` or
+- **Status:** shipped and played. 221 tests, clean types and lint, no `any` or
   `@ts-ignore`. The **answer vault is live and covers the packs**: 13,593
   answers seeded against the 13,452 the packs need plus the 4 harness entries,
   both rulesets published, preflight passing.
@@ -15,7 +15,11 @@ Built to replace Polly in Teams.
   ids hash the question text, so a revised question leaves its old answer in
   place, unread and harmless. All 14,176 pack questions across the ten packs
   resolve to an answer.
-- **Next:** nothing queued. [The closing seconds now carry a
+- **Next:** [durable identity](#next-session--start-here), which is phase 2 of
+  three. Phase 1 — [the round in review](#the-round-in-review) — is done. The
+  reasoning for the order is that everything now worth carrying between games
+  hangs off an anonymous auth uid that dies with site storage, so identity is
+  hardened *before* honours are banked against it. [The closing seconds carry a
   clock](#the-clock) — nine seconds of gameshow music in place of the two-tone
   tick, deployed and heard on 14 August 2026. [The answer window is
   selectable](#the-configurable-answer-window) — 10 / 15 / 20 seconds, chosen in
@@ -376,6 +380,57 @@ one.
 
 ---
 
+## The round in review
+
+Two panels under the rosettes, saying what the round did to the room rather than
+what the room did to each other: **the one that beat everybody** — a question at
+least two people answered and nobody got, shown with the answer they all missed —
+and **nobody missed it**, where everyone who answered was right.
+
+**It costs nothing.** `reviewFor` in `src/engine/awards.ts` reads the same
+`useGameLog` records the awards already run on, which every device already has
+because every device already receives every reveal. No reads, no writes, no rules
+change.
+
+Three decisions in it are load-bearing:
+
+- **Two answers minimum.** One person wrong on their own is a guess, not a
+  question that beat the room; one person right on their own is already the lone
+  wolf's rosette. Both readings need a room to be true of.
+- **Candidates are sorted, not taken in log order.** The log's order is a property
+  of how *this device* watched the game. Ranking by how many people a question
+  happened to, and settling ties on the lowest index, is what stops two screens
+  naming different questions — the same failure the awards' sorted joint winners
+  avoid.
+- **The engine returns an index; the screen holds the prompt.** `Highlight` is a
+  question number and a count, and `src/components/Review.tsx` owns every word.
+  Same split as the awards and the lobby's level names.
+
+### The log now survives a reload
+
+`useGameLog` mirrors itself into **session** storage, keyed by `gameId`. Session
+rather than local because the log describes the game this tab is in the middle of;
+local storage would keep a finished game's log on every device forever for
+something no later visit can use.
+
+This mattered little while the awards were decoration — the final screen already
+withholds them from a partial log, which is better than two screens disagreeing.
+It matters a great deal for what comes next, because the same log is what will be
+banked against a season, and a reloaded device would otherwise under-report
+somebody's honours permanently and silently.
+
+`parseLog` validates on the way **out** of storage as well as in, for the same
+reason `cleanName` does: what is in storage is whatever an earlier build wrote
+there, or whatever a bored player with the console open put there instead. A
+record that will not parse is dropped rather than repaired, which shortens the log
+and so withholds the awards — the safe direction.
+
+**Not yet verified in a real room.** The parsing is covered both ways by tests and
+the panels were checked on fixtures at 1280, 375 and 320 px, but nobody has
+reloaded mid-game against a live room and watched the awards survive.
+
+---
+
 ## The replay
 
 The reveal always had a beat between the clock stopping and the verdict landing
@@ -557,8 +612,47 @@ room code that already existed.
 
 ## Next session — start here
 
-Written 11 August 2026, revised 13 August after the join link went out, and
-again on 14 August after the chair and the sticky desk.
+Written 11 August 2026, revised 13 August after the join link went out, again on
+14 August after the chair and the sticky desk, and again on 15 August when the
+round in review shipped and the next two phases were agreed.
+
+> ### The three-phase plan, and why identity comes before the honours
+>
+> **Phase 1 — the round in review. Done.** See [its section](#the-round-in-review).
+>
+> **Phase 2 — durable identity. Next, and the only one that touches the rules.**
+> `seasons/{season}/players/{uid}` is keyed on the anonymous auth uid, which dies
+> with site storage: iOS Safari evicts after about a week, and a second machine
+> has never seen it. Today that costs a points total. Once rosettes and titles
+> hang off the same key, an eviction erases a season of earned reputation
+> silently — and the feature meant to make the league feel continuous becomes the
+> one that makes it feel arbitrary. It is also the same root cause as item 1
+> below.
+>
+> The shape: **a `playerId` that defaults to the uid**, so every existing
+> `season-2` row keeps working with no migration, and a second browser may
+> *claim* an existing `playerId` by presenting a permanent recovery code.
+> Verification reuses the vault's asymmetry exactly — `recovery/{CODE}` is
+> `allow read: if false`, so no client can look a code up while the rule itself
+> can `get()` it. Claiming is an assertion judged server-side, like a reveal.
+> `exists()` must precede `get()` or an unclaimed browser is locked out of its
+> own row, and the `||` must put the uid case first so the ordinary player still
+> pays zero extra reads.
+>
+> **You cannot do this any cheaper without accounts.** Moving a Firebase Auth uid
+> between browsers needs either a custom token — a server, so Blaze — or linking
+> a real provider, which is an account. Decoupling the season from the uid is the
+> only route that keeps anonymous auth's no-signup appeal, which is most of why
+> the app is pleasant to join.
+>
+> **Phase 3 — Form.** A cold open before question one built from the season rows
+> of the people actually in the room, plus honours accumulating on those rows.
+> Phase 2 publishes every rule it needs, including an optional `playerId` on each
+> player's own entry so the digest costs no extra reads.
+>
+> **Publish the rules before deploying**, as with the answer window and unlike
+> the vault: `playerOk` currently pins each entry to `{name, joinedAt}`, so a new
+> client writing `playerId` against the old published rules cannot join at all.
 
 0. **An alternate skin: the British pub quiz.** Greg's idea, and the first thing
    to weigh up next session. Today the app is one look — a broadcast studio, and
@@ -625,6 +719,11 @@ again on 14 August after the chair and the sticky desk.
    storage write throwing silently — it is wrapped and deliberately quiet — and
    whether the deployed build is the one being loaded. `vibequiz.name` in the
    browser's storage inspector settles the first question in seconds.
+
+   **Phase 2 closes this whichever way it goes**, because claiming an identity on
+   a second browser adopts the season row's name with it. If the cause was the
+   first boring explanation — a second machine is a second browser, and nothing
+   crosses — then that is the fix rather than a workaround.
 
 2. ~~**A refused reveal can stall the round, and nothing retries it.**~~ **Fixed**
    — the auto-reveal now retries eight times at 1.5s intervals, reset per
@@ -756,6 +855,11 @@ happened once.
 | **The reveal gate is millisecond arithmetic, not `duration.value()`** | `duration.value` takes an `int`, and `durationSecs` arrives from a client SDK that decides for itself whether a whole number is an integer or a double on the wire. A double would error the rule and deny every reveal in the room — the same trap as `joinedAt is number`, but with a far worse failure. |
 | **`tallyQuestion` is given the room's window** | It always took the parameter and nothing ever passed it, so speed points decayed across a hardcoded twenty seconds. Harmless while every round *was* twenty; at the ten-second default it would cap everybody at 750 of a possible 1000 no matter how fast they were. |
 | **`fullGame.test.ts` pins its window at 20 instead of taking the default** | Its games answer as late as twelve seconds in. On the ten-second default those answers stop being recorded, and the games would still pass while quietly testing a round nobody answered. |
+| **The review returns a question index, never a prompt** (`Highlight`) | The engine has no business holding copy, and an index cannot be reworded into something the round did not do. `Review.tsx` owns the sentences, the same split as the awards and the lobby's level names. |
+| **The review ignores a question fewer than two people answered** (`MIN_ATTEMPTS`) | One wrong answer on its own is a guess rather than a question that beat the room, and one right answer on its own is the lone wolf's rosette, already awarded. Both panels are claims about a room. |
+| **Review candidates are sorted rather than taken in log order** | The order the log holds is a property of how *this device* watched the game. Two screens naming different questions is exactly the failure the awards' sorted joint winners exist to avoid, and it would show up only when two people compared screens. |
+| **The game log is in `sessionStorage`, not `localStorage`** | It describes the game this tab is in the middle of. Local storage would leave a finished game's log on every device forever, for something no later visit can read — and the log is the one thing here that is worthless the moment its game is over. |
+| **`.review` sizes its columns with `minmax(min(18rem, 100%), 1fr)`** | A bare `minmax(18rem, …)` is honoured even when the container is narrower than 18rem, so the track runs out of the side of a small phone. `.stage` clips rather than scrolls, so it would go silently. The rosettes get away with a bare `13rem` only because that is smaller than any screen we have met. |
 | **Fonts are self-hosted** (`src/design/fonts.css`) | The display faces carry the whole look; a network that blocks `fonts.googleapis.com` would drop it to Impact with no warning. Archivo is variable — Google's CSS lists it once per weight but serves the same file each time, so it's declared once instead of shipping 105 kB of duplicates. |
 
 ---
@@ -765,8 +869,12 @@ happened once.
 **Verified against the live Firebase:** anonymous sign-in, room creation, pack
 selection, round start, question render, answer write, reveal and scoring, and
 leaving a room. Engine covered by 140 tests including six full three-question
-games (quizmaster disconnect, skip, reset, ties). 192 across the repo, the
-balance being the question pipeline and the clock's arithmetic.
+games (quizmaster disconnect, skip, reset, ties). 221 across the repo, the
+balance being the question pipeline, the clock's arithmetic and the review.
+
+> The count in this file had been stale at 192 for several commits before the
+> review landed; the suite was already at 208. Read it as "roughly this many"
+> and trust `npm test`.
 
 **Verified in the browser, on fixtures only:** every screen at 1280px and 390px,
 the level picker disabling a level its pack can't fill, and no horizontal scroll

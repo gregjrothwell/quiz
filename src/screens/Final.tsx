@@ -1,8 +1,9 @@
 import { Awards } from '../components/Awards';
 import { Chair } from '../components/Chair';
+import { Review } from '../components/Review';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { Standings } from '../components/Standings';
-import { awardsFor, type QuestionRecord } from '../engine/awards';
+import { awardsFor, reviewFor, type QuestionRecord } from '../engine/awards';
 import { seatedLast, standings } from '../engine/scoring';
 import type { RoomState } from '../engine/state';
 import { useCue } from '../lib/sound';
@@ -53,6 +54,7 @@ export function Final({
   */
   const sawItAll = log.length === room.questions.length && room.questions.length > 0;
   const awards = sawItAll ? awardsFor(log, Object.keys(room.players)) : [];
+  const review = sawItAll ? reviewFor(log) : [];
   const leaders = rows.filter((entry) => entry.position === 1);
   const winnerName =
     leaders.length > 1
@@ -117,6 +119,8 @@ export function Final({
       <Standings players={room.players} scores={room.scores} youUid={youUid} />
 
       <Awards awards={awards} players={room.players} youUid={youUid} />
+
+      <Review review={review} questions={room.questions} />
 
       <div className="btn-row">
         {isQuizmaster ? (

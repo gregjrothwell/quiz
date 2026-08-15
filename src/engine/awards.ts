@@ -150,6 +150,65 @@ function comeback(log: QuestionRecord[], playerUids: string[]): Award | null {
 }
 
 /**
+ * The round as a thing that happened, rather than the players who played it.
+ *
+ * Which question, and how many people it happened to — facts, on the same
+ * principle as {@link Award}. Naming the question is the screen's job, because
+ * it is the only side that holds the prompts, and an index cannot be reworded
+ * into a lie.
+ */
+export type Highlight =
+  | { id: 'stumper'; index: number; attempts: number }
+  | { id: 'sweep'; index: number; attempts: number };
+
+/**
+ * Both readings need a room to be true of. One person wrong on their own is a
+ * guess rather than a question that beat everybody, and one person right on
+ * their own is the lone wolf above, which already has a rosette.
+ */
+const MIN_ATTEMPTS = 2;
+
+function highlight(
+  log: QuestionRecord[],
+  qualifies: (correct: number, attempts: number) => boolean,
+): { index: number; attempts: number } | null {
+  const candidates = log.flatMap((record) => {
+    const answers = Object.values(record.answers);
+    const correct = answers.filter(
+      (answer) => answer.optionIndex === record.correctIndex,
+    ).length;
+
+    if (answers.length < MIN_ATTEMPTS || !qualifies(correct, answers.length)) return [];
+    return [{ index: record.index, attempts: answers.length }];
+  });
+
+  // The one it happened to the most people, and the earliest question when that
+  // ties. Sorted rather than taken in the order the log happens to hold, because
+  // that order is a property of how this device watched the game — and two
+  // screens naming different questions is the failure the awards already avoid.
+  candidates.sort((a, b) => b.attempts - a.attempts || a.index - b.index);
+  return candidates[0] ?? null;
+}
+
+/**
+ * What the round did to the room, for a panel beside the rosettes. Costs
+ * nothing: the log is already on every device, the same free retelling the
+ * replay is built from.
+ *
+ * A highlight nothing supports is left out rather than shown empty, exactly as
+ * {@link awardsFor} does.
+ */
+export function reviewFor(log: QuestionRecord[]): Highlight[] {
+  const stumper = highlight(log, (correct) => correct === 0);
+  const sweep = highlight(log, (correct, attempts) => correct === attempts);
+
+  return [
+    stumper ? ({ id: 'stumper', ...stumper } as const) : null,
+    sweep ? ({ id: 'sweep', ...sweep } as const) : null,
+  ].filter((entry): entry is Highlight => entry !== null);
+}
+
+/**
  * Every award the game actually earned, in the order they are worth reading.
  * An award nothing supports is left out rather than shown empty — a podium with
  * a blank rosette on it is worse than one without.
