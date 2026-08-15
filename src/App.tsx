@@ -6,7 +6,6 @@ import { formFor } from './engine/form';
 import { standings } from './engine/scoring';
 import { codeFromHash } from './engine/roomCode';
 import {
-  COLD_OPEN_MS,
   DEFAULT_QUESTION_DURATION_MS,
   buildQuizQuestions,
   currentQuestion,
@@ -119,15 +118,6 @@ function Game() {
   // anything this ref cannot see, such as a reload.
   const bankedRef = useRef<string | null>(null);
 
-  /**
-   * The round the opening titles are introducing, held until they finish.
-   *
-   * A ref rather than state because nothing renders from it, and because the
-   * effect that starts the round must read the value the quizmaster settled on
-   * when they pressed Start — not one re-derived six seconds later from whatever
-   * the lobby controls happen to say now.
-   */
-  const pendingStartRef = useRef<{ durationSecs: number; gameId: string } | null>(null);
 
   // Built as the game runs, because nothing else keeps a record of it — see
   // useGameLog. Held here rather than in Final so it survives that screen
@@ -222,16 +212,18 @@ function Game() {
           const facts = await loadForm(roster).then(formFor).catch(() => []);
 
           /*
-            The round itself is started by the effect below rather than after a
-            sleep here, and the difference is not stylistic. `dispatch` closes
-            over `room`, so anything awaited between taking that closure and
-            writing folds the round over a snapshot that is however many seconds
-            old — the same staleness that once let a pack fetch erase everyone
-            who joined while it ran. Six seconds of titles is a far wider window
-            than that fetch ever was.
-          */
-          pendingStartRef.current = { durationSecs, gameId: crypto.randomUUID() };
+            The titles go up and the round waits there. Starting it is a second,
+            deliberate press — see `handleBeginRound`.
 
+            The window is parked inside the digest rather than kept on this
+            device, so the round can still open on the window that was chosen if
+            the quizmaster's chair changes hands while the titles are up. It
+            cannot go on the room's own `durationSecs`, which the rules pin until
+            a question actually opens.
+
+            A room the season knows nothing about has no titles to show, and gets
+            the round it asked for on the one press it made.
+          */
           await dispatch([
             {
               type: 'selectPack',
@@ -240,11 +232,16 @@ function Game() {
               questions,
             },
             ...(facts.length > 0
-              ? [{ type: 'titles' as const, at: Date.now(), facts }]
-              : [{ type: 'start' as const, at: Date.now(), ...pendingStartRef.current }]),
+              ? [{ type: 'titles' as const, at: Date.now(), facts, durationSecs }]
+              : [
+                  {
+                    type: 'start' as const,
+                    at: Date.now(),
+                    gameId: crypto.randomUUID(),
+                    durationSecs,
+                  },
+                ]),
           ]);
-
-          if (facts.length === 0) pendingStartRef.current = null;
 
           // After the round is safely under way, for the same reason.
           await recordAsked(packId, questions.map((question) => question.id)).catch(
@@ -299,69 +296,38 @@ function Game() {
     }
   }, [room, dispatch]);
 
-  /*
-    The titles come down on a timer as well as on the round starting, so a room
-    whose quizmaster closed their laptop mid-sequence returns to a working lobby
-    on its own rather than sitting on a card nobody can clear. Every device runs
-    this, not just the one that put them up.
-  */
-  const formAt = room?.form?.at ?? null;
-  const [titlesExpired, setTitlesExpired] = useState(false);
-  const [titlesKey, setTitlesKey] = useState(formAt);
+  const form = room?.form ?? null;
+  const showTitles = room?.phase === 'lobby' && form !== null;
 
-  // Adjusted during render so a fresh set of titles is not born expired,
-  // the same pattern as the reveal retry counter below.
-  if (titlesKey !== formAt) {
-    setTitlesKey(formAt);
-    setTitlesExpired(false);
-  }
+  /**
+   * Starts the round the titles are introducing.
+   *
+   * Nothing does this on a timer, and that is the whole point of it being here.
+   * The titles used to run for six seconds and start the round themselves, which
+   * meant pressing Start handed the beginning of the quiz to a `setTimeout` —
+   * and the beginning is the one moment a quizmaster actually wants to hold,
+   * while the room reads the card and somebody finds their drink.
+   *
+   * The room cannot get stuck behind a quizmaster who wandered off, because the
+   * role is derived from who has been present longest: if they go, somebody else
+   * inherits this button within a second.
+   */
+  const handleBeginRound = useCallback(() => {
+    if (!form) return;
+    setActionError(null);
+    void dispatch({
+      type: 'start',
+      at: Date.now(),
+      gameId: crypto.randomUUID(),
+      durationSecs: form.durationSecs,
+    }).catch(report);
+  }, [form, dispatch, report]);
 
-  useEffect(() => {
-    if (formAt === null) return;
+  const handleCancelTitles = useCallback(() => {
+    setActionError(null);
+    void dispatch({ type: 'clearTitles' }).catch(report);
+  }, [dispatch, report]);
 
-    // Always through a timeout, never set directly here — `react-hooks/
-    // set-state-in-effect` exists to catch exactly that, and a zero delay
-    // lands on the next tick which is all this needs.
-    const remaining = Math.max(0, formAt + COLD_OPEN_MS - Date.now());
-    const timer = window.setTimeout(() => setTitlesExpired(true), remaining);
-    return () => window.clearTimeout(timer);
-  }, [formAt]);
-
-  // No clock reading in render — `Date.now()` is impure and React is right to
-  // refuse it. Joining a room whose titles are already half over therefore shows
-  // the card for the single frame before the zero-delay timeout above lands,
-  // which is the cheapest possible price for keeping render pure.
-  const showTitles = room?.phase === 'lobby' && room.form !== null && !titlesExpired;
-
-  /*
-    The round starts when the opening titles have run.
-
-    Here rather than after an `await sleep(...)` inside `handleStart`, because
-    `dispatch` closes over `room` and six seconds is long enough for that
-    snapshot to be badly out of date — it is the same trap that once let a pack
-    fetch erase everybody who joined while it was running. This effect re-reads
-    the room on every update, so the round is folded over what is actually there.
-
-    Only the device that put the titles up finishes the job, which `pendingStartRef`
-    settles: it is set by whoever pressed Start and is null everywhere else. If
-    that device disappears mid-sequence nobody starts the round, the card times
-    out on its own, and the room falls back to a working lobby for whoever
-    inherits the quizmaster's chair.
-  */
-  useEffect(() => {
-    if (!room || room.phase !== 'lobby' || !room.form) return;
-
-    const pending = pendingStartRef.current;
-    if (!pending) return;
-
-    const remaining = room.form.at + COLD_OPEN_MS - Date.now();
-    const timer = window.setTimeout(() => {
-      pendingStartRef.current = null;
-      void dispatch({ type: 'start', at: Date.now(), ...pending }).catch(report);
-    }, Math.max(0, remaining));
-
-    return () => window.clearTimeout(timer);
-  }, [room, dispatch, report]);
 
   // The quizmaster's device closes the question when the clock runs out, so a
   // round keeps moving even if nobody remembers to press Reveal.
@@ -491,8 +457,14 @@ function Game() {
         </p>
       )}
 
-      {(showTitles && room.form && (
-        <ColdOpen facts={room.form.facts} players={room.players} />
+      {(showTitles && form && (
+        <ColdOpen
+          facts={form.facts}
+          players={room.players}
+          isQuizmaster={isQuizmaster}
+          onStart={handleBeginRound}
+          onBack={handleCancelTitles}
+        />
       )) ||
         (room.phase === 'lobby' && (
         <Lobby

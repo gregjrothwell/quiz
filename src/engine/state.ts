@@ -71,16 +71,23 @@ export interface Player {
  * and the rest learn it from an update they were getting anyway.
  */
 export interface FormDigest {
-  /**
-   * When the titles went up, by the writer's clock.
-   *
-   * The card is shown for a fixed window measured from here, so every device
-   * leaves it at the same moment and — more importantly — a room whose
-   * quizmaster vanished mid-sequence falls back to the lobby on its own instead
-   * of sitting on a title card nobody can clear.
-   */
+  /** When the titles went up, by the writer's clock. */
   at: number;
   facts: FormFact[];
+  /**
+   * The window the round will open with, parked here until it does.
+   *
+   * It cannot be written to the room's own `durationSecs` yet: `timingOk()` in
+   * the security rules pins that field to its previous value on every write
+   * except the one that opens a question, so setting it during the titles would
+   * be refused outright. Nested inside the digest it is ordinary data the rules
+   * do not inspect.
+   *
+   * Carried rather than kept on the quizmaster's device so the round can still
+   * be started with the window that was chosen if the role changes hands while
+   * the titles are up.
+   */
+  durationSecs: number;
 }
 
 export interface Answer {
@@ -158,16 +165,6 @@ export interface RoomState {
   /** The opening titles, or null when a round is not being introduced. */
   form: FormDigest | null;
 }
-
-/**
- * How long the opening titles hold the room before question one.
- *
- * Spent in the lobby, deliberately: the answering window starts the moment the
- * question opens and is stamped by the server, so a beat of theatre laid over
- * the question would come straight out of everybody's thinking time. It is the
- * same reasoning that puts the round title card on the standings screen.
- */
-export const COLD_OPEN_MS = 6_000;
 
 export function createRoom(code: string): RoomState {
   return {

@@ -17,8 +17,14 @@ export type Action =
    * the answering window is stamped by the server the moment a question opens —
    * a beat of theatre laid over question one would come straight out of
    * everybody's thinking time.
+   *
+   * They stay up until the quizmaster starts the round. Nothing here is on a
+   * timer: a round that begins on its own takes the start of the quiz away from
+   * the person running it, which is the one moment they most want to hold.
    */
-  | { type: 'titles'; at: number; facts: FormFact[] }
+  | { type: 'titles'; at: number; facts: FormFact[]; durationSecs: number }
+  /** Back to the lobby controls, for a quizmaster who has changed their mind. */
+  | { type: 'clearTitles' }
   | { type: 'leave'; uid: string }
   | { type: 'selectPack'; packId: PackId; packTitle: string; questions: QuizQuestion[] }
   /**
@@ -50,7 +56,9 @@ export function reduce(state: RoomState, action: Action): RoomState {
     case 'join':
       return join(state, action.uid, action.name, action.at, action.playerId);
     case 'titles':
-      return titles(state, action.at, action.facts);
+      return titles(state, action.at, action.facts, action.durationSecs);
+    case 'clearTitles':
+      return state.form === null ? state : { ...state, form: null };
     case 'leave':
       return leave(state, action.uid);
     case 'selectPack':
@@ -125,11 +133,19 @@ function selectPack(
  * card with nothing on it is refused too — an empty title sequence is a pause
  * the room cannot explain.
  */
-function titles(state: RoomState, at: number, facts: FormFact[]): RoomState {
+function titles(
+  state: RoomState,
+  at: number,
+  facts: FormFact[],
+  durationSecs: number,
+): RoomState {
   if (state.phase !== 'lobby') return state;
   if (facts.length === 0) return state;
+  // Refused here rather than at the reveal, where it would cost a round that
+  // stops at its first question instead of a Start button that does nothing.
+  if (!isDurationAllowed(durationSecs)) return state;
 
-  return { ...state, form: { at, facts } };
+  return { ...state, form: { at, facts, durationSecs } };
 }
 
 function start(state: RoomState, at: number, gameId: string, durationSecs: number): RoomState {

@@ -710,11 +710,15 @@ describe('the opening titles', () => {
     const state = lobbyWithPack();
 
     // #when the titles are put up
-    const next = reduce(state, { type: 'titles', at: 5_000, facts: FACTS });
+    const next = reduce(state, { type: 'titles', at: 5_000, facts: FACTS, durationSecs: DEFAULT_DURATION_SECS });
 
     // #then the room carries them, still in the lobby
     expect(next.phase).toBe('lobby');
-    expect(next.form).toEqual({ at: 5_000, facts: FACTS });
+    expect(next.form).toEqual({
+      at: 5_000,
+      facts: FACTS,
+      durationSecs: DEFAULT_DURATION_SECS,
+    });
   });
 
   test('are refused once a question is open', () => {
@@ -722,7 +726,7 @@ describe('the opening titles', () => {
     const state = playingRoom();
 
     // #when the titles are put up
-    const next = reduce(state, { type: 'titles', at: 5_000, facts: FACTS });
+    const next = reduce(state, { type: 'titles', at: 5_000, facts: FACTS, durationSecs: DEFAULT_DURATION_SECS });
 
     // #then nothing changes — a title card over a running clock would take the
     // time out of everybody's answering window, which is the one thing this
@@ -735,7 +739,7 @@ describe('the opening titles', () => {
     const state = lobbyWithPack();
 
     // #when empty titles are put up
-    const next = reduce(state, { type: 'titles', at: 5_000, facts: [] });
+    const next = reduce(state, { type: 'titles', at: 5_000, facts: [], durationSecs: DEFAULT_DURATION_SECS });
 
     // #then the round is not held up by a card with nothing on it
     expect(next).toBe(state);
@@ -743,7 +747,7 @@ describe('the opening titles', () => {
 
   test('come down when the round starts', () => {
     // #given a lobby showing the titles
-    const state = reduce(lobbyWithPack(), { type: 'titles', at: 5_000, facts: FACTS });
+    const state = reduce(lobbyWithPack(), { type: 'titles', at: 5_000, facts: FACTS, durationSecs: DEFAULT_DURATION_SECS });
 
     // #when the round starts
     const next = reduce(state, {
@@ -761,7 +765,7 @@ describe('the opening titles', () => {
 
   test('are cleared by a reset', () => {
     // #given a room that somehow reached the end still carrying titles
-    const state = { ...playingRoom(), form: { at: 5_000, facts: FACTS } };
+    const state = { ...playingRoom(), form: { at: 5_000, facts: FACTS, durationSecs: DEFAULT_DURATION_SECS } };
 
     // #when the room is reset
     const next = reduce(state, { type: 'reset' });
@@ -800,5 +804,85 @@ describe('join and the claimed identity', () => {
     // #then no redundant copy of the uid goes into the document — the entry is
     // byte-for-byte the two fields it has always been
     expect(state.players.greg).toEqual({ name: 'Greg', joinedAt: 100 });
+  });
+});
+
+describe('the quizmaster keeps the start of the round', () => {
+  const FACTS = [{ id: 'champion' as const, uids: ['host'], wins: 3 }];
+
+  function titledLobby(durationSecs = 15): RoomState {
+    return apply(
+      createRoom('ABCD'),
+      { type: 'join', uid: 'host', name: 'Greg', at: 100 },
+      { type: 'selectPack', packId: 'geography', packTitle: 'Geography', questions: QUESTIONS },
+      { type: 'titles', at: 5_000, facts: FACTS, durationSecs },
+    );
+  }
+
+  test('holds the round in the lobby until it is started', () => {
+    // #given titles that went up a long time ago
+    const state = titledLobby();
+
+    // #then the room has not moved on by itself — nothing here runs on a timer,
+    // because a round that begins on its own takes the start of the quiz away
+    // from the person running it
+    expect(state.phase).toBe('lobby');
+    expect(state.form).not.toBeNull();
+  });
+
+  test('opens on the window that was chosen, not the room default', () => {
+    // #given titles carrying a fifteen-second window
+    const state = titledLobby(15);
+
+    // #when the quizmaster starts the round with what the digest carried
+    const next = reduce(state, {
+      type: 'start',
+      at: 9_000,
+      gameId: 'game-1',
+      durationSecs: state.form?.durationSecs ?? 0,
+    });
+
+    // #then the round opens on fifteen. The window cannot be parked on the
+    // room's own durationSecs, which the rules pin until a question opens, so it
+    // rides inside the digest instead
+    expect(next.durationSecs).toBe(15);
+    expect(next.phase).toBe('question');
+  });
+
+  test('refuses titles carrying a window the rules would reject', () => {
+    // #given a lobby and a one-second window
+    const state = apply(
+      createRoom('ABCD'),
+      { type: 'join', uid: 'host', name: 'Greg', at: 100 },
+      { type: 'selectPack', packId: 'geography', packTitle: 'Geography', questions: QUESTIONS },
+    );
+
+    // #when the titles are put up with it
+    const next = reduce(state, { type: 'titles', at: 5_000, facts: FACTS, durationSecs: 1 });
+
+    // #then it is refused here, where it costs a Start button that does nothing
+    // rather than a round that stops dead at its first reveal
+    expect(next).toBe(state);
+  });
+
+  test('goes back to the lobby controls when the titles are cleared', () => {
+    // #given a quizmaster who has changed their mind about the round
+    const state = titledLobby();
+
+    // #when the titles are cleared
+    const next = reduce(state, { type: 'clearTitles' });
+
+    // #then the lobby is a lobby again, with the pack still chosen
+    expect(next.form).toBeNull();
+    expect(next.questions).toHaveLength(QUESTIONS.length);
+  });
+
+  test('clearing titles that are not up changes nothing', () => {
+    // #given an ordinary lobby
+    const state = reduce(createRoom('ABCD'), { type: 'join', uid: 'host', name: 'Greg', at: 100 });
+
+    // #when the titles are cleared
+    // #then the same object comes back, so no write is made for a no-op
+    expect(reduce(state, { type: 'clearTitles' })).toBe(state);
   });
 });

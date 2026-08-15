@@ -394,13 +394,22 @@ export function Preview() {
             { id: 'newcomers', uids: ['alex'] },
           ]}
           players={PLAYERS}
+          isQuizmaster
+          onStart={noop}
+          onBack={noop}
         />
       ),
     },
     {
       title: 'Cold open · a room with no history',
       node: (
-        <ColdOpen facts={[{ id: 'newcomers', uids: ['greg', 'sam', 'priya'] }]} players={PLAYERS} />
+        <ColdOpen
+          facts={[{ id: 'newcomers', uids: ['greg', 'sam', 'priya'] }]}
+          players={PLAYERS}
+          isQuizmaster={false}
+          onStart={noop}
+          onBack={noop}
+        />
       ),
     },
     {

@@ -4,6 +4,9 @@ import type { Player } from '../engine/state';
 interface ColdOpenProps {
   facts: FormFact[];
   players: Record<string, Player>;
+  isQuizmaster: boolean;
+  onStart: () => void;
+  onBack: () => void;
 }
 
 /**
@@ -46,7 +49,7 @@ function describe(fact: FormFact, names: string): { label: string; line: string 
  * of the room's thinking time — the same reasoning that puts the round title
  * card on the standings screen rather than over the question.
  */
-export function ColdOpen({ facts, players }: ColdOpenProps) {
+export function ColdOpen({ facts, players, isQuizmaster, onStart, onBack }: ColdOpenProps) {
   const named = facts
     .map((fact) => {
       const names = fact.uids
@@ -85,6 +88,25 @@ export function ColdOpen({ facts, players }: ColdOpenProps) {
           );
         })}
       </ul>
+
+      {/*
+        The card waits here. Nothing starts the round but this button, so the
+        quizmaster keeps the moment the quiz begins — which is exactly what an
+        auto-start took away: time to let the room read the card, and to ask
+        whether everyone is ready.
+      */}
+      {isQuizmaster ? (
+        <div className="btn-row">
+          <button type="button" className="btn btn--primary" onClick={onStart}>
+            Start the round
+          </button>
+          <button type="button" className="btn btn--ghost" onClick={onBack}>
+            Back
+          </button>
+        </div>
+      ) : (
+        <p className="muted">Waiting for the quizmaster to start the round…</p>
+      )}
     </section>
   );
 }
