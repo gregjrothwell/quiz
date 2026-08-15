@@ -6,7 +6,7 @@ Built to replace Polly in Teams.
 - **Live:** https://gregjrothwell.github.io/quiz/
 - **Repo:** https://github.com/gregjrothwell/quiz (public, `master`, deploys from `gh-pages`)
 - **Firebase project:** `quiz-d686e` (Firestore + Realtime Database in europe-west1 + Anonymous auth)
-- **Status:** shipped and played. 235 tests, clean types and lint, no `any` or
+- **Status:** shipped and played. 242 tests, clean types and lint, no `any` or
   `@ts-ignore`. The **answer vault is live and covers the packs**: 13,593
   answers seeded against the 13,452 the packs need plus the 4 harness entries,
   both rulesets published, preflight passing.
@@ -15,12 +15,12 @@ Built to replace Polly in Teams.
   ids hash the question text, so a revised question leaves its old answer in
   place, unread and harmless. All 14,176 pack questions across the ten packs
   resolve to an answer.
-- **Next:** **publish `firestore.rules`, then run `npm run check-rules` and
-  `npm run sync-harness 10`, then deploy** — [durable
-  identity](#durable-identity) is code-complete and its rules are *not* live yet,
-  which is the one state this repo has been burned by twice. Phase 1 — [the round
-  in review](#the-round-in-review) — is done and needed no rules at all. Phase 3
-  is [Form](#next-session--start-here). [The closing seconds carry a
+- **Next:** **`npm run deploy`** — phases 1 and 2 are done and verified, the
+  rules are published, and the bundle is the only thing still behind. Then
+  [Form](#next-session--start-here), which needs no rules work at all. [The
+  round in review](#the-round-in-review) and [durable
+  identity](#durable-identity) are the two new sections. [The closing seconds
+  carry a
   clock](#the-clock) — nine seconds of gameshow music in place of the two-tone
   tick, deployed and heard on 14 August 2026. [The answer window is
   selectable](#the-configurable-answer-window) — 10 / 15 / 20 seconds, chosen in
@@ -390,9 +390,10 @@ one.
 
 ## Durable identity
 
-**Code complete, and the rules are not published yet.** See [publish before you
-deploy](#publish-the-identity-rules-before-you-deploy) — this one is not
-optional, and the order is the same as the answer window's.
+**Shipped, rules published and verified on 15 August 2026.** `npm run
+check-rules` reports 33 of 33, and `npm run sync-harness 10` had ten clients
+joined and seeing the round start within 83 ms with none dropped — which was the
+real risk, since `playerOk` gates every room write.
 
 A season row used to be keyed on the anonymous auth uid. That uid is durable per
 browser and dies with site storage: iOS Safari evicts after about a week without
@@ -452,6 +453,34 @@ enumerate is not one. 29⁸ is about 5×10¹¹.
   and write that person's row. `ownsPlayer` on `recovery` create is the whole of
   what stops it.
 
+### Claiming folds in the record the browser already had
+
+Without this, claiming leaves the row the claiming browser had built up sitting
+on the board forever under the same person's name — nothing writes to it again
+and nothing removes it. **Two rows, one human, on a table the office looks at**,
+and it would have hit the two-machine case that motivated the whole feature.
+
+`foldRecords` in `src/engine/records.ts` is the arithmetic and is pure and
+tested; `mergeRecords` in `src/lib/season.ts` does nothing but read two
+documents, call it, and write one back. Four things about it are load-bearing:
+
+- **It runs *after* the claim, never before.** Writing the target row needs
+  `ownsPlayer` to pass, which needs the claim already in place. Deleting the
+  source works either way, because a browser always satisfies the uid branch for
+  its own uid — which is also why a claimed browser can still tidy up after
+  itself later.
+- **Only ever the browser's own uid row.** Never a previously claimed identity:
+  somebody moving between two identities is not asking for the first one's record
+  to be poured into the second, and doing it would quietly move another person's
+  history.
+- **It is idempotent**, because the source is deleted in the same transaction
+  that folds it in. A failure leaves a visible duplicate rather than a corrupt
+  total, and typing the code again retries it.
+- **`best` is a maximum, everything else a sum.** A personal best is not improved
+  by having been set on two devices. There is a test asserting the merged row
+  still satisfies every bound the rules impose, so a merge can never write a row
+  the rules would then reject.
+
 ### What it does not do
 
 - **Anyone holding a code can write that row.** Same trust model as the room
@@ -465,22 +494,20 @@ enumerate is not one. 29⁸ is about 5×10¹¹.
   playerId, so the second banks nothing — `lastGame` is the same game id. That is
   the right answer, and it is worth knowing before somebody reports it as a bug.
 
-### Publish the identity rules before you deploy
+### The publish order, kept because it will matter again
 
-Same order as [the answer window](#the-configurable-answer-window), and for a
-related reason. The new rules are fully backwards-compatible with the deployed
-bundle — every field added is optional and defaulted, and the season rule's uid
-branch is what every current client hits. The reverse order is the broken one:
-a new client writing `fastest: 1` onto a season row against the old ruleset is
-refused by `hasOnly`, and nobody's game gets banked.
+Rules first, then deploy — same as [the answer
+window](#the-configurable-answer-window) and the opposite of the vault's.
 
-```bash
-npm run check-rules && npm run sync-harness 10
-```
+The new rules are fully backwards-compatible with any deployed bundle: every
+field added is optional and defaulted, and the season rule's uid branch is what
+an unclaimed client hits. **The reverse order is the broken one** — a new client
+writing `fastest: 1` onto a season row against the old ruleset is refused by
+`hasOnly`, and nobody's game gets banked.
 
-Then deploy. `sync-harness` is the one that matters here for the same reason it
-mattered for the vault: `playerOk` gates every room write, so a wrong bound
-breaks *joining*, which is a much louder failure than anything security-shaped.
+That compatibility was traced field by field before publishing rather than
+assumed, which is why the rules went live while the old bundle was still being
+served and nothing broke in between.
 
 ---
 
@@ -997,6 +1024,8 @@ happened once.
 | **A recovery code is *read*, where a vault answer is *asserted*** | Opposite problems. The vault's document ids ship inside the packs, so they are public and an answer had to be unreadable. A recovery code's id *is* the secret, so knowing it is the whole proof. What that needs is `list: if false`, which is the room code's pattern, not the vault's. |
 | **A recovery code can only be minted for an identity you already hold** | playerIds are the document ids of a readable collection — anyone can read one off the season table. Without `ownsPlayer` on create, they could mint a code pointing at it, claim it, and own that person's row. |
 | **`recovery` is deletable by its owner but never updatable** | Update is the dangerous one: it would let whoever handed a code out re-aim it at another identity afterwards. Delete is revocation, and it strands nobody — a browser that already claimed holds its own `claims` document, which is what the season rules actually read. It is also what stops `check-rules` leaving an undeletable document behind on every run. |
+| **Claiming folds the browser's own row in, and only its own** (`mergeRecords`) | Otherwise claiming leaves an abandoned row on a shared board under the same person's name, which is exactly the two-machine case the feature exists for. Only the uid row, never a previously claimed identity — that would move somebody else's history. Run after the claim, because writing the target needs `ownsPlayer` to pass. |
+| **The merge arithmetic lives in the engine, the transaction in lib** (`foldRecords`) | It is the one piece of this that can quietly corrupt a season total, and a Firestore transaction is not something a test can reach. There is a test asserting the merged row still satisfies every bound the rules impose, so a merge cannot write a row the rules would then reject. |
 | **Honours are banked only from a log covering the whole game** (`sawWholeGame`) | The final screen already withholds the awards from a partial log, but that is a screen saying nothing for one evening. Banking is permanent, so a device that reloaded mid-game would under-report somebody's shelf forever. The check is exported and shared rather than written twice, because the way two copies drift is one of them quietly banking off a partial log. |
 | **A joint award counts in full for everybody who shared it** (`honoursFor`) | Sharing the fastest finger is still having been the fastest finger. A fraction is not something a shelf can hold, and awarding it to nobody loses the thing that happened. |
 | **The season table shows a dash, not a nought, for no rosettes** | Almost every row predates honours entirely. A column of zeroes reads as a season of failure rather than a column with no history behind it. |
@@ -1014,7 +1043,7 @@ happened once.
 **Verified against the live Firebase:** anonymous sign-in, room creation, pack
 selection, round start, question render, answer write, reveal and scoring, and
 leaving a room. Engine covered by 140 tests including six full three-question
-games (quizmaster disconnect, skip, reset, ties). 235 across the repo, the
+games (quizmaster disconnect, skip, reset, ties). 242 across the repo, the
 balance being the question pipeline, the clock's arithmetic, the review, the
 honours and the recovery code.
 

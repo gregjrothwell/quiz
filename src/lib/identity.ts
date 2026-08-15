@@ -1,6 +1,7 @@
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { randomRecoveryCode } from '../engine/recoveryCode';
 import { firestore } from '../firebase';
+import { mergeRecords } from './season';
 
 /**
  * Who this browser plays as, which is deliberately no longer the same question
@@ -106,6 +107,12 @@ export async function ensureRecoveryCode(playerId: string): Promise<string> {
   throw new Error('Could not find a free recovery code, please try again');
 }
 
+export interface ClaimOutcome {
+  playerId: string;
+  /** Whether this browser had a record of its own that was folded in. */
+  merged: boolean;
+}
+
 export class UnknownRecoveryCode extends Error {
   constructor() {
     super('That recovery code does not match anybody');
@@ -127,7 +134,7 @@ export class UnknownRecoveryCode extends Error {
  * recovery document — that the season rules consult on every write. Storing it
  * locally last means a failed write leaves this browser on the identity it had.
  */
-export async function claimIdentity(uid: string, code: string): Promise<string> {
+export async function claimIdentity(uid: string, code: string): Promise<ClaimOutcome> {
   const snapshot = await getDoc(recoveryDoc(code));
   if (!snapshot.exists()) throw new UnknownRecoveryCode();
 
@@ -139,5 +146,18 @@ export async function claimIdentity(uid: string, code: string): Promise<string> 
   write(PLAYER_ID_KEY, playerId);
   write(RECOVERY_KEY, code);
 
-  return playerId;
+  /*
+    Only ever this browser's *own* uid, never a previously claimed identity.
+    Somebody moving between two identities is not asking for the first one's
+    record to be poured into the second, and doing it would quietly move another
+    person's history. The uid row is the one thing that is unambiguously this
+    browser's own work.
+
+    After the claim, because writing the target row needs `ownsPlayer` to pass.
+    Left to throw: a merge that fails leaves a duplicate on the board, which is
+    worth telling somebody about, and typing the code again retries it.
+  */
+  const merged = await mergeRecords(uid, playerId);
+
+  return { playerId, merged };
 }

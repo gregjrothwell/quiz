@@ -10,6 +10,7 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import type { Honours } from '../engine/awards';
+import { foldRecords, type PlayerRecord } from '../engine/records';
 import { firestore } from '../firebase';
 
 /**
@@ -53,16 +54,12 @@ export interface SeasonRow extends Honours {
   best: number;
 }
 
-interface SeasonDoc extends Partial<Honours> {
-  name: string;
-  played: number;
-  wins: number;
-  points: number;
-  best: number;
-  /** The last game banked for this player, so the same one cannot count twice. */
-  lastGame: string;
-  lastPlayed: number;
-}
+/**
+ * Shared with `src/engine/records.ts`, which owns the arithmetic for folding two
+ * of these together — the one part of this file that can quietly corrupt a
+ * season, and the one part a test can reach.
+ */
+type SeasonDoc = PlayerRecord;
 
 /**
  * Keyed on the playerId rather than the auth uid — see `src/lib/identity.ts` for
@@ -125,6 +122,51 @@ export async function recordGame(result: GameResult): Promise<void> {
     };
 
     transaction.set(reference, next);
+  });
+}
+
+/**
+ * Folds one record into another and removes the first, for a browser that has
+ * just claimed an identity.
+ *
+ * Without this, claiming leaves the record the claiming browser had built up
+ * sitting on the board forever under the same person's name — nothing writes to
+ * it again, and nothing removes it. Two rows, one human, on a table the office
+ * looks at.
+ *
+ * **Run after the claim, never before.** Writing `into` needs `ownsPlayer` to
+ * pass, which needs the claim already in place; deleting `from` keeps working
+ * either way, because a browser always satisfies the uid branch for its own uid.
+ *
+ * Idempotent, which is what makes a failure survivable: the source is deleted in
+ * the same transaction that folds it in, so running it twice does nothing the
+ * second time. A merge that fails leaves a visible duplicate rather than a
+ * corrupt total, and claiming again retries it.
+ *
+ * The arithmetic itself is `foldRecords` in `src/engine/records.ts`, where a
+ * test can reach it. This half does nothing but read two documents, call it, and
+ * write one back.
+ */
+export async function mergeRecords(from: string, into: string): Promise<boolean> {
+  if (from === into) return false;
+
+  return runTransaction(firestore(), async (transaction) => {
+    // Both reads before either write: Firestore transactions require it.
+    const source = await transaction.get(playerDoc(from));
+    if (!source.exists()) return false;
+
+    const target = await transaction.get(playerDoc(into));
+
+    transaction.set(
+      playerDoc(into),
+      foldRecords(
+        source.data() as SeasonDoc,
+        target.exists() ? (target.data() as SeasonDoc) : null,
+      ),
+    );
+
+    transaction.delete(playerDoc(from));
+    return true;
   });
 }
 

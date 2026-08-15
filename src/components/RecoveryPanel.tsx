@@ -32,7 +32,7 @@ type Status =
   | { state: 'working' }
   | { state: 'copied' }
   | { state: 'manual' }
-  | { state: 'claimed' }
+  | { state: 'claimed'; merged: boolean }
   | { state: 'error'; message: string };
 
 const FEEDBACK_MS = 3000;
@@ -115,10 +115,10 @@ export function RecoveryPanel({ uid, onClaimed, initialCode }: RecoveryPanelProp
 
     setStatus({ state: 'working' });
     try {
-      await claimIdentity(uid, candidate);
+      const { merged } = await claimIdentity(uid, candidate);
       setCode(candidate);
       setTyped('');
-      setStatus({ state: 'claimed' });
+      setStatus({ state: 'claimed', merged });
       onClaimed();
     } catch (cause) {
       fail(cause);
@@ -194,7 +194,9 @@ export function RecoveryPanel({ uid, onClaimed, initialCode }: RecoveryPanelProp
         {status.state === 'error'
           ? status.message
           : status.state === 'claimed'
-            ? 'Done — this browser now plays as that record.'
+            ? status.merged
+              ? 'Done — this browser now plays as that record, and the games it had already played have been added to it.'
+              : 'Done — this browser now plays as that record.'
             : status.state === 'manual'
               ? 'Your browser wouldn’t let us copy — the code is selected, so take it from the box.'
               : status.state === 'copied'
