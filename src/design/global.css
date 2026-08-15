@@ -1085,6 +1085,53 @@ input {
   color: var(--amber-bright);
 }
 
+/* ── The recovery panel ─────────────────────────────────────────────────────
+   How a season record stops belonging to one browser. Sits under the table
+   rather than above it: the board is what people came to look at, and this is
+   housekeeping they only want once.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.recovery {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 1rem;
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  background: linear-gradient(180deg, var(--panel), rgb(7 26 46 / 0.45));
+}
+
+/* Sized to its label rather than to the panel: a column stretches its children,
+   and a full-width button reads as the main action on a screen whose main action
+   is the board above it. */
+.recovery > .btn {
+  align-self: start;
+}
+
+.recovery__hint,
+.recovery__status {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+
+/* Reserved whether or not it says anything, so confirming a claim does not
+   shunt the board underneath it. */
+.recovery__status {
+  min-height: 1.2em;
+}
+
+.recovery__claim {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.recovery__claim .field {
+  flex: 1 1 12rem;
+}
+
 /* ── The round in review ────────────────────────────────────────────────────
    What the round did to the room, rather than what the room did to each other:
    the question nobody got, and the one everybody had. Wider tiles than the

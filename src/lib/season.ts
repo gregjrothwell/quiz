@@ -9,6 +9,7 @@ import {
   runTransaction,
   setDoc,
 } from 'firebase/firestore';
+import type { Honours } from '../engine/awards';
 import { firestore } from '../firebase';
 
 /**
@@ -43,8 +44,8 @@ export const SEASON = 'season-2';
 /** More than an office will fill, small enough to stay one cheap read. */
 const TABLE_LIMIT = 50;
 
-export interface SeasonRow {
-  uid: string;
+export interface SeasonRow extends Honours {
+  playerId: string;
   name: string;
   played: number;
   wins: number;
@@ -52,7 +53,7 @@ export interface SeasonRow {
   best: number;
 }
 
-interface SeasonDoc {
+interface SeasonDoc extends Partial<Honours> {
   name: string;
   played: number;
   wins: number;
@@ -63,16 +64,30 @@ interface SeasonDoc {
   lastPlayed: number;
 }
 
-function playerDoc(uid: string) {
-  return doc(firestore(), 'seasons', SEASON, 'players', uid);
+/**
+ * Keyed on the playerId rather than the auth uid — see `src/lib/identity.ts` for
+ * why, and note that the two are the same string for anybody who has never
+ * claimed an identity, which is what lets every existing row stand untouched.
+ */
+function playerDoc(playerId: string) {
+  return doc(firestore(), 'seasons', SEASON, 'players', playerId);
 }
 
 export interface GameResult {
-  uid: string;
+  playerId: string;
   name: string;
   gameId: string;
   score: number;
   won: boolean;
+  /**
+   * The rosettes this player took tonight, or none.
+   *
+   * None is also what a device sends when it did not see the whole game — the
+   * final screen withholds the awards in that case, and banking honours it
+   * cannot stand behind would be worse than banking none. It is not evidence
+   * nothing was won.
+   */
+  honours: Honours;
 }
 
 /**
@@ -84,7 +99,7 @@ export interface GameResult {
  * Without that, reloading the final screen would count the game again.
  */
 export async function recordGame(result: GameResult): Promise<void> {
-  const reference = playerDoc(result.uid);
+  const reference = playerDoc(result.playerId);
 
   await runTransaction(firestore(), async (transaction) => {
     const snapshot = await transaction.get(reference);
@@ -92,12 +107,19 @@ export async function recordGame(result: GameResult): Promise<void> {
 
     if (existing?.lastGame === result.gameId) return;
 
+    // The transaction already holds the row, so the rosettes cost no read of
+    // their own — the same reason `best` is worked out here rather than with a
+    // server-side sentinel it does not have.
     const next: SeasonDoc = {
       name: result.name,
       played: (existing?.played ?? 0) + 1,
       wins: (existing?.wins ?? 0) + (result.won ? 1 : 0),
       points: (existing?.points ?? 0) + result.score,
       best: Math.max(existing?.best ?? 0, result.score),
+      fastest: (existing?.fastest ?? 0) + result.honours.fastest,
+      comeback: (existing?.comeback ?? 0) + result.honours.comeback,
+      loneWolf: (existing?.loneWolf ?? 0) + result.honours.loneWolf,
+      contrarian: (existing?.contrarian ?? 0) + result.honours.contrarian,
       lastGame: result.gameId,
       lastPlayed: Date.now(),
     };
@@ -174,12 +196,18 @@ export async function loadSeason(): Promise<SeasonRow[]> {
   return snapshot.docs.map((entry) => {
     const data = entry.data() as SeasonDoc;
     return {
-      uid: entry.id,
+      playerId: entry.id,
       name: data.name,
       played: data.played,
       wins: data.wins,
       points: data.points,
       best: data.best,
+      // Absent on every row written before honours existed, which is most of
+      // them, and zero is the honest reading of a row that never counted any.
+      fastest: data.fastest ?? 0,
+      comeback: data.comeback ?? 0,
+      loneWolf: data.loneWolf ?? 0,
+      contrarian: data.contrarian ?? 0,
     };
   });
 }

@@ -150,6 +150,61 @@ function comeback(log: QuestionRecord[], playerUids: string[]): Award | null {
 }
 
 /**
+ * A player's rosettes, counted rather than listed, for banking against a season.
+ * Keyed by the award ids above so a shelf reads as the same thing the final
+ * screen just handed out.
+ */
+export interface Honours {
+  fastest: number;
+  comeback: number;
+  loneWolf: number;
+  contrarian: number;
+}
+
+export const NO_HONOURS: Honours = { fastest: 0, comeback: 0, loneWolf: 0, contrarian: 0 };
+
+const HONOUR_KEYS: Record<Award['id'], keyof Honours> = {
+  fastest: 'fastest',
+  comeback: 'comeback',
+  'lone-wolf': 'loneWolf',
+  contrarian: 'contrarian',
+};
+
+/**
+ * Whether this device watched the whole game, which is the one precondition on
+ * saying anything about it.
+ *
+ * Exported so the screen that *shows* the awards and the code that *banks* them
+ * ask the identical question. Held in two places these would drift, and the way
+ * they would drift is a device quietly banking honours off a partial log — which
+ * is permanent, unlike a screen that merely says nothing.
+ */
+export function sawWholeGame(log: QuestionRecord[], questionCount: number): boolean {
+  return questionCount > 0 && log.length === questionCount;
+}
+
+/**
+ * What one player won tonight, for a season row.
+ *
+ * Joint winners each count it. Sharing the fastest finger is still having been
+ * the fastest finger, and the alternative — a fractional rosette, or awarding it
+ * to nobody — is worse in both directions.
+ */
+export function honoursFor(
+  log: QuestionRecord[],
+  playerUids: string[],
+  uid: string,
+): Honours {
+  const honours: Honours = { ...NO_HONOURS };
+
+  for (const award of awardsFor(log, playerUids)) {
+    if (award.uids.includes(uid)) honours[HONOUR_KEYS[award.id]] += 1;
+  }
+
+  return honours;
+}
+
+/**
  * The round as a thing that happened, rather than the players who played it.
  *
  * Which question, and how many people it happened to — facts, on the same

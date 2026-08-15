@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { RecoveryPanel } from '../components/RecoveryPanel';
 import type { QuestionRecord } from '../engine/awards';
 import { createRoom, type QuizQuestion, type RoomState } from '../engine/state';
 import type { PackSummary } from '../lib/usePacks';
@@ -380,6 +381,14 @@ export function Preview() {
           onSeason={noop}
         />
       ),
+    },
+    {
+      title: 'Recovery · a code already saved',
+      node: <RecoveryPanel uid="greg" onClaimed={noop} initialCode="ABCD3F7H" />,
+    },
+    {
+      title: 'Recovery · nothing saved yet',
+      node: <RecoveryPanel uid="greg" onClaimed={noop} initialCode={null} />,
     },
     {
       title: 'Final · the round in review',

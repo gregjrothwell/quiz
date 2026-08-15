@@ -28,6 +28,94 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // ── Identity ──────────────────────────────────────────────────────────────
+    //
+    // A season row used to be keyed on the auth uid. That uid dies with site
+    // storage — iOS Safari evicts after about a week — and a second machine has
+    // never seen it. So a row is keyed on a **playerId** which *defaults to the
+    // uid*: every row written before this still validates, with no migration,
+    // and a player who claims nothing is on exactly the path they were on.
+    //
+    // Whether a writer holds a playerId is the one question these rules have to
+    // answer, and `ownsPlayer` is the whole of it. The uid case is deliberately
+    // first: rules short-circuit, so the ordinary unclaimed player costs no
+    // extra document read at all, and only somebody who has claimed pays one —
+    // once per game, when their row is banked.
+    //
+    // `exists()` before `get()` is load-bearing. A `get()` on a missing document
+    // returns null, and reading `.data` off null errors the rule, which denies —
+    // so without it a browser that had never claimed anything would be locked
+    // out of its own row. Both calls read the same document inside one
+    // evaluation and Firestore caches that, so the pair still costs one read.
+    function ownsPlayer(playerId) {
+      return request.auth != null
+        && (playerId == request.auth.uid
+            || (exists(/databases/$(database)/documents/claims/$(request.auth.uid))
+                && get(/databases/$(database)/documents/claims/$(request.auth.uid)).data.playerId
+                     == playerId));
+    }
+
+    // What a recovery code points at. **The code is the secret, so the document
+    // id is the proof** — which is why this is readable and the vault is not.
+    // The vault's ids ship inside the packs, so an answer had to be unreadable
+    // and merely checkable; a recovery code is known only to whoever was given
+    // it. `list` is denied for the same reason it is denied on rooms: a
+    // capability you can enumerate is not one. 29^8 is about 5×10^11.
+    //
+    // Minting is restricted to an identity the writer already holds. Without
+    // that, anybody could read a playerId off the season table — they are the
+    // document ids of a readable collection — mint a code pointing at it, claim
+    // it, and write that person's row.
+    match /recovery/{code} {
+      allow get: if request.auth != null;
+      allow list: if false;
+
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['playerId'])
+        && request.resource.data.playerId is string
+        && request.resource.data.playerId.size() > 0
+        && request.resource.data.playerId.size() <= 128
+        && ownsPlayer(request.resource.data.playerId);
+
+      // Never repointed: an update would let whoever minted a code aim it at
+      // somebody else's identity after the fact, which is the one move that
+      // turns a capability into a theft.
+      allow update: if false;
+
+      // Revocable by whoever it belongs to, which is how a leaked code is
+      // killed. It strands nobody: a browser that has already claimed carries
+      // its own `claims` document, and the season rules read *that* — this is
+      // only consulted when a claim is made. So deleting stops the code being
+      // used again and leaves everyone who already used it exactly where they
+      // are, which is precisely what revoking should mean.
+      allow delete: if ownsPlayer(resource.data.playerId);
+    }
+
+    // Which identity a browser has taken on. Read by the rules above on every
+    // season write, and by nobody else — it is this browser's business.
+    //
+    // A claim is only accepted against a live recovery document naming the same
+    // playerId, so the assertion cannot be made up. Updating is allowed, with
+    // the identical check, so a browser can move between identities rather than
+    // being pinned to the first one it ever claimed; deleting returns it to its
+    // own uid, which is the way back out.
+    match /claims/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+
+      allow create, update: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['playerId', 'code'])
+        && request.resource.data.playerId is string
+        && request.resource.data.playerId.size() > 0
+        && request.resource.data.playerId.size() <= 128
+        && request.resource.data.code is string
+        && exists(/databases/$(database)/documents/recovery/$(request.resource.data.code))
+        && get(/databases/$(database)/documents/recovery/$(request.resource.data.code)).data.playerId
+             == request.resource.data.playerId;
+
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
     match /rooms/{code} {
       // Comfortably past an office round, tight enough that a malformed write
       // cannot inflate the document every client re-reads on every transition.
@@ -47,12 +135,26 @@ service cloud.firestore {
       // on purpose: the exact wire type is the SDK's choice, and a room nobody
       // can join is a far worse failure than a float slipping past a bound that
       // exists only to keep garbage out.
+      //
+      // **`playerId` is optional and nothing writes it yet.** It is accepted
+      // here because the pre-round title card will want to know who is in the
+      // room without paying a `claims` read per player, and the room document is
+      // already re-read on every transition — but the client half belongs with
+      // that feature. Bounded now because this is the republish that is
+      // happening; a second hand-paste is the thing worth avoiding, not a field
+      // sitting unused. An unwritten field is inert.
+      //
+      // It also means publishing these rules ahead of the bundle changes nothing
+      // for anybody already playing: every entry in the wild is `{name,
+      // joinedAt}`, which still validates exactly as it did.
       function playerOk(player) {
-        return player.keys().hasOnly(['name', 'joinedAt'])
+        return player.keys().hasOnly(['name', 'joinedAt', 'playerId'])
           && player.name is string
           && player.name.size() > 0
           && player.name.size() <= 40
-          && player.joinedAt is number;
+          && player.joinedAt is number
+          && player.get('playerId', '') is string
+          && player.get('playerId', '').size() <= 128;
       }
 
       // The writer's own entry is the only one a rule can check without
@@ -315,7 +417,7 @@ service cloud.firestore {
       allow delete: if signedIn();
     }
 
-    match /seasons/{season}/players/{uid} {
+    match /seasons/{season}/players/{playerId} {
       // A round is at most 25 questions at 1,000 points, so 100k leaves room for
       // a long season's best game and still rejects a fantasy number.
       function maxBest() { return 100000; }
@@ -332,10 +434,21 @@ service cloud.firestore {
       // choice, not an oversight. See docs/HANDOVER.md.
       allow read: if signedIn();
 
+      // Four rosettes, so a shelf cannot hold more of any one of them than there
+      // were rounds to win it in. Defaulted rather than required: a row written
+      // before honours existed carries none, and a client one deploy behind
+      // writes none, and neither should be locked out of its own row.
+      function honourOk(field) {
+        return request.resource.data.get(field, 0) is int
+          && request.resource.data.get(field, 0) >= 0
+          && request.resource.data.get(field, 0) <= request.resource.data.played;
+      }
+
       allow create, update: if signedIn()
-        && request.auth.uid == uid
+        && ownsPlayer(playerId)
         && request.resource.data.keys().hasOnly(
-             ['name', 'played', 'wins', 'points', 'best', 'lastGame', 'lastPlayed'])
+             ['name', 'played', 'wins', 'points', 'best', 'lastGame', 'lastPlayed',
+              'fastest', 'comeback', 'loneWolf', 'contrarian', 'team'])
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0
         && request.resource.data.name.size() <= 40
@@ -356,12 +469,25 @@ service cloud.firestore {
         && request.resource.data.best <= request.resource.data.points
         && request.resource.data.lastGame is string
         && request.resource.data.lastGame.size() <= 64
-        && request.resource.data.lastPlayed is number;
+        && request.resource.data.lastPlayed is number
+        // After `played` has been checked, because that is what they are bounded
+        // against and rules evaluate left to right.
+        && honourOk('fastest')
+        && honourOk('comeback')
+        && honourOk('loneWolf')
+        && honourOk('contrarian')
+        // Nothing writes `team` yet. It is bounded here because the season row
+        // is validated with `hasOnly`, so *any* new field on it costs a rules
+        // republish — and a hand-pasted ruleset has broken the game twice. A
+        // field nobody writes is inert; a republish is not. Whenever team
+        // leagues do ship, they are then a client-only change.
+        && request.resource.data.get('team', '') is string
+        && request.resource.data.get('team', '').size() <= 40;
 
       // Removing your own row is the only way anybody can take a display name
       // back off a shared board without console access. Someone else's row still
       // needs the console — the app has no moderator.
-      allow delete: if signedIn() && request.auth.uid == uid;
+      allow delete: if signedIn() && ownsPlayer(playerId);
     }
   }
 }

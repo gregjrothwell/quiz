@@ -201,7 +201,26 @@ async function main(): Promise<void> {
   const db = getFirestore(app);
   const rtdb = getDatabase(app);
 
-  console.log(`Project ${config.projectId}, signed in anonymously as ${uid.slice(0, 8)}…`);
+  /**
+   * A second, genuinely separate anonymous client.
+   *
+   * Nothing else here needs one, and this does: the whole point of a recovery
+   * code is that a *different browser* takes on an identity, and the rule branch
+   * that permits it — a `claims` lookup rather than `playerId == uid` — cannot
+   * be reached from the client that owns the identity already, because the first
+   * branch short-circuits before it. Signed in as one user and merely reasoned
+   * about, that branch would be exactly as proven as the season transaction is,
+   * which is to say not at all.
+   */
+  const appB = initializeApp(config, 'check-rules-claimer');
+  const credentialB = await signInAnonymously(getAuth(appB));
+  const uidB = credentialB.user.uid;
+  const dbB = getFirestore(appB);
+
+  console.log(
+    `Project ${config.projectId}, signed in anonymously as ${uid.slice(0, 8)}… `
+      + `and ${uidB.slice(0, 8)}…`,
+  );
   console.log(`The last check waits out a real ${SHORT_WINDOW_SECS}-second gate.\n`);
 
   // Opened up front so the deny checks below have a genuinely live question to
@@ -209,6 +228,14 @@ async function main(): Promise<void> {
   // like a reveal refused by the time gate, and prove nothing. On a long window,
   // because a dozen round-trips happen before the last of them runs.
   await openProbeQuestion(db, uid, LONG_WINDOW_SECS);
+
+  /**
+   * Fresh per run, because a `recovery` document cannot be updated — a fixed
+   * code would exist from the second run onwards and the mint check would then
+   * be failing for the wrong reason. Deleted at the end, which the rules permit
+   * for whoever owns it.
+   */
+  const probeCode = `RC${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 
   const presence = ref(rtdb, `presence/${PROBE_ROOM}/${uid}`);
   const ownSeasonRow = doc(db, 'seasons', ANY_SEASON, 'players', uid);
@@ -295,6 +322,84 @@ async function main(): Promise<void> {
       hint: 'firestore.rules lets anyone rewrite another player’s standings',
       run: () =>
         setDoc(doc(db, 'seasons', ANY_SEASON, 'players', 'not-my-uid'), validSeasonRow),
+    },
+    {
+      label: 'Firestore   · write a season row with a fantasy rosette count',
+      expect: 'deny',
+      hint: 'firestore.rules is missing the honour bounds on the season row — a '
+        + 'trophy shelf can hold more rosettes than there were rounds to win them',
+      run: () => setDoc(ownSeasonRow, { ...validSeasonRow, played: 1, fastest: 99 }),
+    },
+    {
+      // The whole identity mechanism in one check. `recovery` documents are
+      // create-only and only for an identity the writer already holds, which is
+      // what stops somebody reading a playerId off the season table — they are
+      // the document ids of a readable collection — and minting a way into it.
+      label: 'Firestore   · mint a recovery code for your own identity',
+      expect: 'allow',
+      hint: 'firestore.rules is missing the /recovery block — nobody can move '
+        + 'their season record to a second device',
+      run: () => setDoc(doc(db, 'recovery', probeCode), { playerId: uid }),
+    },
+    {
+      label: "Firestore   · mint a recovery code for someone else's identity",
+      expect: 'deny',
+      hint: 'firestore.rules is missing ownsPlayer() on /recovery create — '
+        + 'anyone can read a playerId off the season table, mint a code for it, '
+        + 'claim it, and then write that person’s row',
+      run: () =>
+        setDoc(doc(db, 'recovery', `${probeCode}X`), { playerId: 'not-my-uid' }),
+    },
+    {
+      label: 'Firestore   · repoint an existing recovery code',
+      expect: 'deny',
+      hint: 'firestore.rules allows update on /recovery — a code handed out '
+        + 'once can be aimed at a different identity afterwards',
+      run: () => updateDoc(doc(db, 'recovery', probeCode), { playerId: 'not-my-uid' }),
+    },
+    {
+      label: 'Firestore   · list the recovery collection',
+      expect: 'deny',
+      hint: 'firestore.rules grants list on /recovery — the codes are the whole '
+        + 'security of this mechanism and they could be harvested in one query',
+      run: () => getDocs(query(collection(db, 'recovery'), limit(1))),
+    },
+    {
+      label: 'Firestore   · claim an identity with a code that does not exist',
+      expect: 'deny',
+      hint: 'firestore.rules does not check the claim against /recovery — a '
+        + 'browser can simply assert somebody else’s playerId',
+      run: () =>
+        setDoc(doc(dbB, 'claims', uidB), { playerId: uid, code: 'NOSUCHCD' }),
+    },
+    {
+      label: "Firestore   · write another player's season row without claiming it",
+      expect: 'deny',
+      hint: 'firestore.rules is not gating the season row on ownsPlayer() — a '
+        + 'second browser can write a record it has no code for',
+      run: () =>
+        setDoc(doc(dbB, 'seasons', ANY_SEASON, 'players', uid), validSeasonRow),
+    },
+    {
+      // The allow half of the pair above, from a genuinely separate client. This
+      // is the check that would otherwise leave everybody stranded on one
+      // browser, and it is the only one that reaches the `claims` branch of
+      // ownsPlayer() — the uid branch short-circuits before it everywhere else.
+      label: 'Firestore   · claim an identity with a live code, on a second client',
+      expect: 'allow',
+      hint: 'firestore.rules is missing the /claims block, or its lookup into '
+        + '/recovery is wrong — the recovery code will be refused on every device',
+      run: () => setDoc(doc(dbB, 'claims', uidB), { playerId: uid, code: probeCode }),
+    },
+    {
+      // And now the same write that was denied two checks ago must succeed,
+      // which is the entire mechanism proved end to end rather than assumed.
+      label: 'Firestore   · write the claimed identity’s season row',
+      expect: 'allow',
+      hint: 'ownsPlayer() is not consulting /claims, or exists() is missing '
+        + 'before get() — a player who moved device cannot bank a game',
+      run: () =>
+        setDoc(doc(dbB, 'seasons', ANY_SEASON, 'players', uid), validSeasonRow),
     },
     {
       label: 'Firestore   · read the vault',
@@ -498,7 +603,14 @@ async function main(): Promise<void> {
 
   // Best effort. A leftover under the throwaway season id or the probe room is
   // never read by the app, and only exists at all if a check already failed.
+  //
+  // The claim goes first: while it stands, uidB owns this row, and the delete
+  // below is only permitted to somebody who owns it. Revoking the recovery code
+  // is what stops these accumulating a document per run — `recovery` is the one
+  // collection here whose contents cannot simply be overwritten next time.
+  await deleteDoc(doc(dbB, 'claims', uidB)).catch(() => undefined);
   await deleteDoc(ownSeasonRow).catch(() => undefined);
+  await deleteDoc(doc(db, 'recovery', probeCode)).catch(() => undefined);
   await remove(presence).catch(() => undefined);
 
   console.log(

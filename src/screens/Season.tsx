@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { RecoveryPanel } from '../components/RecoveryPanel';
+import { playerIdFor } from '../lib/identity';
 import { loadSeason, type SeasonRow } from '../lib/season';
 
 interface SeasonProps {
@@ -10,6 +12,19 @@ type Load = { state: 'loading' } | { state: 'ready'; rows: SeasonRow[] } | { sta
 
 export function Season({ youUid, onBack }: SeasonProps) {
   const [load, setLoad] = useState<Load>({ state: 'loading' });
+
+  /*
+    Which row is yours is a question about the identity, not the browser. They
+    are the same string until somebody claims a record with a recovery code, and
+    the whole point of claiming is that afterwards they are not.
+  */
+  const [youPlayerId, setYouPlayerId] = useState(() => (youUid ? playerIdFor(youUid) : null));
+  const [reloads, setReloads] = useState(0);
+
+  const onClaimed = useCallback(() => {
+    if (youUid) setYouPlayerId(playerIdFor(youUid));
+    setReloads((n) => n + 1);
+  }, [youUid]);
 
   useEffect(() => {
     let cancelled = false;
@@ -29,7 +44,7 @@ export function Season({ youUid, onBack }: SeasonProps) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [reloads]);
 
   return (
     <>
@@ -66,31 +81,44 @@ export function Season({ youUid, onBack }: SeasonProps) {
                 <th scope="col">Played</th>
                 <th scope="col">Wins</th>
                 <th scope="col">Best</th>
+                <th scope="col">Rosettes</th>
                 <th scope="col">Points</th>
               </tr>
             </thead>
             <tbody>
-              {load.rows.map((row, index) => (
-                <tr key={row.uid} data-you={row.uid === youUid ? '' : undefined}>
-                  <td>{index + 1}</td>
-                  <td>
-                    {row.name}
-                    {row.uid === youUid ? <span className="you">This device</span> : null}
-                  </td>
-                  <td>{row.played}</td>
-                  <td>{row.wins}</td>
-                  <td>{row.best.toLocaleString('en-GB')}</td>
-                  <td>{row.points.toLocaleString('en-GB')}</td>
-                </tr>
-              ))}
+              {load.rows.map((row, index) => {
+                const rosettes = row.fastest + row.comeback + row.loneWolf + row.contrarian;
+                const yours = row.playerId === youPlayerId;
+
+                return (
+                  <tr key={row.playerId} data-you={yours ? '' : undefined}>
+                    <td>{index + 1}</td>
+                    <td>
+                      {row.name}
+                      {yours ? <span className="you">You</span> : null}
+                    </td>
+                    <td>{row.played}</td>
+                    <td>{row.wins}</td>
+                    <td>{row.best.toLocaleString('en-GB')}</td>
+                    {/* A dash rather than a nought: most rows predate honours
+                        entirely, and a column of zeroes reads as a season of
+                        failure rather than a column with no history behind it. */}
+                    <td>{rosettes > 0 ? rosettes : '—'}</td>
+                    <td>{row.points.toLocaleString('en-GB')}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       ) : null}
 
+      {youUid ? <RecoveryPanel uid={youUid} onClaimed={onClaimed} /> : null}
+
       <p className="muted" style={{ fontSize: '0.85rem' }}>
-        Standings follow the browser, not the person — there is no sign-up. A new laptop, cleared
-        site data or a private window starts a fresh record.
+        There is no sign-up, so a record starts out belonging to one browser — a new laptop,
+        cleared site data or a private window begins a fresh one. A recovery code is how it
+        moves.
       </p>
     </>
   );

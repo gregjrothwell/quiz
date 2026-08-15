@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Stage } from './components/Stage';
+import { honoursFor, sawWholeGame, NO_HONOURS } from './engine/awards';
 import { standings } from './engine/scoring';
 import { codeFromHash } from './engine/roomCode';
 import {
@@ -10,6 +11,7 @@ import {
   type Level,
 } from './engine/state';
 import { isFirebaseConfigured } from './firebase';
+import { playerIdFor } from './lib/identity';
 import { useGameLog } from './lib/useGameLog';
 import { loadAsked, recordAsked, recordGame } from './lib/season';
 import { play } from './lib/sound';
@@ -310,14 +312,20 @@ function Game() {
     const mine = rows.find((entry) => entry.uid === uid);
 
     recordGame({
-      uid,
+      playerId: playerIdFor(uid),
       name: player.name,
       gameId,
       score: room.scores[uid] ?? 0,
       // A round where nobody scored is not a win for everybody.
       won: leadScore > 0 && mine?.position === 1,
+      // Only from a log covering the whole game. A device that joined late or
+      // reloaded before the log was kept would otherwise bank a shelf it cannot
+      // stand behind — and unlike a screen that says nothing, that is permanent.
+      honours: sawWholeGame(gameLog, room.questions.length)
+        ? honoursFor(gameLog, Object.keys(room.players), uid)
+        : NO_HONOURS,
     }).catch(report);
-  }, [room, uid, report]);
+  }, [room, uid, gameLog, report]);
 
   if (connection === 'error') {
     return (

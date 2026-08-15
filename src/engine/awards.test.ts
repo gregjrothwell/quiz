@@ -1,5 +1,12 @@
 import { describe, expect, test } from 'vitest';
-import { awardsFor, reviewFor, type Award, type QuestionRecord } from './awards';
+import {
+  awardsFor,
+  honoursFor,
+  reviewFor,
+  sawWholeGame,
+  type Award,
+  type QuestionRecord,
+} from './awards';
 import type { Answer } from './state';
 
 function answer(optionIndex: number, elapsedMs: number): Answer {
@@ -347,5 +354,100 @@ describe('the round in review', () => {
 
     // #then it is empty rather than carrying two blank panels
     expect(review).toEqual([]);
+  });
+});
+
+describe('sawWholeGame', () => {
+  test('refuses a log short of the round', () => {
+    // #given a device that has two of a three-question round
+    const log = [record(0, 0, {}), record(1, 0, {})];
+
+    // #when it asks whether it saw the whole game
+    // #then it did not, so nothing downstream may speak for it
+    expect(sawWholeGame(log, 3)).toBe(false);
+  });
+
+  test('refuses a round with no questions in it', () => {
+    // #given an empty log and an empty round
+    // #when it asks
+    // #then a game that never happened is not a game this device watched — the
+    // lengths matching is not enough on its own
+    expect(sawWholeGame([], 0)).toBe(false);
+  });
+
+  test('accepts a log covering the round', () => {
+    // #given a device with all three questions
+    const log = [record(0, 0, {}), record(1, 0, {}), record(2, 0, {})];
+
+    // #when it asks
+    // #then it may speak for the game
+    expect(sawWholeGame(log, 3)).toBe(true);
+  });
+});
+
+describe('honoursFor', () => {
+  test('counts only the rosettes this player won', () => {
+    // #given the end-to-end game above, where Greg took fastest finger and
+    // shared the lone wolf
+    const log = [
+      record(
+        0,
+        0,
+        { greg: answer(0, 800), sam: answer(1, 2_000), alex: answer(1, 2_200) },
+        { greg: 960, sam: 0, alex: 0 },
+      ),
+      record(
+        1,
+        1,
+        { sam: answer(1, 1_200), greg: answer(1, 3_000), alex: answer(3, 2_000) },
+        { sam: 900, greg: 700, alex: 0 },
+      ),
+      record(
+        2,
+        2,
+        { sam: answer(2, 1_000), greg: answer(0, 2_000), alex: answer(0, 2_500) },
+        { sam: 950, greg: 0, alex: 0 },
+      ),
+    ];
+
+    // #when Greg's honours are counted
+    const honours = honoursFor(log, ['greg', 'sam', 'alex'], 'greg');
+
+    // #then he banks his own two and none of Sam's or Alex's
+    expect(honours).toEqual({ fastest: 1, comeback: 0, loneWolf: 1, contrarian: 0 });
+  });
+
+  test('gives a joint winner the whole rosette', () => {
+    // #given two players who tied for fastest finger
+    const log = [record(0, 0, { sam: answer(0, 1_500), alex: answer(0, 1_500) })];
+
+    // #when each player's honours are counted
+    const sam = honoursFor(log, ['sam', 'alex'], 'sam');
+    const alex = honoursFor(log, ['sam', 'alex'], 'alex');
+
+    // #then both banked it — sharing it is still having been the fastest, and a
+    // fraction of a rosette is not a thing a shelf can hold
+    expect(sam.fastest).toBe(1);
+    expect(alex.fastest).toBe(1);
+  });
+
+  test('banks nothing for a player who won nothing', () => {
+    // #given a round Alex was wrong in, alongside everybody else
+    const log = [record(0, 0, { greg: answer(1, 900), alex: answer(1, 1_200) })];
+
+    // #when Alex's honours are counted
+    const honours = honoursFor(log, ['greg', 'alex'], 'alex');
+
+    // #then the shelf stays empty rather than gaining a consolation
+    expect(honours).toEqual({ fastest: 0, comeback: 0, loneWolf: 0, contrarian: 0 });
+  });
+
+  test('banks nothing from an empty log', () => {
+    // #given a device that recorded nothing
+    // #when honours are counted
+    const honours = honoursFor([], ['greg'], 'greg');
+
+    // #then there is nothing to bank, which is what a partial log must produce
+    expect(honours).toEqual({ fastest: 0, comeback: 0, loneWolf: 0, contrarian: 0 });
   });
 });

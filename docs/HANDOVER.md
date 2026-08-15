@@ -6,7 +6,7 @@ Built to replace Polly in Teams.
 - **Live:** https://gregjrothwell.github.io/quiz/
 - **Repo:** https://github.com/gregjrothwell/quiz (public, `master`, deploys from `gh-pages`)
 - **Firebase project:** `quiz-d686e` (Firestore + Realtime Database in europe-west1 + Anonymous auth)
-- **Status:** shipped and played. 221 tests, clean types and lint, no `any` or
+- **Status:** shipped and played. 235 tests, clean types and lint, no `any` or
   `@ts-ignore`. The **answer vault is live and covers the packs**: 13,593
   answers seeded against the 13,452 the packs need plus the 4 harness entries,
   both rulesets published, preflight passing.
@@ -15,11 +15,12 @@ Built to replace Polly in Teams.
   ids hash the question text, so a revised question leaves its old answer in
   place, unread and harmless. All 14,176 pack questions across the ten packs
   resolve to an answer.
-- **Next:** [durable identity](#next-session--start-here), which is phase 2 of
-  three. Phase 1 — [the round in review](#the-round-in-review) — is done. The
-  reasoning for the order is that everything now worth carrying between games
-  hangs off an anonymous auth uid that dies with site storage, so identity is
-  hardened *before* honours are banked against it. [The closing seconds carry a
+- **Next:** **publish `firestore.rules`, then run `npm run check-rules` and
+  `npm run sync-harness 10`, then deploy** — [durable
+  identity](#durable-identity) is code-complete and its rules are *not* live yet,
+  which is the one state this repo has been burned by twice. Phase 1 — [the round
+  in review](#the-round-in-review) — is done and needed no rules at all. Phase 3
+  is [Form](#next-session--start-here). [The closing seconds carry a
   clock](#the-clock) — nine seconds of gameshow music in place of the two-tone
   tick, deployed and heard on 14 August 2026. [The answer window is
   selectable](#the-configurable-answer-window) — 10 / 15 / 20 seconds, chosen in
@@ -48,10 +49,17 @@ Built to replace Polly in Teams.
 > fail permissively, and that direction is silent: everything works, and nobody
 > finds out `list` is still open until somebody enumerates every room.
 >
-> 24 checks — thirteen from the security review, seven for the vault, two for
-> the question history, two for the answer window. The vault seven include the
-> one that catches `firestore.seed.rules` being left published, which would
-> leave every answer in the game overwritable by anybody.
+> 33 checks — thirteen from the security review, seven for the vault, two for
+> the question history, two for the answer window, nine for identity. The vault
+> seven include the one that catches `firestore.seed.rules` being left
+> published, which would leave every answer in the game overwritable by anybody.
+>
+> It now signs in **twice**, as two independent anonymous users. That is not
+> thoroughness for its own sake: the whole point of a recovery code is that a
+> *different browser* takes on an identity, and the rule branch that permits it
+> cannot be reached from the client that already owns that identity, because the
+> `playerId == uid` branch short-circuits in front of it. One client could only
+> ever have proved that branch by reasoning about it.
 
 ---
 
@@ -380,6 +388,102 @@ one.
 
 ---
 
+## Durable identity
+
+**Code complete, and the rules are not published yet.** See [publish before you
+deploy](#publish-the-identity-rules-before-you-deploy) — this one is not
+optional, and the order is the same as the answer window's.
+
+A season row used to be keyed on the anonymous auth uid. That uid is durable per
+browser and dies with site storage: iOS Safari evicts after about a week without
+a visit, and a work machine has never had it. While the row held points that cost
+a total. Now it holds rosettes, and an eviction would erase a season of earned
+reputation silently — the feature meant to make the league feel continuous
+becoming the one that makes it feel arbitrary.
+
+**You cannot move a Firebase Auth uid between browsers.** A custom token needs a
+server, which means leaving the free tier; linking a real provider means an
+account, which is the one thing anonymous auth is here to avoid. So the uid stops
+being the identity.
+
+### The shape
+
+A **`playerId`**, which *defaults to the uid*. That default is what makes the
+whole thing free: every row written before this is keyed by a uid, which is now
+simply a playerId nobody has claimed. **There is no migration**, and a player who
+never touches any of it is on exactly the path they were on.
+
+A second browser takes on an identity by presenting a **recovery code** —
+permanent, regenerable, and revocable. It is stored beside the remembered name
+and shown on the season screen.
+
+| Collection | What it holds |
+|---|---|
+| `recovery/{CODE}` | `{ playerId }`. Readable by id, never listable, never updatable, deletable by its owner. |
+| `claims/{uid}` | `{ playerId, code }`. This browser's identity, readable only by it. |
+
+### This is the room code's pattern, not the vault's
+
+Worth being precise, because the first sketch of this design got it wrong. The
+vault is `allow read: if false` because **its document ids are public** — they
+ship inside the packs — so an answer had to be unreadable and merely checkable
+by a rule.
+
+A recovery code is the opposite: **the id itself is the secret.** So knowing it
+is the whole proof, and the code is simply read. What that needs instead is
+`list: if false`, exactly as `/rooms` has, because a capability you can
+enumerate is not one. 29⁸ is about 5×10¹¹.
+
+### Three things that will bite
+
+- **`exists()` must come before `get()`.** A `get()` on a missing document
+  returns null, and reading `.data` off null errors the rule, which denies. Drop
+  the `exists()` and every browser that has never claimed anything is locked out
+  of *its own row* — the common case, broken by a guard meant for the rare one.
+  Both calls read the same document inside one evaluation and Firestore caches
+  that, so the pair still costs one read.
+- **The `||` must put the uid case first.** Rules short-circuit, so an unclaimed
+  player pays no extra read at all and only somebody who has claimed pays one,
+  once per game. Reversed, every player in every game pays a document read for a
+  branch almost none of them need.
+- **Minting is restricted to an identity the writer already holds.** Without
+  that, anybody could read a playerId off the season table — they are the
+  document ids of a readable collection — mint a code pointing at it, claim it,
+  and write that person's row. `ownsPlayer` on `recovery` create is the whole of
+  what stops it.
+
+### What it does not do
+
+- **Anyone holding a code can write that row.** Same trust model as the room
+  code, deliberately. The blast radius is a leaderboard entry, and a leaked code
+  can be revoked by deleting it.
+- **Revoking strands nobody.** A browser that has already claimed carries its own
+  `claims` document, and the season rules read *that*; the recovery document is
+  consulted only when a claim is made. So deleting it stops the code being used
+  again and leaves everyone who already used it exactly where they are.
+- **Two devices of one person in one room are two players.** They share a
+  playerId, so the second banks nothing — `lastGame` is the same game id. That is
+  the right answer, and it is worth knowing before somebody reports it as a bug.
+
+### Publish the identity rules before you deploy
+
+Same order as [the answer window](#the-configurable-answer-window), and for a
+related reason. The new rules are fully backwards-compatible with the deployed
+bundle — every field added is optional and defaulted, and the season rule's uid
+branch is what every current client hits. The reverse order is the broken one:
+a new client writing `fastest: 1` onto a season row against the old ruleset is
+refused by `hasOnly`, and nobody's game gets banked.
+
+```bash
+npm run check-rules && npm run sync-harness 10
+```
+
+Then deploy. `sync-harness` is the one that matters here for the same reason it
+mattered for the vault: `playerOk` gates every room write, so a wrong bound
+breaks *joining*, which is a much louder failure than anything security-shaped.
+
+---
+
 ## The round in review
 
 Two panels under the rosettes, saying what the round did to the room rather than
@@ -649,6 +753,38 @@ round in review shipped and the next two phases were agreed.
 > of the people actually in the room, plus honours accumulating on those rows.
 > Phase 2 publishes every rule it needs, including an optional `playerId` on each
 > player's own entry so the digest costs no extra reads.
+
+### Teams — leagues that are not one global list
+
+Greg's idea, 15 August 2026. **Not** teams playing together: teams as in groups
+at work — Engineering against Marketing — so the season table is your team's
+board rather than everybody's.
+
+**Checked against the current plan, and the answer is: the field is already
+published, the feature is not built.** The reasoning is worth keeping because it
+is the whole argument for deciding this now rather than later.
+
+- **The feature itself is client-only and small.** `TABLE_LIMIT` is 50 and
+  `loadSeason` is read on demand, so grouping happens in the client — no
+  `where` clause, and therefore no composite index to create in the console. Add
+  a picker beside the name, remember it the way the name is remembered, group
+  the rows.
+- **But the one field it needs was gated behind a rules republish.** The season
+  row is validated with `keys().hasOnly([...])`, so *any* new field on it is
+  refused until the console is updated by hand — and a hand-pasted ruleset has
+  broken this game twice.
+- **So `team` is bounded in the Phase 2 rules and nothing writes it.** An
+  unwritten field is inert; a second republish is not. Whenever teams do ship,
+  they ship as a client-only change with no console step at all.
+
+Two things to decide when it is picked up, neither of them urgent:
+
+- **Is a team a property of the identity or of the round?** On the season row it
+  follows the person, and moving department means editing it. That is almost
+  certainly right, and it is what the published bound assumes.
+- **What happens to the global board?** Simplest is to keep it and add a filter,
+  because the office-wide table is the thing the whole league is currently for.
+  Replacing it with a team-only view is the change that would be missed.
 >
 > **Publish the rules before deploying**, as with the answer window and unlike
 > the vault: `playerOk` currently pins each entry to `{name, joinedAt}`, so a new
@@ -855,6 +991,15 @@ happened once.
 | **The reveal gate is millisecond arithmetic, not `duration.value()`** | `duration.value` takes an `int`, and `durationSecs` arrives from a client SDK that decides for itself whether a whole number is an integer or a double on the wire. A double would error the rule and deny every reveal in the room — the same trap as `joinedAt is number`, but with a far worse failure. |
 | **`tallyQuestion` is given the room's window** | It always took the parameter and nothing ever passed it, so speed points decayed across a hardcoded twenty seconds. Harmless while every round *was* twenty; at the ten-second default it would cap everybody at 750 of a possible 1000 no matter how fast they were. |
 | **`fullGame.test.ts` pins its window at 20 instead of taking the default** | Its games answer as late as twelve seconds in. On the ten-second default those answers stop being recorded, and the games would still pass while quietly testing a round nobody answered. |
+| **`playerId` defaults to the auth uid** (`playerIdFor`) | It is what makes the change free. Every season row already written is keyed by a uid, which the new scheme reads as a playerId nobody has claimed — so there is no migration, no backfill, and a player who never claims anything behaves byte-for-byte as they did. Nothing is even stored until a claim happens. |
+| **`exists()` precedes `get()` in `ownsPlayer`** | A `get()` on a missing document returns null and reading `.data` off null *errors* the rule, which denies. Without the guard, every browser that has never claimed anything is locked out of its own row — the common case broken by a check meant for the rare one. |
+| **`ownsPlayer` tests the uid branch first** | Rules short-circuit. First, an unclaimed player costs no extra read and only a claimed one pays, once per game. Reversed, every player in every game pays a document read for a branch almost none of them need. |
+| **A recovery code is *read*, where a vault answer is *asserted*** | Opposite problems. The vault's document ids ship inside the packs, so they are public and an answer had to be unreadable. A recovery code's id *is* the secret, so knowing it is the whole proof. What that needs is `list: if false`, which is the room code's pattern, not the vault's. |
+| **A recovery code can only be minted for an identity you already hold** | playerIds are the document ids of a readable collection — anyone can read one off the season table. Without `ownsPlayer` on create, they could mint a code pointing at it, claim it, and own that person's row. |
+| **`recovery` is deletable by its owner but never updatable** | Update is the dangerous one: it would let whoever handed a code out re-aim it at another identity afterwards. Delete is revocation, and it strands nobody — a browser that already claimed holds its own `claims` document, which is what the season rules actually read. It is also what stops `check-rules` leaving an undeletable document behind on every run. |
+| **Honours are banked only from a log covering the whole game** (`sawWholeGame`) | The final screen already withholds the awards from a partial log, but that is a screen saying nothing for one evening. Banking is permanent, so a device that reloaded mid-game would under-report somebody's shelf forever. The check is exported and shared rather than written twice, because the way two copies drift is one of them quietly banking off a partial log. |
+| **A joint award counts in full for everybody who shared it** (`honoursFor`) | Sharing the fastest finger is still having been the fastest finger. A fraction is not something a shelf can hold, and awarding it to nobody loses the thing that happened. |
+| **The season table shows a dash, not a nought, for no rosettes** | Almost every row predates honours entirely. A column of zeroes reads as a season of failure rather than a column with no history behind it. |
 | **The review returns a question index, never a prompt** (`Highlight`) | The engine has no business holding copy, and an index cannot be reworded into something the round did not do. `Review.tsx` owns the sentences, the same split as the awards and the lobby's level names. |
 | **The review ignores a question fewer than two people answered** (`MIN_ATTEMPTS`) | One wrong answer on its own is a guess rather than a question that beat the room, and one right answer on its own is the lone wolf's rosette, already awarded. Both panels are claims about a room. |
 | **Review candidates are sorted rather than taken in log order** | The order the log holds is a property of how *this device* watched the game. Two screens naming different questions is exactly the failure the awards' sorted joint winners exist to avoid, and it would show up only when two people compared screens. |
@@ -869,8 +1014,9 @@ happened once.
 **Verified against the live Firebase:** anonymous sign-in, room creation, pack
 selection, round start, question render, answer write, reveal and scoring, and
 leaving a room. Engine covered by 140 tests including six full three-question
-games (quizmaster disconnect, skip, reset, ties). 221 across the repo, the
-balance being the question pipeline, the clock's arithmetic and the review.
+games (quizmaster disconnect, skip, reset, ties). 235 across the repo, the
+balance being the question pipeline, the clock's arithmetic, the review, the
+honours and the recovery code.
 
 > The count in this file had been stale at 192 for several commits before the
 > review landed; the suite was already at 208. Read it as "roughly this many"
@@ -995,13 +1141,14 @@ rules are still using a fixed twenty.
   else. It no longer *scores*, and no longer inflates the answered count, but
   the write itself is still possible and the rules still permit it. What that
   costs now is a stray document, not somebody's game.
-- **Season standings follow the browser, not the person.** Anonymous auth gives a
-  durable uid with no sign-up, which is the whole appeal and the whole limitation.
-  The sharp edge is **iOS Safari, which evicts site storage after about a week
-  without a visit** — a weekly quiz survives, a fortnight off doesn't. A short
-  transfer code would let one identity move to a second device; that's the obvious
-  next step and it's small now the collection exists. The remembered name has
-  exactly the same lifetime and for the same reason, which is deliberate: it is
+- **Season standings follow the browser until somebody saves a recovery code.**
+  Anonymous auth gives a durable uid with no sign-up, which is the whole appeal
+  and was the whole limitation — **iOS Safari evicts site storage after about a
+  week without a visit**, so a weekly quiz survived and a fortnight off did not.
+  [Durable identity](#durable-identity) is the answer to that, and it is opt-in
+  by design: a player who never saves a code is exactly where they always were,
+  and eviction still costs them everything. The remembered name has the same
+  lifetime and for the same reason, which is deliberate: it is
   stored beside the uid rather than fetched from the season row, so the two can
   never disagree about who this browser is.
 - **The answer lamps have no cap, so a very large room makes a tall desk.** Ten
