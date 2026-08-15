@@ -31,6 +31,16 @@ interface ChairProps {
 export function Chair({ name, score }: ChairProps) {
   return (
     <div className="seat">
+      {/*
+        Label above the chair, which is not just tidiness: `.finale` aligns its
+        columns to the floor, so anything stacked on top pushes the chair further
+        down the podium. Below it, the label was propping the chair up.
+      */}
+      <span className="seat__name">{name}</span>
+      <span className="seat__score">
+        <ScoreTicker value={score} from={0} />
+      </span>
+
       <svg className="seat__chair" viewBox="6 2 50 72" aria-hidden="true" focusable="false">
         {/* Askew, as though it has been pushed back rather than tucked in. */}
         <g transform="rotate(-3 31 64)">
@@ -70,11 +80,6 @@ export function Chair({ name, score }: ChairProps) {
           </g>
         </g>
       </svg>
-
-      <span className="seat__name">{name}</span>
-      <span className="seat__score">
-        <ScoreTicker value={score} from={0} />
-      </span>
     </div>
   );
 }
