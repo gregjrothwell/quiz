@@ -923,6 +923,78 @@ the board is the half with layout worth checking.
 
 ---
 
+## What it all costs, and how much room is left
+
+**Counted 15 August 2026, and it is now one command:**
+
+```bash
+npm run take-stock
+```
+
+Aggregate counts, so the whole thing costs single-digit reads. **This is the
+script to reach for instead of `seed-vault`**, which reads every answer to work
+out what is new and has taken the game down for a day. It needs the service
+account, because `list` is denied to clients on `/rooms` and `/recovery` and a
+count is a query.
+
+| | |
+|---|---|
+| rooms | 76 |
+| vault answers | 13,593 |
+| `season-2` players | 20 |
+| recovery codes | 0 |
+| identity claims | 0 |
+
+The last two are zero because they shipped that morning.
+
+### Reads, for a six-player night
+
+| | |
+|---|---|
+| The round itself | ~1,500 |
+| The opening titles | ~12 — six for the digest, six for the fan-out |
+| Everyone opening the season board | ~300 — 50 rows each |
+| **A full night** | **~1,812** |
+
+**About 27 full nights a day against a 50,000-read free tier, for a weekly
+quiz.** Writes are nowhere near the limit: a game is well under 200 against
+20,000 a day.
+
+### What the season work actually added
+
+Almost nothing per game, which was the point of every design decision that
+looked fussy at the time:
+
+- **The opening titles cost twelve reads, not three hundred.** `loadForm` runs
+  once, on the quizmaster's device, and everybody else learns the result from a
+  room update they were already receiving. `loadSeason` would have been fifty
+  rows per person.
+- **`ownsPlayer` costs nothing for an unclaimed player.** Rules short-circuit and
+  the uid branch is first, so only somebody who has claimed an identity pays a
+  read — one, once per game, when their row is banked.
+- **Honours, the merge and the review are free.** Honours ride inside the
+  transaction that already reads the row; the merge is two reads on a claim,
+  which happens once ever; the review reads a log that is already in memory.
+
+**The season board is the one line worth watching**, and it is the one thing here
+that is user-driven rather than per-game: 50 reads every time somebody opens it,
+and the final screen now points them at it. At six people that is 300 a night —
+comfortable, but it is the number that would move first if the office grew. The
+cheap fixes if it ever matters are a lower `TABLE_LIMIT` or caching the table for
+a few minutes; neither is needed now.
+
+### The two slow leaks
+
+Neither is urgent, both only ever grow:
+
+- **Rooms are never deleted** and have no TTL. 76 after a couple of months, at
+  roughly one per game. Every one holds players' names.
+- **Recovery codes are never tidied**, though they are deletable by their owner,
+  which is how a leaked one is revoked. One document per person who ever asks
+  for a code, so it is far slower than rooms.
+
+---
+
 ## Where things are
 
 ```
@@ -938,7 +1010,7 @@ scripts/        Build-time question harvest, and the multi-client test harnesses
 
 Commands: `npm run dev` (serves at `/quiz/`, port 5273), `test`, `typecheck`, `lint`,
 `build`, `deploy`, `fetch-questions [-- --resort]`, `fetch-otqa`, `seed-vault`,
-`check-rules`, `sync-harness [n]`, `host-room [-- secs]`.
+`check-rules`, `sync-harness [n]`, `host-room [-- secs]`, `take-stock`.
 
 `npm test` covers `src/` plus the pure parts of `scripts/` — the OpenTriviaQA
 parser and its encoding fallback, which corrupt questions silently when wrong.
@@ -1004,6 +1076,9 @@ happened once.
 | **Nothing starts a round on a timer** (`handleBeginRound`) | The first version ran the titles for six seconds and then started the round itself, which handed the beginning of the quiz to a `setTimeout`. Found by playing a round: the start is the one moment a quizmaster most wants to hold. The room cannot stall behind an absent quizmaster because the role is derived from who has been present longest, so the button always exists for somebody. |
 | **The chosen window rides inside the digest** (`form.durationSecs`) | It cannot go on the room's own `durationSecs`, which `timingOk()` pins to its previous value on every write except the one that opens a question — writing it during the titles is refused outright. Inside the digest it is ordinary data the rules do not inspect, and it survives the quizmaster's chair changing hands while the titles are up. |
 | **`loadForm` reads one document per player, not the season table** | `loadSeason` reads up to fifty documents to answer a question about six people, and every client would run it. One device reads six and writes a digest the rest get from an update they were already receiving — the reveal's pattern. |
+| **The landing page has a short-viewport tier, keyed on height not width** | It was never too narrow — it ran out of vertical room the moment the team box arrived, and a laptop is about 900px of content. A monitor with the room keeps the full-size wordmark and the generous rhythm; a laptop gets the compact one. Nothing is hidden or moved either way, so there is still only one layout to reason about. |
+| **That tier lives at the very end of the stylesheet** | It overrides `.stage__inner`, `.wordmark`, `.lede` and `.panel`, all of which are defined further down the file — at equal specificity the later rule wins, so a media query placed above them silently does nothing. This was got wrong twice while writing it: once the wordmark did not shrink, then moving the block to fix that quietly reverted the panel and lede overrides instead. |
+| **Name and team sit side by side above 46rem** (`.identity`) | They are one thought — who is playing — and stacking them cost the landing page exactly the height that put it behind a scroll. Same breakpoint as the two action panels, so the page reflows once on the way down to a phone rather than twice. |
 | **A team is grouped on a normalised key but shown as it was typed** (`teamKey`) | Free text means "Engineering", "engineering" and " Engineering " all exist. Keying on trimmed lowercase merges them on the board without rewriting anybody's spelling. Deliberately nothing cleverer — collapsing "Eng" into "Engineering" needs a dictionary, and merging two teams somebody meant to keep apart is worse than showing both. |
 | **An empty team never clears one that is already set** (`GameResult.team`) | The team lives on the season record but is remembered per browser. A regular who set theirs on a laptop and then played from a phone would otherwise wipe it by banking a single game, silently. Removing a team is a deliberate edit, not a side effect of playing. |
 | **Firebase is a separate build chunk** (`vite.config.ts`) | Not to make the download smaller — it is a few hundred bytes bigger. As one file every deploy changed the hash, so a returning player re-fetched the whole 260 kB including the Firebase half that had not changed, seeing nothing until it landed. Split, an ordinary deploy leaves that hash alone. Proven by building twice across a real code change; a comment-only change proves nothing, because minification strips it and the output is byte-identical. |
@@ -1218,11 +1293,10 @@ rules are still using a fixed twenty.
   owner, which is how a leaked code is revoked, but nothing tidies up
   automatically. One document per person who ever asks for a code, so it is a
   much slower leak than rooms.
-- **Pointing people at the season table costs reads.** `loadSeason` is capped at
-  50 documents and the final screen now nudges everybody towards it for a
-  recovery code. Six players checking the board after a round is up to 300 reads
-  on top of the game's 800–1,500. Comfortable against 50,000 a day, and worth
-  knowing before wondering where a quiet day's quota went.
+- **The season board is the one read that scales with curiosity rather than with
+  play** — 50 rows every time somebody opens it, and the final screen now points
+  them there. Counted properly under [what it all
+  costs](#what-it-all-costs-and-how-much-room-is-left).
 - **The answer lamps have no cap, so a very large room makes a tall desk.** Ten
   names wrap to two rows on a phone, which is about 20% of the screen and was
   judged worth it. Twenty names would be four rows and would start to crowd the

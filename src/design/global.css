@@ -416,6 +416,9 @@ input {
   border: 0;
 }
 
+
+
+
 .eyebrow {
   font-family: var(--tech);
   font-weight: 700;
@@ -553,6 +556,28 @@ input {
   display: grid;
   gap: clamp(1rem, 3vw, 2rem);
   grid-template-columns: 1fr;
+}
+
+/* ── Who you are ────────────────────────────────────────────────────────────
+   Name and team side by side once there is room for them. They are one thought
+   — who is playing — and stacking them cost the landing page a screenful of
+   height the moment the team box arrived, which is what put the whole page
+   behind a scroll on an ordinary laptop.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.identity {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 46rem) {
+  /* The same breakpoint the two action panels use, so the page reflows once
+     rather than twice on the way down to a phone. */
+  .identity {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
 }
 
 @media (min-width: 46rem) {
@@ -2453,5 +2478,50 @@ input {
   }
   to {
     transform: translate3d(1.5%, 1%, 0) scale(1.04);
+  }
+}
+
+/* ── Short screens ──────────────────────────────────────────────────────────
+   A laptop is about 900px of content, and the landing screen is the one page
+   that has to hold everything at once: the wordmark, who you are, both ways
+   into a room, and the season. It had grown past that.
+
+   Keyed on the viewport's *height* rather than its width, because height is
+   what actually ran out — the page was never too narrow. A desktop monitor with
+   the room for it keeps the full-size wordmark and the generous rhythm; a
+   laptop gets the compact one and no scrollbar. Nothing is hidden or moved
+   either way, so there is only one layout to reason about.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+@media (max-height: 60rem) {
+  .stage__inner {
+    gap: clamp(0.7rem, 1.6vh, 1.1rem);
+    /* Horizontal gutter untouched — it is the width that keeps the column off
+       the beams. It is only ever the vertical padding that is in the way, and
+       at 48px top and bottom it was the largest single thing on the page that
+       was not content. */
+    padding-block: 1.5rem;
+  }
+
+  .wordmark {
+    font-size: clamp(2.6rem, 9vw, 3.6rem);
+  }
+
+  .wordmark__rule {
+    margin-top: 0.6rem;
+  }
+
+  /* Aimed to clear a 900px laptop with room to spare rather than to land on it
+     exactly. A page that fits to the pixel is a page that scrolls again the
+     moment somebody has a bookmarks bar. */
+  .panel {
+    padding: clamp(0.9rem, 3vw, 1.15rem);
+  }
+
+  /* 34rem is the comfortable measure for reading; on a screen this short the
+     comfortable measure costs a third line, and a third line costs the page.
+     Wider and two lines beats narrower and scrolling. */
+  .lede {
+    max-width: 46rem;
   }
 }

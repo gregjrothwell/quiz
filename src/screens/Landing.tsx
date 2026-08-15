@@ -78,17 +78,37 @@ export function Landing({
         <h2 className="display" style={{ fontSize: '1.6rem' }}>
           Your name
         </h2>
-        <label className="field">
-          <span className="field__label">Shown on the leaderboard — needed either way</span>
-          <input
-            className="input"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            placeholder="e.g. Greg"
-            maxLength={MAX_NAME_LENGTH}
-            autoComplete="given-name"
-          />
-        </label>
+        <div className="identity">
+          <label className="field">
+            <span className="field__label">Shown on the leaderboard — needed either way</span>
+            <input
+              className="input"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="e.g. Greg"
+              maxLength={MAX_NAME_LENGTH}
+              autoComplete="given-name"
+            />
+          </label>
+
+          {/*
+            Optional, and second, because it is: a quiz you cannot join without
+            naming a department is a quiz people stop joining. Left blank it
+            changes nothing at all — see `GameResult.team` for why an empty box
+            never clears a team somebody set elsewhere.
+          */}
+          <label className="field">
+            <span className="field__label">Team — optional, for the league table</span>
+            <input
+              className="input"
+              value={team}
+              onChange={(event) => setTeam(event.target.value)}
+              placeholder="e.g. Engineering"
+              maxLength={MAX_TEAM_LENGTH}
+              autoComplete="organization"
+            />
+          </label>
+        </div>
         {/*
           A box that fills itself in is a box somebody stops reading, and the
           one case that matters is the borrowed laptop — where the name already
@@ -100,23 +120,6 @@ export function Landing({
           </p>
         ) : null}
 
-        {/*
-          Optional, and second, because it is: a quiz you cannot join without
-          naming a department is a quiz people stop joining. Left blank it
-          changes nothing at all — see `GameResult.team` for why an empty box
-          never clears a team somebody set elsewhere.
-        */}
-        <label className="field">
-          <span className="field__label">Team — optional, for the league table</span>
-          <input
-            className="input"
-            value={team}
-            onChange={(event) => setTeam(event.target.value)}
-            placeholder="e.g. Engineering"
-            maxLength={MAX_TEAM_LENGTH}
-            autoComplete="organization"
-          />
-        </label>
       </section>
 
       <div className="split split--two">
