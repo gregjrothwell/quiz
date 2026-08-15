@@ -15,7 +15,9 @@ Built to replace Polly in Teams.
   ids hash the question text, so a revised question leaves its old answer in
   place, unread and harmless. All 14,176 pack questions across the ten packs
   resolve to an answer.
-- **Next:** nothing queued. [The round in review](#the-round-in-review),
+- **Next:** nothing queued, and the read budget has been counted — see [what it
+  all costs](#what-it-all-costs-and-how-much-room-is-left). Roughly 27 full quiz
+  nights a day against the free tier, for a weekly quiz. [The round in review](#the-round-in-review),
   [durable identity](#durable-identity), [Form](#form--the-opening-titles) and
   [teams](#teams--shipped-15-august-2026) are all shipped, published and
   deployed. **What is missing is a round with other people in it** — a solo game
