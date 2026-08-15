@@ -19,11 +19,13 @@
 
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously } from 'firebase/auth';
+import { attachDebugAppCheck } from './appCheck';
 import {
   doc,
   getFirestore,
   onSnapshot,
   serverTimestamp,
+  Timestamp,
   setDoc,
   updateDoc,
   type DocumentData,
@@ -90,6 +92,7 @@ const stamp = (): string => new Date().toISOString().slice(11, 23);
 
 async function main(): Promise<void> {
   const app = initializeApp(config, 'host');
+  await attachDebugAppCheck(app);
   const auth = getAuth(app);
   const credential = await signInAnonymously(auth);
   const db = getFirestore(app);
@@ -103,7 +106,12 @@ async function main(): Promise<void> {
   // narrows to `never` at every read below.
   const view: { latest: PersistedRoom | null } = { latest: null };
   const fresh = reduce(createRoom(code), { type: 'join', uid, name: 'Host', at: Date.now() });
-  await setDoc(reference, toPersisted(fresh));
+  // See the note in sync-harness: a day, so a hosted test room reaps itself
+  // rather than joining the pile nothing can reach.
+  await setDoc(reference, {
+    ...toPersisted(fresh),
+    expiresAt: Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1_000),
+  });
 
   onSnapshot(reference, (snapshot) => {
     if (!snapshot.exists()) return;

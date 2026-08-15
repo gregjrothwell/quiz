@@ -15,6 +15,7 @@ import {
   onSnapshot,
   serverTimestamp,
   setDoc,
+  Timestamp,
   updateDoc,
   type DocumentData,
 } from 'firebase/firestore';
@@ -74,6 +75,20 @@ function answersCollection(code: string) {
 function presenceRef(code: string, uid: string) {
   return rtdbRef(realtimeDb(), `presence/${code}/${uid}`);
 }
+
+/**
+ * How long a finished room is kept before a TTL policy may remove it.
+ *
+ * The room is disposable the moment its game ends — the season row is what
+ * outlives it, and that lives somewhere else entirely. What the retention buys
+ * is being able to look back at what a room actually did after somebody
+ * complains about it, which is a question that has come up more than once.
+ *
+ * A month is long enough for that and short enough that colleagues' names are
+ * not sitting on a public project indefinitely. Change it here; the policy in
+ * the Google Cloud console names the field, never a duration.
+ */
+const ROOM_RETENTION_MS = 30 * 24 * 60 * 60 * 1_000;
 
 /** Answer documents carry the question index so a stale answer never scores. */
 interface AnswerDoc extends Answer {
@@ -447,7 +462,39 @@ export function useRoom(): UseRoom {
           // the opening titles could not find.
           playerId: playerIdFor(uid),
         });
-        await setDoc(roomDoc(candidate), toPersisted(fresh));
+        // `expiresAt` is storage only — it is not on RoomState and nothing in
+        // the app reads it. It exists so a Firestore TTL policy on `rooms` has
+        // a field to expire against, because otherwise every room ever created
+        // lives forever with its players' names in it and the only way to
+        // remove one is the console.
+        //
+        // **It is an expiry, not a creation stamp.** A TTL policy deletes a
+        // document once its timestamp field is in the *past*, so a bare
+        // `createdAt` would mark every room eligible the instant it was
+        // written. The policy form does offer an optional expiration offset,
+        // which would make a `createdAt` work — but then the retention lives in
+        // a console field nobody reviews, on a project whose rules have twice
+        // been broken by a hand-paste. Kept here instead, where it is versioned
+        // and `take-stock` can print it back.
+        //
+        // Written from the client clock rather than `serverTimestamp()`, which
+        // cannot do arithmetic. Skew does not matter: nothing is gated on this,
+        // the rules never read it, and being a few minutes out on a thirty-day
+        // retention changes nothing.
+        //
+        // No rules change: `wellFormed()` bounds the fields it names and does
+        // not `hasOnly` the document's keys, which is the same reason
+        // `openedAt` can be written without being declared. Updates never write
+        // it and `updateDoc` merges, so it survives every transition.
+        //
+        // A TTL sweep deletes the room document, not its `answers` and `reveal`
+        // subcollections — those are orphaned rather than removed. That is the
+        // right way round: the names are on the document, and what is left
+        // behind holds an option index and an answer string.
+        await setDoc(roomDoc(candidate), {
+          ...toPersisted(fresh),
+          expiresAt: Timestamp.fromMillis(Date.now() + ROOM_RETENTION_MS),
+        });
         setCode(candidate);
         return candidate;
       }

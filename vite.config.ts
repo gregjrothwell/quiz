@@ -30,6 +30,19 @@ export default defineConfig({
           if (id.includes('node_modules/firebase') || id.includes('node_modules/@firebase')) {
             return 'firebase';
           }
+          // Same argument, smaller number. `motion` is used in two places —
+          // MotionConfig and the standings reorder — and changes about as often
+          // as Firebase does, which is never. Left in the app chunk it is
+          // re-downloaded on every deploy along with the code that did change.
+          //
+          // Matched on `framer-motion` too, which is what `motion/react`
+          // actually re-exports, or half of it lands back in the app chunk.
+          if (
+            id.includes('node_modules/motion')
+            || id.includes('node_modules/framer-motion')
+          ) {
+            return 'motion';
+          }
           return undefined;
         },
       },

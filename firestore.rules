@@ -136,17 +136,16 @@ service cloud.firestore {
       // can join is a far worse failure than a float slipping past a bound that
       // exists only to keep garbage out.
       //
-      // **`playerId` is optional and nothing writes it yet.** It is accepted
-      // here because the pre-round title card will want to know who is in the
-      // room without paying a `claims` read per player, and the room document is
-      // already re-read on every transition — but the client half belongs with
-      // that feature. Bounded now because this is the republish that is
-      // happening; a second hand-paste is the thing worth avoiding, not a field
-      // sitting unused. An unwritten field is inert.
+      // **`playerId` is optional, and it now ships.** It was bounded here ahead
+      // of its client so that durable identity could land without a second
+      // hand-paste, and `writeSelfIntoRoom` has since started writing it — but
+      // only when it differs from the uid, which needs a claimed recovery code.
+      // So most entries in the wild are still `{name, joinedAt}` and validate
+      // exactly as they always did.
       //
-      // It also means publishing these rules ahead of the bundle changes nothing
-      // for anybody already playing: every entry in the wild is `{name,
-      // joinedAt}`, which still validates exactly as it did.
+      // The title card is why it is here: it needs to know who is in the room
+      // without paying a `claims` read per player, and the room document is
+      // already re-read on every transition.
       function playerOk(player) {
         return player.keys().hasOnly(['name', 'joinedAt', 'playerId'])
           && player.name is string
@@ -476,11 +475,17 @@ service cloud.firestore {
         && honourOk('comeback')
         && honourOk('loneWolf')
         && honourOk('contrarian')
-        // Nothing writes `team` yet. It is bounded here because the season row
-        // is validated with `hasOnly`, so *any* new field on it costs a rules
-        // republish — and a hand-pasted ruleset has broken the game twice. A
-        // field nobody writes is inert; a republish is not. Whenever team
-        // leagues do ship, they are then a client-only change.
+        // `team` was bounded here ahead of its client, because the season row is
+        // validated with `hasOnly` and *any* new field on it costs a rules
+        // republish — and a hand-pasted ruleset has broken the game twice. It
+        // shipped on 15 August 2026 and leagues were then a client-only change,
+        // which was the point.
+        //
+        // The trap that came with it: both writers use `set`, a whole-document
+        // overwrite, so a field the client's type does not name is erased by the
+        // next game anybody plays. Anything else bounded here ahead of its
+        // feature has to be carried through `PlayerRecord` on the same day, or
+        // it will appear to work and quietly clear itself overnight.
         && request.resource.data.get('team', '') is string
         && request.resource.data.get('team', '').size() <= 40;
 

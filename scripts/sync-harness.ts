@@ -14,6 +14,7 @@
 
 import { initializeApp, deleteApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, signInAnonymously } from 'firebase/auth';
+import { attachDebugAppCheck } from './appCheck';
 import {
   doc,
   getDoc,
@@ -21,6 +22,7 @@ import {
   onSnapshot,
   setDoc,
   serverTimestamp,
+  Timestamp,
   updateDoc,
   type DocumentData,
   type Firestore,
@@ -97,6 +99,7 @@ function sleep(ms: number): Promise<void> {
 
 async function makeClient(index: number): Promise<Client> {
   const app = initializeApp(config, `harness-${index}`);
+  await attachDebugAppCheck(app);
   const auth = getAuth(app);
   const credential = await signInAnonymously(auth);
   return {
@@ -189,7 +192,13 @@ async function main(): Promise<void> {
     name: host.name,
     at: Date.now(),
   });
-  await setDoc(doc(host.db, 'rooms', code), toPersisted(fresh));
+  // Same `expiresAt` the app writes, so a harness run does not leave a room
+  // behind that nothing can ever reap. Deliberately a day rather than the app's
+  // thirty: these are pure test data and worth nothing an hour later.
+  await setDoc(doc(host.db, 'rooms', code), {
+    ...toPersisted(fresh),
+    expiresAt: Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1_000),
+  });
   console.log(`Room ${code} created by ${host.name}`);
 
   for (const client of clients) watch(client, code);
