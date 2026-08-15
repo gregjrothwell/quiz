@@ -6,7 +6,7 @@ Built to replace Polly in Teams.
 - **Live:** https://gregjrothwell.github.io/quiz/
 - **Repo:** https://github.com/gregjrothwell/quiz (public, `master`, deploys from `gh-pages`)
 - **Firebase project:** `quiz-d686e` (Firestore + Realtime Database in europe-west1 + Anonymous auth)
-- **Status:** shipped and played. 264 tests, clean types and lint, no `any` or
+- **Status:** shipped and played. 272 tests, clean types and lint, no `any` or
   `@ts-ignore`. The **answer vault is live and covers the packs**: 13,593
   answers seeded against the 13,452 the packs need plus the 4 harness entries,
   both rulesets published, preflight passing.
@@ -15,11 +15,13 @@ Built to replace Polly in Teams.
   ids hash the question text, so a revised question leaves its old answer in
   place, unread and harmless. All 14,176 pack questions across the ten packs
   resolve to an answer.
-- **Next:** nothing queued. All three phases are done: [the round in
-  review](#the-round-in-review), [durable identity](#durable-identity) and
-  [Form](#form--the-opening-titles). The rules are published and the bundle is
-  deployed. **Nothing has been played on yet** — see [verified vs
-  not](#verified-vs-not). [The closing seconds carry a
+- **Next:** nothing queued. [The round in review](#the-round-in-review),
+  [durable identity](#durable-identity), [Form](#form--the-opening-titles) and
+  [teams](#teams--shipped-15-august-2026) are all shipped, published and
+  deployed. **What is missing is a round with other people in it** — a solo game
+  on 15 August found the one real fault so far, and the things it could not
+  reach are listed under [verified vs not](#verified-vs-not). [The closing
+  seconds carry a
   clock](#the-clock) — nine seconds of gameshow music in place of the two-tone
   tick, deployed and heard on 14 August 2026. [The answer window is
   selectable](#the-configurable-answer-window) — 10 / 15 / 20 seconds, chosen in
@@ -48,8 +50,9 @@ Built to replace Polly in Teams.
 > fail permissively, and that direction is silent: everything works, and nobody
 > finds out `list` is still open until somebody enumerates every room.
 >
-> 33 checks — thirteen from the security review, seven for the vault, two for
-> the question history, two for the answer window, nine for identity. The vault
+> 35 checks — thirteen from the security review, seven for the vault, two for
+> the question history, two for the answer window, nine for identity, two for
+> teams. The vault
 > seven include the one that catches `firestore.seed.rules` being left
 > published, which would leave every answer in the game overwritable by anybody.
 >
@@ -874,163 +877,49 @@ round in review shipped and the next two phases were agreed.
 > Phase 2 publishes every rule it needs, including an optional `playerId` on each
 > player's own entry so the digest costs no extra reads.
 
-### Teams — leagues that are not one global list
+### Teams — shipped, 15 August 2026
 
-Greg's idea, 15 August 2026. **Not** teams playing together: teams as in groups
-at work — Engineering against Marketing — so the season table is your team's
-board rather than everybody's.
+Greg's idea. **Not** teams playing together: teams as in groups at work —
+Engineering against Marketing — so the board can be read as your league rather
+than the whole office.
 
-**Checked against the current plan, and the answer is: the field is already
-published, the feature is not built.** The reasoning is worth keeping because it
-is the whole argument for deciding this now rather than later.
+**It needed no console step, which was the whole point of bounding `team` in the
+rules a fortnight before writing a line of it.** The season row is validated with
+`keys().hasOnly([...])`, so any new field on it is refused until the rules are
+re-pasted by hand, and that paste has broken this game twice. Publishing the
+bound early made this a client-only change.
 
-- **The feature itself is client-only and small.** `TABLE_LIMIT` is 50 and
-  `loadSeason` is read on demand, so grouping happens in the client — no
-  `where` clause, and therefore no composite index to create in the console. Add
-  a picker beside the name, remember it the way the name is remembered, group
-  the rows.
-- **But the one field it needs was gated behind a rules republish.** The season
-  row is validated with `keys().hasOnly([...])`, so *any* new field on it is
-  refused until the console is updated by hand — and a hand-pasted ruleset has
-  broken this game twice.
-- **So `team` is bounded in the Phase 2 rules and nothing writes it.** An
-  unwritten field is inert; a second republish is not. Whenever teams do ship,
-  they ship as a client-only change with no console step at all.
+Set in an optional box beside the name on the landing screen, remembered per
+browser exactly as the name is, and written onto the season record when a game
+banks.
 
-Two things to decide when it is picked up, neither of them urgent:
+**Free text rather than a fixed list**, because the list would have to be
+configured somewhere and every office needs a different one. The cost is
+obvious — "Engineering", "engineering" and " Engineering " are three leagues on a
+board that should show one — so grouping runs on `teamKey`, a trimmed lowercase
+key, while each row still shows the spelling it was given. Nothing cleverer than
+that: collapsing "Eng" into "Engineering" would need a dictionary, and quietly
+merging two teams somebody meant to keep apart is worse than showing both.
 
-- **Is a team a property of the identity or of the round?** On the season row it
-  follows the person, and moving department means editing it. That is almost
-  certainly right, and it is what the published bound assumes.
-- **What happens to the global board?** Simplest is to keep it and add a filter,
-  because the office-wide table is the thing the whole league is currently for.
-  Replacing it with a team-only view is the change that would be missed.
->
-> **Publish the rules before deploying**, as with the answer window and unlike
-> the vault: `playerOk` currently pins each entry to `{name, joinedAt}`, so a new
-> client writing `playerId` against the old published rules cannot join at all.
+Three decisions worth keeping:
 
-0. **An alternate skin: the British pub quiz.** Greg's idea, and the first thing
-   to weigh up next session. Today the app is one look — a broadcast studio, and
-   a committed one: beams, risers, chrome wordmark, a walking bass and a gong.
-   The pub quiz is the opposite register and would be genuinely funny beside it:
-   a laminated answer sheet, biro, a chalkboard, a folded paper table-number,
-   carpet you can hear. Pick it at the lobby, everyone in the room gets it.
+- **The filter sits on top of the whole board rather than replacing it.** Most
+  rows carry no team at all — every row written before today, and everybody who
+  leaves the box blank — so a team-only view would hide most of the season, and
+  the office-wide table is what the league is currently for.
+- **An empty team means "keep what the record says", not "clear it".** The team
+  lives on the record but is remembered per browser, so a regular who set theirs
+  on a laptop and then played from a phone would otherwise wipe it by banking one
+  game, and would have no idea they had. Taking a team off is a deliberate edit.
+- **Filtered in the client, not in the query.** `TABLE_LIMIT` is fifty and the
+  table is read on demand, so a `where` clause would make nothing faster and
+  would need a composite index built by hand in the console.
 
-   **Is it too much complexity?** It depends entirely on where the line is
-   drawn, and there are two very different jobs wearing the same name:
+`LeagueBoard` is extracted from the season screen so `#/preview` can render it on
+fixtures — `Season` fetches, which is why it had never been in the gallery, and
+the board is the half with layout worth checking.
 
-   - **A skin — a second set of tokens and a body class.** Cheap and worth
-     doing. `src/design/global.css` already keeps its tokens at the top, and
-     nearly everything downstream reads them. Scope it to colour, type and
-     texture, and it is one stylesheet plus a stored preference — the same shape
-     as the remembered name, and it could reuse that module's pattern outright.
-   - **A second theatre — different components, layout and sounds.** Expensive,
-     and it is the one to be careful of. It means every screen exists twice,
-     every future change lands twice, and the preview gallery doubles. Do not
-     start here.
-
-   The trap between them is the parts that are *drawn* rather than styled: the
-   chair, the arc timer, the QR plate, the risers, and the whole audio bed — all
-   of which encode the studio in their geometry, not their colour. A gong is not
-   a pub sound. Decide up front whether those get pub equivalents or simply
-   carry over, because that single decision is the difference between a weekend
-   and a rewrite. Recommendation: ship the token-level skin first, play a round
-   on it, and only then judge whether the drawn pieces are worth a second set.
-
-   Two things already lean the right way: the sound module is a table of cues
-   behind `play(cue)`, so a second set of voices is data rather than structure;
-   and `Preview` renders every screen from fixtures, so a skin can be reviewed
-   whole without a room or four other people.
-
-1. **The remembered name was not seen prefilling on the live site.** Reported by
-   Greg on 14 August 2026, immediately after the deploy. **Not investigated** —
-   reported at the very end of a session with no room left to look, and written
-   down here rather than chased. Treat everything below as unconfirmed.
-
-   What he saw: prefilling on his MacBook Pro, not on his work machine. His own
-   read is that testing across two machines makes him an edge case and ordinary
-   players use one, so he is content to leave it until somebody who isn't him
-   reports the same thing. That is a reasonable call and this item is not
-   urgent — but it is also **not evidence the feature works**, so do not close it
-   on the strength of it.
-
-   Two boring explanations to rule out before assuming a bug, in this order:
-
-   - **A second machine is a second browser, and nothing crosses.** The name
-     lives in that browser's `localStorage`, exactly like the sound preference,
-     and the anonymous auth uid it belongs to is per-browser too. A work machine
-     has never seen either. This is the same limitation the season table already
-     carries and is documented under Known limits — if this is all it is, there
-     is nothing to fix and the honest answer is that the feature does what it
-     says, which is remember *this browser's* name.
-   - **Nothing is stored until a room is joined or created.** `adoptName` runs on
-     join and on create, not on typing. So the *first* visit from any browser
-     after this shipped shows an empty box no matter what, and it only prefills
-     from the second visit onward. A quick look at the live site by somebody who
-     had not yet joined a room on that machine would show precisely what was
-     reported.
-
-   If both are ruled out and it still does not prefill, the next suspects are the
-   storage write throwing silently — it is wrapped and deliberately quiet — and
-   whether the deployed build is the one being loaded. `vibequiz.name` in the
-   browser's storage inspector settles the first question in seconds.
-
-   **Phase 2 closes this whichever way it goes**, because claiming an identity on
-   a second browser adopts the season row's name with it. If the cause was the
-   first boring explanation — a second machine is a second browser, and nothing
-   crosses — then that is the fix rather than a workaround.
-
-2. ~~**A refused reveal can stall the round, and nothing retries it.**~~ **Fixed**
-   — the auto-reveal now retries eight times at 1.5s intervals, reset per
-   question, with the quizmaster's Reveal button still there after that. The
-   retry firing has not been watched, because a vault refusal cannot be
-   summoned on demand; the success path is unchanged. Original finding:
-
-   Seen live
-   on 13 August 2026: question one stopped on "the vault would not confirm an
-   answer" and stayed there for minutes. The auto-reveal effect only re-fires
-   when `handleReveal` changes identity, which needs a room update — and in a
-   room where everybody has already answered, nothing is writing, so nothing
-   arrives to trigger the retry. It recovered the moment the Reveal button was
-   pressed, and the rest of the ten questions ran clean.
-
-   The quizmaster can always rescue it by pressing Reveal, and the notice now
-   says to, so this is not urgent — but a round that needs rescuing is a round
-   that looks broken to everybody else. A timed retry on a failed reveal is the
-   obvious fix, and it predates the replay and the awards. **This is the first
-   job.**
-
-3. ~~**Check the game actually plays.**~~ **Done** — played on the morning of 13
-   August 2026, on the `b24358f` build. That clears the second question source,
-   the change-your-answer round and the vault reveal all at once: they had been
-   deployed but never played, and they work.
-
-   It also found the stale-notice bug fixed in this commit, which is the useful
-   part. A real round surfaced in one sitting what neither the tests nor the
-   ten-client harness could see, because both check whether the game *works*
-   rather than what it *says* while it works.
-4. **Take stock of Firestore.** Half done. The vault side is counted: 13,593
-   documents against 13,452 packs plus 4 harness, so 137 orphans, and they are
-   expected rather than a fault. Rooms and season rows are still uncounted.
-   Worth knowing: rooms are never deleted, so the collection only grows, and
-   every one of them holds players' names — which now also means every join link
-   ever pasted into a chat still resolves to a real room.
-5. **Fix `npm run host-room`.** Broken, and it predates all of this work:
-   `src/lib/vault.ts` imports `../firebase`, which reads `import.meta.env` at
-   module scope — Vite-only, so it throws under `tsx` before the script starts.
-   Deferring the config read would fix it, but `firebase.ts` is load-bearing and
-   its documented failure is a blank app, so give it its own change and test it
-   properly. It is the harness for quizmaster handover and the live reveal.
-6. **Watch the read budget.** A game is roughly 800–1,500 reads, and changing an
-   answer now costs a write that fans out to every client — so a round where
-   people fidget costs more than it used to. The console's usage alerts are on;
-   App Check is still the real fix and still not done.
-7. **Difficulty is still unsolved**, deliberately. Imported questions are all
-   `medium` and the reasons are written up under [the second
-   source](#the-difficulty-rating-that-is-not-there). Do not reach for another
-   heuristic without measuring it against a hand-labelled set first — three have
-   been tried and none beat calling everything hard.
+---
 
 ---
 
@@ -1115,6 +1004,9 @@ happened once.
 | **Nothing starts a round on a timer** (`handleBeginRound`) | The first version ran the titles for six seconds and then started the round itself, which handed the beginning of the quiz to a `setTimeout`. Found by playing a round: the start is the one moment a quizmaster most wants to hold. The room cannot stall behind an absent quizmaster because the role is derived from who has been present longest, so the button always exists for somebody. |
 | **The chosen window rides inside the digest** (`form.durationSecs`) | It cannot go on the room's own `durationSecs`, which `timingOk()` pins to its previous value on every write except the one that opens a question — writing it during the titles is refused outright. Inside the digest it is ordinary data the rules do not inspect, and it survives the quizmaster's chair changing hands while the titles are up. |
 | **`loadForm` reads one document per player, not the season table** | `loadSeason` reads up to fifty documents to answer a question about six people, and every client would run it. One device reads six and writes a digest the rest get from an update they were already receiving — the reveal's pattern. |
+| **A team is grouped on a normalised key but shown as it was typed** (`teamKey`) | Free text means "Engineering", "engineering" and " Engineering " all exist. Keying on trimmed lowercase merges them on the board without rewriting anybody's spelling. Deliberately nothing cleverer — collapsing "Eng" into "Engineering" needs a dictionary, and merging two teams somebody meant to keep apart is worse than showing both. |
+| **An empty team never clears one that is already set** (`GameResult.team`) | The team lives on the season record but is remembered per browser. A regular who set theirs on a laptop and then played from a phone would otherwise wipe it by banking a single game, silently. Removing a team is a deliberate edit, not a side effect of playing. |
+| **Firebase is a separate build chunk** (`vite.config.ts`) | Not to make the download smaller — it is a few hundred bytes bigger. As one file every deploy changed the hash, so a returning player re-fetched the whole 260 kB including the Firebase half that had not changed, seeing nothing until it landed. Split, an ordinary deploy leaves that hash alone. Proven by building twice across a real code change; a comment-only change proves nothing, because minification strips it and the output is byte-identical. |
 | **A whole-document `set` must name every field, including ones no feature uses yet** (`PlayerRecord.team`) | Both season writers use `set`. `team` was bounded in the rules ahead of its feature, and neither writer knew about it — so the first game anybody played after teams shipped would have cleared their league, and the one after that too. Teams would have appeared to work and quietly emptied themselves overnight. Anything else added to `firestore.rules` ahead of its client needs the same treatment. |
 | **`playerId` defaults to the auth uid** (`playerIdFor`) | It is what makes the change free. Every season row already written is keyed by a uid, which the new scheme reads as a playerId nobody has claimed — so there is no migration, no backfill, and a player who never claims anything behaves byte-for-byte as they did. Nothing is even stored until a claim happens. |
 | **`exists()` precedes `get()` in `ownsPlayer`** | A `get()` on a missing document returns null and reading `.data` off null *errors* the rule, which denies. Without the guard, every browser that has never claimed anything is locked out of its own row — the common case broken by a check meant for the rare one. |
@@ -1141,7 +1033,7 @@ happened once.
 **Verified against the live Firebase:** anonymous sign-in, room creation, pack
 selection, round start, question render, answer write, reveal and scoring, and
 leaving a room. Engine covered by 140 tests including six full three-question
-games (quizmaster disconnect, skip, reset, ties). 264 across the repo, the
+games (quizmaster disconnect, skip, reset, ties). 272 across the repo, the
 balance being the question pipeline, the clock's arithmetic, the review, the
 honours and the recovery code.
 
@@ -1175,6 +1067,10 @@ other people in it:
   to a row.
 - **The review panel with a real room in it.** Both its highlights need at least
   two people who answered, so a solo round can never show either.
+- **Two people in different teams on the board.** The filter is covered on
+  fixtures and the rules accept the field, but no real record has carried a team
+  yet — the first game anybody plays after the deploy of 15 August will be the
+  first to write one.
 
 **Not verified in a real room:** everything from 14 August. The name persists
 across a reload on one browser, but has not been watched surviving a week, and
@@ -1269,7 +1165,16 @@ rules are still using a fixed twenty.
   packs and the room document — see [the vault](#turning-the-vault-on) for what
   that does and does not buy. `elapsedMs` is still self-reported, so a
   fast-but-wrong answer is honest and a slow-but-claimed-instant one is not.
-- **~261 kB gzipped**, nearly all Firebase, plus 67 kB of fonts. The review, the
+- **~262 kB gzipped across two chunks** — 114 kB of app and 148 kB of Firebase —
+  plus 67 kB of fonts. **The split is about the deploy, not the download.** As
+  one file, every deploy changed the bundle's hash, so a returning player
+  re-fetched all of it including the Firebase half that had not changed, and saw
+  nothing at all until it landed because `index.html` is a 0.7 kB shell. That was
+  the delay after each deploy, and only after each deploy — every visit
+  afterwards was cached. Split, an ordinary change leaves the Firebase chunk's
+  hash alone. **Verified by building twice across a real code change**, not
+  assumed: the app hash moved and the Firebase hash did not. `font-display: swap`
+  was already set, so the fonts were never part of it. The review, the
   recovery panel, the identity modules and the opening titles added about 5 kB
   between them. The
   lobby QR
@@ -1313,16 +1218,6 @@ rules are still using a fixed twenty.
   owner, which is how a leaked code is revoked, but nothing tidies up
   automatically. One document per person who ever asks for a code, so it is a
   much slower leak than rooms.
-- **Every deploy makes the next first load slow, because the bundle is one
-  chunk.** `dist/assets/index-*.js` is 840 kB raw and 261 kB gzipped in a single
-  file, nearly all of it Firebase, and its hash changes on every deploy — so a
-  returning player re-downloads the whole thing including the ~250 kB of Firebase
-  that did not change. Nothing renders until it lands, because `index.html` is a
-  0.71 kB shell. Subsequent visits are cached, which is why it is only ever the
-  first load after a deploy. **The fix is a manual chunk splitting Firebase out**
-  so a normal deploy invalidates only the small app chunk; it is a few lines in
-  `vite.config.ts` and has not been done. `font-display: swap` is already set, so
-  the fonts are not part of this.
 - **Pointing people at the season table costs reads.** `loadSeason` is capped at
   50 documents and the final screen now nudges everybody towards it for a
   recovery code. Six players checking the board after a round is up to 300 reads
