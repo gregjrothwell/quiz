@@ -1,8 +1,10 @@
 /**
  * Deletes rooms that are past their expiry. Run with:
  *
- *   npm run prune-rooms            # says what it would delete, deletes nothing
- *   npm run prune-rooms -- --go    # actually deletes
+ *   npm run prune-rooms                    # says what it would delete, deletes nothing
+ *   npm run prune-rooms -- --go            # actually deletes
+ *   npm run prune-rooms -- --list          # every room, with who is in it
+ *   npm run prune-rooms -- --code AB12     # a named room, whatever its expiry
  *
  * **This exists because Firestore's own TTL policies need billing enabled.**
  * The obvious answer to "rooms are never deleted" is a TTL policy on
@@ -68,6 +70,60 @@ interface Doomed {
    * abandoned in the lobby.
    */
   lastActive: Date | null;
+  /**
+   * Who is in the room, which is the thing actually being destroyed.
+   *
+   * Printed before any deletion because a room code says nothing about whether
+   * a room matters. "Rules check" or "Header probe" is obviously disposable;
+   * four colleagues' names is a decision worth making deliberately.
+   */
+  players: string[];
+}
+
+/** The names in a room document, for the listing. */
+function playersOf(room: FirebaseFirestore.DocumentSnapshot): string[] {
+  const map = (room.get('players') ?? {}) as Record<string, { name?: unknown }>;
+  return Object.values(map)
+    .map((player) => (typeof player.name === 'string' ? player.name : '?'))
+    .sort((a, b) => a.localeCompare(b, 'en-GB'));
+}
+
+/**
+ * Rooms named outright on the command line, expired or not.
+ *
+ * The other two paths answer "what has aged out"; this one answers "get rid of
+ * that one" — a test room, or a room somebody wants their name taken out of.
+ * Until this existed the only way to remove a specific room was the console,
+ * because `allow delete: if false` means no client can do it and a live room
+ * has thirty days to run before any sweep would reach it.
+ *
+ * A code that does not exist is reported rather than skipped silently: the
+ * whole input is four characters, and a typo should not look like success.
+ */
+async function findNamed(db: Firestore, codes: string[]): Promise<Doomed[]> {
+  const found: Doomed[] = [];
+
+  for (const code of codes) {
+    if (RESERVED.has(code)) {
+      console.log(`  ${code} is owned by check-rules and is skipped.`);
+      continue;
+    }
+
+    const room = await db.collection('rooms').doc(code).get();
+    if (!room.exists) {
+      console.log(`  ${code} does not exist.`);
+      continue;
+    }
+
+    found.push({
+      code,
+      expiresAt: (room.get('expiresAt') as Timestamp | undefined)?.toDate() ?? null,
+      lastActive: (room.get('openedAt') as Timestamp | undefined)?.toDate() ?? null,
+      players: playersOf(room),
+    });
+  }
+
+  return found;
 }
 
 /**
@@ -91,6 +147,7 @@ async function findExpired(db: Firestore, legacy: boolean): Promise<Doomed[]> {
       code: room.id,
       expiresAt: (room.get('expiresAt') as Timestamp | undefined)?.toDate() ?? null,
       lastActive: (room.get('openedAt') as Timestamp | undefined)?.toDate() ?? null,
+      players: playersOf(room),
     }));
 
   if (!legacy || found.length >= BATCH) return found;
@@ -103,7 +160,7 @@ async function findExpired(db: Firestore, legacy: boolean): Promise<Doomed[]> {
     tens of documents, not thousands. If `rooms` ever runs to five figures this
     needs rethinking rather than raising the limit.
   */
-  const all = await db.collection('rooms').select('expiresAt', 'openedAt').limit(1_000).get();
+  const all = await db.collection('rooms').select('expiresAt', 'openedAt', 'players').limit(1_000).get();
   for (const room of all.docs) {
     if (found.length >= BATCH) break;
     if (RESERVED.has(room.id)) continue;
@@ -112,6 +169,7 @@ async function findExpired(db: Firestore, legacy: boolean): Promise<Doomed[]> {
       code: room.id,
       expiresAt: null,
       lastActive: (room.get('openedAt') as Timestamp | undefined)?.toDate() ?? null,
+      players: playersOf(room),
     });
   }
 
@@ -157,13 +215,46 @@ async function main(): Promise<void> {
   const app = initializeApp({ credential: cert(key as Parameters<typeof cert>[0]) }, 'prune-rooms');
   const db = getFirestore(app);
 
-  const doomed = await findExpired(db, legacy);
+  /*
+    `--list` exists because `--code` needs a code, and nothing else here can
+    tell you one. `take-stock` counts rooms and clients cannot query the
+    collection at all — `list` is denied on `/rooms`, deliberately, since a room
+    code is the only thing protecting a room. So without this the only way to
+    find a specific room was the console, which is what the whole script exists
+    to avoid.
+  */
+  if (process.argv.includes('--list')) {
+    const rooms = await db.collection('rooms').select('expiresAt', 'openedAt', 'players').get();
+    console.log(`\n${rooms.size} room(s):\n`);
+    for (const room of rooms.docs) {
+      const expiry = (room.get('expiresAt') as Timestamp | undefined)?.toDate();
+      const who = playersOf(room);
+      console.log(
+        `  ${room.id.padEnd(18)}`
+          + `${(expiry ? `expires ${expiry.toISOString().slice(0, 10)}` : 'no expiry').padEnd(24)}`
+          + `${who.length > 0 ? who.join(', ') : 'nobody'}`,
+      );
+    }
+    console.log('');
+    return;
+  }
+
+  // `--code AB12 --code CD34`, or `--code AB12,CD34`.
+  const named = process.argv
+    .flatMap((arg, index) => (process.argv[index - 1] === '--code' ? arg.split(',') : []))
+    .map((code) => code.trim().toUpperCase())
+    .filter((code) => code.length > 0);
+
+  const doomed = named.length > 0 ? await findNamed(db, named) : await findExpired(db, legacy);
 
   if (doomed.length === 0) {
     console.log(
-      legacy
-        ? '\nNothing to prune: no room has expired, and none predates `expiresAt`.\n'
-        : '\nNothing to prune. Add --legacy to also reach rooms written before `expiresAt` existed.\n',
+      named.length > 0
+        ? '\nNone of those rooms can be deleted — see above.\n'
+        : legacy
+          ? '\nNothing to prune: no room has expired, and none predates `expiresAt`.\n'
+          : '\nNothing to prune. Add --legacy to also reach rooms written before `expiresAt` existed,'
+            + '\nor --code AB12 to remove a named room whatever its expiry.\n',
     );
     return;
   }
@@ -176,7 +267,9 @@ async function main(): Promise<void> {
     const active = room.lastActive
       ? `last question ${room.lastActive.toISOString().slice(0, 16).replace('T', ' ')}`
       : 'never reached a question';
+    const who = room.players.length > 0 ? room.players.join(', ') : 'nobody';
     console.log(`  ${room.code.padEnd(18)}${age.padEnd(34)}${active}`);
+    console.log(`  ${''.padEnd(18)}in it: ${who}`);
   }
 
   /*

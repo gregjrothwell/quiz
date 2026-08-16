@@ -1131,10 +1131,20 @@ ever matters.
   > written before `expiresAt` existed, which a policy can never touch.
   >
   > ```bash
-  > npm run prune-rooms              # lists what it would delete, deletes nothing
-  > npm run prune-rooms -- --legacy  # also lists rooms with no expiresAt
-  > npm run prune-rooms -- --go      # actually deletes
+  > npm run prune-rooms                 # lists what it would delete, deletes nothing
+  > npm run prune-rooms -- --list       # every room, its expiry, and who is in it
+  > npm run prune-rooms -- --legacy     # also catches rooms with no expiresAt
+  > npm run prune-rooms -- --code AB12  # one named room, whatever its expiry
+  > npm run prune-rooms -- --go         # actually deletes
   > ```
+  >
+  > `--list` is there because `--code` needs a code and nothing else can give
+  > you one: clients cannot query `/rooms` at all — `list` is denied, since the
+  > code is the only thing protecting a room — and `take-stock` only counts.
+  > **`--code` is also the answer to "take my name off that room"**, which
+  > previously meant the console. The listing names the players in each room
+  > before anything is deleted, because a four-character code says nothing about
+  > whether a room matters.
   >
   > It is capped at 200 rooms a run and skips `rules-check-live`, which the
   > preflight owns and recreates. Nothing runs it automatically; at one room per

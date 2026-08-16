@@ -130,7 +130,7 @@ The app is served under `/quiz/`, so the local URL is
 | `npm run sync-harness 10` | Put 10 real clients in one room and measure how fast each sees a round start |
 | `npm run host-room` | Host a room from the terminal, so a browser can be watched as an ordinary player |
 | `npm run take-stock` | Count what is in Firestore, for single-digit reads |
-| `npm run prune-rooms` | List rooms past their expiry. Add `--go` to delete them, `--legacy` to include rooms written before expiries existed |
+| `npm run prune-rooms` | List rooms past their expiry. `--list` shows every room and who is in it, `--code AB12` targets one, `--legacy` includes rooms written before expiries existed, `--go` actually deletes |
 
 The last four talk to the live Firebase project. The two harnesses exist because
 a single browser cannot show what a room full of people does — they are how the
