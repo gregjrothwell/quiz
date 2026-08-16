@@ -1679,7 +1679,8 @@ down here rather than quietly fixed.
 | "A TTL policy has no duration setting" | An optional **expiration offset** exists. The correction to the first error overshot into a second one. |
 | "Leave the offset blank" | The form requires a value. It is `0`. |
 | TTL was presented as a free-tier fix | **TTL requires billing enabled.** Creating one on Spark fails with a 403, which is stated on neither documentation page. |
-| Enforcement lives at a named console path | Half right, and asserted before checking. It is Security → App Check → APIs, but the product must have metrics before it can be enforced. |
+| Enforcement lives at a named console path | Half right, and asserted before checking. Security → App Check → APIs → **expand the Cloud Firestore row** → Enforce. |
+| "The APIs tab is empty because metrics lag by 24 hours — wait" | It was not empty. The Cloud Firestore row was there, below the Functions row that happened to be on screen. A day was lost to this. |
 
 **The rule that would have prevented all six: never state platform behaviour
 from memory.** Fetch the documentation first, and where the documentation is
@@ -1690,6 +1691,15 @@ more than "I need to check", because it is acted on.
 **The second rule: a correction is not automatically right either.** Two of the
 six were corrections to earlier errors. After being wrong once about a thing,
 verify the replacement claim harder than the original, not less.
+
+**The third rule, and the expensive one: when what somebody reports seeing
+contradicts what you told them, ask what is on their screen. Do not explain the
+contradiction away.** Told that the enforcement tab showed only a Functions row,
+the answer given was an invented mechanism — metrics lag, empty state, wait a
+day — and a day was duly lost. The real answer was that the Cloud Firestore row
+was sitting just off the bottom of the screenshot. A report from someone looking
+at the thing beats a theory about the thing, every time, and the cheapest
+possible move was one question.
 
 **What did work**, and is worth keeping as the pattern: every claim about *this
 repo* was proved by running something. The `expiresAt` write was confirmed by
