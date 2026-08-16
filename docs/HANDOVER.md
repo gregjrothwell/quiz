@@ -22,10 +22,23 @@ Built to replace Polly in Teams.
      deleted**, leaving 3. Season rows, the vault and the question history were
      untouched and `check-rules` still passes. Re-run `npm run prune-rooms`
      occasionally — quarterly is ample at one room per game.
-  2. **Enforce App Check.** It is registered, deployed and **verified minting
-     tokens on the live site, 15 August 2026** — the token in IndexedDB decodes
-     to `provider: recaptcha_v3`, `aud: projects/quiz-d686e`, 24-hour expiry.
-     What is left is the enforcement switch.
+  2. ~~Enforce App Check.~~ **Done and enforcing on Cloud Firestore, 16 August
+     2026.** Proved in both directions on the day, which is the only way to know
+     an enforcement switch actually did anything:
+
+     | | |
+     |---|---|
+     | Live site, real browser | creates a room, no error, no console warning |
+     | `check-rules` with its debug token | 36/36 |
+     | `check-rules` with the token removed | signs in, then **`Missing or insufficient permissions`** on the first Firestore call |
+
+     That third row is the one that matters. A signed-in but unattested client
+     is now refused, which is exactly the traffic anonymous auth used to let
+     through — and it is the reason a script pointed at a known room code can no
+     longer burn the day's 50,000 reads.
+
+     Authentication itself is **not** enforced, only Firestore: the negative
+     test still signed in. Worth knowing before assuming everything is covered.
 
      **Firebase console → Security → App Check → the `APIs` tab** — not the
      `Apps` tab, which is where registration lives and where the debug-token
@@ -1833,17 +1846,24 @@ and `check-rules` confirmed the semantics, which between them cover it.
 
 ### Not done, and what it would take
 
-1. **No App Check, no rate limiting.** Anonymous accounts can be minted at will
-   against the project. The sharp end is not privacy, it is **cost and
-   availability**: the free tier is 50k reads a day and a game is ~800, so
-   somebody who knows one room code can take the quiz down for the office for a
-   day. **On the Spark plan there is no bill to run up and no budget to set** —
-   budgets live in Cloud Billing, which a free project has no account for. The
-   substitute is the console's usage alerts, enabled for both Firestore and the
-   Realtime Database; Firestore is the one that matters, as the RTDB holds only
-   presence. **If this project is ever moved to Blaze, set a budget that day** —
-   the same exhaustion stops being an outage and starts being an invoice.
-   App Check is the real fix either way.
+1. ~~**No App Check, no rate limiting.**~~ **App Check is enforcing on Cloud
+   Firestore as of 16 August 2026**, verified by a negative test: the same
+   script that passes 36/36 with its debug token is refused outright without
+   one. Anonymous accounts can still be minted, but they can no longer *read*
+   anything without attesting, which was the exposure — the free tier is 50k
+   reads a day and a game is ~800, so a script pointed at one room code could
+   take the quiz down for the office for a day.
+
+   Still open around it:
+   - **The Realtime Database is not enforced**, only Firestore. It holds
+     presence only, so the blast radius is ghosts in a lobby rather than the
+     read budget, but it is not covered.
+   - **Authentication is not enforced.** The negative test still signed in.
+   - **No rate limiting**, and no budget: **on Spark there is no bill to run up
+     and no budget to set** — budgets live in Cloud Billing, which a free
+     project has no account for. The substitute is the console's usage alerts.
+     **If this project is ever moved to Blaze, set a budget that day** — the
+     same exhaustion stops being an outage and starts being an invoice.
 2. ~~**Rooms are never deleted**~~ **Solved, 15 August 2026 — but not the way
    it was planned.** Rooms carry `expiresAt` and `npm run prune-rooms` removes
    the expired ones along with their subcollections. The intended fix was a
