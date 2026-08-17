@@ -60,6 +60,49 @@ export function tallyQuestion(params: {
   return deltas;
 }
 
+/**
+ * What to tell a player about their own answer, once the question is revealed.
+ *
+ * `lost` is the one worth having a name for. The other three are what the player
+ * already knows; this one is the room disagreeing with what they saw on their own
+ * screen, and until it existed nothing said so.
+ */
+export type Verdict = 'correct' | 'wrong' | 'lost' | 'silent';
+
+export interface VerdictInput {
+  /** This player's answer to the question in play, if this device has one. */
+  answer: Answer | undefined;
+  correctIndex: number | null;
+  /** `lastDeltas` from the reveal — every player the question was scored for. */
+  deltas: Record<string, number>;
+  uid: string | null;
+}
+
+/**
+ * Reads one player's fortunes off a reveal.
+ *
+ * The whole point is the `lost` case. An answer is written to a subcollection and
+ * the reveal is folded on the quizmaster's device, so there is a gap in which an
+ * answer can be perfectly valid — inside the window, on the right question — and
+ * still not be in the room when the question is scored. The player sees their
+ * lectern light up and their score not move, and nothing connects the two. In
+ * room 6JA5 that would have read as **"Correct · +0"**, which is the game calling
+ * itself a liar.
+ *
+ * The test for it is exact rather than a guess: `tallyQuestion` emits an entry
+ * for *everyone* whose answer was scored, including a zero for everyone who got
+ * it wrong. So a player holding an answer who has no entry at all was not in the
+ * tally, and that is the only way it can happen.
+ *
+ * Call it only once the question is revealed. Before that the deltas belong to
+ * the previous question and every answer looks lost.
+ */
+export function verdictFor({ answer, correctIndex, deltas, uid }: VerdictInput): Verdict {
+  if (!uid || !answer) return 'silent';
+  if (!Object.hasOwn(deltas, uid)) return 'lost';
+  return answer.optionIndex === correctIndex ? 'correct' : 'wrong';
+}
+
 export interface Standing {
   uid: string;
   score: number;

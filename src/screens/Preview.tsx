@@ -250,6 +250,22 @@ export function Preview() {
       ),
     },
     {
+      title: 'Question · walked in on it',
+      node: (
+        <QuestionScreen
+          room={mockRoom({ phase: 'question', questionOpenedAt: 1_000 })}
+          youUid="greg"
+          isQuizmaster={false}
+          clock={CLOCK}
+          joinedMidQuestion
+          revealed={false}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+        />
+      ),
+    },
+    {
       title: 'Question · answered',
       node: (
         <QuestionScreen
@@ -345,10 +361,43 @@ export function Preview() {
               alex: { optionIndex: 3, elapsedMs: 5_200 },
               priya: { optionIndex: 0, elapsedMs: 8_900 },
             },
-            lastDeltas: { sam: 880 },
+            // Every answerer, including a zero for each of the three who got it
+            // wrong. That is what `tallyQuestion` produces, and the verdict now
+            // reads absence from here as "your answer never reached the room" —
+            // so a fixture that names only the scorer would show the other three
+            // a fault that did not happen.
+            lastDeltas: { sam: 0, greg: 0, alex: 0, priya: 555 },
           })}
           youUid="greg"
           isQuizmaster
+          clock={CLOCK}
+          revealed
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+        />
+      ),
+    },
+    {
+      /*
+        The answer that was written inside the window and was not in the room
+        when the question was scored. Greg picked the right lectern and has no
+        delta, which used to render as "Correct · +0".
+      */
+      title: 'Reveal · answer didn’t land',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'reveal',
+            answers: {
+              sam: { optionIndex: 2, elapsedMs: 2_300 },
+              priya: { optionIndex: 0, elapsedMs: 4_100 },
+              greg: { optionIndex: 0, elapsedMs: 9_850 },
+            },
+            lastDeltas: { sam: 0, priya: 795 },
+          })}
+          youUid="greg"
+          isQuizmaster={false}
           clock={CLOCK}
           revealed
           onAnswer={noop}

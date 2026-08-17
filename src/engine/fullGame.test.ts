@@ -108,7 +108,7 @@ function answerAs(state: RoomState, uid: string, correct: boolean, elapsedMs: nu
 function revealNow(state: RoomState): Action {
   const question = currentQuestion(state);
   if (!question) throw new Error('No open question to reveal');
-  return { type: 'reveal', correctIndex: vaultIndex(question) };
+  return { type: 'reveal', correctIndex: vaultIndex(question), questionId: question.id };
 }
 
 function advance(state: RoomState): RoomState {

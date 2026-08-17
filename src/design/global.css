@@ -2107,6 +2107,16 @@ input {
   color: var(--ink-dim);
 }
 
+/*
+ * An answer that did not reach the room in time. Amber, on the same principle
+ * as `.nudge`: this is not the player getting it wrong, it is the game failing
+ * to count them, and the two must not look the same. Red here would tell
+ * somebody who answered correctly that they were wrong.
+ */
+.verdict[data-tone='lost'] {
+  color: var(--amber-bright);
+}
+
 /* ── The desk ───────────────────────────────────────────────────────────────
    The strip under the lecterns: your own state on the left, who the room is
    waiting on and the transport on the right. Lit along the top edge like the

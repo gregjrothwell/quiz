@@ -9,6 +9,7 @@ import {
   isDurationAllowed,
   rampPlan,
   resolveQuizmaster,
+  seatBehind,
   selectQuestions,
   shuffle,
 } from './state';
@@ -104,6 +105,62 @@ describe('resolveQuizmaster', () => {
 
     // #then there is no quizmaster
     expect(result).toBeNull();
+  });
+});
+
+describe('seatBehind', () => {
+  test('uses the arriving clock when it is already the latest', () => {
+    // #given a room whose newest player joined before now
+    const players = { greg: { name: 'Greg', joinedAt: 100 } };
+
+    // #when a newcomer takes a seat
+    const result = seatBehind(players, 500);
+
+    // #then their own reading stands
+    expect(result).toBe(500);
+  });
+
+  test('seats a slow clock behind everyone already present', () => {
+    // #given a device whose clock reads earlier than the host's join
+    const players = {
+      greg: { name: 'Greg', joinedAt: 1_000 },
+      sam: { name: 'Sam', joinedAt: 1_200 },
+    };
+
+    // #when it joins reading an hour ago
+    const result = seatBehind(players, 400);
+
+    // #then it lands after the newest player rather than before the host
+    expect(result).toBe(1_201);
+  });
+
+  test('leaves the quizmaster with the room after a mid-round join', () => {
+    // #given a round under way, and a browser carrying a timestamp it earned in
+    // an earlier room — the shape of Double D in room 6JA5
+    const players = {
+      greg: { name: 'Greg', joinedAt: 1_786_963_005_566 },
+      amier: { name: 'Amier', joinedAt: 1_786_963_034_402 },
+    };
+
+    // #when that browser joins mid-round with the stale reading as its clock
+    const players2 = {
+      ...players,
+      doubled: { name: 'Double D', joinedAt: seatBehind(players, 1_786_962_000_000) },
+    };
+
+    // #then the chair does not move
+    expect(resolveQuizmaster(players2)).toBe('greg');
+  });
+
+  test('seats the first arrival at their own clock in an empty room', () => {
+    // #given a room with nobody in it
+    const players = {};
+
+    // #when somebody joins
+    const result = seatBehind(players, 900);
+
+    // #then nothing is pushed back
+    expect(result).toBe(900);
   });
 });
 

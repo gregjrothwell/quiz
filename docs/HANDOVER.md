@@ -1443,14 +1443,18 @@ rules are still using a fixed twenty.
   code added about 10 kB of that (`qrcode-generator`, MIT, no dependencies) —
   more than it looked like it would. Code-splitting is the fix if it matters.
   The clock added 0.9 kB, being oscillators rather than audio.
-- **Devices in the same room will phase against each other.** Each one schedules
-  its own clock from when *it* saw the question open, and those moments differ by
-  the spread of the Firestore snapshot. This was already true of the tick and
-  nobody remarked on it; nine seconds of music makes it far more noticeable. It
-  cannot be fixed by syncing to `questionOpenedAt` without folding the
-  quizmaster's clock offset back into every device — the thing
-  `useQuestionClock` exists to avoid. If it grates in a real room, the honest
-  fix is fewer laptops with the volume up, not a shared clock.
+- **Devices in the same room will phase against each other, and it costs
+  answers.** Each one schedules its own clock from when *it* saw the question
+  open, and those moments differ by the spread of the Firestore snapshot. This
+  was already true of the tick and nobody remarked on it; nine seconds of music
+  makes it far more noticeable. **It was filed here as an audio nuisance and
+  that was wrong** — on 17 August a player's window started about five seconds
+  late, so the reveal killed his lecterns while his own timer still read five
+  seconds and he could not answer at all. It cannot be fixed by syncing to
+  `questionOpenedAt`, which is a client wall clock and would fold the
+  quizmaster's offset into every device — but `openedAt` is a
+  `serverTimestamp()` and there is a route through it. See [the clock, and what
+  it actually costs](#the-clock-and-what-it-actually-costs).
 - **A non-member can still write an answer document.** Nothing checks
   membership on the way in — the room code is the capability, as everywhere
   else. It no longer *scores*, and no longer inflates the answered count, but
@@ -1684,6 +1688,290 @@ Both were costed; neither is queued.
   and each left a long tail. Inverting it is shorter, stricter, and costs volume
   the pool can afford. It is the same shape as `uk-leaning`, which has always
   been a positive filter.
+
+---
+
+## Joining a round that has already started
+
+Room **6JA5**, 17 August 2026, Geography, twenty questions, six people. Two
+people arrived after it began, and the post-mortem on that room found three
+faults. All three were already in the code before that night; the round exposed
+them rather than caused them.
+
+### The stale seat, and how it was proved
+
+`resolveQuizmaster` picks whoever has been in the room longest, so `joinedAt`
+decides who drives the round. `joinedAtRef` in `useRoom` remembers this device's
+place so that coming back from a reap does not cost a quizmaster their chair —
+but it was never cleared, and it outlives a room.
+
+Double D's entry in 6JA5 reads `joinedAt: 1786963245823` — 10:40:45.823. Room
+**6WP6** has `expiresAt` exactly thirty days after that same millisecond, an
+empty `players` map and a single score of zero under Double D's uid. That is the
+signature of `createAndJoin` followed by `leave`. They made a room by accident,
+left it, joined the real one, and were stamped in 6JA5 with the moment they
+created the *other* room.
+
+It cost nothing that night only because 10:40 happens to be later than the
+host's 10:36. Nothing made it so. Had that stray room been created a few minutes
+earlier — or had the tab simply still been in the previous game, where Double D's
+stamp was **08:43** — the arrival would have resolved as quizmaster of a round
+already under way. The transport moves to a device that has just walked in,
+whose answer clock starts from zero, so the round stops until the newcomer's own
+timer runs out.
+
+Two fixes, because either alone leaves the other half open:
+
+- the ref is stamped with its room and restored only into that same room;
+- a genuinely new entry is seated with `seatBehind`, which is `max(now, latest
+  joinedAt + 1)`. A slow laptop clock cannot get ahead of the room either.
+
+A reap-and-return still restores the original seat, which is the case the ref
+exists for.
+
+### The fresh clock
+
+`useQuestionClock` counts from the moment *this* device saw a question open. That
+is deliberate and stays — comparing against the quizmaster's `questionOpenedAt`
+folds their clock offset into everyone's speed score, and office laptops
+disagree by more than the bonus is worth. It is sound for anybody present when
+the question opened, because a local clock can only start late.
+
+It is not sound for somebody who joins halfway through. They get a full fresh
+window on a question that is already nine seconds old, and an answer given on the
+buzzer is stamped as though it were instant — up to 990 points for arriving late
+and guessing.
+
+Fixed without consulting any clock at all. The first snapshot after joining is
+the room's current state, so a question already open in it is one this device did
+not see open. `engine/arrival.ts` holds the rule; that question is submitted at
+the full window, so it scores its points and no speed bonus, and the arc timer is
+replaced by a line saying why rather than counting down a window the room does
+not have left.
+
+### The phantom game
+
+Boss Man joined at 10:47:26.911 — thirty-three seconds after the last question
+opened, eight seconds before the results went up. He answered nothing. Two
+things happened anyway:
+
+- `writeSelfIntoRoom` wrote him a score of zero, and `standings` is built from
+  `scores`. He went onto the final board, and `seatedLast` put him in the
+  loser's chair for a game he never saw.
+- The banking effect fired on the finished screen and took his season record from
+  eight games to nine, on a score of zero.
+
+Now: a join into a `finished` room opens no score at all — absent from `scores`
+is absent from the standings, and `reset` gives everybody a score again when the
+next round starts. And a device banks only if its game log holds at least one
+question of that game. One is enough: joining late and playing three of twenty is
+still playing, and the log is mirrored into session storage so a reload does not
+read as never having been here.
+
+### Still open
+
+**The board cannot tell the room who was actually playing.** The fixes above are
+all per-device or per-arrival, because `playerOk` in `firestore.rules` validates
+a player entry with `hasOnly(['name', 'joinedAt', 'playerId'])` — recording the
+question somebody joined at would need a rules change, and this project has had
+two broken by a hand-paste. So a player who joins at question eighteen is still
+ranked against people who played all twenty, on every screen. Worth doing, and
+worth doing at the same time as the next rules change rather than on its own.
+
+Nothing here needs a rules change, so all of it shipped.
+
+---
+
+## The buzzer-beater the reveal used to throw away
+
+A real bug, found while looking for a different one. **It is not what was
+reported on 17 August** — see the correction at the end of this section — but it
+stands on its own, and it is worth reading before touching `dispatch` or
+`handleReveal`.
+
+`handleReveal` asks the vault and then dispatches:
+
+```js
+const correctIndex = await openTheVault(room.code, question);
+await dispatch({ type: 'reveal', correctIndex, questionId: question.id });
+```
+
+`openTheVault` is not cheap. It fires **four concurrent `setDoc` writes** — one
+per lectern, three of which the rules refuse — and waits for all four. That is a
+full network round trip, and on a phone it is the slowest of four.
+
+`dispatch` used to fold the reveal over the `room` its own closure was created
+with, which is the room as it stood *before* that round trip. Every answer that
+landed during it was in a newer room object that closure could never see. The
+player answered inside the window, watched their lectern light, and scored
+nothing. Next question they were fine — so it reads as falling a question behind
+and then catching up, which is exactly how it was reported.
+
+Two things make the window wider than the round trip alone:
+
+- **The quizmaster's clock is the earliest in the room.** They wrote the update
+  that opened the question, so their local echo is instant while everyone else
+  waits on the fan-out. They call time while other screens still show a fraction
+  of a second left.
+- **Nobody is told.** There is no "your answer didn't count". The lectern lights
+  up locally the moment it is tapped.
+
+It costs whoever answers latest, on whichever question they cut it finest.
+
+Fixed by folding over `roomRef.current` — the newest room this client has seen —
+rather than the closure's copy. That also turns the round trip into grace time
+rather than a blind spot, which roughly cancels the quizmaster's head start.
+
+**The `questionId` on the reveal action exists because of that fix, not
+independently of it.** Folding over the current room means the room could in
+principle have moved on during the round trip, and applying one question's answer
+to the next would mark the entire room wrong on a question nobody got a chance to
+answer. The reducer now refuses a reveal whose `questionId` is not the question in
+play. Keep them together: removing the guard makes the fold unsafe.
+
+### The diagnosis this was attached to, and why it was wrong
+
+It was pinned on the 17 August report — a player falling a question behind and
+then catching up — on the strength of one number: he answered the last question
+at 12.2s of 15s, where the rest of the room came in between 3.7s and 6.8s. The
+slowest answerer is the one this bug costs, so it fit.
+
+It made a falsifiable prediction, which is the only reason the mistake was cheap:
+`verdictFor` shows a lost answer as `Correct · +0`, so the player would have seen
+that on screen. **He was asked, and he had not.** What he actually described was
+his timer sitting at zero after the question was over, and, separately, a face
+reading five seconds that snapped to zero with the lecterns going dead. Neither
+is this bug — he never got an answer in at all. See [the clock, and what it
+actually costs](#the-clock-and-what-it-actually-costs).
+
+Two things worth keeping from that:
+
+- **A plausible mechanism plus a matching number is not a diagnosis.** Every
+  piece of evidence here was consistent with the theory and none of it was
+  evidence *for* it, because nothing had been checked that could have come back
+  no. The reveal-gap bug is real; the attribution was invented.
+- **Ask the person first.** One question to the player settled in a sentence what
+  a day of reading Firestore could not, and it settled it against the theory.
+  Same lesson as the console tab in the 15 August session, one section down.
+
+### Reproducing it
+
+Not observable in one browser, and not observable on localhost with a fast
+connection, because the window is the length of a round trip. What it needs is a
+real device on real wifi answering on the buzzer:
+
+1. Two devices, one phone among them. Host a round with a **10-second** window —
+   the shorter the window the larger the round trip is as a fraction of it.
+2. On the phone, tap an answer as late as you dare, inside the last half second.
+3. Watch the standings. Before the fix, that answer scores nothing perhaps one
+   time in three, and nothing on any screen says why.
+
+`scripts/host-room.ts` is not the tool for this: it runs the reveal from Node, so
+it does not exercise the App's closure at all.
+
+### Telling the player, which is the part that matters
+
+The bug above cost one question. What cost a week was that **nothing said it had
+happened**. The screen read `Correct · +0` — the game contradicting itself — and
+the only way to find out why was to pull the room out of Firestore days later.
+
+`verdictFor` in `engine/scoring.ts` now names four outcomes rather than three,
+and the fourth is `lost`. The test for it is exact rather than a heuristic:
+`tallyQuestion` emits an entry for **everyone** whose answer was scored,
+including a zero for everyone who got it wrong. So a player holding an answer
+with no entry at all was not in the tally, and there is no other way that
+happens.
+
+It shows in amber, not the verdict red, on the same principle as `.nudge`: this
+is not the player getting it wrong, it is the game failing to count them, and red
+would tell somebody who answered correctly that they were wrong.
+
+**It generalises across every way an answer can go missing** — it does not know
+or care *why*, only that the room scored the question without it — but note the
+limit, because it was overstated when this was written: **it only fires for a
+player who got an answer in.** It says nothing to somebody who could not answer
+at all, which is the 17 August report. Different failure, different indicator.
+
+There is a fixture for it in the preview gallery — *Reveal · answer didn't
+land*. Note that adding it exposed a stale one: *Reveal · wrong answer* named
+only the scorer in `lastDeltas`, which no real tally ever does, and it started
+showing the other three a fault that had not happened. Any new reveal fixture
+must list every answerer.
+
+---
+
+## The clock, and what it actually costs
+
+This is the 17 August report, in the player's own words:
+
+> it was just those two moments where my timer was stuck on 0 after the question
+> was over and the other being it said I had 5 seconds left but it instantly went
+> to 0 and I couldn't answer
+
+Two different halves of one thing: **every device runs its own private clock, and
+nothing on screen ever admits it.**
+
+`useQuestionClock` counts from the moment *this* device saw the question open.
+That is deliberate and the reasoning is sound — syncing to `questionOpenedAt`
+would fold the quizmaster's clock offset into everybody's speed score, and office
+laptops disagree by more than the bonus is worth. What was not thought through is
+what the gap does to a player.
+
+**"Five seconds left, then instantly zero, and I couldn't answer."** His snapshot
+of the question opening arrived about five seconds after the room's, so his
+window started five seconds late and his face was five seconds behind everyone's.
+The reveal ended the question — correctly, for the room — while his timer still
+showed time, and the lecterns went dead under his hand. He was not slow. He was
+shown a clock the room was not running to.
+
+**"Stuck on 0 after the question was over."** The mirror image: his clock expired
+and the reveal had not reached him. Two ways in, and a player cannot tell them
+apart because neither says anything. The vault gate is the interesting one — it
+refuses until the *server* agrees the window has passed, and `App` retries every
+1.5s up to eight times, so a room can legitimately sit at zero for twelve
+seconds. **That notice only renders on the quizmaster's device.** Everybody else
+gets a dead timer and no explanation.
+
+### This was already written down, and under-rated
+
+Under [known limits](#known-limits): *"Devices in the same room will phase against
+each other... If it grates in a real room, the honest fix is fewer laptops with
+the volume up."*
+
+That was filed as an audio nuisance — the nine-second bed sounding like a round
+in a canon. It is the same defect, and it does not just grate. **It takes
+answers off people.** The entry has been corrected.
+
+### What would actually fix it
+
+Not the naive shared clock the limit rules out. But `openedAt` is a
+`serverTimestamp()`, not a client one, so there is a way through: each client
+records `Date.now() - openedAt` when a question opens, and the **minimum** of
+that across a round approximates its own pure clock skew, because delivery
+latency is never negative. The rest is this device's lag, and subtracting it
+gives every screen the room's remaining time rather than its own.
+
+Real work, on the most safety-critical code in the app, and it fails quietly if
+it fails — so it is a deliberate decision, not a tidy-up. Not started.
+
+The cheap half, which is most of the harm: **let the screen say it is out of
+step.** A dead zero should read "waiting for the quizmaster", and a reveal that
+lands while your face still shows time should say the room has moved on rather
+than silently killing the lecterns. Neither needs a shared clock, and either
+would have told this player what was happening instead of leaving him to report
+it a week later.
+
+---
+
+## Still not fixed
+
+`submitAnswer` stamps `questionIndex` from this device's snapshot. A client whose
+listener has stalled writes an answer against the question it can still see, and
+it is filtered out everywhere. Much harder to reach than the above — `phase` and
+`index` travel in the same snapshot, so a stalled client is usually showing the
+scoreboard and cannot answer at all. Left alone deliberately: it is now
+*visible* rather than silent, which was the actual problem, and the fix would be
+a retry path on a write that must not be retried carelessly.
 
 ---
 

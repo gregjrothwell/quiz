@@ -228,6 +228,34 @@ export function isQuizmaster(state: RoomState, uid: string): boolean {
   return resolveQuizmaster(state.players) === uid;
 }
 
+/**
+ * A place in the queue that is behind everyone already in the room.
+ *
+ * `joinedAt` decides the quizmaster, and it is a wall clock reading from the
+ * joining device — so an arrival can only be trusted to be *later* than the
+ * people already there if it is made to be. Two ways it is not: a laptop whose
+ * clock is an hour slow, and a browser carrying a timestamp it earned somewhere
+ * else. The second is not hypothetical. Room 6JA5 on 17 August 2026 has a player
+ * stamped 10:40:45.823, which is the millisecond they created a *different*
+ * room, abandoned it, and came here with the number still in hand.
+ *
+ * Neither one took the chair that night, because both readings happened to land
+ * after the host's. Nothing made them: a mid-round join that resolves as
+ * quizmaster takes the transport away from whoever is running the quiz and hands
+ * it to a device that has just arrived, whose answer clock starts from zero — so
+ * the round stops until the newcomer's own timer runs out.
+ *
+ * Used only for a genuinely new entry. Somebody coming back from a reap keeps
+ * the place they already had, which is the whole reason that path remembers it.
+ */
+export function seatBehind(players: Record<string, Player>, now: number): number {
+  let latest = 0;
+  for (const player of Object.values(players)) {
+    if (player.joinedAt > latest) latest = player.joinedAt;
+  }
+  return Math.max(now, latest + 1);
+}
+
 /** A random source in [0, 1). Injectable so tests can pin the shuffle. */
 export type Rng = () => number;
 

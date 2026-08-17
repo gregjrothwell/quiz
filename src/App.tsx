@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ColdOpen } from './components/ColdOpen';
 import { Stage } from './components/Stage';
+import { arrivalFor, walkedIn, NO_ARRIVAL, type Arrival } from './engine/arrival';
 import { honoursFor, sawWholeGame, NO_HONOURS } from './engine/awards';
 import { formFor } from './engine/form';
 import { standings } from './engine/scoring';
@@ -132,11 +133,32 @@ function Game() {
   const gameLog = useGameLog(room);
 
   const phase = room?.phase ?? 'lobby';
-  const clock = useQuestionClock(
-    phase === 'question',
-    room?.index ?? 0,
-    room ? questionDurationMs(room) : DEFAULT_QUESTION_DURATION_MS,
-  );
+  const durationMs = room ? questionDurationMs(room) : DEFAULT_QUESTION_DURATION_MS;
+  const clock = useQuestionClock(phase === 'question', room?.index ?? 0, durationMs);
+
+  /**
+   * The question this device walked in on, if it walked in on one.
+   *
+   * `useQuestionClock` counts from the moment *this* device saw a question open,
+   * which is deliberate — see the note there about office laptops disagreeing
+   * about the time by more than the speed bonus is worth. It holds for anybody
+   * who was in the room when the question opened, because their clock can only
+   * start a little late. It is false for somebody who joins halfway through: they
+   * get a full fresh window on a question that is already nine seconds old, and
+   * an answer typed on the buzzer is stamped as though it were instant.
+   *
+   * The rules for it are in `engine/arrival.ts`, where they can be tested against
+   * a whole round rather than only watched in a live room.
+   *
+   * Adjusted during render, like the retry counter below: React re-renders before
+   * committing, so no frame is painted from the previous room's arrival.
+   */
+  const [arrival, setArrival] = useState<Arrival>(NO_ARRIVAL);
+
+  const seen = arrivalFor(arrival, room);
+  if (seen !== arrival) setArrival(seen);
+
+  const joinedMidQuestion = walkedIn(seen, room);
 
   /**
    * Which state of the room an action was attempted against. A failure
@@ -271,9 +293,14 @@ function Game() {
       // sound is to confirm the press, and a round-trip to Firestore is long
       // enough for the delay to read as a missed input.
       play('lock');
-      submitAnswer(optionIndex, clock.elapsedMs).catch(report);
+      // Somebody who walked in on this question is timed from the end of the
+      // window rather than from their own arrival: they still score the answer,
+      // they just do not collect a speed bonus measured from a clock that
+      // started when they sat down. The alternative was letting a mid-question
+      // join bank 990 for an answer given on the buzzer.
+      submitAnswer(optionIndex, joinedMidQuestion ? durationMs : clock.elapsedMs).catch(report);
     },
-    [submitAnswer, clock.elapsedMs, report],
+    [submitAnswer, clock.elapsedMs, joinedMidQuestion, durationMs, report],
   );
 
   /**
@@ -297,7 +324,11 @@ function Game() {
       // The answer is not in the room, the pack or this bundle. It comes back
       // from the vault, and only once the server agrees the clock has run out.
       const correctIndex = await openTheVault(room.code, question);
-      await dispatch({ type: 'reveal', correctIndex });
+      // Named rather than assumed: `dispatch` folds over the room as it is when
+      // this returns, so that an answer landing during the round trip still
+      // counts — and the reducer refuses to score this answer against anything
+      // but the question it was asked about.
+      await dispatch({ type: 'reveal', correctIndex, questionId: question.id });
     } catch (cause) {
       // Rethrown rather than reported here so the caller owns the error, which
       // keeps this callback free of state updates and the expiry effect below
@@ -390,6 +421,16 @@ function Game() {
 
     const player = room.players[uid];
     if (!player) return;
+
+    // A device that saw no question of this game did not play it, and banking
+    // for it costs a real person a game on their season record for nothing.
+    // Somebody joined room 6JA5 eight seconds before the final screen went up
+    // and took `played` from eight to nine on a score of zero.
+    //
+    // One question is enough, because joining late and playing three of twenty
+    // is still playing. The log is mirrored into session storage, so a reload
+    // during the round does not read as never having been here.
+    if (gameLog.length === 0) return;
 
     bankedRef.current = gameId;
 
@@ -503,6 +544,7 @@ function Game() {
             youUid={uid}
             isQuizmaster={isQuizmaster}
             clock={clock}
+            joinedMidQuestion={joinedMidQuestion}
             revealed={room.phase === 'reveal'}
             onAnswer={handleAnswer}
             onReveal={() => void handleReveal().catch(report)}

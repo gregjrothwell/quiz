@@ -169,7 +169,7 @@ async function main(): Promise<void> {
   if (!asked) throw new Error('No open question to reveal');
   const correctIndex = await resolveAnswer(db, code, asked);
   console.log(`${stamp()}  >>> WRITING reveal (answer ${correctIndex})`);
-  await dispatch([{ type: 'reveal', correctIndex }]);
+  await dispatch([{ type: 'reveal', correctIndex, questionId: asked.id }]);
 
   await sleep(8000);
   console.log(`${stamp()}  >>> WRITING next (to standings)`);
