@@ -13,8 +13,10 @@
  * things free text could not: the board cannot be split by a typo, and "which
  * squad am I in" stops being a question you can get wrong.
  *
- * The cost is that a value outside the list can still exist — one live record
- * carries `Awesome team` from the free-text era. Those are kept and shown
+ * The cost is that a value outside the list can still exist. The board carried
+ * exactly one — cleared by hand on 19 August 2026 — but the rules accept any
+ * string up to 40 characters, so anything written by an older bundle or by
+ * somebody with the console open still arrives here. Those are kept and shown
  * rather than rewritten: quietly reassigning somebody's squad is worse than
  * showing one the picker no longer offers, and the season screen is where they
  * can change it deliberately.

@@ -206,7 +206,7 @@ const SEASON_ROWS: SeasonRow[] = [
   // Two rounds and a very good one. Ranked on points she is nowhere; ranked on
   // the average she would lead the board outright, which is the whole reason
   // the qualifying floor exists — so the fixture has to contain her.
-  { playerId: 'tom', name: 'Tom', squad: 'Awesome team', played: 2, wins: 2, points: 17_600,
+  { playerId: 'tom', name: 'Tom', squad: 'Engineering', played: 2, wins: 2, points: 17_600,
     best: 9_100, fastest: 1, comeback: 0, loneWolf: 1, contrarian: 0 },
   { playerId: 'ines', name: 'Inès', squad: '', played: 1, wins: 0, points: 2_300,
     best: 2_300, fastest: 0, comeback: 0, loneWolf: 0, contrarian: 0 },
@@ -536,7 +536,7 @@ export function Preview() {
         by rendering a value none of the options match.
       */
       title: 'Squad · a record from before the list',
-      node: <SquadPanel playerId="preview" current="Awesome team" onChanged={noop} />,
+      node: <SquadPanel playerId="preview" current="Engineering" onChanged={noop} />,
     },
     {
       title: 'Recovery · a code already saved',

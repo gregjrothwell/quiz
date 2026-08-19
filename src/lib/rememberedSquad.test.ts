@@ -53,8 +53,8 @@ describe('rememberedSquad', () => {
   });
 
   test('ignores a value the picker no longer offers', () => {
-    // #given a name stored during the free-text era, which one live record has
-    stubStorage({ squad: 'Awesome team' });
+    // #given a name stored during the free-text era
+    stubStorage({ squad: 'Engineering' });
 
     // #when the squad is read
     // #then nothing, so the player is asked to choose. A `<select>` handed a
@@ -121,7 +121,7 @@ describe('rememberSquad', () => {
     const { local } = stubStorage();
 
     // #when something outside the list arrives
-    rememberSquad('Awesome team');
+    rememberSquad('Engineering');
 
     // #then it is not kept — the picker cannot produce this, and storing it
     // would put back the value `rememberedSquad` exists to reject

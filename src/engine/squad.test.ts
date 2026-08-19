@@ -29,11 +29,11 @@ describe('cleanSquad', () => {
   });
 
   test('still accepts a name the picker no longer offers', () => {
-    // #given a value from the free-text era, which one live record carries
+    // #given a value from the free-text era
     // #when it is cleaned
     // #then it survives. This runs on the way out of Firestore as well as in,
     // so narrowing it to SQUADS would erase those rows from the board
-    expect(cleanSquad('Awesome team')).toBe('Awesome team');
+    expect(cleanSquad('Engineering')).toBe('Engineering');
   });
 });
 
@@ -50,7 +50,7 @@ describe('isSquad', () => {
     // #when they are checked
     // #then none is a squad — this is what stops a select rendering a value
     // that matches none of its options
-    expect(isSquad('Awesome team')).toBe(false);
+    expect(isSquad('Engineering')).toBe(false);
     expect(isSquad('')).toBe(false);
     expect(isSquad(null)).toBe(false);
   });
@@ -102,12 +102,12 @@ describe('squadsOf', () => {
   });
 
   test('keeps a legacy value so its holder can still find themselves', () => {
-    // #given the live board's actual shape: two squads and one free-text value
-    const rows = [{ squad: 'Hermes' }, { squad: 'Awesome team' }];
+    // #given a squad on the list and one from the free-text era
+    const rows = [{ squad: 'Hermes' }, { squad: 'Engineering' }];
 
     // #when the filters are worked out
     // #then the legacy name still gets a chip, after the known ones
-    expect(squadsOf(rows)).toEqual(['Hermes', 'Awesome team']);
+    expect(squadsOf(rows)).toEqual(['Hermes', 'Engineering']);
   });
 
   test('does not offer a squad twice for two spellings of it', () => {
