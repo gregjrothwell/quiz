@@ -202,6 +202,13 @@ const SEASON_ROWS: SeasonRow[] = [
     best: 5_200, fastest: 0, comeback: 1, loneWolf: 0, contrarian: 3 },
   { playerId: 'nadia', name: 'Nadia', team: 'Marketing', played: 4, wins: 0, points: 9_800,
     best: 3_100, fastest: 0, comeback: 0, loneWolf: 0, contrarian: 0 },
+  // Two rounds and a very good one. Ranked on points she is nowhere; ranked on
+  // the average she would lead the board outright, which is the whole reason
+  // the qualifying floor exists — so the fixture has to contain her.
+  { playerId: 'tom', name: 'Tom', team: 'Engineering', played: 2, wins: 2, points: 17_600,
+    best: 9_100, fastest: 1, comeback: 0, loneWolf: 1, contrarian: 0 },
+  { playerId: 'ines', name: 'Inès', team: '', played: 1, wins: 0, points: 2_300,
+    best: 2_300, fastest: 0, comeback: 0, loneWolf: 0, contrarian: 0 },
 ];
 
 const noop = (): void => undefined;

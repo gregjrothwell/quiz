@@ -1762,8 +1762,33 @@ input {
 .season td:last-child {
   border-right: 1px solid rgb(18 64 95 / 0.6);
   border-radius: 0 3px 3px 0;
+}
+
+/* The column the table is ordered on, lit rather than merely present. This used
+   to be `td:last-child` — free styling, but it put the ranking number off the
+   right-hand edge of a phone, where the table scrolls inside its own wrapper.
+   The glow follows the meaning now, not the position. */
+.season td.season__avg {
   color: var(--amber-bright);
   text-shadow: 0 0 12px rgb(255 178 38 / 0.6);
+}
+
+/* The line between the ranked table and the records too short to rank. It is a
+   caption, not a row, so it drops every piece of row furniture: the cyan rank
+   border on the first cell, the amber glow on the last, and the panel fill. */
+.season tr.season__break td {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: 1.1rem 0.9rem 0.35rem;
+  font-family: var(--tech);
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  color: var(--cyan);
+  text-shadow: none;
+  width: auto;
 }
 
 .season tr[data-you] td {

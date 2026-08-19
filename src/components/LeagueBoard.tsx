@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { MIN_GAMES_TO_QUALIFY, averageFor, rankByAverage } from '../engine/table';
 import { teamKey, teamsOf } from '../engine/team';
 import type { SeasonRow } from '../lib/season';
 
@@ -7,6 +8,9 @@ interface LeagueBoardProps {
   /** Which row belongs to whoever is looking, or null before sign-in lands. */
   youPlayerId: string | null;
 }
+
+/** Nine columns, so a separator row has to span all of them. */
+const COLUMNS = 9;
 
 /**
  * The season table, and the league filter that sits on top of it.
@@ -19,6 +23,13 @@ interface LeagueBoardProps {
  * rows carry no team at all — every row written before leagues existed, and
  * everybody who leaves the box blank — so a team-only view would hide most of
  * the season, and the office-wide table is what the league is currently for.
+ *
+ * **Ranked on the average, ordered by the query on points.** `loadTable` asks
+ * Firestore for the top fifty by total, because an average cannot be ordered
+ * server-side without storing it and storing it means a rules republish. The
+ * re-sort here is therefore exact only while the board fits inside that fifty —
+ * true today at twenty-odd rows, and worth knowing before the fifty-first
+ * person joins.
  */
 export function LeagueBoard({ rows, youPlayerId }: LeagueBoardProps) {
   const [team, setTeam] = useState('');
@@ -27,6 +38,44 @@ export function LeagueBoard({ rows, youPlayerId }: LeagueBoardProps) {
   // Compared on the key, so "Engineering" and "engineering" are one league even
   // though each row still shows the spelling it was given.
   const shown = team === '' ? rows : rows.filter((row) => teamKey(row.team) === teamKey(team));
+
+  // Filtered first, then ranked, so a league's table reads 1, 2, 3 rather than
+  // carrying the positions those rows held on the office-wide board.
+  const { ranked, provisional } = rankByAverage(shown);
+
+  const cells = (row: SeasonRow, position: string) => {
+    const rosettes = row.fastest + row.comeback + row.loneWolf + row.contrarian;
+    const yours = row.playerId === youPlayerId;
+
+    return (
+      <tr key={row.playerId} data-you={yours ? '' : undefined}>
+        <td>{position}</td>
+        <td>
+          {row.name}
+          {yours ? <span className="you">You</span> : null}
+        </td>
+        {/* Third, directly beside the name, because it is what the board is
+            ordered on. It began as the last column, where it inherited the
+            table's headline styling for free — and at 375px that put the
+            ranking number off the right-hand edge, so the phone showed an order
+            with no visible reason for it. The styling moved to the cell rather
+            than the cell to the styling.
+
+            Rounded to a whole number: scores run to five figures, so a decimal
+            place is noise. The ordering uses the exact value, so two rows can
+            show the same number with one above the other. */}
+        <td className="season__avg">{Math.round(averageFor(row)).toLocaleString('en-GB')}</td>
+        {/* A dash rather than an empty cell, here and for the rosettes, because
+            a blank reads as a rendering fault where a dash reads as "none". */}
+        <td>{row.team || '—'}</td>
+        <td>{row.played}</td>
+        <td>{row.wins}</td>
+        <td>{row.best.toLocaleString('en-GB')}</td>
+        <td>{rosettes > 0 ? rosettes : '—'}</td>
+        <td>{row.points.toLocaleString('en-GB')}</td>
+      </tr>
+    );
+  };
 
   return (
     <>
@@ -63,6 +112,7 @@ export function LeagueBoard({ rows, youPlayerId }: LeagueBoardProps) {
                   <span className="sr-only">Position</span>
                 </th>
                 <th scope="col">Contender</th>
+                <th scope="col">Average</th>
                 <th scope="col">Team</th>
                 <th scope="col">Played</th>
                 <th scope="col">Wins</th>
@@ -72,29 +122,20 @@ export function LeagueBoard({ rows, youPlayerId }: LeagueBoardProps) {
               </tr>
             </thead>
             <tbody>
-              {shown.map((row, index) => {
-                const rosettes = row.fastest + row.comeback + row.loneWolf + row.contrarian;
-                const yours = row.playerId === youPlayerId;
+              {ranked.map((row, index) => cells(row, String(index + 1)))}
 
-                return (
-                  <tr key={row.playerId} data-you={yours ? '' : undefined}>
-                    <td>{index + 1}</td>
-                    <td>
-                      {row.name}
-                      {yours ? <span className="you">You</span> : null}
-                    </td>
-                    {/* A dash rather than an empty cell, here and for the
-                        rosettes, because a blank reads as a rendering fault
-                        where a dash reads as "none". */}
-                    <td>{row.team || '—'}</td>
-                    <td>{row.played}</td>
-                    <td>{row.wins}</td>
-                    <td>{row.best.toLocaleString('en-GB')}</td>
-                    <td>{rosettes > 0 ? rosettes : '—'}</td>
-                    <td>{row.points.toLocaleString('en-GB')}</td>
-                  </tr>
-                );
-              })}
+              {/* Listed rather than hidden, and said in words rather than left
+                  to be inferred from a gap: somebody two rounds short should be
+                  able to see what they are two rounds short of. */}
+              {provisional.length > 0 ? (
+                <tr className="season__break">
+                  <td colSpan={COLUMNS}>
+                    {MIN_GAMES_TO_QUALIFY} rounds to qualify
+                  </td>
+                </tr>
+              ) : null}
+
+              {provisional.map((row) => cells(row, '—'))}
             </tbody>
           </table>
         </div>
