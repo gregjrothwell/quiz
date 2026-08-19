@@ -24,6 +24,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { attachDebugAppCheck } from './appCheck';
+import { weekId } from '../src/engine/week';
 import { get, getDatabase, ref, remove, set } from 'firebase/database';
 import {
   Timestamp,
@@ -49,6 +50,20 @@ import {
  * checks below cannot touch the season anybody is actually playing.
  */
 const ANY_SEASON = 'rules-check';
+
+/**
+ * A week bucket, which is a season id and nothing more — the rule matches
+ * `{season}` as an unconstrained wildcard, so a weekly board needs no rules of
+ * its own. That is load-bearing rather than incidental: it is the whole reason
+ * the weekly leaderboard shipped without a hand-paste in the console, and if a
+ * future ruleset ever constrains the season segment, banking would start
+ * failing on the week half of every game while the season half kept working.
+ * This check is what would name that.
+ *
+ * Dated in 1999 so it is genuinely week-shaped and can never be a bucket
+ * anybody is playing in.
+ */
+const PROBE_WEEK = weekId(new Date(1999, 0, 15));
 
 /**
  * Outside the room-code alphabet, so a stray document can never be joined from
@@ -242,6 +257,7 @@ async function main(): Promise<void> {
 
   const presence = ref(rtdb, `presence/${PROBE_ROOM}/${uid}`);
   const ownSeasonRow = doc(db, 'seasons', ANY_SEASON, 'players', uid);
+  const ownWeekRow = doc(db, 'seasons', PROBE_WEEK, 'players', uid);
 
   const validSeasonRow = {
     name: 'Rules check',
@@ -312,6 +328,15 @@ async function main(): Promise<void> {
       hint: 'firestore.rules is missing the seasons/{season}/players block — '
         + 'the final screen will fail to bank anybody’s result',
       run: () => setDoc(ownSeasonRow, validSeasonRow),
+    },
+    {
+      // Banking writes two documents in one transaction — the season and the
+      // week — so half of every game depends on this path.
+      label: 'Firestore   · write a row into a weekly bucket',
+      expect: 'allow',
+      hint: 'the season rule no longer accepts an arbitrary {season} segment — '
+        + 'every game will bank its season half and lose its week half',
+      run: () => setDoc(ownWeekRow, validSeasonRow),
     },
     {
       label: 'Firestore   · write an impossible season row (wins > played)',
@@ -630,6 +655,7 @@ async function main(): Promise<void> {
   // collection here whose contents cannot simply be overwritten next time.
   await deleteDoc(doc(dbB, 'claims', uidB)).catch(() => undefined);
   await deleteDoc(ownSeasonRow).catch(() => undefined);
+  await deleteDoc(ownWeekRow).catch(() => undefined);
   await deleteDoc(doc(db, 'recovery', probeCode)).catch(() => undefined);
   await remove(presence).catch(() => undefined);
 

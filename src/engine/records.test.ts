@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { foldRecords, type PlayerRecord } from './records';
+import { bankGame, foldRecords, type GameOutcome, type PlayerRecord } from './records';
 
 function record(overrides: Partial<PlayerRecord> = {}): PlayerRecord {
   return {
@@ -13,6 +13,140 @@ function record(overrides: Partial<PlayerRecord> = {}): PlayerRecord {
     ...overrides,
   };
 }
+
+const NO_HONOURS = { fastest: 0, comeback: 0, loneWolf: 0, contrarian: 0 };
+
+function outcome(overrides: Partial<GameOutcome> = {}): GameOutcome {
+  return {
+    name: 'Greg',
+    gameId: 'game-2',
+    score: 2_000,
+    won: false,
+    team: '',
+    honours: NO_HONOURS,
+    ...overrides,
+  };
+}
+
+describe('bankGame', () => {
+  test('opens a record for the first game in a bucket', () => {
+    // #given nothing banked yet, which is every player's first Monday of a new
+    // week as well as their first ever game
+    // #when a game is banked
+    const banked = bankGame(null, outcome({ score: 2_450, won: true }));
+
+    // #then the record starts from that one game rather than from zero plus it
+    expect(banked.played).toBe(1);
+    expect(banked.wins).toBe(1);
+    expect(banked.points).toBe(2_450);
+    expect(banked.best).toBe(2_450);
+    expect(banked.lastGame).toBe('game-2');
+  });
+
+  test('accumulates onto a record that already has games in it', () => {
+    // #given a record with three games on it
+    const existing = record({ played: 3, wins: 1, points: 6_000, best: 2_400 });
+
+    // #when a fourth is banked
+    const banked = bankGame(existing, outcome({ score: 1_800 }));
+
+    // #then the totals move and the personal best does not, because 1,800 is
+    // not better than 2,400
+    expect(banked.played).toBe(4);
+    expect(banked.points).toBe(7_800);
+    expect(banked.best).toBe(2_400);
+  });
+
+  test('raises the personal best when the night beats it', () => {
+    // #given a record whose best is 2,400
+    const existing = record({ played: 3, points: 6_000, best: 2_400 });
+
+    // #when a better game is banked
+    const banked = bankGame(existing, outcome({ score: 3_100 }));
+
+    // #then the best is the new score, not the sum of the two
+    expect(banked.best).toBe(3_100);
+  });
+
+  test('counts a rosette onto the shelf', () => {
+    // #given a record already carrying one fastest finger
+    const existing = record({ played: 2, points: 4_000, fastest: 1 });
+
+    // #when a night carrying two more rosettes is banked
+    const banked = bankGame(existing, outcome({
+      honours: { fastest: 1, comeback: 0, loneWolf: 1, contrarian: 0 },
+    }));
+
+    // #then each is counted on its own, and an absent one stays at zero
+    expect(banked.fastest).toBe(2);
+    expect(banked.loneWolf).toBe(1);
+    expect(banked.comeback).toBe(0);
+  });
+
+  test('an empty team keeps the one the record already had', () => {
+    // #given a record set to a squad on some other device
+    const existing = record({ team: 'Hermes' });
+
+    // #when a browser that knows of no squad banks a game
+    const banked = bankGame(existing, outcome({ team: '' }));
+
+    // #then the squad survives. Without this, playing one game from a phone
+    // would silently wipe the squad set on a laptop
+    expect(banked.team).toBe('Hermes');
+  });
+
+  test('a stated team overwrites the one on the record', () => {
+    // #given a record on one squad
+    const existing = record({ team: 'Hermes' });
+
+    // #when a game is banked naming another
+    const banked = bankGame(existing, outcome({ team: 'Bundae' }));
+
+    // #then the stated one wins — this is the deliberate edit path
+    expect(banked.team).toBe('Bundae');
+  });
+
+  test('leaves the team field off entirely when there is none', () => {
+    // #given no squad on either side
+    // #when a game is banked
+    const banked = bankGame(null, outcome({ team: '' }));
+
+    // #then the key is absent rather than undefined, which Firestore rejects
+    // outright — the same reason foldRecords spreads it conditionally
+    expect('team' in banked).toBe(false);
+  });
+
+  test('writes a record the rules would accept', () => {
+    // #given a long-running record and a winning night with every rosette
+    const existing = record({ played: 40, wins: 12, points: 90_000, best: 3_400 });
+    const banked = bankGame(existing, outcome({
+      score: 3_600,
+      won: true,
+      honours: { fastest: 1, comeback: 1, loneWolf: 1, contrarian: 1 },
+    }));
+
+    // #then every bound firestore.rules imposes still holds, so banking can
+    // never write a row the rules would then refuse
+    expect(banked.wins).toBeLessThanOrEqual(banked.played);
+    expect(banked.best).toBeLessThanOrEqual(banked.points);
+    expect(banked.fastest ?? 0).toBeLessThanOrEqual(banked.played);
+    expect(banked.comeback ?? 0).toBeLessThanOrEqual(banked.played);
+    expect(banked.loneWolf ?? 0).toBeLessThanOrEqual(banked.played);
+    expect(banked.contrarian ?? 0).toBeLessThanOrEqual(banked.played);
+  });
+
+  test('a fresh week bucket satisfies best <= points on its very first game', () => {
+    // #given an empty bucket, which is what every Monday looks like
+    // #when the first game of the week is banked
+    const banked = bankGame(null, outcome({ score: 3_100 }));
+
+    // #then best equals points rather than exceeding them. This is the bound
+    // most likely to be tripped by a second bucket, because a week's total
+    // starts at one game rather than at a season's worth
+    expect(banked.best).toBe(banked.points);
+    expect(banked.best).toBeLessThanOrEqual(banked.points);
+  });
+});
 
 describe('foldRecords', () => {
   test('sums the totals and keeps the better personal best', () => {
