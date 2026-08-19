@@ -1767,8 +1767,9 @@ input {
 /* The column the table is ordered on, lit rather than merely present. This used
    to be `td:last-child` — free styling, but it put the ranking number off the
    right-hand edge of a phone, where the table scrolls inside its own wrapper.
-   The glow follows the meaning now, not the position. */
-.season td.season__avg {
+   The glow follows the meaning now, not the position, which is also what lets
+   the week board light its points column and the season board its average. */
+.season td.season__ranked {
   color: var(--amber-bright);
   text-shadow: 0 0 12px rgb(255 178 38 / 0.6);
 }

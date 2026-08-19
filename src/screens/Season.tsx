@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { LeagueBoard } from '../components/LeagueBoard';
+import { WeekBoard } from '../components/WeekBoard';
 import { RecoveryPanel } from '../components/RecoveryPanel';
 import { SquadPanel } from '../components/SquadPanel';
 import { playerIdFor } from '../lib/identity';
+import { weekId } from '../engine/week';
 import { loadTable, type SeasonRow } from '../lib/season';
 
 interface SeasonProps {
@@ -17,6 +19,16 @@ export function Season({ youUid, onBack }: SeasonProps) {
 
   const [reloads, setReloads] = useState(0);
   const [claimed, setClaimed] = useState<string | null>(null);
+
+  /*
+    Which board is showing. The week is not only worth seeing in the ninety
+    seconds after a round — "how did we do this week" is a Friday afternoon
+    question — so it lives here as well as on the final screen.
+
+    Read on demand, like the season: switching pays for one table and the
+    minute-long cache covers switching back.
+  */
+  const [showing, setShowing] = useState<'season' | 'week'>('season');
 
   /*
     Which row is yours is a question about the identity, not the browser. They
@@ -78,17 +90,49 @@ export function Season({ youUid, onBack }: SeasonProps) {
         </button>
       </header>
 
+      <div className="league-filter" role="group" aria-label="Which board">
+        <button
+          type="button"
+          className={showing === 'season' ? 'chip chip--on' : 'chip'}
+          onClick={() => setShowing('season')}
+        >
+          Season
+        </button>
+        <button
+          type="button"
+          className={showing === 'week' ? 'chip chip--on' : 'chip'}
+          onClick={() => setShowing('week')}
+        >
+          This week
+        </button>
+      </div>
+
       {load.state === 'loading' ? <p className="lede">Reading the board…</p> : null}
       {load.state === 'error' ? <p className="notice">{load.message}</p> : null}
 
-      {load.state === 'ready' && load.rows.length === 0 ? (
+      {showing === 'season' && load.state === 'ready' && load.rows.length === 0 ? (
         <p className="lede">
           Nothing on the board yet. Season standings start filling up once a round finishes.
         </p>
       ) : null}
 
-      {load.state === 'ready' && load.rows.length > 0 ? (
+      {showing === 'season' && load.state === 'ready' && load.rows.length > 0 ? (
         <LeagueBoard rows={load.rows} youPlayerId={youPlayerId} />
+      ) : null}
+
+      {/*
+        Everybody who played this week, not filtered by squad — the squad view
+        belongs on the final screen, where you have just played for one. Here
+        the question is what the office did.
+      */}
+      {showing === 'week' ? (
+        <WeekBoard
+          bucket={weekId(new Date())}
+          squad=""
+          ready
+          youPlayerId={youPlayerId}
+          whenEmpty="say"
+        />
       ) : null}
 
       {/*

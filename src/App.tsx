@@ -23,7 +23,7 @@ import {
 } from './lib/rememberedSquad';
 import { useFinalSnapshot } from './lib/useFinalSnapshot';
 import { useGameLog } from './lib/useGameLog';
-import { loadAsked, loadForm, recordAsked, recordGame } from './lib/season';
+import { loadAsked, loadForm, recordAsked, recordGame, type Banked } from './lib/season';
 import { play } from './lib/sound';
 import { loadPackQuestions, usePackIndex } from './lib/usePacks';
 import { useQuestionClock } from './lib/useQuestionClock';
@@ -120,6 +120,12 @@ function Game() {
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<ActionError | null>(null);
   const [showSeason, setShowSeason] = useState(false);
+
+  // What this device banked, and where. Held rather than re-derived so the week
+  // board reads the bucket the write actually landed in — a game banked at one
+  // minute to midnight on a Sunday belongs to the week that has just ended, not
+  // to the one starting while the podium is still on screen.
+  const [banked, setBanked] = useState<(Banked & { gameId: string }) | null>(null);
 
   // Which game this device has already banked, or is in the middle of banking,
   // so a re-render on the final screen cannot bank it twice. The season document
@@ -478,13 +484,16 @@ function Game() {
       honours: sawWholeGame(gameLog, room.questions.length)
         ? honoursFor(gameLog, Object.keys(players), uid)
         : NO_HONOURS,
-    }).catch((cause: unknown) => {
-      // Put the game back within reach of another attempt. Nothing retries on a
-      // timer — the next room update or a reload is what tries again — so this
-      // cannot spin: on a finished room the document is almost never written.
-      bankedRef.current = null;
-      report(cause);
-    });
+    })
+      .then((written) => setBanked({ ...written, gameId }))
+      .catch((cause: unknown) => {
+        // Put the game back within reach of another attempt. Nothing retries on
+        // a timer — the next room update or a reload is what tries again — so
+        // this cannot spin: on a finished room the document is almost never
+        // written.
+        bankedRef.current = null;
+        report(cause);
+      });
   }, [room, uid, gameLog, finalSnapshot, report]);
 
   if (connection === 'error') {
@@ -587,6 +596,8 @@ function Game() {
           <Final
             room={room}
             snapshot={finalSnapshot}
+            banked={banked?.gameId === room.gameId ? banked : null}
+            youPlayerId={uid ? playerIdFor(uid) : null}
             youUid={uid}
             isQuizmaster={isQuizmaster}
             log={gameLog}

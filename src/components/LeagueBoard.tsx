@@ -64,7 +64,7 @@ export function LeagueBoard({ rows, youPlayerId }: LeagueBoardProps) {
             Rounded to a whole number: scores run to five figures, so a decimal
             place is noise. The ordering uses the exact value, so two rows can
             show the same number with one above the other. */}
-        <td className="season__avg">{Math.round(averageFor(row)).toLocaleString('en-GB')}</td>
+        <td className="season__ranked">{Math.round(averageFor(row)).toLocaleString('en-GB')}</td>
         {/* A dash rather than an empty cell, here and for the rosettes, because
             a blank reads as a rendering fault where a dash reads as "none". */}
         <td>{row.squad || '—'}</td>

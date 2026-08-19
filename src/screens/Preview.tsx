@@ -3,6 +3,7 @@ import { ColdOpen } from '../components/ColdOpen';
 import { LeagueBoard } from '../components/LeagueBoard';
 import { RecoveryPanel } from '../components/RecoveryPanel';
 import { SquadPanel } from '../components/SquadPanel';
+import { WeekTable } from '../components/WeekBoard';
 import type { QuestionRecord } from '../engine/awards';
 import { createRoom, type QuizQuestion, type RoomState } from '../engine/state';
 import type { SeasonRow } from '../lib/season';
@@ -429,6 +430,8 @@ export function Preview() {
       title: 'Final · tie for first',
       node: (
         <Final
+          banked={null}
+          youPlayerId="greg"
           snapshot={null}
           room={mockRoom({ phase: 'finished', index: 1 })}
           youUid="greg"
@@ -451,6 +454,8 @@ export function Preview() {
       title: 'Final · after the winners left',
       node: (
         <Final
+          banked={null}
+          youPlayerId="greg"
           snapshot={{
             gameId: 'preview-game',
             players: PLAYERS,
@@ -474,6 +479,8 @@ export function Preview() {
       title: 'Final · with the awards',
       node: (
         <Final
+          banked={null}
+          youPlayerId="greg"
           snapshot={null}
           room={mockRoom({
             phase: 'finished',
@@ -525,6 +532,21 @@ export function Preview() {
       ),
     },
     {
+      title: 'Week · the squad you played for',
+      node: (
+        <WeekTable
+          rows={SEASON_ROWS.filter((row) => row.squad === 'Hermes')}
+          squad="Hermes"
+          youPlayerId="greg"
+          onRefresh={noop}
+        />
+      ),
+    },
+    {
+      title: 'Week · everybody who played',
+      node: <WeekTable rows={SEASON_ROWS} squad="" youPlayerId="greg" onRefresh={noop} />,
+    },
+    {
       title: 'Squad · changing the one on your record',
       node: <SquadPanel playerId="preview" current="Hermes" onChanged={noop} />,
     },
@@ -550,6 +572,8 @@ export function Preview() {
       title: 'Final · the round in review',
       node: (
         <Final
+          banked={null}
+          youPlayerId="greg"
           snapshot={null}
           room={mockRoom({
             phase: 'finished',

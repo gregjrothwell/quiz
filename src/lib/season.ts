@@ -119,6 +119,24 @@ export interface GameResult extends GameOutcome {
 }
 
 /**
+ * Which squad a game counts for on the weekly board.
+ *
+ * A Lurker's choice where they made one, and their own squad otherwise — so
+ * everybody who is actually in a squad gets the same answer for both tables.
+ */
+function weekSquad(result: GameResult): string {
+  return result.playingWith || result.squad;
+}
+
+/** What was written, so the screen can show the week it just landed in. */
+export interface Banked {
+  season: string;
+  week: string;
+  /** The squad the week's row was filed under — a Lurker's pick, or their own. */
+  squad: string;
+}
+
+/**
  * Banks one finished game — against the season, and against this week.
  *
  * Runs in a transaction rather than using `increment` because `best` is a
@@ -140,8 +158,10 @@ export interface GameResult extends GameOutcome {
  * because `ownsPlayer` is evaluated per document; an unclaimed player still
  * pays none at all, since the uid branch short-circuits in front of it.
  */
-export async function recordGame(result: GameResult): Promise<void> {
-  const references = bucketsFor(new Date()).map((bucket) => playerDoc(result.playerId, bucket));
+export async function recordGame(result: GameResult): Promise<Banked> {
+  const [season, week] = bucketsFor(new Date());
+  const buckets = [season ?? SEASON, week ?? SEASON];
+  const references = buckets.map((bucket) => playerDoc(result.playerId, bucket));
 
   await runTransaction(firestore(), async (transaction) => {
     // Every read before any write, which Firestore requires of a transaction.
@@ -161,7 +181,7 @@ export async function recordGame(result: GameResult): Promise<void> {
       // The only difference between the two documents. `bucketsFor` puts the
       // season first, so index 0 keeps the player's standing squad and the
       // week takes whoever they actually sat with.
-      const squad = index === 0 ? result.squad : result.playingWith || result.squad;
+      const squad = index === 0 ? result.squad : weekSquad(result);
 
       transaction.set(reference, bankGame(existing, { ...result, squad }));
     });
@@ -169,6 +189,8 @@ export async function recordGame(result: GameResult): Promise<void> {
 
   // Your own game is the one you will go straight to the board to look for.
   invalidateSeason();
+
+  return { season: buckets[0] as string, week: buckets[1] as string, squad: weekSquad(result) };
 }
 
 /**

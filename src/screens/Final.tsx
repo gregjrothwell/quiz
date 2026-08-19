@@ -1,4 +1,5 @@
 import { Awards } from '../components/Awards';
+import { WeekBoard } from '../components/WeekBoard';
 import { Chair } from '../components/Chair';
 import { Review } from '../components/Review';
 import { ScoreTicker } from '../components/ScoreTicker';
@@ -6,6 +7,7 @@ import { Standings } from '../components/Standings';
 import { awardsFor, reviewFor, sawWholeGame, type QuestionRecord } from '../engine/awards';
 import { seatedLast, standings } from '../engine/scoring';
 import type { RoomState } from '../engine/state';
+import type { Banked } from '../lib/season';
 import type { FinalSnapshot } from '../lib/useFinalSnapshot';
 import { useCue } from '../lib/sound';
 
@@ -22,6 +24,16 @@ interface FinalProps {
    * exactly where they were before this existed.
    */
   snapshot: FinalSnapshot | null;
+  /**
+   * What this device banked and where, or null until it has.
+   *
+   * The week board waits for it rather than loading on mount: every device
+   * banks its own row, so reading any earlier reliably shows a table with you
+   * missing from it, which reads as a bug rather than as a race.
+   */
+  banked: Banked | null;
+  /** Which row on the week board is yours. Not the uid once a code is claimed. */
+  youPlayerId: string | null;
   youUid: string | null;
   isQuizmaster: boolean;
   /**
@@ -50,6 +62,8 @@ const RISER_SLOTS = [
 export function Final({
   room,
   snapshot,
+  banked,
+  youPlayerId,
   youUid,
   isQuizmaster,
   log,
@@ -148,6 +162,18 @@ export function Final({
       <Awards awards={awards} players={players} youUid={youUid} />
 
       <Review review={review} questions={room.questions} />
+
+      {/* The week the round just went into, filtered to the squad it was played
+          for — a Lurker's pick where they made one, and their own squad
+          otherwise. Renders nothing until this device's own row has landed. */}
+      {banked ? (
+        <WeekBoard
+          bucket={banked.week}
+          squad={banked.squad}
+          ready
+          youPlayerId={youPlayerId}
+        />
+      ) : null}
 
       <div className="btn-row">
         {isQuizmaster ? (
