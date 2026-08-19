@@ -12,7 +12,7 @@ import {
 import type { Honours } from '../engine/awards';
 import type { FormRecord } from '../engine/form';
 import { bankGame, foldRecords, type GameOutcome, type PlayerRecord } from '../engine/records';
-import { cleanTeam } from '../engine/team';
+import { cleanSquad } from '../engine/squad';
 import { weekId } from '../engine/week';
 import { firestore } from '../firebase';
 
@@ -55,8 +55,13 @@ export interface SeasonRow extends Honours {
   wins: number;
   points: number;
   best: number;
-  /** Empty for the many rows that predate leagues, or a player who set none. */
-  team: string;
+  /**
+   * Empty for the many rows that predate squads, or a player who set none.
+   *
+   * Read from the stored `team` field — see `PlayerRecord`. This is the read
+   * model, not the document, so it uses the name the rest of the app does.
+   */
+  squad: string;
 }
 
 /**
@@ -98,6 +103,19 @@ export interface GameResult extends GameOutcome {
    * season row and the week row under this one id.
    */
   playerId: string;
+  /**
+   * Which squad a Lurker sat with tonight, or empty for everybody else.
+   *
+   * **The one place the two buckets are told different things.** A Lurker
+   * belongs to no side for the season and may still carry Hermes on a Thursday,
+   * so their season row keeps saying Lurkers while that week's row says who
+   * they played for. Anyone in a real squad leaves this empty and both rows
+   * agree.
+   *
+   * It is per-game rather than per-browser, which is why it rides here instead
+   * of on the record — see `rememberedPlayingWith`.
+   */
+  playingWith: string;
 }
 
 /**
@@ -140,11 +158,62 @@ export async function recordGame(result: GameResult): Promise<void> {
       // job rather than skip it because the other half looked done.
       if (existing?.lastGame === result.gameId) return;
 
-      transaction.set(reference, bankGame(existing, result));
+      // The only difference between the two documents. `bucketsFor` puts the
+      // season first, so index 0 keeps the player's standing squad and the
+      // week takes whoever they actually sat with.
+      const squad = index === 0 ? result.squad : result.playingWith || result.squad;
+
+      transaction.set(reference, bankGame(existing, { ...result, squad }));
     });
   });
 
   // Your own game is the one you will go straight to the board to look for.
+  invalidateSeason();
+}
+
+/**
+ * Changes the squad on a record that already exists.
+ *
+ * **The escape hatch this file has claimed to have since squads shipped and
+ * never did.** Banking treats an empty squad as "keep what is there", which is
+ * what stops a phone wiping the squad a laptop set — and the consequence
+ * nobody noticed is that a squad, once written, could not be changed or
+ * removed by any means short of the Firebase console. A picker makes a wrong
+ * choice both likelier and one click away, so the fix ships with it.
+ *
+ * A transaction rather than an `updateDoc` because the rules validate the whole
+ * document: `hasOnly` plus every bound, so a partial write has to be assembled
+ * from what is already there.
+ *
+ * **Only the season record.** A week row records who somebody played with on a
+ * night that has already happened, and editing a standing arrangement is not a
+ * reason to rewrite a result. The cost is that a squad picked in error on the
+ * landing screen leaves that week's row wrong; changing it here fixes every
+ * week after it, and the wrong one stays wrong.
+ *
+ * Does nothing for a player with no row yet — the rules require `name`,
+ * `played` and the rest, so there is no document to amend and nothing sensible
+ * to invent. The screen only offers the control once a round has been banked.
+ */
+export async function setSquad(playerId: string, squad: string): Promise<void> {
+  const clean = cleanSquad(squad);
+
+  await runTransaction(firestore(), async (transaction) => {
+    const reference = playerDoc(playerId);
+    const snapshot = await transaction.get(reference);
+    if (!snapshot.exists()) return;
+
+    const next = { ...(snapshot.data() as SeasonDoc) };
+
+    // Deleted rather than written as an empty string, so "no squad" is the
+    // absence of the field — the same shape a record that never had one has,
+    // and the only one `squadsOf` reads as nobody.
+    if (clean) next.team = clean;
+    else delete next.team;
+
+    transaction.set(reference, next);
+  });
+
   invalidateSeason();
 }
 
@@ -375,7 +444,7 @@ export async function loadTable(bucket: string = SEASON): Promise<SeasonRow[]> {
       wins: data.wins,
       points: data.points,
       best: data.best,
-      team: cleanTeam(data.team),
+      squad: cleanSquad(data.team),
       // Absent on every row written before honours existed, which is most of
       // them, and zero is the honest reading of a row that never counted any.
       fastest: data.fastest ?? 0,

@@ -22,7 +22,7 @@ function outcome(overrides: Partial<GameOutcome> = {}): GameOutcome {
     gameId: 'game-2',
     score: 2_000,
     won: false,
-    team: '',
+    squad: '',
     honours: NO_HONOURS,
     ...overrides,
   };
@@ -83,33 +83,34 @@ describe('bankGame', () => {
     expect(banked.comeback).toBe(0);
   });
 
-  test('an empty team keeps the one the record already had', () => {
+  test('an empty squad keeps the one the record already had', () => {
     // #given a record set to a squad on some other device
     const existing = record({ team: 'Hermes' });
 
     // #when a browser that knows of no squad banks a game
-    const banked = bankGame(existing, outcome({ team: '' }));
+    const banked = bankGame(existing, outcome({ squad: '' }));
 
     // #then the squad survives. Without this, playing one game from a phone
-    // would silently wipe the squad set on a laptop
+    // would silently wipe the squad set on a laptop. Read back as `team`,
+    // which is what the field is called in Firestore
     expect(banked.team).toBe('Hermes');
   });
 
-  test('a stated team overwrites the one on the record', () => {
+  test('a stated squad overwrites the one on the record', () => {
     // #given a record on one squad
     const existing = record({ team: 'Hermes' });
 
     // #when a game is banked naming another
-    const banked = bankGame(existing, outcome({ team: 'Bundae' }));
+    const banked = bankGame(existing, outcome({ squad: 'Bundae' }));
 
     // #then the stated one wins — this is the deliberate edit path
     expect(banked.team).toBe('Bundae');
   });
 
-  test('leaves the team field off entirely when there is none', () => {
+  test('leaves the stored team field off entirely when there is none', () => {
     // #given no squad on either side
     // #when a game is banked
-    const banked = bankGame(null, outcome({ team: '' }));
+    const banked = bankGame(null, outcome({ squad: '' }));
 
     // #then the key is absent rather than undefined, which Firestore rejects
     // outright — the same reason foldRecords spreads it conditionally
@@ -245,7 +246,7 @@ describe('foldRecords', () => {
 });
 
 describe('foldRecords and the fields it does not own', () => {
-  test('carries a team through the fold', () => {
+  test('carries a squad through the fold', () => {
     // #given a record joining one that already sits in a league
     const source = record();
     const target = record({ team: 'Engineering' });
@@ -258,7 +259,7 @@ describe('foldRecords and the fields it does not own', () => {
     expect(merged.team).toBe('Engineering');
   });
 
-  test('omits the team entirely when neither side has one', () => {
+  test('omits the stored team field entirely when neither side has one', () => {
     // #given two records from before leagues existed
     // #when they are folded together
     const merged = foldRecords(record(), record());

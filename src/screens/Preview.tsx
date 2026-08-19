@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { ColdOpen } from '../components/ColdOpen';
 import { LeagueBoard } from '../components/LeagueBoard';
 import { RecoveryPanel } from '../components/RecoveryPanel';
+import { SquadPanel } from '../components/SquadPanel';
 import type { QuestionRecord } from '../engine/awards';
 import { createRoom, type QuizQuestion, type RoomState } from '../engine/state';
 import type { SeasonRow } from '../lib/season';
@@ -192,22 +193,22 @@ const REVIEWED_GAME: QuestionRecord[] = [
  * leagues existed — which is what most of the live board still looks like.
  */
 const SEASON_ROWS: SeasonRow[] = [
-  { playerId: 'sam', name: 'Sam', team: 'Engineering', played: 12, wins: 5, points: 41_200,
+  { playerId: 'sam', name: 'Sam', squad: 'Hermes', played: 12, wins: 5, points: 41_200,
     best: 8_150, fastest: 3, comeback: 1, loneWolf: 2, contrarian: 0 },
-  { playerId: 'greg', name: 'Greg', team: 'Engineering', played: 14, wins: 4, points: 38_900,
+  { playerId: 'greg', name: 'Greg', squad: 'Hermes', played: 14, wins: 4, points: 38_900,
     best: 7_400, fastest: 2, comeback: 2, loneWolf: 0, contrarian: 1 },
-  { playerId: 'priya', name: 'Priya', team: 'Marketing', played: 11, wins: 3, points: 33_100,
+  { playerId: 'priya', name: 'Priya', squad: 'Bundae', played: 11, wins: 3, points: 33_100,
     best: 6_900, fastest: 1, comeback: 0, loneWolf: 1, contrarian: 0 },
-  { playerId: 'alex', name: 'Alex', team: '', played: 9, wins: 1, points: 24_050,
+  { playerId: 'alex', name: 'Alex', squad: '', played: 9, wins: 1, points: 24_050,
     best: 5_200, fastest: 0, comeback: 1, loneWolf: 0, contrarian: 3 },
-  { playerId: 'nadia', name: 'Nadia', team: 'Marketing', played: 4, wins: 0, points: 9_800,
+  { playerId: 'nadia', name: 'Nadia', squad: 'Lurkers', played: 4, wins: 0, points: 9_800,
     best: 3_100, fastest: 0, comeback: 0, loneWolf: 0, contrarian: 0 },
   // Two rounds and a very good one. Ranked on points she is nowhere; ranked on
   // the average she would lead the board outright, which is the whole reason
   // the qualifying floor exists — so the fixture has to contain her.
-  { playerId: 'tom', name: 'Tom', team: 'Engineering', played: 2, wins: 2, points: 17_600,
+  { playerId: 'tom', name: 'Tom', squad: 'Awesome team', played: 2, wins: 2, points: 17_600,
     best: 9_100, fastest: 1, comeback: 0, loneWolf: 1, contrarian: 0 },
-  { playerId: 'ines', name: 'Inès', team: '', played: 1, wins: 0, points: 2_300,
+  { playerId: 'ines', name: 'Inès', squad: '', played: 1, wins: 0, points: 2_300,
     best: 2_300, fastest: 0, comeback: 0, loneWolf: 0, contrarian: 0 },
 ];
 
@@ -522,6 +523,20 @@ export function Preview() {
           onBack={noop}
         />
       ),
+    },
+    {
+      title: 'Squad · changing the one on your record',
+      node: <SquadPanel playerId="preview" current="Hermes" onChanged={noop} />,
+    },
+    {
+      /*
+        The case the picker has to handle rather than paper over: a record from
+        the free-text era, carrying a name the list no longer offers. It keeps
+        its own option, so opening this panel cannot silently reassign somebody
+        by rendering a value none of the options match.
+      */
+      title: 'Squad · a record from before the list',
+      node: <SquadPanel playerId="preview" current="Awesome team" onChanged={noop} />,
     },
     {
       title: 'Recovery · a code already saved',

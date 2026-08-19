@@ -353,16 +353,18 @@ async function main(): Promise<void> {
     },
     {
       // The bound was published ahead of the feature. This is the check that it
-      // was published *correctly* — a row that cannot carry a team is a league
+      // was published *correctly* — a row that cannot carry one is a squad
       // table nobody can join, and the failure would only appear at bank time.
-      label: 'Firestore   · write a season row carrying a team',
+      label: 'Firestore   · write a season row carrying a squad',
       expect: 'allow',
       hint: 'firestore.rules does not list `team` in the season row keys — '
         + 'nobody can be put in a league',
-      run: () => setDoc(ownSeasonRow, { ...validSeasonRow, team: 'Engineering' }),
+      // The field is `team` on the wire and a squad everywhere else — see
+      // `src/engine/squad.ts` for why the stored name never moved.
+      run: () => setDoc(ownSeasonRow, { ...validSeasonRow, team: 'Hermes' }),
     },
     {
-      label: 'Firestore   · write a season row with an oversized team',
+      label: 'Firestore   · write a season row with an oversized squad',
       expect: 'deny',
       hint: 'firestore.rules is missing the length bound on `team` — a field on '
         + 'a document the whole office reads can be inflated without limit',

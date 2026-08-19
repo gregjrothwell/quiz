@@ -559,9 +559,9 @@ input {
 }
 
 /* ── Who you are ────────────────────────────────────────────────────────────
-   Name and team side by side once there is room for them. They are one thought
+   Name and squad side by side once there is room for them. They are one thought
    — who is playing — and stacking them cost the landing page a screenful of
-   height the moment the team box arrived, which is what put the whole page
+   height the moment the squad box arrived, which is what put the whole page
    behind a scroll on an ordinary laptop.
    ──────────────────────────────────────────────────────────────────────────── */
 
@@ -1173,7 +1173,7 @@ input {
 
 /* ── The league filter ──────────────────────────────────────────────────────
    Sits on top of the whole board rather than replacing it: most rows carry no
-   team at all, so a team-only view would hide most of the season.
+   squad at all, so a squad-only view would hide most of the season.
    ──────────────────────────────────────────────────────────────────────────── */
 
 .league-filter {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { MIN_GAMES_TO_QUALIFY, averageFor, rankByAverage } from '../engine/table';
-import { teamKey, teamsOf } from '../engine/team';
+import { squadKey, squadsOf } from '../engine/squad';
 import type { SeasonRow } from '../lib/season';
 
 interface LeagueBoardProps {
@@ -20,9 +20,9 @@ const COLUMNS = 9;
  * with the layout worth checking.
  *
  * **The filter sits on top of the whole board rather than replacing it.** Most
- * rows carry no team at all — every row written before leagues existed, and
- * everybody who leaves the box blank — so a team-only view would hide most of
- * the season, and the office-wide table is what the league is currently for.
+ * rows carry no squad at all — every row written before squads existed, and
+ * everybody who never picked one — so a squad-only view would hide most of the
+ * season, and the office-wide table is what the board is currently for.
  *
  * **Ranked on the average, ordered by the query on points.** `loadTable` asks
  * Firestore for the top fifty by total, because an average cannot be ordered
@@ -32,12 +32,12 @@ const COLUMNS = 9;
  * person joins.
  */
 export function LeagueBoard({ rows, youPlayerId }: LeagueBoardProps) {
-  const [team, setTeam] = useState('');
+  const [squad, setSquad] = useState('');
 
-  const teams = teamsOf(rows);
-  // Compared on the key, so "Engineering" and "engineering" are one league even
+  const squads = squadsOf(rows);
+  // Compared on the key, so two spellings of one squad are one filter even
   // though each row still shows the spelling it was given.
-  const shown = team === '' ? rows : rows.filter((row) => teamKey(row.team) === teamKey(team));
+  const shown = squad === '' ? rows : rows.filter((row) => squadKey(row.squad) === squadKey(squad));
 
   // Filtered first, then ranked, so a league's table reads 1, 2, 3 rather than
   // carrying the positions those rows held on the office-wide board.
@@ -67,7 +67,7 @@ export function LeagueBoard({ rows, youPlayerId }: LeagueBoardProps) {
         <td className="season__avg">{Math.round(averageFor(row)).toLocaleString('en-GB')}</td>
         {/* A dash rather than an empty cell, here and for the rosettes, because
             a blank reads as a rendering fault where a dash reads as "none". */}
-        <td>{row.team || '—'}</td>
+        <td>{row.squad || '—'}</td>
         <td>{row.played}</td>
         <td>{row.wins}</td>
         <td>{row.best.toLocaleString('en-GB')}</td>
@@ -79,21 +79,21 @@ export function LeagueBoard({ rows, youPlayerId }: LeagueBoardProps) {
 
   return (
     <>
-      {teams.length > 0 ? (
-        <div className="league-filter" role="group" aria-label="Filter by team">
+      {squads.length > 0 ? (
+        <div className="league-filter" role="group" aria-label="Filter by squad">
           <button
             type="button"
-            className={team === '' ? 'chip chip--on' : 'chip'}
-            onClick={() => setTeam('')}
+            className={squad === '' ? 'chip chip--on' : 'chip'}
+            onClick={() => setSquad('')}
           >
             Everyone
           </button>
-          {teams.map((name) => (
+          {squads.map((name) => (
             <button
               key={name}
               type="button"
-              className={teamKey(name) === teamKey(team) ? 'chip chip--on' : 'chip'}
-              onClick={() => setTeam(name)}
+              className={squadKey(name) === squadKey(squad) ? 'chip chip--on' : 'chip'}
+              onClick={() => setSquad(name)}
             >
               {name}
             </button>
@@ -102,7 +102,7 @@ export function LeagueBoard({ rows, youPlayerId }: LeagueBoardProps) {
       ) : null}
 
       {shown.length === 0 ? (
-        <p className="lede">Nobody in {team} has finished a round yet.</p>
+        <p className="lede">Nobody in {squad} has finished a round yet.</p>
       ) : (
         <div className="season-wrap">
           <table className="season">
@@ -113,7 +113,7 @@ export function LeagueBoard({ rows, youPlayerId }: LeagueBoardProps) {
                 </th>
                 <th scope="col">Contender</th>
                 <th scope="col">Average</th>
-                <th scope="col">Team</th>
+                <th scope="col">Squad</th>
                 <th scope="col">Played</th>
                 <th scope="col">Wins</th>
                 <th scope="col">Best</th>

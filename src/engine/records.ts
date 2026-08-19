@@ -1,5 +1,5 @@
 import type { Honours } from './awards';
-import { cleanTeam } from './team';
+import { cleanSquad } from './squad';
 
 /**
  * One player's season record, as it is stored.
@@ -18,10 +18,13 @@ export interface PlayerRecord {
   loneWolf?: number;
   contrarian?: number;
   /**
-   * Which league this record belongs to. Bounded in `firestore.rules` ahead of
-   * its client, because the season row is validated with `hasOnly` and adding a
-   * field to it costs a hand-paste in the console — which made leagues, when
-   * they came, a client-only change.
+   * Which squad this record belongs to.
+   *
+   * **Named `team` because that is the field name in `firestore.rules`**, where
+   * it is bounded by name and the row is validated with `hasOnly`. Renaming it
+   * would cost a hand-paste in the console and orphan every value already
+   * written; everywhere else in the app calls it a squad, and the two names
+   * meet only in `src/lib/season.ts`.
    *
    * **It is carried through every write here for exactly that reason.** Both
    * paths that write a row use `set`, which is a whole-document overwrite, so a
@@ -48,8 +51,8 @@ export interface GameOutcome {
   gameId: string;
   score: number;
   won: boolean;
-  /** Empty means "keep what the record says", not "no team". See `bankGame`. */
-  team: string;
+  /** Empty means "keep what the record says", not "no squad". See `bankGame`. */
+  squad: string;
   honours: Honours;
 }
 
@@ -82,13 +85,13 @@ export interface GameOutcome {
 export function foldRecords(source: PlayerRecord, target: PlayerRecord | null): PlayerRecord {
   const newest = target && target.lastPlayed > source.lastPlayed ? target : source;
 
-  // The league the adopted record already sits in, falling back to the incoming
+  // The squad the adopted record already sits in, falling back to the incoming
   // one's. Spread conditionally rather than written as `undefined`, which
   // Firestore rejects outright.
-  const team = target?.team ?? source.team;
+  const squad = target?.team ?? source.team;
 
   return {
-    ...(team === undefined ? {} : { team }),
+    ...(squad === undefined ? {} : { team: squad }),
     name: target?.name ?? source.name,
     played: (target?.played ?? 0) + source.played,
     wins: (target?.wins ?? 0) + source.wins,
@@ -117,20 +120,20 @@ export function foldRecords(source: PlayerRecord, target: PlayerRecord | null): 
  * for a week rather than an exceptional one — a fresh week starts empty every
  * Monday.
  *
- * The empty-team rule is the subtle part. An incoming empty string means
+ * The empty-squad rule is the subtle part. An incoming empty string means
  * **keep whatever the record says**, not "clear it": the squad lives on the
  * record but is remembered per browser, so a regular who set theirs on a laptop
  * and then played from a phone would otherwise wipe it by banking one game, and
  * would have no idea they had.
  */
 export function bankGame(existing: PlayerRecord | null, outcome: GameOutcome): PlayerRecord {
-  const team = cleanTeam(outcome.team) || cleanTeam(existing?.team);
+  const squad = cleanSquad(outcome.squad) || cleanSquad(existing?.team);
 
   return {
     // `set` is a whole-document overwrite, so a field this object does not name
     // is erased by the next game anybody plays. Spread conditionally rather than
     // written as `undefined`, which Firestore rejects outright.
-    ...(team ? { team } : {}),
+    ...(squad ? { team: squad } : {}),
     name: outcome.name,
     played: (existing?.played ?? 0) + 1,
     wins: (existing?.wins ?? 0) + (outcome.won ? 1 : 0),

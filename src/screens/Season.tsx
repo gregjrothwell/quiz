@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { LeagueBoard } from '../components/LeagueBoard';
 import { RecoveryPanel } from '../components/RecoveryPanel';
+import { SquadPanel } from '../components/SquadPanel';
 import { playerIdFor } from '../lib/identity';
 import { loadTable, type SeasonRow } from '../lib/season';
 
@@ -35,6 +36,9 @@ export function Season({ youUid, onBack }: SeasonProps) {
     setReloads((n) => n + 1);
   }, []);
 
+  // Shared with the squad panel, which changes a row this screen is showing.
+  const reload = useCallback(() => setReloads((n) => n + 1), []);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -54,6 +58,11 @@ export function Season({ youUid, onBack }: SeasonProps) {
       cancelled = true;
     };
   }, [reloads]);
+
+  const youRow =
+    load.state === 'ready' && youPlayerId
+      ? load.rows.find((row) => row.playerId === youPlayerId)
+      : undefined;
 
   return (
     <>
@@ -80,6 +89,15 @@ export function Season({ youUid, onBack }: SeasonProps) {
 
       {load.state === 'ready' && load.rows.length > 0 ? (
         <LeagueBoard rows={load.rows} youPlayerId={youPlayerId} />
+      ) : null}
+
+      {/*
+        Only once there is a row to amend. The rules require `name`, `played`
+        and the rest, so there is nothing to write for somebody who has not
+        finished a round — and nothing to correct either.
+      */}
+      {load.state === 'ready' && youRow ? (
+        <SquadPanel playerId={youRow.playerId} current={youRow.squad} onChanged={reload} />
       ) : null}
 
       {youUid ? <RecoveryPanel uid={youUid} onClaimed={onClaimed} /> : null}
