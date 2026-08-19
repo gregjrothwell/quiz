@@ -421,7 +421,38 @@ export function Preview() {
       title: 'Final · tie for first',
       node: (
         <Final
+          snapshot={null}
           room={mockRoom({ phase: 'finished', index: 1 })}
+          youUid="greg"
+          isQuizmaster
+          log={[]}
+          onPlayAgain={noop}
+          onLeave={noop}
+          onSeason={noop}
+        />
+      ),
+    },
+    {
+      /*
+        The one that proves the freeze. Alex and Sam are joint top on 3,100 and
+        both have gone home, so the live room holds two players — and the podium
+        still shows all four, because it reads the snapshot taken at the whistle
+        rather than the room. Before this, the screen renumbered itself and put
+        Greg on the middle plinth.
+      */
+      title: 'Final · after the winners left',
+      node: (
+        <Final
+          snapshot={{
+            gameId: 'preview-game',
+            players: PLAYERS,
+            scores: { greg: 2450, sam: 3100, priya: 1800, alex: 3100 },
+          }}
+          room={mockRoom({
+            phase: 'finished',
+            index: 1,
+            players: { greg: PLAYERS.greg, priya: PLAYERS.priya },
+          })}
           youUid="greg"
           isQuizmaster
           log={[]}
@@ -435,6 +466,7 @@ export function Preview() {
       title: 'Final · with the awards',
       node: (
         <Final
+          snapshot={null}
           room={mockRoom({
             phase: 'finished',
             index: 1,
@@ -496,6 +528,7 @@ export function Preview() {
       title: 'Final · the round in review',
       node: (
         <Final
+          snapshot={null}
           room={mockRoom({
             phase: 'finished',
             index: 1,

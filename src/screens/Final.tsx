@@ -6,10 +6,22 @@ import { Standings } from '../components/Standings';
 import { awardsFor, reviewFor, sawWholeGame, type QuestionRecord } from '../engine/awards';
 import { seatedLast, standings } from '../engine/scoring';
 import type { RoomState } from '../engine/state';
+import type { FinalSnapshot } from '../lib/useFinalSnapshot';
 import { useCue } from '../lib/sound';
 
 interface FinalProps {
   room: RoomState;
+  /**
+   * The room as it stood at the whistle. Everything on this screen reads from
+   * here rather than from `room`, because `leave` deletes `players.{uid}` and
+   * the old derivation filtered on membership — so one person going home
+   * re-indexed the risers on every other device. See `useFinalSnapshot`.
+   *
+   * Null only for a room with no `gameId`, which means every round played
+   * before games were identified. Those fall back to the live room, which is
+   * exactly where they were before this existed.
+   */
+  snapshot: FinalSnapshot | null;
   youUid: string | null;
   isQuizmaster: boolean;
   /**
@@ -37,6 +49,7 @@ const RISER_SLOTS = [
 
 export function Final({
   room,
+  snapshot,
   youUid,
   isQuizmaster,
   log,
@@ -44,7 +57,16 @@ export function Final({
   onLeave,
   onSeason,
 }: FinalProps) {
-  const rows = standings(room.scores).filter((entry) => room.players[entry.uid]);
+  const players = snapshot?.players ?? room.players;
+  const scores = snapshot?.scores ?? room.scores;
+
+  /*
+    Still filtered on membership, but on the *frozen* membership — so it keeps
+    doing the job it was written for (a score can never exist for somebody the
+    room never listed) without letting anyone leaving after the whistle change
+    what the room is looking at.
+  */
+  const rows = standings(scores).filter((entry) => players[entry.uid]);
 
   /*
     Only from a complete log. Every client works the awards out for itself from
@@ -53,30 +75,35 @@ export function Final({
     worse than neither of them saying.
   */
   const sawItAll = sawWholeGame(log, room.questions.length);
-  const awards = sawItAll ? awardsFor(log, Object.keys(room.players)) : [];
+  const awards = sawItAll ? awardsFor(log, Object.keys(players)) : [];
   const review = sawItAll ? reviewFor(log) : [];
   const leaders = rows.filter((entry) => entry.position === 1);
   const winnerName =
     leaders.length > 1
-      ? leaders.map((entry) => room.players[entry.uid]?.name).filter(Boolean).join(' & ')
+      ? leaders.map((entry) => players[entry.uid]?.name).filter(Boolean).join(' & ')
       : rows[0]
-        ? room.players[rows[0].uid]?.name
+        ? players[rows[0].uid]?.name
         : undefined;
   const podium = RISER_SLOTS.map((slot) => ({ ...slot, entry: rows[slot.row] }));
   const hasPodium = rows.length > 0;
 
   /*
     The chair at the end of the podium. Named the same way the dead-heat winner
-    above is, because a shared last place is still last — and emptied if whoever
-    earned it has already left, on the same principle as an award going with its
-    winner rather than staying pinned to nobody.
+    above is, because a shared last place is still last.
+
+    **It used to empty when its occupant left**, on the stated principle that an
+    award goes with its winner rather than staying pinned to nobody. That is
+    deliberately reversed: the round is over, so there is no winner left to go
+    anywhere — there is only a result, and a result that rearranges itself while
+    the room reads it is not one. The same reversal is why every other reader on
+    this screen now works from the frozen snapshot.
   */
   const seated = seatedLast(rows);
   const seatedName = seated
-    .map((uid) => room.players[uid]?.name)
+    .map((uid) => players[uid]?.name)
     .filter(Boolean)
     .join(' & ');
-  const seatedScore = seated[0] ? (room.scores[seated[0]] ?? 0) : 0;
+  const seatedScore = seated[0] ? (scores[seated[0]] ?? 0) : 0;
 
   // Keyed on the game so a second round in the same room gets its own fanfare,
   // and a re-render on the final screen does not.
@@ -98,7 +125,7 @@ export function Final({
       {hasPodium ? (
         <div className={seatedName ? 'finale finale--seated' : 'finale'}>
           {podium.map(({ height, entry }) => {
-            const player = entry ? room.players[entry.uid] : undefined;
+            const player = entry ? players[entry.uid] : undefined;
             if (!entry || !player) return <div key={height} />;
 
             return (
@@ -116,9 +143,9 @@ export function Final({
         </div>
       ) : null}
 
-      <Standings players={room.players} scores={room.scores} youUid={youUid} />
+      <Standings players={players} scores={scores} youUid={youUid} />
 
-      <Awards awards={awards} players={room.players} youUid={youUid} />
+      <Awards awards={awards} players={players} youUid={youUid} />
 
       <Review review={review} questions={room.questions} />
 

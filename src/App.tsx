@@ -16,6 +16,7 @@ import {
 import { isFirebaseConfigured } from './firebase';
 import { playerIdFor } from './lib/identity';
 import { rememberTeam, rememberedTeam } from './lib/rememberedTeam';
+import { useFinalSnapshot } from './lib/useFinalSnapshot';
 import { useGameLog } from './lib/useGameLog';
 import { loadAsked, loadForm, recordAsked, recordGame } from './lib/season';
 import { play } from './lib/sound';
@@ -131,6 +132,12 @@ function Game() {
   // useGameLog. Held here rather than in Final so it survives that screen
   // mounting, which happens after the last question has already gone.
   const gameLog = useGameLog(room);
+
+  // The room as it stood at the whistle. Held here rather than in Final for the
+  // same reason the log is — and because the season write below has to bank
+  // against the same frozen table the screen is showing, or a winner going home
+  // before your device banks promotes you into a win you did not take.
+  const finalSnapshot = useFinalSnapshot(room);
 
   const phase = room?.phase ?? 'lobby';
   const durationMs = room ? questionDurationMs(room) : DEFAULT_QUESTION_DURATION_MS;
@@ -434,7 +441,14 @@ function Game() {
 
     bankedRef.current = gameId;
 
-    const rows = standings(room.scores).filter((entry) => room.players[entry.uid]);
+    // The frozen table, not the live one. Both filter on membership, but this
+    // one filters on who was in the room when the whistle went — otherwise a
+    // winner pressing Leave before this device banks removes them from `rows`,
+    // promotes whoever was second, and banks a win that never happened.
+    const players = finalSnapshot?.players ?? room.players;
+    const scores = finalSnapshot?.scores ?? room.scores;
+
+    const rows = standings(scores).filter((entry) => players[entry.uid]);
     const leadScore = rows[0]?.score ?? 0;
     const mine = rows.find((entry) => entry.uid === uid);
 
@@ -442,7 +456,7 @@ function Game() {
       playerId: playerIdFor(uid),
       name: player.name,
       gameId,
-      score: room.scores[uid] ?? 0,
+      score: scores[uid] ?? 0,
       // A round where nobody scored is not a win for everybody.
       won: leadScore > 0 && mine?.position === 1,
       // Empty means "keep whatever the record says" rather than "no team", so a
@@ -452,7 +466,7 @@ function Game() {
       // reloaded before the log was kept would otherwise bank a shelf it cannot
       // stand behind — and unlike a screen that says nothing, that is permanent.
       honours: sawWholeGame(gameLog, room.questions.length)
-        ? honoursFor(gameLog, Object.keys(room.players), uid)
+        ? honoursFor(gameLog, Object.keys(players), uid)
         : NO_HONOURS,
     }).catch((cause: unknown) => {
       // Put the game back within reach of another attempt. Nothing retries on a
@@ -461,7 +475,7 @@ function Game() {
       bankedRef.current = null;
       report(cause);
     });
-  }, [room, uid, gameLog, report]);
+  }, [room, uid, gameLog, finalSnapshot, report]);
 
   if (connection === 'error') {
     return (
@@ -562,6 +576,7 @@ function Game() {
         (room.phase === 'finished' && (
           <Final
             room={room}
+            snapshot={finalSnapshot}
             youUid={uid}
             isQuizmaster={isQuizmaster}
             log={gameLog}
