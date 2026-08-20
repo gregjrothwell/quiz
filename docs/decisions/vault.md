@@ -242,6 +242,7 @@ one after it — 36 of 36, both directions.
 write stream — and it costs the room update after it about double. The replay hold
 is up to **1820ms** (`REPLAY_SHAPE`), 700ms when nobody answered. That is the
 largest single component of the gap, and it is deliberate showmanship rather than
-latency: trimming it is a product decision, and `spreadMs` is the number.
+latency. **Asked and decided, 20 August 2026: it stays.** Not an optimisation
+target — if it is ever revisited, `spreadMs` is the number and it needs Greg.
 
 ---
