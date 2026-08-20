@@ -5,21 +5,32 @@
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
 
-## App Check on the Realtime Database — measured, not yet enforced
+## App Check on the Realtime Database — enforced, 20 August 2026
 
-**Measured 20 August 2026 with `npm run appcheck-probe`**, which signs in with no
-App Check token at all and reports what each product does:
+**Done, and proved in three directions on the day.** `npm run appcheck-probe`
+signs in with no App Check token at all and reports what each product does:
 
-| Product | State |
-|---|---|
-| Authentication | **not enforced** — signs in fine without a token |
-| Cloud Firestore | **enforced** — refused, `Missing or insufficient permissions` |
-| Realtime Database | **not enforced** — presence write *and* read both succeeded |
+| Product | Before | After |
+|---|---|---|
+| Authentication | not enforced | **still not enforced** — signs in fine |
+| Cloud Firestore | enforced | enforced |
+| Realtime Database | **not enforced** — write *and* read succeeded | **enforced** — both refused |
 
-So the gap the review named is real and is now measured rather than assumed. The
-blast radius stays small — the Realtime Database holds presence and nothing else,
-so the worst case is ghosts in a lobby rather than the read budget — but an
-unattested client can write and read it today.
+Then the two that catch it breaking real play:
+
+- `npm run check-rules` — **36/36**, every Realtime Database check included.
+- `npm run sync-harness 10` — **10/10 joined, 0 dropped**, all ten saw the
+  question within 109 ms.
+
+The before column is what makes the after column mean anything. Without it, "the
+site still works" is all anyone could have said.
+
+**How a refused Realtime Database call presents, because it is not obvious.** It
+does not reject. The SDK treats a refusal as a dropped connection and retries, so
+the request simply never settles — the probe reports it via an 8-second timeout,
+not an error. Anything that waits on an RTDB call without a timeout will hang
+rather than fail, which is why `appcheck-probe` races every call, cleanup
+included.
 
 ### The client side needs no change
 

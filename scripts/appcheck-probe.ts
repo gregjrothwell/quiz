@@ -124,8 +124,11 @@ async function main(): Promise<void> {
     }
   }
 
-  // Best effort, and only reachable if the write above was allowed.
-  await remove(presence).catch(() => undefined);
+  // Best effort, and timed out like everything else. Once the Realtime Database
+  // is enforced this delete is refused the same way the write was — by never
+  // settling — so an unguarded cleanup hangs the script *after* it has printed
+  // the answer, which is a maddening way to fail.
+  await withTimeout(remove(presence)).catch(() => undefined);
 
   console.log(
     '\n  "NOT ENFORCED" is a finding, not a pass. It means this product accepts a\n'
