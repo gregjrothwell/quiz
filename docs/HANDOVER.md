@@ -21,9 +21,9 @@ Built to replace Polly in Teams.
 - **Nothing is queued.** [PR
   #2](https://github.com/gregjrothwell/quiz/pull/2) is merged and live; the two
   console steps below are both **done** and are kept for the reasoning, not as
-  work. The best-value job left is [fixing
-  `host-room`](#npm-run-host-room-is-broken-and-was-before-this-branch), which
-  three untested paths are waiting on.
+  work. `host-room` was broken and is [now
+  fixed](#npm-run-host-room-was-broken-for-weeks--fixed-20-august-2026), which
+  unblocks the three untested paths that had no other tool.
 
   A maintenance pass on 15 August 2026 did the code half of both and could not do
   the other half from here:
@@ -277,18 +277,45 @@ It lifts at the reveal deliberately: the answer is on screen by then, and
 copying a good question to send to somebody afterwards is legitimate. The room
 code, the join link, the standings and the round in review are untouched.
 
-### `npm run host-room` is broken, and was before this branch
+### `npm run host-room` was broken for weeks — fixed 20 August 2026
 
-It imports `resolveAnswer` from `src/lib/vault`, which imports `src/firebase`,
-which reads `import.meta.env` — undefined outside Vite. It dies on the first
+It imported `resolveAnswer` from `src/lib/vault`, which imported `src/firebase`,
+which reads `import.meta.env` — undefined outside Vite. It died on the first
 import with `Cannot read properties of undefined (reading
-'VITE_FIREBASE_API_KEY')`. **Confirmed on `master`.**
+'VITE_FIREBASE_API_KEY')`, long before a line of its own code ran.
 
-This file has listed the harness as *untested*. It is **broken**, which is worse:
-it is named here as the way to test quizmaster handover, keyboard shortcuts and
-the vault gate, and none of those can be done with it today. Not fixed — the fix
-means restructuring `vault.ts`'s Firestore dependency, which deserves its own
-change.
+**The damage was not one broken command.** This file named that harness as the
+way to test three separate things — a quizmaster dropping out mid-round, the
+keyboard shortcuts in a live game, and the vault's own gate from the terminal —
+so all three were untestable, and the file recorded them as merely *untested*,
+which is a much smaller-sounding thing.
+
+**The fix was one import.** `vault.ts` already took its `Firestore` as a
+parameter; the only thing reaching for the app's singleton was a one-line
+convenience wrapper, `openTheVault`, with a single call site. Deleting it and
+calling `resolveAnswer(firestore(), …)` from `App.tsx` left the module pure, and
+nothing else changed. The lesson is the cheap one: **a single import at the top
+of a file is enough to make a module unusable outside the browser**, however
+carefully the functions below it were parameterised.
+
+**`scripts/imports.test.ts` is what stops it coming back.** It walks the import
+graph of every script and fails if any of them reaches `src/firebase.ts` at any
+depth. Nothing else would: `npm test` covers `src/` and the pure parts of
+`scripts/`, and the harnesses themselves talk to the live project and are kept
+out on purpose, so no suite ever imports them. The guard was checked in both
+directions — the import was put back deliberately and the test went red on
+`scripts/host-room.ts` before being restored.
+
+**Proved by running it**, 20 August 2026: room `PY7G`, a browser joined, and the
+harness ran its whole scripted sequence and exited clean — start, wait out the
+gate, **`>>> ASKING the vault` to `>>> WRITING reveal` in 225 ms**, then two
+advances. That reveal is the terminal vault path, which had never executed once
+since the vault shipped.
+
+Note what the harness does and does not do, since the name oversells it: it
+takes **one** question through the vault and then advances twice. It is a way to
+watch a browser being an ordinary player while something else runs the game, not
+a way to play a whole round unattended.
 
 ### Regression pass, 20 August 2026
 
@@ -1360,8 +1387,7 @@ scripts/        Build-time question harvest, and the multi-client test harnesses
 
 Commands: `npm run dev` (serves at `/quiz/`, port 5273), `test`, `typecheck`, `lint`,
 `build`, `deploy`, `fetch-questions [-- --resort]`, `fetch-otqa`, `seed-vault`,
-`check-rules`, `sync-harness [n]`, `host-room [-- secs]` (**broken**, see
-[why](#npm-run-host-room-is-broken-and-was-before-this-branch)), `take-stock`,
+`check-rules`, `sync-harness [n]`, `host-room [-- secs]`, `take-stock`,
 `prune-rooms`.
 
 `npm test` covers `src/` plus the pure parts of `scripts/` — the OpenTriviaQA
@@ -1515,10 +1541,11 @@ badly enough to sit in the chair in anger.
   anyone was dropped. Ten players see a round start within ~85 ms, none dropped.
   `LEGACY_WRITE=1` restores the whole-document write so the players-clobber bug
   can be watched happening rather than taken on trust.
-- `npm run host-room` was meant to host a room from the terminal so the browser
-  could be watched as an ordinary player. **It has never run** — see
-  [why](#npm-run-host-room-is-broken-and-was-before-this-branch). It is listed
-  here because this section used to claim it as verification, and it never was.
+- `npm run host-room` hosts a room from the terminal so the browser can be
+  watched as an ordinary player while somebody else runs the game. **It had
+  never run until 20 August 2026** — it died on an import — so this section
+  claimed it as verification for months while it was doing nothing. It works
+  now; see [the note](#npm-run-host-room-was-broken-for-weeks--fixed-20-august-2026).
 
 **Not verified — start here:**
 
@@ -1526,26 +1553,19 @@ badly enough to sit in the chair in anger.
    covered — three reducer tests, and the preview shows the unpicked lecterns
    staying live — but a second write landing on `answers/{uid}` in Firestore has
    not been watched. The rules permit it and always did, so the risk is not
-   permission but the write racing the reveal. The obvious way to try it was
-   `npm run host-room -- 20`, for a window long enough to answer, change and
-   watch which one scores — **and that harness does not run.** A second browser
-   against a solo-hosted room is the way in until it is fixed.
+   permission but the write racing the reveal. `npm run host-room -- 20` gives a
+   window long enough to answer, change and watch which one scores — and that
+   harness runs again as of 20 August 2026.
 
-0. **Fix `host-room`, and it is the best-value job on this list.** It is broken
-   outright and was before the squads branch — it imports `src/firebase`, which
-   needs Vite. See [the note
-   above](#npm-run-host-room-is-broken-and-was-before-this-branch).
+0. ~~**Fix `host-room`.**~~ **Done, 20 August 2026** — see [the
+   note](#npm-run-host-room-was-broken-for-weeks--fixed-20-august-2026). Its own
+   reveal path ran for the first time in the same session: `>>> ASKING the
+   vault` to `>>> WRITING reveal` in 225 ms, which is the terminal harness
+   asking the vault and being answered.
 
-   It is not one untested path but the *tool* three of them need: a quizmaster
-   dropping out mid-round, the keyboard shortcuts in a live game, and the
-   terminal harness's own reveal — which waits out the gate and asks the vault
-   itself, and has never executed. `sync-harness` covers joining and phase sync
-   and cannot reach any of that.
-
-   The fix is to stop `scripts/` reaching `src/lib/vault.ts`, which drags in
-   `src/firebase.ts` and its `import.meta.env`. `scripts/appCheck.ts` already
-   shows the shape: the scripts build their own Firebase app rather than
-   importing the app's.
+   What it *unblocks* is still outstanding, and is now reachable: a quizmaster
+   dropping out mid-round, and the keyboard shortcuts in a live game. Both need
+   a browser alongside `npm run host-room -- 10`.
 
 **Verified — the vault, end to end.** The rules were written from documented
 semantics and, at the time of writing, nothing had executed. It has now: seeded
@@ -2378,19 +2398,17 @@ Fastest way to be useful: `npm run check-rules`, then `npm run sync-harness 10`.
 Between them they confirm the rules are published and that ten clients stay in
 sync — the two things that have actually broken in play.
 
-> ### Do not reach for `npm run host-room`. It does not run.
+> ### `npm run host-room -- 10` works again, and did not for weeks
 >
-> This section used to name it as the way to test the remaining untested path.
-> It imports `src/firebase`, which reads `import.meta.env`, so it dies on the
-> first import outside Vite — and it has been that way since before the squads
-> branch. See [the note in its
-> section](#npm-run-host-room-is-broken-and-was-before-this-branch).
+> It died on an import outside Vite, which made three things in this file
+> untestable while reading as merely untested. [Fixed 20 August
+> 2026](#npm-run-host-room-was-broken-for-weeks--fixed-20-august-2026), with a
+> test that fails if the import comes back.
 >
-> Three things are named in this file as being testable with it and are
-> therefore **not testable at all today**: a quizmaster dropping out mid-round,
-> the keyboard shortcuts in a live game, and the vault gate from the terminal.
-> Fixing the harness is the unblocking move, and it is the best-value job on the
-> list for that reason.
+> Two of those three are still open and now reachable: **a quizmaster dropping
+> out mid-round**, and **the keyboard shortcuts in a live game**. Both want this
+> harness plus a browser. The third — the vault gate from the terminal — ran in
+> the same session.
 
 A solo round in the browser is what is left, and it does more than it sounds:
 it is what proved `recordGame` against the live project on 19 August, including
