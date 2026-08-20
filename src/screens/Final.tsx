@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Awards } from '../components/Awards';
 import { WeekBoard } from '../components/WeekBoard';
 import { Chair } from '../components/Chair';
@@ -7,6 +8,9 @@ import { Standings } from '../components/Standings';
 import { awardsFor, reviewFor, sawWholeGame, type QuestionRecord } from '../engine/awards';
 import { roomStandings, seatedLast } from '../engine/scoring';
 import type { RoomState } from '../engine/state';
+// Type-only, so the drawing module itself stays out of this chunk.
+import type * as DrawCard from '../lib/drawCard';
+import type { Delivery } from '../lib/drawCard';
 import type { Banked } from '../lib/season';
 import type { FinalSnapshot } from '../lib/useFinalSnapshot';
 import { useCue } from '../lib/sound';
@@ -58,6 +62,33 @@ const RISER_SLOTS = [
   { row: 0, height: 'first' },
   { row: 2, height: 'third' },
 ] as const;
+
+/**
+ * The drawing module, fetched at most once per page rather than once per screen.
+ *
+ * At module scope deliberately. A `useRef` would hold the same promise per
+ * component instance, which is both more state than the problem has — there is
+ * exactly one such module — and a mutation the React Compiler cannot follow, so
+ * it refuses to optimise the whole component around it.
+ */
+let drawer: Promise<typeof DrawCard> | null = null;
+
+function loadDrawer(): Promise<typeof DrawCard> {
+  drawer ??= import('../lib/drawCard');
+  return drawer;
+}
+
+/** What the share button is doing, so it can say so rather than sit there. */
+type CardState = 'idle' | 'working' | 'failed' | Delivery;
+
+const CARD_LABELS: Record<CardState, string> = {
+  idle: 'Share the result',
+  working: 'Drawing…',
+  clipboard: 'Copied — paste it in',
+  share: 'Shared',
+  download: 'Saved as an image',
+  failed: 'Couldn’t make the image',
+};
 
 export function Final({
   room,
@@ -123,6 +154,48 @@ export function Final({
   // and a re-render on the final screen does not.
   useCue('fanfare', room.gameId ?? 'no-game', hasPodium);
 
+  const [cardState, setCardState] = useState<CardState>('idle');
+
+  /*
+    Fetched when the podium appears rather than when the button is pressed, and
+    that is not an optimisation — it is what makes the clipboard route work.
+
+    Writing an image to the clipboard is gated on the transient activation of the
+    press that asked for it, and a cold `import()` is a network fetch: on a slow
+    connection the module lands after the activation has expired, the write is
+    refused, and the card silently degrades to a download on the one press that
+    mattered. Prefetching costs a couple of kB, on the last screen of the round,
+    to the people who have already finished playing.
+
+    It still does what the split was for: nothing here is in the main chunk, so
+    the players who never reach a final screen never fetch it.
+  */
+  useEffect(() => {
+    if (hasPodium) void loadDrawer();
+  }, [hasPodium]);
+
+  const handleShareCard = () => {
+    setCardState('working');
+
+    loadDrawer()
+      .then((loaded) =>
+        loaded.shareRound(
+          {
+            packTitle: room.packTitle,
+            players,
+            scores,
+            rows,
+            awards,
+            sawWholeGame: sawItAll,
+            questionCount: room.questions.length,
+          },
+          `vibe-quiz-${room.code}.png`,
+        ),
+      )
+      .then(setCardState)
+      .catch(() => setCardState('failed'));
+  };
+
   return (
     <>
       <header>
@@ -183,6 +256,18 @@ export function Final({
         ) : (
           <p className="muted">Waiting to see if the quizmaster starts another…</p>
         )}
+        {/* Everybody, not just the quizmaster: whoever is in the Teams channel
+            is the person who will paste it there. */}
+        {hasPodium ? (
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={handleShareCard}
+            disabled={cardState === 'working'}
+          >
+            {CARD_LABELS[cardState]}
+          </button>
+        ) : null}
         <button type="button" className="btn btn--ghost" onClick={onSeason}>
           Season table
         </button>

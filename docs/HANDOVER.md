@@ -35,35 +35,37 @@ it, and the session-start hook will say so if it grows.
 | — before assuming a thing is a style choice | [`decisions/gotchas.md`](decisions/gotchas.md) |
 | — before trusting a claim in here | [`decisions/state-of-play.md`](decisions/state-of-play.md) |
 | what a question is worth, and why it is not a speed curve | [`decisions/scoring.md`](decisions/scoring.md) |
+| the shareable result card, and how it gets to the player | [`decisions/final-card.md`](decisions/final-card.md) |
 | what to build next, and what each idea costs | [`decisions/ideas-review.md`](decisions/ideas-review.md) |
 
 ## State as of 20 August 2026
 
-**Shipped and played.** 416 tests, clean types and lint, no `any` or `@ts-ignore`.
+**Shipped and played.** 430 tests, clean types and lint, no `any` or `@ts-ignore`.
 
 - **Squads, the weekly board, the average season table, the frozen podium and the
   sealed question text are live** ([PR #2](https://github.com/gregjrothwell/quiz/pull/2),
-  merged and deployed 20 August). **The office has not yet played a real round on
-  any of it.**
+  deployed 20 August).
 - **The answer vault is live and covers the packs.** 13,593 answers against the
   13,452 the packs need plus 4 harness entries. Both rulesets published, preflight
-  passing. The surplus are orphans from earlier harvests — ids hash the question
-  text, so a revised question leaves its old answer unread and harmless.
+  passing. The surplus are orphans from earlier harvests, unread and harmless.
 - **App Check enforces on Cloud Firestore, the Realtime Database and
   authentication** — the last confirmed at 12:42 on 20 August, hours past the
-  documented 15-minute window. `appcheck-probe` now refuses at sign-in, which is
-  the proof; debug-token scripts are unaffected.
+  documented window. `appcheck-probe` refuses at sign-in, which is the proof.
   [`decisions/app-check-auth.md`](decisions/app-check-auth.md).
 - **The reveal lands on its own, ~0.5s after the clock**, anchored on the
-  server-confirmed snapshot rather than a local one. `reveal-probe` is the
-  instrument:
-  [`decisions/vault.md`](decisions/vault.md#the-gate-had-no-margin-and-the-host-was-the-one-who-paid).
+  server-confirmed snapshot rather than a local one; `reveal-probe` is the
+  instrument: [`decisions/vault.md`](decisions/vault.md#the-gate-had-no-margin-and-the-host-was-the-one-who-paid).
 - **Scoring is a rank ladder, not a speed curve** — 500 for correct plus
   500/400/300/200/100 by the order the correct answers landed. No rules change;
-  416 tests. **Nobody has played a round on it**, and ranks need two answerers so
-  no solo round can show one: [`decisions/scoring.md`](decisions/scoring.md).
-- **`npm run host-room -- 10` works again** after weeks dead on an import outside
-  Vite. `scripts/imports.test.ts` fails if it comes back.
+  416 tests. **Live since 20 August** ([PR #6](https://github.com/gregjrothwell/quiz/pull/6),
+  `index-BMejBzPG.js`, CDN confirmed serving it). **Nobody has played a round on
+  it** — ranks need two answerers, so no solo round can show one:
+  [`decisions/scoring.md`](decisions/scoring.md).
+- **The final screen makes a shareable PNG of the round** — clipboard, share
+  sheet or download, whichever the browser has. Built, **not deployed**:
+  [`decisions/final-card.md`](decisions/final-card.md).
+- **`npm run host-room -- 10` works again**; `scripts/imports.test.ts` fails if
+  that import comes back.
 
 **Measured live, 20 August 2026** (`npm run take-stock`):
 
@@ -93,12 +95,10 @@ it, and the session-start hook will say so if it grows.
 
 1. **A real round on the new season work.** Played 20 August: two reports — the
    reveal delay and the squad dropdowns — both fixed, nothing else raised.
-2. **Two paths still need a browser plus `host-room`:** a quizmaster dropping out
-   mid-round, and the keyboard shortcuts in a live game. Both are reachable now
-   that the harness runs.
+2. **Two paths need a browser plus `host-room`:** a quizmaster dropping out
+   mid-round, and the keyboard shortcuts in a live game.
 3. **No Content-Security-Policy.** Deliberate — a `<meta http-equiv>` CSP breaks
    the live app silently and the stale-CDN window makes that painful to diagnose.
-   Its own change, with a round of testing.
 4. ~~**App Check on authentication.**~~ **Done, 20 August**
    ([`decisions/app-check-auth.md`](decisions/app-check-auth.md)). The
    **anonymous-account purge is reviewed and the answer is don't** — it buys
