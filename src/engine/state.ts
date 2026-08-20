@@ -115,7 +115,7 @@ export interface QuizQuestion {
    * Nobody's device knows this while the clock is running — not even the
    * quizmaster's. The packs ship without answers, and the answer is fetched
    * from the vault at reveal by a write the security rules refuse until the
-   * room's answer window is up. See docs/HANDOVER.md.
+   * room's answer window is up. See docs/decisions/answer-window.md.
    */
   correctIndex: number | null;
   category: string;

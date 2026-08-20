@@ -35,9 +35,16 @@ export type PackId = (typeof PACK_IDS)[number];
 
 /**
  * A question as harvested, with its answer. **Only the build scripts ever see
- * this shape.** Nothing under `src/` outside this file may name `correct`: the
- * whole point of the vault is that a player's device never holds the answer,
- * and a type that cannot travel is the cheapest way to keep that true.
+ * this shape**, and nothing that reaches a browser is built from it — the whole
+ * point of the vault is that a player's device never holds the answer, and a
+ * type that cannot travel is the cheapest way to keep that true.
+ *
+ * The invariant that actually matters is downstream of this one: **no file in
+ * `public/packs/` may contain an answer**, since those ship as static files.
+ * `seal.test.ts` checks it in both directions. This comment used to claim that
+ * nothing under `src/` outside this file could name `correct`, which was never
+ * true and could not have been enforced — ten files use the word, almost all of
+ * it prose, and `correctIndex` is a legitimate runtime field.
  */
 export interface Question {
   id: string;
@@ -64,7 +71,7 @@ export type QuestionSource = 'opentdb' | 'opentriviaqa';
  * so their position carries no signal either.
  *
  * The answer lives in the `vault` collection in Firestore, which no client can
- * read. See docs/HANDOVER.md.
+ * read. See docs/decisions/vault.md.
  */
 export interface SealedQuestion {
   id: string;

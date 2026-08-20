@@ -22,10 +22,24 @@ interface Reading {
  * laptops disagree about the time by more than the speed bonus is worth.
  *
  * `durationMs` comes from the room, so every device counts down the same window
- * the security rules will hold the vault shut for. It is measured from when this
- * device *saw* the question open, which is necessarily after the server stamped
- * it — so a local clock always expires a little after the gate does, never
- * before, and the auto-reveal never arrives early.
+ * the security rules will hold the vault shut for.
+ *
+ * > **Correction, 20 August 2026.** This note used to end: *"It is measured from
+ * > when this device saw the question open, which is necessarily after the server
+ * > stamped it — so a local clock always expires a little after the gate does,
+ * > never before, and the auto-reveal never arrives early."*
+ * >
+ * > That is true of every device except the one that reveals. The quizmaster is
+ * > the device that *wrote* the question open, and Firestore's latency
+ * > compensation delivers that write back as a local snapshot before the server
+ * > has seen it — so their `startedAt` is roughly the click, while `openedAt` is
+ * > stamped a hop later. The two writes' latencies then cancel, leaving a margin
+ * > of single-digit milliseconds: measured at about 7ms on the live project, with
+ * > 100ms early refused (`npm run reveal-probe`).
+ * >
+ * > The clock is unchanged and still deliberately local — scoring depends on it.
+ * > What changed is that the auto-reveal no longer trusts it for the gate; see
+ * > `src/engine/revealGate.ts`.
  */
 export function useQuestionClock(
   isOpen: boolean,

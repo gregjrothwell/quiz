@@ -72,9 +72,17 @@ if (!isDurationAllowed(DURATION_SECS)) {
 
 /**
  * The vault opens strictly *after* the window, and the server measures it from
- * its own clock rather than this one. A second of slack covers the difference,
- * which is the same margin the browser gets for free by starting its countdown
- * only once it has seen the write land.
+ * its own clock rather than this one. A second of slack covers the difference.
+ *
+ * > **Correction, 20 August 2026.** This used to add: *"which is the same margin
+ * > the browser gets for free by starting its countdown only once it has seen the
+ * > write land."* The browser never got it for free. Latency compensation hands
+ * > the quizmaster's device a local snapshot of its own write before the server
+ * > has seen it, so its countdown started a hop early and its reveal cleared the
+ * > gate by single-digit milliseconds — when it cleared it at all. This script
+ * > adding slack while the app did not is what hid the bug: the harness always
+ * > passed. The app now waits for the server-confirmed snapshot instead
+ * > (`src/engine/revealGate.ts`), which needs no slack to be correct.
  */
 const GATE_SLACK_MS = 1_000;
 

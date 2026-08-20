@@ -7,7 +7,7 @@ import {
   sortIntoPacks,
   ukScore,
 } from './classify';
-import type { Question } from './types';
+import type { Question } from '../src/questions/types';
 
 function makeQuestion(overrides: Partial<Question> = {}): Question {
   return {

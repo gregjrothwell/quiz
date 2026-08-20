@@ -132,6 +132,25 @@ export function standings(scores: Record<string, number>): Standing[] {
   });
 }
 
+/**
+ * The standings, less anybody the room no longer lists.
+ *
+ * `scores` outlives membership on purpose — a player who leaves keeps their
+ * score in the map so the numbers still add up if they come back — so ranking
+ * the raw map puts people on the board who are not in the room.
+ *
+ * Written out three separate times before this existed: in `App.tsx`, `Final`
+ * and `Standings`. Two of those paint a screen and the third feeds `recordGame`,
+ * so a divergence between them would not look like a rendering bug — it would
+ * bank a wrong season row and keep it.
+ */
+export function roomStandings(
+  players: Record<string, unknown>,
+  scores: Record<string, number>,
+): Standing[] {
+  return standings(scores).filter((entry) => players[entry.uid]);
+}
+
 /** How many the podium stands up, and so where the floor begins. */
 export const PODIUM_PLACES = 3;
 

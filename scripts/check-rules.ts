@@ -25,7 +25,15 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { attachDebugAppCheck } from './appCheck';
 import { weekId } from '../src/engine/week';
-import { get, getDatabase, ref, remove, set } from 'firebase/database';
+import {
+  get,
+  getDatabase,
+  ref,
+  remove,
+  set,
+  type Database,
+  type DatabaseReference,
+} from 'firebase/database';
 import {
   Timestamp,
   collection,
@@ -40,6 +48,7 @@ import {
   setDoc,
   updateDoc,
   type Firestore,
+  type DocumentReference,
 } from 'firebase/firestore';
 
 /**
@@ -210,66 +219,38 @@ interface Check {
   run: () => Promise<unknown>;
 }
 
-async function main(): Promise<void> {
-  const app = initializeApp(config, 'check-rules');
-  await attachDebugAppCheck(app);
-  const credential = await signInAnonymously(getAuth(app));
-  const uid = credential.user.uid;
-  const db = getFirestore(app);
-  const rtdb = getDatabase(app);
+/**
+ * What the checks need to reach the live project. Passed as one object and
+ * destructured below, so the array itself is moved untouched — 346 lines of
+ * assertions about a live security ruleset are not worth re-typing to save a
+ * parameter list.
+ */
+interface Probes {
+  uid: string;
+  db: Firestore;
+  rtdb: Database;
+  uidB: string;
+  dbB: Firestore;
+  probeCode: string;
+  presence: DatabaseReference;
+  ownSeasonRow: DocumentReference;
+  ownWeekRow: DocumentReference;
+  validSeasonRow: Record<string, unknown>;
+}
 
-  /**
-   * A second, genuinely separate anonymous client.
-   *
-   * Nothing else here needs one, and this does: the whole point of a recovery
-   * code is that a *different browser* takes on an identity, and the rule branch
-   * that permits it — a `claims` lookup rather than `playerId == uid` — cannot
-   * be reached from the client that owns the identity already, because the first
-   * branch short-circuits before it. Signed in as one user and merely reasoned
-   * about, that branch would be exactly as proven as the season transaction is,
-   * which is to say not at all.
-   */
-  const appB = initializeApp(config, 'check-rules-claimer');
-  await attachDebugAppCheck(appB);
-  const credentialB = await signInAnonymously(getAuth(appB));
-  const uidB = credentialB.user.uid;
-  const dbB = getFirestore(appB);
+/**
+ * Every check, in the order they run.
+ *
+ * Lifted out of `main` so that adding one does not mean scrolling past two
+ * hundred lines of probe setup to find where the list starts — which is exactly
+ * what the next change to this file has to do.
+ */
+function buildChecks(probes: Probes): Check[] {
+  const {
+    uid, db, rtdb, uidB, dbB, probeCode, presence, ownSeasonRow, ownWeekRow, validSeasonRow,
+  } = probes;
 
-  console.log(
-    `Project ${config.projectId}, signed in anonymously as ${uid.slice(0, 8)}… `
-      + `and ${uidB.slice(0, 8)}…`,
-  );
-  console.log(`The last check waits out a real ${SHORT_WINDOW_SECS}-second gate.\n`);
-
-  // Opened up front so the deny checks below have a genuinely live question to
-  // ask about — a reveal refused because nothing is in play would look exactly
-  // like a reveal refused by the time gate, and prove nothing. On a long window,
-  // because a dozen round-trips happen before the last of them runs.
-  await openProbeQuestion(db, uid, LONG_WINDOW_SECS);
-
-  /**
-   * Fresh per run, because a `recovery` document cannot be updated — a fixed
-   * code would exist from the second run onwards and the mint check would then
-   * be failing for the wrong reason. Deleted at the end, which the rules permit
-   * for whoever owns it.
-   */
-  const probeCode = `RC${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-
-  const presence = ref(rtdb, `presence/${PROBE_ROOM}/${uid}`);
-  const ownSeasonRow = doc(db, 'seasons', ANY_SEASON, 'players', uid);
-  const ownWeekRow = doc(db, 'seasons', PROBE_WEEK, 'players', uid);
-
-  const validSeasonRow = {
-    name: 'Rules check',
-    played: 1,
-    wins: 1,
-    points: 1000,
-    best: 1000,
-    lastGame: 'rules-check',
-    lastPlayed: Date.now(),
-  };
-
-  const checks: Check[] = [
+  return [
     {
       label: 'Firestore   · read a room',
       expect: 'allow',
@@ -615,7 +596,16 @@ async function main(): Promise<void> {
       },
     },
   ];
+}
 
+/**
+ * Runs every check and reports it, returning how many failed.
+ *
+ * A check that *errors* is reported separately from one that comes back the
+ * wrong way round: an error proves nothing in either direction, and reading it
+ * as a pass is how a broken preflight looks like a healthy one.
+ */
+async function runChecks(checks: Check[]): Promise<number> {
   let failed = 0;
 
   for (const check of checks) {
@@ -648,18 +638,122 @@ async function main(): Promise<void> {
     }
   }
 
-  // Best effort. A leftover under the throwaway season id or the probe room is
-  // never read by the app, and only exists at all if a check already failed.
+  return failed;
+}
+
+/**
+ * Runs one cleanup delete and reports the path if it did not work, rather than
+ * throwing. Returns null on success.
+ *
+ * A failure here must never fail the preflight: the checks have already run and
+ * their verdict is the point of the script. But it must not be invisible either
+ * — see the note at the call site.
+ */
+async function tidy(path: string, work: Promise<unknown>): Promise<string | null> {
+  try {
+    await work;
+    return null;
+  } catch {
+    return path;
+  }
+}
+
+async function main(): Promise<void> {
+  const app = initializeApp(config, 'check-rules');
+  await attachDebugAppCheck(app);
+  const credential = await signInAnonymously(getAuth(app));
+  const uid = credential.user.uid;
+  const db = getFirestore(app);
+  const rtdb = getDatabase(app);
+
+  /**
+   * A second, genuinely separate anonymous client.
+   *
+   * Nothing else here needs one, and this does: the whole point of a recovery
+   * code is that a *different browser* takes on an identity, and the rule branch
+   * that permits it — a `claims` lookup rather than `playerId == uid` — cannot
+   * be reached from the client that owns the identity already, because the first
+   * branch short-circuits before it. Signed in as one user and merely reasoned
+   * about, that branch would be exactly as proven as the season transaction is,
+   * which is to say not at all.
+   */
+  const appB = initializeApp(config, 'check-rules-claimer');
+  await attachDebugAppCheck(appB);
+  const credentialB = await signInAnonymously(getAuth(appB));
+  const uidB = credentialB.user.uid;
+  const dbB = getFirestore(appB);
+
+  console.log(
+    `Project ${config.projectId}, signed in anonymously as ${uid.slice(0, 8)}… `
+      + `and ${uidB.slice(0, 8)}…`,
+  );
+  console.log(`The last check waits out a real ${SHORT_WINDOW_SECS}-second gate.\n`);
+
+  // Opened up front so the deny checks below have a genuinely live question to
+  // ask about — a reveal refused because nothing is in play would look exactly
+  // like a reveal refused by the time gate, and prove nothing. On a long window,
+  // because a dozen round-trips happen before the last of them runs.
+  await openProbeQuestion(db, uid, LONG_WINDOW_SECS);
+
+  /**
+   * Fresh per run, because a `recovery` document cannot be updated — a fixed
+   * code would exist from the second run onwards and the mint check would then
+   * be failing for the wrong reason. Deleted at the end, which the rules permit
+   * for whoever owns it.
+   */
+  const probeCode = `RC${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+
+  const presence = ref(rtdb, `presence/${PROBE_ROOM}/${uid}`);
+  const ownSeasonRow = doc(db, 'seasons', ANY_SEASON, 'players', uid);
+  const ownWeekRow = doc(db, 'seasons', PROBE_WEEK, 'players', uid);
+
+  const validSeasonRow = {
+    name: 'Rules check',
+    played: 1,
+    wins: 1,
+    points: 1000,
+    best: 1000,
+    lastGame: 'rules-check',
+    lastPlayed: Date.now(),
+  };
+
+  const checks = buildChecks({
+    uid, db, rtdb, uidB, dbB, probeCode, presence, ownSeasonRow, ownWeekRow, validSeasonRow,
+  });
+
+  const failed = await runChecks(checks);
+
+  // A leftover under the throwaway season id or the probe room is never read by
+  // the app, and only exists at all if a check already failed.
   //
   // The claim goes first: while it stands, uidB owns this row, and the delete
   // below is only permitted to somebody who owns it. Revoking the recovery code
   // is what stops these accumulating a document per run — `recovery` is the one
   // collection here whose contents cannot simply be overwritten next time.
-  await deleteDoc(doc(dbB, 'claims', uidB)).catch(() => undefined);
-  await deleteDoc(ownSeasonRow).catch(() => undefined);
-  await deleteDoc(ownWeekRow).catch(() => undefined);
-  await deleteDoc(doc(db, 'recovery', probeCode)).catch(() => undefined);
-  await remove(presence).catch(() => undefined);
+  //
+  // **Best effort, but no longer silent.** Every anonymous run mints a fresh uid,
+  // so a season row this fails to remove is one nothing can ever delete again:
+  // it belongs to a uid that stops existing when this process exits, and the
+  // rules only let an owner delete their own row. Swallowed, that leaks one
+  // permanent document per failed run and says nothing — which is exactly what
+  // happened, and it took `take-stock` enumerating buckets on 20 August 2026 to
+  // notice three of them. Whatever is reported here needs
+  // `npm run prune-rooms -- --probe-rows --go`, from a machine with the key.
+  const swept = await Promise.all([
+    tidy('claims/' + uidB, deleteDoc(doc(dbB, 'claims', uidB))),
+    tidy(ownSeasonRow.path, deleteDoc(ownSeasonRow)),
+    tidy(ownWeekRow.path, deleteDoc(ownWeekRow)),
+    tidy(`recovery/${probeCode}`, deleteDoc(doc(db, 'recovery', probeCode))),
+    tidy('presence', remove(presence)),
+  ]);
+
+  const stranded = swept.filter((path) => path !== null);
+  if (stranded.length > 0) {
+    console.log(`\n  ${stranded.length} leftover(s) this run could not remove:`);
+    for (const path of stranded) console.log(`    ${path}`);
+    console.log('  Season rows here are permanent — only the service account can reach them.');
+    console.log('  npm run prune-rooms -- --probe-rows --go');
+  }
 
   console.log(
     failed === 0

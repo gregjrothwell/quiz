@@ -58,6 +58,20 @@ export interface UseRoom {
    * who close a tab will linger in the lobby. The game itself is unaffected.
    */
   presenceWorking: boolean;
+  /**
+   * When this device received the first **server-confirmed** snapshot of the
+   * question now in play, on its own clock. Null until one arrives.
+   *
+   * This is not the same as when the question appeared on screen, and the
+   * difference is the whole reason it exists. Firestore's latency compensation
+   * delivers a write back as a local snapshot before the server has seen it, so
+   * the device that *opened* the question — always the quizmaster, always the
+   * one that reveals — sees it a round trip before `openedAt` is stamped. Its
+   * countdown therefore expires marginally *before* the vault's gate opens, and
+   * the reveal is refused. See `src/engine/revealGate.ts` for the ordering
+   * argument and the live measurements behind it.
+   */
+  questionConfirmedAt: number | null;
   createAndJoin: (name: string) => Promise<string>;
   join: (code: string, name: string) => Promise<void>;
   leave: () => Promise<void>;
@@ -200,6 +214,15 @@ function opensAQuestion(next: RoomState, previous: RoomState | null): boolean {
 export function useRoom(): UseRoom {
   const [uid, setUid] = useState<string | null>(null);
   const [persisted, setPersisted] = useState<PersistedRoom | null>(null);
+  /**
+   * Keyed by question so the moment belongs to the question it was measured for,
+   * the same shape the reveal retry counter uses. A bare timestamp would survive
+   * into the next question and open its gate early.
+   */
+  const [questionConfirmed, setQuestionConfirmed] = useState<{ key: string; at: number }>({
+    key: '',
+    at: 0,
+  });
   const [answers, setAnswers] = useState<Record<string, Answer>>({});
   const [code, setCode] = useState<string | null>(null);
   const [connection, setConnection] = useState<ConnectionState>('connecting');
@@ -267,8 +290,23 @@ export function useRoom(): UseRoom {
 
     return onSnapshot(
       roomDoc(code),
+      // `includeMetadataChanges` is what makes `hasPendingWrites` mean anything.
+      // Without it the server's acknowledgement of a write this device made is
+      // never delivered, because the document did not change — and that
+      // acknowledgement is precisely the moment the reveal has to wait for.
+      // Metadata changes are local events, so this costs no extra reads.
+      { includeMetadataChanges: true },
       (snapshot) => {
-        setPersisted(snapshot.exists() ? (snapshot.data() as PersistedRoom) : null);
+        const data = snapshot.exists() ? (snapshot.data() as PersistedRoom) : null;
+        setPersisted(data);
+
+        // Recorded per question, and only from a snapshot the server has
+        // acknowledged. `??=` inside the guard keeps the *first* such moment
+        // rather than the latest, since a later update to the same question
+        // would push the reveal further out for no reason.
+        if (!data || data.phase !== 'question' || snapshot.metadata.hasPendingWrites) return;
+        const key = `${data.gameId ?? ''}:${data.index}`;
+        setQuestionConfirmed((current) => (current.key === key ? current : { key, at: Date.now() }));
       },
       (cause) => {
         setConnection('error');
@@ -649,6 +687,8 @@ export function useRoom(): UseRoom {
     });
   }, [code, isQuizmaster]);
 
+  const questionKey = room && room.phase === 'question' ? `${room.gameId ?? ''}:${room.index}` : null;
+
   return {
     uid,
     room,
@@ -656,6 +696,8 @@ export function useRoom(): UseRoom {
     error,
     isQuizmaster,
     presenceWorking,
+    questionConfirmedAt:
+      questionKey !== null && questionConfirmed.key === questionKey ? questionConfirmed.at : null,
     createAndJoin,
     join,
     leave,

@@ -3,6 +3,7 @@ import {
   BASE_POINTS,
   SPEED_POINTS,
   scoreAnswer,
+  roomStandings,
   seatedLast,
   standings,
   tallyQuestion,
@@ -140,6 +141,40 @@ describe('standings', () => {
 
     // #then there are no standings
     expect(result).toEqual([]);
+  });
+});
+
+describe('roomStandings', () => {
+  test('drops anybody the room no longer lists', () => {
+    // `scores` outlives membership, so the leaver is still in the map.
+    const scores = { greg: 3000, nadia: 2000, gone: 5000 };
+    const players = { greg: {}, nadia: {} };
+
+    expect(roomStandings(players, scores).map((entry) => entry.uid)).toEqual(['greg', 'nadia']);
+  });
+
+  test('positions are inherited from the full table, not re-derived', () => {
+    // Ranking happens before the filter, so a departed leader leaves a gap: the
+    // top row of the returned table is position 2, and nobody holds position 1.
+    //
+    // Asserted rather than corrected. This is the behaviour all three call sites
+    // already had — the filter was written out three times identically — and
+    // this change only moved it. It matters because `recordGame` banks a win on
+    // `position === 1`, so in this state nobody is credited with the win rather
+    // than the wrong person being credited, which is the safer of the two.
+    //
+    // Rarely reached in practice: the final screen ranks the frozen snapshot, in
+    // which the leaver is still a member and so is not filtered out at all. See
+    // docs/decisions/season.md.
+    const scores = { greg: 3000, nadia: 2000, gone: 5000 };
+    const rows = roomStandings({ greg: {}, nadia: {} }, scores);
+
+    expect(rows[0]).toEqual({ uid: 'greg', score: 3000, position: 2 });
+    expect(rows.some((entry) => entry.position === 1)).toBe(false);
+  });
+
+  test('a room with nobody in it ranks nobody', () => {
+    expect(roomStandings({}, { greg: 3000 })).toEqual([]);
   });
 });
 

@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { ColdOpen } from './components/ColdOpen';
 import { Stage } from './components/Stage';
 import { arrivalFor, walkedIn, NO_ARRIVAL, type Arrival } from './engine/arrival';
 import { honoursFor, sawWholeGame, NO_HONOURS } from './engine/awards';
 import { formFor } from './engine/form';
-import { standings } from './engine/scoring';
+import { msUntilRevealGate, revealBackoffMs } from './engine/revealGate';
+import { roomStandings } from './engine/scoring';
 import { codeFromHash } from './engine/roomCode';
 import {
   DEFAULT_QUESTION_DURATION_MS,
@@ -33,17 +34,42 @@ import type { PackId } from './questions/types';
 import { Final } from './screens/Final';
 import { Landing } from './screens/Landing';
 import { Lobby } from './screens/Lobby';
-import { Preview } from './screens/Preview';
 import { QuestionScreen } from './screens/QuestionScreen';
 import { Scoreboard } from './screens/Scoreboard';
-import { Season } from './screens/Season';
+
+/*
+  Split out of the main bundle, because neither is on the path into a game.
+
+  `Preview` is the design gallery and its fixtures — the largest screen in the
+  repo, reachable only from `#/preview`. `Season` is behind a button press.
+  Every player was downloading both to play a round that touches neither.
+
+  Named exports, so the dynamic import is mapped to a default for `lazy`.
+*/
+const Preview = lazy(() => import('./screens/Preview').then((m) => ({ default: m.Preview })));
+const Season = lazy(() => import('./screens/Season').then((m) => ({ default: m.Season })));
 
 /**
- * How long to wait before asking the vault again, and how many times. The gate
- * it is waiting on is the server agreeing the answer window has passed, which
- * resolves in a second or two — so this is a short flurry rather than a poll.
+ * What shows while one of those chunks is in flight.
+ *
+ * Deliberately a word rather than a spinner: on a warm cache it is one frame,
+ * and a spinner that flashes for 16ms reads as a glitch. It says which thing is
+ * coming so a slow network looks like waiting rather than like nothing.
  */
-const REVEAL_RETRY_MS = 1_500;
+function Loading({ what }: { what: string }) {
+  return <p className="muted">Loading {what}…</p>;
+}
+
+/**
+ * How many times to ask the vault before leaving it to the quizmaster's button.
+ *
+ * The wait between attempts is no longer flat — see `revealBackoffMs`. It was
+ * 1500ms, chosen when a refusal was thought to mean the server disagreed by a
+ * second or so. Measured on the live project on 20 August 2026 it disagrees by
+ * one network hop, so the first retry is now 300ms and the cap is unchanged: the
+ * same number of writes against the same read budget, recovering five times
+ * faster in the case that actually happens.
+ */
 const MAX_REVEAL_RETRIES = 8;
 
 interface ActionError {
@@ -85,7 +111,9 @@ export function App() {
   if (window.location.hash.startsWith('#/preview')) {
     return (
       <Stage>
-        <Preview />
+        <Suspense fallback={<Loading what="the gallery" />}>
+          <Preview />
+        </Suspense>
       </Stage>
     );
   }
@@ -109,6 +137,7 @@ function Game() {
     error,
     isQuizmaster,
     presenceWorking,
+    questionConfirmedAt,
     createAndJoin,
     join,
     leave,
@@ -403,6 +432,16 @@ function Game() {
   // "the vault would not confirm an answer" for minutes until Reveal was pressed
   // by hand.
   //
+  // **`clock.expired` is not enough on its own, and this is the device where
+  // that bites.** The quizmaster wrote the question open, so latency
+  // compensation gave them a local snapshot of it a round trip before the server
+  // stamped `openedAt` — their countdown expires marginally before the vault
+  // will answer, and the two writes' latencies then cancel, leaving a margin of
+  // single-digit milliseconds decided by jitter. Measured at about 7ms on 20
+  // August 2026 (`npm run reveal-probe`), with 100ms early refused. So the gate
+  // is asked separately, from a moment that is provably after the server's:
+  // `revealGate.ts` has the argument.
+  //
   // Capped rather than open-ended. A vault that genuinely lacks the answer would
   // otherwise be asked forever, and every attempt is a write against a read
   // budget this game has already exhausted once. After the cap the quizmaster's
@@ -417,18 +456,47 @@ function Game() {
   useEffect(() => {
     if (!isQuizmaster || phase !== 'question' || !clock.expired) return;
 
+    const gate = { confirmedAt: questionConfirmedAt, durationMs, now: Date.now() };
+    const wait = msUntilRevealGate(gate);
+
+    // Nothing to count from yet: the server has not acknowledged the question.
+    // The effect re-runs when it does, because `questionConfirmedAt` changes.
+    if (wait === null) return;
+
     let timer = 0;
+    if (wait > 0) {
+      // Woken rather than polled. Between the local clock expiring and the gate
+      // opening there is nothing else to re-run this effect — in a room where
+      // everybody has already answered, nothing is writing at all.
+      // A fresh object, not the same one: `retry` is in the dependency list
+      // below precisely so this wakes the effect. React re-renders on any
+      // `setState`, but it only re-runs an effect whose dependencies changed —
+      // so mutating nothing and returning `current` would schedule a timer that
+      // fired into silence.
+      timer = window.setTimeout(() => setRetry((current) => ({ ...current })), wait);
+      return () => window.clearTimeout(timer);
+    }
+
     void handleReveal().catch((cause: unknown) => {
       report(cause);
       if (retry.n >= MAX_REVEAL_RETRIES) return;
       timer = window.setTimeout(
         () => setRetry((current) => ({ ...current, n: current.n + 1 })),
-        REVEAL_RETRY_MS,
+        revealBackoffMs(retry.n),
       );
     });
 
     return () => window.clearTimeout(timer);
-  }, [isQuizmaster, phase, clock.expired, handleReveal, report, retry.n]);
+  }, [
+    isQuizmaster,
+    phase,
+    clock.expired,
+    questionConfirmedAt,
+    durationMs,
+    handleReveal,
+    report,
+    retry,
+  ]);
 
   // Each device banks its own season row. Doing it per-client rather than having
   // the quizmaster write everybody's is what lets the rules restrict the write
@@ -461,7 +529,7 @@ function Game() {
     const players = finalSnapshot?.players ?? room.players;
     const scores = finalSnapshot?.scores ?? room.scores;
 
-    const rows = standings(scores).filter((entry) => players[entry.uid]);
+    const rows = roomStandings(players, scores);
     const leadScore = rows[0]?.score ?? 0;
     const mine = rows.find((entry) => entry.uid === uid);
 
@@ -515,7 +583,9 @@ function Game() {
   if (showSeason) {
     return (
       <Stage>
-        <Season youUid={uid} onBack={() => setShowSeason(false)} />
+        <Suspense fallback={<Loading what="the season" />}>
+          <Season youUid={uid} onBack={() => setShowSeason(false)} />
+        </Suspense>
       </Stage>
     );
   }
@@ -579,6 +649,13 @@ function Game() {
             clock={clock}
             joinedMidQuestion={joinedMidQuestion}
             revealed={room.phase === 'reveal'}
+            // Derived rather than held: an automatic reveal is outstanding from
+            // the moment the clock expires until the attempts are used up,
+            // whether it is currently waiting for the gate or waiting for a
+            // refusal to come back. Holding it as state would mean a setState
+            // inside the expiry effect, which is the thing that effect is
+            // deliberately built to avoid.
+            revealing={clock.expired && retry.n < MAX_REVEAL_RETRIES}
             onAnswer={handleAnswer}
             onReveal={() => void handleReveal().catch(report)}
             onNext={() => void dispatch({ type: 'next', at: Date.now() }).catch(report)}

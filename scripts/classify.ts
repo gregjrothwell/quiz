@@ -1,4 +1,4 @@
-import type { Question, PackId } from './types';
+import type { Question, PackId } from '../src/questions/types';
 
 /**
  * The open trivia datasets skew roughly 4:1 towards US-specific content. These

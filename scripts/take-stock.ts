@@ -19,7 +19,35 @@ import { readFileSync } from 'node:fs';
 import { cert, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
-const SEASON = 'season-2';
+/**
+ * Every bucket under `seasons/`, and how many rows each holds.
+ *
+ * This used to be `const SEASON = 'season-2'` and one count. Weekly boards ship a
+ * *week* as a season id — `seasons/week-2026-W34/players` — so from the moment
+ * they landed this script was reporting a fraction of what was there and saying
+ * nothing about the rest. A hardcoded id could only ever have gone stale again at
+ * the next one, so there is now no id here to go stale: `listDocuments` returns
+ * the implicit parents of the subcollections that actually exist, which is the
+ * question being asked.
+ *
+ * Still cheap. One read per bucket id returned, plus one aggregate query per
+ * bucket — an aggregate bills about one read per *thousand* index entries. Tens
+ * of reads all in, which is the whole point of this script over `seed-vault`.
+ */
+async function seasonBuckets(
+  db: FirebaseFirestore.Firestore,
+): Promise<{ id: string; players: number }[]> {
+  const parents = await db.collection('seasons').listDocuments();
+  const counted = await Promise.all(
+    parents.map(async (parent) => ({
+      id: parent.id,
+      players: (await parent.collection('players').count().get()).data().count,
+    })),
+  );
+  // Seasons first, then weeks newest last — the ids sort chronologically by
+  // construction, which is half the reason `weekId` pads the week number.
+  return counted.filter((bucket) => bucket.players > 0).sort((a, b) => a.id.localeCompare(b.id));
+}
 
 /** Free-tier daily allowances, for putting the counts in proportion. */
 const DAILY_READS = 50_000;
@@ -52,11 +80,11 @@ async function main(): Promise<void> {
     being written: if this stops climbing while `rooms` does, something dropped
     it from the create path.
   */
-  const [rooms, expirable, vault, players, recovery, claims] = await Promise.all([
+  const [rooms, expirable, vault, buckets, recovery, claims] = await Promise.all([
     count('rooms'),
     (await db.collection('rooms').orderBy('expiresAt').count().get()).data().count,
     count('vault'),
-    count(`seasons/${SEASON}/players`),
+    seasonBuckets(db),
     count('recovery'),
     count('claims'),
   ]);
@@ -90,7 +118,10 @@ async function main(): Promise<void> {
     );
   }
   console.log(`  vault answers            ${vault.toLocaleString('en-GB')}`);
-  console.log(`  ${SEASON} players        ${players.toLocaleString('en-GB')}`);
+  for (const bucket of buckets) {
+    console.log(`  ${bucket.id.padEnd(24)} ${bucket.players.toLocaleString('en-GB')}`);
+  }
+  if (buckets.length === 0) console.log('  seasons                  none');
   console.log(`  recovery codes           ${recovery.toLocaleString('en-GB')}`);
   console.log(`  identity claims          ${claims.toLocaleString('en-GB')}`);
 
@@ -122,7 +153,7 @@ async function main(): Promise<void> {
   console.log(`\n  All of this is for SIX players. The answers subcollection fans out to`);
   console.log(`  every client, so the round itself grows with the SQUARE of the room:`);
   console.log(`  twelve players is roughly 2,700 reads and twenty-five is roughly`);
-  console.log(`  10,500. See docs/HANDOVER.md before assuming a bigger room is fine.\n`);
+  console.log(`  10,500. See docs/decisions/cost.md before assuming a bigger room is fine.\n`);
 
   if (expirable < rooms) {
     console.log(`  ${(rooms - expirable).toLocaleString('en-GB')} rooms predate \`expiresAt\` and no TTL policy can reach them.`);
