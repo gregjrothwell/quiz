@@ -15,6 +15,19 @@ the old 2,422-line handover, when it was split. They are a true index of what
 happened and when; they are not a contemporaneous log, and anything needing the
 detail should follow the pointer rather than trust the summary here.
 
+## 2026-08-20 — "The Ladder" was already taken
+
+Rank scoring was written up as "the ladder" throughout — this spine, `scoring.md`, and comments
+in `scoring.ts`, `reducer.ts`, `App.tsx` and two test files. **The Ladder is already the `ramp`
+level in the lobby**, which builds a round from easy to hard, and `Ladder.tsx` draws the
+round's progress beside the question. Two unrelated mechanics under one name, one of them on
+screen in front of players. Caught by Greg, not by any check.
+
+The mechanic is now the **rank bonus** and the scheme is **rank scoring**. Nothing shipped
+under the wrong name — no user-facing string ever said it — so this is prose and comments
+only, and the collision is recorded in
+[`decisions/scoring.md`](decisions/scoring.md) rather than quietly fixed.
+
 ## 2026-08-20 — The final screen makes a shareable card
 
 Built, not deployed. A 1200×630 PNG of the round — pack, winner, podium, chair, rosettes —
@@ -38,11 +51,11 @@ Also: `Date.now()` cannot be called anywhere in a component under the React Comp
 is why the model is assembled inside the lazily-imported module rather than by `Final`.
 → [`decisions/final-card.md`](decisions/final-card.md)
 
-## 2026-08-20 — Scoring is a rank ladder, not a speed curve
+## 2026-08-20 — Scoring is a rank bonus, not a speed curve
 
 Built. 500 for correct plus 500/400/300/200/100 by the order the correct answers landed,
 ties sharing a rank per `standings()`. Max per question stays 1,000, so **no rules paste**.
-416 tests, types and lint clean, `#/preview` renders the ladder with no console errors.
+416 tests, types and lint clean, `#/preview` renders the bonuses with no console errors.
 
 Two things the story did not foresee, both left alone and both recorded: a mid-question join
 is now sorted last rather than stripped of its bonus, which is *softer* than before; and the

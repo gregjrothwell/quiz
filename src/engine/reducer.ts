@@ -242,8 +242,8 @@ function reveal(state: RoomState, correctIndex: number, questionId: string): Roo
   );
 
   // The window is not passed, and that is the change of 20 August 2026: the
-  // ladder ranks the correct answers against each other rather than against the
-  // clock, so a ten-second round and a twenty-second one pay identically. The
+  // rank bonus ranks the correct answers against each other rather than against
+  // the clock, so a ten-second round and a twenty-second one pay identically. The
   // window still bounds what may be answered at all — `answer` above refuses
   // anything past it — it just no longer decides what an answer is worth.
   const deltas = tallyQuestion({ correctIndex, answers: eligible });

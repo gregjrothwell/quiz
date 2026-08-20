@@ -55,7 +55,7 @@ it, and the session-start hook will say so if it grows.
 - **The reveal lands on its own, ~0.5s after the clock**, anchored on the
   server-confirmed snapshot rather than a local one; `reveal-probe` is the
   instrument: [`decisions/vault.md`](decisions/vault.md#the-gate-had-no-margin-and-the-host-was-the-one-who-paid).
-- **Scoring is a rank ladder, not a speed curve** — 500 for correct plus
+- **Scoring is a rank bonus, not a speed curve** — 500 for correct plus
   500/400/300/200/100 by the order the correct answers landed. No rules change;
   416 tests. **Live since 20 August** ([PR #6](https://github.com/gregjrothwell/quiz/pull/6),
   `index-BMejBzPG.js`, CDN confirmed serving it). **Nobody has played a round on
@@ -105,7 +105,7 @@ it, and the session-start hook will say so if it grows.
    nothing on Spark and would orphan all 21 season rows:
    [`decisions/identity.md`](decisions/identity.md).
 5. **Nothing needing a second person has been tested** — the review panel, a real
-   quizmaster handover, two squads on one board, and now **a rank ladder with
+   quizmaster handover, two squads on one board, and now **a rank bonus with
    more than one right answer in it**.
 
 ## Where things are

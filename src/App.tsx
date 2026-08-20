@@ -348,7 +348,7 @@ function Game() {
       // were. The alternative was letting a mid-question join take first place
       // for an answer given on the buzzer.
       //
-      // Under the ladder this is a softer penalty than it was — the full window
+      // Under rank scoring this is a softer penalty than it was — the full window
       // sorts them last among the correct answers rather than stripping the
       // bonus outright, so in a room where two people got it right they are
       // second rather than on the base alone. Making it exact would need the

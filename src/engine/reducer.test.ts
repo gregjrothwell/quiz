@@ -358,7 +358,7 @@ describe('the answer window', () => {
       ).scores['guest'] ?? 0;
 
     // #when each is answered five seconds in
-    // #then both take first place and the same points, because the ladder ranks
+    // #then both take first place and the same points, because the bonus ranks
     // answers against each other rather than against the clock
     expect({ brisk: answered(10, 5_000), standard: answered(20, 5_000) }).toEqual({
       brisk: 1000,
@@ -549,7 +549,7 @@ describe('reveal', () => {
     const result = reduce(landed, action);
 
     // #then the late answer counts. Under the old curve this was 505, nearly all
-    // of the speed bonus having decayed; the ladder pays it first place, because
+    // of the speed bonus having decayed; rank scoring pays it first place, because
     // it was the only correct answer the question had.
     expect(result.scores['guest']).toBe(1000);
   });
