@@ -95,12 +95,10 @@ it, and the session-start hook will say so if it grows.
 
 1. **A real round on the new season work.** Played 20 August: two reports — the
    reveal delay and the squad dropdowns — both fixed, nothing else raised.
-2. **Two paths still need a browser plus `host-room`:** a quizmaster dropping out
-   mid-round, and the keyboard shortcuts in a live game. Both are reachable now
-   that the harness runs.
+2. **Two paths need a browser plus `host-room`:** a quizmaster dropping out
+   mid-round, and the keyboard shortcuts in a live game.
 3. **No Content-Security-Policy.** Deliberate — a `<meta http-equiv>` CSP breaks
    the live app silently and the stale-CDN window makes that painful to diagnose.
-   Its own change, with a round of testing.
 4. ~~**App Check on authentication.**~~ **Done, 20 August**
    ([`decisions/app-check-auth.md`](decisions/app-check-auth.md)). The
    **anonymous-account purge is reviewed and the answer is don't** — it buys
