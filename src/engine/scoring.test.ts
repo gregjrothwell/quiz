@@ -6,6 +6,7 @@ import {
   seatedLast,
   standings,
   tallyQuestion,
+  verdictFor,
 } from './scoring';
 import { DEFAULT_QUESTION_DURATION_MS } from './state';
 
@@ -207,5 +208,92 @@ describe('seatedLast', () => {
 
     // #then there is nothing to seat
     expect(seated).toEqual([]);
+  });
+});
+
+describe('verdictFor', () => {
+  test('names a correct answer', () => {
+    // #given an answer on the right lectern, scored by the reveal
+    const verdict = verdictFor({
+      answer: { optionIndex: 1, elapsedMs: 2_000 },
+      correctIndex: 1,
+      deltas: { amier: 900 },
+      uid: 'amier',
+    });
+
+    // #then it is correct
+    expect(verdict).toBe('correct');
+  });
+
+  test('names a wrong answer, which the tally still records', () => {
+    // #given an answer on the wrong lectern — present in the deltas as a zero
+    const verdict = verdictFor({
+      answer: { optionIndex: 3, elapsedMs: 2_000 },
+      correctIndex: 1,
+      deltas: { amier: 0 },
+      uid: 'amier',
+    });
+
+    // #then it is wrong rather than lost
+    expect(verdict).toBe('wrong');
+  });
+
+  test('calls an answer lost when the tally never saw it', () => {
+    // #given a correct answer that landed while the vault was being asked, so
+    // the reveal was folded without it
+    const verdict = verdictFor({
+      answer: { optionIndex: 1, elapsedMs: 14_900 },
+      correctIndex: 1,
+      deltas: { greg: 700, friar: 0 },
+      uid: 'amier',
+    });
+
+    // #then the player is told, rather than shown "Correct · +0"
+    expect(verdict).toBe('lost');
+  });
+
+  test('does not call silence a lost answer', () => {
+    // #given a player who never answered at all
+    const verdict = verdictFor({
+      answer: undefined,
+      correctIndex: 1,
+      deltas: { greg: 700 },
+      uid: 'amier',
+    });
+
+    // #then nothing went wrong — they just did not answer
+    expect(verdict).toBe('silent');
+  });
+
+  test('reads a question nobody answered as silence, not loss', () => {
+    // #given a reveal where the whole room ran out of time
+    const verdict = verdictFor({
+      answer: undefined,
+      correctIndex: 1,
+      deltas: {},
+      uid: 'amier',
+    });
+
+    // #then no alarm is raised
+    expect(verdict).toBe('silent');
+  });
+
+  test('agrees with the tally it is reading', () => {
+    // #given the answers the reveal actually scored
+    const answers = {
+      greg: { optionIndex: 1, elapsedMs: 4_510 },
+      amier: { optionIndex: 2, elapsedMs: 12_203 },
+    };
+    const deltas = tallyQuestion({ correctIndex: 1, answers, durationMs: 15_000 });
+
+    // #when a third player's answer arrives too late to be in it
+    const late = { optionIndex: 1, elapsedMs: 14_900 };
+
+    // #then the two scored players read as scored and the third as lost
+    expect([
+      verdictFor({ answer: answers.greg, correctIndex: 1, deltas, uid: 'greg' }),
+      verdictFor({ answer: answers.amier, correctIndex: 1, deltas, uid: 'amier' }),
+      verdictFor({ answer: late, correctIndex: 1, deltas, uid: 'friar' }),
+    ]).toEqual(['correct', 'wrong', 'lost']);
   });
 });

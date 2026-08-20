@@ -11,3 +11,9 @@ coverage/
 
 # Service-account key for `npm run seed-vault`. Never commit one.
 .secrets/
+
+# Tool wiring — symlinks onto shared context and AGENTS.md. Never commit.
+CLAUDE.md
+.cursor/rules/00-core.mdc
+.cursor/rules/typescript.mdc
+.cursor/rules/testing.mdc

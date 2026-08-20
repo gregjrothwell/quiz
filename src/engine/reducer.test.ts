@@ -45,7 +45,11 @@ function vaultIndexOf(state: RoomState): number {
 
 /** The reveal action for whichever question the room is currently on. */
 function revealNow(state: RoomState): Action {
-  return { type: 'reveal', correctIndex: vaultIndexOf(state) };
+  return {
+    type: 'reveal',
+    correctIndex: vaultIndexOf(state),
+    questionId: state.questions[state.index]?.id ?? '',
+  };
 }
 
 /**
@@ -522,6 +526,44 @@ describe('reveal', () => {
       phase: 'reveal',
       openedAt: null,
     });
+  });
+
+  test('scores an answer that lands while the vault is being asked', () => {
+    // #given a question revealed against a room that gained an answer after the
+    // vault was asked — the buzzer-beater the round used to throw away
+    const asked = playingRoom();
+    const action = revealNow(asked);
+    const landed = reduce(asked, {
+      type: 'answer',
+      uid: 'guest',
+      optionIndex: 1,
+      elapsedMs: 9_900,
+    });
+
+    // #when the answer comes back and is applied to the room as it is now
+    const result = reduce(landed, action);
+
+    // #then the late answer counts
+    expect(result.scores['guest']).toBe(505);
+  });
+
+  test('refuses an answer that belongs to a different question', () => {
+    // #given a reveal for the question that was open when the vault was asked
+    const asked = playingRoom();
+    const action = revealNow(asked);
+
+    // #when the room has since moved on to the question after it
+    const movedOn = apply(
+      asked,
+      action,
+      { type: 'next', at: 0 },
+      { type: 'next', at: 1 },
+    );
+
+    // #then applying that answer again does nothing at all, rather than marking
+    // the whole room wrong on a question it was never the answer to
+    expect(reduce(movedOn, action)).toBe(movedOn);
+    expect(movedOn.index).toBe(1);
   });
 });
 

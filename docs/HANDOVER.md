@@ -6,8 +6,10 @@ Built to replace Polly in Teams.
 - **Live:** https://gregjrothwell.github.io/quiz/
 - **Repo:** https://github.com/gregjrothwell/quiz (public, `master`, deploys from `gh-pages`)
 - **Firebase project:** `quiz-d686e` (Firestore + Realtime Database in europe-west1 + Anonymous auth)
-- **Status:** shipped and played. 272 tests, clean types and lint, no `any` or
-  `@ts-ignore`. The **answer vault is live and covers the packs**: 13,593
+- **Status:** shipped and played. 356 tests, clean types and lint, no `any` or
+  `@ts-ignore`. **[PR #2](https://github.com/gregjrothwell/quiz/pull/2) is open
+  and awaiting review — not merged, not deployed** — see [squads, weeks and the
+  average board](#squads-weeks-and-the-average-board). The **answer vault is live and covers the packs**: 13,593
   answers seeded against the 13,452 the packs need plus the 4 harness entries,
   both rulesets published, preflight passing.
 - **The vault is ahead of the packs, not behind** — verified 13 August 2026 by
@@ -15,9 +17,12 @@ Built to replace Polly in Teams.
   ids hash the question text, so a revised question leaves its old answer in
   place, unread and harmless. All 14,176 pack questions across the ten packs
   resolve to an answer.
-- **Next: two console steps, and they are the only things outstanding.** A
-  maintenance pass on 15 August 2026 did the code half of both and cannot do the
-  other half from here:
+- **Next: review and merge [PR #2](https://github.com/gregjrothwell/quiz/pull/2),
+  then deploy.** Nothing else is queued. The two console steps below are both
+  **done** and are kept for the reasoning, not as work.
+
+  A maintenance pass on 15 August 2026 did the code half of both and could not do
+  the other half from here:
   1. ~~Prune the rooms.~~ **Done, 15 August 2026: 81 rooms and 533 documents
      deleted**, leaving 3. Season rows, the vault and the question history were
      untouched and `check-rules` still passes. Re-run `npm run prune-rooms`
@@ -140,6 +145,153 @@ Built to replace Polly in Teams.
 > cannot be reached from the client that already owns that identity, because the
 > `playerId == uid` branch short-circuits in front of it. One client could only
 > ever have proved that branch by reasoning about it.
+
+---
+
+## Squads, weeks and the average board
+
+**[PR #2](https://github.com/gregjrothwell/quiz/pull/2), branch
+`squads-and-weekly-boards`, 19–20 August 2026. Open, not merged, not
+deployed.** Six changes, and **not one of them needs a rules republish** — which
+was the design constraint, because a hand-pasted ruleset has broken this game
+twice.
+
+**To ship it:** merge, then `npm run deploy`. There is nothing to paste into the
+console first — which is the opposite of the vault and of durable identity, and
+is the whole point of the three facts below. Run `npm run check-rules` before
+deploying anyway: this branch *depends* on the published ruleset having the
+`{season}` wildcard and the 40-character `team` bound, even though it changes
+neither.
+
+| | |
+|---|---|
+| **The podium freezes** | at the whistle, so somebody pressing Leave no longer rearranges it on every other device |
+| **A weekly board** | `seasons/week-2026-W34/players/{id}` — a week *is* a season id |
+| **The season ranks on points ÷ played** | three rounds to qualify |
+| **Teams became Squads** | Hermes, Bundae, Lurkers, from a dropdown |
+| **The week board after the quiz** | filtered to the squad you played for |
+| **The question text is sealed** | while the clock runs, and only while it runs |
+
+### Why none of it needed the console
+
+Three facts, each worth keeping:
+
+- **`match /seasons/{season}/players/{playerId}` takes an unconstrained
+  wildcard.** So a week bucket is the same document under a different name,
+  validated by the same published rule. `check-rules` has always written under a
+  throwaway `rules-check` season, which is the proof it was safe.
+- **`played` has been stored since the first board.** Ranking on the average
+  needed no new field.
+- **`team` is bounded as a string ≤ 40 chars.** `Hermes`, `Bundae` and `Lurkers`
+  all fit.
+
+> **The stored field is still `team`.** Everything on screen and almost
+> everything in the code says *squad*; the Firestore field does not, because it
+> is bounded by name in `firestore.rules` and the row is validated with
+> `hasOnly`. Renaming it would cost a hand-paste **and** orphan every value
+> already written. The two names meet in exactly one place — the mapping in
+> `src/lib/season.ts` — and `src/engine/squad.ts` says so at the top.
+
+`check-rules` gained a permanent check that a week-shaped season id still
+writes. The rules did not change, but the app now *depends* on that wildcard: if
+a future ruleset ever constrains the season segment, every game would bank its
+season half and silently lose its week half. That check is what would name it.
+
+### The Lurker split, which is the only clever part
+
+Some regulars belong to neither side and sit with either on the night. Lurkers
+is a squad in its own right, and a Lurker is asked who they are playing with —
+**the one thing the two tables are ever told differently**: the week's row is
+filed under whoever they sat with, and their season record still says Lurkers.
+Kept in *session* storage, because sitting with Bundae this week is not a
+standing arrangement.
+
+**Proved end to end against live Firebase, 19 August 2026** — a full
+ten-question round played as a Lurker with Hermes:
+
+| | |
+|---|---|
+| Final screen | **"Hermes this week"** under the podium |
+| `seasons/season-2/players/{id}` | `team: "Lurkers"` |
+| `seasons/week-2026-W34/players/{id}` | `team: "Hermes"` |
+| Reload the final screen | still `played: 1` in both |
+
+**That last row closes what this file called the least-proven thing in the
+repo.** `recordGame` had never run against a real project and its repeat-write
+guard had only been reasoned about. It holds, per bucket, watched. Test rows and
+the test room were deleted afterwards.
+
+### Things that will bite
+
+- **The season board re-sorts in the client.** `loadTable` still asks Firestore
+  for the top fifty *by points*, because an average cannot be ordered
+  server-side without storing it — and storing it means a new field, which means
+  the console. Exact while the board is fifty rows or fewer; it is twenty-one.
+  **Past fifty, the tail of the average board is wrong**, quietly.
+- **`setSquad` writes the season row only.** A squad picked in error leaves that
+  week's row wrong. Changing it fixes every week after; the wrong one stays
+  wrong. Rewriting a banked week means editing a result after the fact, which
+  was judged a bigger decision than the fix deserved.
+- **The empty week board reads as broken unless it says something.** Clicking
+  *This week* on a Monday rendered nothing at all — correct on the final screen,
+  where absence under a podium reads as "not yet", and broken-looking as a whole
+  screen. `whenEmpty` picks which. Found by trying it, not by reasoning.
+- **`rememberedSquad` narrows to the list; `cleanSquad` does not.** A `<select>`
+  handed a value matching none of its options renders as though nothing were
+  chosen, so a stored legacy name would make the picker silently disagree with
+  the record. `cleanSquad` stays tolerant because it also runs on the way *out*
+  of Firestore, where narrowing would erase legacy rows from the board.
+- **The average board is a rearrangement, not a re-sort.** On the live rows Joe
+  goes 8th → 1st, Greg 1st → 3rd, Rach 2nd → 10th, Bret 7th → 13th. The people
+  who lose are the ones who have turned up most. That is the intended effect and
+  the thing somebody will complain about.
+
+### What the seal on the question text does and does not buy
+
+`user-select: none` plus `onCopy`/`onCut`, on the prompt and the options, **only
+while the question is open**. It kills select → copy → paste into a search box
+or an LLM, which takes about four seconds and is the only cheat anybody in an
+office would actually try mid-question.
+
+It stops **nothing else** — view-source, DevTools, the network tab, a screenshot
+through OCR, or typing the question out. Anyone willing to do those was already
+willing to harvest OpenTDB, which is the real ceiling and is
+[documented](#what-it-does-not-stop).
+
+It lifts at the reveal deliberately: the answer is on screen by then, and
+copying a good question to send to somebody afterwards is legitimate. The room
+code, the join link, the standings and the round in review are untouched.
+
+### `npm run host-room` is broken, and was before this branch
+
+It imports `resolveAnswer` from `src/lib/vault`, which imports `src/firebase`,
+which reads `import.meta.env` — undefined outside Vite. It dies on the first
+import with `Cannot read properties of undefined (reading
+'VITE_FIREBASE_API_KEY')`. **Confirmed on `master`.**
+
+This file has listed the harness as *untested*. It is **broken**, which is worse:
+it is named here as the way to test quizmaster handover, keyboard shortcuts and
+the vault gate, and none of those can be done with it today. Not fixed — the fix
+means restructuring `vault.ts`'s Firestore dependency, which deserves its own
+change.
+
+### Regression pass, 20 August 2026
+
+`typecheck`, `lint`, **356 tests**, `npm run build` all clean. No `any`, no
+`@ts-ignore`. `firestore.rules`, `firestore.seed.rules`, `database.rules.json`
+and `package.json` are untouched by the whole branch.
+
+- `npm run check-rules` — **36/36**, both directions, twice.
+- `npm run sync-harness 10` — ten clients, all ten joined, all ten saw the round
+  start **within 63 ms**, none dropped.
+- The whole `#/preview` gallery renders with no console errors and no sideways
+  body scroll at 1280, 375 and 320 px.
+- The bundle grew about **3 kB gzipped** (app chunk 114 → 117 kB).
+
+One correction to this file: it says `check-rules` runs 36 checks and to count
+them with `grep -c "label:"`. That grep counted the `label: string` on the type
+declaration, so it was 35 before this branch and is 36 now that the weekly
+bucket check exists.
 
 ---
 
@@ -1193,7 +1345,9 @@ scripts/        Build-time question harvest, and the multi-client test harnesses
 
 Commands: `npm run dev` (serves at `/quiz/`, port 5273), `test`, `typecheck`, `lint`,
 `build`, `deploy`, `fetch-questions [-- --resort]`, `fetch-otqa`, `seed-vault`,
-`check-rules`, `sync-harness [n]`, `host-room [-- secs]`, `take-stock`.
+`check-rules`, `sync-harness [n]`, `host-room [-- secs]` (**broken**, see
+[why](#npm-run-host-room-is-broken-and-was-before-this-branch)), `take-stock`,
+`prune-rooms`.
 
 `npm test` covers `src/` plus the pure parts of `scripts/` — the OpenTriviaQA
 parser and its encoding fallback, which corrupt questions silently when wrong.
@@ -1329,10 +1483,10 @@ other people in it:
   to a row.
 - **The review panel with a real room in it.** Both its highlights need at least
   two people who answered, so a solo round can never show either.
-- **Two people in different teams on the board.** The filter is covered on
-  fixtures and the rules accept the field, but no real record has carried a team
-  yet — the first game anybody plays after the deploy of 15 August will be the
-  first to write one.
+- ~~**Two people in different teams on the board.**~~ One real record did carry
+  one — `Awesome team`, from the free-text era — and it was cleared by hand on
+  19 August when squads became a fixed list. Still nobody has played a round
+  with two *different* squads in the room.
 
 **Not verified in a real room:** everything from 14 August. The name persists
 across a reload on one browser, but has not been watched surviving a week, and
@@ -1346,8 +1500,10 @@ badly enough to sit in the chair in anger.
   anyone was dropped. Ten players see a round start within ~85 ms, none dropped.
   `LEGACY_WRITE=1` restores the whole-document write so the players-clobber bug
   can be watched happening rather than taken on trust.
-- `npm run host-room` hosts a room from the terminal and drives a round, so the
-  browser can be watched as an ordinary player while somebody else runs the game.
+- `npm run host-room` was meant to host a room from the terminal so the browser
+  could be watched as an ordinary player. **It has never run** — see
+  [why](#npm-run-host-room-is-broken-and-was-before-this-branch). It is listed
+  here because this section used to claim it as verification, and it never was.
 
 **Not verified — start here:**
 
@@ -1355,19 +1511,26 @@ badly enough to sit in the chair in anger.
    covered — three reducer tests, and the preview shows the unpicked lecterns
    staying live — but a second write landing on `answers/{uid}` in Firestore has
    not been watched. The rules permit it and always did, so the risk is not
-   permission but the write racing the reveal. `npm run host-room -- 20` gives a
-   long enough window to answer, change, and watch which one scores.
+   permission but the write racing the reveal. The obvious way to try it was
+   `npm run host-room -- 20`, for a window long enough to answer, change and
+   watch which one scores — **and that harness does not run.** A second browser
+   against a solo-hosted room is the way in until it is fixed.
 
-0. **`host-room` since the vault landed.** It waits out the gate and asks the
-   vault itself before revealing, and that path has still not been run.
-   `sync-harness` covers joining and phase sync; this is the one that would
-   catch a mistake in the terminal harness's own reveal. It now takes the window
-   as an argument, so `npm run host-room -- 10` both exercises the configurable
-   window and halves the wait:
+0. **Fix `host-room`, and it is the best-value job on this list.** It is broken
+   outright and was before the squads branch — it imports `src/firebase`, which
+   needs Vite. See [the note
+   above](#npm-run-host-room-is-broken-and-was-before-this-branch).
 
-   ```bash
-   npm run host-room -- 10
-   ```
+   It is not one untested path but the *tool* three of them need: a quizmaster
+   dropping out mid-round, the keyboard shortcuts in a live game, and the
+   terminal harness's own reveal — which waits out the gate and asks the vault
+   itself, and has never executed. `sync-harness` covers joining and phase sync
+   and cannot reach any of that.
+
+   The fix is to stop `scripts/` reaching `src/lib/vault.ts`, which drags in
+   `src/firebase.ts` and its `import.meta.env`. `scripts/appCheck.ts` already
+   shows the shape: the scripts build their own Firebase app rather than
+   importing the app's.
 
 **Verified — the vault, end to end.** The rules were written from documented
 semantics and, at the time of writing, nothing had executed. It has now: seeded
@@ -1392,12 +1555,12 @@ one, which is why it waits out a real gate instead of being assumed. It runs on
 the five-second floor, which also makes it the check that fails if the published
 rules are still using a fixed twenty.
 
-0. **The season table against live Firestore.** `recordGame` has never run
-   against a real project, and the transaction's repeat-write guard has only been
-   reasoned about, not watched. This is the least-proven thing in the repo.
-   `npm run check-rules` now writes and deletes a real season row under a
-   throwaway season id, so the *rules* side is covered; the transaction's
-   repeat-write guard still is not.
+0. ~~**The season table against live Firestore.**~~ **Done, 19 August 2026.**
+   `recordGame` ran against the real project in a full ten-question round, and
+   reloading the final screen afterwards left `played: 1` in both the season and
+   the week bucket — so the repeat-write guard is now watched rather than
+   reasoned about, per bucket. See [squads, weeks and the average
+   board](#squads-weeks-and-the-average-board).
 
 1. ~~**Whether the clock sounds right.**~~ **Done** — heard on 14 August 2026
    and it works, including the bed-to-gong balance that had been set by eye
@@ -1443,14 +1606,18 @@ rules are still using a fixed twenty.
   code added about 10 kB of that (`qrcode-generator`, MIT, no dependencies) —
   more than it looked like it would. Code-splitting is the fix if it matters.
   The clock added 0.9 kB, being oscillators rather than audio.
-- **Devices in the same room will phase against each other.** Each one schedules
-  its own clock from when *it* saw the question open, and those moments differ by
-  the spread of the Firestore snapshot. This was already true of the tick and
-  nobody remarked on it; nine seconds of music makes it far more noticeable. It
-  cannot be fixed by syncing to `questionOpenedAt` without folding the
-  quizmaster's clock offset back into every device — the thing
-  `useQuestionClock` exists to avoid. If it grates in a real room, the honest
-  fix is fewer laptops with the volume up, not a shared clock.
+- **Devices in the same room will phase against each other, and it costs
+  answers.** Each one schedules its own clock from when *it* saw the question
+  open, and those moments differ by the spread of the Firestore snapshot. This
+  was already true of the tick and nobody remarked on it; nine seconds of music
+  makes it far more noticeable. **It was filed here as an audio nuisance and
+  that was wrong** — on 17 August a player's window started about five seconds
+  late, so the reveal killed his lecterns while his own timer still read five
+  seconds and he could not answer at all. It cannot be fixed by syncing to
+  `questionOpenedAt`, which is a client wall clock and would fold the
+  quizmaster's offset into every device — but `openedAt` is a
+  `serverTimestamp()` and there is a route through it. See [the clock, and what
+  it actually costs](#the-clock-and-what-it-actually-costs).
 - **A non-member can still write an answer document.** Nothing checks
   membership on the way in — the room code is the capability, as everywhere
   else. It no longer *scores*, and no longer inflates the answered count, but
@@ -1687,6 +1854,290 @@ Both were costed; neither is queued.
 
 ---
 
+## Joining a round that has already started
+
+Room **6JA5**, 17 August 2026, Geography, twenty questions, six people. Two
+people arrived after it began, and the post-mortem on that room found three
+faults. All three were already in the code before that night; the round exposed
+them rather than caused them.
+
+### The stale seat, and how it was proved
+
+`resolveQuizmaster` picks whoever has been in the room longest, so `joinedAt`
+decides who drives the round. `joinedAtRef` in `useRoom` remembers this device's
+place so that coming back from a reap does not cost a quizmaster their chair —
+but it was never cleared, and it outlives a room.
+
+Double D's entry in 6JA5 reads `joinedAt: 1786963245823` — 10:40:45.823. Room
+**6WP6** has `expiresAt` exactly thirty days after that same millisecond, an
+empty `players` map and a single score of zero under Double D's uid. That is the
+signature of `createAndJoin` followed by `leave`. They made a room by accident,
+left it, joined the real one, and were stamped in 6JA5 with the moment they
+created the *other* room.
+
+It cost nothing that night only because 10:40 happens to be later than the
+host's 10:36. Nothing made it so. Had that stray room been created a few minutes
+earlier — or had the tab simply still been in the previous game, where Double D's
+stamp was **08:43** — the arrival would have resolved as quizmaster of a round
+already under way. The transport moves to a device that has just walked in,
+whose answer clock starts from zero, so the round stops until the newcomer's own
+timer runs out.
+
+Two fixes, because either alone leaves the other half open:
+
+- the ref is stamped with its room and restored only into that same room;
+- a genuinely new entry is seated with `seatBehind`, which is `max(now, latest
+  joinedAt + 1)`. A slow laptop clock cannot get ahead of the room either.
+
+A reap-and-return still restores the original seat, which is the case the ref
+exists for.
+
+### The fresh clock
+
+`useQuestionClock` counts from the moment *this* device saw a question open. That
+is deliberate and stays — comparing against the quizmaster's `questionOpenedAt`
+folds their clock offset into everyone's speed score, and office laptops
+disagree by more than the bonus is worth. It is sound for anybody present when
+the question opened, because a local clock can only start late.
+
+It is not sound for somebody who joins halfway through. They get a full fresh
+window on a question that is already nine seconds old, and an answer given on the
+buzzer is stamped as though it were instant — up to 990 points for arriving late
+and guessing.
+
+Fixed without consulting any clock at all. The first snapshot after joining is
+the room's current state, so a question already open in it is one this device did
+not see open. `engine/arrival.ts` holds the rule; that question is submitted at
+the full window, so it scores its points and no speed bonus, and the arc timer is
+replaced by a line saying why rather than counting down a window the room does
+not have left.
+
+### The phantom game
+
+Boss Man joined at 10:47:26.911 — thirty-three seconds after the last question
+opened, eight seconds before the results went up. He answered nothing. Two
+things happened anyway:
+
+- `writeSelfIntoRoom` wrote him a score of zero, and `standings` is built from
+  `scores`. He went onto the final board, and `seatedLast` put him in the
+  loser's chair for a game he never saw.
+- The banking effect fired on the finished screen and took his season record from
+  eight games to nine, on a score of zero.
+
+Now: a join into a `finished` room opens no score at all — absent from `scores`
+is absent from the standings, and `reset` gives everybody a score again when the
+next round starts. And a device banks only if its game log holds at least one
+question of that game. One is enough: joining late and playing three of twenty is
+still playing, and the log is mirrored into session storage so a reload does not
+read as never having been here.
+
+### Still open
+
+**The board cannot tell the room who was actually playing.** The fixes above are
+all per-device or per-arrival, because `playerOk` in `firestore.rules` validates
+a player entry with `hasOnly(['name', 'joinedAt', 'playerId'])` — recording the
+question somebody joined at would need a rules change, and this project has had
+two broken by a hand-paste. So a player who joins at question eighteen is still
+ranked against people who played all twenty, on every screen. Worth doing, and
+worth doing at the same time as the next rules change rather than on its own.
+
+Nothing here needs a rules change, so all of it shipped.
+
+---
+
+## The buzzer-beater the reveal used to throw away
+
+A real bug, found while looking for a different one. **It is not what was
+reported on 17 August** — see the correction at the end of this section — but it
+stands on its own, and it is worth reading before touching `dispatch` or
+`handleReveal`.
+
+`handleReveal` asks the vault and then dispatches:
+
+```js
+const correctIndex = await openTheVault(room.code, question);
+await dispatch({ type: 'reveal', correctIndex, questionId: question.id });
+```
+
+`openTheVault` is not cheap. It fires **four concurrent `setDoc` writes** — one
+per lectern, three of which the rules refuse — and waits for all four. That is a
+full network round trip, and on a phone it is the slowest of four.
+
+`dispatch` used to fold the reveal over the `room` its own closure was created
+with, which is the room as it stood *before* that round trip. Every answer that
+landed during it was in a newer room object that closure could never see. The
+player answered inside the window, watched their lectern light, and scored
+nothing. Next question they were fine — so it reads as falling a question behind
+and then catching up, which is exactly how it was reported.
+
+Two things make the window wider than the round trip alone:
+
+- **The quizmaster's clock is the earliest in the room.** They wrote the update
+  that opened the question, so their local echo is instant while everyone else
+  waits on the fan-out. They call time while other screens still show a fraction
+  of a second left.
+- **Nobody is told.** There is no "your answer didn't count". The lectern lights
+  up locally the moment it is tapped.
+
+It costs whoever answers latest, on whichever question they cut it finest.
+
+Fixed by folding over `roomRef.current` — the newest room this client has seen —
+rather than the closure's copy. That also turns the round trip into grace time
+rather than a blind spot, which roughly cancels the quizmaster's head start.
+
+**The `questionId` on the reveal action exists because of that fix, not
+independently of it.** Folding over the current room means the room could in
+principle have moved on during the round trip, and applying one question's answer
+to the next would mark the entire room wrong on a question nobody got a chance to
+answer. The reducer now refuses a reveal whose `questionId` is not the question in
+play. Keep them together: removing the guard makes the fold unsafe.
+
+### The diagnosis this was attached to, and why it was wrong
+
+It was pinned on the 17 August report — a player falling a question behind and
+then catching up — on the strength of one number: he answered the last question
+at 12.2s of 15s, where the rest of the room came in between 3.7s and 6.8s. The
+slowest answerer is the one this bug costs, so it fit.
+
+It made a falsifiable prediction, which is the only reason the mistake was cheap:
+`verdictFor` shows a lost answer as `Correct · +0`, so the player would have seen
+that on screen. **He was asked, and he had not.** What he actually described was
+his timer sitting at zero after the question was over, and, separately, a face
+reading five seconds that snapped to zero with the lecterns going dead. Neither
+is this bug — he never got an answer in at all. See [the clock, and what it
+actually costs](#the-clock-and-what-it-actually-costs).
+
+Two things worth keeping from that:
+
+- **A plausible mechanism plus a matching number is not a diagnosis.** Every
+  piece of evidence here was consistent with the theory and none of it was
+  evidence *for* it, because nothing had been checked that could have come back
+  no. The reveal-gap bug is real; the attribution was invented.
+- **Ask the person first.** One question to the player settled in a sentence what
+  a day of reading Firestore could not, and it settled it against the theory.
+  Same lesson as the console tab in the 15 August session, one section down.
+
+### Reproducing it
+
+Not observable in one browser, and not observable on localhost with a fast
+connection, because the window is the length of a round trip. What it needs is a
+real device on real wifi answering on the buzzer:
+
+1. Two devices, one phone among them. Host a round with a **10-second** window —
+   the shorter the window the larger the round trip is as a fraction of it.
+2. On the phone, tap an answer as late as you dare, inside the last half second.
+3. Watch the standings. Before the fix, that answer scores nothing perhaps one
+   time in three, and nothing on any screen says why.
+
+`scripts/host-room.ts` is not the tool for this: it runs the reveal from Node, so
+it does not exercise the App's closure at all.
+
+### Telling the player, which is the part that matters
+
+The bug above cost one question. What cost a week was that **nothing said it had
+happened**. The screen read `Correct · +0` — the game contradicting itself — and
+the only way to find out why was to pull the room out of Firestore days later.
+
+`verdictFor` in `engine/scoring.ts` now names four outcomes rather than three,
+and the fourth is `lost`. The test for it is exact rather than a heuristic:
+`tallyQuestion` emits an entry for **everyone** whose answer was scored,
+including a zero for everyone who got it wrong. So a player holding an answer
+with no entry at all was not in the tally, and there is no other way that
+happens.
+
+It shows in amber, not the verdict red, on the same principle as `.nudge`: this
+is not the player getting it wrong, it is the game failing to count them, and red
+would tell somebody who answered correctly that they were wrong.
+
+**It generalises across every way an answer can go missing** — it does not know
+or care *why*, only that the room scored the question without it — but note the
+limit, because it was overstated when this was written: **it only fires for a
+player who got an answer in.** It says nothing to somebody who could not answer
+at all, which is the 17 August report. Different failure, different indicator.
+
+There is a fixture for it in the preview gallery — *Reveal · answer didn't
+land*. Note that adding it exposed a stale one: *Reveal · wrong answer* named
+only the scorer in `lastDeltas`, which no real tally ever does, and it started
+showing the other three a fault that had not happened. Any new reveal fixture
+must list every answerer.
+
+---
+
+## The clock, and what it actually costs
+
+This is the 17 August report, in the player's own words:
+
+> it was just those two moments where my timer was stuck on 0 after the question
+> was over and the other being it said I had 5 seconds left but it instantly went
+> to 0 and I couldn't answer
+
+Two different halves of one thing: **every device runs its own private clock, and
+nothing on screen ever admits it.**
+
+`useQuestionClock` counts from the moment *this* device saw the question open.
+That is deliberate and the reasoning is sound — syncing to `questionOpenedAt`
+would fold the quizmaster's clock offset into everybody's speed score, and office
+laptops disagree by more than the bonus is worth. What was not thought through is
+what the gap does to a player.
+
+**"Five seconds left, then instantly zero, and I couldn't answer."** His snapshot
+of the question opening arrived about five seconds after the room's, so his
+window started five seconds late and his face was five seconds behind everyone's.
+The reveal ended the question — correctly, for the room — while his timer still
+showed time, and the lecterns went dead under his hand. He was not slow. He was
+shown a clock the room was not running to.
+
+**"Stuck on 0 after the question was over."** The mirror image: his clock expired
+and the reveal had not reached him. Two ways in, and a player cannot tell them
+apart because neither says anything. The vault gate is the interesting one — it
+refuses until the *server* agrees the window has passed, and `App` retries every
+1.5s up to eight times, so a room can legitimately sit at zero for twelve
+seconds. **That notice only renders on the quizmaster's device.** Everybody else
+gets a dead timer and no explanation.
+
+### This was already written down, and under-rated
+
+Under [known limits](#known-limits): *"Devices in the same room will phase against
+each other... If it grates in a real room, the honest fix is fewer laptops with
+the volume up."*
+
+That was filed as an audio nuisance — the nine-second bed sounding like a round
+in a canon. It is the same defect, and it does not just grate. **It takes
+answers off people.** The entry has been corrected.
+
+### What would actually fix it
+
+Not the naive shared clock the limit rules out. But `openedAt` is a
+`serverTimestamp()`, not a client one, so there is a way through: each client
+records `Date.now() - openedAt` when a question opens, and the **minimum** of
+that across a round approximates its own pure clock skew, because delivery
+latency is never negative. The rest is this device's lag, and subtracting it
+gives every screen the room's remaining time rather than its own.
+
+Real work, on the most safety-critical code in the app, and it fails quietly if
+it fails — so it is a deliberate decision, not a tidy-up. Not started.
+
+The cheap half, which is most of the harm: **let the screen say it is out of
+step.** A dead zero should read "waiting for the quizmaster", and a reveal that
+lands while your face still shows time should say the room has moved on rather
+than silently killing the lecterns. Neither needs a shared clock, and either
+would have told this player what was happening instead of leaving him to report
+it a week later.
+
+---
+
+## Still not fixed
+
+`submitAnswer` stamps `questionIndex` from this device's snapshot. A client whose
+listener has stalled writes an answer against the question it can still see, and
+it is filtered out everywhere. Much harder to reach than the above — `phase` and
+`index` travel in the same snapshot, so a stalled client is usually showing the
+scoreboard and cannot answer at all. Left alone deliberately: it is now
+*visible* rather than silent, which was the actual problem, and the fix would be
+a retry path on a write that must not be retried carelessly.
+
+---
+
 ## Lessons from the 15 August session
 
 Six wrong statements were made about Google's console and Firebase's product
@@ -1901,17 +2352,37 @@ gain new paths.
 
 ## If you're picking this up cold
 
+**First, the state of play: [PR #2](https://github.com/gregjrothwell/quiz/pull/2)
+is open and unmerged** — squads, the weekly board, the average season table, the
+frozen podium and the sealed question text. It needs no console step. Read
+[its section](#squads-weeks-and-the-average-board) before touching the season
+table, `recordGame` or anything called `team`.
+
 Fastest way to be useful: `npm run check-rules`, then `npm run sync-harness 10`.
 Between them they confirm the rules are published and that ten clients stay in
 sync — the two things that have actually broken in play.
 
-The remaining untested path is a **quizmaster dropping out mid-round** and the
-role passing to somebody else. It is covered in the engine but has never been
-watched happen with real clients. `npm run host-room -- 10` plus a browser is
-the way to try it — and that harness has itself not been run since the vault
-landed, so it exercises the gate and the vault lookup on the way through.
+> ### Do not reach for `npm run host-room`. It does not run.
+>
+> This section used to name it as the way to test the remaining untested path.
+> It imports `src/firebase`, which reads `import.meta.env`, so it dies on the
+> first import outside Vite — and it has been that way since before the squads
+> branch. See [the note in its
+> section](#npm-run-host-room-is-broken-and-was-before-this-branch).
+>
+> Three things are named in this file as being testable with it and are
+> therefore **not testable at all today**: a quizmaster dropping out mid-round,
+> the keyboard shortcuts in a live game, and the vault gate from the terminal.
+> Fixing the harness is the unblocking move, and it is the best-value job on the
+> list for that reason.
 
-Nothing is queued after that. If you are changing anything about the answer
-window, [read its section first](#the-configurable-answer-window): the number
-lives in `firestore.rules` as well as the client, and two of the three rules
-around it exist to close holes that are not obvious from the client side.
+A solo round in the browser is what is left, and it does more than it sounds:
+it is what proved `recordGame` against the live project on 19 August, including
+the repeat-write guard across a reload. What it cannot reach is anything needing
+a second person — the review panel, a real quizmaster handover, two squads on
+one board.
+
+If you are changing anything about the answer window, [read its section
+first](#the-configurable-answer-window): the number lives in `firestore.rules`
+as well as the client, and two of the three rules around it exist to close holes
+that are not obvious from the client side.

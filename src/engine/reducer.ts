@@ -39,8 +39,14 @@ export type Action =
    * `correctIndex` arrives from the vault, not from the room. Only the client
    * that ran the reveal knows it, and writing it into the question is how
    * everybody else finds out.
+   *
+   * `questionId` says which question it is the answer *to*. The vault is asked
+   * before this is dispatched, so there is a network round trip between reading
+   * the question and scoring it, and this is what stops an answer being applied
+   * to a question the room has since moved on to — which would mark everybody
+   * wrong on a question nobody got a chance to get wrong.
    */
-  | { type: 'reveal'; correctIndex: number }
+  | { type: 'reveal'; correctIndex: number; questionId: string }
   | { type: 'skip' }
   | { type: 'next'; at: number }
   | { type: 'reset' };
@@ -68,7 +74,7 @@ export function reduce(state: RoomState, action: Action): RoomState {
     case 'answer':
       return answer(state, action.uid, action.optionIndex, action.elapsedMs);
     case 'reveal':
-      return reveal(state, action.correctIndex);
+      return reveal(state, action.correctIndex, action.questionId);
     case 'skip':
       return skip(state);
     case 'next':
@@ -198,11 +204,19 @@ function answer(state: RoomState, uid: string, optionIndex: number, elapsedMs: n
   return { ...state, answers: { ...state.answers, [uid]: { optionIndex, elapsedMs } } };
 }
 
-function reveal(state: RoomState, correctIndex: number): RoomState {
+function reveal(state: RoomState, correctIndex: number, questionId: string): RoomState {
   if (state.phase !== 'question') return state;
 
   const question = currentQuestion(state);
   if (!question) return state;
+
+  // The answer has to belong to the question in play. The vault is asked over
+  // the network before this is dispatched, and the room is folded over as it is
+  // when the answer comes back rather than as it was when it was asked for —
+  // which is what lets an answer written on the buzzer still count. The same
+  // gap means the room could in principle have moved on, and scoring one
+  // question's answer against the next would mark the whole room wrong.
+  if (question.id !== questionId) return state;
   // A vault answer that does not name one of this question's lecterns means the
   // room and the vault disagree about what is being asked. Scoring anything on
   // that basis would mark the whole room wrong, so the reveal is refused and

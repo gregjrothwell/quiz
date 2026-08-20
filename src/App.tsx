@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ColdOpen } from './components/ColdOpen';
 import { Stage } from './components/Stage';
+import { arrivalFor, walkedIn, NO_ARRIVAL, type Arrival } from './engine/arrival';
 import { honoursFor, sawWholeGame, NO_HONOURS } from './engine/awards';
 import { formFor } from './engine/form';
 import { standings } from './engine/scoring';
@@ -14,9 +15,15 @@ import {
 } from './engine/state';
 import { isFirebaseConfigured } from './firebase';
 import { playerIdFor } from './lib/identity';
-import { rememberTeam, rememberedTeam } from './lib/rememberedTeam';
+import {
+  rememberPlayingWith,
+  rememberSquad,
+  rememberedPlayingWith,
+  rememberedSquad,
+} from './lib/rememberedSquad';
+import { useFinalSnapshot } from './lib/useFinalSnapshot';
 import { useGameLog } from './lib/useGameLog';
-import { loadAsked, loadForm, recordAsked, recordGame } from './lib/season';
+import { loadAsked, loadForm, recordAsked, recordGame, type Banked } from './lib/season';
 import { play } from './lib/sound';
 import { loadPackQuestions, usePackIndex } from './lib/usePacks';
 import { useQuestionClock } from './lib/useQuestionClock';
@@ -114,6 +121,12 @@ function Game() {
   const [actionError, setActionError] = useState<ActionError | null>(null);
   const [showSeason, setShowSeason] = useState(false);
 
+  // What this device banked, and where. Held rather than re-derived so the week
+  // board reads the bucket the write actually landed in — a game banked at one
+  // minute to midnight on a Sunday belongs to the week that has just ended, not
+  // to the one starting while the podium is still on screen.
+  const [banked, setBanked] = useState<(Banked & { gameId: string }) | null>(null);
+
   // Which game this device has already banked, or is in the middle of banking,
   // so a re-render on the final screen cannot bank it twice. The season document
   // carries the same guard for anything this ref cannot see, such as a reload.
@@ -131,12 +144,39 @@ function Game() {
   // mounting, which happens after the last question has already gone.
   const gameLog = useGameLog(room);
 
+  // The room as it stood at the whistle. Held here rather than in Final for the
+  // same reason the log is — and because the season write below has to bank
+  // against the same frozen table the screen is showing, or a winner going home
+  // before your device banks promotes you into a win you did not take.
+  const finalSnapshot = useFinalSnapshot(room);
+
   const phase = room?.phase ?? 'lobby';
-  const clock = useQuestionClock(
-    phase === 'question',
-    room?.index ?? 0,
-    room ? questionDurationMs(room) : DEFAULT_QUESTION_DURATION_MS,
-  );
+  const durationMs = room ? questionDurationMs(room) : DEFAULT_QUESTION_DURATION_MS;
+  const clock = useQuestionClock(phase === 'question', room?.index ?? 0, durationMs);
+
+  /**
+   * The question this device walked in on, if it walked in on one.
+   *
+   * `useQuestionClock` counts from the moment *this* device saw a question open,
+   * which is deliberate — see the note there about office laptops disagreeing
+   * about the time by more than the speed bonus is worth. It holds for anybody
+   * who was in the room when the question opened, because their clock can only
+   * start a little late. It is false for somebody who joins halfway through: they
+   * get a full fresh window on a question that is already nine seconds old, and
+   * an answer typed on the buzzer is stamped as though it were instant.
+   *
+   * The rules for it are in `engine/arrival.ts`, where they can be tested against
+   * a whole round rather than only watched in a live room.
+   *
+   * Adjusted during render, like the retry counter below: React re-renders before
+   * committing, so no frame is painted from the previous room's arrival.
+   */
+  const [arrival, setArrival] = useState<Arrival>(NO_ARRIVAL);
+
+  const seen = arrivalFor(arrival, room);
+  if (seen !== arrival) setArrival(seen);
+
+  const joinedMidQuestion = walkedIn(seen, room);
 
   /**
    * Which state of the room an action was attempted against. A failure
@@ -167,10 +207,11 @@ function Game() {
   );
 
   const handleCreate = useCallback(
-    (name: string, team: string) => {
+    (name: string, squad: string, playingWith: string) => {
       setBusy(true);
       setActionError(null);
-      rememberTeam(team);
+      rememberSquad(squad);
+      rememberPlayingWith(playingWith);
       createAndJoin(name)
         .catch(report)
         .finally(() => setBusy(false));
@@ -179,10 +220,11 @@ function Game() {
   );
 
   const handleJoin = useCallback(
-    (code: string, name: string, team: string) => {
+    (code: string, name: string, squad: string, playingWith: string) => {
       setBusy(true);
       setActionError(null);
-      rememberTeam(team);
+      rememberSquad(squad);
+      rememberPlayingWith(playingWith);
       join(code, name)
         .catch(report)
         .finally(() => setBusy(false));
@@ -271,9 +313,14 @@ function Game() {
       // sound is to confirm the press, and a round-trip to Firestore is long
       // enough for the delay to read as a missed input.
       play('lock');
-      submitAnswer(optionIndex, clock.elapsedMs).catch(report);
+      // Somebody who walked in on this question is timed from the end of the
+      // window rather than from their own arrival: they still score the answer,
+      // they just do not collect a speed bonus measured from a clock that
+      // started when they sat down. The alternative was letting a mid-question
+      // join bank 990 for an answer given on the buzzer.
+      submitAnswer(optionIndex, joinedMidQuestion ? durationMs : clock.elapsedMs).catch(report);
     },
-    [submitAnswer, clock.elapsedMs, report],
+    [submitAnswer, clock.elapsedMs, joinedMidQuestion, durationMs, report],
   );
 
   /**
@@ -297,7 +344,11 @@ function Game() {
       // The answer is not in the room, the pack or this bundle. It comes back
       // from the vault, and only once the server agrees the clock has run out.
       const correctIndex = await openTheVault(room.code, question);
-      await dispatch({ type: 'reveal', correctIndex });
+      // Named rather than assumed: `dispatch` folds over the room as it is when
+      // this returns, so that an answer landing during the round trip still
+      // counts — and the reducer refuses to score this answer against anything
+      // but the question it was asked about.
+      await dispatch({ type: 'reveal', correctIndex, questionId: question.id });
     } catch (cause) {
       // Rethrown rather than reported here so the caller owns the error, which
       // keeps this callback free of state updates and the expiry effect below
@@ -391,9 +442,26 @@ function Game() {
     const player = room.players[uid];
     if (!player) return;
 
+    // A device that saw no question of this game did not play it, and banking
+    // for it costs a real person a game on their season record for nothing.
+    // Somebody joined room 6JA5 eight seconds before the final screen went up
+    // and took `played` from eight to nine on a score of zero.
+    //
+    // One question is enough, because joining late and playing three of twenty
+    // is still playing. The log is mirrored into session storage, so a reload
+    // during the round does not read as never having been here.
+    if (gameLog.length === 0) return;
+
     bankedRef.current = gameId;
 
-    const rows = standings(room.scores).filter((entry) => room.players[entry.uid]);
+    // The frozen table, not the live one. Both filter on membership, but this
+    // one filters on who was in the room when the whistle went — otherwise a
+    // winner pressing Leave before this device banks removes them from `rows`,
+    // promotes whoever was second, and banks a win that never happened.
+    const players = finalSnapshot?.players ?? room.players;
+    const scores = finalSnapshot?.scores ?? room.scores;
+
+    const rows = standings(scores).filter((entry) => players[entry.uid]);
     const leadScore = rows[0]?.score ?? 0;
     const mine = rows.find((entry) => entry.uid === uid);
 
@@ -401,26 +469,32 @@ function Game() {
       playerId: playerIdFor(uid),
       name: player.name,
       gameId,
-      score: room.scores[uid] ?? 0,
+      score: scores[uid] ?? 0,
       // A round where nobody scored is not a win for everybody.
       won: leadScore > 0 && mine?.position === 1,
-      // Empty means "keep whatever the record says" rather than "no team", so a
-      // regular playing from a second device cannot silently clear their league.
-      team: rememberedTeam(),
+      // Empty means "keep whatever the record says" rather than "no squad", so
+      // a regular playing from a second device cannot silently clear theirs.
+      squad: rememberedSquad(),
+      // Only ever set by a Lurker, and only changes which squad's weekly board
+      // these points land on. Their season record still says Lurkers.
+      playingWith: rememberedPlayingWith(),
       // Only from a log covering the whole game. A device that joined late or
       // reloaded before the log was kept would otherwise bank a shelf it cannot
       // stand behind — and unlike a screen that says nothing, that is permanent.
       honours: sawWholeGame(gameLog, room.questions.length)
-        ? honoursFor(gameLog, Object.keys(room.players), uid)
+        ? honoursFor(gameLog, Object.keys(players), uid)
         : NO_HONOURS,
-    }).catch((cause: unknown) => {
-      // Put the game back within reach of another attempt. Nothing retries on a
-      // timer — the next room update or a reload is what tries again — so this
-      // cannot spin: on a finished room the document is almost never written.
-      bankedRef.current = null;
-      report(cause);
-    });
-  }, [room, uid, gameLog, report]);
+    })
+      .then((written) => setBanked({ ...written, gameId }))
+      .catch((cause: unknown) => {
+        // Put the game back within reach of another attempt. Nothing retries on
+        // a timer — the next room update or a reload is what tries again — so
+        // this cannot spin: on a finished room the document is almost never
+        // written.
+        bankedRef.current = null;
+        report(cause);
+      });
+  }, [room, uid, gameLog, finalSnapshot, report]);
 
   if (connection === 'error') {
     return (
@@ -503,6 +577,7 @@ function Game() {
             youUid={uid}
             isQuizmaster={isQuizmaster}
             clock={clock}
+            joinedMidQuestion={joinedMidQuestion}
             revealed={room.phase === 'reveal'}
             onAnswer={handleAnswer}
             onReveal={() => void handleReveal().catch(report)}
@@ -520,6 +595,9 @@ function Game() {
         (room.phase === 'finished' && (
           <Final
             room={room}
+            snapshot={finalSnapshot}
+            banked={banked?.gameId === room.gameId ? banked : null}
+            youPlayerId={uid ? playerIdFor(uid) : null}
             youUid={uid}
             isQuizmaster={isQuizmaster}
             log={gameLog}

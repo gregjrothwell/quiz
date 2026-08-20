@@ -11,8 +11,9 @@ import {
 } from 'firebase/firestore';
 import type { Honours } from '../engine/awards';
 import type { FormRecord } from '../engine/form';
-import { foldRecords, type PlayerRecord } from '../engine/records';
-import { cleanTeam } from '../engine/team';
+import { bankGame, foldRecords, type GameOutcome, type PlayerRecord } from '../engine/records';
+import { cleanSquad } from '../engine/squad';
+import { weekId } from '../engine/week';
 import { firestore } from '../firebase';
 
 /**
@@ -54,8 +55,13 @@ export interface SeasonRow extends Honours {
   wins: number;
   points: number;
   best: number;
-  /** Empty for the many rows that predate leagues, or a player who set none. */
-  team: string;
+  /**
+   * Empty for the many rows that predate squads, or a player who set none.
+   *
+   * Read from the stored `team` field — see `PlayerRecord`. This is the read
+   * model, not the document, so it uses the name the rest of the app does.
+   */
+  squad: string;
 }
 
 /**
@@ -70,81 +76,166 @@ type SeasonDoc = PlayerRecord;
  * why, and note that the two are the same string for anybody who has never
  * claimed an identity, which is what lets every existing row stand untouched.
  */
-function playerDoc(playerId: string) {
-  return doc(firestore(), 'seasons', SEASON, 'players', playerId);
-}
-
-export interface GameResult {
-  playerId: string;
-  name: string;
-  gameId: string;
-  score: number;
-  won: boolean;
-  /**
-   * The league this player is in, if this browser knows of one.
-   *
-   * An empty string means "leave whatever the record already says", not "no
-   * team". The team lives on the season record but is remembered per browser, so
-   * a regular who set their team on a laptop and then plays from a phone would
-   * otherwise clear it by banking one game — and would have no idea they had.
-   * Taking a team *off* a record is done by editing it on the season screen.
-   */
-  team: string;
-  /**
-   * The rosettes this player took tonight, or none.
-   *
-   * None is also what a device sends when it did not see the whole game — the
-   * final screen withholds the awards in that case, and banking honours it
-   * cannot stand behind would be worse than banking none. It is not evidence
-   * nothing was won.
-   */
-  honours: Honours;
+function playerDoc(playerId: string, bucket: string = SEASON) {
+  return doc(firestore(), 'seasons', bucket, 'players', playerId);
 }
 
 /**
- * Banks one finished game against a player's season row.
+ * The two tables a finished game lands on.
+ *
+ * A week is a season id and nothing more. `seasons/{season}/players/{playerId}`
+ * takes an unconstrained wildcard, so the week bucket is the same document
+ * under a different name, validated by the same published rule and needing no
+ * hand-paste in the console — which is the entire reason it is shaped this way
+ * rather than as a `weeks` collection or a field on the row.
+ *
+ * Read in the same order they are written, so the season is always the one a
+ * caller gets first.
+ */
+function bucketsFor(at: Date): string[] {
+  return [SEASON, weekId(at)];
+}
+
+export interface GameResult extends GameOutcome {
+  /**
+   * Which record this lands on — routing, not arithmetic, which is why it is
+   * here and not on `GameOutcome`. The same outcome is banked against the
+   * season row and the week row under this one id.
+   */
+  playerId: string;
+  /**
+   * Which squad a Lurker sat with tonight, or empty for everybody else.
+   *
+   * **The one place the two buckets are told different things.** A Lurker
+   * belongs to no side for the season and may still carry Hermes on a Thursday,
+   * so their season row keeps saying Lurkers while that week's row says who
+   * they played for. Anyone in a real squad leaves this empty and both rows
+   * agree.
+   *
+   * It is per-game rather than per-browser, which is why it rides here instead
+   * of on the record — see `rememberedPlayingWith`.
+   */
+  playingWith: string;
+}
+
+/**
+ * Which squad a game counts for on the weekly board.
+ *
+ * A Lurker's choice where they made one, and their own squad otherwise — so
+ * everybody who is actually in a squad gets the same answer for both tables.
+ */
+function weekSquad(result: GameResult): string {
+  return result.playingWith || result.squad;
+}
+
+/** What was written, so the screen can show the week it just landed in. */
+export interface Banked {
+  season: string;
+  week: string;
+  /** The squad the week's row was filed under — a Lurker's pick, or their own. */
+  squad: string;
+}
+
+/**
+ * Banks one finished game — against the season, and against this week.
  *
  * Runs in a transaction rather than using `increment` because `best` is a
  * maximum, which has no server-side sentinel — and because reading the stored
  * `lastGame` inside the same transaction is what makes a repeat write a no-op.
  * Without that, reloading the final screen would count the game again.
+ *
+ * **One transaction for both buckets**, so a night either lands on both tables
+ * or on neither. The alternative — two transactions — would leave a season
+ * total and a weekly one describing different sets of games after any partial
+ * failure, and nothing would ever reconcile them.
+ *
+ * The arithmetic is `bankGame` in `src/engine/records.ts`, where a test can
+ * reach it. This half does nothing but decide which documents it applies to.
+ *
+ * **Costs one extra read and one extra write per player per game.** Against a
+ * six-player night's counted 1,812 reads that is under half a percent. A player
+ * who has claimed a recovery code now pays two `claims` reads rather than one,
+ * because `ownsPlayer` is evaluated per document; an unclaimed player still
+ * pays none at all, since the uid branch short-circuits in front of it.
  */
-export async function recordGame(result: GameResult): Promise<void> {
-  const reference = playerDoc(result.playerId);
+export async function recordGame(result: GameResult): Promise<Banked> {
+  const [season, week] = bucketsFor(new Date());
+  const buckets = [season ?? SEASON, week ?? SEASON];
+  const references = buckets.map((bucket) => playerDoc(result.playerId, bucket));
 
   await runTransaction(firestore(), async (transaction) => {
+    // Every read before any write, which Firestore requires of a transaction.
+    // In parallel because they are independent documents and the round-trips
+    // would otherwise be serial for no reason.
+    const snapshots = await Promise.all(references.map((reference) => transaction.get(reference)));
+
+    references.forEach((reference, index) => {
+      const snapshot = snapshots[index];
+      const existing = snapshot?.exists() ? (snapshot.data() as SeasonDoc) : null;
+
+      // Guarded per bucket rather than once for the pair. They cannot normally
+      // disagree, but if a write ever half-lands the retry has to finish the
+      // job rather than skip it because the other half looked done.
+      if (existing?.lastGame === result.gameId) return;
+
+      // The only difference between the two documents. `bucketsFor` puts the
+      // season first, so index 0 keeps the player's standing squad and the
+      // week takes whoever they actually sat with.
+      const squad = index === 0 ? result.squad : weekSquad(result);
+
+      transaction.set(reference, bankGame(existing, { ...result, squad }));
+    });
+  });
+
+  // Your own game is the one you will go straight to the board to look for.
+  invalidateSeason();
+
+  return { season: buckets[0] as string, week: buckets[1] as string, squad: weekSquad(result) };
+}
+
+/**
+ * Changes the squad on a record that already exists.
+ *
+ * **The escape hatch this file has claimed to have since squads shipped and
+ * never did.** Banking treats an empty squad as "keep what is there", which is
+ * what stops a phone wiping the squad a laptop set — and the consequence
+ * nobody noticed is that a squad, once written, could not be changed or
+ * removed by any means short of the Firebase console. A picker makes a wrong
+ * choice both likelier and one click away, so the fix ships with it.
+ *
+ * A transaction rather than an `updateDoc` because the rules validate the whole
+ * document: `hasOnly` plus every bound, so a partial write has to be assembled
+ * from what is already there.
+ *
+ * **Only the season record.** A week row records who somebody played with on a
+ * night that has already happened, and editing a standing arrangement is not a
+ * reason to rewrite a result. The cost is that a squad picked in error on the
+ * landing screen leaves that week's row wrong; changing it here fixes every
+ * week after it, and the wrong one stays wrong.
+ *
+ * Does nothing for a player with no row yet — the rules require `name`,
+ * `played` and the rest, so there is no document to amend and nothing sensible
+ * to invent. The screen only offers the control once a round has been banked.
+ */
+export async function setSquad(playerId: string, squad: string): Promise<void> {
+  const clean = cleanSquad(squad);
+
+  await runTransaction(firestore(), async (transaction) => {
+    const reference = playerDoc(playerId);
     const snapshot = await transaction.get(reference);
-    const existing = snapshot.exists() ? (snapshot.data() as SeasonDoc) : null;
+    if (!snapshot.exists()) return;
 
-    if (existing?.lastGame === result.gameId) return;
+    const next = { ...(snapshot.data() as SeasonDoc) };
 
-    // The transaction already holds the row, so the rosettes cost no read of
-    // their own — the same reason `best` is worked out here rather than with a
-    // server-side sentinel it does not have.
-    // `set` is a whole-document overwrite, so anything not named here is erased
-    // by every game anybody plays. An empty incoming team therefore means "keep
-    // what is there" rather than "clear it" — see `GameResult.team`.
-    const team = cleanTeam(result.team) || cleanTeam(existing?.team);
-
-    const next: SeasonDoc = {
-      ...(team ? { team } : {}),
-      name: result.name,
-      played: (existing?.played ?? 0) + 1,
-      wins: (existing?.wins ?? 0) + (result.won ? 1 : 0),
-      points: (existing?.points ?? 0) + result.score,
-      best: Math.max(existing?.best ?? 0, result.score),
-      fastest: (existing?.fastest ?? 0) + result.honours.fastest,
-      comeback: (existing?.comeback ?? 0) + result.honours.comeback,
-      loneWolf: (existing?.loneWolf ?? 0) + result.honours.loneWolf,
-      contrarian: (existing?.contrarian ?? 0) + result.honours.contrarian,
-      lastGame: result.gameId,
-      lastPlayed: Date.now(),
-    };
+    // Deleted rather than written as an empty string, so "no squad" is the
+    // absence of the field — the same shape a record that never had one has,
+    // and the only one `squadsOf` reads as nobody.
+    if (clean) next.team = clean;
+    else delete next.team;
 
     transaction.set(reference, next);
   });
 
-  // Your own game is the one you will go straight to the board to look for.
   invalidateSeason();
 }
 
@@ -266,7 +357,7 @@ export async function recordAsked(
 /**
  * The season records of just the people in this room, for the opening titles.
  *
- * **Not `loadSeason`.** That reads the whole board — up to fifty documents — to
+ * **Not `loadTable`.** That reads the whole board — up to fifty documents — to
  * answer a question about six people, and it would be read by every client
  * rather than one. This is one `getDoc` per player, run once by whoever starts
  * the round, and everybody else learns the result from the room update they were
@@ -315,34 +406,52 @@ export async function loadForm(players: { uid: string; playerId: string }[]): Pr
  */
 const TABLE_CACHE_MS = 60_000;
 
-let cached: { rows: SeasonRow[]; at: number } | null = null;
+/**
+ * One entry per bucket. It was a single slot while there was one table; a week
+ * board and a season board reading through the same slot would evict each
+ * other on every switch, which is the opposite of what a cache is for.
+ */
+const cached = new Map<string, { rows: SeasonRow[]; at: number }>();
 
 /**
- * Drops the cached table, for a write that has just changed what it holds.
+ * Drops every cached table, for a write that has just changed what one holds.
  *
- * Called by the two writers here rather than by their callers, so a future
- * third writer that forgets is the only way this goes stale — and both of the
- * current ones are in this file, where the omission is visible.
+ * All of them rather than the bucket that was written, because banking a game
+ * touches two and claiming an identity moves rows between them. Clearing a map
+ * of at most a handful of entries costs nothing, and a selective version would
+ * be one more place to forget a bucket.
+ *
+ * Called by the writers here rather than by their callers, so a future writer
+ * that forgets is the only way this goes stale — and all of them are in this
+ * file, where the omission is visible.
  */
 export function invalidateSeason(): void {
-  cached = null;
+  cached.clear();
 }
 
 /**
- * The season table, highest total first. Read on demand rather than subscribed
- * to: standings do not change while you are looking at them, and a live
- * listener on every client is the kind of fan-out this app spends care avoiding.
+ * One table, highest total first — the season by default, or a week if asked
+ * for one. Read on demand rather than subscribed to: standings do not change
+ * while you are looking at them, and a live listener on every client is the
+ * kind of fan-out this app spends care avoiding.
+ *
+ * `orderBy('points')` is the right order for a week and the wrong one for the
+ * season, which ranks on points ÷ played and is re-sorted by the caller. It
+ * stays here because an average cannot be ordered server-side without storing
+ * it, and storing it means a new field on the row — which means a rules
+ * republish. Fifty rows is well inside what a client can sort.
  *
  * Handed out as a copy. Nothing sorts or splices it today, but the cache holds
  * the only reference, and an in-place sort added later would quietly corrupt
  * every later read rather than failing where it was written.
  */
-export async function loadSeason(): Promise<SeasonRow[]> {
-  if (cached && Date.now() - cached.at < TABLE_CACHE_MS) return [...cached.rows];
+export async function loadTable(bucket: string = SEASON): Promise<SeasonRow[]> {
+  const hit = cached.get(bucket);
+  if (hit && Date.now() - hit.at < TABLE_CACHE_MS) return [...hit.rows];
 
   const snapshot = await getDocs(
     query(
-      collection(firestore(), 'seasons', SEASON, 'players'),
+      collection(firestore(), 'seasons', bucket, 'players'),
       orderBy('points', 'desc'),
       limit(TABLE_LIMIT),
     ),
@@ -357,7 +466,7 @@ export async function loadSeason(): Promise<SeasonRow[]> {
       wins: data.wins,
       points: data.points,
       best: data.best,
-      team: cleanTeam(data.team),
+      squad: cleanSquad(data.team),
       // Absent on every row written before honours existed, which is most of
       // them, and zero is the honest reading of a row that never counted any.
       fastest: data.fastest ?? 0,
@@ -367,6 +476,6 @@ export async function loadSeason(): Promise<SeasonRow[]> {
     };
   });
 
-  cached = { rows, at: Date.now() };
+  cached.set(bucket, { rows, at: Date.now() });
   return [...rows];
 }

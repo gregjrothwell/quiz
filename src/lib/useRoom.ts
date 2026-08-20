@@ -21,6 +21,7 @@ import {
 } from 'firebase/firestore';
 import { firebaseAuth, firestore, realtimeDb } from '../firebase';
 import { reduce, type Action } from '../engine/reducer';
+import { planJoin } from '../engine/join';
 import { reapAbsent } from '../engine/presence';
 import {
   LEGACY_DURATION_SECS,
@@ -212,12 +213,34 @@ export function useRoom(): UseRoom {
   const phaseRef = useRef<Phase>('lobby');
 
   /**
+   * The newest room this client has seen, for `dispatch` to fold over.
+   *
+   * A callback holds the room from the render that made it, which is fine for
+   * an action dispatched straight away and wrong for one dispatched after an
+   * await. The reveal is the case that matters: `handleReveal` asks the vault
+   * first, which is four writes and a network round trip, and every answer that
+   * lands during it belongs to a room object that closure will never see. See
+   * `dispatch`.
+   */
+  const roomRef = useRef<RoomState | null>(null);
+
+  /**
    * This client's place in the queue, remembered so that coming back from a
    * reap does not cost the quizmaster their role — `resolveQuizmaster` picks
    * the longest-present player, and a fresh `joinedAt` would send them to the
    * back.
+   *
+   * **Stamped with the room it was earned in, and only ever restored into that
+   * same room.** This ref outlives a room: it is never cleared, so a tab that
+   * has been in one room carries that room's timestamp into the next one it
+   * joins. Room 6JA5 on 17 August 2026 has a player whose `joinedAt` is the
+   * millisecond they created an entirely different room — they made one by
+   * accident, left it, and joined the real one with the number still in hand.
+   * That reading is what decides the quizmaster, so a browser that had been
+   * sitting in an earlier room could walk into a round already under way and
+   * take the transport off the person running it.
    */
-  const joinedAtRef = useRef<number | null>(null);
+  const joinedAtRef = useRef<{ code: string; joinedAt: number } | null>(null);
 
   /** Guards against stacking rejoin writes while one is already in flight. */
   const rejoiningRef = useRef(false);
@@ -320,8 +343,11 @@ export function useRoom(): UseRoom {
   const isQuizmaster = Boolean(uid && quizmasterUid === uid);
 
   // Read by the reaper's Realtime Database callback, which must not have `room`
-  // in its dependencies — see the reaper effect below.
+  // in its dependencies — see the reaper effect below, and by `dispatch`, which
+  // must fold over the room as it is *now* rather than as it was when the
+  // callback was made.
   useEffect(() => {
+    roomRef.current = room;
     playersRef.current = room?.players ?? {};
     phaseRef.current = room?.phase ?? 'lobby';
 
@@ -331,66 +357,89 @@ export function useRoom(): UseRoom {
     // back stamped with the current time — losing the quizmaster role to
     // whoever had been there second longest.
     const mine = uid ? room?.players[uid] : undefined;
-    if (mine) joinedAtRef.current = mine.joinedAt;
-  }, [room, uid]);
+    if (mine && code) joinedAtRef.current = { code, joinedAt: mine.joinedAt };
+  }, [room, uid, code]);
 
 
   /**
    * Applies an engine action and persists the result. The quizmaster drives
    * every phase transition, so the reducer runs on exactly one device and the
    * others simply render what it wrote.
+   *
+   * **Folded over the newest room this client has seen, not the one this
+   * callback was created with.** The difference is the length of an await, and
+   * the reveal spends one: `handleReveal` asks the vault before it dispatches,
+   * which is four writes and a round trip. An answer arriving in that gap is in
+   * a newer room object, and folding over the closure's copy dropped it — the
+   * player answered inside the window, watched their lectern light up, and
+   * scored nothing, while the round moved on without them. It costs whoever
+   * answers latest, on whichever question they cut it finest.
+   *
+   * It also makes the gap work in the room's favour rather than against it. The
+   * quizmaster's clock starts before anybody else's, because they wrote the
+   * update they are reacting to, so they call time while everyone else still
+   * has a fraction of a second showing. Counting the answers that land during
+   * the vault round trip gives that fraction back.
+   *
+   * The ref is ignored if it belongs to a different room, which can only happen
+   * mid-switch.
    */
   const dispatch = useCallback(
     async (action: Action | Action[]): Promise<void> => {
-      if (!room || !code) return;
+      if (!code) return;
+
+      const latest = roomRef.current;
+      const current = latest && latest.code === code ? latest : room;
+      if (!current) return;
 
       // Actions are folded together and written once. Dispatching twice in a row
-      // instead would run the second against this closure's stale `room`, so
-      // e.g. `start` would not see the questions `selectPack` just added and
-      // would silently do nothing.
+      // instead would run the second against a stale room, so e.g. `start` would
+      // not see the questions `selectPack` just added and would silently do
+      // nothing.
       const actions = Array.isArray(action) ? action : [action];
-      const next = actions.reduce(reduce, room);
-      if (next === room) return;
+      const next = actions.reduce(reduce, current);
+      if (next === current) return;
 
-      await updateDoc(roomDoc(code), toUpdate(next, room) as Partial<DocumentData>);
+      await updateDoc(roomDoc(code), toUpdate(next, current) as Partial<DocumentData>);
     },
     [room, code],
   );
 
   const writeSelfIntoRoom = useCallback(
     async (targetCode: string, targetUid: string, name: string): Promise<void> => {
-      // Only when it differs from the uid, which needs a claimed recovery code.
-      // Written unconditionally it would put a redundant copy of the uid into
-      // every entry in every room, and change the shape of a document that
-      // clients one deploy behind still write, for no information at all.
-      const claimed = playerIdFor(targetUid);
-      const identity = claimed === targetUid ? {} : { playerId: claimed };
-
-      const player: Player = { name, joinedAt: Date.now(), ...identity };
       const snapshot = await getDoc(roomDoc(targetCode));
       if (!snapshot.exists()) throw new Error(`Room ${targetCode} does not exist`);
 
       const data = snapshot.data() as PersistedRoom;
-      const existing = data.players[targetUid];
 
-      // Preserve the original joinedAt on a reconnect, or a returning
-      // quizmaster would drop to the back of the queue and lose the role.
-      // `joinedAtRef` covers the case where the entry is gone entirely — a
-      // rejoin after being reaped — where there is nothing left to read it off.
-      const restored = joinedAtRef.current;
-      const entry =
-        existing ?? (restored === null ? player : { name, joinedAt: restored, ...identity });
+      // The place this device already held **in this room**. `joinedAtRef`
+      // outlives a room — it is what brings a quizmaster back from a reap with
+      // their seat intact — so a value earned somewhere else is discarded here
+      // rather than carried in. See the ref's own note.
+      const remembered = joinedAtRef.current;
+      const restored = remembered?.code === targetCode ? remembered.joinedAt : null;
+
+      // What to write, and why, lives in the engine where a test can reach it.
+      const { entry, score } = planJoin({
+        players: data.players,
+        scores: data.scores,
+        phase: data.phase,
+        uid: targetUid,
+        name,
+        playerId: playerIdFor(targetUid),
+        restored,
+        now: Date.now(),
+      });
 
       await updateDoc(roomDoc(targetCode), {
         [`players.${targetUid}`]: entry,
-        // Never reset a score that is already on the board. Somebody rejoining
-        // mid-round has been earning points all along — the reveal tallies
-        // whoever answered, member or not — and zeroing them here would turn a
-        // recovered player into a punished one.
-        [`scores.${targetUid}`]: data.scores[targetUid] ?? 0,
+        // Omitted rather than zeroed for somebody arriving after the round is
+        // over — absent from `scores` is absent from the standings, which is
+        // where they belong until the next round opens one for them.
+        ...(score === null ? {} : { [`scores.${targetUid}`]: score }),
       });
 
-      joinedAtRef.current = entry.joinedAt;
+      joinedAtRef.current = { code: targetCode, joinedAt: entry.joinedAt };
     },
     [],
   );

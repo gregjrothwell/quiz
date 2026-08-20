@@ -2,6 +2,8 @@ import type { ReactNode } from 'react';
 import { ColdOpen } from '../components/ColdOpen';
 import { LeagueBoard } from '../components/LeagueBoard';
 import { RecoveryPanel } from '../components/RecoveryPanel';
+import { SquadPanel } from '../components/SquadPanel';
+import { WeekTable } from '../components/WeekBoard';
 import type { QuestionRecord } from '../engine/awards';
 import { createRoom, type QuizQuestion, type RoomState } from '../engine/state';
 import type { SeasonRow } from '../lib/season';
@@ -192,16 +194,23 @@ const REVIEWED_GAME: QuestionRecord[] = [
  * leagues existed — which is what most of the live board still looks like.
  */
 const SEASON_ROWS: SeasonRow[] = [
-  { playerId: 'sam', name: 'Sam', team: 'Engineering', played: 12, wins: 5, points: 41_200,
+  { playerId: 'sam', name: 'Sam', squad: 'Hermes', played: 12, wins: 5, points: 41_200,
     best: 8_150, fastest: 3, comeback: 1, loneWolf: 2, contrarian: 0 },
-  { playerId: 'greg', name: 'Greg', team: 'Engineering', played: 14, wins: 4, points: 38_900,
+  { playerId: 'greg', name: 'Greg', squad: 'Hermes', played: 14, wins: 4, points: 38_900,
     best: 7_400, fastest: 2, comeback: 2, loneWolf: 0, contrarian: 1 },
-  { playerId: 'priya', name: 'Priya', team: 'Marketing', played: 11, wins: 3, points: 33_100,
+  { playerId: 'priya', name: 'Priya', squad: 'Bundae', played: 11, wins: 3, points: 33_100,
     best: 6_900, fastest: 1, comeback: 0, loneWolf: 1, contrarian: 0 },
-  { playerId: 'alex', name: 'Alex', team: '', played: 9, wins: 1, points: 24_050,
+  { playerId: 'alex', name: 'Alex', squad: '', played: 9, wins: 1, points: 24_050,
     best: 5_200, fastest: 0, comeback: 1, loneWolf: 0, contrarian: 3 },
-  { playerId: 'nadia', name: 'Nadia', team: 'Marketing', played: 4, wins: 0, points: 9_800,
+  { playerId: 'nadia', name: 'Nadia', squad: 'Lurkers', played: 4, wins: 0, points: 9_800,
     best: 3_100, fastest: 0, comeback: 0, loneWolf: 0, contrarian: 0 },
+  // Two rounds and a very good one. Ranked on points she is nowhere; ranked on
+  // the average she would lead the board outright, which is the whole reason
+  // the qualifying floor exists — so the fixture has to contain her.
+  { playerId: 'tom', name: 'Tom', squad: 'Engineering', played: 2, wins: 2, points: 17_600,
+    best: 9_100, fastest: 1, comeback: 0, loneWolf: 1, contrarian: 0 },
+  { playerId: 'ines', name: 'Inès', squad: '', played: 1, wins: 0, points: 2_300,
+    best: 2_300, fastest: 0, comeback: 0, loneWolf: 0, contrarian: 0 },
 ];
 
 const noop = (): void => undefined;
@@ -242,6 +251,22 @@ export function Preview() {
           youUid="greg"
           isQuizmaster
           clock={CLOCK}
+          revealed={false}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+        />
+      ),
+    },
+    {
+      title: 'Question · walked in on it',
+      node: (
+        <QuestionScreen
+          room={mockRoom({ phase: 'question', questionOpenedAt: 1_000 })}
+          youUid="greg"
+          isQuizmaster={false}
+          clock={CLOCK}
+          joinedMidQuestion
           revealed={false}
           onAnswer={noop}
           onReveal={noop}
@@ -345,10 +370,43 @@ export function Preview() {
               alex: { optionIndex: 3, elapsedMs: 5_200 },
               priya: { optionIndex: 0, elapsedMs: 8_900 },
             },
-            lastDeltas: { sam: 880 },
+            // Every answerer, including a zero for each of the three who got it
+            // wrong. That is what `tallyQuestion` produces, and the verdict now
+            // reads absence from here as "your answer never reached the room" —
+            // so a fixture that names only the scorer would show the other three
+            // a fault that did not happen.
+            lastDeltas: { sam: 0, greg: 0, alex: 0, priya: 555 },
           })}
           youUid="greg"
           isQuizmaster
+          clock={CLOCK}
+          revealed
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+        />
+      ),
+    },
+    {
+      /*
+        The answer that was written inside the window and was not in the room
+        when the question was scored. Greg picked the right lectern and has no
+        delta, which used to render as "Correct · +0".
+      */
+      title: 'Reveal · answer didn’t land',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'reveal',
+            answers: {
+              sam: { optionIndex: 2, elapsedMs: 2_300 },
+              priya: { optionIndex: 0, elapsedMs: 4_100 },
+              greg: { optionIndex: 0, elapsedMs: 9_850 },
+            },
+            lastDeltas: { sam: 0, priya: 795 },
+          })}
+          youUid="greg"
+          isQuizmaster={false}
           clock={CLOCK}
           revealed
           onAnswer={noop}
@@ -372,7 +430,42 @@ export function Preview() {
       title: 'Final · tie for first',
       node: (
         <Final
+          banked={null}
+          youPlayerId="greg"
+          snapshot={null}
           room={mockRoom({ phase: 'finished', index: 1 })}
+          youUid="greg"
+          isQuizmaster
+          log={[]}
+          onPlayAgain={noop}
+          onLeave={noop}
+          onSeason={noop}
+        />
+      ),
+    },
+    {
+      /*
+        The one that proves the freeze. Alex and Sam are joint top on 3,100 and
+        both have gone home, so the live room holds two players — and the podium
+        still shows all four, because it reads the snapshot taken at the whistle
+        rather than the room. Before this, the screen renumbered itself and put
+        Greg on the middle plinth.
+      */
+      title: 'Final · after the winners left',
+      node: (
+        <Final
+          banked={null}
+          youPlayerId="greg"
+          snapshot={{
+            gameId: 'preview-game',
+            players: PLAYERS,
+            scores: { greg: 2450, sam: 3100, priya: 1800, alex: 3100 },
+          }}
+          room={mockRoom({
+            phase: 'finished',
+            index: 1,
+            players: { greg: PLAYERS.greg, priya: PLAYERS.priya },
+          })}
           youUid="greg"
           isQuizmaster
           log={[]}
@@ -386,6 +479,9 @@ export function Preview() {
       title: 'Final · with the awards',
       node: (
         <Final
+          banked={null}
+          youPlayerId="greg"
+          snapshot={null}
           room={mockRoom({
             phase: 'finished',
             index: 1,
@@ -436,6 +532,35 @@ export function Preview() {
       ),
     },
     {
+      title: 'Week · the squad you played for',
+      node: (
+        <WeekTable
+          rows={SEASON_ROWS.filter((row) => row.squad === 'Hermes')}
+          squad="Hermes"
+          youPlayerId="greg"
+          onRefresh={noop}
+        />
+      ),
+    },
+    {
+      title: 'Week · everybody who played',
+      node: <WeekTable rows={SEASON_ROWS} squad="" youPlayerId="greg" onRefresh={noop} />,
+    },
+    {
+      title: 'Squad · changing the one on your record',
+      node: <SquadPanel playerId="preview" current="Hermes" onChanged={noop} />,
+    },
+    {
+      /*
+        The case the picker has to handle rather than paper over: a record from
+        the free-text era, carrying a name the list no longer offers. It keeps
+        its own option, so opening this panel cannot silently reassign somebody
+        by rendering a value none of the options match.
+      */
+      title: 'Squad · a record from before the list',
+      node: <SquadPanel playerId="preview" current="Engineering" onChanged={noop} />,
+    },
+    {
       title: 'Recovery · a code already saved',
       node: <RecoveryPanel uid="greg" onClaimed={noop} initialCode="ABCD3F7H" />,
     },
@@ -447,6 +572,9 @@ export function Preview() {
       title: 'Final · the round in review',
       node: (
         <Final
+          banked={null}
+          youPlayerId="greg"
+          snapshot={null}
           room={mockRoom({
             phase: 'finished',
             index: 1,

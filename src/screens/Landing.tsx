@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import { isValidRoomCode, normaliseRoomCode, ROOM_CODE_LENGTH } from '../engine/roomCode';
-import { MAX_TEAM_LENGTH } from '../engine/team';
+import { SQUADS } from '../engine/squad';
 import { MAX_NAME_LENGTH, rememberedName } from '../lib/rememberedName';
-import { rememberedTeam } from '../lib/rememberedTeam';
+import { rememberedPlayingWith, rememberedSquad } from '../lib/rememberedSquad';
 
 interface LandingProps {
   busy: boolean;
   error: string | null;
   /** Carried in from a join link, so a phone only has to supply a name. */
   initialCode?: string;
-  onCreate: (name: string, team: string) => void;
-  onJoin: (code: string, name: string, team: string) => void;
+  onCreate: (name: string, squad: string, playingWith: string) => void;
+  onJoin: (code: string, name: string, squad: string, playingWith: string) => void;
   onSeason: () => void;
 }
 
@@ -27,8 +27,16 @@ export function Landing({
   // arrived believing, which is the thing worth saying out loud below.
   const [remembered] = useState(rememberedName);
   const [name, setName] = useState(remembered);
-  const [team, setTeam] = useState(rememberedTeam);
+  const [squad, setSquad] = useState<string>(rememberedSquad);
+  const [playingWith, setPlayingWith] = useState<string>(rememberedPlayingWith);
   const [code, setCode] = useState(initialCode);
+
+  // Only a Lurker is asked, because only a Lurker has a side to choose. For
+  // anybody else the answer is their own squad and the question is noise.
+  const asksWhoWith = squad === 'Lurkers';
+  // Sent as empty by everyone else, so the week row simply agrees with the
+  // season row — see `GameResult.playingWith`.
+  const withWhom = asksWhoWith ? playingWith : '';
 
   const trimmedName = name.trim();
   const canCreate = trimmedName.length > 0 && !busy;
@@ -93,21 +101,53 @@ export function Landing({
 
           {/*
             Optional, and second, because it is: a quiz you cannot join without
-            naming a department is a quiz people stop joining. Left blank it
-            changes nothing at all — see `GameResult.team` for why an empty box
-            never clears a team somebody set elsewhere.
+            naming a squad is a quiz people stop joining. Left unchosen it
+            changes nothing at all — see `GameResult.squad` for why an empty
+            value never clears a squad somebody set elsewhere.
+
+            A list rather than the free text this used to be. Three names is a
+            list somebody can actually be wrong about typing, and a board split
+            in two by a stray capital is worse than no board.
           */}
           <label className="field">
-            <span className="field__label">Team — optional, for the league table</span>
-            <input
+            <span className="field__label">Squad — optional, for the league table</span>
+            <select
               className="input"
-              value={team}
-              onChange={(event) => setTeam(event.target.value)}
-              placeholder="e.g. Engineering"
-              maxLength={MAX_TEAM_LENGTH}
-              autoComplete="organization"
-            />
+              value={squad}
+              onChange={(event) => setSquad(event.target.value)}
+            >
+              <option value="">Not saying</option>
+              {SQUADS.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
           </label>
+
+          {/*
+            A Lurker belongs to no side for the season and can still sit with
+            one tonight. This is the only thing the two boards are ever told
+            differently: the week's table counts these points for whoever they
+            played with, and the season record still says Lurkers.
+          */}
+          {asksWhoWith ? (
+            <label className="field">
+              <span className="field__label">Playing with — just for this week</span>
+              <select
+                className="input"
+                value={playingWith}
+                onChange={(event) => setPlayingWith(event.target.value)}
+              >
+                <option value="">On my own</option>
+                {SQUADS.filter((name) => name !== 'Lurkers').map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
         </div>
         {/*
           A box that fills itself in is a box somebody stops reading, and the
@@ -138,7 +178,7 @@ export function Landing({
             type="button"
             className="btn btn--primary"
             disabled={!canCreate}
-            onClick={() => onCreate(trimmedName, team)}
+            onClick={() => onCreate(trimmedName, squad, withWhom)}
           >
             Start a new room
           </button>
@@ -179,7 +219,7 @@ export function Landing({
             type="button"
             className="btn"
             disabled={!canJoin}
-            onClick={() => onJoin(code, trimmedName, team)}
+            onClick={() => onJoin(code, trimmedName, squad, withWhom)}
           >
             Join the round
           </button>

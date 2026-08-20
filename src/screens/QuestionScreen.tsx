@@ -5,6 +5,7 @@ import { Ladder } from '../components/Ladder';
 import { PodiumTile, type TileArrival, type TileState } from '../components/PodiumTile';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { replayDurationMs, replayTimeline, type Arrival } from '../engine/replay';
+import { verdictFor } from '../engine/scoring';
 import { currentQuestion, questionDurationMs, type RoomState } from '../engine/state';
 import { CLOCK_LEAD_SECONDS, startClock, stopClock, useCue } from '../lib/sound';
 import type { QuestionClock } from '../lib/useQuestionClock';
@@ -31,6 +32,12 @@ interface QuestionScreenProps {
   youUid: string | null;
   isQuizmaster: boolean;
   clock: QuestionClock;
+  /**
+   * Whether this device arrived after this question was already open, in which
+   * case its clock is counting from the wrong zero — see App.tsx. The answer
+   * still counts; the speed bonus does not.
+   */
+  joinedMidQuestion?: boolean;
   revealed: boolean;
   onAnswer: (optionIndex: number) => void;
   onReveal: () => void;
@@ -47,6 +54,7 @@ export function QuestionScreen({
   youUid,
   isQuizmaster,
   clock,
+  joinedMidQuestion = false,
   revealed,
   onAnswer,
   onReveal,
@@ -57,9 +65,27 @@ export function QuestionScreen({
 
   const myAnswer = youUid ? room.answers[youUid] : undefined;
   const myDelta = youUid ? (room.lastDeltas[youUid] ?? 0) : 0;
-  const gotItRight = Boolean(myAnswer && myAnswer.optionIndex === question?.correctIndex);
-  const verdictTone = gotItRight ? 'correct' : myAnswer ? 'wrong' : 'silent';
-  const verdictLabel = gotItRight ? 'Correct' : myAnswer ? 'Not this time' : 'You didn’t answer';
+
+  /*
+    Read off the reveal rather than worked out here, because "your answer was not
+    in the room when it was scored" is not something a screen can infer from the
+    answer alone — see `verdictFor`. It used to render as "Correct · +0".
+  */
+  const verdict = verdictFor({
+    answer: myAnswer,
+    correctIndex: question?.correctIndex ?? null,
+    deltas: room.lastDeltas,
+    uid: youUid,
+  });
+  const gotItRight = verdict === 'correct';
+  const verdictLabel =
+    verdict === 'correct'
+      ? 'Correct'
+      : verdict === 'wrong'
+        ? 'Not this time'
+        : verdict === 'lost'
+          ? 'Your answer didn’t reach the room in time'
+          : 'You didn’t answer';
 
   /**
    * The verdict is worth nothing if it arrives at the same instant the clock
@@ -268,7 +294,17 @@ export function QuestionScreen({
             {question.difficulty}
           </span>
         </div>
-        {revealed ? null : (
+        {/*
+          No arc for somebody who walked in on the question. Their clock started
+          when they arrived, so it would count down a window the room does not
+          have left and then be cut off by a reveal several seconds early —
+          which reads as the round jumping rather than as arriving late.
+        */}
+        {revealed ? null : joinedMidQuestion ? (
+          <p className="muted" style={{ margin: 0, fontSize: '0.85rem' }}>
+            You joined mid-question, so this one is worth its points but no speed bonus.
+          </p>
+        ) : (
           <ArcTimer
             secondsLeft={clock.secondsLeft}
             remainingMs={clock.remainingMs}
@@ -277,7 +313,33 @@ export function QuestionScreen({
         )}
       </header>
 
-      <div className="qgrid">
+      {/*
+        Sealed only while the question is open.
+
+        What this buys is narrow and worth stating exactly: it kills
+        select → copy → paste into a search box or an LLM, which takes about
+        four seconds and is the only cheat anybody in an office would actually
+        try mid-question. It stops nothing else — view-source, DevTools, the
+        network tab, a screenshot through OCR, or simply typing the question out
+        all still work. Anyone willing to do those was already willing to
+        harvest OpenTDB, which is the real ceiling and is documented as such in
+        the handover.
+
+        It lifts at the reveal rather than staying on, because by then the
+        answer is on screen anyway and copying a good question to send to
+        somebody afterwards is a thing people legitimately do. The cheat window
+        is exactly the answering window, so that is exactly how long the lock
+        lasts.
+
+        `onCopy` as well as the CSS: `user-select: none` stops a mouse
+        selection, and a keyboard select-all plus ⌘C would otherwise still put
+        the prompt on the clipboard.
+      */}
+      <div
+        className={revealed ? 'qgrid' : 'qgrid qgrid--sealed'}
+        onCopy={revealed ? undefined : (event) => event.preventDefault()}
+        onCut={revealed ? undefined : (event) => event.preventDefault()}
+      >
         <div className="stack">
           {/* Keyed on the question so the CSS entrance replays for each new one. */}
           <h1 key={question.id} className="prompt">
@@ -336,7 +398,7 @@ export function QuestionScreen({
         */}
           <p className="tally">
             {revealed ? (
-              <span className={settled ? 'verdict verdict--in' : 'verdict'} data-tone={verdictTone}>
+              <span className={settled ? 'verdict verdict--in' : 'verdict'} data-tone={verdict}>
                 {verdictLabel}
                 {gotItRight ? (
                   <>
