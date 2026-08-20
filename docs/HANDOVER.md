@@ -34,11 +34,12 @@ it, and the session-start hook will say so if it grows.
 | anything that adds reads or writes | [`decisions/cost.md`](decisions/cost.md) |
 | — before assuming a thing is a style choice | [`decisions/gotchas.md`](decisions/gotchas.md) |
 | — before trusting a claim in here | [`decisions/state-of-play.md`](decisions/state-of-play.md) |
+| what a question is worth, and why it is not a speed curve | [`decisions/scoring.md`](decisions/scoring.md) |
+| what to build next, and what each idea costs | [`decisions/ideas-review.md`](decisions/ideas-review.md) |
 
 ## State as of 20 August 2026
 
-**Shipped and played.** 412 tests, clean types and lint, no `any` or `@ts-ignore`.
-(Said 397 until 20 August — one short even before the reveal gate's 14. Counted.)
+**Shipped and played.** 416 tests, clean types and lint, no `any` or `@ts-ignore`.
 
 - **Squads, the weekly board, the average season table, the frozen podium and the
   sealed question text are live** ([PR #2](https://github.com/gregjrothwell/quiz/pull/2),
@@ -53,14 +54,16 @@ it, and the session-start hook will say so if it grows.
   documented 15-minute window. `appcheck-probe` now refuses at sign-in, which is
   the proof; debug-token scripts are unaffected.
   [`decisions/app-check-auth.md`](decisions/app-check-auth.md).
-- **The reveal now lands on its own, ~0.5s after the clock.** It was a coin flip
-  with about 7ms of margin and the quizmaster's device always lost it — latency
-  compensation started their countdown a hop before the server stamped `openedAt`.
-  Anchored on the server-confirmed snapshot instead: provable, not tuned.
-  `reveal-probe` is the instrument, and it and `sync-harness 10` agree on +6/+85ms:
+- **The reveal lands on its own, ~0.5s after the clock**, anchored on the
+  server-confirmed snapshot rather than a local one. `reveal-probe` is the
+  instrument:
   [`decisions/vault.md`](decisions/vault.md#the-gate-had-no-margin-and-the-host-was-the-one-who-paid).
-- **`npm run host-room -- 10` works again** after being dead for weeks on an
-  import outside Vite. `scripts/imports.test.ts` fails if it comes back.
+- **Scoring is a rank ladder, not a speed curve** — 500 for correct plus
+  500/400/300/200/100 by the order the correct answers landed. No rules change;
+  416 tests. **Nobody has played a round on it**, and ranks need two answerers so
+  no solo round can show one: [`decisions/scoring.md`](decisions/scoring.md).
+- **`npm run host-room -- 10` works again** after weeks dead on an import outside
+  Vite. `scripts/imports.test.ts` fails if it comes back.
 
 **Measured live, 20 August 2026** (`npm run take-stock`):
 
@@ -88,25 +91,22 @@ it, and the session-start hook will say so if it grows.
 
 ## Outstanding
 
-1. **A real round on the new season work.** Played by the office on 20 August. It
-   produced two reports — the reveal delay, and the squad dropdowns — both fixed.
-   Nothing else was raised.
+1. **A real round on the new season work.** Played 20 August: two reports — the
+   reveal delay and the squad dropdowns — both fixed, nothing else raised.
 2. **Two paths still need a browser plus `host-room`:** a quizmaster dropping out
    mid-round, and the keyboard shortcuts in a live game. Both are reachable now
    that the harness runs.
 3. **No Content-Security-Policy.** Deliberate — a `<meta http-equiv>` CSP breaks
    the live app silently and the stale-CDN window makes that painful to diagnose.
    Its own change, with a round of testing.
-4. ~~**App Check on authentication — enabled, but not doing anything.**~~
-   **Done, 20 August.** It took effect that afternoon; the four unattested runs
-   were real and the delay simply ran past what the documentation says.
-   [`decisions/app-check-auth.md`](decisions/app-check-auth.md).
-   The **anonymous-account purge is reviewed and the recommendation is not to
-   enable it** — it buys nothing on Spark and would orphan all 21 season rows,
-   since nobody has claimed a recovery code:
+4. ~~**App Check on authentication.**~~ **Done, 20 August**
+   ([`decisions/app-check-auth.md`](decisions/app-check-auth.md)). The
+   **anonymous-account purge is reviewed and the answer is don't** — it buys
+   nothing on Spark and would orphan all 21 season rows:
    [`decisions/identity.md`](decisions/identity.md).
 5. **Nothing needing a second person has been tested** — the review panel, a real
-   quizmaster handover, two squads on one board.
+   quizmaster handover, two squads on one board, and now **a rank ladder with
+   more than one right answer in it**.
 
 ## Where things are
 

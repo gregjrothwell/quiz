@@ -241,14 +241,12 @@ function reveal(state: RoomState, correctIndex: number, questionId: string): Roo
     Object.entries(state.answers).filter(([uid]) => state.players[uid]),
   );
 
-  // The room's own window, not the default. Speed points decay across it, so
-  // scoring a ten-second round on a twenty-second curve would cap everybody at
-  // three-quarters of the speed bonus no matter how fast they were.
-  const deltas = tallyQuestion({
-    correctIndex,
-    answers: eligible,
-    durationMs: questionDurationMs(state),
-  });
+  // The window is not passed, and that is the change of 20 August 2026: the
+  // ladder ranks the correct answers against each other rather than against the
+  // clock, so a ten-second round and a twenty-second one pay identically. The
+  // window still bounds what may be answered at all — `answer` above refuses
+  // anything past it — it just no longer decides what an answer is worth.
+  const deltas = tallyQuestion({ correctIndex, answers: eligible });
 
   const scores = { ...state.scores };
   for (const [uid, delta] of Object.entries(deltas)) {

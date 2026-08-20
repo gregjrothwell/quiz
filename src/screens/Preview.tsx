@@ -144,7 +144,7 @@ const AWARDED_GAME: QuestionRecord[] = [
       priya: { optionIndex: 1, elapsedMs: 2_400 },
       alex: { optionIndex: 3, elapsedMs: 3_000 },
     },
-    deltas: { greg: 955, sam: 0, priya: 0, alex: 0 },
+    deltas: { greg: 1_000, sam: 0, priya: 0, alex: 0 },
   },
   {
     index: 1,
@@ -375,7 +375,7 @@ export function Preview() {
             // reads absence from here as "your answer never reached the room" —
             // so a fixture that names only the scorer would show the other three
             // a fault that did not happen.
-            lastDeltas: { sam: 0, greg: 0, alex: 0, priya: 555 },
+            lastDeltas: { sam: 0, greg: 0, alex: 0, priya: 1_000 },
           })}
           youUid="greg"
           isQuizmaster
@@ -403,7 +403,7 @@ export function Preview() {
               priya: { optionIndex: 0, elapsedMs: 4_100 },
               greg: { optionIndex: 0, elapsedMs: 9_850 },
             },
-            lastDeltas: { sam: 0, priya: 795 },
+            lastDeltas: { sam: 0, priya: 1_000 },
           })}
           youUid="greg"
           isQuizmaster={false}
@@ -419,7 +419,7 @@ export function Preview() {
       title: 'Standings',
       node: (
         <Scoreboard
-          room={mockRoom({ phase: 'scoreboard', lastDeltas: { sam: 880, greg: 0, priya: 640 } })}
+          room={mockRoom({ phase: 'scoreboard', lastDeltas: { sam: 1_000, greg: 0, priya: 900 } })}
           youUid="greg"
           isQuizmaster
           onNext={noop}

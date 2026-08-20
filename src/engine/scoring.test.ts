@@ -1,89 +1,99 @@
 import { describe, expect, test } from 'vitest';
 import {
   BASE_POINTS,
-  SPEED_POINTS,
-  scoreAnswer,
+  RANK_BONUSES,
+  RANK_FLOOR,
+  rankBonus,
   roomStandings,
   seatedLast,
   standings,
   tallyQuestion,
   verdictFor,
 } from './scoring';
-import { DEFAULT_QUESTION_DURATION_MS } from './state';
 
 /** Whichever lectern the vault named when the question closed. */
 const correctIndex = 1;
 
-describe('scoreAnswer', () => {
-  test('awards the maximum for an instant correct answer', () => {
-    // #given a correct answer with no time elapsed
-    const input = { correct: true, elapsedMs: 0 };
+describe('rankBonus', () => {
+  test('pays the ladder down to fourth', () => {
+    // #given the first four positions
+    const positions = [1, 2, 3, 4];
 
-    // #when it is scored
-    const score = scoreAnswer(input);
+    // #when each is paid
+    const bonuses = positions.map(rankBonus);
 
-    // #then it earns base plus the full speed bonus
-    expect(score).toBe(BASE_POINTS + SPEED_POINTS);
+    // #then they take the ladder as published
+    expect(bonuses).toEqual([...RANK_BONUSES]);
   });
 
-  test('awards only the base for a correct answer at the buzzer', () => {
-    // #given a correct answer landing exactly as the window closes
-    const input = { correct: true, elapsedMs: DEFAULT_QUESTION_DURATION_MS };
+  test('pays the floor from fifth onwards', () => {
+    // #given positions past the end of the ladder
+    const positions = [5, 6, 20];
 
-    // #when it is scored
-    const score = scoreAnswer(input);
+    // #when each is paid
+    const bonuses = positions.map(rankBonus);
 
-    // #then the speed bonus has fully decayed
-    expect(score).toBe(BASE_POINTS);
+    // #then every one of them is on the floor rather than tailing to nothing
+    expect(bonuses).toEqual([RANK_FLOOR, RANK_FLOOR, RANK_FLOOR]);
   });
 
-  test('awards half the speed bonus at the midpoint', () => {
-    // #given a correct answer at half time
-    const input = { correct: true, elapsedMs: DEFAULT_QUESTION_DURATION_MS / 2 };
-
-    // #when it is scored
-    const score = scoreAnswer(input);
-
-    // #then the bonus is halved
-    expect(score).toBe(BASE_POINTS + SPEED_POINTS / 2);
-  });
-
-  test('awards nothing for a wrong answer however fast', () => {
-    // #given an instant but incorrect answer
-    const input = { correct: false, elapsedMs: 0 };
-
-    // #when it is scored
-    const score = scoreAnswer(input);
-
-    // #then speed earns nothing without correctness
-    expect(score).toBe(0);
-  });
-
-  test('clamps an elapsed time beyond the window', () => {
-    // #given a correct answer recorded after the window somehow
-    const input = { correct: true, elapsedMs: DEFAULT_QUESTION_DURATION_MS * 10 };
-
-    // #when it is scored
-    const score = scoreAnswer(input);
-
-    // #then it floors at the base rather than going negative
-    expect(score).toBe(BASE_POINTS);
-  });
-
-  test('clamps a negative elapsed time from clock skew', () => {
-    // #given a clock skew producing a negative elapsed time
-    const input = { correct: true, elapsedMs: -5_000 };
-
-    // #when it is scored
-    const score = scoreAnswer(input);
-
-    // #then it caps at the maximum rather than exceeding it
-    expect(score).toBe(BASE_POINTS + SPEED_POINTS);
+  test('treats a position before first as first', () => {
+    // #given a position that should not exist
+    // #when it is paid
+    // #then it cannot pay more than the top of the ladder
+    expect(rankBonus(0)).toBe(RANK_BONUSES[0]);
   });
 });
 
 describe('tallyQuestion', () => {
-  test('scores each answer by correctness and speed', () => {
+  test('pays the ladder by the order the correct answers landed', () => {
+    // #given four correct answers at different speeds, in no particular key order
+    const answers = {
+      third: { optionIndex: 1, elapsedMs: 4_000 },
+      first: { optionIndex: 1, elapsedMs: 900 },
+      fourth: { optionIndex: 1, elapsedMs: 8_100 },
+      second: { optionIndex: 1, elapsedMs: 2_500 },
+    };
+
+    // #when the question is tallied
+    const deltas = tallyQuestion({ correctIndex, answers });
+
+    // #then each takes base plus its rank bonus
+    expect(deltas).toEqual({ first: 1000, second: 900, third: 800, fourth: 700 });
+  });
+
+  test('puts the fifth correct answer and everyone after it on the floor', () => {
+    // #given six people who all got it right
+    const answers = Object.fromEntries(
+      ['a', 'b', 'c', 'd', 'e', 'f'].map((uid, i) => [
+        uid,
+        { optionIndex: 1, elapsedMs: (i + 1) * 1_000 },
+      ]),
+    );
+
+    // #when the question is tallied
+    const deltas = tallyQuestion({ correctIndex, answers });
+
+    // #then the last two are level on the floor rather than tailing to nothing
+    expect(deltas).toEqual({ a: 1000, b: 900, c: 800, d: 700, e: 600, f: 600 });
+  });
+
+  test('ranks only the correct answers, ignoring faster wrong ones', () => {
+    // #given the two fastest answers of the question being wrong
+    const answers = {
+      quick: { optionIndex: 0, elapsedMs: 100 },
+      quicker: { optionIndex: 3, elapsedMs: 50 },
+      right: { optionIndex: 1, elapsedMs: 6_000 },
+    };
+
+    // #when the question is tallied
+    const deltas = tallyQuestion({ correctIndex, answers });
+
+    // #then being first of the people who got it right is first
+    expect(deltas).toEqual({ quick: 0, quicker: 0, right: 1000 });
+  });
+
+  test('records a wrong answer as a zero rather than omitting it', () => {
     // #given a fast correct answer and a slow wrong one
     const answers = {
       fast: { optionIndex: 1, elapsedMs: 0 },
@@ -93,8 +103,68 @@ describe('tallyQuestion', () => {
     // #when the question is tallied
     const deltas = tallyQuestion({ correctIndex, answers });
 
-    // #then only the correct answer scores, at full speed value
+    // #then the wrong answer is present on zero. `verdictFor` reads the absence
+    // of a key as `lost`, so omitting it would tell an honest wrong answer that
+    // the room never scored it.
     expect(deltas).toEqual({ fast: 1000, slow: 0 });
+  });
+
+  test('gives a question nobody got right a zero for everybody who tried', () => {
+    // #given three wrong answers and no right one
+    const answers = {
+      a: { optionIndex: 0, elapsedMs: 1_000 },
+      b: { optionIndex: 2, elapsedMs: 2_000 },
+      c: { optionIndex: 3, elapsedMs: 3_000 },
+    };
+
+    // #when the question is tallied
+    const deltas = tallyQuestion({ correctIndex, answers });
+
+    // #then nobody scores and nobody is missing
+    expect(deltas).toEqual({ a: 0, b: 0, c: 0 });
+  });
+
+  test('shares a rank on a tie and resumes at the count already awarded', () => {
+    // #given two players level on the fastest correct answer
+    const answers = {
+      dead: { optionIndex: 1, elapsedMs: 1_500 },
+      heat: { optionIndex: 1, elapsedMs: 1_500 },
+      after: { optionIndex: 1, elapsedMs: 3_000 },
+    };
+
+    // #when the question is tallied
+    const deltas = tallyQuestion({ correctIndex, answers });
+
+    // #then both are first and the next is third — the convention `standings`
+    // already uses, so the game has one tie rule rather than two
+    expect(deltas).toEqual({ dead: 1000, heat: 1000, after: 800 });
+  });
+
+  test('does not care how long the window was', () => {
+    // #given the same single correct answer landing late in a long question
+    const answers = { only: { optionIndex: 1, elapsedMs: 19_000 } };
+
+    // #when the question is tallied
+    const deltas = tallyQuestion({ correctIndex, answers });
+
+    // #then it still takes first, because the ladder ranks answers against each
+    // other rather than against the clock. This is the whole change: under the
+    // old curve the same answer scored 525.
+    expect(deltas).toEqual({ only: BASE_POINTS + RANK_BONUSES[0] });
+  });
+
+  test('sorts a negative elapsed time to the front rather than breaking', () => {
+    // #given a clock skew producing a negative reading
+    const answers = {
+      skewed: { optionIndex: 1, elapsedMs: -5_000 },
+      honest: { optionIndex: 1, elapsedMs: 1_000 },
+    };
+
+    // #when the question is tallied
+    const deltas = tallyQuestion({ correctIndex, answers });
+
+    // #then it ranks first, which is what the old curve's clamp did too
+    expect(deltas).toEqual({ skewed: 1000, honest: 900 });
   });
 
   test('omits players who did not answer', () => {
@@ -252,7 +322,7 @@ describe('verdictFor', () => {
     const verdict = verdictFor({
       answer: { optionIndex: 1, elapsedMs: 2_000 },
       correctIndex: 1,
-      deltas: { amier: 900 },
+      deltas: { amier: 1000 },
       uid: 'amier',
     });
 
@@ -279,7 +349,7 @@ describe('verdictFor', () => {
     const verdict = verdictFor({
       answer: { optionIndex: 1, elapsedMs: 14_900 },
       correctIndex: 1,
-      deltas: { greg: 700, friar: 0 },
+      deltas: { greg: 1000, friar: 0 },
       uid: 'amier',
     });
 
@@ -292,7 +362,7 @@ describe('verdictFor', () => {
     const verdict = verdictFor({
       answer: undefined,
       correctIndex: 1,
-      deltas: { greg: 700 },
+      deltas: { greg: 1000 },
       uid: 'amier',
     });
 
@@ -319,7 +389,7 @@ describe('verdictFor', () => {
       greg: { optionIndex: 1, elapsedMs: 4_510 },
       amier: { optionIndex: 2, elapsedMs: 12_203 },
     };
-    const deltas = tallyQuestion({ correctIndex: 1, answers, durationMs: 15_000 });
+    const deltas = tallyQuestion({ correctIndex: 1, answers });
 
     // #when a third player's answer arrives too late to be in it
     const late = { optionIndex: 1, elapsedMs: 14_900 };
