@@ -64,7 +64,7 @@ export type QuestionSource = 'opentdb' | 'opentriviaqa';
  * so their position carries no signal either.
  *
  * The answer lives in the `vault` collection in Firestore, which no client can
- * read. See docs/HANDOVER.md.
+ * read. See docs/decisions/vault.md.
  */
 export interface SealedQuestion {
   id: string;

@@ -2,7 +2,10 @@
 
 Real-time office quiz. Static site on GitHub Pages; Firebase (Firestore, Realtime Database, anonymous auth) for live rooms. Question packs ship **without answers** — those live in a Firestore vault no client can read.
 
-The long record is [`docs/HANDOVER.md`](docs/HANDOVER.md). Read it before changing rules, scoring, the answer window, presence, or the vault.
+[`docs/HANDOVER.md`](docs/HANDOVER.md) is the way in — live state plus a table saying which file
+answers which question. Depth is one file per subsystem in [`docs/decisions/`](docs/decisions/);
+[`docs/TOTAL-RECALL.md`](docs/TOTAL-RECALL.md) is the dated spine. Follow the table before changing
+rules, scoring, the answer window, presence, or the vault — do not read the lot.
 
 ## Stack
 
@@ -34,6 +37,10 @@ src/design/      One stylesheet (`global.css`)
 scripts/         Harvest and live harnesses
 public/packs/    Sealed questions — `options`, never `correct`
 firestore.rules  / firestore.seed.rules / database.rules.json
+
+docs/HANDOVER.md      Live state and the index. 150-line budget
+docs/TOTAL-RECALL.md  Dated decisions and gotchas. 300-line budget
+docs/decisions/       One subsystem each. 250-line budget
 ```
 
 ## Conventions

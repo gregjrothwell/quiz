@@ -23,7 +23,7 @@ import type { QuizQuestion } from '../engine/state';
  * the room document, and the rules read it from there — a copy in this file
  * could only ever drift out of agreement with the thing actually enforcing it.
  *
- * See docs/HANDOVER.md for what this does and does not buy.
+ * See docs/decisions/vault.md for what this does and does not buy.
  *
  * **Nothing here reaches `src/firebase.ts`, and that is load-bearing.** The
  * Firestore instance is a parameter, so this module runs anywhere — including

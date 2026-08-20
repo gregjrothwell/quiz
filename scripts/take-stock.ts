@@ -122,7 +122,7 @@ async function main(): Promise<void> {
   console.log(`\n  All of this is for SIX players. The answers subcollection fans out to`);
   console.log(`  every client, so the round itself grows with the SQUARE of the room:`);
   console.log(`  twelve players is roughly 2,700 reads and twenty-five is roughly`);
-  console.log(`  10,500. See docs/HANDOVER.md before assuming a bigger room is fine.\n`);
+  console.log(`  10,500. See docs/decisions/cost.md before assuming a bigger room is fine.\n`);
 
   if (expirable < rooms) {
     console.log(`  ${(rooms - expirable).toLocaleString('en-GB')} rooms predate \`expiresAt\` and no TTL policy can reach them.`);

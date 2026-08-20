@@ -204,7 +204,7 @@ export function Lobby({
               Worth saying, because it is the one thing about this game that
               surprises people who have played Polly: nobody can cut a question
               short, including the quizmaster. The answer is not on any device
-              until the window has closed. See docs/HANDOVER.md.
+              until the window has closed. See docs/decisions/answer-window.md.
             */}
             <p className="muted" style={{ fontSize: '0.85rem', margin: 0 }}>
               Every question runs the full {durationSecs} seconds — the answer is locked away

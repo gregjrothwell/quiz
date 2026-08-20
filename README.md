@@ -178,7 +178,7 @@ not the quizmaster's. The security rules can still see it, which is what lets a
 reveal check an answer without ever handing one out, and they refuse to do even
 that until the question's twenty seconds are up. So opening DevTools, or
 fetching `packs/music.json` and searching for the prompt, no longer finds
-anything. See [docs/HANDOVER.md](docs/HANDOVER.md) for the mechanism and for an
+anything. See [docs/decisions/vault.md](docs/decisions/vault.md) for the mechanism and for an
 honest account of what it does not stop.
 
 `scripts/fetch-questions.ts` harvests the verified pool, then filters it:

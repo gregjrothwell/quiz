@@ -239,7 +239,7 @@ export async function harvestOpenTriviaQA(cacheOnly = false): Promise<Question[]
         category,
         // The source carries no difficulty and none can be inferred from the
         // text — three heuristics were measured against a hand-labelled sample
-        // and none beat labelling everything hard. See docs/HANDOVER.md.
+        // and none beat labelling everything hard. See docs/decisions/questions.md.
         difficulty: 'medium',
         source: 'opentriviaqa',
       });

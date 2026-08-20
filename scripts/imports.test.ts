@@ -12,7 +12,7 @@ import { describe, expect, test } from 'vitest';
  * defines and Node does not. So the script died on its first import, long
  * before any of its own code ran.
  *
- * The damage was not one broken command. `docs/HANDOVER.md` names that harness
+ * The damage was not one broken command. `docs/decisions/gotchas.md` names that harness
  * as the way to test three separate things — a quizmaster dropping out
  * mid-round, the keyboard shortcuts in a live game, and the vault's own gate
  * from the terminal — so all three were untestable and the file recorded them
