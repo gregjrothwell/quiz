@@ -15,6 +15,23 @@ the old 2,422-line handover, when it was split. They are a true index of what
 happened and when; they are not a contemporaneous log, and anything needing the
 detail should follow the pointer rather than trust the summary here.
 
+## 2026-08-20 — The final screen makes a shareable card
+
+Built, not deployed. A 1200×630 PNG of the round — pack, winner, podium, chair, rosettes —
+handed over by clipboard, share sheet or download, whichever the browser has, all
+feature-detected. Zero Firebase, no rules change. 430 tests; `drawCard` splits out at 4.48 kB
+and the main chunk moved 0.66 kB.
+
+Three things the browser found that no test could: the third riser dropped its score out of
+the bottom of its own box (silently — the number was legible, in mid-air); a shared chair read
+*"Konstantin & Alexandra takes the chair"*; and the lazy import had to become a prefetch,
+because a cold `import()` outlives the clipboard's transient activation and degrades the
+primary route into the fallback on the one press that mattered.
+
+Also: `Date.now()` cannot be called anywhere in a component under the React Compiler, which
+is why the model is assembled inside the lazily-imported module rather than by `Final`.
+→ [`decisions/final-card.md`](decisions/final-card.md)
+
 ## 2026-08-20 — Scoring is a rank ladder, not a speed curve
 
 Built. 500 for correct plus 500/400/300/200/100 by the order the correct answers landed,
