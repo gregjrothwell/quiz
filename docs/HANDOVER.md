@@ -7,9 +7,9 @@ Built to replace Polly in Teams.
 - **Repo:** https://github.com/gregjrothwell/quiz (public, `master`, deploys from `gh-pages`)
 - **Firebase project:** `quiz-d686e` (Firestore + Realtime Database in europe-west1 + Anonymous auth)
 - **Status:** shipped and played. 356 tests, clean types and lint, no `any` or
-  `@ts-ignore`. **On branch `squads-and-weekly-boards`, not yet merged or
-  deployed** — see [squads, weeks and the average
-  board](#squads-weeks-and-the-average-board). The **answer vault is live and covers the packs**: 13,593
+  `@ts-ignore`. **[PR #2](https://github.com/gregjrothwell/quiz/pull/2) is open
+  and awaiting review — not merged, not deployed** — see [squads, weeks and the
+  average board](#squads-weeks-and-the-average-board). The **answer vault is live and covers the packs**: 13,593
   answers seeded against the 13,452 the packs need plus the 4 harness entries,
   both rulesets published, preflight passing.
 - **The vault is ahead of the packs, not behind** — verified 13 August 2026 by
@@ -17,9 +17,12 @@ Built to replace Polly in Teams.
   ids hash the question text, so a revised question leaves its old answer in
   place, unread and harmless. All 14,176 pack questions across the ten packs
   resolve to an answer.
-- **Next: two console steps, and they are the only things outstanding.** A
-  maintenance pass on 15 August 2026 did the code half of both and cannot do the
-  other half from here:
+- **Next: review and merge [PR #2](https://github.com/gregjrothwell/quiz/pull/2),
+  then deploy.** Nothing else is queued. The two console steps below are both
+  **done** and are kept for the reasoning, not as work.
+
+  A maintenance pass on 15 August 2026 did the code half of both and could not do
+  the other half from here:
   1. ~~Prune the rooms.~~ **Done, 15 August 2026: 81 rooms and 533 documents
      deleted**, leaving 3. Season rows, the vault and the question history were
      untouched and `check-rules` still passes. Re-run `npm run prune-rooms`
@@ -147,10 +150,18 @@ Built to replace Polly in Teams.
 
 ## Squads, weeks and the average board
 
-**Branch `squads-and-weekly-boards`, 19–20 August 2026. Not merged, not
+**[PR #2](https://github.com/gregjrothwell/quiz/pull/2), branch
+`squads-and-weekly-boards`, 19–20 August 2026. Open, not merged, not
 deployed.** Six changes, and **not one of them needs a rules republish** — which
 was the design constraint, because a hand-pasted ruleset has broken this game
 twice.
+
+**To ship it:** merge, then `npm run deploy`. There is nothing to paste into the
+console first — which is the opposite of the vault and of durable identity, and
+is the whole point of the three facts below. Run `npm run check-rules` before
+deploying anyway: this branch *depends* on the published ruleset having the
+`{season}` wildcard and the 40-character `team` bound, even though it changes
+neither.
 
 | | |
 |---|---|
@@ -1334,7 +1345,9 @@ scripts/        Build-time question harvest, and the multi-client test harnesses
 
 Commands: `npm run dev` (serves at `/quiz/`, port 5273), `test`, `typecheck`, `lint`,
 `build`, `deploy`, `fetch-questions [-- --resort]`, `fetch-otqa`, `seed-vault`,
-`check-rules`, `sync-harness [n]`, `host-room [-- secs]`, `take-stock`.
+`check-rules`, `sync-harness [n]`, `host-room [-- secs]` (**broken**, see
+[why](#npm-run-host-room-is-broken-and-was-before-this-branch)), `take-stock`,
+`prune-rooms`.
 
 `npm test` covers `src/` plus the pure parts of `scripts/` — the OpenTriviaQA
 parser and its encoding fallback, which corrupt questions silently when wrong.
@@ -1487,8 +1500,10 @@ badly enough to sit in the chair in anger.
   anyone was dropped. Ten players see a round start within ~85 ms, none dropped.
   `LEGACY_WRITE=1` restores the whole-document write so the players-clobber bug
   can be watched happening rather than taken on trust.
-- `npm run host-room` hosts a room from the terminal and drives a round, so the
-  browser can be watched as an ordinary player while somebody else runs the game.
+- `npm run host-room` was meant to host a room from the terminal so the browser
+  could be watched as an ordinary player. **It has never run** — see
+  [why](#npm-run-host-room-is-broken-and-was-before-this-branch). It is listed
+  here because this section used to claim it as verification, and it never was.
 
 **Not verified — start here:**
 
@@ -1496,22 +1511,26 @@ badly enough to sit in the chair in anger.
    covered — three reducer tests, and the preview shows the unpicked lecterns
    staying live — but a second write landing on `answers/{uid}` in Firestore has
    not been watched. The rules permit it and always did, so the risk is not
-   permission but the write racing the reveal. `npm run host-room -- 20` gives a
-   long enough window to answer, change, and watch which one scores.
+   permission but the write racing the reveal. The obvious way to try it was
+   `npm run host-room -- 20`, for a window long enough to answer, change and
+   watch which one scores — **and that harness does not run.** A second browser
+   against a solo-hosted room is the way in until it is fixed.
 
-0. **`host-room` is broken outright**, and was before the squads branch — it
-   imports `src/firebase`, which needs Vite. See [the note
-   above](#npm-run-host-room-is-broken-and-was-before-this-branch). It waits out
-   the gate and asks the vault itself before revealing, and that path has still
-   not been run.
-   `sync-harness` covers joining and phase sync; this is the one that would
-   catch a mistake in the terminal harness's own reveal. It now takes the window
-   as an argument, so `npm run host-room -- 10` both exercises the configurable
-   window and halves the wait:
+0. **Fix `host-room`, and it is the best-value job on this list.** It is broken
+   outright and was before the squads branch — it imports `src/firebase`, which
+   needs Vite. See [the note
+   above](#npm-run-host-room-is-broken-and-was-before-this-branch).
 
-   ```bash
-   npm run host-room -- 10
-   ```
+   It is not one untested path but the *tool* three of them need: a quizmaster
+   dropping out mid-round, the keyboard shortcuts in a live game, and the
+   terminal harness's own reveal — which waits out the gate and asks the vault
+   itself, and has never executed. `sync-harness` covers joining and phase sync
+   and cannot reach any of that.
+
+   The fix is to stop `scripts/` reaching `src/lib/vault.ts`, which drags in
+   `src/firebase.ts` and its `import.meta.env`. `scripts/appCheck.ts` already
+   shows the shape: the scripts build their own Firebase app rather than
+   importing the app's.
 
 **Verified — the vault, end to end.** The rules were written from documented
 semantics and, at the time of writing, nothing had executed. It has now: seeded
@@ -2333,17 +2352,37 @@ gain new paths.
 
 ## If you're picking this up cold
 
+**First, the state of play: [PR #2](https://github.com/gregjrothwell/quiz/pull/2)
+is open and unmerged** — squads, the weekly board, the average season table, the
+frozen podium and the sealed question text. It needs no console step. Read
+[its section](#squads-weeks-and-the-average-board) before touching the season
+table, `recordGame` or anything called `team`.
+
 Fastest way to be useful: `npm run check-rules`, then `npm run sync-harness 10`.
 Between them they confirm the rules are published and that ten clients stay in
 sync — the two things that have actually broken in play.
 
-The remaining untested path is a **quizmaster dropping out mid-round** and the
-role passing to somebody else. It is covered in the engine but has never been
-watched happen with real clients. `npm run host-room -- 10` plus a browser is
-the way to try it — and that harness has itself not been run since the vault
-landed, so it exercises the gate and the vault lookup on the way through.
+> ### Do not reach for `npm run host-room`. It does not run.
+>
+> This section used to name it as the way to test the remaining untested path.
+> It imports `src/firebase`, which reads `import.meta.env`, so it dies on the
+> first import outside Vite — and it has been that way since before the squads
+> branch. See [the note in its
+> section](#npm-run-host-room-is-broken-and-was-before-this-branch).
+>
+> Three things are named in this file as being testable with it and are
+> therefore **not testable at all today**: a quizmaster dropping out mid-round,
+> the keyboard shortcuts in a live game, and the vault gate from the terminal.
+> Fixing the harness is the unblocking move, and it is the best-value job on the
+> list for that reason.
 
-Nothing is queued after that. If you are changing anything about the answer
-window, [read its section first](#the-configurable-answer-window): the number
-lives in `firestore.rules` as well as the client, and two of the three rules
-around it exist to close holes that are not obvious from the client side.
+A solo round in the browser is what is left, and it does more than it sounds:
+it is what proved `recordGame` against the live project on 19 August, including
+the repeat-write guard across a reload. What it cannot reach is anything needing
+a second person — the review panel, a real quizmaster handover, two squads on
+one board.
+
+If you are changing anything about the answer window, [read its section
+first](#the-configurable-answer-window): the number lives in `firestore.rules`
+as well as the client, and two of the three rules around it exist to close holes
+that are not obvious from the client side.
