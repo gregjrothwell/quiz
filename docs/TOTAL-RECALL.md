@@ -15,6 +15,35 @@ the old 2,422-line handover, when it was split. They are a true index of what
 happened and when; they are not a contemporaneous log, and anything needing the
 detail should follow the pointer rather than trust the summary here.
 
+## 2026-08-20 — Build-time code moved out of `src/`, and two routes stopped shipping
+
+`questions/classify.ts` and its test — 1,098 lines — were imported by exactly one
+thing, `scripts/fetch-questions.ts`, and had no business in the app's source
+tree. Moved to `scripts/`. `src/questions/` now holds `types.ts` and the seal
+test, and nothing else.
+
+`Preview` (the design gallery and its fixtures) and `Season` were statically
+imported by `App.tsx`, so every player downloaded both to play a round that
+touches neither. Now `React.lazy`. The main chunk went **240.41 kB → 224.72 kB**
+(gzip 77.55 → 73.78), with `Preview`, `Season` and a shared `SquadPanel` split
+out. A real cut, and a modest one: `firebase` at 488 kB dominates the download
+and none of this touches it.
+
+`standings(scores).filter((entry) => players[entry.uid])` was written out three
+times — `App.tsx`, `Final`, `Standings`. Now `roomStandings` in the engine, where
+it has tests.
+
+**Found while writing those tests, and left alone deliberately:** positions are
+inherited from the full score map rather than re-derived after the filter, so a
+departed leader leaves the top row at position 2 and nobody at position 1. All
+three copies already did this; the change only moved it. It matters because
+`recordGame` banks a win on `position === 1`, so the effect is that nobody is
+credited rather than the wrong person — the safer of the two. Rarely reachable:
+the final screen ranks the frozen snapshot, in which the leaver is still a
+member. Asserted in `scoring.test.ts` rather than corrected, because a
+de-duplication is not the place to change behaviour.
+→ [`decisions/season.md`](decisions/season.md)
+
 ## 2026-08-20 — The pack seal was a convention, not a test
 
 `public/packs/*.json` ships as static files on GitHub Pages, so anything in one

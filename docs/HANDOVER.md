@@ -36,7 +36,7 @@ it, and the session-start hook will say so if it grows.
 
 ## State as of 20 August 2026
 
-**Shipped and played.** 392 tests, clean types and lint, no `any` or `@ts-ignore`.
+**Shipped and played.** 396 tests, clean types and lint, no `any` or `@ts-ignore`.
 
 - **Squads, the weekly board, the average season table, the frozen podium and the
   sealed question text are live** ([PR #2](https://github.com/gregjrothwell/quiz/pull/2),

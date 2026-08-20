@@ -5,7 +5,7 @@ import { Review } from '../components/Review';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { Standings } from '../components/Standings';
 import { awardsFor, reviewFor, sawWholeGame, type QuestionRecord } from '../engine/awards';
-import { seatedLast, standings } from '../engine/scoring';
+import { roomStandings, seatedLast } from '../engine/scoring';
 import type { RoomState } from '../engine/state';
 import type { Banked } from '../lib/season';
 import type { FinalSnapshot } from '../lib/useFinalSnapshot';
@@ -80,7 +80,7 @@ export function Final({
     room never listed) without letting anyone leaving after the whistle change
     what the room is looking at.
   */
-  const rows = standings(scores).filter((entry) => players[entry.uid]);
+  const rows = roomStandings(players, scores);
 
   /*
     Only from a complete log. Every client works the awards out for itself from

@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { ColdOpen } from './components/ColdOpen';
 import { Stage } from './components/Stage';
 import { arrivalFor, walkedIn, NO_ARRIVAL, type Arrival } from './engine/arrival';
 import { honoursFor, sawWholeGame, NO_HONOURS } from './engine/awards';
 import { formFor } from './engine/form';
-import { standings } from './engine/scoring';
+import { roomStandings } from './engine/scoring';
 import { codeFromHash } from './engine/roomCode';
 import {
   DEFAULT_QUESTION_DURATION_MS,
@@ -33,10 +33,31 @@ import type { PackId } from './questions/types';
 import { Final } from './screens/Final';
 import { Landing } from './screens/Landing';
 import { Lobby } from './screens/Lobby';
-import { Preview } from './screens/Preview';
 import { QuestionScreen } from './screens/QuestionScreen';
 import { Scoreboard } from './screens/Scoreboard';
-import { Season } from './screens/Season';
+
+/*
+  Split out of the main bundle, because neither is on the path into a game.
+
+  `Preview` is the design gallery and its fixtures — the largest screen in the
+  repo, reachable only from `#/preview`. `Season` is behind a button press.
+  Every player was downloading both to play a round that touches neither.
+
+  Named exports, so the dynamic import is mapped to a default for `lazy`.
+*/
+const Preview = lazy(() => import('./screens/Preview').then((m) => ({ default: m.Preview })));
+const Season = lazy(() => import('./screens/Season').then((m) => ({ default: m.Season })));
+
+/**
+ * What shows while one of those chunks is in flight.
+ *
+ * Deliberately a word rather than a spinner: on a warm cache it is one frame,
+ * and a spinner that flashes for 16ms reads as a glitch. It says which thing is
+ * coming so a slow network looks like waiting rather than like nothing.
+ */
+function Loading({ what }: { what: string }) {
+  return <p className="muted">Loading {what}…</p>;
+}
 
 /**
  * How long to wait before asking the vault again, and how many times. The gate
@@ -85,7 +106,9 @@ export function App() {
   if (window.location.hash.startsWith('#/preview')) {
     return (
       <Stage>
-        <Preview />
+        <Suspense fallback={<Loading what="the gallery" />}>
+          <Preview />
+        </Suspense>
       </Stage>
     );
   }
@@ -461,7 +484,7 @@ function Game() {
     const players = finalSnapshot?.players ?? room.players;
     const scores = finalSnapshot?.scores ?? room.scores;
 
-    const rows = standings(scores).filter((entry) => players[entry.uid]);
+    const rows = roomStandings(players, scores);
     const leadScore = rows[0]?.score ?? 0;
     const mine = rows.find((entry) => entry.uid === uid);
 
@@ -515,7 +538,9 @@ function Game() {
   if (showSeason) {
     return (
       <Stage>
-        <Season youUid={uid} onBack={() => setShowSeason(false)} />
+        <Suspense fallback={<Loading what="the season" />}>
+          <Season youUid={uid} onBack={() => setShowSeason(false)} />
+        </Suspense>
       </Stage>
     );
   }

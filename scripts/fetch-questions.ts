@@ -12,7 +12,7 @@
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { sortIntoPacks } from '../src/questions/classify';
+import { sortIntoPacks } from './classify';
 import { harvestOpenTriviaQA } from './opentriviaqa';
 import {
   DIFFICULTIES,

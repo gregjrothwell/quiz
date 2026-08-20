@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react';
-import { standings } from '../engine/scoring';
+import { roomStandings } from '../engine/scoring';
 import type { Player } from '../engine/state';
 import { ScoreTicker } from './ScoreTicker';
 
@@ -15,7 +15,7 @@ interface StandingsProps {
  * overtaking is something you watch happen rather than something you infer.
  */
 export function Standings({ players, scores, deltas, youUid }: StandingsProps) {
-  const rows = standings(scores).filter((entry) => players[entry.uid]);
+  const rows = roomStandings(players, scores);
   const leadScore = rows[0]?.score ?? 0;
 
   if (rows.length === 0) {

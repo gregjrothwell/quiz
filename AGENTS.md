@@ -32,9 +32,9 @@ React 18, TypeScript, Vite, Vitest. Firebase client SDK. Deploy is `gh-pages` fr
 src/engine/      Pure TS game rules — no React, no Firebase
 src/lib/         Firebase wiring, clock, sound, identity
 src/screens/     One component per phase
-src/questions/   Pack types and classification
+src/questions/   Pack types and the seal test. Classification is build-time, so it lives in scripts/
 src/design/      One stylesheet (`global.css`)
-scripts/         Harvest and live harnesses
+scripts/         Harvest, classification and live harnesses. Never imports src/firebase.ts
 public/packs/    Sealed questions — `options`, never `correct`
 firestore.rules  / firestore.seed.rules / database.rules.json
 
