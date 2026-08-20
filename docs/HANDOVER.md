@@ -7,9 +7,10 @@ Built to replace Polly in Teams.
 - **Repo:** https://github.com/gregjrothwell/quiz (public, `master`, deploys from `gh-pages`)
 - **Firebase project:** `quiz-d686e` (Firestore + Realtime Database in europe-west1 + Anonymous auth)
 - **Status:** shipped and played. 356 tests, clean types and lint, no `any` or
-  `@ts-ignore`. **[PR #2](https://github.com/gregjrothwell/quiz/pull/2) is open
-  and awaiting review — not merged, not deployed** — see [squads, weeks and the
-  average board](#squads-weeks-and-the-average-board). The **answer vault is live and covers the packs**: 13,593
+  `@ts-ignore`. **Squads, the weekly board and the average season table are
+  live as of 20 August 2026** — [PR
+  #2](https://github.com/gregjrothwell/quiz/pull/2), merged and deployed. See
+  [its section](#squads-weeks-and-the-average-board). The **answer vault is live and covers the packs**: 13,593
   answers seeded against the 13,452 the packs need plus the 4 harness entries,
   both rulesets published, preflight passing.
 - **The vault is ahead of the packs, not behind** — verified 13 August 2026 by
@@ -17,9 +18,12 @@ Built to replace Polly in Teams.
   ids hash the question text, so a revised question leaves its old answer in
   place, unread and harmless. All 14,176 pack questions across the ten packs
   resolve to an answer.
-- **Next: review and merge [PR #2](https://github.com/gregjrothwell/quiz/pull/2),
-  then deploy.** Nothing else is queued. The two console steps below are both
-  **done** and are kept for the reasoning, not as work.
+- **Nothing is queued.** [PR
+  #2](https://github.com/gregjrothwell/quiz/pull/2) is merged and live; the two
+  console steps below are both **done** and are kept for the reasoning, not as
+  work. The best-value job left is [fixing
+  `host-room`](#npm-run-host-room-is-broken-and-was-before-this-branch), which
+  three untested paths are waiting on.
 
   A maintenance pass on 15 August 2026 did the code half of both and could not do
   the other half from here:
@@ -150,18 +154,29 @@ Built to replace Polly in Teams.
 
 ## Squads, weeks and the average board
 
-**[PR #2](https://github.com/gregjrothwell/quiz/pull/2), branch
-`squads-and-weekly-boards`, 19–20 August 2026. Open, not merged, not
-deployed.** Six changes, and **not one of them needs a rules republish** — which
-was the design constraint, because a hand-pasted ruleset has broken this game
-twice.
+**[PR #2](https://github.com/gregjrothwell/quiz/pull/2), merged and deployed 20
+August 2026.** Six changes, and **not one of them needed a rules republish** —
+which was the design constraint, because a hand-pasted ruleset has broken this
+game twice.
 
-**To ship it:** merge, then `npm run deploy`. There is nothing to paste into the
-console first — which is the opposite of the vault and of durable identity, and
-is the whole point of the three facts below. Run `npm run check-rules` before
-deploying anyway: this branch *depends* on the published ruleset having the
-`{season}` wildcard and the 40-character `team` bound, even though it changes
-neither.
+**It shipped without a console step**, which is the opposite of the vault and of
+durable identity, and is the whole point of the three facts below. `check-rules`
+was still run before deploying, because the branch *depends* on the published
+ruleset having the `{season}` wildcard and the 40-character `team` bound even
+though it changes neither.
+
+> ### The deploy, and the check that is worth repeating
+>
+> `npm run deploy` published `index-BN2cLnbF.js`, and the CDN served the **old**
+> bundle for about twenty seconds afterwards — long enough to look like a failed
+> deploy if you only check for a 200.
+>
+> Tell the two apart the way this file has always said: compare the asset hash
+> in the served HTML against the local build, and if they differ, check whether
+> the publish itself landed before blaming the cache. `git show
+> origin/gh-pages:index.html` and `gh api repos/.../pages/builds/latest` answer
+> that in two commands — on 20 August both said the new bundle was already
+> there, which turned "did it deploy?" into "wait twenty seconds".
 
 | | |
 |---|---|
@@ -2352,11 +2367,12 @@ gain new paths.
 
 ## If you're picking this up cold
 
-**First, the state of play: [PR #2](https://github.com/gregjrothwell/quiz/pull/2)
-is open and unmerged** — squads, the weekly board, the average season table, the
-frozen podium and the sealed question text. It needs no console step. Read
-[its section](#squads-weeks-and-the-average-board) before touching the season
-table, `recordGame` or anything called `team`.
+**First, the state of play: squads, the weekly board, the average season table,
+the frozen podium and the sealed question text went live on 20 August 2026**
+([PR #2](https://github.com/gregjrothwell/quiz/pull/2)). Read [its
+section](#squads-weeks-and-the-average-board) before touching the season table,
+`recordGame` or anything called `team` — and note the office has not yet played
+a real round on any of it.
 
 Fastest way to be useful: `npm run check-rules`, then `npm run sync-harness 10`.
 Between them they confirm the rules are published and that ten clients stay in
