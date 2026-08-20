@@ -17,7 +17,7 @@ React 18, TypeScript, Vite, Vitest. Firebase client SDK. Deploy is `gh-pages` fr
 | `npm run typecheck` / `lint` / `build` | |
 | `npm run check-rules` | Live project: both rulesets, **both directions** |
 | `npm run sync-harness [n]` | *n* concurrent clients against live Firebase |
-| `npm run host-room -- [secs]` | Drive a round from the terminal |
+| `npm run host-room -- [secs]` | Drive a round from the terminal. **Broken — dies on import outside Vite. See the handover** |
 | `npm run seed-vault` | Admin SDK; needs `GOOGLE_APPLICATION_CREDENTIALS` under `.secrets/` |
 | `npm run deploy` | `build` then `gh-pages` |
 
