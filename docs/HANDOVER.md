@@ -41,7 +41,7 @@ it, and the session-start hook will say so if it grows.
 
 ## State as of 20 August 2026
 
-**Shipped and played.** 443 tests, clean types and lint, no `any` or `@ts-ignore`.
+**Shipped and played.** 448 tests, clean types and lint, no `any` or `@ts-ignore`.
 
 - **Squads, the weekly board, the average season table, the frozen podium and the
   sealed question text are live** ([PR #2](https://github.com/gregjrothwell/quiz/pull/2),
@@ -61,11 +61,11 @@ it, and the session-start hook will say so if it grows.
 - **The final screen makes a shareable PNG of the round**, chair and all. **Live
   since 20 August** ([PR #7](https://github.com/gregjrothwell/quiz/pull/7)):
   [`decisions/final-card.md`](decisions/final-card.md).
-- **Every device counts the same window from the same origin**, corrected for its
-  own clock offset from the server. Built, **not deployed**:
+- **Every device counts the same window from the same origin**, corrected for
+  its own clock offset. Built, **not deployed**:
   [`decisions/shared-clock.md`](decisions/shared-clock.md).
 - **`npm run host-room` scores a real answer now** — it never read the answers
-  subcollection, so every reveal it folded scored nobody. Fixed and proved both
+  subcollection, so every reveal it folded scored nobody. Fixed, proved both
   ways; `state-of-play.md` carries the correction.
 
 **Measured live, 20 August 2026** (`npm run take-stock`):
@@ -98,8 +98,8 @@ it, and the session-start hook will say so if it grows.
    reveal delay and the squad dropdowns — both fixed, nothing else raised.
 2. **Two paths need a browser plus `host-room`:** a quizmaster dropping out
    mid-round, and the keyboard shortcuts in a live game.
-3. **No Content-Security-Policy.** Deliberate — a `<meta http-equiv>` CSP breaks
-   the live app silently and the stale-CDN window makes that painful to diagnose.
+3. **No Content-Security-Policy.** Deliberate: a `<meta http-equiv>` CSP breaks
+   the live app silently and the stale CDN makes that painful to diagnose.
 4. ~~**App Check on authentication.**~~ **Done, 20 August**
    ([`decisions/app-check-auth.md`](decisions/app-check-auth.md)). The
    **anonymous-account purge is reviewed and the answer is don't** — it buys
