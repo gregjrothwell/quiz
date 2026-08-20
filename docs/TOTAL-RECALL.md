@@ -15,6 +15,25 @@ the old 2,422-line handover, when it was split. They are a true index of what
 happened and when; they are not a contemporaneous log, and anything needing the
 detail should follow the pointer rather than trust the summary here.
 
+## 2026-08-20 — The pack seal was a convention, not a test
+
+`public/packs/*.json` ships as static files on GitHub Pages, so anything in one
+is readable by anybody with the URL — the vault, the time gate and the reveal
+rules all rest on those files carrying no answer. Nothing checked it. It held,
+by care.
+
+`src/questions/seal.test.ts` now checks every pack and refuses a broken one,
+proved by poisoning `geography.json` and watching it fail on
+`questions[0].correct`.
+
+**Correction:** `AGENTS.md` and `types.ts` both stated the rule as "nothing
+under `src/` except `types.ts` may name `correct`". That was never the invariant
+and could not have been enforced — ten files under `src/` use the word, almost
+all prose, and nine name `correctIndex`, which is legitimate because it is the
+runtime field that exists only once the vault has resolved an answer. Both are
+corrected in place.
+→ [`decisions/vault.md`](decisions/vault.md)
+
 ## 2026-08-20 — The handover was split, because it cost more than the code
 
 `docs/HANDOVER.md` had reached 2,422 lines / ~40,000 tokens, read at the start of

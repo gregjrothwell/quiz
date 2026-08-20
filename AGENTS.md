@@ -49,7 +49,11 @@ docs/decisions/       One subsystem each. 250-line budget
 - Quizmaster is derived (`resolveQuizmaster`), never stored.
 - Answers live in a subcollection. `elapsedMs` is measured on the answering device, not a wall-clock timestamp.
 - A phase transition never writes the `players` map. Membership changes are `players.{uid}` only.
-- Published packs are sealed. Nothing under `src/` except `types.ts` may name `correct`.
+- **Published packs are sealed: no file in `public/packs/` may contain an answer.**
+  They are static files on GitHub Pages, so anything in one is readable by
+  anybody with the URL. `src/questions/seal.test.ts` enforces it in both
+  directions. (`correctIndex` under `src/` is fine and expected — it is the
+  runtime field that exists only once the vault has resolved an answer.)
 
 ## What bites
 
