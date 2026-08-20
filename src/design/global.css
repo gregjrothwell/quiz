@@ -1453,6 +1453,18 @@ input {
   grid-template-columns: 1fr;
 }
 
+/* The question and its options, while the clock is running.
+   Deliberately not the whole grid: the ladder, the timer and everything in the
+   header stay selectable, and nothing outside this screen is touched at all —
+   the room code, the join link and the standings are things people copy on
+   purpose, and the landing screen has a whole clipboard fallback built for it.
+   Screen readers are unaffected; the text is still in the DOM and still read. */
+.qgrid--sealed .prompt,
+.qgrid--sealed .tile__text {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 @media (min-width: 58rem) {
   .qgrid {
     grid-template-columns: 1fr 8.5rem;

@@ -313,7 +313,33 @@ export function QuestionScreen({
         )}
       </header>
 
-      <div className="qgrid">
+      {/*
+        Sealed only while the question is open.
+
+        What this buys is narrow and worth stating exactly: it kills
+        select → copy → paste into a search box or an LLM, which takes about
+        four seconds and is the only cheat anybody in an office would actually
+        try mid-question. It stops nothing else — view-source, DevTools, the
+        network tab, a screenshot through OCR, or simply typing the question out
+        all still work. Anyone willing to do those was already willing to
+        harvest OpenTDB, which is the real ceiling and is documented as such in
+        the handover.
+
+        It lifts at the reveal rather than staying on, because by then the
+        answer is on screen anyway and copying a good question to send to
+        somebody afterwards is a thing people legitimately do. The cheat window
+        is exactly the answering window, so that is exactly how long the lock
+        lasts.
+
+        `onCopy` as well as the CSS: `user-select: none` stops a mouse
+        selection, and a keyboard select-all plus ⌘C would otherwise still put
+        the prompt on the clipboard.
+      */}
+      <div
+        className={revealed ? 'qgrid' : 'qgrid qgrid--sealed'}
+        onCopy={revealed ? undefined : (event) => event.preventDefault()}
+        onCut={revealed ? undefined : (event) => event.preventDefault()}
+      >
         <div className="stack">
           {/* Keyed on the question so the CSS entrance replays for each new one. */}
           <h1 key={question.id} className="prompt">
