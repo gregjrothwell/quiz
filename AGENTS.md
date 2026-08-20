@@ -71,3 +71,8 @@ docs/decisions/       One subsystem each. 250-line budget
 ## Verify
 
 `npm run typecheck && npm run lint && npm test`. For rules or presence: `npm run check-rules`, then `npm run sync-harness 10`.
+
+## Standards (Claude Code loads these; Cursor attaches them by glob)
+
+@~/clawd/context/standards/typescript.mdc
+@~/clawd/context/standards/testing.mdc
