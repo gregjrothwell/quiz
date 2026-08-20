@@ -35,13 +35,20 @@ exist, so the season write is refused until the code is re-entered by hand, and
 nothing prompts for it.
 → [`decisions/identity.md`](decisions/identity.md)
 
-## 2026-08-20 — What App Check enforces, finally measured
+## 2026-08-20 — App Check enforced on the Realtime Database
 
 The review had *claimed* the Realtime Database was unenforced since 16 August
 without ever checking. `npm run appcheck-probe` is new and checks: it signs in
-with no App Check token and reports each product. Firestore refuses. **The
-Realtime Database accepts both a presence write and a read.** Authentication
-signs in fine.
+with no App Check token and reports each product. Firestore refused. **The
+Realtime Database accepted both a presence write and a read.** Authentication
+signed in fine.
+
+**Enforcement was switched on the same day**, and the probe re-run: the Realtime
+Database now refuses both. `check-rules` still passes 36/36 with its debug token
+and `sync-harness 10` still gets ten clients into a round with none dropped, so
+attested clients are unaffected. The before measurement is what makes the after
+mean anything — without it, "the site still works" is all anyone could report.
+Authentication remains unenforced, and is now the only gap on the list.
 
 `check-rules` could never have answered this — it needs its debug token to do its
 job, and without one it dies on the first Firestore call, long before reaching

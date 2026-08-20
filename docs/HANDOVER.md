@@ -46,11 +46,11 @@ it, and the session-start hook will say so if it grows.
   13,452 the packs need plus 4 harness entries. Both rulesets published, preflight
   passing. The surplus are orphans from earlier harvests — ids hash the question
   text, so a revised question leaves its old answer unread and harmless.
-- **App Check enforces on Cloud Firestore** (16 August), proved in both
-  directions. **Not** on the Realtime Database, and **not** on auth itself —
-  measured 20 August with `npm run appcheck-probe`, which signs in unattested
-  and reports what each product does. Turning RTDB on is a console step and
-  needs no code: [`decisions/security.md`](decisions/security.md).
+- **App Check enforces on Cloud Firestore and the Realtime Database** (16 and 20
+  August), each proved in both directions. **Auth itself is still not
+  enforced.** `npm run appcheck-probe` signs in unattested and reports what each
+  product does — one command, any time:
+  [`decisions/security.md`](decisions/security.md).
 - **`npm run host-room -- 10` works again** after being dead for weeks on an
   import outside Vite. `scripts/imports.test.ts` fails if it comes back.
 
@@ -81,8 +81,8 @@ it, and the session-start hook will say so if it grows.
 3. **No Content-Security-Policy.** Deliberate — a `<meta http-equiv>` CSP breaks
    the live app silently and the stale-CDN window makes that painful to diagnose.
    Its own change, with a round of testing.
-4. **App Check on the Realtime Database** — measured as unenforced, needs no
-   code, one console step: [`decisions/security.md`](decisions/security.md).
+4. **App Check on authentication** is the last gap — anonymous accounts can
+   still be minted by anyone, though they can no longer read or write anything.
    The **anonymous-account purge is reviewed and the recommendation is not to
    enable it** — it buys nothing on Spark and would orphan all 21 season rows,
    since nobody has claimed a recovery code:
