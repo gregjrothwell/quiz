@@ -29,7 +29,8 @@ it, and the session-start hook will say so if it grows.
 | scoring an answer that lands late | [`decisions/late-answers.md`](decisions/late-answers.md) |
 | the review panel or the replay | [`decisions/review-replay.md`](decisions/review-replay.md) |
 | packs, harvesting, classification | [`decisions/questions.md`](decisions/questions.md) |
-| rules, App Check, anything security-shaped | [`decisions/security.md`](decisions/security.md) |
+| rules, App Check on Firestore and the RTDB, anything security-shaped | [`decisions/security.md`](decisions/security.md) |
+| App Check on **authentication** specifically | [`decisions/app-check-auth.md`](decisions/app-check-auth.md) |
 | anything that adds reads or writes | [`decisions/cost.md`](decisions/cost.md) |
 | — before assuming a thing is a style choice | [`decisions/gotchas.md`](decisions/gotchas.md) |
 | — before trusting a claim in here | [`decisions/state-of-play.md`](decisions/state-of-play.md) |
@@ -37,8 +38,7 @@ it, and the session-start hook will say so if it grows.
 ## State as of 20 August 2026
 
 **Shipped and played.** 412 tests, clean types and lint, no `any` or `@ts-ignore`.
-(This line said 397 until 20 August; it was one short even before the 14 added
-with the reveal gate. Counted, not remembered: `npm test`.)
+(Said 397 until 20 August — one short even before the reveal gate's 14. Counted.)
 
 - **Squads, the weekly board, the average season table, the frozen podium and the
   sealed question text are live** ([PR #2](https://github.com/gregjrothwell/quiz/pull/2),
@@ -48,11 +48,12 @@ with the reveal gate. Counted, not remembered: `npm test`.)
   13,452 the packs need plus 4 harness entries. Both rulesets published, preflight
   passing. The surplus are orphans from earlier harvests — ids hash the question
   text, so a revised question leaves its old answer unread and harmless.
-- **App Check enforces on Cloud Firestore and the Realtime Database** (16 and 20
-  August), each proved in both directions. **Auth itself is still not
-  enforced.** `npm run appcheck-probe` signs in unattested and reports what each
-  product does — one command, any time:
-  [`decisions/security.md`](decisions/security.md).
+- **App Check enforces on Cloud Firestore, the Realtime Database and
+  authentication** — the last confirmed at 12:42 on 20 August, hours after it was
+  switched on and long past the documented 15-minute window. `npm run
+  appcheck-probe` now refuses at sign-in, which is the whole proof; the scripts
+  carrying a debug token are unaffected.
+  [`decisions/app-check-auth.md`](decisions/app-check-auth.md).
 - **The reveal now lands on its own, ~0.5s after the clock.** It was a coin flip
   with about 7ms of margin, and the quizmaster's device was the one that lost it —
   latency compensation started their countdown a network hop before the server
@@ -96,10 +97,10 @@ with the reveal gate. Counted, not remembered: `npm test`.)
 3. **No Content-Security-Policy.** Deliberate — a `<meta http-equiv>` CSP breaks
    the live app silently and the stale-CDN window makes that painful to diagnose.
    Its own change, with a round of testing.
-4. **App Check on authentication — enabled, but not doing anything.** Four
-   `appcheck-probe` runs over 20 minutes all signed in unattested, while the
-   docs say `SignUp` (which anonymous sign-in uses) is covered. Unresolved, and
-   not to be reasoned away: [`decisions/security.md`](decisions/security.md).
+4. ~~**App Check on authentication — enabled, but not doing anything.**~~
+   **Done, 20 August.** It took effect that afternoon; the four unattested runs
+   were real and the delay simply ran past what the documentation says.
+   [`decisions/app-check-auth.md`](decisions/app-check-auth.md).
    The **anonymous-account purge is reviewed and the recommendation is not to
    enable it** — it buys nothing on Spark and would orphan all 21 season rows,
    since nobody has claimed a recovery code:

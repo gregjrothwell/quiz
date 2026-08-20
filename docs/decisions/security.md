@@ -77,47 +77,13 @@ The first is the proof; the second and third are what catch it breaking real
 play. A run of only the last two would show that nothing broke, which is not the
 same as showing that anything is enforced.
 
-### Authentication — switched on 20 August, not yet observed taking effect
+### Authentication — enforced, and it took longer than documented
 
-Enforcement was enabled in the console the same afternoon. **`appcheck-probe`
-still signed in unattested twice afterwards, roughly 10 minutes apart.** The
-documented delay is up to 15 minutes, so this is not yet a finding either way —
-it is recorded as unresolved rather than rounded up to "done".
-
-**Still unenforced at 08:54, past the window.** Four probe runs, all signing in
-unattested. For comparison the Realtime Database took effect almost immediately,
-so "wait longer" is a weak explanation by 20 minutes.
-
-What the documentation says, checked rather than assumed. [Identity Platform's
-App Check
-page](https://docs.cloud.google.com/identity-platform/docs/admin/app-check-integration)
-enumerates eight protected operations, and `SignUp` is one of them — *"Signs up a
-new email and password user or anonymous user."* The Firebase JS
-`signInAnonymously` calls that endpoint. **So anonymous sign-in should be
-covered, and the measurement disagrees with the documentation.**
-
-Two caveats from the same page, both worth holding: it is labelled a **Pre-GA
-Offering**, and it does not state whether an Identity Platform upgrade is a
-prerequisite for Auth enforcement. Another Auth feature on this project —
-anonymous auto-clean-up — does require that upgrade.
-
-**Do not resolve this by reasoning.** The next move is to look at what the
-console actually shows for Authentication, because a setting that did not save
-looks identical from here to one that saved and does nothing. That is the exact
-failure that cost a day in August: an invented mechanism was offered instead of
-one question about what was on screen.
-
-When it does take effect, `appcheck-probe` can only answer one question: signing
-in is the first thing it does, so an enforced Auth makes every product below it
-unreachable. The script exits early and says so rather than reporting the rest as
-fine. That is a real loss of reach and an acceptable one — if nothing can
-authenticate, nothing reaches Firestore or the Realtime Database either.
-
-**What enforcement buys, and does not.** It stops accounts being *minted* by
-anything that cannot attest, which is the accumulation problem the anonymous
-purge was aimed at — and it solves it without touching a single existing season
-row. It adds no new user-facing failure: a browser that cannot load reCAPTCHA is
-already unable to read anything, so this only moves that failure earlier.
+Switched on the same afternoon, and genuinely unenforced through four probe
+runs across more than 20 minutes before it took effect. The whole account, with
+the readings that were premature left visible, is in
+[`app-check-auth.md`](app-check-auth.md) — split out of this file on 20 August
+when it reached its budget.
 
 ## The security review
 
