@@ -15,6 +15,30 @@ the old 2,422-line handover, when it was split. They are a true index of what
 happened and when; they are not a contemporaneous log, and anything needing the
 detail should follow the pointer rather than trust the summary here.
 
+## 2026-08-20 — What App Check enforces, finally measured
+
+The review had *claimed* the Realtime Database was unenforced since 16 August
+without ever checking. `npm run appcheck-probe` is new and checks: it signs in
+with no App Check token and reports each product. Firestore refuses. **The
+Realtime Database accepts both a presence write and a read.** Authentication
+signs in fine.
+
+`check-rules` could never have answered this — it needs its debug token to do its
+job, and without one it dies on the first Firestore call, long before reaching
+any Realtime Database check. Hence a separate script.
+
+Two things that cost a few minutes and are worth not rediscovering: a refused
+Realtime Database call does not reliably reject — the SDK retries a dropped
+connection rather than surfacing it, so an unserved request simply never settles
+and the script hangs reporting nothing. Every probe is now raced against an 8s
+timeout. And both clients hold Node's event loop open, so `main()` returning is
+not the process exiting.
+
+Enforcing it needs **no client code** — verified against the Firebase docs rather
+than from memory: App Check covers RTDB on web, and `src/firebase.ts` already
+initialises before `getDatabase`. It is one console step, and it is Greg's.
+→ [`decisions/security.md`](decisions/security.md)
+
 ## 2026-08-20 — Build-time code moved out of `src/`, and two routes stopped shipping
 
 `questions/classify.ts` and its test — 1,098 lines — were imported by exactly one

@@ -19,6 +19,7 @@ React 18, TypeScript, Vite, Vitest. Firebase client SDK. Deploy is `gh-pages` fr
 | `npm test` | Vitest, offline. Must keep running without the network |
 | `npm run typecheck` / `lint` / `build` | |
 | `npm run check-rules` | Live project: both rulesets, **both directions** |
+| `npm run appcheck-probe` | What App Check actually enforces, from an unattested client |
 | `npm run sync-harness [n]` | *n* concurrent clients against live Firebase |
 | `npm run host-room -- [secs]` | Drive a round from the terminal |
 | `npm run seed-vault` | Admin SDK; needs `GOOGLE_APPLICATION_CREDENTIALS` under `.secrets/` |

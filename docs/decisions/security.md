@@ -5,6 +5,72 @@
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
 
+## App Check on the Realtime Database — measured, not yet enforced
+
+**Measured 20 August 2026 with `npm run appcheck-probe`**, which signs in with no
+App Check token at all and reports what each product does:
+
+| Product | State |
+|---|---|
+| Authentication | **not enforced** — signs in fine without a token |
+| Cloud Firestore | **enforced** — refused, `Missing or insufficient permissions` |
+| Realtime Database | **not enforced** — presence write *and* read both succeeded |
+
+So the gap the review named is real and is now measured rather than assumed. The
+blast radius stays small — the Realtime Database holds presence and nothing else,
+so the worst case is ghosts in a lobby rather than the read budget — but an
+unattested client can write and read it today.
+
+### The client side needs no change
+
+Verified against [the App Check reCAPTCHA
+docs](https://firebase.google.com/docs/app-check/web/recaptcha-provider), not
+from memory: App Check covers the Realtime Database on web, and once
+`initializeAppCheck` has run the client "will begin sending App Check tokens
+along with every request it makes to Firebase" — no per-product code. The
+requirement is ordering: initialise **before you access any Firebase services**.
+
+`src/firebase.ts` already does. `initializeAppCheck` runs inside `connect()`
+ahead of the `getFirestore` / `getAuth` / `getDatabase` calls that build the
+services object, and `scripts/appCheck.ts` attaches the debug token to the same
+`FirebaseApp` that every live script takes its `getDatabase` from. **There is
+nothing to write.**
+
+### The console step, which is Greg's
+
+From [Enable App Check
+enforcement](https://firebase.google.com/docs/app-check/enable-enforcement):
+
+1. Firebase console → **Security** → **App Check**
+2. **Expand the metrics view for Realtime Database**
+3. **Enforce**, and confirm
+
+Two things the documentation states plainly: **it can take up to 15 minutes to
+take effect**, and once on, *"all unverified requests to that product will be
+rejected"*. Enforcement is per-product, so this does not touch Firestore.
+
+**What the documentation does not say**, and so neither will this file: whether
+the product must accumulate metrics before its row appears. A previous session
+asserted it did, lost a day to it, and was wrong — the row was on screen the
+whole time, below the fold. If the row is not visible, scroll before theorising.
+
+### After the switch, prove it in both directions
+
+```bash
+npm run appcheck-probe    # Realtime Database must flip to ENFORCED
+npm run check-rules       # must still pass 36/36 with the debug token
+npm run sync-harness 10   # ten real clients must still join and stay in sync
+```
+
+The first is the proof; the second and third are what catch it breaking real
+play. A run of only the last two would show that nothing broke, which is not the
+same as showing that anything is enforced.
+
+**Still not enforced afterwards, and worth saying out loud:** authentication.
+Anonymous accounts can still be minted by anybody; what they can no longer do is
+read or write. That was always the exposure, but it is not the same as being
+closed.
+
 ## The security review
 
 Done. The brief was to go over the app the way a lead developer would before it

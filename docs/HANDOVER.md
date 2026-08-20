@@ -36,7 +36,7 @@ it, and the session-start hook will say so if it grows.
 
 ## State as of 20 August 2026
 
-**Shipped and played.** 396 tests, clean types and lint, no `any` or `@ts-ignore`.
+**Shipped and played.** 397 tests, clean types and lint, no `any` or `@ts-ignore`.
 
 - **Squads, the weekly board, the average season table, the frozen podium and the
   sealed question text are live** ([PR #2](https://github.com/gregjrothwell/quiz/pull/2),
@@ -47,7 +47,10 @@ it, and the session-start hook will say so if it grows.
   passing. The surplus are orphans from earlier harvests — ids hash the question
   text, so a revised question leaves its old answer unread and harmless.
 - **App Check enforces on Cloud Firestore** (16 August), proved in both
-  directions. **Not** on the Realtime Database, and **not** on auth itself.
+  directions. **Not** on the Realtime Database, and **not** on auth itself —
+  measured 20 August with `npm run appcheck-probe`, which signs in unattested
+  and reports what each product does. Turning RTDB on is a console step and
+  needs no code: [`decisions/security.md`](decisions/security.md).
 - **`npm run host-room -- 10` works again** after being dead for weeks on an
   import outside Vite. `scripts/imports.test.ts` fails if it comes back.
 
@@ -78,8 +81,9 @@ it, and the session-start hook will say so if it grows.
 3. **No Content-Security-Policy.** Deliberate — a `<meta http-equiv>` CSP breaks
    the live app silently and the stale-CDN window makes that painful to diagnose.
    Its own change, with a round of testing.
-4. **App Check on the Realtime Database**, and the anonymous-account purge. Both
-   need a console step. See [`decisions/security.md`](decisions/security.md).
+4. **App Check on the Realtime Database** — measured as unenforced, needs no
+   code, one console step. And the anonymous-account purge. Both in
+   [`decisions/security.md`](decisions/security.md).
 5. **Nothing needing a second person has been tested** — the review panel, a real
    quizmaster handover, two squads on one board.
 

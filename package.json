@@ -15,6 +15,7 @@
     "fetch-questions": "tsx scripts/fetch-questions.ts",
     "fetch-otqa": "tsx scripts/opentriviaqa.ts",
     "check-rules": "tsx --env-file=.env.local scripts/check-rules.ts",
+    "appcheck-probe": "tsx --env-file=.env.local scripts/appcheck-probe.ts",
     "seed-vault": "tsx --env-file=.env.local scripts/seed-vault.ts",
     "sync-harness": "tsx --env-file=.env.local scripts/sync-harness.ts",
     "host-room": "tsx --env-file=.env.local scripts/host-room.ts",
