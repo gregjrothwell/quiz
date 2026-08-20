@@ -81,10 +81,10 @@ it, and the session-start hook will say so if it grows.
 3. **No Content-Security-Policy.** Deliberate — a `<meta http-equiv>` CSP breaks
    the live app silently and the stale-CDN window makes that painful to diagnose.
    Its own change, with a round of testing.
-4. **App Check on authentication** — enabled in the console 20 August, but
-   `appcheck-probe` still signed in unattested 10 minutes later. Re-run it and
-   confirm before calling it done:
-   [`decisions/security.md`](decisions/security.md).
+4. **App Check on authentication — enabled, but not doing anything.** Four
+   `appcheck-probe` runs over 20 minutes all signed in unattested, while the
+   docs say `SignUp` (which anonymous sign-in uses) is covered. Unresolved, and
+   not to be reasoned away: [`decisions/security.md`](decisions/security.md).
    The **anonymous-account purge is reviewed and the recommendation is not to
    enable it** — it buys nothing on Spark and would orphan all 21 season rows,
    since nobody has claimed a recovery code:

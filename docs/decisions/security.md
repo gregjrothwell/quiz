@@ -84,13 +84,28 @@ still signed in unattested twice afterwards, roughly 10 minutes apart.** The
 documented delay is up to 15 minutes, so this is not yet a finding either way —
 it is recorded as unresolved rather than rounded up to "done".
 
-Re-run `npm run appcheck-probe`. If Authentication still reports NOT ENFORCED
-well past the window, the thing to check is whether the console actually shows it
-enforcing, **before inventing a mechanism for why it does not**. Note that
-another Auth feature on this project — anonymous account auto-clean-up — turns
-out to require an Identity Platform upgrade; whether enforcement has any similar
-prerequisite is **not stated on the enforcement page**, and is not guessed at
-here.
+**Still unenforced at 08:54, past the window.** Four probe runs, all signing in
+unattested. For comparison the Realtime Database took effect almost immediately,
+so "wait longer" is a weak explanation by 20 minutes.
+
+What the documentation says, checked rather than assumed. [Identity Platform's
+App Check
+page](https://docs.cloud.google.com/identity-platform/docs/admin/app-check-integration)
+enumerates eight protected operations, and `SignUp` is one of them — *"Signs up a
+new email and password user or anonymous user."* The Firebase JS
+`signInAnonymously` calls that endpoint. **So anonymous sign-in should be
+covered, and the measurement disagrees with the documentation.**
+
+Two caveats from the same page, both worth holding: it is labelled a **Pre-GA
+Offering**, and it does not state whether an Identity Platform upgrade is a
+prerequisite for Auth enforcement. Another Auth feature on this project —
+anonymous auto-clean-up — does require that upgrade.
+
+**Do not resolve this by reasoning.** The next move is to look at what the
+console actually shows for Authentication, because a setting that did not save
+looks identical from here to one that saved and does nothing. That is the exact
+failure that cost a day in August: an invented mechanism was offered instead of
+one question about what was on screen.
 
 When it does take effect, `appcheck-probe` can only answer one question: signing
 in is the first thing it does, so an enforced Auth makes every product below it
