@@ -60,10 +60,12 @@ it, and the session-start hook will say so if it grows.
   [`decisions/vault.md`](decisions/vault.md#the-gate-had-no-margin-and-the-host-was-the-one-who-paid).
 - **Scoring is a rank ladder, not a speed curve** — 500 for correct plus
   500/400/300/200/100 by the order the correct answers landed. No rules change;
-  416 tests. **Nobody has played a round on it**, and ranks need two answerers so
-  no solo round can show one: [`decisions/scoring.md`](decisions/scoring.md).
-- **`npm run host-room -- 10` works again** after weeks dead on an import outside
-  Vite. `scripts/imports.test.ts` fails if it comes back.
+  416 tests. **Live since 20 August** ([PR #6](https://github.com/gregjrothwell/quiz/pull/6),
+  `index-BMejBzPG.js`, CDN confirmed serving it). **Nobody has played a round on
+  it** — ranks need two answerers, so no solo round can show one:
+  [`decisions/scoring.md`](decisions/scoring.md).
+- **`npm run host-room -- 10` works again**; `scripts/imports.test.ts` fails if
+  that import comes back.
 
 **Measured live, 20 August 2026** (`npm run take-stock`):
 

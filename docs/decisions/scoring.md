@@ -7,6 +7,11 @@
 [spine](../TOTAL-RECALL.md). The story and acceptance criteria are kept below as written,
 because what a change was agreed to do is worth reading beside what it did.
 
+**Deployed 20 August 2026** ([PR #6](https://github.com/gregjrothwell/quiz/pull/6)).
+`check-rules` 36/36 before publishing — no rules changed, run on the standing principle that
+the repo copy is not what Firebase is running — and the CDN was watched until it served
+`index-BMejBzPG.js` rather than assumed.
+
 **Not yet played by anybody.** Ranks need at least two people who answered, so no solo round
 can show one — see [Evidence](#evidence).
 
