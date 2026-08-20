@@ -15,7 +15,7 @@ export const BASE_POINTS = 500;
  * year of rounds ever remarked on it. Nobody ever scored 1,000 either, because
  * that needed a zero-latency answer at the instant of render.
  *
- * The ladder makes the same gap 100 points and makes it legible: you are not
+ * The rank bonus makes the same gap 100 points and makes it legible: you are not
  * racing a decay curve you cannot see, you are racing the people in the room.
  *
  * See docs/decisions/scoring.md.
@@ -27,13 +27,13 @@ export const RANK_BONUSES = [500, 400, 300, 200] as const;
  *
  * A floor rather than a tail to nothing, because a correct answer in a big room
  * should not be worth barely more than a wrong one — the base is doing that job
- * already, and the ladder is only meant to separate the front of the field.
+ * already, and the bonus is only meant to separate the front of the field.
  */
 export const RANK_FLOOR = 100;
 
 /**
  * The bonus for finishing in a given 1-based position among the correct
- * answers. Positions past the ladder take {@link RANK_FLOOR}.
+ * answers. Positions past {@link RANK_BONUSES} take {@link RANK_FLOOR}.
  */
 export function rankBonus(position: number): number {
   return RANK_BONUSES[Math.max(0, position - 1)] ?? RANK_FLOOR;
@@ -44,7 +44,7 @@ export function rankBonus(position: number): number {
  *
  * Correct answers are ranked against each other by `elapsedMs` and paid
  * {@link BASE_POINTS} plus {@link rankBonus}; wrong answers score nothing. The
- * answer window is deliberately not a parameter — the ladder ranks answers
+ * answer window is deliberately not a parameter — the bonus ranks answers
  * against each other rather than against the clock, so a fifteen-second question
  * and a ten-second one pay identically.
  *

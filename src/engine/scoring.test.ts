@@ -15,19 +15,19 @@ import {
 const correctIndex = 1;
 
 describe('rankBonus', () => {
-  test('pays the ladder down to fourth', () => {
+  test('pays the bonus down to fourth', () => {
     // #given the first four positions
     const positions = [1, 2, 3, 4];
 
     // #when each is paid
     const bonuses = positions.map(rankBonus);
 
-    // #then they take the ladder as published
+    // #then they take the bonuses as published
     expect(bonuses).toEqual([...RANK_BONUSES]);
   });
 
   test('pays the floor from fifth onwards', () => {
-    // #given positions past the end of the ladder
+    // #given positions past the end of the published bonuses
     const positions = [5, 6, 20];
 
     // #when each is paid
@@ -40,13 +40,13 @@ describe('rankBonus', () => {
   test('treats a position before first as first', () => {
     // #given a position that should not exist
     // #when it is paid
-    // #then it cannot pay more than the top of the ladder
+    // #then it cannot pay more than first place
     expect(rankBonus(0)).toBe(RANK_BONUSES[0]);
   });
 });
 
 describe('tallyQuestion', () => {
-  test('pays the ladder by the order the correct answers landed', () => {
+  test('pays by the order the correct answers landed', () => {
     // #given four correct answers at different speeds, in no particular key order
     const answers = {
       third: { optionIndex: 1, elapsedMs: 4_000 },
@@ -147,7 +147,7 @@ describe('tallyQuestion', () => {
     // #when the question is tallied
     const deltas = tallyQuestion({ correctIndex, answers });
 
-    // #then it still takes first, because the ladder ranks answers against each
+    // #then it still takes first, because the bonus ranks answers against each
     // other rather than against the clock. This is the whole change: under the
     // old curve the same answer scored 525.
     expect(deltas).toEqual({ only: BASE_POINTS + RANK_BONUSES[0] });

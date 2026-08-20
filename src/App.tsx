@@ -138,6 +138,7 @@ function Game() {
     isQuizmaster,
     presenceWorking,
     questionConfirmedAt,
+    questionOriginAt,
     createAndJoin,
     join,
     leave,
@@ -181,7 +182,14 @@ function Game() {
 
   const phase = room?.phase ?? 'lobby';
   const durationMs = room ? questionDurationMs(room) : DEFAULT_QUESTION_DURATION_MS;
-  const clock = useQuestionClock(phase === 'question', room?.index ?? 0, durationMs);
+  const clock = useQuestionClock(
+    phase === 'question',
+    room?.index ?? 0,
+    durationMs,
+    // The room's clock where this device has been able to measure itself
+    // against the server, and its own where it has not.
+    questionOriginAt,
+  );
 
   /**
    * The question this device walked in on, if it walked in on one.
@@ -348,7 +356,7 @@ function Game() {
       // were. The alternative was letting a mid-question join take first place
       // for an answer given on the buzzer.
       //
-      // Under the ladder this is a softer penalty than it was — the full window
+      // Under rank scoring this is a softer penalty than it was — the full window
       // sorts them last among the correct answers rather than stripping the
       // bonus outright, so in a room where two people got it right they are
       // second rather than on the base alone. Making it exact would need the

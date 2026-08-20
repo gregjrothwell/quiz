@@ -15,6 +15,60 @@ the old 2,422-line handover, when it was split. They are a true index of what
 happened and when; they are not a contemporaneous log, and anything needing the
 detail should follow the pointer rather than trust the summary here.
 
+## 2026-08-20 — host-room reads the answers, and scores them
+
+Fixed the thing found an hour earlier. `host-room` built its state with `answers: {}`
+hard-coded in two places, so every reveal it folded scored nobody and every real answer read
+as `lost`.
+
+**Proved both ways**, which is the only way an "it works now" means anything: before, an
+answer scored nothing; after, the same action gave `scored: GateTest +1000` in the terminal
+and `+1000` at position 1 in the browser — the two agreeing being the point. That run is also
+the first time the **rank bonus has scored anybody in a live room**, 500 + 500 for first,
+through the vault against a remote host. It does not prove ranking; that needs two answerers.
+
+The filter was **extracted, not copied**: `liveAnswers` in `src/engine/answers.ts`, used by
+`useRoom` and the harness alike. A second copy of the rule deciding what gets scored would not
+look like a rendering bug when it drifted — the same reasoning that pulled out
+`roomStandings`. Five tests.
+
+`state-of-play.md` carries a correction in place: it claimed this harness could be used to
+"watch which one scores", which was false when written. Second time a doc has named this
+harness as verification while it was doing nothing.
+
+## 2026-08-20 — The shared clock, and a harness that scores nothing
+
+Built, not deployed. Every device now counts the answer window from `openedAt` translated onto
+its own clock, using the **minimum** of `arrival − openedAt` across a round as its skew —
+latency is never negative, so the least-delayed question is the closest thing to a pure
+measurement. Nobody else's clock enters the arithmetic, which is what ruled out the naive
+version. Two guards mean every failure returns to today's behaviour, and the correction can
+only ever take time away, never give a device more than it already had. 443 tests.
+
+`sync-harness 10` confirms the premise: host **+8ms**, the other nine **+64–65ms** — on one
+machine, which is the best possible case. On 17 August that gap was five seconds and cost a
+player his answer.
+
+**Found while verifying, and not fixed:** `host-room` builds its state with `answers: {}`
+hard-coded, so it folds every reveal with nothing to score and every real player's answer
+reads as `lost` — the browser says *"your answer didn't reach the room in time"* about an
+answer displayed on the same screen at 7.6s. `state-of-play.md` claims that harness can be
+used to "watch which one scores". It cannot, and never could.
+→ [`decisions/shared-clock.md`](decisions/shared-clock.md)
+
+## 2026-08-20 — "The Ladder" was already taken
+
+Rank scoring was written up as "the ladder" throughout — this spine, `scoring.md`, and comments
+in `scoring.ts`, `reducer.ts`, `App.tsx` and two test files. **The Ladder is already the `ramp`
+level in the lobby**, which builds a round from easy to hard, and `Ladder.tsx` draws the
+round's progress beside the question. Two unrelated mechanics under one name, one of them on
+screen in front of players. Caught by Greg, not by any check.
+
+The mechanic is now the **rank bonus** and the scheme is **rank scoring**. Nothing shipped
+under the wrong name — no user-facing string ever said it — so this is prose and comments
+only, and the collision is recorded in
+[`decisions/scoring.md`](decisions/scoring.md) rather than quietly fixed.
+
 ## 2026-08-20 — The final screen makes a shareable card
 
 Built, not deployed. A 1200×630 PNG of the round — pack, winner, podium, chair, rosettes —
@@ -38,11 +92,11 @@ Also: `Date.now()` cannot be called anywhere in a component under the React Comp
 is why the model is assembled inside the lazily-imported module rather than by `Final`.
 → [`decisions/final-card.md`](decisions/final-card.md)
 
-## 2026-08-20 — Scoring is a rank ladder, not a speed curve
+## 2026-08-20 — Scoring is a rank bonus, not a speed curve
 
 Built. 500 for correct plus 500/400/300/200/100 by the order the correct answers landed,
 ties sharing a rank per `standings()`. Max per question stays 1,000, so **no rules paste**.
-416 tests, types and lint clean, `#/preview` renders the ladder with no console errors.
+416 tests, types and lint clean, `#/preview` renders the bonuses with no console errors.
 
 Two things the story did not foresee, both left alone and both recorded: a mid-question join
 is now sorted last rather than stripped of its bonus, which is *softer* than before; and the
