@@ -21,6 +21,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { attachDebugAppCheck } from './appCheck';
 import {
+  collection,
   doc,
   getFirestore,
   onSnapshot,
@@ -31,6 +32,7 @@ import {
   type DocumentData,
 } from 'firebase/firestore';
 import { reduce, type Action } from '../src/engine/reducer';
+import { liveAnswers, type AnswerDoc } from '../src/engine/answers';
 import {
   DEFAULT_DURATION_SECS,
   createRoom,
@@ -113,6 +115,7 @@ async function main(): Promise<void> {
   // not see the assignment inside the snapshot callback, so a plain variable
   // narrows to `never` at every read below.
   const view: { latest: PersistedRoom | null } = { latest: null };
+  const answers: { live: Record<string, AnswerDoc> } = { live: {} };
   const fresh = reduce(createRoom(code), { type: 'join', uid, name: 'Host', at: Date.now() });
   // See the note in sync-harness: a day, so a hosted test room reaps itself
   // rather than joining the pile nothing can reach.
@@ -129,14 +132,42 @@ async function main(): Promise<void> {
     console.log(`${stamp()}  phase=${data.phase} index=${data.index} players=[${names}]`);
   });
 
+  // **The harness had never read this**, and it folded every reveal with an
+  // empty answers map as a result — so a browser that answered perfectly well
+  // was told "your answer didn't reach the room in time", and nobody could ever
+  // score. The filtering is `liveAnswers`, the same function the app uses, so
+  // the harness cannot score a round differently from the browsers watching it.
+  onSnapshot(collection(db, 'rooms', code, 'answers'), (snapshot) => {
+    const next: Record<string, AnswerDoc> = {};
+    for (const document of snapshot.docs) next[document.id] = document.data() as AnswerDoc;
+    answers.live = next;
+
+    const room = view.latest;
+    if (!room) return;
+    const counted = Object.keys(liveAnswers(room.players, room.index, next)).length;
+    console.log(`${stamp()}  answers for question ${room.index + 1}: ${counted}`);
+  });
+
   console.log(`\n=======================================`);
   console.log(`  JOIN THIS ROOM:  ${code}`);
   console.log(`=======================================\n`);
 
-  const dispatch = async (actions: Action[]): Promise<void> => {
-    const current0 = view.latest;
-    if (!current0) return;
-    const current: RoomState = { ...current0, code, answers: {} };
+  /**
+   * The room as the engine wants it, with the answers the app would count.
+   *
+   * One helper for both callers, because the reveal and the dispatch have to
+   * agree about what is in the room — the reveal reads the question and the
+   * dispatch scores it, and those disagreeing is how a round scores nothing.
+   */
+  const stateNow = (): RoomState | null => {
+    const latest = view.latest;
+    if (!latest) return null;
+    return { ...latest, code, answers: liveAnswers(latest.players, latest.index, answers.live) };
+  };
+
+  const dispatch = async (actions: Action[]): Promise<RoomState | null> => {
+    const current = stateNow();
+    if (!current) return null;
     const next = actions.reduce(reduce, current);
     const update: Record<string, unknown> = { ...toPersisted(next) };
     // The vault's time gate is measured from the server's own record of when a
@@ -147,6 +178,7 @@ async function main(): Promise<void> {
       update.openedAt = serverTimestamp();
     }
     await updateDoc(reference, update as Partial<DocumentData>);
+    return next;
   };
 
   // Wait for a browser to join.
@@ -172,12 +204,21 @@ async function main(): Promise<void> {
   // Past this room's own gate, so the vault will answer.
   await sleep(DURATION_SECS * 1000 + GATE_SLACK_MS);
   console.log(`${stamp()}  >>> ASKING the vault`);
-  const open = view.latest;
-  const asked = open ? currentQuestion({ ...open, code, answers: {} }) : null;
+  const open = stateNow();
+  const asked = open ? currentQuestion(open) : null;
   if (!asked) throw new Error('No open question to reveal');
   const correctIndex = await resolveAnswer(db, code, asked);
   console.log(`${stamp()}  >>> WRITING reveal (answer ${correctIndex})`);
-  await dispatch([{ type: 'reveal', correctIndex, questionId: asked.id }]);
+  const revealed = await dispatch([{ type: 'reveal', correctIndex, questionId: asked.id }]);
+
+  // What the reveal actually did, which is the thing this harness could never
+  // report. Read off the state the reveal produced rather than off the next
+  // snapshot, which has not necessarily landed yet. A zero here now means
+  // nobody answered, rather than meaning nothing was read.
+  const named = Object.entries(revealed?.lastDeltas ?? {})
+    .map(([uid, delta]) => `${revealed?.players[uid]?.name ?? uid} +${delta}`)
+    .join(', ');
+  console.log(`${stamp()}      scored: ${named || 'nobody'}`);
 
   await sleep(8000);
   console.log(`${stamp()}  >>> WRITING next (to standings)`);

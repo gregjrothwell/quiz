@@ -46,8 +46,7 @@ it, and the session-start hook will say so if it grows.
 - **Squads, the weekly board, the average season table, the frozen podium and the
   sealed question text are live** ([PR #2](https://github.com/gregjrothwell/quiz/pull/2),
   deployed 20 August).
-- **The answer vault is live and covers the packs.** 13,593 answers, both
-  rulesets published, preflight passing. The surplus are orphans, harmless.
+- **The answer vault is live**: 13,593 answers, both rulesets published.
 - **App Check enforces on Cloud Firestore, the Realtime Database and
   authentication**; `appcheck-probe` refuses at sign-in, which is the proof.
   [`decisions/app-check-auth.md`](decisions/app-check-auth.md).
@@ -65,8 +64,9 @@ it, and the session-start hook will say so if it grows.
 - **Every device counts the same window from the same origin**, corrected for its
   own clock offset from the server. Built, **not deployed**:
   [`decisions/shared-clock.md`](decisions/shared-clock.md).
-- **`npm run host-room` scores nothing** — it hard-codes `answers: {}`, so every
-  real answer reads as `lost`. Looks like a bug, isn't one. Not fixed.
+- **`npm run host-room` scores a real answer now** — it never read the answers
+  subcollection, so every reveal it folded scored nobody. Fixed and proved both
+  ways; `state-of-play.md` carries the correction.
 
 **Measured live, 20 August 2026** (`npm run take-stock`):
 

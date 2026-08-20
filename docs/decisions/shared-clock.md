@@ -107,25 +107,26 @@ ordinary player: the question opened, the clock counted down, an answer was acce
 **7.6s** and recorded against the right option, and the reveal landed on time. No console
 errors.
 
-### What the harness cannot show, and a claim it has been quietly failing
+### The harness could not show it, and now can
 
-**`host-room` never reads the answers subcollection.** It builds its `RoomState` with
-`answers: {}` hard-coded, in two places — `scripts/host-room.ts:139` and `:176` — so when it
-folds a reveal, `tallyQuestion` is handed nothing and `lastDeltas` comes back empty. Every
-real player's answer therefore reads as **`lost`**, and the browser shows *"your answer didn't
-reach the room in time"* for an answer that reached it perfectly well and is displayed on the
-same screen at 7.6s.
+**`host-room` never read the answers subcollection.** It built its `RoomState` with
+`answers: {}` hard-coded, in two places, so every reveal was folded with nothing to score:
+`lastDeltas` came back empty, every real player's answer read as **`lost`**, and the browser
+said *"your answer didn't reach the room in time"* about an answer displayed on the same
+screen at 7.6s. A false alarm shaped exactly like a bug.
 
-Two consequences worth writing down, neither of them this change's to fix:
+**Fixed on Greg's say-so, and proved in both directions.** Before: an answer scored nothing.
+After, the same action, same harness: `scored: GateTest +1000` in the terminal and `+1000` at
+position 1 on the browser's standings — the two agreeing being the point. The filter was
+**extracted rather than copied** — `liveAnswers` in `src/engine/answers.ts`, used by both the
+app and the harness, because a second copy of the rule that decides what gets scored would not
+look like a rendering bug when it drifted. Same reasoning that pulled out `roomStandings`.
 
-- **A false alarm that looks exactly like a bug.** Anyone testing answering through this
-  harness will be told the room dropped their answer.
-- **[`state-of-play.md`](state-of-play.md) is wrong about it.** It says `npm run host-room --
-  20` "gives a window long enough to answer, change and watch which one scores". You cannot
-  watch which one scores: the harness scores nothing and never has. This is the same shape as
-  the harness being dead for weeks while the docs named it as verification.
+That run is also the **first time the rank bonus has scored anybody in a live room**: 500 for
+correct plus 500 for first, through the vault, against a remote host. It does not prove
+*ranking* — that needs two answerers — but the path works end to end.
 
-So **scoring under the corrected clock is still unproven in a live room**, and the only thing
+So **ranking under the corrected clock is still unproven in a live room**, and the only thing
 that will prove it is two real devices.
 
 **Also not covered:** whether the estimate is good enough on the office network. Ten clients

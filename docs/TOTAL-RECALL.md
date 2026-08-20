@@ -15,6 +15,27 @@ the old 2,422-line handover, when it was split. They are a true index of what
 happened and when; they are not a contemporaneous log, and anything needing the
 detail should follow the pointer rather than trust the summary here.
 
+## 2026-08-20 — host-room reads the answers, and scores them
+
+Fixed the thing found an hour earlier. `host-room` built its state with `answers: {}`
+hard-coded in two places, so every reveal it folded scored nobody and every real answer read
+as `lost`.
+
+**Proved both ways**, which is the only way an "it works now" means anything: before, an
+answer scored nothing; after, the same action gave `scored: GateTest +1000` in the terminal
+and `+1000` at position 1 in the browser — the two agreeing being the point. That run is also
+the first time the **rank bonus has scored anybody in a live room**, 500 + 500 for first,
+through the vault against a remote host. It does not prove ranking; that needs two answerers.
+
+The filter was **extracted, not copied**: `liveAnswers` in `src/engine/answers.ts`, used by
+`useRoom` and the harness alike. A second copy of the rule deciding what gets scored would not
+look like a rendering bug when it drifted — the same reasoning that pulled out
+`roomStandings`. Five tests.
+
+`state-of-play.md` carries a correction in place: it claimed this harness could be used to
+"watch which one scores", which was false when written. Second time a doc has named this
+harness as verification while it was doing nothing.
+
 ## 2026-08-20 — The shared clock, and a harness that scores nothing
 
 Built, not deployed. Every device now counts the answer window from `openedAt` translated onto

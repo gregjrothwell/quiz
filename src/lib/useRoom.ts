@@ -21,6 +21,7 @@ import {
 } from 'firebase/firestore';
 import { firebaseAuth, firestore, realtimeDb } from '../firebase';
 import { reduce, type Action } from '../engine/reducer';
+import { liveAnswers, type AnswerDoc } from '../engine/answers';
 import {
   estimateSkew,
   questionOriginMs,
@@ -150,10 +151,6 @@ function presenceRef(code: string, uid: string) {
 const ROOM_RETENTION_MS = 30 * 24 * 60 * 60 * 1_000;
 
 /** Answer documents carry the question index so a stale answer never scores. */
-interface AnswerDoc extends Answer {
-  questionIndex: number;
-}
-
 function toRoomState(code: string, data: DocumentData, answers: Record<string, Answer>): RoomState {
   const persisted = data as PersistedRoom;
   return {
@@ -432,12 +429,7 @@ export function useRoom(): UseRoom {
     // the way in, so a client can write an answer to a room it is not a member
     // of — which used to leave the "how many have answered" pips reading more
     // than the number of players.
-    const live: Record<string, Answer> = {};
-    for (const [answerUid, answer] of Object.entries(answers as Record<string, AnswerDoc>)) {
-      if (answer.questionIndex !== persisted.index) continue;
-      if (!persisted.players[answerUid]) continue;
-      live[answerUid] = { optionIndex: answer.optionIndex, elapsedMs: answer.elapsedMs };
-    }
+    const live = liveAnswers(persisted.players, persisted.index, answers as Record<string, AnswerDoc>);
     return toRoomState(code, persisted, live);
   }, [code, persisted, answers]);
 
