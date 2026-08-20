@@ -76,3 +76,5 @@ docs/decisions/       One subsystem each. 250-line budget
 
 @~/clawd/context/standards/typescript.mdc
 @~/clawd/context/standards/testing.mdc
+
+<!-- sentinel-b: kestrel -->
