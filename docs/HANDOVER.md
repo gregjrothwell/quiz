@@ -62,7 +62,8 @@ it, and the session-start hook will say so if it grows.
   it** — ranks need two answerers, so no solo round can show one:
   [`decisions/scoring.md`](decisions/scoring.md).
 - **The final screen makes a shareable PNG of the round** — clipboard, share
-  sheet or download, whichever the browser has. Built, **not deployed**:
+  sheet or download, whichever the browser has, with the chair drawn on it.
+  **Live since 20 August** ([PR #7](https://github.com/gregjrothwell/quiz/pull/7)):
   [`decisions/final-card.md`](decisions/final-card.md).
 - **`npm run host-room -- 10` works again**; `scripts/imports.test.ts` fails if
   that import comes back.

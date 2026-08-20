@@ -2,7 +2,10 @@
 
 > **Owner: Greg Rothwell. Last updated: 20 August 2026. Budget: 250 lines.**
 
-**Status: built 20 August 2026, not deployed.** Chosen from
+**Status: live 20 August 2026** ([PR #7](https://github.com/gregjrothwell/quiz/pull/7)).
+`check-rules` 36/36 before publishing — nothing here changes the rules; run on the standing
+principle that the repo copy is not what Firebase is running — and the CDN watched until it
+served `index-BJ8Gz5Z5.js` rather than assumed. Chosen from
 [`ideas-review.md`](ideas-review.md#7-the-final-card-as-a-png). The story and acceptance
 criteria below are as they were agreed; what building it changed is under
 [What the story got wrong](#what-the-story-got-wrong).
