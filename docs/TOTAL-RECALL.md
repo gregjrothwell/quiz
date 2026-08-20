@@ -22,11 +22,17 @@ handed over by clipboard, share sheet or download, whichever the browser has, al
 feature-detected. Zero Firebase, no rules change. 430 tests; `drawCard` splits out at 4.48 kB
 and the main chunk moved 0.66 kB.
 
+**The chair is drawn on it, not captioned** — Greg's call, and the right one: the joke in
+`Chair.tsx` is entirely in the height, so a card saying *"Alex takes the chair"* was explaining
+a picture instead of drawing it. Ported with `Path2D` from the same path data the component
+uses, sharing the podium's floor.
+
 Three things the browser found that no test could: the third riser dropped its score out of
 the bottom of its own box (silently — the number was legible, in mid-air); a shared chair read
-*"Konstantin & Alexandra takes the chair"*; and the lazy import had to become a prefetch,
-because a cold `import()` outlives the clipboard's transient activation and degrades the
-primary route into the fallback on the one press that mattered.
+*"Konstantin & Alexandra takes the chair"*, a bug that then vanished with the caption itself;
+and the lazy import had to become a prefetch, because a cold `import()` outlives the
+clipboard's transient activation and degrades the primary route into the fallback on the one
+press that mattered.
 
 Also: `Date.now()` cannot be called anywhere in a component under the React Compiler, which
 is why the model is assembled inside the lazily-imported module rather than by `Final`.

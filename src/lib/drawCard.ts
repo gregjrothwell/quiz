@@ -100,6 +100,84 @@ function roundedRect(
   ctx.closePath();
 }
 
+const RAD = Math.PI / 180;
+
+/**
+ * The office swivel chair, ported line for line from `Chair.tsx`.
+ *
+ * Ported rather than rasterised: an `<svg>` drawn through an `Image` would be
+ * one more asynchronous thing that can quietly fail, and `Path2D` takes SVG path
+ * data verbatim — so the arcs, the slump and the askew angle are the same
+ * numbers the component uses, and changing one means changing both on purpose.
+ *
+ * **Why it is here at all**, from that component's own note: the joke is
+ * entirely in the height. Three people stand on risers and this one is sat down
+ * next to them at ground level, and no caption does that work as well as the
+ * eye-line does. The card had a caption — *"Alex takes the chair"* — and this
+ * replaces it.
+ *
+ * The source viewBox is `6 2 50 72`, so the drawing is translated by that origin
+ * before anything else and everything below is in the component's coordinates.
+ */
+function drawChair(ctx: CanvasRenderingContext2D, middle: number, floor: number, height: number) {
+  const scale = height / 72;
+
+  ctx.save();
+  ctx.translate(middle - (50 * scale) / 2, floor - height);
+  ctx.scale(scale, scale);
+  ctx.translate(-6, -2);
+
+  // Askew, as though it has been pushed back rather than tucked in.
+  ctx.translate(31, 64);
+  ctx.rotate(-3 * RAD);
+  ctx.translate(-31, -64);
+
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = INK_DIM;
+  ctx.lineWidth = 2.6;
+
+  // The backrest carries a rotation of its own, inside the chair's.
+  ctx.save();
+  ctx.translate(45, 40);
+  ctx.rotate(10 * RAD);
+  ctx.translate(-45, -40);
+  roundedRect(ctx, 40, 8, 10, 32, 5);
+  ctx.stroke();
+  ctx.restore();
+
+  roundedRect(ctx, 13, 40, 32, 7, 3.5);
+  ctx.stroke();
+
+  for (const d of ['M43 30H21a3 3 0 0 0-3 3v7', 'M29 47v10', 'm29 57-14 8M29 57l14 8M29 57v9']) {
+    ctx.stroke(new Path2D(d));
+  }
+
+  for (const [x, y] of [[13.5, 66.5], [44.5, 66.5], [29, 68]] as const) {
+    ctx.beginPath();
+    ctx.arc(x, y, 2.3, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // Head forward of the shoulders and an arm gone limp over the rest. The slump
+  // is the whole characterisation.
+  ctx.strokeStyle = INK_SOFT;
+  ctx.fillStyle = INK_SOFT;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(34, 18, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.lineWidth = 5;
+  for (const d of ['M36 25 33 38', 'M33 38H17', 'M17 38 15 57']) ctx.stroke(new Path2D(d));
+
+  ctx.lineWidth = 4;
+  for (const d of ['M35 28 25 31', 'M15 57h-4']) ctx.stroke(new Path2D(d));
+
+  ctx.restore();
+}
+
 /** Left to right, so the winner stands in the middle as they do on screen. */
 const RISER_ORDER = [1, 0, 2] as const;
 
@@ -115,11 +193,44 @@ const RISER_ORDER = [1, 0, 2] as const;
  */
 const RISER_HEIGHTS = [200, 172, 152] as const;
 
+const CHAIR_WIDTH = 168;
+const CHAIR_HEIGHT = 138;
+
+/**
+ * The three risers and, when the round seated somebody, the chair on the floor
+ * beside them — one row, one floor, exactly as `.finale--seated` lays it out.
+ */
 function drawPodium(ctx: CanvasRenderingContext2D, card: CardModel, floor: number): void {
   const width = 236;
   const gap = 26;
-  const total = width * 3 + gap * 2;
+  const risers = width * 3 + gap * 2;
+  const total = card.chair ? risers + gap + CHAIR_WIDTH : risers;
   const left = (CARD_WIDTH - total) / 2;
+
+  if (card.chair) {
+    const middle = left + risers + gap + CHAIR_WIDTH / 2;
+    const top = floor - CHAIR_HEIGHT;
+
+    // Above the chair, not below it: on screen the label sits on top because
+    // the column is floor-aligned and anything underneath props the chair up.
+    ctx.textAlign = 'center';
+    ctx.fillStyle = INK_SOFT;
+    fitted(
+      ctx,
+      card.chair.names.join(' & '),
+      (s) => `400 ${s}px ${SHOUT}, Impact, sans-serif`,
+      CHAIR_WIDTH,
+      30,
+      16,
+    );
+    ctx.fillText(card.chair.names.join(' & '), middle, top - 42);
+
+    ctx.fillStyle = INK_DIM;
+    ctx.font = `600 22px ${TECH}, monospace`;
+    ctx.fillText(card.chair.score.toLocaleString('en-GB'), middle, top - 14);
+
+    drawChair(ctx, middle, floor, CHAIR_HEIGHT);
+  }
 
   RISER_ORDER.forEach((rowIndex, slot) => {
     const row = card.podium[rowIndex];
@@ -203,21 +314,7 @@ export async function drawCard(card: CardModel): Promise<Blob> {
   );
   ctx.fillText(headline(card.winners), 56, 156);
 
-  const floor = card.chair ? 470 : 508;
-  drawPodium(ctx, card, floor);
-
-  if (card.chair) {
-    ctx.textAlign = 'center';
-    ctx.fillStyle = INK_SOFT;
-    ctx.font = `600 22px ${TECH}, monospace`;
-    // A shared last place is still last, and two people do not *takes* it.
-    const verb = card.chair.names.length > 1 ? 'take' : 'takes';
-    ctx.fillText(
-      `${card.chair.names.join(' & ')} ${verb} the chair — ${card.chair.score.toLocaleString('en-GB')}`,
-      CARD_WIDTH / 2,
-      floor + 42,
-    );
-  }
+  drawPodium(ctx, card, 494);
 
   // Rosettes only when this device watched the whole round. Null is not an
   // empty list here: see `CardModel`.

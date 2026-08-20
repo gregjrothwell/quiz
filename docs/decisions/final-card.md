@@ -21,6 +21,12 @@ A **1200 × 630** PNG drawn on a canvas: the pack, the winner, the podium, the c
 round seated one, the rosettes, and the date. Handed to the player by whichever of three
 routes their browser supports.
 
+**The chair is the drawing, not a caption.** Greg's call, and it is the right one: the joke
+in `Chair.tsx` is entirely in the height — three people stand on risers and one is sat down
+next to them at ground level — and a card that said *"Alex takes the chair"* was explaining
+a picture instead of drawing it. The chair is ported line for line onto the canvas and shares
+the podium's floor.
+
 ## Acceptance criteria
 
 1. A button on the final screen produces a PNG of the round. Available to **everybody**, not
@@ -116,7 +122,9 @@ than by a test passing.
   box, and no test could have caught it. `RISER_HEIGHTS` now floors at 152, which is why that
   constant carries a comment saying so.
 - **"Konstantin & Alexandra takes the chair."** A shared last place is still last, and two
-  people do not *takes* it. Only visible on a card drawn with a dead heat for the chair.
+  people do not *takes* it. Only visible on a card drawn with a dead heat for the chair —
+  and then **the sentence was deleted outright**, because drawing the chair says it better.
+  The bug is recorded rather than quietly disappearing with the line that had it.
 
 Two of the eight tests were also wrong when first written, and were corrected rather than the
 code: an all-zero round makes **everybody** a joint winner, because `Final` has always called
@@ -129,13 +137,26 @@ that the review is deliberately left off was passing vacuously.
 > nobody losing, on the screen and now on the card. Asserted in `card.test.ts` rather than
 > corrected: the card follows the screen, and changing the rule is a decision about the podium.
 
+## The chair, and how it got there
+
+Ported with **`Path2D`, not a rasterised `<svg>`.** Path2D takes SVG path data verbatim, so
+the arcs, the slump and the askew three degrees are the same numbers `Chair.tsx` uses, and
+changing one means changing both on purpose. Going through an `Image` would have been one
+more asynchronous thing that can quietly fail, on a card whose other silent failure is
+already the fonts.
+
+It sits in the podium row rather than under it, sharing the floor — which is what
+`.finale--seated` does on screen, and the only arrangement in which the eye-line means
+anything. The name and score go **above** it for the reason the component gives: the column is
+floor-aligned, so anything stacked underneath props the chair up.
+
 ## Evidence
 
 `typecheck`, `lint` and `build` clean, **430 tests** (up from 416), no `any`, no
 `@ts-ignore`. Fourteen new cases in `card.test.ts`, written first and watched fail.
 
-**The bundle did what it was supposed to, nearly.** `drawCard` splits out at **4.48 kB (2.16
-kB gzipped)** and is fetched only on a final screen. The main chunk went 225.54 kB → 226.20
+**The bundle did what it was supposed to, nearly.** `drawCard` splits out at **5.45 kB (2.54
+kB gzipped)**, the chair being about a kilobyte of it, and is fetched only on a final screen. The main chunk went 225.54 kB → 226.20
 kB — **it was supposed not to move at all**, and the 0.66 kB is the button, its six labels and
 the prefetch effect, which live in `Final` and cannot be anywhere else.
 
@@ -144,7 +165,7 @@ the prefetch effect, which live in `Final` and cannot be anywhere else.
 | Case | Held up |
 |---|---|
 | Ordinary round — pack, three risers, chair, three rosettes | yes |
-| Worst case — dead heat, 14-character names, four rosettes, a shared chair | yes; the headline and the names shrink to fit |
+| Worst case — dead heat, 14-character names, four rosettes, a shared chair | yes; the headline and the names shrink to fit, and a shared last place shares one chair |
 | Sparse — no pack title, no chair, no rosettes from a partial log | yes; airy rather than broken |
 
 The button was pressed on a real `Final` in the gallery and ran the whole chain, reporting
