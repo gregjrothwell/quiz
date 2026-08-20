@@ -17,3 +17,4 @@ CLAUDE.md
 .cursor/rules/00-core.mdc
 .cursor/rules/typescript.mdc
 .cursor/rules/testing.mdc
+.cursor/rules/docs.mdc
