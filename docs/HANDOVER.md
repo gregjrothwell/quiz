@@ -67,10 +67,15 @@ with the reveal gate. Counted, not remembered: `npm test`.)
 
 | | |
 |---|---|
-| rooms | 12 — one predates `expiresAt` and no TTL policy can ever reach it |
+| rooms | 25 — one predates `expiresAt` and no TTL policy can ever reach it. Was 12 this morning; the reveal-gate probes and a browser round made the rest, all carrying `expiresAt` |
 | vault answers | 13,593 |
 | `season-2` players | 21 |
+| `season-1` / `week-2026-W34` / `rules-check` | 4 / 4 / 3 — **none of these were being reported until today.** `take-stock` held its own `season-2` and counted nothing else, so every weekly bucket was invisible from the day weekly boards shipped. It now enumerates instead of naming |
 | recovery codes / identity claims | **0 / 0** — nobody has ever used the feature |
+
+> `rules-check` is `check-rules` leaving three rows in the live season table on
+> every run. Reported, not fixed — it is a preflight artefact sitting in real
+> data, and it is somebody's decision whether that matters.
 
 > **Correction, 20 August 2026.** This file previously said both "leaving 3
 > rooms" (15 August, after the prune) and "79 rooms are still there" in the

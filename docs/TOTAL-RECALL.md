@@ -15,6 +15,22 @@ the old 2,422-line handover, when it was split. They are a true index of what
 happened and when; they are not a contemporaneous log, and anything needing the
 detail should follow the pointer rather than trust the summary here.
 
+## 2026-08-20 — take-stock had been under-reporting since weekly boards shipped
+
+It held `const SEASON = 'season-2'` and counted that one bucket. A week *is* a
+season id — `seasons/week-2026-W34/players` — so from the day weekly boards landed
+it was reporting a fraction and saying nothing about the rest.
+
+Replaced the constant with `listDocuments()` over `seasons/`, which returns the
+implicit parents of the subcollections that exist. No id to go stale. First run
+showed three buckets nobody had counted: `season-1` (4), `week-2026-W34` (4) and
+`rules-check` (3) — the last being `check-rules` leaving rows in the live season
+table on every run. Reported, not fixed.
+
+Cost unchanged in kind: one read per bucket id plus one aggregate each, tens of
+reads all in. Carried over from the 20 August plan, where it was dropped rather
+than deferred — it appeared in neither the handover nor here.
+
 ## 2026-08-20 — The reveal was a coin flip, and the host's device always called it
 
 Greg hosted a real office round on a 15-second window and reported a gap after
