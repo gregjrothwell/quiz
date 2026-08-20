@@ -15,6 +15,21 @@ the old 2,422-line handover, when it was split. They are a true index of what
 happened and when; they are not a contemporaneous log, and anything needing the
 detail should follow the pointer rather than trust the summary here.
 
+## 2026-08-20 — Three directional decisions, and an ideas review
+
+Reviewed against first principles rather than the backlog. The machinery is far ahead of the
+playing: a sealed vault, App Check on three products, durable identity, 412 tests — and **21
+season players with 0 recovery codes and 0 claims**. Three decisions, Greg's:
+
+- **The quiz stays an event, not a habit.** A date-seeded async "Daily Five" was costed, would
+  have needed **no rules change at all**, and was rejected on product grounds.
+- **Ruleset pastes are no longer a big deal** — *"we can do them as needed"*. This relaxes an
+  assumption several files design around. Order and both-direction verification still stand.
+- **Rank-based scoring, to try.** The linear speed curve came from Polly and had never been
+  questioned: anybody who knows the answer scores 960–990, so 1s versus 2s is 50 points.
+
+Nothing built. → [`decisions/ideas-review.md`](decisions/ideas-review.md)
+
 ## 2026-08-20 — App Check on auth is enforcing after all, hours late
 
 `appcheck-probe` at 12:42: `ENFORCED  Authentication · refused`. The four earlier

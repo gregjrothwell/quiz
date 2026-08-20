@@ -34,6 +34,7 @@ it, and the session-start hook will say so if it grows.
 | anything that adds reads or writes | [`decisions/cost.md`](decisions/cost.md) |
 | — before assuming a thing is a style choice | [`decisions/gotchas.md`](decisions/gotchas.md) |
 | — before trusting a claim in here | [`decisions/state-of-play.md`](decisions/state-of-play.md) |
+| what to build next, and what each idea costs | [`decisions/ideas-review.md`](decisions/ideas-review.md) |
 
 ## State as of 20 August 2026
 
