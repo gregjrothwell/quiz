@@ -69,7 +69,15 @@ button {
   cursor: pointer;
 }
 
-input {
+/* `select` and `textarea` are here for the same reason `input` is: form controls
+   do not inherit the page's font, they fall back to the UA's own. This rule said
+   `input` alone until 20 August 2026, which was true of every control on the page
+   when it was written — the squad list arrived later, and rendered in Arial
+   13.3px beside a name field in Archivo 16px. Add controls here, not one-off
+   font rules on the class. */
+input,
+select,
+textarea {
   font: inherit;
 }
 
@@ -471,6 +479,51 @@ input {
   outline: none;
   border-color: var(--cyan);
   box-shadow: 0 0 0 3px rgb(41 214 255 / 0.2);
+}
+
+/*
+  A `select` wearing `.input` still is not one, and the two sat side by side in
+  the same row looking like different kinds of field: 46px against 53px, Arial
+  against Archivo, and a grey native chevron on a screen where every other control
+  is drawn. The font is fixed in the reset above; the rest is here.
+
+  `appearance: none` is what lets the chevron be ours. It is drawn as an inline
+  SVG rather than a glyph or a pseudo-element: a pseudo-element cannot be placed
+  on a replaced element, and a text arrow inherits the letter-spacing and sits
+  wrong. The stroke is `--ink-dim` written out, because a `var()` cannot be
+  interpolated into a data URI.
+*/
+select.input {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  /* Room for the chevron, so a long squad name never runs under it. */
+  padding-right: 2.75rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%235d7794' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5 6 6.5l5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 0.75rem;
+}
+
+select.input:hover:not(:disabled) {
+  border-color: var(--cyan-dim);
+}
+
+select.input:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/*
+  The popup itself is the operating system's, not ours. Windows and Linux honour
+  these; **macOS ignores them entirely** and draws its own list, which is why
+  there is no attempt here to style the open state to match the page. Set anyway,
+  because the platforms that do honour it would otherwise render dark text on a
+  dark background.
+*/
+select.input option {
+  background: #0a1626;
+  color: var(--ink);
 }
 
 .input--code {

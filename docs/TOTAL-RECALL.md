@@ -19,58 +19,59 @@ detail should follow the pointer rather than trust the summary here.
 
 `appcheck-probe` at 12:42: `ENFORCED  Authentication · refused`,
 `auth/firebase-app-check-token-is-invalid`. The four earlier runs that signed in
-unattested across 20+ minutes were real readings, and the earlier entries saying
-so stand. What was wrong was the implied timescale, not the observation — the
-documented delay is 15 minutes and this took hours.
+unattested across 20+ minutes were real, and those entries stand. What was wrong
+was the implied timescale — documented delay 15 minutes, actual hours. **Not "the
+docs were right all along": a propagation delay the documentation does not bound.**
+Debug-token scripts unaffected.
 
-Do not read it as the docs having been right all along. Read it as a propagation
-delay the documentation does not bound. Scripts on the debug token are unaffected;
-`check-rules`, `sync-harness`, `take-stock` and `reveal-probe` all ran clean after.
-
-`security.md` hit its 250-line budget recording this, so the whole authentication
-account is split out to [`decisions/app-check-auth.md`](decisions/app-check-auth.md)
-— moved, not rewritten, premature readings included.
+`security.md` hit its budget recording this, so authentication is split out to
+[`decisions/app-check-auth.md`](decisions/app-check-auth.md) — moved not rewritten,
+premature readings included.
 
 ## 2026-08-20 — take-stock had been under-reporting since weekly boards shipped
 
 It held `const SEASON = 'season-2'` and counted that one bucket. A week *is* a
 season id — `seasons/week-2026-W34/players` — so from the day weekly boards landed
-it was reporting a fraction and saying nothing about the rest.
-
-Replaced the constant with `listDocuments()` over `seasons/`, which returns the
+it reported a fraction and said nothing about the rest. Replaced the constant with
+`listDocuments()` over `seasons/`, which returns the
 implicit parents of the subcollections that exist. No id to go stale. First run
 found three buckets nobody had counted: `season-1` (4), `week-2026-W34` (4) and
 `rules-check` (3) — the last is `check-rules` leaving rows in the live season table
 on every run, reported not fixed. Still tens of reads. Carried over from the 20
 August plan, where it was dropped rather than deferred.
 
+## 2026-08-20 — The squad dropdowns were never styled
+
+Reported by Greg after the round. A `select` wearing `.input` is still not an
+`<input>`: the reset said `input { font: inherit }` and nothing else, so the squad
+lists rendered **Arial 13.3px at 46px** beside a name field in **Archivo 16px at
+53px** — same row, plus a grey native chevron.
+
+Reset now covers `select` and `textarea`; `select.input` gets `appearance: none` and
+an inline-SVG chevron. All three fields measure 53px/Archivo 16px, checked at desktop
+and mobile. The open popup stays the OS's — **macOS ignores `option` colours**.
+
 ## 2026-08-20 — The reveal was a coin flip, and the host's device always called it
 
-Greg hosted a real office round on a 15-second window and reported a gap after
-every question, having to press **Reveal** each time.
+Greg hosted a real office round on a 15-second window and had to press **Reveal**
+every question. Not the vault's price: `useQuestionClock` claimed a local clock
+"always expires a little after the gate does, never before" — true of every device
+*except* the one that reveals. Latency compensation starts the quizmaster's
+countdown a hop before `openedAt` is stamped, and the two writes' latency and skew
+then cancel, leaving **about 7ms** of margin decided by jitter.
 
-The cause is not the vault's price. `useQuestionClock` claimed a local clock
-"always expires a little after the gate does, never before". That holds for every
-device except the one that reveals: the quizmaster *wrote* the question open, and
-Firestore's latency compensation hands that write back as a local snapshot before
-the server has seen it. Both writes then carry the same latency and skew, which
-cancel — leaving a margin of **about 7ms**, decided by jitter.
+Measured, not reasoned (`npm run reveal-probe`, new): 100ms early **refused**, 250ms
+early **refused**. `sync-harness 10` agrees — host +6ms, the other nine +82–86ms.
 
-Measured live rather than reasoned about (`npm run reveal-probe`, new): pending
-local snapshot at +6ms, server-confirmed at +85ms, asking 100ms early **refused**,
-250ms early **refused**. `sync-harness 10` says the same thing from the other
-side — the host saw the question at +6ms and the other nine at +82–86ms.
+Fixed by anchoring on the first **server-confirmed** snapshot, so neither latency
+nor skew appears in the arithmetic. Backoff 1500 flat → 300/600/1200/1500. After:
+reveal at **+478ms / +561ms**, answer at 1.2s, nothing pressed, no notice;
+`check-rules` 36/36 both directions.
 
-Fixed by anchoring the auto-reveal to the first **server-confirmed** snapshot,
-which cannot arrive before `openedAt` was stamped — so the ordering is provable
-and neither latency nor skew appears in it. Retry backoff 1500ms flat → 300/600/
-1200/1500. The button now says **Revealing…** instead of offering itself while an
-attempt is in flight, and an expired clock says **Time's up** rather than "You can
-still change it" beside four dead tiles.
-
-Live, after: reveal lands **478ms and 561ms** after zero on two questions, answer
-on screen at 1.2s, nothing pressed and no notice raised. `check-rules` 36/36, both
-directions. Depth: [`decisions/vault.md`](decisions/vault.md#the-gate-had-no-margin-and-the-host-was-the-one-who-paid).
+**The replay hold stays as it is** — up to 1820ms, and now the largest part of the
+gap. Greg's call, made 20 August: it is the showmanship, not latency. Do not
+"optimise" it. Full account, including what the gap is still made of:
+[`decisions/vault.md`](decisions/vault.md#the-gate-had-no-margin-and-the-host-was-the-one-who-paid).
 
 ## 2026-08-20 — Anonymous account purge: reviewed, and the answer is don't
 
