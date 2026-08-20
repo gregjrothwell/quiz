@@ -49,18 +49,16 @@ it, and the session-start hook will say so if it grows.
 - **The answer vault is live and covers the packs.** 13,593 answers, both
   rulesets published, preflight passing. The surplus are orphans, harmless.
 - **App Check enforces on Cloud Firestore, the Realtime Database and
-  authentication** — the last confirmed at 12:42 on 20 August, hours past the
-  documented window. `appcheck-probe` refuses at sign-in, which is the proof.
+  authentication**; `appcheck-probe` refuses at sign-in, which is the proof.
   [`decisions/app-check-auth.md`](decisions/app-check-auth.md).
 - **The reveal lands on its own, ~0.5s after the clock**, anchored on the
   server-confirmed snapshot; `reveal-probe` is the instrument:
   [`decisions/vault.md`](decisions/vault.md#the-gate-had-no-margin-and-the-host-was-the-one-who-paid).
 - **Scoring is a rank bonus, not a speed curve** — 500 for correct plus
-  500/400/300/200/100 by the order the correct answers landed. No rules change;
-  416 tests. **Live since 20 August** ([PR #6](https://github.com/gregjrothwell/quiz/pull/6),
-  `index-BMejBzPG.js`, CDN confirmed serving it). **Nobody has played a round on
-  it** — ranks need two answerers, so no solo round can show one:
-  [`decisions/scoring.md`](decisions/scoring.md).
+  500/400/300/200/100 by the order the correct answers landed. No rules change.
+  **Live since 20 August** ([PR #6](https://github.com/gregjrothwell/quiz/pull/6)).
+  **Nobody has played a round on it** — ranks need two answerers, so no solo
+  round can show one: [`decisions/scoring.md`](decisions/scoring.md).
 - **The final screen makes a shareable PNG of the round** — clipboard, share
   sheet or download, whichever the browser has, with the chair drawn on it.
   **Live since 20 August** ([PR #7](https://github.com/gregjrothwell/quiz/pull/7)):
