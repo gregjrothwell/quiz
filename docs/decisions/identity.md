@@ -168,3 +168,69 @@ round in review shipped and the next two phases were agreed.
 > of the people actually in the room, plus honours accumulating on those rows.
 > Phase 2 publishes every rule it needs, including an optional `playerId` on each
 > player's own entry so the digest costs no extra reads.
+
+---
+
+## Purging anonymous accounts — the recommendation is don't
+
+**Reviewed 20 August 2026.** The old security list carried this as an open item:
+*"There is a console setting to auto-purge unused anonymous accounts after 30
+days; it is off. Turning it on would also quietly reset anybody's season row."*
+Both halves need correcting.
+
+### It may not be available on this project at all
+
+[The anonymous auth
+docs](https://firebase.google.com/docs/auth/web/anonymous-auth) state the
+setting requires an upgrade: *"If you've upgraded your project to Firebase
+Authentication with Identity Platform, you can enable automatic clean-up in the
+Firebase console."*
+
+**The documentation does not say whether that upgrade requires a billing
+account, and neither does this file.** It is the same shape as the TTL policy,
+which turned out to need billing and said so on no documentation page — it was
+discovered at the button. Check in the console before planning around it.
+
+### The benefit is nil here
+
+The docs give the benefit as: anonymous authentication *"will no longer count
+toward usage limits or billing quotas."* This is a Spark project with no billing
+account and roughly one round a week. There is no bill to reduce and no quota
+under pressure. **Nothing is being bought.**
+
+### The cost is the whole season
+
+Measured 20 August 2026 with `npm run take-stock`: **21 players in `season-2`,
+0 recovery codes, 0 identity claims.** Not one person has ever used the durable
+identity feature.
+
+So the mitigation that exists on paper protects nobody. Every one of those 21
+rows is keyed on a `playerId` that is still just an auth uid, and purging the
+account orphans the row — the points survive in Firestore and no browser can
+ever write to them again.
+
+### A recovery code would not fully save them either
+
+**Reasoned from the rules, not tested** — and worth testing before anyone relies
+on it. `ownsPlayer` in `firestore.rules` allows a write when
+`playerId == request.auth.uid`, *or* when `claims/{request.auth.uid}` points at
+that playerId. A purge invalidates the browser's credential, so the next visit
+mints a **new** uid. `playerIdFor` still returns the claimed playerId out of
+localStorage, so the app keeps writing to the right row — but `claims/{newUid}`
+does not exist and `playerId != newUid`, so **both branches fail and the write is
+refused.**
+
+The player would keep their history, see an error when a game tried to bank, and
+have to re-enter their recovery code to mint `claims/{newUid}`. Nothing in the
+app prompts them to. The code is still in their localStorage, so recovery is
+possible — it is just neither automatic nor discoverable.
+
+Verifying this properly means deleting a real anonymous account and watching what
+the next visit does. That deletes somebody's row if the reasoning is wrong, so it
+has not been done.
+
+### If it is ever turned on
+
+Have people claim recovery codes **first**, and only then enable it — and fix the
+re-claim gap above, because otherwise every claimed player silently loses the
+ability to bank a game thirty days after their last visit.

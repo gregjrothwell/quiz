@@ -15,6 +15,26 @@ the old 2,422-line handover, when it was split. They are a true index of what
 happened and when; they are not a contemporaneous log, and anything needing the
 detail should follow the pointer rather than trust the summary here.
 
+## 2026-08-20 — Anonymous account purge: reviewed, and the answer is don't
+
+The open item said the setting was off and turning it on "would quietly reset
+anybody's season row". Both halves were wrong in useful ways.
+
+The docs say auto-clean-up requires an **Identity Platform upgrade**, and are
+**silent** on whether that needs billing — the same shape as the TTL policy,
+which needed billing and said so nowhere. The stated benefit is that anonymous
+auth stops counting toward billing quotas, which on a Spark project running one
+round a week buys nothing.
+
+The cost is measured: **21 players, 0 recovery codes, 0 claims.** The mitigation
+protects nobody, because nobody has ever used it.
+
+And a recovery code would not fully save them anyway — reasoned from
+`ownsPlayer`, not tested: a purge mints a new uid, `claims/{newUid}` does not
+exist, so the season write is refused until the code is re-entered by hand, and
+nothing prompts for it.
+→ [`decisions/identity.md`](decisions/identity.md)
+
 ## 2026-08-20 — What App Check enforces, finally measured
 
 The review had *claimed* the Realtime Database was unenforced since 16 August

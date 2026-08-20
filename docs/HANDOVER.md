@@ -82,8 +82,11 @@ it, and the session-start hook will say so if it grows.
    the live app silently and the stale-CDN window makes that painful to diagnose.
    Its own change, with a round of testing.
 4. **App Check on the Realtime Database** — measured as unenforced, needs no
-   code, one console step. And the anonymous-account purge. Both in
-   [`decisions/security.md`](decisions/security.md).
+   code, one console step: [`decisions/security.md`](decisions/security.md).
+   The **anonymous-account purge is reviewed and the recommendation is not to
+   enable it** — it buys nothing on Spark and would orphan all 21 season rows,
+   since nobody has claimed a recovery code:
+   [`decisions/identity.md`](decisions/identity.md).
 5. **Nothing needing a second person has been tested** — the review panel, a real
    quizmaster handover, two squads on one board.
 
