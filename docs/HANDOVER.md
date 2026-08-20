@@ -65,8 +65,7 @@ it, and the session-start hook will say so if it grows.
   sheet or download, whichever the browser has, with the chair drawn on it.
   **Live since 20 August** ([PR #7](https://github.com/gregjrothwell/quiz/pull/7)):
   [`decisions/final-card.md`](decisions/final-card.md).
-- **`npm run host-room -- 10` works again**; `scripts/imports.test.ts` fails if
-  that import comes back.
+- **`npm run host-room -- 10` works again**; `scripts/imports.test.ts` guards it.
 
 **Measured live, 20 August 2026** (`npm run take-stock`):
 
