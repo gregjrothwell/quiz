@@ -15,6 +15,22 @@ the old 2,422-line handover, when it was split. They are a true index of what
 happened and when; they are not a contemporaneous log, and anything needing the
 detail should follow the pointer rather than trust the summary here.
 
+## 2026-08-20 — Scoring is a rank ladder, not a speed curve
+
+Built. 500 for correct plus 500/400/300/200/100 by the order the correct answers landed,
+ties sharing a rank per `standings()`. Max per question stays 1,000, so **no rules paste**.
+416 tests, types and lint clean, `#/preview` renders the ladder with no console errors.
+
+Two things the story did not foresee, both left alone and both recorded: a mid-question join
+is now sorted last rather than stripped of its bonus, which is *softer* than before; and the
+podium's one-decimal elapsed chip can show two players the same time when they are 100 points
+apart. **Nobody has played a round on it** — ranks need two answerers, so no solo round can
+show one.
+
+The reducer test asserting the old window-dependent scores was **inverted rather than
+deleted**: it now asserts both windows pay the same, and says what it used to say.
+→ [`decisions/scoring.md`](decisions/scoring.md)
+
 ## 2026-08-20 — Three directional decisions, and an ideas review
 
 Reviewed against first principles rather than the backlog. The machinery is far ahead of the

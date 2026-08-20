@@ -240,8 +240,8 @@ means a dropped quizmaster hands over instantly and silently.
 
 **Answers record elapsed time, not a timestamp.** Each device measures how long
 *it* took to answer. Comparing one laptop's clock against another's would fold
-clock skew straight into the speed scores, and office laptops disagree about the
-time by more than the speed bonus is worth.
+clock skew straight into the scores, and office laptops disagree about the time
+by far more than the gap between first and second place.
 
 **Answers live in a subcollection.** If they were on the room document, every
 answer would push an update to every player. One listener per client on the room

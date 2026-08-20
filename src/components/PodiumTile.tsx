@@ -44,9 +44,15 @@ function sentence(names: string[]): string {
 }
 
 /**
- * One decimal place. The speed bonus decays continuously, so the tenth is the
- * smallest difference worth showing — and a chip reading `1.24s` is a number to
- * read rather than a time to glance at.
+ * One decimal place, because a chip reading `1.24s` is a number to read rather
+ * than a time to glance at.
+ *
+ * **Known wrinkle since rank-based scoring, 20 August 2026.** Points now come
+ * from the *order* of the correct answers rather than from a curve, so two
+ * players a millisecond apart can show the same rounded time and be 100 points
+ * apart. The display was left alone rather than quietly given a second decimal:
+ * whether the chip should show the time or the position is a question about the
+ * podium, not about scoring. See docs/decisions/scoring.md.
  */
 function seconds(elapsedMs: number): string {
   return `${(elapsedMs / 1000).toFixed(1)}s`;

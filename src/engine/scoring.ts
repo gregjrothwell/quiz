@@ -1,40 +1,70 @@
-import { DEFAULT_QUESTION_DURATION_MS, type Answer } from './state';
+import type { Answer } from './state';
 
-/** Awarded for any correct answer, regardless of speed. */
+/** Awarded for any correct answer, however slow. */
 export const BASE_POINTS = 500;
 
-/** Additional points available for answering quickly, scaled by time left. */
-export const SPEED_POINTS = 500;
-
-export interface ScoreInput {
-  correct: boolean;
-  elapsedMs: number;
-  durationMs?: number;
-}
-
 /**
- * Speed-weighted scoring, matching what the team already expects from Polly:
- * a correct answer is worth {@link BASE_POINTS}, plus up to {@link SPEED_POINTS}
- * more on a linear decay across the question window. Answering instantly scores
- * 1000; answering as the clock expires still scores 500; wrong scores nothing.
+ * What being first is worth, then second, third and fourth.
+ *
+ * **This replaced a linear decay across the answer window on 20 August 2026**, and
+ * the reason is arithmetic rather than taste. The old curve paid
+ * `BASE_POINTS + 500 * (1 - elapsed/window)`, so on a ten-second question a
+ * player answering at 0.4s — about as fast as reaction, render and network
+ * allow — scored 980, and one at a full second scored 950. Thirty points
+ * separated the fastest possible answer from an ordinary one, and nobody in a
+ * year of rounds ever remarked on it. Nobody ever scored 1,000 either, because
+ * that needed a zero-latency answer at the instant of render.
+ *
+ * The ladder makes the same gap 100 points and makes it legible: you are not
+ * racing a decay curve you cannot see, you are racing the people in the room.
+ *
+ * See docs/decisions/scoring.md.
  */
-export function scoreAnswer({
-  correct,
-  elapsedMs,
-  durationMs = DEFAULT_QUESTION_DURATION_MS,
-}: ScoreInput): number {
-  if (!correct) return 0;
-  if (durationMs <= 0) return BASE_POINTS + SPEED_POINTS;
+export const RANK_BONUSES = [500, 400, 300, 200] as const;
 
-  const clamped = Math.min(Math.max(elapsedMs, 0), durationMs);
-  const remaining = 1 - clamped / durationMs;
-  return BASE_POINTS + Math.round(SPEED_POINTS * remaining);
+/**
+ * What fifth place and everything after it is worth.
+ *
+ * A floor rather than a tail to nothing, because a correct answer in a big room
+ * should not be worth barely more than a wrong one — the base is doing that job
+ * already, and the ladder is only meant to separate the front of the field.
+ */
+export const RANK_FLOOR = 100;
+
+/**
+ * The bonus for finishing in a given 1-based position among the correct
+ * answers. Positions past the ladder take {@link RANK_FLOOR}.
+ */
+export function rankBonus(position: number): number {
+  return RANK_BONUSES[Math.max(0, position - 1)] ?? RANK_FLOOR;
 }
 
 /**
- * Points each player earned on one question. Players who did not answer are
- * absent from the result rather than present with zero, so the reveal can tell
- * "got it wrong" apart from "ran out of time".
+ * Points each player earned on one question.
+ *
+ * Correct answers are ranked against each other by `elapsedMs` and paid
+ * {@link BASE_POINTS} plus {@link rankBonus}; wrong answers score nothing. The
+ * answer window is deliberately not a parameter — the ladder ranks answers
+ * against each other rather than against the clock, so a fifteen-second question
+ * and a ten-second one pay identically.
+ *
+ * Two properties the rest of the app depends on:
+ *
+ * - **Everyone who answered is in the result**, including a zero for everyone
+ *   who got it wrong. `verdictFor` tells `lost` from `wrong` by whether the key
+ *   exists at all, so dropping the zeros would tell an honest wrong answer that
+ *   the room never scored it. Players who did not answer are absent, which is
+ *   what keeps "got it wrong" apart from "ran out of time".
+ * - **Ties share a rank and the next distinct time resumes at the count already
+ *   awarded**, which is the convention {@link standings} uses. Two players level
+ *   on the fastest correct answer are both first and both take 1000; the next is
+ *   third and takes 800. One tie rule in the game rather than two.
+ *
+ * The sort breaks a tie on uid so every device orders the field identically.
+ * It cannot change anybody's score — tied answers take the same bonus — but the
+ * reveal is re-derived on every client from the same log, and an ordering that
+ * differed between devices is the kind of thing that shows up later somewhere
+ * else.
  */
 export function tallyQuestion(params: {
   /**
@@ -44,17 +74,27 @@ export function tallyQuestion(params: {
    */
   correctIndex: number;
   answers: Record<string, Answer>;
-  durationMs?: number;
 }): Record<string, number> {
-  const { correctIndex, answers, durationMs = DEFAULT_QUESTION_DURATION_MS } = params;
+  const { correctIndex, answers } = params;
   const deltas: Record<string, number> = {};
 
+  const correct = Object.entries(answers)
+    .filter(([, answer]) => answer.optionIndex === correctIndex)
+    .sort(([aUid, a], [bUid, b]) => (a.elapsedMs - b.elapsedMs) || aUid.localeCompare(bUid));
+
+  let position = 0;
+  let previousElapsed: number | null = null;
+
+  correct.forEach(([uid, answer], i) => {
+    if (previousElapsed === null || answer.elapsedMs !== previousElapsed) {
+      position = i + 1;
+      previousElapsed = answer.elapsedMs;
+    }
+    deltas[uid] = BASE_POINTS + rankBonus(position);
+  });
+
   for (const [uid, answer] of Object.entries(answers)) {
-    deltas[uid] = scoreAnswer({
-      correct: answer.optionIndex === correctIndex,
-      elapsedMs: answer.elapsedMs,
-      durationMs,
-    });
+    if (answer.optionIndex !== correctIndex) deltas[uid] = 0;
   }
 
   return deltas;

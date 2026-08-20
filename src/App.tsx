@@ -344,9 +344,16 @@ function Game() {
       play('lock');
       // Somebody who walked in on this question is timed from the end of the
       // window rather than from their own arrival: they still score the answer,
-      // they just do not collect a speed bonus measured from a clock that
-      // started when they sat down. The alternative was letting a mid-question
-      // join bank 990 for an answer given on the buzzer.
+      // they are just ranked from a clock that says nothing about how fast they
+      // were. The alternative was letting a mid-question join take first place
+      // for an answer given on the buzzer.
+      //
+      // Under the ladder this is a softer penalty than it was — the full window
+      // sorts them last among the correct answers rather than stripping the
+      // bonus outright, so in a room where two people got it right they are
+      // second rather than on the base alone. Making it exact would need the
+      // answer document to say "I walked in", which is a new field and a rules
+      // paste for a case worth 100 points. See docs/decisions/scoring.md.
       submitAnswer(optionIndex, joinedMidQuestion ? durationMs : clock.elapsedMs).catch(report);
     },
     [submitAnswer, clock.elapsedMs, joinedMidQuestion, durationMs, report],

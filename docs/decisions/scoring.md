@@ -2,10 +2,13 @@
 
 > **Owner: Greg Rothwell. Last updated: 20 August 2026. Budget: 250 lines.**
 
-**Status: story agreed, not built.** Decision recorded in
+**Status: built 20 August 2026.** Decision recorded in
 [`ideas-review.md`](ideas-review.md#1-rank-based-scoring--chosen) and the
-[spine](../TOTAL-RECALL.md). This file is the agreement; it becomes the subsystem doc when
-the work lands.
+[spine](../TOTAL-RECALL.md). The story and acceptance criteria are kept below as written,
+because what a change was agreed to do is worth reading beside what it did.
+
+**Not yet played by anybody.** Ranks need at least two people who answered, so no solo round
+can show one — see [Evidence](#evidence).
 
 ## The story
 
@@ -69,16 +72,34 @@ but first of the people who got it right is first.
    claim from the per-question rank bonus and stays true alongside it. The two agree in the
    common case, because rank is decided on `elapsedMs` too.
 
-## Two decisions for Greg
+## Two decisions, both taken
 
-- **`durationMs` becomes unused in `tallyQuestion`.** The rank formula does not need the
-  window, and late answers are already refused twice before scoring — `submitAnswer`
-  (`useRoom.ts:644`) and the reducer's own guard. Keep the parameter as documentation of what
-  bounds an answer, or drop it and let the two guards own that entirely? **Recommend
-  dropping it**: an argument nothing reads is the kind of thing that later gets read.
-- **The floor.** 100 for fifth and after means a slow correct answer is still worth 600
-  against a fast one's 1000 — a 40% spread, where today it is 25%. That is the intended
-  sharpening. If it proves brutal in a big room, the floor is the dial, not the ladder.
+- **`durationMs` is gone from `tallyQuestion`.** The ladder does not need the window, and
+  late answers are already refused twice before scoring — `submitAnswer` (`useRoom.ts:644`)
+  and the reducer's own guard. An argument nothing reads is the kind of thing that later
+  gets read.
+- **The floor stays at 100.** A slow correct answer is worth 600 against a fast one's 1000 —
+  a 40% spread where the old curve gave 25%. That is the intended sharpening. If it proves
+  brutal in a big room, **the floor is the dial, not the ladder**.
+
+## Two things the story did not foresee
+
+Both found while building, both left as they are, both worth knowing before somebody reports
+them as bugs.
+
+- **A mid-question join is now a softer penalty than it was.** Somebody who walks in on an
+  open question submits `elapsedMs = durationMs` (`App.tsx:350`), because their own clock
+  started when they sat down and says nothing about how fast they were. Under the old curve
+  that stripped the speed bonus exactly, leaving the base. Under the ladder it sorts them
+  **last among the correct answers** — so in a room where two people got it right, they are
+  second and take 900 rather than 500. Making it exact would need the answer document to say
+  *"I walked in"*, which is a new field and a rules paste for a case worth 100 points.
+- **The podium's elapsed chip shows one decimal, and points no longer follow it
+  continuously.** Two players a millisecond apart can read `1.2s` and `1.2s` and be 100
+  points apart, where under the decay curve they were a point apart and nobody could tell.
+  `PodiumTile.tsx` records it. **Left alone deliberately** — whether that chip should show
+  the time or the position is a question about the podium, not about scoring, and quietly
+  adding a second decimal would answer it without anybody deciding.
 
 ## What this makes worse, and it is deliberate
 
@@ -92,9 +113,10 @@ The companion change is costed in
 bound, `elapsedMs >= (request.time - openedAt) - grace`, for one rule `get()` per answer
 write. **Not part of this story**, but it should not stay unbuilt for long afterwards.
 
-## Tests to write first
+## The tests, written first
 
-In `src/engine/scoring.test.ts`, before any change to `scoring.ts`:
+Nine cases in `src/engine/scoring.test.ts`, written and watched fail — **9 failed, 21
+passed** — before `scoring.ts` was touched:
 
 - One correct answer alone scores 1000.
 - Four correct answers in a known `elapsedMs` order score 1000 / 900 / 800 / 700.
@@ -106,18 +128,42 @@ In `src/engine/scoring.test.ts`, before any change to `scoring.ts`:
 - A question nobody answered yields `{}`.
 - `verdictFor` still returns `wrong` — not `lost` — for a scored wrong answer.
 
-Then `fullGame.test.ts`, which already plays complete rounds, will move: its expected totals
-are the regression surface, and updating them is where a mistake in the ladder shows up.
+`fullGame.test.ts` needed no change at all: its rounds are answered by one player at a time,
+and a lone correct answer was worth 1,000 under both schemes.
+
+**Two tests in `reducer.test.ts` did move, and one of them is worth keeping an eye on.**
+*"scores speed against the room's window rather than the default"* asserted 750 on a
+ten-second window against 875 on a twenty-second one. That behaviour is exactly what this
+change removes, so the assertion was **inverted rather than deleted** — both windows now pay
+1,000, and the test says so along with what it used to say. Deleting it would have removed
+the only coverage of the window's effect on a score in the same commit that changed it.
 
 ## Evidence
 
-`npm run typecheck && npm run lint && npm test` clean, no `any`, no `@ts-ignore`.
+**Done:** `npm run typecheck`, `npm run lint` and `npm run build` clean; **416 tests
+passing**, up from 412. No `any`, no `@ts-ignore`. The main chunk went 224.72 kB → 225.54 kB.
 
-Then a live round, because two things have to agree on one screen: the scoreboard's rank
-bonuses and the final screen's fastest-finger rosette. A solo round cannot show it — ranks
-need at least two people who answered — so this needs `npm run host-room -- 15` with a
-browser alongside, which is the same evening the review panel and squad-vs-squad are waiting
-on.
+The `#/preview` gallery renders the ladder in a real screen — `1,000 / 900 / 800 / 700` down
+the standings — with no console errors and no sideways scroll at 1280px. Its fixtures were
+hand-written deltas from the old curve (`+880`, `+640`, `555`, `795`, `955`), which the
+ladder cannot produce; they are now ladder-legal, because a design gallery showing scores the
+engine cannot generate is a lie in the one place that exists to show what the app looks like.
 
-**No rules change, so `check-rules` is unaffected** — but run it anyway before deploying, on
+**Outstanding, and it is the whole point of the change:** a live round with more than one
+person answering. Ranks need at least two, so no solo round can ever show one, and the
+scoreboard's bonuses and the final screen's fastest-finger rosette have to agree on the same
+screen. `npm run host-room -- 15` with a browser alongside — the same evening the review
+panel and squad-vs-squad are waiting on.
+
+**No rules change, so `check-rules` is unaffected** — but run it before deploying anyway, on
 the standing principle that the repo copy is not what Firebase is running.
+
+## One thing this makes more urgent
+
+[`clock.md`](clock.md) and `README.md` both justified the locally-measured answer clock with
+*"office laptops disagree about the time by more than the speed bonus is worth"*. The
+decision is unchanged and still right — comparing wall clocks would be worse — but **the
+stakes went up**: the gap between first and second is now 100 points rather than a handful,
+so a device running five seconds behind loses more than it used to. The README wording is
+corrected, and this is another reason the shared clock is the first thing in
+[`ideas-review.md`](ideas-review.md#the-shared-clock--it-takes-answers-off-people).

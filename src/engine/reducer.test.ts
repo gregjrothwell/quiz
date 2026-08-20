@@ -336,9 +336,15 @@ describe('the answer window', () => {
     expect(result.answers['guest']).toBeUndefined();
   });
 
-  test('scores speed against the room’s window rather than the default', () => {
-    // #given two identical rounds differing only in their window, each answered
-    // at the halfway point of the shorter one
+  test('no longer scores against the window at all', () => {
+    // This test used to assert the opposite: that the same answer scored 750 on
+    // a ten-second window and 875 on a twenty-second one, because the speed
+    // bonus decayed across whichever window the room chose. Rank-based scoring
+    // removed that on 20 August 2026, and the assertion is inverted rather than
+    // deleted — the window's effect on a score is exactly what changed, so it is
+    // worth a test saying so. See docs/decisions/scoring.md.
+    //
+    // #given two identical rounds differing only in their window
     const answered = (durationSecs: number, elapsedMs: number): number =>
       apply(
         briskRoom(durationSecs),
@@ -351,13 +357,12 @@ describe('the answer window', () => {
         revealNow,
       ).scores['guest'] ?? 0;
 
-    // #when one is answered five seconds into a ten-second window, and the
-    // other five seconds into the default twenty
-    // #then the first scores the full half of the speed bonus and the second
-    // scores three-quarters — the curve is stretched across the real window
+    // #when each is answered five seconds in
+    // #then both take first place and the same points, because the ladder ranks
+    // answers against each other rather than against the clock
     expect({ brisk: answered(10, 5_000), standard: answered(20, 5_000) }).toEqual({
-      brisk: 750,
-      standard: 875,
+      brisk: 1000,
+      standard: 1000,
     });
   });
 });
@@ -543,8 +548,10 @@ describe('reveal', () => {
     // #when the answer comes back and is applied to the room as it is now
     const result = reduce(landed, action);
 
-    // #then the late answer counts
-    expect(result.scores['guest']).toBe(505);
+    // #then the late answer counts. Under the old curve this was 505, nearly all
+    // of the speed bonus having decayed; the ladder pays it first place, because
+    // it was the only correct answer the question had.
+    expect(result.scores['guest']).toBe(1000);
   });
 
   test('refuses an answer that belongs to a different question', () => {

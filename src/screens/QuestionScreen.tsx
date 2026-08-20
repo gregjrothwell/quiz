@@ -35,7 +35,7 @@ interface QuestionScreenProps {
   /**
    * Whether this device arrived after this question was already open, in which
    * case its clock is counting from the wrong zero — see App.tsx. The answer
-   * still counts; the speed bonus does not.
+   * still counts; it is ranked as though it landed on the buzzer.
    */
   joinedMidQuestion?: boolean;
   revealed: boolean;
@@ -314,7 +314,7 @@ export function QuestionScreen({
         */}
         {revealed ? null : joinedMidQuestion ? (
           <p className="muted" style={{ margin: 0, fontSize: '0.85rem' }}>
-            You joined mid-question, so this one is worth its points but no speed bonus.
+            You joined mid-question, so this one is scored as if you answered on the buzzer.
           </p>
         ) : (
           <ArcTimer
