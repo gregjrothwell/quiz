@@ -17,7 +17,7 @@ React 18, TypeScript, Vite, Vitest. Firebase client SDK. Deploy is `gh-pages` fr
 | `npm run typecheck` / `lint` / `build` | |
 | `npm run check-rules` | Live project: both rulesets, **both directions** |
 | `npm run sync-harness [n]` | *n* concurrent clients against live Firebase |
-| `npm run host-room -- [secs]` | Drive a round from the terminal. **Broken — dies on import outside Vite. See the handover** |
+| `npm run host-room -- [secs]` | Drive a round from the terminal |
 | `npm run seed-vault` | Admin SDK; needs `GOOGLE_APPLICATION_CREDENTIALS` under `.secrets/` |
 | `npm run deploy` | `build` then `gh-pages` |
 
@@ -46,9 +46,14 @@ firestore.rules  / firestore.seed.rules / database.rules.json
 
 ## What bites
 
-1. **Rules are published by hand.** The repo copy is not what Firebase is running. An unpublished Realtime Database ruleset, or `firestore.seed.rules` left live, is the usual "nothing works" failure. `npm run check-rules` is the check — it must refuse as well as allow.
-2. **Never add `localhost` to the reCAPTCHA allowlist.** The site key is public. Local and Node use a debug token. App Check is enforced on Firestore; auth itself is not.
-3. **Do not undo derived-quizmaster or the no-whole-`players`-map rule** without reading the handover table. Both were bugs that already shipped.
+1. **Nothing in `scripts/` may reach `src/firebase.ts`.** It reads
+   `import.meta.env`, which Vite defines and Node does not, so importing it at
+   any depth kills a script before its own code runs. `host-room` was dead that
+   way for weeks. `scripts/imports.test.ts` walks the graph and fails if it
+   comes back.
+2. **Rules are published by hand.** The repo copy is not what Firebase is running. An unpublished Realtime Database ruleset, or `firestore.seed.rules` left live, is the usual "nothing works" failure. `npm run check-rules` is the check — it must refuse as well as allow.
+3. **Never add `localhost` to the reCAPTCHA allowlist.** The site key is public. Local and Node use a debug token. App Check is enforced on Firestore; auth itself is not.
+4. **Do not undo derived-quizmaster or the no-whole-`players`-map rule** without reading the handover table. Both were bugs that already shipped.
 
 ## Verify
 

@@ -13,7 +13,7 @@ import {
   questionDurationMs,
   type Level,
 } from './engine/state';
-import { isFirebaseConfigured } from './firebase';
+import { firestore, isFirebaseConfigured } from './firebase';
 import { playerIdFor } from './lib/identity';
 import {
   rememberPlayingWith,
@@ -28,7 +28,7 @@ import { play } from './lib/sound';
 import { loadPackQuestions, usePackIndex } from './lib/usePacks';
 import { useQuestionClock } from './lib/useQuestionClock';
 import { useRoom } from './lib/useRoom';
-import { openTheVault } from './lib/vault';
+import { resolveAnswer } from './lib/vault';
 import type { PackId } from './questions/types';
 import { Final } from './screens/Final';
 import { Landing } from './screens/Landing';
@@ -343,7 +343,7 @@ function Game() {
     try {
       // The answer is not in the room, the pack or this bundle. It comes back
       // from the vault, and only once the server agrees the clock has run out.
-      const correctIndex = await openTheVault(room.code, question);
+      const correctIndex = await resolveAnswer(firestore(), room.code, question);
       // Named rather than assumed: `dispatch` folds over the room as it is when
       // this returns, so that an answer landing during the round trip still
       // counts — and the reducer refuses to score this answer against anything

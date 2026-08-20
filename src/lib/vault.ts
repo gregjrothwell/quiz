@@ -1,5 +1,4 @@
 import { doc, getDoc, setDoc, type Firestore } from 'firebase/firestore';
-import { firestore } from '../firebase';
 import type { QuizQuestion } from '../engine/state';
 
 /**
@@ -25,6 +24,16 @@ import type { QuizQuestion } from '../engine/state';
  * could only ever drift out of agreement with the thing actually enforcing it.
  *
  * See docs/HANDOVER.md for what this does and does not buy.
+ *
+ * **Nothing here reaches `src/firebase.ts`, and that is load-bearing.** The
+ * Firestore instance is a parameter, so this module runs anywhere — including
+ * from Node, which `scripts/host-room.ts` needs. It used to carry a one-line
+ * convenience wrapper that closed over the app's singleton, and the import at
+ * the top of the file was enough to break every script that touched this
+ * module: `src/firebase.ts` reads `import.meta.env` in its module body, which
+ * exists under Vite and nowhere else. `host-room` died on that import for
+ * weeks, and the cost was not one broken command but three untested paths that
+ * had no other tool. `scripts/imports.test.ts` now fails if it comes back.
  */
 
 function revealDoc(db: Firestore, code: string, questionId: string) {
@@ -92,9 +101,4 @@ export async function resolveAnswer(
     'The vault would not confirm an answer for this question. It only opens once '
       + 'the clock has run out — give it a moment and try again.',
   );
-}
-
-/** The app's own entry point, against the lazily initialised Firestore. */
-export function openTheVault(code: string, question: QuizQuestion): Promise<number> {
-  return resolveAnswer(firestore(), code, question);
 }
