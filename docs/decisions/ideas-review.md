@@ -63,7 +63,7 @@ Ranked by value ÷ cost, in Firestore ops per game unless stated. Reference is
 `scoreAnswer` is 500 base plus up to 500 decaying linearly across the window
 (`src/engine/scoring.ts:21`). Against this project's own measurements, human reaction plus
 render plus network is ~300–400ms — so on a ten-second window **anybody who simply knows it
-scores 960–990**, and one second versus two is 50 points out of 1,000. The speed bonus is a
+scores 950–985**, and one second versus two is 50 points out of 1,000. The speed bonus is a
 rounding error dressed as drama, and nobody has ever scored 1,000 or ever will.
 
 **The shape:** 500 for a correct answer, plus 500/400/300/200/100 by the order the correct
@@ -79,7 +79,7 @@ answers landed, floored at 100. Four things to get right, all in `scoring.ts`, a
   something different from "took the speed bonus" is the game contradicting itself on one
   screen.
 
-Zero cost. Pure engine, fully reversible.
+Zero cost, pure engine, fully reversible. Story: [`scoring.md`](scoring.md).
 
 ### 2. Live squad scoring
 
