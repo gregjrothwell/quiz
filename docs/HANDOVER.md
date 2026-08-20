@@ -59,9 +59,8 @@ it, and the session-start hook will say so if it grows.
   **Live since 20 August** ([PR #6](https://github.com/gregjrothwell/quiz/pull/6)).
   **Nobody has played a round on it** — ranks need two answerers, so no solo
   round can show one: [`decisions/scoring.md`](decisions/scoring.md).
-- **The final screen makes a shareable PNG of the round** — clipboard, share
-  sheet or download, whichever the browser has, with the chair drawn on it.
-  **Live since 20 August** ([PR #7](https://github.com/gregjrothwell/quiz/pull/7)):
+- **The final screen makes a shareable PNG of the round**, chair and all. **Live
+  since 20 August** ([PR #7](https://github.com/gregjrothwell/quiz/pull/7)):
   [`decisions/final-card.md`](decisions/final-card.md).
 - **Every device counts the same window from the same origin**, corrected for its
   own clock offset from the server. Built, **not deployed**:
