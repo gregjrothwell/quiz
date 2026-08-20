@@ -15,6 +15,34 @@ the old 2,422-line handover, when it was split. They are a true index of what
 happened and when; they are not a contemporaneous log, and anything needing the
 detail should follow the pointer rather than trust the summary here.
 
+## 2026-08-20 — The reveal was a coin flip, and the host's device always called it
+
+Greg hosted a real office round on a 15-second window and reported a gap after
+every question, having to press **Reveal** each time.
+
+The cause is not the vault's price. `useQuestionClock` claimed a local clock
+"always expires a little after the gate does, never before". That holds for every
+device except the one that reveals: the quizmaster *wrote* the question open, and
+Firestore's latency compensation hands that write back as a local snapshot before
+the server has seen it. Both writes then carry the same latency and skew, which
+cancel — leaving a margin of **about 7ms**, decided by jitter.
+
+Measured live rather than reasoned about (`npm run reveal-probe`, new): pending
+local snapshot at +6ms, server-confirmed at +85ms, asking 100ms early **refused**,
+250ms early **refused**. `sync-harness 10` says the same thing from the other
+side — the host saw the question at +6ms and the other nine at +82–86ms.
+
+Fixed by anchoring the auto-reveal to the first **server-confirmed** snapshot,
+which cannot arrive before `openedAt` was stamped — so the ordering is provable
+and neither latency nor skew appears in it. Retry backoff 1500ms flat → 300/600/
+1200/1500. The button now says **Revealing…** instead of offering itself while an
+attempt is in flight, and an expired clock says **Time's up** rather than "You can
+still change it" beside four dead tiles.
+
+Live, after: reveal lands **478ms and 561ms** after zero on two questions, answer
+on screen at 1.2s, nothing pressed and no notice raised. `check-rules` 36/36, both
+directions. Depth: [`decisions/vault.md`](decisions/vault.md#the-gate-had-no-margin-and-the-host-was-the-one-who-paid).
+
 ## 2026-08-20 — Anonymous account purge: reviewed, and the answer is don't
 
 The open item said the setting was off and turning it on "would quietly reset

@@ -129,6 +129,17 @@ refuses until the *server* agrees the window has passed, and `App` retries every
 seconds. **That notice only renders on the quizmaster's device.** Everybody else
 gets a dead timer and no explanation.
 
+> **Partly closed, 20 August 2026.** The refusals were not the routine
+> disagreement this assumed. The quizmaster's countdown started a network hop
+> before the server stamped `openedAt`, leaving about 7ms of margin — so a room
+> sitting at zero was usually the gate being missed by a whisker rather than
+> genuinely waiting. Fixed, and the retries are now 300/600/1200/1500 rather than
+> a flat 1500. See [the vault](vault.md#the-gate-had-no-margin-and-the-host-was-the-one-who-paid).
+>
+> The cheap half below is done too: an expired clock now says **Time's up** to
+> everybody, and the quizmaster's button says **Revealing…** while an attempt is
+> out. The shared clock itself is still not started.
+
 ### This was already written down, and under-rated
 
 Under [known limits](state-of-play.md#known-limits): *"Devices in the same room will phase against

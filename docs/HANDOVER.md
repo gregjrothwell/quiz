@@ -19,7 +19,7 @@ it, and the session-start hook will say so if it grows.
 
 | If you're changing | Read |
 |---|---|
-| the vault, reveals, answer secrecy | [`decisions/vault.md`](decisions/vault.md) |
+| the vault, reveals, answer secrecy, **when a client may ask** | [`decisions/vault.md`](decisions/vault.md) |
 | the answer window or its rules | [`decisions/answer-window.md`](decisions/answer-window.md) |
 | the season table, squads, weekly boards, `recordGame`, anything called `team` | [`decisions/season.md`](decisions/season.md) |
 | the opening titles, honours, rosettes | [`decisions/form-and-awards.md`](decisions/form-and-awards.md) |
@@ -36,7 +36,9 @@ it, and the session-start hook will say so if it grows.
 
 ## State as of 20 August 2026
 
-**Shipped and played.** 397 tests, clean types and lint, no `any` or `@ts-ignore`.
+**Shipped and played.** 412 tests, clean types and lint, no `any` or `@ts-ignore`.
+(This line said 397 until 20 August; it was one short even before the 14 added
+with the reveal gate. Counted, not remembered: `npm test`.)
 
 - **Squads, the weekly board, the average season table, the frozen podium and the
   sealed question text are live** ([PR #2](https://github.com/gregjrothwell/quiz/pull/2),
@@ -51,6 +53,13 @@ it, and the session-start hook will say so if it grows.
   enforced.** `npm run appcheck-probe` signs in unattested and reports what each
   product does — one command, any time:
   [`decisions/security.md`](decisions/security.md).
+- **The reveal now lands on its own, ~0.5s after the clock.** It was a coin flip
+  with about 7ms of margin, and the quizmaster's device was the one that lost it —
+  latency compensation started their countdown a network hop before the server
+  stamped `openedAt`. Anchored on the server-confirmed snapshot instead, which is
+  provable rather than tuned. `npm run reveal-probe` is the instrument, and both
+  it and `sync-harness 10` show the same +6ms/+85ms split:
+  [`decisions/vault.md`](decisions/vault.md#the-gate-had-no-margin-and-the-host-was-the-one-who-paid).
 - **`npm run host-room -- 10` works again** after being dead for weeks on an
   import outside Vite. `scripts/imports.test.ts` fails if it comes back.
 
@@ -73,8 +82,9 @@ it, and the session-start hook will say so if it grows.
 
 ## Outstanding
 
-1. **A real round on the new season work.** Nothing here has been played by the
-   office yet. That is the largest untested surface.
+1. **A real round on the new season work.** Played by the office on 20 August.
+   What came back was the reveal delay below; nothing else has been reported yet,
+   and nobody has been asked. **Ask before assuming it went otherwise fine.**
 2. **Two paths still need a browser plus `host-room`:** a quizmaster dropping out
    mid-round, and the keyboard shortcuts in a live game. Both are reachable now
    that the harness runs.
@@ -108,8 +118,8 @@ docs/decisions/ One subsystem each. Reached from the table above.
 
 Commands: `npm run dev` (serves at `/quiz/`, port 5273), `test`, `typecheck`, `lint`,
 `build`, `deploy`, `fetch-questions [-- --resort]`, `fetch-otqa`, `seed-vault`,
-`check-rules`, `sync-harness [n]`, `host-room [-- secs]`, `take-stock`,
-`prune-rooms`.
+`check-rules`, `sync-harness [n]`, `host-room [-- secs]`, `reveal-probe [-- secs offsetMs]`,
+`take-stock`, `prune-rooms`.
 
 `npm test` covers `src/` plus the pure parts of `scripts/` — the OpenTriviaQA
 parser and its encoding fallback, which corrupt questions silently when wrong.

@@ -39,6 +39,17 @@ interface QuestionScreenProps {
    */
   joinedMidQuestion?: boolean;
   revealed: boolean;
+  /**
+   * Whether the reveal is already on its way, so the button says so instead of
+   * offering itself again.
+   *
+   * The clock hitting zero used to leave a live-looking **Reveal** next to a
+   * dead timer, which is an invitation to press it — and pressing it while the
+   * automatic one is in flight does nothing except make the wait feel like a
+   * fault. It is only ever true while an attempt is actually outstanding, so a
+   * reveal that has genuinely failed still puts the button back.
+   */
+  revealing?: boolean;
   onAnswer: (optionIndex: number) => void;
   onReveal: () => void;
   onNext: () => void;
@@ -56,6 +67,7 @@ export function QuestionScreen({
   clock,
   joinedMidQuestion = false,
   revealed,
+  revealing = false,
   onAnswer,
   onReveal,
   onNext,
@@ -407,13 +419,18 @@ export function QuestionScreen({
                   </>
                 ) : null}
               </span>
+            ) : clock.expired ? (
+              // Before `myAnswer`, not after it. The lecterns disable on expiry
+              // (see the grid below), so a player who had answered was being told
+              // "You can still change it" next to four dead tiles — the app
+              // contradicting itself at exactly the moment the room is waiting and
+              // wondering whether something has broken.
+              'Time’s up'
             ) : myAnswer ? (
               // Not "Locked in" any more, and worth saying rather than leaving to
               // be discovered: every other quiz app takes the first answer and
               // keeps it, so nobody will try a second lectern unless told they can.
               'You can still change it'
-            ) : clock.expired ? (
-              'Time’s up'
             ) : (
               'Pick an answer'
             )}
@@ -456,10 +473,14 @@ export function QuestionScreen({
                   <button
                     type="button"
                     className="btn btn--primary"
-                    disabled={!clock.expired}
+                    disabled={!clock.expired || revealing}
                     onClick={onReveal}
                   >
-                    {clock.expired ? 'Reveal' : `Reveal in ${clock.secondsLeft}s`}
+                    {!clock.expired
+                      ? `Reveal in ${clock.secondsLeft}s`
+                      : revealing
+                        ? 'Revealing…'
+                        : 'Reveal'}
                   </button>
                 )}
               </>

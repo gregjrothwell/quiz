@@ -21,7 +21,8 @@
     "host-room": "tsx --env-file=.env.local scripts/host-room.ts",
     "deploy": "npm run build && gh-pages -d dist",
     "take-stock": "tsx --env-file=.env.local scripts/take-stock.ts",
-    "prune-rooms": "tsx --env-file=.env.local scripts/prune-rooms.ts"
+    "prune-rooms": "tsx --env-file=.env.local scripts/prune-rooms.ts",
+    "reveal-probe": "tsx --env-file=.env.local scripts/reveal-gate-probe.ts"
   },
   "dependencies": {
     "firebase": "^11.1.0",
