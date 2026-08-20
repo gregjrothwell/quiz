@@ -49,17 +49,15 @@ it, and the session-start hook will say so if it grows.
   passing. The surplus are orphans from earlier harvests — ids hash the question
   text, so a revised question leaves its old answer unread and harmless.
 - **App Check enforces on Cloud Firestore, the Realtime Database and
-  authentication** — the last confirmed at 12:42 on 20 August, hours after it was
-  switched on and long past the documented 15-minute window. `npm run
-  appcheck-probe` now refuses at sign-in, which is the whole proof; the scripts
-  carrying a debug token are unaffected.
+  authentication** — the last confirmed at 12:42 on 20 August, hours past the
+  documented 15-minute window. `appcheck-probe` now refuses at sign-in, which is
+  the proof; debug-token scripts are unaffected.
   [`decisions/app-check-auth.md`](decisions/app-check-auth.md).
 - **The reveal now lands on its own, ~0.5s after the clock.** It was a coin flip
-  with about 7ms of margin, and the quizmaster's device was the one that lost it —
-  latency compensation started their countdown a network hop before the server
-  stamped `openedAt`. Anchored on the server-confirmed snapshot instead, which is
-  provable rather than tuned. `npm run reveal-probe` is the instrument, and both
-  it and `sync-harness 10` show the same +6ms/+85ms split:
+  with about 7ms of margin and the quizmaster's device always lost it — latency
+  compensation started their countdown a hop before the server stamped `openedAt`.
+  Anchored on the server-confirmed snapshot instead: provable, not tuned.
+  `reveal-probe` is the instrument, and it and `sync-harness 10` agree on +6/+85ms:
   [`decisions/vault.md`](decisions/vault.md#the-gate-had-no-margin-and-the-host-was-the-one-who-paid).
 - **`npm run host-room -- 10` works again** after being dead for weeks on an
   import outside Vite. `scripts/imports.test.ts` fails if it comes back.
@@ -68,15 +66,17 @@ it, and the session-start hook will say so if it grows.
 
 | | |
 |---|---|
-| rooms | 25 — one predates `expiresAt` and no TTL policy can ever reach it. Was 12 this morning; the reveal-gate probes and a browser round made the rest, all carrying `expiresAt` |
+| rooms | 25 — one predates `expiresAt`, unreachable by any TTL policy. Was 12 this morning; the reveal-gate probes and a browser round made the rest, all with `expiresAt` |
 | vault answers | 13,593 |
 | `season-2` players | 21 |
-| `season-1` / `week-2026-W34` / `rules-check` | 4 / 4 / 3 — **none of these were being reported until today.** `take-stock` held its own `season-2` and counted nothing else, so every weekly bucket was invisible from the day weekly boards shipped. It now enumerates instead of naming |
+| `season-1` / `week-2026-W34` | 4 / 4 — **neither was being reported until today.** `take-stock` held its own `season-2` and counted nothing else, so every weekly bucket was invisible from the day weekly boards shipped. It now enumerates instead of naming |
 | recovery codes / identity claims | **0 / 0** — nobody has ever used the feature |
 
-> `rules-check` is `check-rules` leaving three rows in the live season table on
-> every run. Reported, not fixed — it is a preflight artefact sitting in real
-> data, and it is somebody's decision whether that matters.
+> **Correction.** This table also listed `rules-check` at 3 and called it the
+> preflight "leaving three rows on every run". **It was not** — counted, ran
+> `check-rules` three more times, still 3. Those predated the cleanup and no client
+> could remove them. Swept with `prune-rooms -- --probe-rows --go`; the bucket is
+> gone and a fresh preflight leaves nothing behind.
 
 > **Correction, 20 August 2026.** This file previously said both "leaving 3
 > rooms" (15 August, after the prune) and "79 rooms are still there" in the
@@ -88,9 +88,9 @@ it, and the session-start hook will say so if it grows.
 
 ## Outstanding
 
-1. **A real round on the new season work.** Played by the office on 20 August.
-   What came back was the reveal delay below; nothing else has been reported yet,
-   and nobody has been asked. **Ask before assuming it went otherwise fine.**
+1. **A real round on the new season work.** Played by the office on 20 August. It
+   produced two reports — the reveal delay, and the squad dropdowns — both fixed.
+   Nothing else was raised.
 2. **Two paths still need a browser plus `host-room`:** a quizmaster dropping out
    mid-round, and the keyboard shortcuts in a live game. Both are reachable now
    that the harness runs.
@@ -125,7 +125,7 @@ docs/decisions/ One subsystem each. Reached from the table above.
 Commands: `npm run dev` (serves at `/quiz/`, port 5273), `test`, `typecheck`, `lint`,
 `build`, `deploy`, `fetch-questions [-- --resort]`, `fetch-otqa`, `seed-vault`,
 `check-rules`, `sync-harness [n]`, `host-room [-- secs]`, `reveal-probe [-- secs offsetMs]`,
-`take-stock`, `prune-rooms`.
+`take-stock`, `prune-rooms [-- --probe-rows --go]`.
 
 `npm test` covers `src/` plus the pure parts of `scripts/` — the OpenTriviaQA
 parser and its encoding fallback, which corrupt questions silently when wrong.

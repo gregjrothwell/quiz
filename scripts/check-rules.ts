@@ -641,6 +641,23 @@ async function runChecks(checks: Check[]): Promise<number> {
   return failed;
 }
 
+/**
+ * Runs one cleanup delete and reports the path if it did not work, rather than
+ * throwing. Returns null on success.
+ *
+ * A failure here must never fail the preflight: the checks have already run and
+ * their verdict is the point of the script. But it must not be invisible either
+ * — see the note at the call site.
+ */
+async function tidy(path: string, work: Promise<unknown>): Promise<string | null> {
+  try {
+    await work;
+    return null;
+  } catch {
+    return path;
+  }
+}
+
 async function main(): Promise<void> {
   const app = initializeApp(config, 'check-rules');
   await attachDebugAppCheck(app);
@@ -706,18 +723,37 @@ async function main(): Promise<void> {
 
   const failed = await runChecks(checks);
 
-  // Best effort. A leftover under the throwaway season id or the probe room is
-  // never read by the app, and only exists at all if a check already failed.
+  // A leftover under the throwaway season id or the probe room is never read by
+  // the app, and only exists at all if a check already failed.
   //
   // The claim goes first: while it stands, uidB owns this row, and the delete
   // below is only permitted to somebody who owns it. Revoking the recovery code
   // is what stops these accumulating a document per run — `recovery` is the one
   // collection here whose contents cannot simply be overwritten next time.
-  await deleteDoc(doc(dbB, 'claims', uidB)).catch(() => undefined);
-  await deleteDoc(ownSeasonRow).catch(() => undefined);
-  await deleteDoc(ownWeekRow).catch(() => undefined);
-  await deleteDoc(doc(db, 'recovery', probeCode)).catch(() => undefined);
-  await remove(presence).catch(() => undefined);
+  //
+  // **Best effort, but no longer silent.** Every anonymous run mints a fresh uid,
+  // so a season row this fails to remove is one nothing can ever delete again:
+  // it belongs to a uid that stops existing when this process exits, and the
+  // rules only let an owner delete their own row. Swallowed, that leaks one
+  // permanent document per failed run and says nothing — which is exactly what
+  // happened, and it took `take-stock` enumerating buckets on 20 August 2026 to
+  // notice three of them. Whatever is reported here needs
+  // `npm run prune-rooms -- --probe-rows --go`, from a machine with the key.
+  const swept = await Promise.all([
+    tidy('claims/' + uidB, deleteDoc(doc(dbB, 'claims', uidB))),
+    tidy(ownSeasonRow.path, deleteDoc(ownSeasonRow)),
+    tidy(ownWeekRow.path, deleteDoc(ownWeekRow)),
+    tidy(`recovery/${probeCode}`, deleteDoc(doc(db, 'recovery', probeCode))),
+    tidy('presence', remove(presence)),
+  ]);
+
+  const stranded = swept.filter((path) => path !== null);
+  if (stranded.length > 0) {
+    console.log(`\n  ${stranded.length} leftover(s) this run could not remove:`);
+    for (const path of stranded) console.log(`    ${path}`);
+    console.log('  Season rows here are permanent — only the service account can reach them.');
+    console.log('  npm run prune-rooms -- --probe-rows --go');
+  }
 
   console.log(
     failed === 0
