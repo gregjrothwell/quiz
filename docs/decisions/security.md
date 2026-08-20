@@ -77,10 +77,32 @@ The first is the proof; the second and third are what catch it breaking real
 play. A run of only the last two would show that nothing broke, which is not the
 same as showing that anything is enforced.
 
-**Still not enforced afterwards, and worth saying out loud:** authentication.
-Anonymous accounts can still be minted by anybody; what they can no longer do is
-read or write. That was always the exposure, but it is not the same as being
-closed.
+### Authentication — switched on 20 August, not yet observed taking effect
+
+Enforcement was enabled in the console the same afternoon. **`appcheck-probe`
+still signed in unattested twice afterwards, roughly 10 minutes apart.** The
+documented delay is up to 15 minutes, so this is not yet a finding either way —
+it is recorded as unresolved rather than rounded up to "done".
+
+Re-run `npm run appcheck-probe`. If Authentication still reports NOT ENFORCED
+well past the window, the thing to check is whether the console actually shows it
+enforcing, **before inventing a mechanism for why it does not**. Note that
+another Auth feature on this project — anonymous account auto-clean-up — turns
+out to require an Identity Platform upgrade; whether enforcement has any similar
+prerequisite is **not stated on the enforcement page**, and is not guessed at
+here.
+
+When it does take effect, `appcheck-probe` can only answer one question: signing
+in is the first thing it does, so an enforced Auth makes every product below it
+unreachable. The script exits early and says so rather than reporting the rest as
+fine. That is a real loss of reach and an acceptable one — if nothing can
+authenticate, nothing reaches Firestore or the Realtime Database either.
+
+**What enforcement buys, and does not.** It stops accounts being *minted* by
+anything that cannot attest, which is the accumulation problem the anonymous
+purge was aimed at — and it solves it without touching a single existing season
+row. It adds no new user-facing failure: a browser that cannot load reCAPTCHA is
+already unable to read anything, so this only moves that failure earlier.
 
 ## The security review
 

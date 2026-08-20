@@ -13,6 +13,14 @@
  * tiny script that signs in with **no** App Check at all and reports, per
  * product, whether the request was refused.
  *
+ * **Once Authentication itself is enforced, this script can only answer one
+ * question.** Signing in is the first thing it does, so an enforced Auth refuses
+ * it and everything below becomes unreachable — the early exit says exactly that
+ * rather than reporting the other products as untested-but-fine. That is a real
+ * loss of reach and an acceptable one: if nothing can authenticate, nothing can
+ * get to Firestore or the Realtime Database either, so the posture is strictly
+ * stronger even though this tool sees less of it.
+ *
  * Reports rather than gates. It is a measurement of the console's current
  * state, and both answers are legitimate readings depending on what has been
  * switched on — so it always exits 0 and never fails a preflight. What it must
