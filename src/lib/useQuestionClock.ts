@@ -40,11 +40,25 @@ interface Reading {
  * > The clock is unchanged and still deliberately local — scoring depends on it.
  * > What changed is that the auto-reveal no longer trusts it for the gate; see
  * > `src/engine/revealGate.ts`.
+ *
+ * > **Superseded in part, 20 August 2026.** `originMs` now carries the moment the
+ * > question opened *on this device's clock*, worked out from the server's
+ * > `openedAt` and this device's own measured offset — so the countdown is the
+ * > room's rather than this tab's, and neither the quizmaster's clock nor
+ * > anybody's latency appears in it. The local fallback below is unchanged and
+ * > is what runs whenever there is no origin to use.
+ * > See `src/engine/roomClock.ts` and docs/decisions/shared-clock.md.
  */
 export function useQuestionClock(
   isOpen: boolean,
   questionIndex: number,
   durationMs: number,
+  /**
+   * When the question opened, on this device's clock. Null falls back to
+   * counting from the moment this device saw it, which is what every round
+   * before this did.
+   */
+  originMs: number | null = null,
 ): QuestionClock {
   const [reading, setReading] = useState<Reading>({ questionIndex, elapsedMs: 0 });
 
@@ -53,15 +67,25 @@ export function useQuestionClock(
 
     // The start time lives in the effect closure, so there is no ref to read
     // during render and no need to seed state from inside the effect body.
-    const startedAt = Date.now();
+    //
+    // The origin arrives a moment after the phase does — it needs the
+    // server-confirmed snapshot — so this effect deliberately depends on it and
+    // re-runs once when it lands. That re-run is the correction being applied,
+    // and it can only ever move the start *earlier*: `questionOriginMs` pins the
+    // origin at this device's own arrival and never past it.
+    const startedAt = originMs ?? Date.now();
 
     // 100ms keeps the arc visibly smooth without repainting every frame.
     const interval = setInterval(() => {
       setReading({ questionIndex, elapsedMs: Date.now() - startedAt });
     }, 100);
 
+    // No immediate reading: setting state from an effect body is what
+    // `react-hooks/set-state-in-effect` exists to stop, and the cost of not
+    // doing it is that a correction landing mid-question shows on the next tick
+    // instead of the next frame. That is a tenth of a second, once.
     return () => clearInterval(interval);
-  }, [isOpen, questionIndex]);
+  }, [isOpen, questionIndex, originMs]);
 
   // A reading left over from the previous question counts as zero, so the new
   // question never inherits the old elapsed time for the frame before the first

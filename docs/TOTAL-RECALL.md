@@ -15,6 +15,26 @@ the old 2,422-line handover, when it was split. They are a true index of what
 happened and when; they are not a contemporaneous log, and anything needing the
 detail should follow the pointer rather than trust the summary here.
 
+## 2026-08-20 — The shared clock, and a harness that scores nothing
+
+Built, not deployed. Every device now counts the answer window from `openedAt` translated onto
+its own clock, using the **minimum** of `arrival − openedAt` across a round as its skew —
+latency is never negative, so the least-delayed question is the closest thing to a pure
+measurement. Nobody else's clock enters the arithmetic, which is what ruled out the naive
+version. Two guards mean every failure returns to today's behaviour, and the correction can
+only ever take time away, never give a device more than it already had. 443 tests.
+
+`sync-harness 10` confirms the premise: host **+8ms**, the other nine **+64–65ms** — on one
+machine, which is the best possible case. On 17 August that gap was five seconds and cost a
+player his answer.
+
+**Found while verifying, and not fixed:** `host-room` builds its state with `answers: {}`
+hard-coded, so it folds every reveal with nothing to score and every real player's answer
+reads as `lost` — the browser says *"your answer didn't reach the room in time"* about an
+answer displayed on the same screen at 7.6s. `state-of-play.md` claims that harness can be
+used to "watch which one scores". It cannot, and never could.
+→ [`decisions/shared-clock.md`](decisions/shared-clock.md)
+
 ## 2026-08-20 — "The Ladder" was already taken
 
 Rank scoring was written up as "the ladder" throughout — this spine, `scoring.md`, and comments

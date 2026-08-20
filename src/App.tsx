@@ -138,6 +138,7 @@ function Game() {
     isQuizmaster,
     presenceWorking,
     questionConfirmedAt,
+    questionOriginAt,
     createAndJoin,
     join,
     leave,
@@ -181,7 +182,14 @@ function Game() {
 
   const phase = room?.phase ?? 'lobby';
   const durationMs = room ? questionDurationMs(room) : DEFAULT_QUESTION_DURATION_MS;
-  const clock = useQuestionClock(phase === 'question', room?.index ?? 0, durationMs);
+  const clock = useQuestionClock(
+    phase === 'question',
+    room?.index ?? 0,
+    durationMs,
+    // The room's clock where this device has been able to measure itself
+    // against the server, and its own where it has not.
+    questionOriginAt,
+  );
 
   /**
    * The question this device walked in on, if it walked in on one.

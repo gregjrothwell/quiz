@@ -21,6 +21,12 @@ import {
 } from 'firebase/firestore';
 import { firebaseAuth, firestore, realtimeDb } from '../firebase';
 import { reduce, type Action } from '../engine/reducer';
+import {
+  estimateSkew,
+  questionOriginMs,
+  rememberDelta,
+  type ClockDeltas,
+} from '../engine/roomClock';
 import { planJoin } from '../engine/join';
 import { reapAbsent } from '../engine/presence';
 import {
@@ -44,6 +50,35 @@ import { rememberName } from './rememberedName';
  * Firestore free tier.
  */
 type PersistedRoom = Omit<RoomState, 'answers'>;
+
+/**
+ * What this device knows about the question in play: when it first heard about
+ * it, and when the server says it opened.
+ *
+ * `openedAtMs` is null on any snapshot that has not carried the server's stamp
+ * yet, which is every pending write and the first delivery on the device that
+ * opened the question.
+ */
+interface QuestionConfirmation {
+  key: string;
+  at: number;
+  openedAtMs: number | null;
+}
+
+/**
+ * `openedAt` off a raw snapshot, in milliseconds.
+ *
+ * Read here rather than through `toRoomState` because it is not part of
+ * `RoomState` and should not become part of it: no screen renders it, and the
+ * one thing that needs it needs the *server's* value rather than anything a
+ * client could have written. Anything that is not a resolved `Timestamp` — a
+ * pending write, an older room, a field that never landed — reads as null, and
+ * the clock falls back to counting locally.
+ */
+function openedAtMillis(data: DocumentData | undefined): number | null {
+  const value: unknown = data?.['openedAt'];
+  return value instanceof Timestamp ? value.toMillis() : null;
+}
 
 export type ConnectionState = 'connecting' | 'ready' | 'error';
 
@@ -72,6 +107,15 @@ export interface UseRoom {
    * argument and the live measurements behind it.
    */
   questionConfirmedAt: number | null;
+  /**
+   * When the question in play opened, translated onto **this device's clock** —
+   * so every screen in the room counts the same window from the same moment
+   * however late its own snapshot arrived.
+   *
+   * Null whenever that cannot be worked out, and the caller then counts from its
+   * own arrival exactly as it always did. See `src/engine/roomClock.ts`.
+   */
+  questionOriginAt: number | null;
   createAndJoin: (name: string) => Promise<string>;
   join: (code: string, name: string) => Promise<void>;
   leave: () => Promise<void>;
@@ -219,10 +263,16 @@ export function useRoom(): UseRoom {
    * the same shape the reveal retry counter uses. A bare timestamp would survive
    * into the next question and open its gate early.
    */
-  const [questionConfirmed, setQuestionConfirmed] = useState<{ key: string; at: number }>({
+  const [questionConfirmed, setQuestionConfirmed] = useState<QuestionConfirmation>({
     key: '',
     at: 0,
+    openedAtMs: null,
   });
+  /**
+   * One reading per question of how far after `openedAt` this device saw it, for
+   * working out its own clock offset from the server. See `roomClock.ts`.
+   */
+  const [clockDeltas, setClockDeltas] = useState<ClockDeltas>({});
   const [answers, setAnswers] = useState<Record<string, Answer>>({});
   const [code, setCode] = useState<string | null>(null);
   const [connection, setConnection] = useState<ConnectionState>('connecting');
@@ -306,7 +356,21 @@ export function useRoom(): UseRoom {
         // would push the reveal further out for no reason.
         if (!data || data.phase !== 'question' || snapshot.metadata.hasPendingWrites) return;
         const key = `${data.gameId ?? ''}:${data.index}`;
-        setQuestionConfirmed((current) => (current.key === key ? current : { key, at: Date.now() }));
+        // Read once: two calls a line apart would put a millisecond of nothing
+        // into a measurement whose whole job is to be a millisecond reading.
+        const at = Date.now();
+        const openedAtMs = openedAtMillis(snapshot.data());
+
+        setQuestionConfirmed((current) =>
+          current.key === key ? current : { key, at, openedAtMs },
+        );
+
+        // `arrival − openedAt` is this device's skew plus that question's
+        // latency. The minimum across a round is the skew on its own, because
+        // latency is never negative.
+        if (openedAtMs !== null) {
+          setClockDeltas((held) => rememberDelta(held, key, at - openedAtMs));
+        }
       },
       (cause) => {
         setConnection('error');
@@ -698,6 +762,14 @@ export function useRoom(): UseRoom {
     presenceWorking,
     questionConfirmedAt:
       questionKey !== null && questionConfirmed.key === questionKey ? questionConfirmed.at : null,
+    questionOriginAt:
+      questionKey !== null && questionConfirmed.key === questionKey
+        ? questionOriginMs({
+            openedAtMs: questionConfirmed.openedAtMs,
+            skewMs: estimateSkew(clockDeltas),
+            arrivedAt: questionConfirmed.at,
+          })
+        : null,
     createAndJoin,
     join,
     leave,
