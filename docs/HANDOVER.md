@@ -53,9 +53,8 @@ it, and the session-start hook will say so if it grows.
   documented window. `appcheck-probe` refuses at sign-in, which is the proof.
   [`decisions/app-check-auth.md`](decisions/app-check-auth.md).
 - **The reveal lands on its own, ~0.5s after the clock**, anchored on the
-  server-confirmed snapshot rather than a local one. `reveal-probe` is the
-  instrument:
-  [`decisions/vault.md`](decisions/vault.md#the-gate-had-no-margin-and-the-host-was-the-one-who-paid).
+  server-confirmed snapshot rather than a local one; `reveal-probe` is the
+  instrument: [`decisions/vault.md`](decisions/vault.md#the-gate-had-no-margin-and-the-host-was-the-one-who-paid).
 - **Scoring is a rank ladder, not a speed curve** — 500 for correct plus
   500/400/300/200/100 by the order the correct answers landed. No rules change;
   416 tests. **Live since 20 August** ([PR #6](https://github.com/gregjrothwell/quiz/pull/6),
