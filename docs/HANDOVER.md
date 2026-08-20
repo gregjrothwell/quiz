@@ -6,8 +6,10 @@ Built to replace Polly in Teams.
 - **Live:** https://gregjrothwell.github.io/quiz/
 - **Repo:** https://github.com/gregjrothwell/quiz (public, `master`, deploys from `gh-pages`)
 - **Firebase project:** `quiz-d686e` (Firestore + Realtime Database in europe-west1 + Anonymous auth)
-- **Status:** shipped and played. 272 tests, clean types and lint, no `any` or
-  `@ts-ignore`. The **answer vault is live and covers the packs**: 13,593
+- **Status:** shipped and played. 356 tests, clean types and lint, no `any` or
+  `@ts-ignore`. **On branch `squads-and-weekly-boards`, not yet merged or
+  deployed** — see [squads, weeks and the average
+  board](#squads-weeks-and-the-average-board). The **answer vault is live and covers the packs**: 13,593
   answers seeded against the 13,452 the packs need plus the 4 harness entries,
   both rulesets published, preflight passing.
 - **The vault is ahead of the packs, not behind** — verified 13 August 2026 by
@@ -140,6 +142,145 @@ Built to replace Polly in Teams.
 > cannot be reached from the client that already owns that identity, because the
 > `playerId == uid` branch short-circuits in front of it. One client could only
 > ever have proved that branch by reasoning about it.
+
+---
+
+## Squads, weeks and the average board
+
+**Branch `squads-and-weekly-boards`, 19–20 August 2026. Not merged, not
+deployed.** Six changes, and **not one of them needs a rules republish** — which
+was the design constraint, because a hand-pasted ruleset has broken this game
+twice.
+
+| | |
+|---|---|
+| **The podium freezes** | at the whistle, so somebody pressing Leave no longer rearranges it on every other device |
+| **A weekly board** | `seasons/week-2026-W34/players/{id}` — a week *is* a season id |
+| **The season ranks on points ÷ played** | three rounds to qualify |
+| **Teams became Squads** | Hermes, Bundae, Lurkers, from a dropdown |
+| **The week board after the quiz** | filtered to the squad you played for |
+| **The question text is sealed** | while the clock runs, and only while it runs |
+
+### Why none of it needed the console
+
+Three facts, each worth keeping:
+
+- **`match /seasons/{season}/players/{playerId}` takes an unconstrained
+  wildcard.** So a week bucket is the same document under a different name,
+  validated by the same published rule. `check-rules` has always written under a
+  throwaway `rules-check` season, which is the proof it was safe.
+- **`played` has been stored since the first board.** Ranking on the average
+  needed no new field.
+- **`team` is bounded as a string ≤ 40 chars.** `Hermes`, `Bundae` and `Lurkers`
+  all fit.
+
+> **The stored field is still `team`.** Everything on screen and almost
+> everything in the code says *squad*; the Firestore field does not, because it
+> is bounded by name in `firestore.rules` and the row is validated with
+> `hasOnly`. Renaming it would cost a hand-paste **and** orphan every value
+> already written. The two names meet in exactly one place — the mapping in
+> `src/lib/season.ts` — and `src/engine/squad.ts` says so at the top.
+
+`check-rules` gained a permanent check that a week-shaped season id still
+writes. The rules did not change, but the app now *depends* on that wildcard: if
+a future ruleset ever constrains the season segment, every game would bank its
+season half and silently lose its week half. That check is what would name it.
+
+### The Lurker split, which is the only clever part
+
+Some regulars belong to neither side and sit with either on the night. Lurkers
+is a squad in its own right, and a Lurker is asked who they are playing with —
+**the one thing the two tables are ever told differently**: the week's row is
+filed under whoever they sat with, and their season record still says Lurkers.
+Kept in *session* storage, because sitting with Bundae this week is not a
+standing arrangement.
+
+**Proved end to end against live Firebase, 19 August 2026** — a full
+ten-question round played as a Lurker with Hermes:
+
+| | |
+|---|---|
+| Final screen | **"Hermes this week"** under the podium |
+| `seasons/season-2/players/{id}` | `team: "Lurkers"` |
+| `seasons/week-2026-W34/players/{id}` | `team: "Hermes"` |
+| Reload the final screen | still `played: 1` in both |
+
+**That last row closes what this file called the least-proven thing in the
+repo.** `recordGame` had never run against a real project and its repeat-write
+guard had only been reasoned about. It holds, per bucket, watched. Test rows and
+the test room were deleted afterwards.
+
+### Things that will bite
+
+- **The season board re-sorts in the client.** `loadTable` still asks Firestore
+  for the top fifty *by points*, because an average cannot be ordered
+  server-side without storing it — and storing it means a new field, which means
+  the console. Exact while the board is fifty rows or fewer; it is twenty-one.
+  **Past fifty, the tail of the average board is wrong**, quietly.
+- **`setSquad` writes the season row only.** A squad picked in error leaves that
+  week's row wrong. Changing it fixes every week after; the wrong one stays
+  wrong. Rewriting a banked week means editing a result after the fact, which
+  was judged a bigger decision than the fix deserved.
+- **The empty week board reads as broken unless it says something.** Clicking
+  *This week* on a Monday rendered nothing at all — correct on the final screen,
+  where absence under a podium reads as "not yet", and broken-looking as a whole
+  screen. `whenEmpty` picks which. Found by trying it, not by reasoning.
+- **`rememberedSquad` narrows to the list; `cleanSquad` does not.** A `<select>`
+  handed a value matching none of its options renders as though nothing were
+  chosen, so a stored legacy name would make the picker silently disagree with
+  the record. `cleanSquad` stays tolerant because it also runs on the way *out*
+  of Firestore, where narrowing would erase legacy rows from the board.
+- **The average board is a rearrangement, not a re-sort.** On the live rows Joe
+  goes 8th → 1st, Greg 1st → 3rd, Rach 2nd → 10th, Bret 7th → 13th. The people
+  who lose are the ones who have turned up most. That is the intended effect and
+  the thing somebody will complain about.
+
+### What the seal on the question text does and does not buy
+
+`user-select: none` plus `onCopy`/`onCut`, on the prompt and the options, **only
+while the question is open**. It kills select → copy → paste into a search box
+or an LLM, which takes about four seconds and is the only cheat anybody in an
+office would actually try mid-question.
+
+It stops **nothing else** — view-source, DevTools, the network tab, a screenshot
+through OCR, or typing the question out. Anyone willing to do those was already
+willing to harvest OpenTDB, which is the real ceiling and is
+[documented](#what-it-does-not-stop).
+
+It lifts at the reveal deliberately: the answer is on screen by then, and
+copying a good question to send to somebody afterwards is legitimate. The room
+code, the join link, the standings and the round in review are untouched.
+
+### `npm run host-room` is broken, and was before this branch
+
+It imports `resolveAnswer` from `src/lib/vault`, which imports `src/firebase`,
+which reads `import.meta.env` — undefined outside Vite. It dies on the first
+import with `Cannot read properties of undefined (reading
+'VITE_FIREBASE_API_KEY')`. **Confirmed on `master`.**
+
+This file has listed the harness as *untested*. It is **broken**, which is worse:
+it is named here as the way to test quizmaster handover, keyboard shortcuts and
+the vault gate, and none of those can be done with it today. Not fixed — the fix
+means restructuring `vault.ts`'s Firestore dependency, which deserves its own
+change.
+
+### Regression pass, 20 August 2026
+
+`typecheck`, `lint`, **356 tests**, `npm run build` all clean. No `any`, no
+`@ts-ignore`. `firestore.rules`, `firestore.seed.rules`, `database.rules.json`
+and `package.json` are untouched by the whole branch.
+
+- `npm run check-rules` — **36/36**, both directions, twice.
+- `npm run sync-harness 10` — ten clients, all ten joined, all ten saw the round
+  start **within 63 ms**, none dropped.
+- The whole `#/preview` gallery renders with no console errors and no sideways
+  body scroll at 1280, 375 and 320 px.
+- The bundle grew about **3 kB gzipped** (app chunk 114 → 117 kB).
+
+One correction to this file: it says `check-rules` runs 36 checks and to count
+them with `grep -c "label:"`. That grep counted the `label: string` on the type
+declaration, so it was 35 before this branch and is 36 now that the weekly
+bucket check exists.
 
 ---
 
@@ -1329,10 +1470,10 @@ other people in it:
   to a row.
 - **The review panel with a real room in it.** Both its highlights need at least
   two people who answered, so a solo round can never show either.
-- **Two people in different teams on the board.** The filter is covered on
-  fixtures and the rules accept the field, but no real record has carried a team
-  yet — the first game anybody plays after the deploy of 15 August will be the
-  first to write one.
+- ~~**Two people in different teams on the board.**~~ One real record did carry
+  one — `Awesome team`, from the free-text era — and it was cleared by hand on
+  19 August when squads became a fixed list. Still nobody has played a round
+  with two *different* squads in the room.
 
 **Not verified in a real room:** everything from 14 August. The name persists
 across a reload on one browser, but has not been watched surviving a week, and
@@ -1358,8 +1499,11 @@ badly enough to sit in the chair in anger.
    permission but the write racing the reveal. `npm run host-room -- 20` gives a
    long enough window to answer, change, and watch which one scores.
 
-0. **`host-room` since the vault landed.** It waits out the gate and asks the
-   vault itself before revealing, and that path has still not been run.
+0. **`host-room` is broken outright**, and was before the squads branch — it
+   imports `src/firebase`, which needs Vite. See [the note
+   above](#npm-run-host-room-is-broken-and-was-before-this-branch). It waits out
+   the gate and asks the vault itself before revealing, and that path has still
+   not been run.
    `sync-harness` covers joining and phase sync; this is the one that would
    catch a mistake in the terminal harness's own reveal. It now takes the window
    as an argument, so `npm run host-room -- 10` both exercises the configurable
@@ -1392,12 +1536,12 @@ one, which is why it waits out a real gate instead of being assumed. It runs on
 the five-second floor, which also makes it the check that fails if the published
 rules are still using a fixed twenty.
 
-0. **The season table against live Firestore.** `recordGame` has never run
-   against a real project, and the transaction's repeat-write guard has only been
-   reasoned about, not watched. This is the least-proven thing in the repo.
-   `npm run check-rules` now writes and deletes a real season row under a
-   throwaway season id, so the *rules* side is covered; the transaction's
-   repeat-write guard still is not.
+0. ~~**The season table against live Firestore.**~~ **Done, 19 August 2026.**
+   `recordGame` ran against the real project in a full ten-question round, and
+   reloading the final screen afterwards left `played: 1` in both the season and
+   the week bucket — so the repeat-write guard is now watched rather than
+   reasoned about, per bucket. See [squads, weeks and the average
+   board](#squads-weeks-and-the-average-board).
 
 1. ~~**Whether the clock sounds right.**~~ **Done** — heard on 14 August 2026
    and it works, including the bed-to-gong balance that had been set by eye
