@@ -21,6 +21,7 @@ and the hook says so if this one grows.
 | the vault, reveals, answer secrecy, **when a client may ask** | [`decisions/vault.md`](decisions/vault.md) |
 | the answer window or its rules | [`decisions/answer-window.md`](decisions/answer-window.md) |
 | the season table, squads, weekly boards, `recordGame`, anything called `team` | [`decisions/season.md`](decisions/season.md) |
+| squads **during** the round | [`decisions/live-squads.md`](decisions/live-squads.md) |
 | the opening titles, honours, rosettes | [`decisions/form-and-awards.md`](decisions/form-and-awards.md) |
 | `playerId`, recovery codes, claiming | [`decisions/identity.md`](decisions/identity.md) |
 | the clock, timing, the countdown | [`decisions/clock.md`](decisions/clock.md) |
@@ -50,8 +51,8 @@ and the hook says so if this one grows.
 - **The answer vault is live**: 13,593 answers, both rulesets published.
 - **App Check enforces on Firestore, the RTDB and auth**; `appcheck-probe` refuses
   at sign-in, which is the proof: [`decisions/app-check-auth.md`](decisions/app-check-auth.md).
-- **The reveal lands on its own, ~0.5s after the clock**, anchored on the
-  server-confirmed snapshot. `reveal-probe` is the instrument: [`decisions/vault.md`](decisions/vault.md#the-gate-had-no-margin-and-the-host-was-the-one-who-paid).
+- **The reveal lands on its own, ~0.5s after the clock**, on the server-confirmed
+  snapshot; `reveal-probe` is the instrument: [`decisions/vault.md`](decisions/vault.md#the-gate-had-no-margin-and-the-host-was-the-one-who-paid).
 - **Scoring is a rank bonus, not a speed curve** — 500 for correct plus
   500/400/300/200/100 by the order the answers landed. **Live since 20 August**
   ([PR #6](https://github.com/gregjrothwell/quiz/pull/6)); scored in a live room,
@@ -65,10 +66,11 @@ and the hook says so if this one grows.
   and played the same day — `CORRECT · +1,000` at 10.6s in the browser against
   `scored: ClockTest +1000` in the terminal, the two agreeing being the point:
   [`decisions/shared-clock.md`](decisions/shared-clock.md).
+- **Squads score live under the standings.** Built, **rules paste outstanding —
+  and this one takes the game down if it deploys first**, because a join write
+  carrying `squad` is refused outright: [`decisions/live-squads.md`](decisions/live-squads.md).
 - **Players vote on a question at the reveal**, and `fold-votes` turns the
-  verdicts into a retirement list. **Live since 28 August** and proved end to end
-  on the live project — vote clicked, `1 verdicts across 1 questions` read back
-  by the Admin SDK, and nothing retired, because one vote is under the floor:
+  verdicts into a retirement list. **Live since 28 August**, proved end to end:
   [`decisions/question-votes.md`](decisions/question-votes.md).
 - **A join link goes straight into the room** when the browser already knows its
   name. **Live since 28 August**:
@@ -92,15 +94,14 @@ expired probe rooms:
 > the cleanup and no client could remove them. Swept with `prune-rooms`.
 
 > **Correction, 20 August 2026.** This file said both "leaving 3 rooms" and "79
-> rooms are still there". The second predated the prune and was never updated;
-> the first was right, settled by measurement rather than reasoning. Both stale
-> readings stay visible in [`decisions/security.md`](decisions/security.md).
+> rooms are still there". The second predated the prune and was never updated.
+> Both stale readings stay visible in [`decisions/security.md`](decisions/security.md).
 
 ## Outstanding
 
-1. **A quizmaster dropping out mid-round** needs a browser plus `host-room`.
+1. **A quizmaster dropping out mid-round** needs a browser and `host-room`.
 2. **No Content-Security-Policy.** Deliberate: a `<meta http-equiv>` CSP breaks
-   the live app silently and the stale CDN makes that painful to diagnose.
+   the live app silently and the stale CDN makes it painful to diagnose.
 3. **Nothing needing a second person has been tested** — the review panel, a real
    quizmaster handover, two squads on one board, and **a rank bonus with more than
    one right answer in it**. Keyboard shortcuts cleared 28 August. The

@@ -13,6 +13,7 @@ import type { Honours } from '../engine/awards';
 import type { FormRecord } from '../engine/form';
 import { bankGame, foldRecords, type GameOutcome, type PlayerRecord } from '../engine/records';
 import { cleanSquad } from '../engine/squad';
+import { sideFor } from '../engine/squadScore';
 import { weekId } from '../engine/week';
 import { firestore } from '../firebase';
 
@@ -123,9 +124,15 @@ export interface GameResult extends GameOutcome {
  *
  * A Lurker's choice where they made one, and their own squad otherwise — so
  * everybody who is actually in a squad gets the same answer for both tables.
+ *
+ * **The rule itself moved to `engine/squadScore.ts` on 28 August 2026**, when
+ * the live board started needing it too. It is deliberately one function: the
+ * running total shown during the round turns into the weekly bucket an hour
+ * later, and two copies of this would not look like a bug when they drifted —
+ * they would look like the room disagreeing with the record.
  */
 function weekSquad(result: GameResult): string {
-  return result.playingWith || result.squad;
+  return sideFor(result.squad, result.playingWith);
 }
 
 /** What was written, so the screen can show the week it just landed in. */

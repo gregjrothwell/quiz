@@ -23,6 +23,8 @@ import { firebaseAuth, firestore, realtimeDb } from '../firebase';
 import { reduce, type Action } from '../engine/reducer';
 import { liveAnswers, type AnswerDoc } from '../engine/answers';
 import { forgetRoom, rememberRoom, rememberedRoom } from './rememberedRoom';
+import { rememberedPlayingWith, rememberedSquad } from './rememberedSquad';
+import { sideFor } from '../engine/squadScore';
 import {
   estimateSkew,
   questionOriginMs,
@@ -566,6 +568,13 @@ export function useRoom(): UseRoom {
         uid: targetUid,
         name,
         playerId: playerIdFor(targetUid),
+        /*
+          Read here rather than passed in, so the rejoin path gets it too — that
+          runs from an effect with nothing to hand it. Storage is the source of
+          truth for both halves anyway, and it is the only place a Lurker's side
+          for the night exists at all.
+        */
+        squad: sideFor(rememberedSquad(), rememberedPlayingWith()),
         restored,
         now: Date.now(),
       });
@@ -649,6 +658,9 @@ export function useRoom(): UseRoom {
           // person guaranteed to be in every room is the one whose season record
           // the opening titles could not find.
           playerId: playerIdFor(uid),
+          // See the note in `join`: this is the *only* path the room creator
+          // takes, and they are in every room.
+          squad: sideFor(rememberedSquad(), rememberedPlayingWith()),
         });
         // `expiresAt` is storage only — it is not on RoomState and nothing in
         // the app reads it. It exists so a Firestore TTL policy on `rooms` has

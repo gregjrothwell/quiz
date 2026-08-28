@@ -16,6 +16,30 @@ and including 20 August moved *verbatim* to
 old entry to make it fit is the thing the paragraph above forbids. Every one of
 them is still listed below by date, so the chronology reads end to end from here.
 
+## 2026-08-28 — Squads score during the round
+
+§2, built. Hermes against Bundae as a running aggregate under the standings, so the round has a
+second story in it rather than squads doing nothing until the board afterwards. Zero Firebase
+cost — the scores are already in the room and every client holds them.
+
+**The Lurker split was the flagged trap and it held.** `sideFor` is now one function, shared
+with `weekSquad` in `season.ts`, because the running total *becomes* the weekly bucket an hour
+later — two copies would look like the room disagreeing with the record, on a screen showing
+both. Same reasoning that extracted `liveAnswers`.
+
+**Caught while building:** the room *creator* does not go through `planJoin` — they go through
+the reducer's `join` action. Missing that would have left the quizmaster, the one player
+guaranteed to be in every room, out of the squad totals on every single round. The existing
+comment about `playerId` on that same path is what flagged it.
+
+**Rules paste outstanding, and this one is different in kind.** `playerOk` validates with
+`hasOnly`, so a join write carrying `squad` against the old ruleset is refused outright and
+**nobody can join a room at all** — not "the feature is inert", which is what the vault and the
+vote failed to. `check-rules` currently FAILs on it and its hint says exactly that.
+
+511 tests. `season.md` hit 282/250, so the live board split to `decisions/live-squads.md`.
+→ [`decisions/live-squads.md`](decisions/live-squads.md)
+
 ## 2026-08-28 — A reload keeps your seat
 
 §10, written down this afternoon and shipped the same day. `code` was React state in `useRoom`

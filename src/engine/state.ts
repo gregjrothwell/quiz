@@ -62,6 +62,23 @@ export interface Player {
    * rules can check, where reading somebody else's claim is not.
    */
   playerId?: string;
+  /**
+   * Which side this player's points count for **tonight** — a Lurker's pick
+   * where they made one, and their own squad otherwise. See `sideFor`.
+   *
+   * On the room rather than read from the season record, for the reason
+   * `playerId` is: the alternative is a `seasons` document read per player per
+   * round, and the room document is already re-read on every transition. It is
+   * also the only value that can be *right*, since a Lurker's side for the night
+   * exists nowhere else — it lives in session storage on the device that chose
+   * it.
+   *
+   * Absent for anybody who has never named a squad, which is different from an
+   * empty one: `squadStandings` leaves them out rather than inventing a side.
+   * Written only on the entry that creates a seat, so a rejoin never restamps
+   * it — the same rule the name and `joinedAt` follow.
+   */
+  squad?: string;
 }
 
 /**

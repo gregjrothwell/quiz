@@ -11,7 +11,7 @@ import {
 } from './state';
 
 export type Action =
-  | { type: 'join'; uid: string; name: string; at: number; playerId?: string }
+  | { type: 'join'; uid: string; name: string; at: number; playerId?: string; squad?: string }
   /**
    * The opening titles. Written while the room is still in the lobby, because
    * the answering window is stamped by the server the moment a question opens —
@@ -60,7 +60,7 @@ export type Action =
 export function reduce(state: RoomState, action: Action): RoomState {
   switch (action.type) {
     case 'join':
-      return join(state, action.uid, action.name, action.at, action.playerId);
+      return join(state, action.uid, action.name, action.at, action.playerId, action.squad);
     case 'titles':
       return titles(state, action.at, action.facts, action.durationSecs);
     case 'clearTitles':
@@ -90,17 +90,28 @@ function join(
   name: string,
   at: number,
   playerId?: string,
+  squad?: string,
 ): RoomState {
   // A rejoin must not reset joinedAt, or a reconnecting quizmaster would lose
   // the role to whoever stayed put.
   if (state.players[uid]) return state;
 
-  // Only when it differs from the uid. Written unconditionally it would put a
-  // redundant copy of the uid into every entry in every room, and — worse —
-  // change the shape of a document that clients one deploy behind still write,
-  // for no information at all.
-  const player: Player =
-    playerId && playerId !== uid ? { name, joinedAt: at, playerId } : { name, joinedAt: at };
+  // Both omitted rather than written empty. Unconditionally they would put a
+  // redundant copy of the uid, and an empty squad, into every entry in every
+  // room — and, worse, change the shape of a document that clients one deploy
+  // behind still write, for no information at all.
+  //
+  // This path is only ever taken by the person **creating** a room, since
+  // everybody else joins through `planJoin`. That makes it easy to miss and
+  // expensive to get wrong: the quizmaster is the one player guaranteed to be in
+  // every room, so a squad omitted here is a squad board with a hole in it on
+  // every single round.
+  const player: Player = {
+    name,
+    joinedAt: at,
+    ...(playerId && playerId !== uid ? { playerId } : {}),
+    ...(squad ? { squad } : {}),
+  };
   return {
     ...state,
     players: { ...state.players, [uid]: player },

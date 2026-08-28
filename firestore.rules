@@ -146,14 +146,23 @@ service cloud.firestore {
       // The title card is why it is here: it needs to know who is in the room
       // without paying a `claims` read per player, and the room document is
       // already re-read on every transition.
+      //
+      // **`squad` is the newest of them, and the live squad board is why.** It
+      // is the side this player's points count for tonight, which is a Lurker's
+      // pick where they made one — a value that exists nowhere but the device
+      // that chose it, so it cannot be read off the season record. Bounded to
+      // the same 40 characters as the season row's `team`, and optional, so
+      // every entry already in the wild still validates.
       function playerOk(player) {
-        return player.keys().hasOnly(['name', 'joinedAt', 'playerId'])
+        return player.keys().hasOnly(['name', 'joinedAt', 'playerId', 'squad'])
           && player.name is string
           && player.name.size() > 0
           && player.name.size() <= 40
           && player.joinedAt is number
           && player.get('playerId', '') is string
-          && player.get('playerId', '').size() <= 128;
+          && player.get('playerId', '').size() <= 128
+          && player.get('squad', '') is string
+          && player.get('squad', '').size() <= 40;
       }
 
       // The writer's own entry is the only one a rule can check without
