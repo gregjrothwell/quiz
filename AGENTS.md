@@ -45,6 +45,7 @@ firestore.rules  / firestore.seed.rules / database.rules.json
 docs/HANDOVER.md      Live state and the index. 150-line budget
 docs/TOTAL-RECALL.md  Dated decisions and gotchas. 300-line budget
 docs/decisions/       One subsystem each. 250-line budget
+docs/recall/          Archived spine entries, by month. Verbatim, no budget
 ```
 
 ## Conventions
