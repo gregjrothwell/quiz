@@ -40,56 +40,56 @@ and the hook says so if this one grows.
 | the shareable result card, and how it gets to the player | [`decisions/final-card.md`](decisions/final-card.md) |
 | what to build next, and what each idea costs | [`decisions/ideas-review.md`](decisions/ideas-review.md) |
 
-## State as of 20 August 2026
+## State as of 28 August 2026
 
-**Shipped and played.** 448 tests, clean types and lint, no `any` or `@ts-ignore`.
+**Shipped and played.** 482 tests, clean types and lint, no `any` or `@ts-ignore`.
 
-- **Squads, the weekly board, the average season table, the frozen podium and
-  the sealed question text are live** (deployed 20 August, [PR #2](https://github.com/gregjrothwell/quiz/pull/2)).
+- **Squads, weekly boards, the average table, the frozen podium and the sealed
+  question text are live** (20 August, [PR #2](https://github.com/gregjrothwell/quiz/pull/2)).
 - **The answer vault is live**: 13,593 answers, both rulesets published.
-- **App Check enforces on Cloud Firestore, the Realtime Database and
-  authentication**; `appcheck-probe` refuses at sign-in, which is the proof.
+- **App Check enforces on Firestore, the Realtime Database and authentication**;
+  `appcheck-probe` refuses at sign-in, which is the proof:
   [`decisions/app-check-auth.md`](decisions/app-check-auth.md).
 - **The reveal lands on its own, ~0.5s after the clock**, anchored on the
-  server-confirmed snapshot; `reveal-probe` is the instrument:
-  [`decisions/vault.md`](decisions/vault.md#the-gate-had-no-margin-and-the-host-was-the-one-who-paid).
+  server-confirmed snapshot. `reveal-probe` is the instrument: [`decisions/vault.md`](decisions/vault.md#the-gate-had-no-margin-and-the-host-was-the-one-who-paid).
 - **Scoring is a rank bonus, not a speed curve** — 500 for correct plus
-  500/400/300/200/100 by the order the correct answers landed. No rules change.
-  **Live since 20 August** ([PR #6](https://github.com/gregjrothwell/quiz/pull/6)).
-  Scored in a live room, but **ranking itself is still unproven** — ranks need
-  two answerers: [`decisions/scoring.md`](decisions/scoring.md).
+  500/400/300/200/100 by the order the answers landed. **Live since 20 August**
+  ([PR #6](https://github.com/gregjrothwell/quiz/pull/6)); scored in a live room,
+  but **ranking is still unproven** — that needs two answerers:
+  [`decisions/scoring.md`](decisions/scoring.md).
 - **The final screen makes a shareable PNG of the round**, chair and all. **Live
   since 20 August** ([PR #7](https://github.com/gregjrothwell/quiz/pull/7)):
   [`decisions/final-card.md`](decisions/final-card.md).
-- **Every device counts the same window from the same origin**, corrected for
-  its own clock offset. **Live since 28 August**
-  ([PR #8](https://github.com/gregjrothwell/quiz/pull/8)), and **played** the
-  same day — `CORRECT · +1,000` at 10.6s in the browser against
+- **Every device counts the same window from the same origin**, corrected for its
+  own clock offset. **Live since 28 August** ([PR #8](https://github.com/gregjrothwell/quiz/pull/8))
+  and played the same day — `CORRECT · +1,000` at 10.6s in the browser against
   `scored: ClockTest +1000` in the terminal, the two agreeing being the point:
   [`decisions/shared-clock.md`](decisions/shared-clock.md).
 - **Players vote on a question at the reveal**, and `fold-votes` turns the
-  verdicts into a retirement list. Built, **rules paste outstanding**:
+  verdicts into a retirement list. **Live since 28 August** and proved end to end
+  on the live project — vote clicked, `1 verdicts across 1 questions` read back
+  by the Admin SDK, and nothing retired, because one vote is under the floor:
   [`decisions/question-votes.md`](decisions/question-votes.md).
 - **A join link goes straight into the room** when the browser already knows its
-  name — a returning player's press on a screen that knew both answers. Built,
-  **not deployed**: [`decisions/joining.md`](decisions/joining.md).
+  name. **Live since 28 August**:
+  [`decisions/joining.md`](decisions/joining.md).
 - **`npm run host-room` scores a real answer now** — it never read the answers
   subcollection, so every reveal it folded scored nobody.
 
-**Measured live, 20 August 2026** (`npm run take-stock`):
+**Measured live, 28 August 2026** (`npm run take-stock`), after a prune of 15
+expired probe rooms:
 
 | | |
 |---|---|
-| rooms | 25 — one predates `expiresAt`, unreachable by any TTL policy |
+| rooms | 37 — one predates `expiresAt`, unreachable by any TTL policy |
 | vault answers | 13,593 |
-| `season-2` players | 21 |
-| `season-1` / `week-2026-W34` | 4 / 4 — **neither was reported until 20 August.** `take-stock` named its own season and counted nothing else, so every weekly bucket was invisible from the day weekly boards shipped. It enumerates now |
+| `season-2` players | 24 |
+| `season-1` / weekly buckets | 4 / W34 7 / W35 16 — **none were reported until 20 August**; `take-stock` named its own season and counted nothing else, so every weekly bucket was invisible from the day weekly boards shipped. It enumerates now |
 | recovery codes / identity claims | **0 / 0** — nobody has ever used the feature |
 
-> **Correction.** This table also listed `rules-check` at 3 and called it the
-> preflight "leaving three rows on every run". **It was not** — counted, ran
-> `check-rules` three more times, still 3. Those predated the cleanup and no
-> client could remove them. Swept with `prune-rooms -- --probe-rows --go`.
+> **Correction.** This table once listed `rules-check` at 3 and called it the
+> preflight "leaving three rows on every run". **It was not** — those predated
+> the cleanup and no client could remove them. Swept with `prune-rooms`.
 
 > **Correction, 20 August 2026.** This file said both "leaving 3 rooms" and "79
 > rooms are still there". The second predated the prune and was never updated;
@@ -98,14 +98,14 @@ and the hook says so if this one grows.
 
 ## Outstanding
 
-1. **A quizmaster dropping out mid-round** still needs a browser plus
-   `host-room`. Keyboard shortcuts cleared 28 August.
+1. **A quizmaster dropping out mid-round** needs a browser plus `host-room`.
 2. **No Content-Security-Policy.** Deliberate: a `<meta http-equiv>` CSP breaks
    the live app silently and the stale CDN makes that painful to diagnose.
 3. **Nothing needing a second person has been tested** — the review panel, a real
-   quizmaster handover, two squads on one board, and **a rank bonus with more
-   than one right answer in it**. The **anonymous-account purge is reviewed and
-   the answer is don't**: [`decisions/identity.md`](decisions/identity.md).
+   quizmaster handover, two squads on one board, and **a rank bonus with more than
+   one right answer in it**. Keyboard shortcuts cleared 28 August. The
+   **anonymous-account purge is reviewed and the answer is don't**:
+   [`decisions/identity.md`](decisions/identity.md).
 4. **A reload drops you out of the room**, back to the landing screen — `code` is
    React state in `useRoom` and nothing persists it. Found 28 August, pre-existing,
    undecided.
