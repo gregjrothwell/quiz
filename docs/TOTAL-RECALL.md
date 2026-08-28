@@ -15,6 +15,26 @@ the old 2,422-line handover, when it was split. They are a true index of what
 happened and when; they are not a contemporaneous log, and anything needing the
 detail should follow the pointer rather than trust the summary here.
 
+## 2026-08-28 — The join link goes straight into the room
+
+Office feedback: following the link still costs a press on a screen that already knows both
+answers. `shouldAutoJoin` (`src/engine/autoJoin.ts`) skips it. Written as a **list of
+refusals** — no code, no remembered name, whitespace name, not signed in, not connected, link
+already used, already in a room — because the refusals are the half worth testing. All of them
+fall back to exactly today's landing screen with the code filled in. 11 tests, 459 total.
+
+**The Lurker is the one refusal about the game rather than readiness.** Their side lives in
+session storage on purpose, so a fresh session has a squad and no side; auto-joining would
+bank their week to Lurkers instead of whoever they sat with, and nobody would see it happen.
+Verified live: name and code both present, still refused, and the landing screen put the
+"playing with" picker up. An empty squad is *not* the same case and goes straight in.
+
+Proved in both directions in the browser: a cleared browser lands on the landing screen with
+the code filled; a browser holding a name goes straight in; the lobby then says *"The link
+brought you straight in as Linky, playing for Hermes"* with **Not you? Start again**, which
+returns to the landing screen without re-joining. A room created by hand shows no such line.
+→ [`decisions/joining.md`](decisions/joining.md)
+
 ## 2026-08-28 — The shared clock is live, and has been played
 
 Merged [PR #8](https://github.com/gregjrothwell/quiz/pull/8) and deployed. Eight commits: the
