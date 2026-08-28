@@ -16,6 +16,36 @@ and including 20 August moved *verbatim* to
 old entry to make it fit is the thing the paragraph above forbids. Every one of
 them is still listed below by date, so the chronology reads end to end from here.
 
+## 2026-08-28 — The rig gets operated
+
+Five phases shared one lighting state. `Stage` now takes a `mood` — only ever the phase, only
+from the one call site inside a room — and sets `data-mood`; the whole effect is in the
+stylesheet, so a lighting change never costs a render. Two cues, both chosen because they carry
+information rather than decoration: **the house dims for the question** (beams 0.7 → 0.3, so
+nothing sweeps behind the lecterns while somebody reads and chooses) and **the rig blazes amber
+on `finished`**, once.
+
+**The rule this had to obey was already in the file.** Eight of the ten existing animations are
+`transform`/`opacity` only; the two that repaint are a 0.5rem dot and four characters. The beams
+are the opposite of small — four layers at 16%x95%, `blur(18px)`, blended `screen` — so animating
+their colour, filter or shadow would repaint all four every frame, on a phone, mid-clock. Only
+opacity moves, and the blaze is a pre-painted layer cross-faded rather than an animated colour.
+No fill mode: `both` is what stopped `.tile--dim` dimming for weeks.
+
+**0.34 alpha was invisible and 0.6 is right.** It read fine in the file and did nothing on screen.
+Putting the number in front of your eyes is the only way that gets caught. Safe at that strength
+because `.beams` is `z-index: -1`, behind the content column, so the wash cannot reach the
+contrast of anything anybody has to read. `prefers-reduced-motion` needed no new code — the
+blanket rule collapses both durations, so the set still changes state, it just arrives.
+
+**Gotcha, and it wasted a detour: `getComputedStyle` in the browser tool returned a stale
+snapshot.** It reported the beams at 0.7 while an inline `opacity: 0.11` was set, which is
+impossible on a live page — that was the tell. Every opacity reading taken that way was fiction;
+screenshots were the only trustworthy instrument. Do not measure this rig with computed style.
+
+**Not verified:** that `mood={room.phase}` lights up in a real room. Typed and read, but it wants
+the live round that four other things are already waiting on.
+
 ## 2026-08-28 — Squads score during the round
 
 §2, built and live. Hermes against Bundae under the standings, so the round has a second story
