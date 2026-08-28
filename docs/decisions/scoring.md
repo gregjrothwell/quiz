@@ -56,6 +56,18 @@ The curve came from Polly and has never been questioned. Questioning it is step 
 Order is decided by `elapsedMs` among the correct answers only. Being fourth-fastest overall
 but first of the people who got it right is first.
 
+> ### Not "the ladder"
+>
+> That name is taken, and by something players can see. **The Ladder** is the `ramp` level in
+> the lobby, which builds a round from easy to hard, and `Ladder.tsx` draws the round's
+> progress beside the question. This file, the spine and several code comments called rank
+> scoring a ladder throughout until **Greg caught it on 20 August 2026** — two unrelated
+> mechanics under one name, one of them on screen in front of the office.
+>
+> The mechanic is the **rank bonus**; the scheme is **rank scoring**. Corrected in place
+> rather than quietly, because the collision is the sort of thing that gets reintroduced by
+> whoever next writes about scoring without knowing the lobby's level names.
+
 ## Acceptance criteria
 
 1. A correct answer scores 500 plus its rank bonus; a wrong answer scores **0**.
@@ -79,13 +91,13 @@ but first of the people who got it right is first.
 
 ## Two decisions, both taken
 
-- **`durationMs` is gone from `tallyQuestion`.** The ladder does not need the window, and
+- **`durationMs` is gone from `tallyQuestion`.** The bonus does not need the window, and
   late answers are already refused twice before scoring — `submitAnswer` (`useRoom.ts:644`)
   and the reducer's own guard. An argument nothing reads is the kind of thing that later
   gets read.
 - **The floor stays at 100.** A slow correct answer is worth 600 against a fast one's 1000 —
   a 40% spread where the old curve gave 25%. That is the intended sharpening. If it proves
-  brutal in a big room, **the floor is the dial, not the ladder**.
+  brutal in a big room, **the floor is the dial, not the steps above it**.
 
 ## Two things the story did not foresee
 
@@ -95,7 +107,7 @@ them as bugs.
 - **A mid-question join is now a softer penalty than it was.** Somebody who walks in on an
   open question submits `elapsedMs = durationMs` (`App.tsx:350`), because their own clock
   started when they sat down and says nothing about how fast they were. Under the old curve
-  that stripped the speed bonus exactly, leaving the base. Under the ladder it sorts them
+  that stripped the speed bonus exactly, leaving the base. Under rank scoring it sorts them
   **last among the correct answers** — so in a room where two people got it right, they are
   second and take 900 rather than 500. Making it exact would need the answer document to say
   *"I walked in"*, which is a new field and a rules paste for a case worth 100 points.
@@ -148,10 +160,10 @@ the only coverage of the window's effect on a score in the same commit that chan
 **Done:** `npm run typecheck`, `npm run lint` and `npm run build` clean; **416 tests
 passing**, up from 412. No `any`, no `@ts-ignore`. The main chunk went 224.72 kB → 225.54 kB.
 
-The `#/preview` gallery renders the ladder in a real screen — `1,000 / 900 / 800 / 700` down
+The `#/preview` gallery renders the bonuses in a real screen — `1,000 / 900 / 800 / 700` down
 the standings — with no console errors and no sideways scroll at 1280px. Its fixtures were
-hand-written deltas from the old curve (`+880`, `+640`, `555`, `795`, `955`), which the
-ladder cannot produce; they are now ladder-legal, because a design gallery showing scores the
+hand-written deltas from the old curve (`+880`, `+640`, `555`, `795`, `955`), which rank
+scoring cannot produce; they are now legal values, because a design gallery showing scores the
 engine cannot generate is a lie in the one place that exists to show what the app looks like.
 
 **Outstanding, and it is the whole point of the change:** a live round with more than one

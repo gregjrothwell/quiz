@@ -77,6 +77,16 @@ badly enough to sit in the chair in anger.
    window long enough to answer, change and watch which one scores — and that
    harness runs again as of 20 August 2026.
 
+   > **Correction, 20 August 2026.** That last sentence was false when written and
+   > stayed false for the rest of the day: `host-room` built its state with
+   > `answers: {}` hard-coded and folded every reveal with nothing to score, so
+   > "watch which one scores" was never possible — it scored nobody, always. The
+   > harness now reads the subcollection through the same `liveAnswers` filter the
+   > app uses, and prints what the reveal awarded. The claim is true from now on;
+   > it was not before, and this is the second time a doc has named this harness as
+   > verification while it was doing nothing.
+   > → [`shared-clock.md`](shared-clock.md#the-harness-could-not-show-it-and-now-can)
+
 0. ~~**Fix `host-room`.**~~ **Done, 20 August 2026** — see [the
    note](season.md#npm-run-host-room-was-broken-for-weeks--fixed-20-august-2026). Its own
    reveal path ran for the first time in the same session: `>>> ASKING the
