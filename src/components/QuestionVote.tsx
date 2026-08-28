@@ -30,7 +30,7 @@ export function QuestionVote({ onVote }: QuestionVoteProps) {
   const [chosen, setChosen] = useState<Verdict | null>(null);
 
   return (
-    <div className="lamps">
+    <div className="lamps lamps--vote">
       <span className="lamp lamp--label">{chosen ? 'Noted' : 'That question?'}</span>
 
       {VERDICTS.map((verdict) => (

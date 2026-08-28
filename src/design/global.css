@@ -2328,11 +2328,52 @@ select.input option {
   font-size: 0.66rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  position: relative;
+}
+
+/*
+  Drawn at 24px because it borrows `.lamp`, which is a label. That is the right
+  size on the strip and the wrong size under a thumb — and this pair sits a few
+  millimetres from Standings, which is 90px of amber, so a near-miss does not
+  just fail to vote, it leaves the screen.
+
+  So the hit area is grown without touching the drawing: a transparent box
+  centred on the pill, 44px tall, which is what both Apple and Google ask for.
+  Padding would have worked too and was rejected — it would inflate the pill
+  itself, and the pill is deliberately the same object as the lamps it replaces.
+
+  Bounded to the pill's own width, so the two verdicts cannot overlap each
+  other sideways. `.lamps--vote` below handles the one case that could overlap
+  them vertically.
+*/
+.lamp--vote::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 44px;
+  transform: translateY(-50%);
 }
 
 .lamp--vote:hover:not(.lamp--in) {
   border-color: var(--cyan);
   color: var(--ink);
+}
+
+/*
+  The vote strip only. `.lamps` is shared with the answer lamps, which wrap to
+  two and three rows on a phone and are *labels* — their 0.3rem row gap is the
+  right one and must not move.
+
+  A vote strip that wraps is different: rows would sit 28.8px apart while each
+  hit area is 44px, so they would overlap and the top of a lower pill would
+  become unhittable. 1.25rem takes the pitch to 44px, where they meet without
+  overlapping. A modifier rather than `:has()`, so there is no support question
+  on the one thing that stops a tap landing on the wrong verdict.
+*/
+.lamps--vote {
+  row-gap: 1.25rem;
 }
 
 /* Not a control — the word in front of the pair. */
