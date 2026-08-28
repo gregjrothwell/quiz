@@ -89,6 +89,14 @@ repo.** `recordGame` had never run against a real project and its repeat-write
 guard had only been reasoned about. It holds, per bucket, watched. Test rows and
 the test room were deleted afterwards.
 
+### The board during the round
+
+Squads now show a running aggregate under the standings while the round is being
+played, rather than only on the board afterwards. It shares this file's Lurker
+rule — `sideFor` is one function, used by both — and has its own file, because
+the live display and the season record are different subsystems that meet at that
+one rule: [`live-squads.md`](live-squads.md).
+
 ### Things that will bite
 
 - **The season board re-sorts in the client.** `loadTable` still asks Firestore

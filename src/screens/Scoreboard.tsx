@@ -1,3 +1,4 @@
+import { SquadScore } from '../components/SquadScore';
 import { Standings } from '../components/Standings';
 import type { RoomState } from '../engine/state';
 import { useCue } from '../lib/sound';
@@ -68,6 +69,13 @@ export function Scoreboard({ room, youUid, isQuizmaster, onNext }: ScoreboardPro
         deltas={room.lastDeltas}
         youUid={youUid}
       />
+
+      {/*
+        Under the individual table rather than above it. The round is still
+        somebody's game to win; the squads are the second story, and putting
+        them first would say otherwise. Renders nothing at all below two squads.
+      */}
+      <SquadScore players={room.players} scores={room.scores} />
 
       {isQuizmaster ? (
         <div className="btn-row">

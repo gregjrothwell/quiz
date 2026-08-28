@@ -19,6 +19,7 @@ describe('planJoin', () => {
       uid: 'doubled',
       name: 'Double D',
       playerId: 'doubled',
+      squad: '',
       restored: null,
       now: 1_786_963_245_823,
     });
@@ -38,6 +39,7 @@ describe('planJoin', () => {
       uid: 'doubled',
       name: 'Double D',
       playerId: 'doubled',
+      squad: '',
       restored: null,
       now: 1_786_960_000_000,
     });
@@ -59,6 +61,7 @@ describe('planJoin', () => {
       uid: 'greg',
       name: 'Greg',
       playerId: 'greg',
+      squad: '',
       restored: 1_786_963_005_566,
       now: 1_786_963_400_000,
     });
@@ -78,6 +81,7 @@ describe('planJoin', () => {
       uid: 'greg',
       name: 'Greg',
       playerId: 'greg',
+      squad: '',
       restored: null,
       now: 1_786_963_400_000,
     });
@@ -96,6 +100,7 @@ describe('planJoin', () => {
       uid: 'bossman',
       name: 'Boss Man',
       playerId: 'bossman',
+      squad: '',
       restored: null,
       now: 1_786_963_646_911,
     });
@@ -114,6 +119,7 @@ describe('planJoin', () => {
       uid: 'amier',
       name: 'Amier',
       playerId: 'amier',
+      squad: '',
       restored: null,
       now: 1_786_963_646_911,
     });
@@ -131,6 +137,7 @@ describe('planJoin', () => {
       uid: 'device',
       name: 'Greg',
       playerId: 'season-greg',
+      squad: '',
       restored: null,
       now: 1_000,
     });
@@ -143,6 +150,7 @@ describe('planJoin', () => {
       uid: 'device',
       name: 'Greg',
       playerId: 'device',
+      squad: '',
       restored: null,
       now: 1_000,
     });
@@ -150,5 +158,66 @@ describe('planJoin', () => {
     // #then only the first states one
     expect(claimed.entry.playerId).toBe('season-greg');
     expect(Object.keys(plain.entry).sort()).toEqual(['joinedAt', 'name']);
+  });
+});
+
+describe('the squad on the entry', () => {
+  test('is written when there is one', () => {
+    const plan = planJoin({
+      players: {},
+      scores: {},
+      phase: 'lobby',
+      uid: 'greg',
+      name: 'Greg',
+      playerId: 'greg',
+      squad: 'Hermes',
+      restored: null,
+      now: 1,
+    });
+
+    expect(plan.entry.squad).toBe('Hermes');
+  });
+
+  test('is left off entirely for somebody who has never named one', () => {
+    // Omitted rather than empty: an empty string would be a field on every
+    // entry in every room saying nothing, and `playerOk` would have to accept
+    // it. `squadStandings` reads absent and empty the same way.
+    const plan = planJoin({
+      players: {},
+      scores: {},
+      phase: 'lobby',
+      uid: 'greg',
+      name: 'Greg',
+      playerId: 'greg',
+      squad: '',
+      restored: null,
+      now: 1,
+    });
+
+    expect('squad' in plan.entry).toBe(false);
+  });
+
+  test('a rejoin never restamps it', () => {
+    // #given somebody already seated with a squad, whose device now says
+    // something else — a squad changed mid-round, or a second browser
+    const players: Record<string, Player> = {
+      greg: { name: 'Greg', joinedAt: 1, squad: 'Hermes' },
+    };
+
+    const plan = planJoin({
+      players,
+      scores: { greg: 900 },
+      phase: 'question',
+      uid: 'greg',
+      name: 'Greg',
+      playerId: 'greg',
+      squad: 'Bundae',
+      restored: null,
+      now: 50,
+    });
+
+    // #then the seat is untouched, squad included — the same rule that stops a
+    // reconnecting quizmaster losing the chair
+    expect(plan.entry).toEqual(players.greg);
   });
 });

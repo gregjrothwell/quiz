@@ -10,6 +10,11 @@ export interface JoinInput {
   /** The season record this browser plays under, when it is not simply the uid. */
   playerId: string;
   /**
+   * Which side this device's points count for tonight, already resolved through
+   * `sideFor`. Empty for somebody who has never named a squad.
+   */
+  squad: string;
+  /**
    * The place in the queue this device already held **in this room**, or null.
    * Scoped by the caller: a timestamp earned in a previous room is not a place
    * in this one, and treating it as one is how an arrival ends up ahead of the
@@ -55,6 +60,7 @@ export function planJoin({
   uid,
   name,
   playerId,
+  squad,
   restored,
   now,
 }: JoinInput): JoinPlan {
@@ -63,11 +69,17 @@ export function planJoin({
   // entry in every room, for no information at all.
   const identity = playerId === uid ? {} : { playerId };
 
+  // Omitted rather than written empty, for the same reason. An empty string
+  // would be a field on every entry in every room saying nothing, and
+  // `playerOk` would have to accept it.
+  const side = squad ? { squad } : {};
+
   const existing = players[uid];
   const entry: Player = existing ?? {
     name,
     joinedAt: restored ?? seatBehind(players, now),
     ...identity,
+    ...side,
   };
 
   const score = scores[uid] ?? (phase === 'finished' ? null : 0);

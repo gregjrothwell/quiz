@@ -539,6 +539,41 @@ function buildChecks(probes: Probes): Check[] {
         }),
     },
     {
+      label: 'Firestore   · write your own entry carrying a squad',
+      expect: 'allow',
+      hint: 'firestore.rules has not been republished with `squad` in playerOk — '
+        + 'nobody can join a room at all on the current bundle, because the join '
+        + 'write carries the field and hasOnly refuses it',
+      run: () =>
+        updateDoc(doc(db, 'rooms', LIVE_ROOM), {
+          [`players.${uid}`]: { name: 'Rules check', joinedAt: Date.now(), squad: 'Hermes' },
+        }),
+    },
+    {
+      label: 'Firestore   · write an oversized squad onto your entry',
+      expect: 'deny',
+      hint: 'firestore.rules does not bound players.squad — an unbounded string '
+        + 'on a document every client re-reads on every transition',
+      run: () =>
+        updateDoc(doc(db, 'rooms', LIVE_ROOM), {
+          [`players.${uid}`]: {
+            name: 'Rules check',
+            joinedAt: Date.now(),
+            squad: 'H'.repeat(41),
+          },
+        }),
+    },
+    {
+      label: 'Firestore   · attach an unexpected field to your entry',
+      expect: 'deny',
+      hint: 'firestore.rules no longer hasOnly the player entry — a member could '
+        + 'inflate a document the whole room re-reads on every transition',
+      run: () =>
+        updateDoc(doc(db, 'rooms', LIVE_ROOM), {
+          [`players.${uid}`]: { name: 'Rules check', joinedAt: Date.now(), colour: 'red' },
+        }),
+    },
+    {
       label: 'Firestore   · vote on a question',
       expect: 'allow',
       hint: 'firestore.rules is missing the questionVotes block — nobody can tell '

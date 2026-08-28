@@ -50,17 +50,21 @@ which anybody who simply knew it scored 950–985. [`scoring.md`](scoring.md).
 **What it left behind:** a faked `elapsedMs` bought ~5 points under the old curve and buys 100
 under this one, which promotes §5 from nice-to-have to the companion change this never got.
 
-### 2. Live squad scoring
+### 2. Live squad scoring — **built 28 August 2026, rules paste outstanding**
 
-Squads do **nothing** until the board after the game. Show Hermes against Bundae as a running
-aggregate on the standings screen and the round has a second story in it — the whole point of
-having squads, and the sort of thing only a live event can have.
+Hermes against Bundae under the standings, so the round has a second story in it. Zero Firebase
+cost — the scores are already in the room.
 
-**Zero Firebase cost**; the scores are already in the room. Needs `squad` on the player entry,
-`playerOk`-bounded (`firestore.rules:150`) — one paste. **Watch the Lurker split**
-([`season.md`](season.md#the-lurker-split-which-is-the-only-clever-part)): a Lurker sits with
-a squad for the night, held in *session* storage, so the live board follows who they sat with
-rather than their season record — the rule the weekly bucket already uses.
+**Ranked on points ÷ headcount, not the total.** Built on the total first and rejected on
+sight: a raw sum means the bigger squad wins by turning up, and the sides are never even.
+
+The Lurker split was the trap this flagged and it held: `sideFor` is now **one** function,
+shared with `weekSquad`, because the running total becomes the weekly bucket an hour later.
+[`live-squads.md`](live-squads.md).
+
+**This one takes the game down if it deploys before the paste** — `playerOk` uses `hasOnly`, so
+a join carrying `squad` against the old ruleset is refused and nobody can join at all. Harder
+than the vault or the vote, where a refusal cost one feature.
 
 ### 3. The wager
 
@@ -219,8 +223,7 @@ seen by more than one person at once.
 
 **Then, in the order the office is likely to notice:**
 
-4. **Live squad scoring** (§2) — zero Firebase cost, one paste, and the whole point of having
-   squads. The largest gap between what the game stores and what the round shows.
+4. ~~**Live squad scoring** (§2)~~ — **built 28 August**, waiting on its paste.
 5. **`stats/{questionId}` writes** (§6) — start collecting now; it is worthless until it has a
    season behind it, which is an argument for doing it early rather than late.
 6. **Bound `elapsedMs` server-side** (§5) — promoted by rank scoring, which took the value of a

@@ -45,11 +45,16 @@ const QUESTIONS: QuizQuestion[] = [
   },
 ];
 
+/*
+  Two squads and one unaligned player, which is the shape that exercises the
+  squad bar properly: Priya has never named a side, so her points are her own
+  and she appears in the standings but in neither squad total.
+*/
 const PLAYERS = {
-  greg: { name: 'Greg', joinedAt: 100 },
-  sam: { name: 'Sam', joinedAt: 200 },
+  greg: { name: 'Greg', joinedAt: 100, squad: 'Hermes' },
+  sam: { name: 'Sam', joinedAt: 200, squad: 'Bundae' },
   priya: { name: 'Priya', joinedAt: 300 },
-  alex: { name: 'Alex', joinedAt: 400 },
+  alex: { name: 'Alex', joinedAt: 400, squad: 'Hermes' },
 };
 
 /**
