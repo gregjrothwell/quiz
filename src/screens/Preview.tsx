@@ -255,6 +255,7 @@ export function Preview() {
           onAnswer={noop}
           onReveal={noop}
           onNext={noop}
+          onVote={noop}
         />
       ),
     },
@@ -271,6 +272,7 @@ export function Preview() {
           onAnswer={noop}
           onReveal={noop}
           onNext={noop}
+          onVote={noop}
         />
       ),
     },
@@ -293,6 +295,7 @@ export function Preview() {
           onAnswer={noop}
           onReveal={noop}
           onNext={noop}
+          onVote={noop}
         />
       ),
     },
@@ -320,6 +323,7 @@ export function Preview() {
           onAnswer={noop}
           onReveal={noop}
           onNext={noop}
+          onVote={noop}
         />
       ),
     },
@@ -352,6 +356,7 @@ export function Preview() {
           onAnswer={noop}
           onReveal={noop}
           onNext={noop}
+          onVote={noop}
         />
       ),
     },
@@ -384,6 +389,7 @@ export function Preview() {
           onAnswer={noop}
           onReveal={noop}
           onNext={noop}
+          onVote={noop}
         />
       ),
     },
@@ -412,6 +418,7 @@ export function Preview() {
           onAnswer={noop}
           onReveal={noop}
           onNext={noop}
+          onVote={noop}
         />
       ),
     },

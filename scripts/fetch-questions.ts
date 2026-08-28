@@ -24,6 +24,7 @@ import {
   type PackSummary,
   type Question,
 } from '../src/questions/types';
+import { retiredIds } from '../src/questions/retired';
 
 const API = 'https://opentdb.com';
 const OUT_DIR = join(import.meta.dirname, '..', 'public', 'packs');
@@ -253,7 +254,24 @@ async function writeVault(packs: ReadonlyMap<string, Question[]>): Promise<void>
   console.log('Run `npm run seed-vault` to publish them to Firestore.');
 }
 
-async function writePacks(pool: Question[]): Promise<void> {
+async function writePacks(rawPool: Question[]): Promise<void> {
+  /*
+    The office's own verdicts, applied before anything is sorted.
+
+    This is the step that makes a retirement stick. Removing a question from
+    `public/packs/*.json` by hand achieves nothing, because this script rebuilds
+    every pack from `.cache/` and would put it straight back — silently, and
+    with no record that it had ever been voted out. The blocklist is the record;
+    the packs are downstream of it.
+
+    Filtered here rather than inside `sortIntoPacks` so the count can be
+    reported beside the other drops, and so a retired question never reaches the
+    vault either, which `writeVault` builds from the packs.
+  */
+  const retired = retiredIds();
+  const pool = rawPool.filter((question) => !retired.has(question.id));
+  const retiredOut = rawPool.length - pool.length;
+
   const { packs, dropped } = sortIntoPacks(pool);
   await mkdir(OUT_DIR, { recursive: true });
 
@@ -284,6 +302,9 @@ async function writePacks(pool: Question[]): Promise<void> {
   await writeVault(packs);
 
   console.log(`\nSorted ${pool.length} unique questions.`);
+  if (retiredOut > 0) {
+    console.log(`Held back ${retiredOut} the office voted out — see src/questions/retired.json.`);
+  }
   console.log(
     `Dropped ${dropped.malformed} malformed, ${dropped.usOnly} US-only, ` +
       `${dropped.offTopicSport} sport with no UK-followed sport in it, ` +

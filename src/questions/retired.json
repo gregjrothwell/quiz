@@ -1,0 +1,4 @@
+{
+  "note": "Questions the office voted out. Written by `npm run fold-votes -- --go` and applied by `scripts/fetch-questions.ts`, so a re-sort cannot resurrect them. Each entry keeps the tally that retired it, because a retirement is permanent and the reason should outlive the run that decided it.",
+  "retired": []
+}

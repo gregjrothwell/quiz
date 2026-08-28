@@ -2315,6 +2315,33 @@ select.input option {
   transform: scale(1.04);
 }
 
+/*
+  The verdict pills, which borrow the lamp because they are the same object: a
+  small pill in the same strip, in the slot the lamps vacate at the reveal.
+  `.lamp` is not a button, so the two things a button needs are added here.
+*/
+.lamp--vote {
+  cursor: pointer;
+  font: inherit;
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.lamp--vote:hover:not(.lamp--in) {
+  border-color: var(--cyan);
+  color: var(--ink);
+}
+
+/* Not a control — the word in front of the pair. */
+.lamp--label {
+  border-color: transparent;
+  background: none;
+  padding-left: 0;
+}
+
 /* Your own name, so you can find yourself in a row of ten without reading it. */
 .lamp--you {
   border-color: var(--amber);

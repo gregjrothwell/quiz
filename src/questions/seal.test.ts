@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, test } from 'vitest';
+import { retiredIds } from './retired';
 import { sealQuestion, type Question } from './types';
 
 /**
@@ -83,6 +84,31 @@ describe('the published packs are sealed', () => {
       (q) => !Array.isArray(q.options) || q.options.length < 2,
     );
     expect(unplayable.map((q) => q.id)).toEqual([]);
+  });
+});
+
+/**
+ * A retirement has to survive a re-sort, and this is what proves it did.
+ *
+ * `npm run fetch-questions -- --resort` rebuilds every pack from `.cache/`, so
+ * deleting a question from `public/packs/*.json` by hand retires nothing — the
+ * next harvest puts it straight back, silently. The blocklist is the record and
+ * the filter in `writePacks` is what applies it; if either is ever removed, a
+ * question the office voted out reappears with nothing to say so.
+ *
+ * Vacuous while the list is empty, which is the honest state on the day this
+ * shipped rather than a gap. It starts checking something the moment the first
+ * fold runs, which is exactly when it needs to.
+ */
+describe('retired questions stay out of the packs', () => {
+  const retired = retiredIds();
+
+  test.each(packFiles)('%s serves nothing that was voted out', (name) => {
+    const pack = JSON.parse(readFileSync(join(PACKS, name), 'utf8')) as {
+      questions: { id: string }[];
+    };
+    const resurrected = pack.questions.filter((question) => retired.has(question.id));
+    expect(resurrected.map((question) => question.id)).toEqual([]);
   });
 });
 

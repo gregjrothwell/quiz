@@ -83,6 +83,16 @@ presence, and is billed on bytes rather than per document. A 50-player game is
 free tier. It is contained to `useRoom.ts`, because `submitAnswer` and
 `room.answers` are the only surface anything else sees.
 
+### What voting added
+
+**One write per player per question, and no reads at all** — 90 a game at six
+players, against 20,000 writes a day. `questionVotes` is global rather than a
+room subcollection precisely so it adds no listener: an in-room collection would
+have put a second `Q·N²` term next to the answers, roughly doubling the read
+cost of a game to show a tally nobody asked for. Nothing in the app ever reads
+it back; the fold runs on the Admin SDK, out of band.
+[`question-votes.md`](question-votes.md) has the rest.
+
 ### What the season work actually added
 
 Almost nothing per game, which was the point of every design decision that

@@ -3,8 +3,10 @@ import { AnswerLamps } from '../components/AnswerLamps';
 import { ArcTimer } from '../components/ArcTimer';
 import { Ladder } from '../components/Ladder';
 import { PodiumTile, type TileArrival, type TileState } from '../components/PodiumTile';
+import { QuestionVote } from '../components/QuestionVote';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { replayDurationMs, replayTimeline, type Arrival } from '../engine/replay';
+import type { Verdict } from '../engine/questionVote';
 import { verdictFor } from '../engine/scoring';
 import { currentQuestion, questionDurationMs, type RoomState } from '../engine/state';
 import { CLOCK_LEAD_SECONDS, startClock, stopClock, useCue } from '../lib/sound';
@@ -53,6 +55,18 @@ interface QuestionScreenProps {
   onAnswer: (optionIndex: number) => void;
   onReveal: () => void;
   onNext: () => void;
+  /**
+   * What this player thought of the question, asked once the answer is out.
+   *
+   * Required rather than optional, which is worth a line. It could only ever be
+   * absent without a uid, and there is no uid without a room, and no room
+   * without this screen having nothing to render — so the optional version
+   * described a state that cannot happen while costing every caller a
+   * conditional. It also keeps the design gallery honest: four fixtures render
+   * this screen, and an optional prop is one they would all have quietly
+   * omitted.
+   */
+  onVote: (verdict: Verdict) => void;
 }
 
 /**
@@ -71,6 +85,7 @@ export function QuestionScreen({
   onAnswer,
   onReveal,
   onNext,
+  onVote,
 }: QuestionScreenProps) {
   const question = currentQuestion(room);
   const optionCount = question?.options.length ?? 0;
@@ -397,7 +412,14 @@ export function QuestionScreen({
           full office is ten names, and they need the width of the strip on a
           phone rather than whatever the button leaves over.
         */}
-        {revealed ? null : (
+        {revealed ? (
+          /*
+            Keyed on the question, so a new one asks again rather than showing
+            the last one's answer. Cheaper and clearer than lifting the choice
+            into state the parent would then have to reset.
+          */
+          <QuestionVote key={room.index} onVote={onVote} />
+        ) : (
           <AnswerLamps players={room.players} answers={room.answers} youUid={youUid} />
         )}
 
