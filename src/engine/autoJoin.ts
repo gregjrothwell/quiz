@@ -37,7 +37,14 @@ export interface AutoJoinContext {
   connected: boolean;
   /** Whether this page load has already acted on the link. */
   consumed: boolean;
-  /** Whether this device is in a room already. */
+  /**
+   * Whether this device is in a room already — or on its way back into one.
+   *
+   * A reload restores the room code before the room itself arrives, so this is
+   * true for a beat before there is anything to show. It has to be: the join
+   * link in the hash outlives the room it was for, and a tab returning to room B
+   * must not be sent to room A because B's snapshot had not landed yet.
+   */
   inRoom: boolean;
 }
 

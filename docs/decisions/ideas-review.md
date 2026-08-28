@@ -161,16 +161,11 @@ the tail of the average board is silently wrong. A stored form figure could be o
 server-side. Twenty-one rows today, so not urgent — but it is why this is worth more than it
 looks.
 
-### 10. A reload should not throw you out of the room
+### 10. A reload should not throw you out of the room — **shipped 28 August 2026**
 
-Found on 28 August while testing something else, and it is the only *bug* on this list. `code`
-is React state in `useRoom` and nothing persists it, so refreshing mid-round drops you to the
-landing screen and you rejoin by hand. Presence, the seat and the game log all already survive
-it — this is the one piece that does not.
-
-Cheap: the room code into `sessionStorage` beside the game log, which is where the same problem
-was already solved once. Zero Firebase cost. **The care needed is in leaving**, which must
-clear it, or Leave becomes a button that puts you straight back.
+The only bug on this list, and it went out the same day it was written down. The room code
+lives in `sessionStorage` beside the game log; leaving clears it.
+[`joining.md`](joining.md).
 
 ### 11. Pick the retirement thresholds from real data
 
@@ -220,7 +215,7 @@ seen by more than one person at once.
    bonus at the same time, for no code.
 2. **Thresholds from real votes** (§11) — one command, but it must happen before the first
    `--go`, because retirement is permanent.
-3. **The reload bug** (§10) — the only defect on the list, and cheap.
+3. ~~**The reload bug** (§10)~~ — **done 28 August**, the same day it was written down.
 
 **Then, in the order the office is likely to notice:**
 

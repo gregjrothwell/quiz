@@ -163,6 +163,7 @@ function Game() {
   const {
     uid,
     room,
+    code,
     connection,
     error,
     isQuizmaster,
@@ -326,27 +327,41 @@ function Game() {
    * out without this needing to know about it.
    */
   useEffect(() => {
-    const code = linkedCode;
-    if (code === null) return;
+    /*
+      Named `target`, not `code`. It was `code` first, which silently shadowed
+      the room code destructured from `useRoom` above — so `inRoom` below read
+      the *link's* code, was never null, and auto-join could not fire at all.
+      Caught in the browser, not by lint or by types: both names were strings.
+    */
+    const target = linkedCode;
+    if (target === null) return;
 
     const name = rememberedName();
     const squad = rememberedSquad();
     const playingWith = rememberedPlayingWith();
 
     const go = shouldAutoJoin({
-      linkedCode: code,
+      linkedCode: target,
       name,
       squad,
       playingWith,
       uid,
       connected: connection === 'ready',
       consumed: linkConsumed,
-      inRoom: room !== null,
+      /*
+        `code` as well as `room`, and not belt-and-braces. A reload restores the
+        code on the first render and the room only when its snapshot lands, so
+        for a beat this tab is in a room that `room` still reports as null — and
+        the hash is never rewritten, so a link from an earlier visit is still
+        sitting in it. On `room` alone that beat is long enough to fire a join at
+        an entirely different room.
+      */
+      inRoom: room !== null || code !== null,
     });
     if (!go) return;
 
     linkConsumed = true;
-    autoJoinedCode = code;
+    autoJoinedCode = target;
 
     /*
       `join` rather than `handleJoin`, and the difference is not cosmetic.
@@ -361,11 +376,11 @@ function Game() {
       `linkConsumed` deliberately is *not* cleared, because a code for a room
       that has gone will fail exactly the same way every time.
     */
-    join(code, name).catch((cause: unknown) => {
+    join(target, name).catch((cause: unknown) => {
       autoJoinedCode = null;
       report(cause);
     });
-  }, [uid, connection, room, join, report]);
+  }, [uid, connection, room, code, join, report]);
 
   /**
    * Leaving clears the auto-joined flag as well as the room.
