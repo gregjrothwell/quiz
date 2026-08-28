@@ -41,6 +41,7 @@ and the hook says so if this one grows.
 | the shareable result card, and how it gets to the player | [`decisions/final-card.md`](decisions/final-card.md) |
 | what to build next, and what each idea costs | [`decisions/ideas-review.md`](decisions/ideas-review.md) |
 | whether an idea was already turned down | [`decisions/scope.md`](decisions/scope.md) |
+| upgrading anything in `package.json` | [`decisions/dependencies.md`](decisions/dependencies.md) |
 
 ## State as of 28 August 2026
 
