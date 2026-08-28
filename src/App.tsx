@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { ColdOpen } from './components/ColdOpen';
 import { Stage } from './components/Stage';
 import { arrivalFor, walkedIn, NO_ARRIVAL, type Arrival } from './engine/arrival';
+import { shouldAutoJoin } from './engine/autoJoin';
 import { honoursFor, sawWholeGame, NO_HONOURS } from './engine/awards';
 import { formFor } from './engine/form';
 import { msUntilRevealGate, revealBackoffMs } from './engine/revealGate';
@@ -16,6 +17,7 @@ import {
 } from './engine/state';
 import { firestore, isFirebaseConfigured } from './firebase';
 import { playerIdFor } from './lib/identity';
+import { rememberedName } from './lib/rememberedName';
 import {
   rememberPlayingWith,
   rememberSquad,
@@ -129,6 +131,32 @@ export function App() {
  */
 const linkedCode = codeFromHash(window.location.hash);
 
+/**
+ * Whether this page load has already acted on that link.
+ *
+ * Module scope for the same reason `linkedCode` is: the hash is never rewritten
+ * while the app runs, so a link is consumed once and the fact has to outlive
+ * every render and every trip back to the landing screen. Component state would
+ * be reset by the unmount that leaving a room causes, and the link would fire
+ * again the instant somebody pressed Leave.
+ *
+ * Set *before* the join is attempted rather than after it lands, which is what
+ * stops a failure retrying for ever: a room that has gone, or a code that no
+ * longer exists, is a thing to be told about once.
+ */
+let linkConsumed = false;
+
+/**
+ * Which room the link actually put this device into, if it put it into one.
+ *
+ * Held rather than a bare boolean so that leaving and rejoining by hand is not
+ * still described as having arrived on a link, and read during render rather
+ * than mirrored into state — an effect that calls `setState` is the pattern
+ * this file avoids everywhere else, and the flag is only ever changed on paths
+ * that re-render anyway: the join sets `busy`, and leaving clears the room.
+ */
+let autoJoinedCode: string | null = null;
+
 function Game() {
   const {
     uid,
@@ -150,6 +178,7 @@ function Game() {
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<ActionError | null>(null);
   const [showSeason, setShowSeason] = useState(false);
+
 
   // What this device banked, and where. Held rather than re-derived so the week
   // board reads the bucket the write actually landed in — a game banked at one
@@ -179,6 +208,16 @@ function Game() {
   // against the same frozen table the screen is showing, or a winner going home
   // before your device banks promotes you into a win you did not take.
   const finalSnapshot = useFinalSnapshot(room);
+
+  /**
+   * Whether this device is in the room because a link put it there, rather than
+   * because somebody typed their name and pressed a button.
+   *
+   * Only the lobby cares. Somebody who came straight in never saw the "change
+   * it if you aren't Greg" line the landing screen shows, and the borrowed
+   * laptop is exactly what that line is for.
+   */
+  const autoJoined = room !== null && room.code === autoJoinedCode;
 
   const phase = room?.phase ?? 'lobby';
   const durationMs = room ? questionDurationMs(room) : DEFAULT_QUESTION_DURATION_MS;
@@ -268,6 +307,74 @@ function Game() {
     },
     [join, report],
   );
+
+  /**
+   * A link that carries a code, on a browser that already knows its own name,
+   * goes straight into the room.
+   *
+   * Nothing here is new capability — it skips a press on the landing screen and
+   * nothing else. Every reason not to is in `shouldAutoJoin`, where each one is
+   * a test, and all of them fall back to that same screen with the code already
+   * filled in.
+   *
+   * The squad and the side are read here rather than passed through, because
+   * they are only ever *consumed* at the end of the game: `recordGame` reads
+   * them when the final screen banks. So a player who fixes either one in the
+   * meantime banks the corrected value, which is why the lobby can offer a way
+   * out without this needing to know about it.
+   */
+  useEffect(() => {
+    const code = linkedCode;
+    if (code === null) return;
+
+    const name = rememberedName();
+    const squad = rememberedSquad();
+    const playingWith = rememberedPlayingWith();
+
+    const go = shouldAutoJoin({
+      linkedCode: code,
+      name,
+      squad,
+      playingWith,
+      uid,
+      connected: connection === 'ready',
+      consumed: linkConsumed,
+      inRoom: room !== null,
+    });
+    if (!go) return;
+
+    linkConsumed = true;
+    autoJoinedCode = code;
+
+    /*
+      `join` rather than `handleJoin`, and the difference is not cosmetic.
+      `handleJoin` sets `busy` and clears the error synchronously, which is a
+      `setState` inside an effect — the thing this file avoids everywhere, and
+      the reveal effect's own note explains why. Neither is wanted here anyway:
+      `busy` exists to disable a button, and there is no button in this path.
+
+      The failure is put back on the landing screen, which is where the room
+      code already is. `autoJoinedCode` is cleared with it, so the lobby cannot
+      later claim a link brought somebody in when it did not — and
+      `linkConsumed` deliberately is *not* cleared, because a code for a room
+      that has gone will fail exactly the same way every time.
+    */
+    join(code, name).catch((cause: unknown) => {
+      autoJoinedCode = null;
+      report(cause);
+    });
+  }, [uid, connection, room, join, report]);
+
+  /**
+   * Leaving clears the auto-joined flag as well as the room.
+   *
+   * Without it, a player who used "not you?" and then joined again by hand
+   * would be told a second time that a link had put them there.
+   */
+  const handleLeave = useCallback(() => {
+    autoJoinedCode = null;
+    void leave().catch(report);
+  }, [leave, report]);
 
   const handleStart = useCallback(
     (packId: PackId, count: number, level: Level, durationSecs: number) => {
@@ -652,8 +759,10 @@ function Game() {
           isQuizmaster={isQuizmaster}
           packs={packs}
           busy={busy}
+          autoJoined={autoJoined}
+          squad={rememberedSquad()}
           onStart={handleStart}
-          onLeave={() => void leave().catch(report)}
+          onLeave={handleLeave}
         />
       )) ||
         ((room.phase === 'question' || room.phase === 'reveal') && (
@@ -694,7 +803,7 @@ function Game() {
             isQuizmaster={isQuizmaster}
             log={gameLog}
             onPlayAgain={() => void dispatch({ type: 'reset' }).catch(report)}
-            onLeave={() => void leave().catch(report)}
+            onLeave={handleLeave}
             onSeason={() => setShowSeason(true)}
           />
         )) || (
@@ -718,7 +827,7 @@ function Game() {
               <button
                 type="button"
                 className="btn btn--ghost"
-                onClick={() => void leave().catch(report)}
+                onClick={handleLeave}
               >
                 Leave
               </button>

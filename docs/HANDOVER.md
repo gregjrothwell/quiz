@@ -10,10 +10,9 @@ Built to replace Polly in Teams.
 - **Firebase project:** `quiz-d686e` (Firestore + Realtime Database in europe-west1 + Anonymous auth)
 
 **This file is the way in, not the record.** It was 2,422 lines until 20 August
-2026 and cost ~40,000 tokens to read at the start of every session — more than
-the codebase it describes. The depth moved, unchanged, into `decisions/`; the
-dated spine is `TOTAL-RECALL.md`. Keep this one short: that is the whole point of
-it, and the session-start hook will say so if it grows.
+2026 — more to read than the codebase it describes. The depth moved into
+`decisions/`, the dated spine is `TOTAL-RECALL.md`, and the session-start hook
+says so if this one grows again.
 
 ## Read this before changing
 
@@ -43,9 +42,8 @@ it, and the session-start hook will say so if it grows.
 
 **Shipped and played.** 448 tests, clean types and lint, no `any` or `@ts-ignore`.
 
-- **Squads, the weekly board, the average season table, the frozen podium and the
-  sealed question text are live** ([PR #2](https://github.com/gregjrothwell/quiz/pull/2),
-  deployed 20 August).
+- **Squads, the weekly board, the average season table, the frozen podium and
+  the sealed question text are live** (deployed 20 August, [PR #2](https://github.com/gregjrothwell/quiz/pull/2)).
 - **The answer vault is live**: 13,593 answers, both rulesets published.
 - **App Check enforces on Cloud Firestore, the Realtime Database and
   authentication**; `appcheck-probe` refuses at sign-in, which is the proof.
@@ -67,9 +65,11 @@ it, and the session-start hook will say so if it grows.
   same day — `CORRECT · +1,000` at 10.6s in the browser against
   `scored: ClockTest +1000` in the terminal, the two agreeing being the point:
   [`decisions/shared-clock.md`](decisions/shared-clock.md).
+- **A join link goes straight into the room** when the browser already knows its
+  name — a returning player's press on a screen that knew both answers. Built,
+  **not deployed**: [`decisions/joining.md`](decisions/joining.md).
 - **`npm run host-room` scores a real answer now** — it never read the answers
-  subcollection, so every reveal it folded scored nobody. Fixed, proved both
-  ways; `state-of-play.md` carries the correction.
+  subcollection, so every reveal it folded scored nobody.
 
 **Measured live, 20 August 2026** (`npm run take-stock`):
 

@@ -54,6 +54,17 @@ interface LobbyProps {
   isQuizmaster: boolean;
   packs: PackSummary[];
   busy: boolean;
+  /**
+   * Whether a link put this device in the room without asking anything.
+   *
+   * The landing screen carries a line reading "change it if you aren't Greg",
+   * and it is there for the borrowed laptop — where the remembered name belongs
+   * to whoever played on it last. Somebody who came straight in never saw it, so
+   * the check has to happen here instead.
+   */
+  autoJoined?: boolean;
+  /** Only shown, and only alongside {@link autoJoined}. */
+  squad?: string;
   onStart: (packId: PackId, count: number, level: Level, durationSecs: number) => void;
   onLeave: () => void;
 }
@@ -64,6 +75,8 @@ export function Lobby({
   isQuizmaster,
   packs,
   busy,
+  autoJoined = false,
+  squad = '',
   onStart,
   onLeave,
 }: LobbyProps) {
@@ -72,6 +85,7 @@ export function Lobby({
   const [level, setLevel] = useState<Level>('ramp');
   const [durationSecs, setDurationSecs] = useState<number>(DEFAULT_DURATION_SECS);
 
+  const youName = youUid ? room.players[youUid]?.name : undefined;
   const quizmasterUid = resolveQuizmaster(room.players);
   const quizmasterName = quizmasterUid ? room.players[quizmasterUid]?.name : undefined;
   const playerEntries = Object.entries(room.players).sort(
@@ -127,6 +141,30 @@ export function Lobby({
             </li>
           ))}
         </ul>
+
+        {/*
+          Only for somebody a link brought in. For anybody else it is noise —
+          they typed the name themselves a moment ago, and the landing screen
+          already asked them about it.
+
+          The squad is named as well as the name, because it is the other thing
+          that goes wrong silently: it is read off this browser at the whistle,
+          not chosen here, so an inherited one banks a stranger's week without
+          ever appearing on screen.
+        */}
+        {autoJoined && youName ? (
+          <div className="stack">
+            <p className="muted" style={{ fontSize: '0.85rem', margin: 0 }}>
+              The link brought you straight in as <strong>{youName}</strong>
+              {squad ? <>, playing for {squad}</> : null}.
+            </p>
+            <div className="btn-row">
+              <button type="button" className="btn btn--ghost" onClick={onLeave}>
+                Not you? Start again
+              </button>
+            </div>
+          </div>
+        ) : null}
       </section>
 
       {isQuizmaster ? (

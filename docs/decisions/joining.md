@@ -24,6 +24,49 @@ strict on purpose: an invalid code returns null rather than half-filling the
 field, because a partly-populated box someone then types into is how you join a
 room nobody meant to be in.
 
+### The link goes straight in — 28 August 2026
+
+A regular following the link was being shown a screen that already knew both
+answers: the code came from the link and the name has been in `localStorage`
+since `rememberedName` shipped. So it asked for a press and nothing else.
+
+`shouldAutoJoin` in `src/engine/autoJoin.ts` decides when that press can be
+skipped. **It is written as a list of refusals**, because that is the half worth
+testing — no linked code, no remembered name, a name that is only whitespace,
+not signed in yet, not connected, the link already used, or already in a room.
+Every one of them falls back to exactly the screen that was there before, with
+the code filled in. Nothing here lets the app do anything it could not do
+before; it removes a press and nothing else.
+
+**The one refusal that is about the game rather than about readiness is the
+Lurker.** A Lurker belongs to no side for the season and picks one for the
+night, and that pick lives in *session* storage on purpose — sitting with Hermes
+this week is not a standing arrangement. So a Lurker opening a link in a fresh
+session has a squad and no side, and auto-joining would bank their week to
+Lurkers instead of to whoever they actually sat with. Nobody would see it
+happen. They get the landing screen, which asks.
+
+An empty squad is deliberately **not** the same case: it banks as "keep whatever
+the record says" and changes nothing, so those players go straight in.
+
+Two details that are load-bearing rather than tidy:
+
+- **`linkConsumed` is module scope, and is set before the join is attempted.**
+  Component state would be reset by the unmount that leaving a room causes, and
+  the link would fire again the instant somebody pressed Leave. Setting it first
+  is what stops a failed join — a room that has gone — retrying for ever.
+- **The effect calls `join`, not `handleJoin`.** `handleJoin` sets `busy` and
+  clears the error synchronously, which is a `setState` inside an effect; the
+  lint rule catches it and `App.tsx` avoids the pattern everywhere else. Neither
+  is wanted here anyway, since `busy` exists to disable a button and this path
+  has no button.
+
+Because somebody who comes straight in never sees the landing screen's *"change
+it if you aren't Greg"* line — which exists for the borrowed laptop — the lobby
+says it instead, naming the squad as well as the name, and offers **Not you?
+Start again**. That leaves and returns to the landing screen without re-joining,
+because the link is already consumed.
+
 The copy button degrades rather than lying. `navigator.clipboard` needs a
 secure context and a permission the browser can refuse, and on an insecure
 origin it is absent outright — which throws where the others reject. All of it
