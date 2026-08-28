@@ -24,6 +24,7 @@ React 18, TypeScript, Vite, Vitest. Firebase client SDK. Deploy is `gh-pages` fr
 | `npm run sync-harness [n]` | *n* concurrent clients against live Firebase |
 | `npm run host-room -- [secs]` | Drive a round from the terminal |
 | `npm run seed-vault` | Admin SDK; needs `GOOGLE_APPLICATION_CREDENTIALS` under `.secrets/` |
+| `npm run fold-votes [-- --go]` | What the office voted out. Dry run by default; `--go` writes the blocklist |
 | `npm run deploy` | `build` then `gh-pages` |
 
 `scripts/` that touch the live project stay out of `npm test` on purpose.
@@ -34,7 +35,8 @@ React 18, TypeScript, Vite, Vitest. Firebase client SDK. Deploy is `gh-pages` fr
 src/engine/      Pure TS game rules — no React, no Firebase
 src/lib/         Firebase wiring, clock, sound, identity
 src/screens/     One component per phase
-src/questions/   Pack types and the seal test. Classification is build-time, so it lives in scripts/
+src/questions/   Pack types, the seal test, and the retirement blocklist.
+                 Classification is build-time, so it lives in scripts/
 src/design/      One stylesheet (`global.css`)
 scripts/         Harvest, classification and live harnesses. Never imports src/firebase.ts
 public/packs/    Sealed questions — `options`, never `correct`

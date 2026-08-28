@@ -384,6 +384,46 @@ service cloud.firestore {
       }
     }
 
+    // ── What the room thought of a question ───────────────────────────────────
+    //
+    // A global collection rather than a room subcollection, and every reason is
+    // about cost or about the data outliving the room it was collected in — see
+    // `src/lib/questionVotes.ts`, which carries the argument in full.
+    //
+    // **Nothing here can leak an answer.** The document is one field, `good` or
+    // `bad`, written after the reveal. There is no option index in it, which is
+    // the same discipline the difficulty counters are designed to: a per-option
+    // breakdown would make the modal answer guessable and hand back precisely
+    // what the vault exists to protect.
+    //
+    // `read` is denied outright, to clients and to the app alike. Nothing shows
+    // a tally — the fold that turns these into a retirement list runs on the
+    // Admin SDK, which is not subject to these rules at all — and a collection
+    // nobody can enumerate is a collection nobody can mine. Granting `list`
+    // later is one paste, and is what a live tally would need.
+    //
+    // The document id is the voter's uid, so one person's opinion of a question
+    // counts once. `update` is allowed for the same reason it is on an answer:
+    // changing your mind is not cheating.
+    match /questionVotes/{questionId}/votes/{uid} {
+      allow read: if false;
+
+      allow create, update: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['verdict'])
+        && request.resource.data.verdict in ['good', 'bad'];
+
+      // Your own, and only your own — the answers rule exactly.
+      //
+      // `delete: if false` was written here first and was a mistake worth
+      // recording: it buys nothing, because `update` already lets anybody flip
+      // their own verdict to `good`, and it costs a row **no client can ever
+      // remove**. `check-rules` writes to this path on every run, so that is a
+      // preflight leaving permanent litter behind — the precise failure
+      // `HANDOVER.md` records having to sweep with `prune-rooms --probe-rows`.
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
     // Season standings. Unlike room scores, these can be locked down properly:
     // a player writes only their own row, so the rules enforce exactly the
     // invariant the app relies on. The values themselves are still self-

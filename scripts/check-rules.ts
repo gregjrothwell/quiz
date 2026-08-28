@@ -539,6 +539,84 @@ function buildChecks(probes: Probes): Check[] {
         }),
     },
     {
+      label: 'Firestore   · vote on a question',
+      expect: 'allow',
+      hint: 'firestore.rules is missing the questionVotes block — nobody can tell '
+        + 'the corpus a question was rubbish, and every vote is refused silently',
+      run: () =>
+        setDoc(doc(db, 'questionVotes', 'rules-check-question', 'votes', uid), {
+          verdict: 'bad',
+        }),
+    },
+    {
+      label: 'Firestore   · change your own verdict',
+      expect: 'allow',
+      hint: 'firestore.rules grants create but not update on questionVotes — a '
+        + 'player cannot change their mind, which the answer rule allows',
+      run: async () => {
+        const reference = doc(db, 'questionVotes', 'rules-check-question', 'votes', uid);
+        await setDoc(reference, { verdict: 'good' });
+        // Swept rather than left. A preflight that writes a row it cannot
+        // remove is how this project ended up with `prune-rooms --probe-rows`.
+        return deleteDoc(reference);
+      },
+    },
+    {
+      label: 'Firestore   · vote as somebody else',
+      expect: 'deny',
+      hint: 'firestore.rules lets one uid write another uid\'s verdict — one '
+        + 'person could retire any question in the corpus on their own',
+      run: () =>
+        setDoc(doc(db, 'questionVotes', 'rules-check-question', 'votes', uidB), {
+          verdict: 'bad',
+        }),
+    },
+    {
+      label: 'Firestore   · vote with a verdict that is not one of the two',
+      expect: 'deny',
+      hint: 'firestore.rules does not pin questionVotes.verdict to good|bad — the '
+        + 'fold would be counting values it has never seen',
+      run: () =>
+        setDoc(doc(db, 'questionVotes', 'rules-check-question', 'votes', uid), {
+          verdict: 'rubbish',
+        }),
+    },
+    {
+      label: 'Firestore   · attach an extra field to a verdict',
+      expect: 'deny',
+      hint: 'firestore.rules does not hasOnly questionVotes — an option index '
+        + 'could be smuggled in beside the verdict, which is the one thing that '
+        + 'would make the modal answer guessable',
+      run: () =>
+        setDoc(doc(db, 'questionVotes', 'rules-check-question', 'votes', uid), {
+          verdict: 'bad',
+          optionIndex: 2,
+        }),
+    },
+    {
+      label: 'Firestore   · delete somebody else\'s verdict',
+      expect: 'deny',
+      hint: 'firestore.rules lets one uid delete another uid\'s verdict — a '
+        + 'question could be kept in the corpus by removing the votes against it',
+      run: () =>
+        deleteDoc(doc(db, 'questionVotes', 'rules-check-question', 'votes', uidB)),
+    },
+    {
+      label: 'Firestore   · read somebody\'s verdict',
+      expect: 'deny',
+      hint: 'firestore.rules grants read on questionVotes — the collection is '
+        + 'written and never read by a client, and one nobody can enumerate is '
+        + 'one nobody can mine',
+      run: () => getDoc(doc(db, 'questionVotes', 'rules-check-question', 'votes', uid)),
+    },
+    {
+      label: 'Firestore   · list the verdicts on a question',
+      expect: 'deny',
+      hint: 'firestore.rules grants list on questionVotes — see above',
+      run: () =>
+        getDocs(query(collection(db, 'questionVotes', 'rules-check-question', 'votes'), limit(1))),
+    },
+    {
       label: 'Realtime DB · write presence',
       expect: 'allow',
       hint: 'publish database.rules.json — closed tabs will never be cleaned up',

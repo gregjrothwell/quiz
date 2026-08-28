@@ -3,6 +3,7 @@ import { ColdOpen } from './components/ColdOpen';
 import { Stage } from './components/Stage';
 import { arrivalFor, walkedIn, NO_ARRIVAL, type Arrival } from './engine/arrival';
 import { shouldAutoJoin } from './engine/autoJoin';
+import type { Verdict } from './engine/questionVote';
 import { honoursFor, sawWholeGame, NO_HONOURS } from './engine/awards';
 import { formFor } from './engine/form';
 import { msUntilRevealGate, revealBackoffMs } from './engine/revealGate';
@@ -17,6 +18,7 @@ import {
 } from './engine/state';
 import { firestore, isFirebaseConfigured } from './firebase';
 import { playerIdFor } from './lib/identity';
+import { recordVote } from './lib/questionVotes';
 import { rememberedName } from './lib/rememberedName';
 import {
   rememberPlayingWith,
@@ -475,6 +477,29 @@ function Game() {
   );
 
   /**
+   * What this player thought of the question just revealed.
+   *
+   * Written straight out and never read back. There is no tally on any screen,
+   * which is what keeps this free: the collection is global rather than in the
+   * room, so it adds no listener and no reads at all — one write per player per
+   * question, ninety a game against twenty thousand a day. The argument in full
+   * is in `src/lib/questionVotes.ts`.
+   *
+   * Failures are swallowed inside `recordVote`. A verdict is a nicety collected
+   * during the reveal and must never put an error over the top of the round.
+   */
+  const handleVote = useCallback(
+    (verdict: Verdict) => {
+      if (!uid) return;
+      const question = room ? currentQuestion(room) : null;
+      if (!question) return;
+
+      void recordVote(firestore(), question.id, uid, verdict);
+    },
+    [uid, room],
+  );
+
+  /**
    * Which question this device is already revealing, so the expiry effect and
    * the button cannot both fire the same reveal. Cleared on failure, because a
    * reveal that errored is exactly the one worth pressing again.
@@ -783,6 +808,7 @@ function Game() {
             onAnswer={handleAnswer}
             onReveal={() => void handleReveal().catch(report)}
             onNext={() => void dispatch({ type: 'next', at: Date.now() }).catch(report)}
+            onVote={handleVote}
           />
         )) ||
         (room.phase === 'scoreboard' && (

@@ -144,6 +144,14 @@ Two things would actually work, if this ever matters enough: hand-rating a
 capped set, or a build-time LLM pass validated against a hand-labelled gold set.
 Both were costed; neither is queued.
 
+### Letting the office vote
+
+Players rate a question at the reveal, and the verdicts fold back into the packs
+as a retirement list. It is the other half of the difficulty problem above — an
+unfair question is not a hard one — and it has its own file, because the vote
+pipeline and the harvest pipeline are different subsystems that happen to meet
+at `public/packs/`: [`question-votes.md`](question-votes.md).
+
 ### Four things that will bite
 
 - **Team names go in the list with their city, not on their own.** Nearly every

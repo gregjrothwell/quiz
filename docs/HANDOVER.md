@@ -28,6 +28,7 @@ says so if this one grows again.
 | scoring an answer that lands late | [`decisions/late-answers.md`](decisions/late-answers.md) |
 | the review panel or the replay | [`decisions/review-replay.md`](decisions/review-replay.md) |
 | packs, harvesting, classification | [`decisions/questions.md`](decisions/questions.md) |
+| voting on a question, retiring one | [`decisions/question-votes.md`](decisions/question-votes.md) |
 | rules, App Check on Firestore and the RTDB, anything security-shaped | [`decisions/security.md`](decisions/security.md) |
 | App Check on **authentication** specifically | [`decisions/app-check-auth.md`](decisions/app-check-auth.md) |
 | anything that adds reads or writes | [`decisions/cost.md`](decisions/cost.md) |
@@ -65,6 +66,9 @@ says so if this one grows again.
   same day — `CORRECT · +1,000` at 10.6s in the browser against
   `scored: ClockTest +1000` in the terminal, the two agreeing being the point:
   [`decisions/shared-clock.md`](decisions/shared-clock.md).
+- **Players vote on a question at the reveal**, and `fold-votes` turns the
+  verdicts into a retirement list. Built, **rules paste outstanding**:
+  [`decisions/question-votes.md`](decisions/question-votes.md).
 - **A join link goes straight into the room** when the browser already knows its
   name — a returning player's press on a screen that knew both answers. Built,
   **not deployed**: [`decisions/joining.md`](decisions/joining.md).
@@ -75,10 +79,10 @@ says so if this one grows again.
 
 | | |
 |---|---|
-| rooms | 25 — one predates `expiresAt`, unreachable by any TTL policy. Was 12 this morning; the reveal-gate probes and a browser round made the rest, all with `expiresAt` |
+| rooms | 25 — one predates `expiresAt`, unreachable by any TTL policy |
 | vault answers | 13,593 |
 | `season-2` players | 21 |
-| `season-1` / `week-2026-W34` | 4 / 4 — **neither was being reported until today.** `take-stock` held its own `season-2` and counted nothing else, so every weekly bucket was invisible from the day weekly boards shipped. It now enumerates instead of naming |
+| `season-1` / `week-2026-W34` | 4 / 4 — **neither was reported until 20 August.** `take-stock` named its own season and counted nothing else, so every weekly bucket was invisible from the day weekly boards shipped. It enumerates now |
 | recovery codes / identity claims | **0 / 0** — nobody has ever used the feature |
 
 > **Correction.** This table also listed `rules-check` at 3 and called it the
@@ -86,13 +90,10 @@ says so if this one grows again.
 > `check-rules` three more times, still 3. Those predated the cleanup and no
 > client could remove them. Swept with `prune-rooms -- --probe-rows --go`.
 
-> **Correction, 20 August 2026.** This file previously said both "leaving 3
-> rooms" (15 August, after the prune) and "79 rooms are still there" in the
-> security section. The second was written *before* the prune ran and never
-> updated; the first was right. Settled by measurement, not by reasoning — 12
-> rooms today is 3 plus the rounds played since. Both stale readings are left
-> visible in [`decisions/security.md`](decisions/security.md) rather than edited
-> away.
+> **Correction, 20 August 2026.** This file said both "leaving 3 rooms" and "79
+> rooms are still there". The second predated the prune and was never updated;
+> the first was right, settled by measurement rather than reasoning. Both stale
+> readings stay visible in [`decisions/security.md`](decisions/security.md).
 
 ## Outstanding
 
@@ -122,15 +123,14 @@ scripts/        Build-time question harvest, and the multi-client test harnesses
 docs/decisions/ One subsystem each. Reached from the table above.
 ```
 
-Commands: `npm run dev` (serves at `/quiz/`, port 5273), `test`, `typecheck`, `lint`,
-`build`, `deploy`, `fetch-questions [-- --resort]`, `fetch-otqa`, `seed-vault`,
-`check-rules`, `sync-harness [n]`, `host-room [-- secs]`, `reveal-probe [-- secs offsetMs]`,
-`take-stock`, `prune-rooms [-- --probe-rows --go]`.
+Commands: `dev` (port 5273), `test`, `typecheck`, `lint`, `build`, `deploy`,
+`fetch-questions [-- --resort]`, `fetch-otqa`, `seed-vault`, `check-rules`,
+`sync-harness [n]`, `host-room [-- secs]`, `reveal-probe`, `take-stock`,
+`prune-rooms [-- --probe-rows --go]`, `fold-votes [-- --go]`.
 
-`npm test` covers `src/` plus the pure parts of `scripts/` — the OpenTriviaQA
-parser and its encoding fallback, which corrupt questions silently when wrong.
-Anything under `scripts/` that touches the network or the live project stays out
-of the suite deliberately; `npm test` must keep running offline.
+`npm test` covers `src/` plus the pure parts of `scripts/`. Anything under
+`scripts/` that touches the network or the live project stays out deliberately;
+`npm test` must keep running offline.
 
 ## If you're picking this up cold
 

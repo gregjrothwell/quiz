@@ -15,6 +15,34 @@ the old 2,422-line handover, when it was split. They are a true index of what
 happened and when; they are not a contemporaneous log, and anything needing the
 detail should follow the pointer rather than trust the summary here.
 
+## 2026-08-28 — The office can vote a question out
+
+Office feedback on question quality. Players rate a question at the reveal; the verdicts fold
+back into the packs as a retirement list. **Built, rules paste outstanding.**
+
+Shape, and the three reasons it is a global collection rather than a room one: no reads (an
+in-room collection is another `Q·N²` term, ~+540 a game at six players), it outlives
+`prune-rooms`, and the uid as document id deduplicates it for free. The document is one field,
+`good` or `bad` — no option index, so it cannot leak what the vault protects. 90 writes a game,
+no reads. `shouldRetire` is 5 votes and 60% bad, in the engine so `npm test` covers it.
+
+**The trap:** deleting a question from `public/packs/` retires nothing, because
+`fetch-questions --resort` rebuilds the packs from `.cache/` and would resurrect it silently.
+So `src/questions/retired.json` is the record and the packs are downstream; `seal.test.ts`
+now checks no retired id is back in a pack. 482 tests.
+
+**Two corrections made while building.** `delete: if false` on the vote path was written first
+and was wrong — it buys nothing, since `update` already lets anyone flip their own verdict, and
+it costs a row no client can remove, which is exactly the `prune-rooms --probe-rows` litter
+this repo already had to sweep once. And `check-rules` currently passes all six *deny* cases
+for the wrong reason: with no rule published, everything is denied. They only prove anything
+after the paste.
+
+`questions.md` hit 259 against its 250 budget, so this **split** into
+`decisions/question-votes.md` rather than being tidied — the harvest pipeline and what the
+office does to it afterwards are different subsystems meeting at `public/packs/`.
+→ [`decisions/question-votes.md`](decisions/question-votes.md)
+
 ## 2026-08-28 — The join link goes straight into the room
 
 Office feedback: following the link still costs a press on a screen that already knows both
