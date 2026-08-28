@@ -16,6 +16,46 @@ and including 20 August moved *verbatim* to
 old entry to make it fit is the thing the paragraph above forbids. Every one of
 them is still listed below by date, so the chronology reads end to end from here.
 
+## 2026-08-28 — A UI audit, and the verdict pills get a thumb
+
+Measured against the built output at 375 and 320 rather than eyeballed. The design holds up on a
+phone; these are defects in it, not an argument for redesigning it.
+
+**Fixed: the verdict pills were 80x24** — the smallest targets in the app, on the newest feature,
+a few millimetres from Standings at 53px of amber. A near-miss did not just fail to vote, it left
+the screen. The cause is in the comment above `.lamp--vote`: `.lamp` is a label reused as a
+control, and *"the two things a button needs"* covered cursor and font. **Hit area is the third.**
+Grown to 44px with a transparent pseudo-element, so the drawing is untouched — padding would have
+inflated the pill, and the pill is deliberately the same object as the lamps it replaces.
+
+Proved with `elementFromPoint`, not computed style: ±21px HIT, ±26px falls through to a container
+rather than a control, Standings still hittable at all three edges, the 32 display lamps still
+24px with no `::after`, and the screenshot pixel-identical to before.
+
+**`.lamps--vote` is not speculative, and that was worth checking.** Forcing the strip to wrap and
+restoring the plain `0.3rem` gap reproduces the defect it prevents: pitch 29px, and the upper
+pill's lower half is **stolen** by the pill beneath it. With the guard, pitch 44 and both stay
+hittable. A guard that has never been exercised is worth less than no guard.
+
+**Measured, not fixed — Greg's call, and both still open:**
+
+| | worst ratio | needs |
+|---|---|---|
+| `--ink-dim` `#5d7794`, 25 uses | **3.27** on `--panel-hi` | 4.5 |
+| `--cyan-dim` `#0e7ea3`, 11 uses | **3.27** on `--panel-hi` | 4.5 |
+
+`--ink-soft` passes comfortably at 7.4–9.9, so it is specifically the dim pair — and `--ink-dim`
+carries the hint text somebody reads once, under pressure, on a phone. Minimal fixes that clear
+4.5 on the worst surface: `#708fb2` and `#1197c4`. Also open: the sound toggle at 36px and the
+squad filter chips at 30.
+
+**Three things checked and cleared, so nobody re-reports them.** No horizontal overflow at 375 or
+320 — the 132 elements past the edge are the beams and the chair overhang, both deliberate and
+capped per [`gotchas.md`](decisions/gotchas.md). Reduced motion is properly handled. **Keyboard
+focus is fine** — nearly filed as missing after programmatic focus reported `outline: none`, but a
+real Tab gives `focusVisible: true` and the UA ring. Reading the gotchas first is what stopped the
+overflow becoming a bug report.
+
 ## 2026-08-28 — Squads score during the round
 
 §2, built and live. Hermes against Bundae under the standings, so the round has a second story
