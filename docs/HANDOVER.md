@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 20 August 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 28 August 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -45,7 +45,7 @@ and the hook says so if this one grows.
 
 ## State as of 28 August 2026
 
-**Shipped and played.** 482 tests, clean types and lint, no `any` or `@ts-ignore`.
+**Shipped and played.** 513 tests, clean types and lint, no `any` or `@ts-ignore`.
 
 - **Squads, weekly boards, the average table, the frozen podium and the sealed
   question text are live** (20 August, [PR #2](https://github.com/gregjrothwell/quiz/pull/2)).
@@ -67,9 +67,9 @@ and the hook says so if this one grows.
   and played the same day — `CORRECT · +1,000` at 10.6s in the browser against
   `scored: ClockTest +1000` in the terminal, the two agreeing being the point:
   [`decisions/shared-clock.md`](decisions/shared-clock.md).
-- **Squads score live under the standings.** Built, **rules paste outstanding —
-  and this one takes the game down if it deploys first**, because a join write
-  carrying `squad` is refused outright: [`decisions/live-squads.md`](decisions/live-squads.md).
+- **Squads score live under the standings**, ranked on points ÷ headcount.
+  **Live since 28 August** ([PR #16](https://github.com/gregjrothwell/quiz/pull/16));
+  rules pasted first, which was the whole risk: [`decisions/live-squads.md`](decisions/live-squads.md).
 - **Players vote on a question at the reveal**, and `fold-votes` turns the
   verdicts into a retirement list. **Live since 28 August**, proved end to end:
   [`decisions/question-votes.md`](decisions/question-votes.md).
@@ -92,8 +92,8 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
    one right answer in it**. Keyboard shortcuts cleared 28 August. The
    **anonymous-account purge is reviewed and the answer is don't**:
    [`decisions/identity.md`](decisions/identity.md).
-4. ~~**A reload drops you out of the room.**~~ **Fixed 28 August**, built not
-   deployed: [`decisions/joining.md`](decisions/joining.md).
+4. ~~**A reload drops you out of the room.**~~ **Fixed and live, 28 August**,
+   verified on production: [`decisions/joining.md`](decisions/joining.md).
 
 ## Where things are
 
