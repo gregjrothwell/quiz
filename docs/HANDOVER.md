@@ -42,6 +42,7 @@ and the hook says so if this one grows.
 | what to build next, and what each idea costs | [`decisions/ideas-review.md`](decisions/ideas-review.md) |
 | whether an idea was already turned down | [`decisions/scope.md`](decisions/scope.md) |
 | upgrading anything in `package.json` | [`decisions/dependencies.md`](decisions/dependencies.md) |
+| the studio set, or any lighting cue | [`decisions/lighting.md`](decisions/lighting.md) |
 
 ## State as of 28 August 2026
 
@@ -79,6 +80,16 @@ and the hook says so if this one grows.
 - **`npm run host-room` scores a real answer now** — it never read the answers
   subcollection, so every reveal it folded scored nobody.
 
+**On a branch and not deployed** (28 August, all reviewed and verified locally,
+none of it seen by a second person):
+
+- **The verdict pills got a thumb-sized hit area** — they drew at 80×24, the
+  smallest targets in the app: [`decisions/state-of-play.md`](decisions/state-of-play.md#the-ui-measured--28-august-2026).
+- **The rig is operated rather than just lit** — the house dims for the question,
+  and blazes on `finished`: [`decisions/lighting.md`](decisions/lighting.md).
+- **Seven in-range dependency bumps and `globals` 17**; four majors measured and
+  held: [`decisions/dependencies.md`](decisions/dependencies.md).
+
 **What is actually in the project right now** — counts, the two slow leaks, and the
 two corrections that came out of miscounting them: [`decisions/cost.md`](decisions/cost.md#measured-live-28-august-2026).
 
@@ -94,6 +105,9 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
    [`decisions/identity.md`](decisions/identity.md).
 4. ~~**A reload drops you out of the room.**~~ **Fixed and live, 28 August**,
    verified on production: [`decisions/joining.md`](decisions/joining.md).
+5. **Two colour tokens fail WCAG AA** on every surface — `--ink-dim` and
+   `--cyan-dim`, worst case 3.27 against 4.5. Measured, not fixed; the values
+   that clear it are recorded: [`decisions/state-of-play.md`](decisions/state-of-play.md#the-ui-measured--28-august-2026).
 
 ## Where things are
 
