@@ -79,24 +79,8 @@ and the hook says so if this one grows.
 - **`npm run host-room` scores a real answer now** — it never read the answers
   subcollection, so every reveal it folded scored nobody.
 
-**Measured live, 28 August 2026** (`npm run take-stock`), after a prune of 15
-expired probe rooms:
-
-| | |
-|---|---|
-| rooms | 37 — one predates `expiresAt`, unreachable by any TTL policy |
-| vault answers | 13,593 |
-| `season-2` players | 24 |
-| `season-1` / weekly buckets | 4 / W34 7 / W35 16 — **none were reported until 20 August**; `take-stock` named its own season and counted nothing else, so every weekly bucket was invisible from the day weekly boards shipped. It enumerates now |
-| recovery codes / identity claims | **0 / 0** — nobody has ever used the feature |
-
-> **Correction.** This table once listed `rules-check` at 3 and called it the
-> preflight "leaving three rows on every run". **It was not** — those predated
-> the cleanup and no client could remove them. Swept with `prune-rooms`.
-
-> **Correction, 20 August 2026.** This file said both "leaving 3 rooms" and "79
-> rooms are still there". The second predated the prune and was never updated.
-> Both stale readings stay visible in [`decisions/security.md`](decisions/security.md).
+**What is actually in the project right now** — counts, the two slow leaks, and the
+two corrections that came out of miscounting them: [`decisions/cost.md`](decisions/cost.md#measured-live-28-august-2026).
 
 ## Outstanding
 

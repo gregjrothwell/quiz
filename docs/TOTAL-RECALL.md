@@ -18,100 +18,46 @@ them is still listed below by date, so the chronology reads end to end from here
 
 ## 2026-08-28 — The rig gets operated
 
-Five phases shared one lighting state. `Stage` now takes a `mood` — only ever the phase, only
-from the one call site inside a room — and sets `data-mood`; the whole effect is in the
-stylesheet, so a lighting change never costs a render. Two cues, both chosen because they carry
-information rather than decoration: **the house dims for the question** (beams 0.7 → 0.3, so
-nothing sweeps behind the lecterns while somebody reads and chooses) and **the rig blazes amber
-on `finished`**, once.
+Five phases shared one lighting state. `Stage` takes a `mood` — only ever the phase — and the
+stylesheet does the rest, so a cue costs no render. **The house dims for the question** and
+**the rig blazes amber on `finished`**. Only `opacity` moves: the beams are four blurred,
+`screen`-blended layers, and eight of the ten existing animations were already compositor-only,
+which is where the rule came from rather than from taste.
 
-**The rule this had to obey was already in the file.** Eight of the ten existing animations are
-`transform`/`opacity` only; the two that repaint are a 0.5rem dot and four characters. The beams
-are the opposite of small — four layers at 16%x95%, `blur(18px)`, blended `screen` — so animating
-their colour, filter or shadow would repaint all four every frame, on a phone, mid-clock. Only
-opacity moves, and the blaze is a pre-painted layer cross-faded rather than an animated colour.
-No fill mode: `both` is what stopped `.tile--dim` dimming for weeks.
+Two things worth carrying: **`0.34` alpha was invisible and `0.6` is right** — it read fine in
+the file and did nothing on screen. And **`getComputedStyle` returned a stale snapshot**,
+reporting the beams at 0.7 while an inline 0.11 was set. Screenshots were the only trustworthy
+instrument.
+→ [`decisions/lighting.md`](decisions/lighting.md)
 
-**0.34 alpha was invisible and 0.6 is right.** It read fine in the file and did nothing on screen.
-Putting the number in front of your eyes is the only way that gets caught. Safe at that strength
-because `.beams` is `z-index: -1`, behind the content column, so the wash cannot reach the
-contrast of anything anybody has to read. `prefers-reduced-motion` needed no new code — the
-blanket rule collapses both durations, so the set still changes state, it just arrives.
-
-**Gotcha, and it wasted a detour: `getComputedStyle` in the browser tool returned a stale
-snapshot.** It reported the beams at 0.7 while an inline `opacity: 0.11` was set, which is
-impossible on a live page — that was the tell. Every opacity reading taken that way was fiction;
-screenshots were the only trustworthy instrument. Do not measure this rig with computed style.
-
-**Not verified:** that `mood={room.phase}` lights up in a real room. Typed and read, but it wants
-the live round that four other things are already waiting on.
 ## 2026-08-28 — A UI audit, and the verdict pills get a thumb
 
-Measured against the built output at 375 and 320 rather than eyeballed. The design holds up on a
-phone; these are defects in it, not an argument for redesigning it.
+Measured against the built output at 375 and 320. **The verdict pills were 80x24** — smallest
+targets in the app, on the newest feature, millimetres from Standings. The cause was in the
+code comment: `.lamp` is a label reused as a control, and *"the two things a button needs"*
+covered cursor and font. Hit area is the third. Grown to 44px with a pseudo-element, so the
+drawing is untouched. Proved with `elementFromPoint` rather than computed style.
 
-**Fixed: the verdict pills were 80x24** — the smallest targets in the app, on the newest feature,
-a few millimetres from Standings at 53px of amber. A near-miss did not just fail to vote, it left
-the screen. The cause is in the comment above `.lamp--vote`: `.lamp` is a label reused as a
-control, and *"the two things a button needs"* covered cursor and font. **Hit area is the third.**
-Grown to 44px with a transparent pseudo-element, so the drawing is untouched — padding would have
-inflated the pill, and the pill is deliberately the same object as the lamps it replaces.
+**The wrap guard was made to earn its place**: forcing a wrap with the old gap reproduces the
+defect — the upper pill's lower half is stolen by the pill below. A guard that has never been
+exercised is worth less than no guard.
 
-Proved with `elementFromPoint`, not computed style: ±21px HIT, ±26px falls through to a container
-rather than a control, Standings still hittable at all three edges, the 32 display lamps still
-24px with no `::after`, and the screenshot pixel-identical to before.
-
-**`.lamps--vote` is not speculative, and that was worth checking.** Forcing the strip to wrap and
-restoring the plain `0.3rem` gap reproduces the defect it prevents: pitch 29px, and the upper
-pill's lower half is **stolen** by the pill beneath it. With the guard, pitch 44 and both stay
-hittable. A guard that has never been exercised is worth less than no guard.
-
-**Measured, not fixed — Greg's call, and both still open:**
-
-| | worst ratio | needs |
-|---|---|---|
-| `--ink-dim` `#5d7794`, 25 uses | **3.27** on `--panel-hi` | 4.5 |
-| `--cyan-dim` `#0e7ea3`, 11 uses | **3.27** on `--panel-hi` | 4.5 |
-
-`--ink-soft` passes comfortably at 7.4–9.9, so it is specifically the dim pair — and `--ink-dim`
-carries the hint text somebody reads once, under pressure, on a phone. Minimal fixes that clear
-4.5 on the worst surface: `#708fb2` and `#1197c4`. Also open: the sound toggle at 36px and the
-squad filter chips at 30.
-
-**Three things checked and cleared, so nobody re-reports them.** No horizontal overflow at 375 or
-320 — the 132 elements past the edge are the beams and the chair overhang, both deliberate and
-capped per [`gotchas.md`](decisions/gotchas.md). Reduced motion is properly handled. **Keyboard
-focus is fine** — nearly filed as missing after programmatic focus reported `outline: none`, but a
-real Tab gives `focusVisible: true` and the UA ring. Reading the gotchas first is what stopped the
-overflow becoming a bug report.
+Two contrast tokens fail AA and three findings were checked and cleared; both recorded in
+[`decisions/state-of-play.md`](decisions/state-of-play.md#the-ui-measured--28-august-2026).
 
 ## 2026-08-28 — A dependency pass, and four majors held back
 
-Six updates had drifted inside their existing `^` ranges. Lockfile only, and the proof was the
-bundle rather than the test count: **every emitted hash came back identical**, and
-`index-VtHlbLAd` is what production serves. All six were build tooling. `firebase-admin` moved,
-so `check-rules` (47 PASS) and `take-stock` ran against the live project as well.
+Seven in-range bumps, lockfile only. **The proof was the bundle, not the test count** — every
+emitted hash identical, and `index-VtHlbLAd` is what production serves. `globals` 17 taken.
+Four majors held, each installed and measured rather than read off a changelog: TypeScript 7
+(our source is already clean; `typescript-eslint` refuses to load), firebase 12 (**+57 kB
+gzipped** for nothing needed), React 19 and motion 13.
 
-Then the five majors, each **installed and measured** rather than read off a changelog.
-`globals` 17 was free and taken. The other four are held, for four different reasons:
-
-- **TypeScript 7** — our source is *already* TS 7 clean, tests and all. `typescript-eslint`
-  refuses to load against it and is targeting TS >= 7.1. Blocked on a tool, not on us.
-- **firebase 12** — **+57 kB gzipped** on the chunk every player downloads, isolated to the
-  umbrella package by splitting `manualChunks` per package. Nothing in v12 is needed and v11
-  has no advisory, so it is 57 kB for nothing. Defer, not never.
-- **React 19** (+14 kB gz) and **motion 13** (+3.6 kB gz) — both clean through typecheck, lint,
-  513 tests and build.
-
-**The finding underneath those last two is the one worth keeping.** `npm test` sets
-`environment: 'node'` and includes `src/**/*.test.ts` — `.ts`, not `.tsx`. **No component is
-ever rendered by the suite.** A green run under React 19 is evidence about the engine, which is
-pure TypeScript and was never at risk. Both were checked instead against the built output at
-`#/preview`, which renders every screen at once: 178 headings, zero console errors, all chunks
-200. That is real and still not sufficient — a static gallery exercises no subscription, no
-answer window, no phase transition. **Both should ride a real round rather than ship alone.**
-
+**The finding underneath the last two:** `npm test` is `environment: 'node'` over
+`src/**/*.test.ts` — `.ts`, not `.tsx`. **No component is ever rendered by the suite**, so a
+green run under React 19 is evidence about the engine, not about React.
 → [`decisions/dependencies.md`](decisions/dependencies.md)
+
 ## 2026-08-28 — Squads score during the round
 
 §2, built and live. Hermes against Bundae under the standings, so the round has a second story

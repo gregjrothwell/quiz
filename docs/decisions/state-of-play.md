@@ -145,6 +145,39 @@ rules are still using a fixed twenty.
 
 ---
 
+## The UI, measured — 28 August 2026
+
+Against the **built** output at 375px and 320px, not eyeballed. The design holds
+up on a phone; these are defects in it rather than a case for redesigning it.
+
+**Open, and both are Greg's call.** Two colour tokens fail WCAG AA on every
+surface they are used on:
+
+| Token | `--night` | `--panel` | `--panel-hi` | Needs |
+|---|---|---|---|---|
+| `--ink-dim` `#5d7794`, 25 uses | 4.38 | 3.79 | **3.27** | 4.5 |
+| `--cyan-dim` `#0e7ea3`, 11 uses | 4.38 | 3.79 | **3.27** | 4.5 |
+| `--ink-soft` `#9fb8cf`, 14 uses | 9.89 | 8.55 | 7.38 | passes |
+
+It is specifically the dim pair, and `--ink-dim` is what carries the hint text —
+"shown on the leaderboard", "4-character code" — read once, under pressure, on a
+phone. `#708fb2` and `#1197c4` are the minimum values that clear 4.5 on the
+worst surface. Also open: the sound toggle at 36px and the squad filter chips at
+30, both above WCAG 2.2's 24px floor and below the 44 Apple and Google ask for.
+
+**Fixed the same day:** the verdict pills were 80×24, the smallest targets in
+the app — see [`question-votes.md`](question-votes.md).
+
+**Checked and cleared, so nobody re-reports them:**
+
+- **No horizontal overflow** at either width. The 132 elements extending past the
+  edge are the light beams and the chair's label overhang, both deliberate and
+  capped ([`gotchas.md`](gotchas.md)).
+- **Reduced motion** is properly handled — a blanket rule plus targeted ones.
+- **Keyboard focus is fine.** Nearly filed as missing: programmatic `.focus()`
+  reports `outline: none`, which looks like a stripped focus style. A real Tab
+  press gives `:focus-visible` and the UA ring. Press the key.
+
 ## Known limits
 
 Moved to [`known-limits.md`](known-limits.md) on 28 August 2026, when this file
