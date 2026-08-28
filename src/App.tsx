@@ -768,7 +768,7 @@ function Game() {
   }
 
   return (
-    <Stage>
+    <Stage mood={room.phase}>
       {problem ? <p className="notice">{problem}</p> : null}
 
       {/*

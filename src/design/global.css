@@ -164,6 +164,12 @@ textarea {
   overflow: hidden;
   mix-blend-mode: screen;
   opacity: 0.7;
+  /*
+   * The rig is operated rather than just lit — see `[data-mood]` below. Only
+   * the opacity ever moves, and slowly, because a lighting change should read
+   * as a hand on a fader and not as a switch.
+   */
+  transition: opacity 900ms ease;
 }
 
 .beams i {
@@ -196,6 +202,76 @@ textarea {
   left: 80%;
   transform: rotate(-10deg);
   background: linear-gradient(180deg, rgb(255 178 38 / 0.26), transparent 72%);
+}
+
+/* ── The rig, operated ──────────────────────────────────────────────────────
+   Five phases used to share one lighting state. These two carry information
+   rather than decoration, which is the bar a lighting cue has to clear here.
+
+   **Only `opacity` moves.** The beams are the most expensive thing on the
+   screen — four layers at 16%x95%, `blur(18px)`, blended `screen` — so
+   animating their colour, filter or shadow would repaint all four every frame,
+   on a phone, while a clock is running. Eight of the ten animations in this
+   file are already `transform`/`opacity` only; the two that repaint are a
+   0.5rem dot and four characters. That is the rule, and this obeys it.
+
+   `prefers-reduced-motion` needs nothing here: the blanket rule at the foot of
+   this file collapses both durations, so the set still changes state — it just
+   arrives rather than fades. That is the correct behaviour, not a casualty.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+/*
+  The house dims while the clock runs, and the question tile carries the light.
+
+  This is the one cue that is not theatre: the beams sweep the full height of
+  the stage behind the lecterns, and taking them down removes competing light
+  at the exact moment somebody is reading a question and choosing an answer.
+  It comes back at the reveal, which is when there is something to look at.
+*/
+.stage[data-mood='question'] .beams {
+  opacity: 0.3;
+}
+
+/*
+  And the rig blazes when the round lands.
+
+  Amber because that is the house colour for a result — the winner's plate, the
+  leader's row and the truss bar are already amber; cyan is the working light.
+  A wash rather than a recolour: the gradient below is painted once and only its
+  opacity animates, so the four blurred beams underneath are never repainted.
+
+  No fill mode, deliberately. `both` would hold the final keyframe above every
+  normal declaration — the trap that stopped `.tile--dim` dimming for weeks —
+  and none is needed, because the resting state of this layer is the state the
+  animation ends on.
+*/
+.stage[data-mood='finished'] .beams {
+  opacity: 1;
+}
+
+.stage[data-mood='finished'] .beams::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /*
+    0.6 because 0.34 was invisible on screen — looked reasonable in the file and
+    did nothing in the room, which is the argument for putting a number in front
+    of your eyes before committing to it. Safe to be this strong: `.beams` is
+    `z-index: -1`, behind the content column, so the wash cannot reach the
+    contrast of anything anybody has to read.
+  */
+  background: radial-gradient(100% 62% at 50% 0%, rgb(255 178 38 / 0.6), transparent 72%);
+  animation: blaze 1600ms ease-out;
+}
+
+@keyframes blaze {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .stage__inner {
