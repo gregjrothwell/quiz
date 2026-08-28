@@ -12,8 +12,33 @@ keeping it one function.
 
 Squads did nothing until the board *after* the game, which is most of the way to
 not having squads at all: the point of a side is watching it win or lose in the
-room. `SquadScore` shows the running aggregate under the standings between
-questions.
+room. `SquadScore` shows it under the standings between questions.
+
+### It ranks on the average, and the first version did not
+
+Built summing each side's points, which **Greg rejected on sight**: *"Bundae get
+to play less than Hermes."* Quite right — a raw total means the bigger squad wins
+by turning up rather than by answering, and the sides are never even. Bundae
+fielding one against Hermes' three would lose every week while playing perfectly
+well.
+
+So the board ranks on **points ÷ headcount**, which is the same complaint and the
+same answer as the season table ranking on average rather than on points. On the
+gallery fixture that turns Hermes 5,550 against Bundae 3,100 into Bundae ahead,
+3,100 a player to 2,775 — the smaller side leading because it is playing better.
+
+The screen says **"Average per player"** above the bar. Without it the number
+reads as a total, fails to match the standings directly above, and the smaller
+squad appearing to lead looks like a bug rather than the point.
+
+Three alternatives were weighed and are worth recording, because the next person
+will think of them. **Best N, where N is the smallest squad** — golf's dropped
+scores, the direction [`ideas-review.md`](ideas-review.md) §9 wants for the
+season — is fair on size but brutal in a live round: with Hermes three and Bundae
+one, two of the three Hermes players are told their round does not count.
+**Questions won head-to-head** is size-neutral and the most event-like, and is
+still on the table as a later change. **Keeping the total** and evening the sides
+up on the night was rejected as a seating fix for a maths problem.
 
 **Zero Firebase cost.** The scores are already in the room document and every
 client is already holding them; this is arithmetic over what is there. The one
@@ -35,6 +60,16 @@ Three decisions worth keeping:
   collected into an "unaligned" row. Their points are their own. The bar hides
   itself below two squads, because one side on its own is a bar saying "Hermes:
   all of it".
+
+### One thing that can now disagree with itself
+
+The live board reads the squad off the **room entry**, frozen at join. `recordGame`
+banks `rememberedSquad()` read from storage at the **end** of the game. Change
+squad mid-round and the two differ — the board shows the side you played as, the
+season row records the side you finished as.
+
+Narrow, and each is arguably right for its own purpose, so it is written down
+rather than fixed. It could not happen before, because there was no live board.
 
 **The entry is written once, on the seat that creates it** — a rejoin never
 restamps it, the same rule `name` and `joinedAt` follow. So somebody who changes

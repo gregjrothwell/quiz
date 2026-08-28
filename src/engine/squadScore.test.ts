@@ -46,7 +46,7 @@ describe('sideFor', () => {
 });
 
 describe('squadStandings', () => {
-  test('adds up the room by side, highest first', () => {
+  test('adds up the room by side', () => {
     const players = room({
       greg: { squad: 'Hermes' },
       sam: { squad: 'Bundae' },
@@ -55,9 +55,47 @@ describe('squadStandings', () => {
     const scores = { greg: 1_000, sam: 2_500, alex: 900 };
 
     expect(squadStandings(players, scores)).toEqual([
-      { squad: 'Bundae', score: 2_500, players: 1 },
-      { squad: 'Hermes', score: 1_900, players: 2 },
+      { squad: 'Bundae', score: 2_500, players: 1, average: 2_500 },
+      { squad: 'Hermes', score: 1_900, players: 2, average: 950 },
     ]);
+  });
+
+  test('ranks on the average, so the bigger squad cannot win by turning up', () => {
+    // #given Hermes fielding three to Bundae's one, and out-scoring them on
+    // the total by nearly two to one
+    const players = room({
+      greg: { squad: 'Hermes' },
+      alex: { squad: 'Hermes' },
+      rach: { squad: 'Hermes' },
+      sam: { squad: 'Bundae' },
+    });
+    const scores = { greg: 2_000, alex: 1_800, rach: 1_600, sam: 3_000 };
+
+    const rows = squadStandings(players, scores);
+
+    // #then Bundae are ahead, because they are playing better — 3,000 each
+    // against 1,800 each. On the raw total this read Hermes 5,400 to 3,000,
+    // which is a board that rewards headcount rather than answers.
+    expect(rows.map((row) => row.squad)).toEqual(['Bundae', 'Hermes']);
+    expect(rows[0]?.average).toBe(3_000);
+    expect(rows[1]?.average).toBe(1_800);
+    expect(rows[1]?.score).toBe(5_400);
+  });
+
+  test('keeps the average unrounded, so the order is exact', () => {
+    // Two sides a third of a point apart still have an order. Rounding here
+    // would call them level and let the tiebreak on name decide it instead.
+    const players = room({
+      greg: { squad: 'Hermes' },
+      alex: { squad: 'Hermes' },
+      rach: { squad: 'Hermes' },
+      sam: { squad: 'Bundae' },
+    });
+    const scores = { greg: 1, alex: 1, rach: 0, sam: 0 };
+
+    const rows = squadStandings(players, scores);
+    expect(rows[0]?.squad).toBe('Hermes');
+    expect(rows[0]?.average).toBeCloseTo(2 / 3);
   });
 
   test('counts a player who has not scored yet', () => {
@@ -65,7 +103,9 @@ describe('squadStandings', () => {
     const players = room({ greg: { squad: 'Hermes' } });
 
     // #then the squad is still represented, on zero
-    expect(squadStandings(players, {})).toEqual([{ squad: 'Hermes', score: 0, players: 1 }]);
+    expect(squadStandings(players, {})).toEqual([
+      { squad: 'Hermes', score: 0, players: 1, average: 0 },
+    ]);
   });
 
   test('leaves out anybody who has not named a squad', () => {
@@ -76,7 +116,7 @@ describe('squadStandings', () => {
     // #then their points are theirs alone — they are not a phantom squad, and
     // they are not quietly folded into somebody else's total
     expect(squadStandings(players, scores)).toEqual([
-      { squad: 'Hermes', score: 500, players: 1 },
+      { squad: 'Hermes', score: 500, players: 1, average: 500 },
     ]);
   });
 
@@ -88,7 +128,7 @@ describe('squadStandings', () => {
     const scores = { greg: 500, stranger: 10_000 };
 
     expect(squadStandings(players, scores)).toEqual([
-      { squad: 'Hermes', score: 500, players: 1 },
+      { squad: 'Hermes', score: 500, players: 1, average: 500 },
     ]);
   });
 
@@ -98,9 +138,14 @@ describe('squadStandings', () => {
 
   test('breaks a tie on the name, so the bar does not swap about between renders', () => {
     // Two squads level is an ordinary state in a live round, and a sort that
-    // reorders equal rows makes the board twitch on every question.
-    const players = room({ greg: { squad: 'Hermes' }, sam: { squad: 'Bundae' } });
-    const scores = { greg: 1_000, sam: 1_000 };
+    // reorders equal rows makes the board twitch on every question. Level on
+    // the average, which is what is being compared — the totals differ.
+    const players = room({
+      greg: { squad: 'Hermes' },
+      alex: { squad: 'Hermes' },
+      sam: { squad: 'Bundae' },
+    });
+    const scores = { greg: 1_000, alex: 1_000, sam: 1_000 };
 
     expect(squadStandings(players, scores).map((row) => row.squad)).toEqual([
       'Bundae',

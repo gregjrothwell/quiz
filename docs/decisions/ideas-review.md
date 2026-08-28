@@ -52,8 +52,11 @@ under this one, which promotes §5 from nice-to-have to the companion change thi
 
 ### 2. Live squad scoring — **built 28 August 2026, rules paste outstanding**
 
-Hermes against Bundae as a running aggregate under the standings, so the round has a second
-story in it. Zero Firebase cost — the scores are already in the room.
+Hermes against Bundae under the standings, so the round has a second story in it. Zero Firebase
+cost — the scores are already in the room.
+
+**Ranked on points ÷ headcount, not the total.** Built on the total first and rejected on
+sight: a raw sum means the bigger squad wins by turning up, and the sides are never even.
 
 The Lurker split was the trap this flagged and it held: `sideFor` is now **one** function,
 shared with `weekSquad`, because the running total becomes the weekly bucket an hour later.

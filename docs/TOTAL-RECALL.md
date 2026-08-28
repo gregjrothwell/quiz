@@ -18,9 +18,16 @@ them is still listed below by date, so the chronology reads end to end from here
 
 ## 2026-08-28 — Squads score during the round
 
-§2, built. Hermes against Bundae as a running aggregate under the standings, so the round has a
-second story in it rather than squads doing nothing until the board afterwards. Zero Firebase
-cost — the scores are already in the room and every client holds them.
+§2, built and live. Hermes against Bundae under the standings, so the round has a second story
+in it rather than squads doing nothing until the board afterwards. Zero Firebase cost — the
+scores are already in the room and every client holds them.
+
+**It shipped summing the totals and that was wrong.** Greg, on sight: *"Bundae get to play less
+than Hermes."* A raw sum means the bigger squad wins by turning up rather than by answering, and
+the sides are never even. It now ranks on **points ÷ headcount** — the same complaint and the
+same answer as the season table ranking on average. On the gallery fixture that turns Hermes
+5,550 against Bundae 3,100 into Bundae ahead, 3,100 a player to 2,775. The screen names the
+metric, or the number reads as a total that fails to add up.
 
 **The Lurker split was the flagged trap and it held.** `sideFor` is now one function, shared
 with `weekSquad` in `season.ts`, because the running total *becomes* the weekly bucket an hour
@@ -37,7 +44,15 @@ comment about `playerId` on that same path is what flagged it.
 **nobody can join a room at all** — not "the feature is inert", which is what the vault and the
 vote failed to. `check-rules` currently FAILs on it and its hint says exactly that.
 
-511 tests. `season.md` hit 282/250, so the live board split to `decisions/live-squads.md`.
+**Audit for regressions, asked for and worth recording.** `sync-harness 6` came back 6/6 with
+old-shape entries, so clients a deploy behind still join — the backwards-compatibility case that
+`hasOnly` could have broken. The `squad` field was read back out of the live room document to
+prove the client sends it rather than assuming the rules accepting a join meant it did. One
+genuine finding: the live board reads the squad off the room entry, frozen at join, while
+`recordGame` banks storage at the end of the game — change squad mid-round and they disagree.
+Documented rather than fixed.
+
+513 tests. `season.md` hit 282/250, so the live board split to `decisions/live-squads.md`.
 → [`decisions/live-squads.md`](decisions/live-squads.md)
 
 ## 2026-08-28 — A reload keeps your seat

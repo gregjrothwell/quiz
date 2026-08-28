@@ -38,9 +38,23 @@ export function sideFor(squad: string, playingWith: string): string {
 
 export interface SquadRow {
   squad: string;
+  /** Everything the side has scored between them. */
   score: number;
   /** How many of the room are on this side, for "Hermes · 3". */
   players: number;
+  /**
+   * {@link score} ÷ {@link players}, unrounded — **and this, not the total, is
+   * what decides who is ahead.**
+   *
+   * A raw total means the bigger squad wins by turning up rather than by being
+   * better, and the sides are never even: Bundae fielding one against Hermes'
+   * three would lose every week while playing perfectly well. The same
+   * complaint, and the same answer, as the season board ranking on average
+   * rather than on points.
+   *
+   * Kept unrounded so the ordering is exact; the screen rounds it.
+   */
+  average: number;
 }
 
 /**
@@ -55,6 +69,8 @@ export interface SquadRow {
  * side for them would put a squad on the board that nobody is playing for, and
  * folding them into a real one would be worse.
  *
+ * **Ordered on the average, not the total** — see {@link SquadRow.average}.
+ *
  * Ties break on the name so the bar does not swap about between renders — two
  * squads level is an ordinary state in a live round, and a board that twitches
  * on every question is one people stop reading.
@@ -63,7 +79,7 @@ export function squadStandings(
   players: Record<string, Player>,
   scores: Record<string, number>,
 ): SquadRow[] {
-  const totals = new Map<string, SquadRow>();
+  const totals = new Map<string, { squad: string; score: number; players: number }>();
 
   for (const [uid, player] of Object.entries(players)) {
     const squad = player.squad ?? '';
@@ -75,7 +91,10 @@ export function squadStandings(
     totals.set(squad, held);
   }
 
-  return [...totals.values()].sort(
-    (a, b) => b.score - a.score || a.squad.localeCompare(b.squad, 'en-GB'),
-  );
+  return [...totals.values()]
+    // `players` is at least one for every row here, because a row only exists
+    // because somebody is on that side. No guard needed, and a guard would hide
+    // it if that ever stopped being true.
+    .map((row): SquadRow => ({ ...row, average: row.score / row.players }))
+    .sort((a, b) => b.average - a.average || a.squad.localeCompare(b.squad, 'en-GB'));
 }

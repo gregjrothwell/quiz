@@ -2364,6 +2364,17 @@ select.input option {
   margin-top: 0.9rem;
 }
 
+/* Names the number, so it cannot be read as a total that fails to add up. */
+.squads__metric {
+  margin: 0;
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
 .squads__bar {
   display: flex;
   height: 8px;

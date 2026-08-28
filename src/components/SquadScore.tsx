@@ -23,22 +23,33 @@ export function SquadScore({ players, scores }: SquadScoreProps) {
   const rows = squadStandings(players, scores);
   if (rows.length < 2) return null;
 
-  const total = rows.reduce((sum, row) => sum + row.score, 0);
+  // Of the averages, not the totals — the bar has to show the comparison being
+  // made, or it contradicts the order of the rows beneath it.
+  const total = rows.reduce((sum, row) => sum + row.average, 0);
   const lead = rows[0];
   const second = rows[1];
   // A round nobody has scored in yet splits the bar evenly rather than dividing
   // by zero — every side is level, which is exactly what it should look like.
-  const share = (score: number): string =>
-    total > 0 ? `${(score / total) * 100}%` : `${100 / rows.length}%`;
+  const share = (average: number): string =>
+    total > 0 ? `${(average / total) * 100}%` : `${100 / rows.length}%`;
+
+  const round = (value: number): string => Math.round(value).toLocaleString('en-GB');
 
   return (
-    <section className="squads" aria-label="Squad scores">
+    <section className="squads" aria-label="Squad scores, average per player">
+      {/*
+        Named rather than left to be inferred. Without this the number reads as
+        a total, does not match the standings above it, and the smaller squad
+        appearing to lead looks like a bug.
+      */}
+      <p className="squads__metric">Average per player</p>
+
       <div className="squads__bar">
         {rows.map((row, order) => (
           <div
             key={row.squad}
             className={order === 0 ? 'squads__seg squads__seg--lead' : 'squads__seg'}
-            style={{ width: share(row.score) }}
+            style={{ width: share(row.average) }}
           />
         ))}
       </div>
@@ -52,7 +63,7 @@ export function SquadScore({ players, scores }: SquadScoreProps) {
             />
             <span className="squads__name">{row.squad}</span>
             <span className="squads__count">{row.players}</span>
-            <span className="squads__score">{row.score.toLocaleString('en-GB')}</span>
+            <span className="squads__score">{round(row.average)}</span>
           </li>
         ))}
       </ul>
@@ -64,10 +75,10 @@ export function SquadScore({ players, scores }: SquadScoreProps) {
         first.
       */}
       <p className="squads__line">
-        {lead && second && lead.score === second.score
-          ? `Level on ${lead.score.toLocaleString('en-GB')}`
+        {lead && second && round(lead.average) === round(second.average)
+          ? `Level on ${round(lead.average)} each`
           : lead && second
-            ? `${lead.squad} lead by ${(lead.score - second.score).toLocaleString('en-GB')}`
+            ? `${lead.squad} lead by ${round(lead.average - second.average)} a player`
             : null}
       </p>
     </section>
