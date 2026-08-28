@@ -16,6 +16,30 @@ and including 20 August moved *verbatim* to
 old entry to make it fit is the thing the paragraph above forbids. Every one of
 them is still listed below by date, so the chronology reads end to end from here.
 
+## 2026-08-28 — Voting and auto-join are live, and proved on the deployed site
+
+Rules pasted by Greg, then PRs #9-#12 merged and deployed in order. New bundle `index-Dtk7kXAa`,
+CDN watched until it served it. **`firebase-Cns3pSRr.js` kept its hash across the deploy**,
+which is the split-chunk design in `known-limits.md` doing exactly what it claims.
+
+**`check-rules` after the paste is the evidence that matters.** The two vote *allow* cases
+flipped FAIL -> PASS, and the six *deny* cases stayed PASS — but they now mean something, where
+before the paste they passed vacuously because with no rule at all everything is denied. That
+distinction was called out in the PR rather than reported as eight green ticks.
+
+Proved end to end on the live site, in one round: the link auto-joined as OfficeTest with no
+landing screen; the answer scored `CORRECT · +1,000` at 8.9s against `scored: OfficeTest +1000`
+in the terminal; the vote was clicked 213ms after the reveal landed, the pill lit and the label
+went to "Noted"; and `fold-votes` read it back with the Admin SDK — **`1 verdicts across 1
+questions`, nothing retired**, because one vote is under the five-vote floor. The refusing
+direction, on production.
+
+Catching the 8s reveal window needed a watcher injected into the page — the tool round-trip is
+longer than the window, and two attempts were lost to it before that.
+
+Also: `MEMORY-PROTOCOL.md` and `standards/docs.mdc` now both carry the archive convention, so
+Cursor sees it too.
+
 ## 2026-08-28 — The office can vote a question out
 
 Office feedback on question quality. Players rate a question at the reveal; the verdicts fold
