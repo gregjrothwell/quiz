@@ -16,6 +16,33 @@ and including 20 August moved *verbatim* to
 old entry to make it fit is the thing the paragraph above forbids. Every one of
 them is still listed below by date, so the chronology reads end to end from here.
 
+## 2026-08-28 — The ideas list re-sorted around what shipped
+
+`ideas-review.md` said "nothing here is built" and five of its entries now are. Re-sorted rather
+than appended to, because a backlog that does not know what it has already delivered ranks the
+rest wrongly.
+
+**§6 turned out to be two ideas**, and the office's feedback is what separated them: *quality*
+and *difficulty*. An unfair question is not a hard one. The vote shipped; the `asked/correct`
+counters did not, and are still worth starting early because they are worthless until a season
+is behind them.
+
+**§4, the melody round, is unblocked** — its stated blocker was "it wants the shared clock
+first", and that shipped this morning.
+
+Three new entries, all from this session: **§10 the reload bug** (the only defect on the list),
+**§11 pick the retirement thresholds from real votes** (must happen before the first `--go`,
+since retirement is permanent), and **§12 a tally on the vote** — cheap, but noted as worth
+thinking about first, because a visible count does some of what not exposing Skip avoids.
+
+**The new order leads with three things that are not features**: a real round with the office on
+it, the thresholds, and the reload bug. Three features shipped this week and only one has met
+more than one person at a time — the app is ahead of the evidence again.
+
+Split at 283 lines against 250: the closed half — decisions taken, what was rejected, what
+Spark allows — is now `decisions/scope.md`.
+→ [`decisions/ideas-review.md`](decisions/ideas-review.md)
+
 ## 2026-08-28 — Voting and auto-join are live, and proved on the deployed site
 
 Rules pasted by Greg, then PRs #9-#12 merged and deployed in order. New bundle `index-Dtk7kXAa`,

@@ -39,6 +39,7 @@ and the hook says so if this one grows.
 | the countdown, and whose clock it runs on | [`decisions/shared-clock.md`](decisions/shared-clock.md) |
 | the shareable result card, and how it gets to the player | [`decisions/final-card.md`](decisions/final-card.md) |
 | what to build next, and what each idea costs | [`decisions/ideas-review.md`](decisions/ideas-review.md) |
+| whether an idea was already turned down | [`decisions/scope.md`](decisions/scope.md) |
 
 ## State as of 28 August 2026
 
@@ -47,9 +48,8 @@ and the hook says so if this one grows.
 - **Squads, weekly boards, the average table, the frozen podium and the sealed
   question text are live** (20 August, [PR #2](https://github.com/gregjrothwell/quiz/pull/2)).
 - **The answer vault is live**: 13,593 answers, both rulesets published.
-- **App Check enforces on Firestore, the Realtime Database and authentication**;
-  `appcheck-probe` refuses at sign-in, which is the proof:
-  [`decisions/app-check-auth.md`](decisions/app-check-auth.md).
+- **App Check enforces on Firestore, the RTDB and auth**; `appcheck-probe` refuses
+  at sign-in, which is the proof: [`decisions/app-check-auth.md`](decisions/app-check-auth.md).
 - **The reveal lands on its own, ~0.5s after the clock**, anchored on the
   server-confirmed snapshot. `reveal-probe` is the instrument: [`decisions/vault.md`](decisions/vault.md#the-gate-had-no-margin-and-the-host-was-the-one-who-paid).
 - **Scoring is a rank bonus, not a speed curve** — 500 for correct plus

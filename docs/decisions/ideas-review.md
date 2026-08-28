@@ -1,85 +1,54 @@
 # The ideas review
 
-> **Owner: Greg Rothwell. Last updated: 20 August 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 28 August 2026. Budget: 250 lines.**
 
-Written after the office's first real round on the season work. **Nothing here is built** —
-this is what to do next, why, and what each idea costs against the Spark free tier.
+Written after the office's first real round on the season work: what to do next, why, and what
+each costs against the Spark free tier.
+
+**The closed half lives in [`scope.md`](scope.md)** — the directional decisions taken, what was
+deliberately not built, and what the Spark tier allows. Read that before proposing something
+that was already turned down. This file is the open half.
+
+> **It said "nothing here is built" until 28 August 2026.** Five of these have now shipped, and
+> they are marked where they stand rather than deleted — an idea's costing is worth keeping once
+> you can check it against what the thing actually took. **Shipped: rank scoring and the PNG card
+> (20 August); the shared clock, question voting and auto-join from the link (28 August).**
 
 The finding it starts from: three weeks produced a sealed vault, App Check on three products,
 durable identity, weekly boards, awards, a synth soundtrack, 412 tests and 3,100 lines of
 docs — against **21 season players, 0 recovery codes, 0 identity claims** and five
 verifications that have never met a second human. The machinery is far ahead of the playing.
 
-## Three decisions taken, 20 August 2026
-
-| Decision | What it changes |
-|---|---|
-| **The quiz stays an event.** Not a habit | Async, hostless play is rejected. Effort goes into the live round |
-| **Ruleset pastes are no longer a big deal.** Greg: *"We can do them as needed"* | A paste per feature, when that feature needs it. **No speculative forward-bound fields**, so no risk of a bound field being erased by `set()` before its client exists |
-| **Rank-based scoring, to try** | The speed curve came from Polly and had never been questioned |
-
-**The second overturns an assumption this repo is built on.** Several places design around
-*"a hand-pasted ruleset has broken this game twice"* — [`season.md`](season.md#why-none-of-it-needed-the-console),
-[`identity.md`](identity.md#the-publish-order-kept-because-it-will-matter-again), and
-`firestore.rules:479`, where `team` was bounded a fortnight ahead of its client precisely to
-avoid one. That reasoning is **relaxed, not wrong**: a paste still goes out in the right order
-and is verified in both directions. It just no longer bends designs around itself.
-
 ## The event's actual problems
 
 Before any new feature; both are evidenced.
 
-### The shared clock — it takes answers off people
+### The shared clock — it took answers off people. **Shipped 28 August 2026**
 
-[`clock.md`](clock.md#what-would-actually-fix-it) has the design written out and marked **not
-started**. On 17 August a player's window opened about five seconds late, the reveal killed
-his lecterns while his own face still read five seconds, and **he could not answer at all**.
-It was filed as an audio nuisance for weeks before being reclassified.
-
-The route is worked out: each client records `Date.now() - openedAt` when a question opens,
-and the **minimum across a round** approximates its own pure clock skew, because delivery
-latency is never negative. Subtract it and every screen shows the room's remaining time
-rather than its own. `openedAt` is a `serverTimestamp()`, so this does not fold the
-quizmaster's clock into anybody's score — the objection that rules out a naive shared clock.
-`questionConfirmedAt` (`useRoom.ts:74`) already exists for the gate and gives half of it free.
-
-**Zero Firebase cost, and the highest value of anything in this file.** It is also the most
-safety-critical code in the app and it fails quietly, so it is its own piece of work with its
-own evidence: `sync-harness 10` reports the delivery spread the design rests on.
+On 17 August a player's window opened about five seconds late and **he could not answer at
+all**. Filed as an audio nuisance for weeks before being reclassified. This was called "the
+highest value of anything in this file" and that was right. [`shared-clock.md`](shared-clock.md).
 
 ### Nothing needing a second person has been tested
 
-The review panel, squad-vs-squad, quizmaster handover, keyboard shortcuts in a live round, a
-recovery code moving between browsers. `npm run host-room -- 10` works again as of 20 August;
-that plus one browser clears three of the five in an evening, with no code written.
+**Four of the five still stand**: the review panel, squad-vs-squad, a quizmaster handover, and a
+recovery code moving between browsers. ~~Keyboard shortcuts~~ cleared 28 August, answering with
+`a` and `c` in a live round. A fifth has been added by shipping rank scoring: **nobody has seen
+the rank bonus award an order**, because that needs two correct answers in one room and every
+round so far has had one answerer.
 
 ## The ideas
 
 Ranked by value ÷ cost, in Firestore ops per game unless stated. Reference is
 [`cost.md`](cost.md): `reads ≈ Q·N² + 3·Q·N`, against 50k reads and 20k writes a day.
 
-### 1. Rank-based scoring — chosen
+### 1. Rank-based scoring — **shipped 20 August 2026**
 
-`scoreAnswer` is 500 base plus up to 500 decaying linearly across the window
-(`src/engine/scoring.ts:21`). Against this project's own measurements, human reaction plus
-render plus network is ~300–400ms — so on a ten-second window **anybody who simply knows it
-scores 950–985**, and one second versus two is 50 points out of 1,000. The speed bonus is a
-rounding error dressed as drama, and nobody has ever scored 1,000 or ever will.
+500 for correct plus 500/400/300/200/100 by the order they landed, replacing a speed curve on
+which anybody who simply knew it scored 950–985. [`scoring.md`](scoring.md).
 
-**The shape:** 500 for a correct answer, plus 500/400/300/200/100 by the order the correct
-answers landed, floored at 100. Four things to get right, all in `scoring.ts`, all testable:
-
-- **Ties share a rank and the next resumes at the count awarded** — the convention
-  `standings()` already uses (`scoring.ts:118`), so the game has one tie rule, not two.
-- **Max per question stays 1,000**, so `maxBest()` and `best <= points` are untouched. **No
-  paste needed.**
-- **It raises the value of cheating.** A faked `elapsedMs` bought ~5 points under the old
-  curve and buys 100 under this one, which promotes §5 to a companion change.
-- **Check `awards.ts`.** `fastest` is computed independently, and "fastest finger" meaning
-  something different from "took the speed bonus" is the game contradicting itself on one
-  screen.
-
-Zero cost, pure engine, fully reversible. Story: [`scoring.md`](scoring.md).
+**What it left behind:** a faked `elapsedMs` bought ~5 points under the old curve and buys 100
+under this one, which promotes §5 from nice-to-have to the companion change this never got.
 
 ### 2. Live squad scoring
 
@@ -111,10 +80,12 @@ of `Voice`**: public-domain melodies, anthems, nursery rhymes, out-of-copyright 
 
 **Zero bytes, zero licence risk, zero bandwidth, zero Firebase** — a whole new round type
 built out of something already in the bundle. The seal is unaffected: a melody in a pack is
-not an answer, and the vault resolves it like any other question. **The real risk:**
-`clockVoices` runs a nine-second bed under every question and devices
-[phase against each other](state-of-play.md#known-limits), which a melody makes audible in a
-way a tick never was. It wants the shared clock first.
+not an answer, and the vault resolves it like any other question.
+
+**Its blocker is gone.** `clockVoices` runs a nine-second bed under every question and devices
+used to phase against each other, which a melody would make audible in a way a tick never was.
+That was "it wants the shared clock first"; the shared clock shipped on 28 August, so this is
+now unblocked and is the cheapest genuinely *new* thing on the list.
 
 ### 5. Bound `elapsedMs` server-side
 
@@ -138,34 +109,36 @@ write lands four seconds later, and is refused — worse than the cheat it preve
 must be generous, and it must be measured against `sync-harness` first, which is the only
 tool reporting the delivery spread it depends on.
 
-### 6. Empirical difficulty — let the office rate its own questions
+### 6. Let the office rate its own questions — **half shipped 28 August 2026**
 
-[`questions.md`](questions.md#the-difficulty-rating-that-is-not-there) costed two ways out of
-the difficulty problem — hand-rating, or a build-time LLM pass — and queued neither. There is
-a third that is free and better than both: **play already generates the ground truth.**
-One write per question per game to `stats/{questionId}` = `{asked, correct}` — fifteen writes
-a game — and a build-time script with the service account folds them back into
-`public/packs/*.json` as a real `difficulty`. Same shape as classification: build-time, out
-of `src/`, out of `npm test`. **Runtime read cost is zero**, since the packs are static.
+This was one idea and turned out to be two, which the office's feedback separated for us:
+**quality** and **difficulty**. An unfair question is not a hard one, and only the first is
+worth deleting.
+
+**Shipped — the vote.** Good or Rubbish at the reveal, one write per player per question, no
+reads. `fold-votes` turns the verdicts into a retirement list.
+[`question-votes.md`](question-votes.md).
+
+**Not shipped — the counters.** One write per question per game of `stats/{questionId}` =
+`{asked, correct}`, folded at build time into a real `difficulty`. Fifteen writes a game, zero
+runtime reads, same build-time shape as classification.
 
 **The leak to avoid, and it is not obvious:** bank `asked` and `correct` only. A per-option
-breakdown makes the modal answer guessable, handing back exactly what the vault protects.
-Two integers leak nothing.
+breakdown makes the modal answer guessable, handing back exactly what the vault protects. Two
+integers leak nothing. (The vote document follows the same rule and carries no option index.)
 
 After a season this gives ratings calibrated to *this office*, against OpenTDB's measured 39%
-agreement with a UK-office judgement. It is also the only thing that would revive `easy` and
-`hard`, which today ship a promise the corpus cannot keep — every imported question is marked
-`medium`, so a hard Sport round draws on fifteen. **Until this exists, those two levels are
-honestly deletable.** Same data, free: a question three quizmasters have skipped is a bad
-question, and `skipped` is already on the room, so the corpus can clean itself.
+agreement with a UK-office judgement. It is the only thing that would revive `easy` and `hard`,
+which today ship a promise the corpus cannot keep — every imported question is marked `medium`,
+so a hard Sport round draws on fifteen. **Until it exists, those two levels are honestly
+deletable.**
 
-Start the writes early — the data only accumulates if you are collecting it.
+Start the writes early — the data only accumulates if you are collecting it, and the votes have
+a two-week head start already.
 
-### 7. The final card as a PNG
+### 7. The final card as a PNG — **shipped 20 August 2026**
 
-Canvas-render the final standings as an image to paste into Teams. Zero backend, zero
-Firebase, one browser API. Right now the quiz ends and **nothing leaves the tab** — and for
-an event, the artefact is what advertises next week to whoever missed this one.
+The round leaves the tab as an image. [`final-card.md`](final-card.md).
 
 ### 8. Ask for the recovery code
 
@@ -188,6 +161,35 @@ the tail of the average board is silently wrong. A stored form figure could be o
 server-side. Twenty-one rows today, so not urgent — but it is why this is worth more than it
 looks.
 
+### 10. A reload should not throw you out of the room
+
+Found on 28 August while testing something else, and it is the only *bug* on this list. `code`
+is React state in `useRoom` and nothing persists it, so refreshing mid-round drops you to the
+landing screen and you rejoin by hand. Presence, the seat and the game log all already survive
+it — this is the one piece that does not.
+
+Cheap: the room code into `sessionStorage` beside the game log, which is where the same problem
+was already solved once. Zero Firebase cost. **The care needed is in leaving**, which must
+clear it, or Leave becomes a button that puts you straight back.
+
+### 11. Pick the retirement thresholds from real data
+
+Not a feature, a follow-up with a deadline attached. `shouldRetire` is 5 votes and 60% bad, and
+**those numbers have never met a real round.** `fold-votes` already prints what six thresholds
+would retire, so this costs one command once there are votes — but it wants doing before the
+first `--go`, because a retirement is permanent and nothing surfaces it again.
+
+### 12. A tally on the vote
+
+Show the room how it voted, rather than only your own verdict. Deliberately left out of v1 to
+keep the write path free of reads, and the way back in is cheap: one `getCountFromServer` per
+question — the aggregate trick [`vault.md`](vault.md#checking-the-vault-without-paying-for-it)
+already documents — plus a `list` grant on `questionVotes`, which is one paste.
+
+**Worth thinking about before building**, though: a visible tally turns a private opinion into a
+public one, and the reason Skip is not exposed is that one player should not be able to turn the
+room against a question. A count that appears before everyone has voted does some of that.
+
 ## Crazy, and mostly cheap
 
 - **The corridor screen.** A telly showing the board and the countdown to Thursday — for an
@@ -205,46 +207,40 @@ looks.
   is public and a leaked webhook is a spammable channel — so it is pasted into localStorage,
   as the App Check debug token is.
 
-## Rejected
+## The order, rewritten 28 August 2026
 
-- **The Daily Five.** An async, hostless five-question round on a date-seeded question set,
-  banked into a daily bucket. Buildable with **no rules change at all**: `selectQuestions`
-  takes an injectable `Rng`, `seasons/{season}` takes an unconstrained wildcard so
-  `day-2026-08-20` is a free bucket exactly as `week-2026-W34` is, and `lastGame` already
-  guards a second attempt. ~35 reads and ~35 writes per player per day; twenty people is
-  ~1.4% of the read budget. **Rejected 20 August 2026 — the quiz is an event, not a habit.**
-  Recorded because it is cheap enough to revisit if the event stops filling.
-- **Auto-advance.** Existed mainly to serve the above. The derived quizmaster already covers a
-  host wandering off, and [`form-and-awards.md`](form-and-awards.md#the-quizmaster-starts-the-round-and-nothing-else-does)
-  records losing the start to a `setTimeout` and deliberately taking it back.
-- **Chat, accounts, a native app, anything with a server.** Each trades away the constraint
-  that has made this design good.
+The first three of the old order are done. What is left re-ranks around one fact: **the app is
+now ahead of the evidence again.** Three things shipped this week and only one of them has been
+seen by more than one person at once.
 
-## Spark
+**Do first, and none of it is a feature:**
 
-**Nothing above needs Blaze.** Reads were never the binding constraint — the ceiling is the
-Realtime Database's **100 simultaneous connections, project-wide**, about sixteen concurrent
-six-player rooms. Staying an event keeps every idea here well inside it. Two things would
-change that: sustained concurrency past 100, which one office cannot reach; and a Firestore
-TTL policy, which needs billing and which `prune-rooms` already beats by reaching the
-subcollections a TTL sweep orphans ([`cost.md`](cost.md#the-two-slow-leaks)).
+1. **A real round with the office on it.** Voting, auto-join and the shared clock are all live
+   and none has met a full room. It also clears four of the five two-person gaps and the rank
+   bonus at the same time, for no code.
+2. **Thresholds from real votes** (§11) — one command, but it must happen before the first
+   `--go`, because retirement is permanent.
+3. **The reload bug** (§10) — the only defect on the list, and cheap.
 
-**Google's pricing is not stated here from memory.** If Blaze is ever considered, check the
-calculator and set a budget alert the same day. The one thing it buys that Spark cannot fake
-is a Cloud Function holding the answers server-side, ending self-reported `elapsedMs`
-outright — and §5 gets most of that for one rule `get()`, so it is not a reason to move.
+**Then, in the order the office is likely to notice:**
 
-## The order
+4. **Live squad scoring** (§2) — zero Firebase cost, one paste, and the whole point of having
+   squads. The largest gap between what the game stores and what the round shows.
+5. **`stats/{questionId}` writes** (§6) — start collecting now; it is worthless until it has a
+   season behind it, which is an argument for doing it early rather than late.
+6. **Bound `elapsedMs` server-side** (§5) — promoted by rank scoring, which took the value of a
+   faked time from ~5 points to 100. Wants `sync-harness` numbers first, and now has them.
+7. **A melody round** (§4) — unblocked by the shared clock, and the cheapest genuinely new
+   thing here.
 
-1. **An evening with `host-room` and a browser.** Three untested paths, no code.
-2. **The shared clock.** The only thing here currently taking answers off a real person.
-3. **Rank-based scoring** (§1) — chosen, free, and what the office notices first.
-4. **`stats/{questionId}` writes** (§6) — one paste, fifteen writes a game, start collecting.
-5. **Live squad scoring** (§2) and **the PNG card** (§7). Then §3, §4, §5 and §9, in
-   whatever order the office asks for.
+**Then §3, §8, §9 and §12 in whatever order the office asks for.** §8 is worth a mention every
+time this list is read: **still 0 recovery codes and 0 identity claims**, because nothing has
+ever asked anybody to save one, and one line on the final screen is the whole feature.
 
-Evidence: `check-rules` in both directions after every paste; `sync-harness 10` before and
-after anything touching timing or the answer write; `reveal-probe` after anything touching
-the gate; `take-stock` around anything that adds writes. **Not covered by any of it:** the
-pre-warmed decoy room ([`vault.md`](vault.md#what-it-does-not-stop)), or the fact that the
-questions come from a public corpus.
+Evidence: `check-rules` in both directions after every paste — and note that **its deny cases
+pass vacuously when a rule is missing entirely**, which is how a paste can look verified when it
+has not happened; `sync-harness 10` before and after anything touching timing or the answer
+write; `reveal-probe` after anything touching the gate; `take-stock` around anything that adds
+writes. **Not covered by any of it:** the pre-warmed decoy room
+([`vault.md`](vault.md#what-it-does-not-stop)), or the fact that the questions come from a
+public corpus.
