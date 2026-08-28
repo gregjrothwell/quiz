@@ -16,6 +16,34 @@ and including 20 August moved *verbatim* to
 old entry to make it fit is the thing the paragraph above forbids. Every one of
 them is still listed below by date, so the chronology reads end to end from here.
 
+## 2026-08-28 — A dependency pass, and four majors held back
+
+Six updates had drifted inside their existing `^` ranges. Lockfile only, and the proof was the
+bundle rather than the test count: **every emitted hash came back identical**, and
+`index-VtHlbLAd` is what production serves. All six were build tooling. `firebase-admin` moved,
+so `check-rules` (47 PASS) and `take-stock` ran against the live project as well.
+
+Then the five majors, each **installed and measured** rather than read off a changelog.
+`globals` 17 was free and taken. The other four are held, for four different reasons:
+
+- **TypeScript 7** — our source is *already* TS 7 clean, tests and all. `typescript-eslint`
+  refuses to load against it and is targeting TS >= 7.1. Blocked on a tool, not on us.
+- **firebase 12** — **+57 kB gzipped** on the chunk every player downloads, isolated to the
+  umbrella package by splitting `manualChunks` per package. Nothing in v12 is needed and v11
+  has no advisory, so it is 57 kB for nothing. Defer, not never.
+- **React 19** (+14 kB gz) and **motion 13** (+3.6 kB gz) — both clean through typecheck, lint,
+  513 tests and build.
+
+**The finding underneath those last two is the one worth keeping.** `npm test` sets
+`environment: 'node'` and includes `src/**/*.test.ts` — `.ts`, not `.tsx`. **No component is
+ever rendered by the suite.** A green run under React 19 is evidence about the engine, which is
+pure TypeScript and was never at risk. Both were checked instead against the built output at
+`#/preview`, which renders every screen at once: 178 headings, zero console errors, all chunks
+200. That is real and still not sufficient — a static gallery exercises no subscription, no
+answer window, no phase transition. **Both should ride a real round rather than ship alone.**
+
+→ [`decisions/dependencies.md`](decisions/dependencies.md)
+
 ## 2026-08-28 — Squads score during the round
 
 §2, built and live. Hermes against Bundae under the standings, so the round has a second story
