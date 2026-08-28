@@ -15,6 +15,24 @@ the old 2,422-line handover, when it was split. They are a true index of what
 happened and when; they are not a contemporaneous log, and anything needing the
 detail should follow the pointer rather than trust the summary here.
 
+## 2026-08-28 — The shared clock is live, and has been played
+
+Merged [PR #8](https://github.com/gregjrothwell/quiz/pull/8) and deployed. Eight commits: the
+shared clock, the rank-scoring rename, the host-room answers fix. The CDN was watched until it
+served `index-AUAGmZGO.js` rather than assumed.
+
+**First round anybody has played on the shared clock.** Room PMVP, 20s window, answered from
+the keyboard at 10s showing: browser `CORRECT · +1,000` stamped 10.6s, terminal
+`scored: ClockTest +1000` at 10.79s after open. The two agreeing is the evidence; the 0.19s
+gap is write latency. Clears **keyboard shortcuts in a live round**. Ranking still unproven —
+one answerer cannot show an order.
+
+Re-run before merging: 448 tests, `check-rules` both directions, `sync-harness 10` (host +4ms,
+other nine +50–53ms), `reveal-probe` accepted at 10005ms.
+
+**Found, not fixed:** a page reload drops you out of the room — `code` is React state in
+`useRoom` and nothing persists it. Pre-existing. Now in the handover's Outstanding list.
+
 ## 2026-08-20 — host-room reads the answers, and scores them
 
 Fixed the thing found an hour earlier. `host-room` built its state with `answers: {}`

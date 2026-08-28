@@ -56,13 +56,16 @@ it, and the session-start hook will say so if it grows.
 - **Scoring is a rank bonus, not a speed curve** — 500 for correct plus
   500/400/300/200/100 by the order the correct answers landed. No rules change.
   **Live since 20 August** ([PR #6](https://github.com/gregjrothwell/quiz/pull/6)).
-  **Nobody has played a round on it** — ranks need two answerers, so no solo
-  round can show one: [`decisions/scoring.md`](decisions/scoring.md).
+  Scored in a live room, but **ranking itself is still unproven** — ranks need
+  two answerers: [`decisions/scoring.md`](decisions/scoring.md).
 - **The final screen makes a shareable PNG of the round**, chair and all. **Live
   since 20 August** ([PR #7](https://github.com/gregjrothwell/quiz/pull/7)):
   [`decisions/final-card.md`](decisions/final-card.md).
 - **Every device counts the same window from the same origin**, corrected for
-  its own clock offset. Built, **not deployed**:
+  its own clock offset. **Live since 28 August**
+  ([PR #8](https://github.com/gregjrothwell/quiz/pull/8)), and **played** the
+  same day — `CORRECT · +1,000` at 10.6s in the browser against
+  `scored: ClockTest +1000` in the terminal, the two agreeing being the point:
   [`decisions/shared-clock.md`](decisions/shared-clock.md).
 - **`npm run host-room` scores a real answer now** — it never read the answers
   subcollection, so every reveal it folded scored nobody. Fixed, proved both
@@ -80,9 +83,8 @@ it, and the session-start hook will say so if it grows.
 
 > **Correction.** This table also listed `rules-check` at 3 and called it the
 > preflight "leaving three rows on every run". **It was not** — counted, ran
-> `check-rules` three more times, still 3. Those predated the cleanup and no client
-> could remove them. Swept with `prune-rooms -- --probe-rows --go`; the bucket is
-> gone and a fresh preflight leaves nothing behind.
+> `check-rules` three more times, still 3. Those predated the cleanup and no
+> client could remove them. Swept with `prune-rooms -- --probe-rows --go`.
 
 > **Correction, 20 August 2026.** This file previously said both "leaving 3
 > rooms" (15 August, after the prune) and "79 rooms are still there" in the
@@ -94,20 +96,17 @@ it, and the session-start hook will say so if it grows.
 
 ## Outstanding
 
-1. **A real round on the new season work.** Played 20 August: two reports — the
-   reveal delay and the squad dropdowns — both fixed, nothing else raised.
-2. **Two paths need a browser plus `host-room`:** a quizmaster dropping out
-   mid-round, and the keyboard shortcuts in a live game.
-3. **No Content-Security-Policy.** Deliberate: a `<meta http-equiv>` CSP breaks
+1. **A quizmaster dropping out mid-round** still needs a browser plus
+   `host-room`. Keyboard shortcuts cleared 28 August.
+2. **No Content-Security-Policy.** Deliberate: a `<meta http-equiv>` CSP breaks
    the live app silently and the stale CDN makes that painful to diagnose.
-4. ~~**App Check on authentication.**~~ **Done, 20 August**
-   ([`decisions/app-check-auth.md`](decisions/app-check-auth.md)). The
-   **anonymous-account purge is reviewed and the answer is don't** — it buys
-   nothing on Spark and would orphan all 21 season rows:
-   [`decisions/identity.md`](decisions/identity.md).
-5. **Nothing needing a second person has been tested** — the review panel, a real
-   quizmaster handover, two squads on one board, and now **a rank bonus with
-   more than one right answer in it**.
+3. **Nothing needing a second person has been tested** — the review panel, a real
+   quizmaster handover, two squads on one board, and **a rank bonus with more
+   than one right answer in it**. The **anonymous-account purge is reviewed and
+   the answer is don't**: [`decisions/identity.md`](decisions/identity.md).
+4. **A reload drops you out of the room**, back to the landing screen — `code` is
+   React state in `useRoom` and nothing persists it. Found 28 August, pre-existing,
+   undecided.
 
 ## Where things are
 
