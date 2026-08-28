@@ -22,6 +22,7 @@ import {
 import { firebaseAuth, firestore, realtimeDb } from '../firebase';
 import { reduce, type Action } from '../engine/reducer';
 import { liveAnswers, type AnswerDoc } from '../engine/answers';
+import { forgetRoom, rememberRoom, rememberedRoom } from './rememberedRoom';
 import {
   estimateSkew,
   questionOriginMs,
@@ -42,7 +43,7 @@ import {
 } from '../engine/state';
 import { randomRoomCode } from '../engine/roomCode';
 import { playerIdFor } from './identity';
-import { rememberName } from './rememberedName';
+import { rememberName, rememberedName } from './rememberedName';
 
 /**
  * Fields the engine owns but that are not persisted on the room document.
@@ -86,6 +87,16 @@ export type ConnectionState = 'connecting' | 'ready' | 'error';
 export interface UseRoom {
   uid: string | null;
   room: RoomState | null;
+  /**
+   * The room this tab is in, which is set a beat before {@link room} is — it is
+   * restored from storage on the first render, where `room` waits for a
+   * snapshot.
+   *
+   * Exposed for exactly one caller: the auto-join in `App` must not fire a stale
+   * join link at a tab that is already restoring a different room, and `room`
+   * alone leaves a window in which it would.
+   */
+  code: string | null;
   connection: ConnectionState;
   error: string | null;
   isQuizmaster: boolean;
@@ -271,13 +282,31 @@ export function useRoom(): UseRoom {
    */
   const [clockDeltas, setClockDeltas] = useState<ClockDeltas>({});
   const [answers, setAnswers] = useState<Record<string, Answer>>({});
-  const [code, setCode] = useState<string | null>(null);
+  /*
+    Restored on the first render rather than in an effect, and that ordering is
+    load-bearing: the auto-join in `App` refuses while this tab is already in a
+    room, and an effect would leave a window where the room was null and a stale
+    join link could fire for a different room entirely.
+
+    Session storage, so this is *this tab tonight* and not this browser — see
+    `rememberedRoom`.
+  */
+  const [code, setCode] = useState<string | null>(() => rememberedRoom() || null);
   const [connection, setConnection] = useState<ConnectionState>('connecting');
   const [error, setError] = useState<string | null>(null);
 
   const [presenceWorking, setPresenceWorking] = useState(true);
 
-  const nameRef = useRef<string>('');
+  /*
+    Seeded from storage, not left empty.
+
+    A reload restores the room but not this ref, and the rejoin effect below
+    writes `nameRef.current` back into the players map when the reaper has
+    removed somebody who is still playing. Empty, that puts a nameless plate on
+    everybody's board — a bug the reload fix would have introduced rather than
+    found.
+  */
+  const nameRef = useRef<string>(rememberedName());
   const absentSinceRef = useRef<Record<string, number>>({});
   const playersRef = useRef<Record<string, Player>>({});
   const phaseRef = useRef<Phase>('lobby');
@@ -344,7 +373,23 @@ export function useRoom(): UseRoom {
       // Metadata changes are local events, so this costs no extra reads.
       { includeMetadataChanges: true },
       (snapshot) => {
-        const data = snapshot.exists() ? (snapshot.data() as PersistedRoom) : null;
+        /*
+          A room that is not there any more is one to stop claiming to be in.
+
+          It matters now that the code is restored from storage: without this a
+          tab that had been in a room since pruned would hold a dead code for
+          ever, which is only untidy on its own — but `code` is what tells the
+          auto-join this tab is busy, so a dead one would quietly stop a
+          perfectly good join link from working.
+        */
+        if (!snapshot.exists()) {
+          forgetRoom();
+          setCode(null);
+          setPersisted(null);
+          return;
+        }
+
+        const data = snapshot.data() as PersistedRoom;
         setPersisted(data);
 
         // Recorded per question, and only from a snapshot the server has
@@ -639,6 +684,7 @@ export function useRoom(): UseRoom {
           expiresAt: Timestamp.fromMillis(Date.now() + ROOM_RETENTION_MS),
         });
         setCode(candidate);
+        rememberRoom(candidate);
         return candidate;
       }
 
@@ -653,6 +699,7 @@ export function useRoom(): UseRoom {
       adoptName(name);
       await writeSelfIntoRoom(targetCode, uid, name);
       setCode(targetCode);
+      rememberRoom(targetCode);
     },
     [uid, adoptName, writeSelfIntoRoom],
   );
@@ -663,6 +710,11 @@ export function useRoom(): UseRoom {
     const leavingUid = uid;
 
     // Drop out locally first, so leaving always works.
+    //
+    // `forgetRoom` before anything else, and it is the whole risk in restoring a
+    // room at all: leave it stored and Leave becomes a button that drops you out
+    // and puts you straight back on the next reload.
+    forgetRoom();
     setCode(null);
     setPersisted(null);
     setAnswers({});
@@ -748,6 +800,7 @@ export function useRoom(): UseRoom {
   return {
     uid,
     room,
+    code,
     connection,
     error,
     isQuizmaster,

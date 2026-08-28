@@ -106,9 +106,8 @@ expired probe rooms:
    one right answer in it**. Keyboard shortcuts cleared 28 August. The
    **anonymous-account purge is reviewed and the answer is don't**:
    [`decisions/identity.md`](decisions/identity.md).
-4. **A reload drops you out of the room**, back to the landing screen — `code` is
-   React state in `useRoom` and nothing persists it. Found 28 August, pre-existing,
-   undecided.
+4. ~~**A reload drops you out of the room.**~~ **Fixed 28 August**, built not
+   deployed: [`decisions/joining.md`](decisions/joining.md).
 
 ## Where things are
 

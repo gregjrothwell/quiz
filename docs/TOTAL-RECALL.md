@@ -16,6 +16,28 @@ and including 20 August moved *verbatim* to
 old entry to make it fit is the thing the paragraph above forbids. Every one of
 them is still listed below by date, so the chronology reads end to end from here.
 
+## 2026-08-28 — A reload keeps your seat
+
+§10, written down this afternoon and shipped the same day. `code` was React state in `useRoom`
+and nothing persisted it, so refreshing mid-round dropped you to the landing screen.
+`rememberedRoom` is session storage — this tab tonight, not this browser — and leaving clears
+it, which is the whole risk and has its own test.
+
+Proved both ways in the browser: reloaded at a bare `/quiz/` with **no join link in the URL at
+all** and came back into room NPRF with both players listed; then left, reloaded again, and
+stayed on the landing screen.
+
+**Two things the fix nearly broke, both caught rather than shipped.** `nameRef` starts empty
+after a reload, and the rejoin path writes it into the players map when the reaper has removed
+somebody still playing — a nameless plate on everybody's board. Now seeded from storage. And
+the auto-join effect declared `const code = linkedCode`, which **silently shadowed** the room
+code from `useRoom`, so `inRoom` read the link's code, was never null, and auto-join could not
+fire at all. Types and lint both passed — two strings with the same name. Only following the
+link in a browser found it.
+
+497 tests.
+→ [`decisions/joining.md`](decisions/joining.md)
+
 ## 2026-08-28 — The ideas list re-sorted around what shipped
 
 `ideas-review.md` said "nothing here is built" and five of its entries now are. Re-sorted rather

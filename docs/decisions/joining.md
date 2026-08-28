@@ -77,6 +77,51 @@ because the next paste is whatever was on the clipboard already.
 **Nothing here needs rules or a re-seed** — it is client-side routing over a
 room code that already existed.
 
+### A reload no longer throws you out — 28 August 2026
+
+`code` was React state in `useRoom` and nothing persisted it, so refreshing
+mid-round dropped you to the landing screen to rejoin by hand. Found while
+testing something else; it was the only outright defect on the ideas list.
+
+Everything else a reload needs already survived one — the auth uid is durable,
+the name is in local storage, and the game log is mirrored into session storage
+precisely so a mid-round reload does not read as never having been here. This was
+the one piece that was not. `rememberedRoom` is **session** storage for the same
+reason `playingWith` is: it describes this tab tonight, not this browser, and a
+room code in local storage would try to put somebody back into last week's room.
+
+Three things that are load-bearing rather than tidy:
+
+- **`forgetRoom()` on leave, first.** Without it Leave becomes a button that
+  drops you out and puts you straight back on the next reload. It is the whole
+  risk in the feature and it has a test of its own.
+- **The room code is restored during the first render, not in an effect.** The
+  auto-join refuses while this tab is already in a room, and an effect would
+  leave a window where `room` was still null and a stale join link — the hash is
+  never rewritten — could fire at a different room entirely.
+- **A room that no longer exists clears itself.** `code` is what tells auto-join
+  this tab is busy, so a dead code held for ever would quietly stop a perfectly
+  good link from working.
+
+`nameRef` is now seeded from storage too, which the reload fix would otherwise
+have broken rather than found: the rejoin path writes `nameRef.current` back into
+the players map when the reaper has removed somebody still playing, and after a
+reload that ref was empty — a nameless plate on everybody's board.
+
+**Two consequences, neither a regression, both worth knowing.** A reload still
+loses `joinedAtRef`, so a quizmaster who reloads *and* is reaped loses their
+chair — same as today, where they would have had to rejoin by hand anyway. And
+reloading mid-question still reads as walking in on it, so that question scores
+its points without a rank bonus; the fix makes that easier to reach, not more
+severe.
+
+> **The bug this shipped with, caught in the browser.** The auto-join effect
+> declared `const code = linkedCode`, which silently shadowed the room code
+> destructured from `useRoom` — so `inRoom` read the *link's* code, was never
+> null, and auto-join could not fire at all. Types and lint both passed: two
+> strings with the same name. Renamed to `target`. The only thing that found it
+> was following the link in a browser and noticing nothing happened.
+
 ---
 
 ## Joining a round that has already started
