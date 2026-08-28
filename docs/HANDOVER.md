@@ -10,9 +10,9 @@ Built to replace Polly in Teams.
 - **Firebase project:** `quiz-d686e` (Firestore + Realtime Database in europe-west1 + Anonymous auth)
 
 **This file is the way in, not the record.** It was 2,422 lines until 20 August
-2026 — more to read than the codebase it describes. The depth moved into
-`decisions/`, the dated spine is `TOTAL-RECALL.md`, and the session-start hook
-says so if this one grows again.
+2026 — more to read than the codebase it describes. Depth is in `decisions/`, the
+dated spine is `TOTAL-RECALL.md` (older half archived in [`recall/`](recall/)),
+and the hook says so if this one grows.
 
 ## Read this before changing
 
@@ -34,6 +34,7 @@ says so if this one grows again.
 | anything that adds reads or writes | [`decisions/cost.md`](decisions/cost.md) |
 | — before assuming a thing is a style choice | [`decisions/gotchas.md`](decisions/gotchas.md) |
 | — before trusting a claim in here | [`decisions/state-of-play.md`](decisions/state-of-play.md) |
+| — before assuming a behaviour is a bug | [`decisions/known-limits.md`](decisions/known-limits.md) |
 | what a question is worth, and why it is not a speed curve | [`decisions/scoring.md`](decisions/scoring.md) |
 | the countdown, and whose clock it runs on | [`decisions/shared-clock.md`](decisions/shared-clock.md) |
 | the shareable result card, and how it gets to the player | [`decisions/final-card.md`](decisions/final-card.md) |
@@ -138,9 +139,8 @@ Fastest way to be useful: `npm run check-rules`, then `npm run sync-harness 10`.
 Between them they confirm the rules are published and that ten clients stay in
 sync — the two things that have actually broken in play.
 
-A solo round in the browser is what is left, and it does more than it sounds: it
-is what proved `recordGame` against the live project on 19 August, including the
-repeat-write guard across a reload.
+A solo round in the browser does more than it sounds: it proved `recordGame`
+against the live project on 19 August, repeat-write guard and all.
 
 Two things that have bitten more than once, both with their own file: **the rules
 are published by hand**, so the repo copy is not what Firebase is running
