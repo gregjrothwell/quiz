@@ -18,7 +18,10 @@
 
   /* House lighting */
   --cyan: #29d6ff;
-  --cyan-dim: #0e7ea3;
+  /* 4.95:1 on --panel-hi. Was #0e7ea3 at 3.27:1, under AA for the three
+     of its eleven uses that are text; the rest are borders, where AA does
+     not apply. Raised whole rather than split into text and border values. */
+  --cyan-dim: #159fcc;
   --amber: #ffb226;
   --amber-bright: #ffd479;
 
@@ -29,7 +32,10 @@
   /* Ink */
   --ink: #eef6ff;
   --ink-soft: #9fb8cf;
-  --ink-dim: #5d7794;
+  /* 4.99:1 on --panel-hi. Was #5d7794 at 3.27:1. The documented minimum
+     for AA here is #708fb2 at 4.52; this one keeps headroom so a later
+     surface tweak cannot quietly drop it back under. */
+  --ink-dim: #7a96bc;
 
   --shout: 'Anton', Impact, sans-serif;
   --tech: 'Chakra Petch', 'Rajdhani', ui-monospace, monospace;
