@@ -274,9 +274,11 @@ export function QuestionScreen({
       return 'gone';
     }
     if (!myAnswer) return 'idle';
-    // Only the pick itself is marked. The others stay `idle` rather than `dim`
-    // because they are still live — you can change your mind until the clock
-    // stops, and dimming a tile you can still press reads as "unavailable".
+    // Only the pick itself is marked. The others stay `idle` because they are
+    // still live — you can change your mind until the clock stops, and dimming
+    // a tile you can still press reads as "unavailable". There was a `dim`
+    // state for exactly that and this is the reason nothing ever set it, so it
+    // has been removed rather than left as an option someone might reach for.
     return myAnswer.optionIndex === index ? 'picked' : 'idle';
   };
 
@@ -310,7 +312,7 @@ export function QuestionScreen({
     <>
       <header className="qhead">
         <div className="qhead__meta">
-          <p className="display" style={{ fontSize: 'clamp(1.3rem, 5vw, 1.9rem)' }}>
+          <p className="display display--inline">
             Question {room.index + 1}
             <span className="muted"> / {room.questions.length}</span>
           </p>
@@ -328,7 +330,7 @@ export function QuestionScreen({
           which reads as the round jumping rather than as arriving late.
         */}
         {revealed ? null : joinedMidQuestion ? (
-          <p className="muted" style={{ margin: 0, fontSize: '0.85rem' }}>
+          <p className="muted hint">
             You joined mid-question, so this one is scored as if you answered on the buzzer.
           </p>
         ) : (
@@ -458,56 +460,62 @@ export function QuestionScreen({
             )}
           </p>
 
-          <div className="btn-row">
-            {isQuizmaster ? (
-              <>
-                {/*
-                  Nobody in the room needs telling who is driving, but the person
-                  driving does — it is the difference between waiting for the
-                  quizmaster and being the quizmaster.
-                */}
-                <span className="onair" aria-hidden="true">
-                  <span className="onair__lamp" />
-                  On air
-                </span>
+          {isQuizmaster ? (
+            <div className="btn-row">
+              {/*
+                Nobody in the room needs telling who is driving, but the person
+                driving does — it is the difference between waiting for the
+                quizmaster and being the quizmaster.
+              */}
+              <span className="onair" aria-hidden="true">
+                <span className="onair__lamp" />
+                On air
+              </span>
 
-                {/*
-                  Skip is deliberately not exposed. The rules cannot restrict
-                  writes to the quizmaster without storing their uid, so a button
-                  here is a button anyone in DevTools can press — and one player
-                  who dislikes a question should not be able to void it for the
-                  room. The engine action stays (and stays tested) in case it is
-                  wanted behind a proper permission model later.
-                */}
-                {revealed ? (
-                  <button type="button" className="btn btn--primary" onClick={onNext}>
-                    Standings
-                  </button>
-                ) : (
-                  /*
-                    Revealing early is no longer possible, and that is the price
-                    of the vault: the rules refuse to confirm an answer until the
-                    server agrees the room's answer window is up, and no
-                    device — this one included — holds it before then. The button
-                    stays visible as a retry for a reveal that errored, since the
-                    clock running out fires one automatically.
-                  */
-                  <button
-                    type="button"
-                    className="btn btn--primary"
-                    disabled={!clock.expired || revealing}
-                    onClick={onReveal}
-                  >
-                    {!clock.expired
-                      ? `Reveal in ${clock.secondsLeft}s`
-                      : revealing
-                        ? 'Revealing…'
-                        : 'Reveal'}
-                  </button>
-                )}
-              </>
-            ) : null}
-          </div>
+              {/*
+                Skip is deliberately not exposed. The rules cannot restrict
+                writes to the quizmaster without storing their uid, so a button
+                here is a button anyone in DevTools can press — and one player
+                who dislikes a question should not be able to void it for the
+                room. The engine action stays (and stays tested) in case it is
+                wanted behind a proper permission model later.
+              */}
+              {revealed ? (
+                <button type="button" className="btn btn--primary" onClick={onNext}>
+                  Standings
+                </button>
+              ) : (
+                /*
+                  Revealing early is no longer possible, and that is the price
+                  of the vault: the rules refuse to confirm an answer until the
+                  server agrees the room's answer window is up, and no
+                  device — this one included — holds it before then. The button
+                  stays visible as a retry for a reveal that errored, since the
+                  clock running out fires one automatically.
+                */
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  disabled={!clock.expired || revealing}
+                  onClick={onReveal}
+                >
+                  {!clock.expired
+                    ? `Reveal in ${clock.secondsLeft}s`
+                    : revealing
+                      ? 'Revealing…'
+                      : 'Reveal'}
+                </button>
+              )}
+            </div>
+          ) : revealed ? (
+            /*
+              The quizmaster's desk carries a Standings button here; without
+              this the slot is simply empty, so the one screen where the whole
+              room is waiting on one person is the only one that does not say
+              so. The lobby, the scoreboard and the final screen all do.
+            */
+            <p className="muted">Waiting for the quizmaster to show the standings…</p>
+          ) : null}
         </div>
       </div>
     </>

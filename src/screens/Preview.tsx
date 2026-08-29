@@ -400,6 +400,37 @@ export function Preview() {
     },
     {
       /*
+        The same moment as the reveal above, from the other side of the room.
+        The gallery had every other quizmaster/player pair and not this one,
+        which is how the desk came to be empty here for everybody but the
+        quizmaster without anyone noticing.
+      */
+      title: 'Reveal · what a player sees',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'reveal',
+            answers: {
+              sam: { optionIndex: 2, elapsedMs: 2_300 },
+              greg: { optionIndex: 2, elapsedMs: 4_100 },
+              alex: { optionIndex: 3, elapsedMs: 5_200 },
+              priya: { optionIndex: 0, elapsedMs: 8_900 },
+            },
+            lastDeltas: { sam: 0, greg: 0, alex: 0, priya: 1_000 },
+          })}
+          youUid="alex"
+          isQuizmaster={false}
+          clock={CLOCK}
+          revealed
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      /*
         The answer that was written inside the window and was not in the room
         when the question was scored. Greg picked the right lectern and has no
         delta, which used to render as "Correct · +0".

@@ -18,7 +18,10 @@
 
   /* House lighting */
   --cyan: #29d6ff;
-  --cyan-dim: #0e7ea3;
+  /* 4.95:1 on --panel-hi. Was #0e7ea3 at 3.27:1, under AA for the three
+     of its eleven uses that are text; the rest are borders, where AA does
+     not apply. Raised whole rather than split into text and border values. */
+  --cyan-dim: #159fcc;
   --amber: #ffb226;
   --amber-bright: #ffd479;
 
@@ -29,14 +32,27 @@
   /* Ink */
   --ink: #eef6ff;
   --ink-soft: #9fb8cf;
-  --ink-dim: #5d7794;
+  /* 4.99:1 on --panel-hi. Was #5d7794 at 3.27:1. The documented minimum
+     for AA here is #708fb2 at 4.52; this one keeps headroom so a later
+     surface tweak cannot quietly drop it back under. */
+  --ink-dim: #7a96bc;
 
   --shout: 'Anton', Impact, sans-serif;
   --tech: 'Chakra Petch', 'Rajdhani', ui-monospace, monospace;
   --body: 'Archivo', 'Helvetica Neue', sans-serif;
 
   --gutter: clamp(1rem, 4vw, 3rem);
+  /*
+     Panels, buttons and inputs. The other two named steps are below; the
+     asymmetric pairs (`8px 8px 3px 3px` and friends) stay written out, because
+     a lectern rounded at the top and square at the base is the studio idea
+     working rather than a value wanting a name.
+  */
   --radius: 6px;
+  /* Small surfaces: chips, awards, standings rows, rungs, the legend. */
+  --radius-sm: 3px;
+  /* Anything with fully round ends. */
+  --radius-pill: 999px;
   --shadow-lift: 0 22px 44px -22px rgb(0 0 0 / 0.95);
 }
 
@@ -164,6 +180,12 @@ textarea {
   overflow: hidden;
   mix-blend-mode: screen;
   opacity: 0.7;
+  /*
+   * The rig is operated rather than just lit — see `[data-mood]` below. Only
+   * the opacity ever moves, and slowly, because a lighting change should read
+   * as a hand on a fader and not as a switch.
+   */
+  transition: opacity 900ms ease;
 }
 
 .beams i {
@@ -196,6 +218,76 @@ textarea {
   left: 80%;
   transform: rotate(-10deg);
   background: linear-gradient(180deg, rgb(255 178 38 / 0.26), transparent 72%);
+}
+
+/* ── The rig, operated ──────────────────────────────────────────────────────
+   Five phases used to share one lighting state. These two carry information
+   rather than decoration, which is the bar a lighting cue has to clear here.
+
+   **Only `opacity` moves.** The beams are the most expensive thing on the
+   screen — four layers at 16%x95%, `blur(18px)`, blended `screen` — so
+   animating their colour, filter or shadow would repaint all four every frame,
+   on a phone, while a clock is running. Eight of the ten animations in this
+   file are already `transform`/`opacity` only; the two that repaint are a
+   0.5rem dot and four characters. That is the rule, and this obeys it.
+
+   `prefers-reduced-motion` needs nothing here: the blanket rule at the foot of
+   this file collapses both durations, so the set still changes state — it just
+   arrives rather than fades. That is the correct behaviour, not a casualty.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+/*
+  The house dims while the clock runs, and the question tile carries the light.
+
+  This is the one cue that is not theatre: the beams sweep the full height of
+  the stage behind the lecterns, and taking them down removes competing light
+  at the exact moment somebody is reading a question and choosing an answer.
+  It comes back at the reveal, which is when there is something to look at.
+*/
+.stage[data-mood='question'] .beams {
+  opacity: 0.3;
+}
+
+/*
+  And the rig blazes when the round lands.
+
+  Amber because that is the house colour for a result — the winner's plate, the
+  leader's row and the truss bar are already amber; cyan is the working light.
+  A wash rather than a recolour: the gradient below is painted once and only its
+  opacity animates, so the four blurred beams underneath are never repainted.
+
+  No fill mode, deliberately. `both` would hold the final keyframe above every
+  normal declaration — the trap that stopped `.tile--dim` dimming for weeks —
+  and none is needed, because the resting state of this layer is the state the
+  animation ends on.
+*/
+.stage[data-mood='finished'] .beams {
+  opacity: 1;
+}
+
+.stage[data-mood='finished'] .beams::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /*
+    0.6 because 0.34 was invisible on screen — looked reasonable in the file and
+    did nothing in the room, which is the argument for putting a number in front
+    of your eyes before committing to it. Safe to be this strong: `.beams` is
+    `z-index: -1`, behind the content column, so the wash cannot reach the
+    contrast of anything anybody has to read.
+  */
+  background: radial-gradient(100% 62% at 50% 0%, rgb(255 178 38 / 0.6), transparent 72%);
+  animation: blaze 1600ms ease-out;
+}
+
+@keyframes blaze {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .stage__inner {
@@ -328,6 +420,25 @@ textarea {
   transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
 }
 
+/*
+  Drawn at 36px, which is the right size for a piece of quiet furniture in the
+  corner and 8px short of what Apple and Google ask for under a thumb. Same
+  trick as `.lamp--vote::after`: grow the hit area without touching the drawing,
+  because making the button itself 44px would stop it being quiet furniture.
+
+  Nothing to overlap here — it is absolutely positioned in the corner on its
+  own, so unlike the vote strip this needs no matching gap on a container.
+*/
+.sound::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}
+
 .sound:hover {
   color: var(--cyan);
   border-color: var(--edge);
@@ -374,6 +485,37 @@ textarea {
   line-height: 0.92;
   text-transform: uppercase;
   margin: 0;
+}
+
+/*
+  `.display` carries no size of its own, so every heading used to write its own
+  clamp() at the call site — four of them as inline style objects in TSX, where
+  the stylesheet could not see them. These are those sizes, named and moved,
+  values unchanged.
+
+  Five steps is more than a scale wants. `--screen` and `--section` are within
+  0.2rem of each other at both ends and are the obvious merge; that is a design
+  call about which headings should match, not a rename, so it is deliberately
+  not made here.
+*/
+.display--hero {
+  font-size: clamp(2.4rem, 11vw, 5rem);
+}
+
+.display--screen {
+  font-size: clamp(2rem, 7vw, 3.4rem);
+}
+
+.display--section {
+  font-size: clamp(1.8rem, 7vw, 3rem);
+}
+
+.display--panel {
+  font-size: 1.6rem;
+}
+
+.display--inline {
+  font-size: clamp(1.3rem, 5vw, 1.9rem);
 }
 
 /*
@@ -446,6 +588,25 @@ textarea {
 
 .muted {
   color: var(--ink-dim);
+}
+
+/*
+  The small print under a control. Was an inline `{ fontSize: '0.85rem',
+  margin: 0 }` repeated eleven times across eight files — a component that had
+  never been named, which is also why a change to its size meant eleven edits.
+
+  Zero margin is the common case: these sit inside a gapped `.stack`, where a
+  paragraph's own margin doubles the spacing. `--apart` keeps the browser
+  default for the three that trail a block rather than belonging to one, so
+  naming this changes no spacing anywhere.
+*/
+.hint {
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.hint--apart {
+  margin-block: 1em;
 }
 
 /* ── Controls ───────────────────────────────────────────────────────────── */
@@ -695,13 +856,40 @@ select.input option {
   box-shadow: 0 16px 30px -18px #000, inset 0 1px 0 rgb(255 255 255 / 0.07);
 }
 
-.plate::after {
+/*
+  The lit edge — a strip of house cyan along the base of a surface, and the
+  clearest signature in the set. It was written out five times: `.plate`,
+  `.pack`, `.pick`, `.tile` and `.riser`, at three heights, four insets and
+  three radii. Those differences were not disagreements; they were five
+  separate authorings of one idea, and the cost was that a sixth surface would
+  have been authored from scratch too.
+
+  Declared once here. A component sets only what it differs on, through the
+  four custom properties below — every value is the one that component already
+  had, so this moves nothing on screen. The defaults are `.pack` and `.pick`,
+  which were byte-identical to each other.
+
+  This has to stay above every `--modifier::after` that overrides it: those
+  match at the same specificity and are settled by source order.
+*/
+.plate::after,
+.pack::after,
+.pick::after,
+.tile::after,
+.riser::after {
   content: '';
   position: absolute;
-  inset: auto 0 0 0;
-  height: 3px;
-  border-radius: 0 0 3px 3px;
-  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  inset: auto var(--lit-edge-x, 0.7rem) var(--lit-edge-y, 0.3rem);
+  height: var(--lit-edge-height, 3px);
+  border-radius: var(--lit-edge-radius, 3px);
+  background: var(--lit-edge-fill, rgb(41 214 255 / 0.25));
+}
+
+.plate::after {
+  --lit-edge-x: 0;
+  --lit-edge-y: 0;
+  --lit-edge-radius: 0 0 3px 3px;
+  --lit-edge-fill: linear-gradient(90deg, transparent, var(--cyan), transparent);
   box-shadow: 0 0 16px 2px rgb(41 214 255 / 0.7);
 }
 
@@ -752,15 +940,6 @@ select.input option {
   border-radius: 8px 8px 3px 3px;
   padding: 0.9rem 1rem 1rem;
   transition: border-color 140ms ease, transform 140ms ease;
-}
-
-.pack::after {
-  content: '';
-  position: absolute;
-  inset: auto 0.7rem 0.3rem 0.7rem;
-  height: 3px;
-  border-radius: 3px;
-  background: rgb(41 214 255 / 0.25);
 }
 
 .pack:hover {
@@ -820,15 +999,6 @@ select.input option {
   border: 1px solid var(--edge);
   background: linear-gradient(180deg, var(--panel-hi), var(--panel));
   transition: border-color 140ms ease, transform 140ms ease;
-}
-
-.pick::after {
-  content: '';
-  position: absolute;
-  inset: auto 0.7rem 0.3rem 0.7rem;
-  height: 3px;
-  border-radius: 3px;
-  background: rgb(41 214 255 / 0.25);
 }
 
 .pick:hover:not(:disabled) {
@@ -926,7 +1096,7 @@ select.input option {
   color: #a9e8ff;
   background: rgb(41 214 255 / 0.12);
   border: 1px solid rgb(41 214 255 / 0.4);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   padding: 0.28rem 0.7rem;
 }
 
@@ -978,19 +1148,18 @@ select.input option {
     opacity 200ms ease;
 }
 
-.tile:hover:not(:disabled):not(.tile--dim) {
+.tile:hover:not(:disabled) {
   border-color: var(--cyan-dim);
   transform: translateY(-2px);
 }
 
 /* The lit front edge of the lectern. */
 .tile::after {
-  content: '';
-  position: absolute;
-  inset: auto 0.8rem 0.35rem 0.8rem;
-  height: 4px;
-  border-radius: 4px;
-  background: linear-gradient(90deg, transparent, rgb(41 214 255 / 0.45), transparent);
+  --lit-edge-x: 0.8rem;
+  --lit-edge-y: 0.35rem;
+  --lit-edge-height: 4px;
+  --lit-edge-radius: 4px;
+  --lit-edge-fill: linear-gradient(90deg, transparent, rgb(41 214 255 / 0.45), transparent);
   transition: background 200ms ease, box-shadow 200ms ease;
 }
 
@@ -1059,15 +1228,14 @@ select.input option {
   box-shadow: 0 0 20px 3px rgb(255 46 77 / 0.85);
 }
 
-.tile--dim {
-  opacity: 0.3;
-}
-
 /*
  * The drum roll. Every lectern but your own pick loses its lamp and sinks a
- * little, so the set is dark at the moment the verdict arrives. Kept as its own
- * state rather than reusing `--dim`, which has to stay readable during the
- * question while this deliberately does not.
+ * little, so the set is dark at the moment the verdict arrives.
+ *
+ * It was kept separate from `--dim`, which had to stay readable during the
+ * question while this deliberately does not. `--dim` has since been deleted —
+ * it was never reachable — so this is now the only state that darkens a
+ * lectern before the verdict.
  */
 .tile--hushed {
   opacity: 0.16;
@@ -1124,7 +1292,7 @@ select.input option {
   padding: 0.85rem 1rem;
   border: 1px solid var(--edge);
   border-top: 3px solid var(--cyan-dim);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   background: linear-gradient(180deg, var(--panel), rgb(7 26 46 / 0.45));
   animation: settle 340ms ease backwards;
 }
@@ -1227,15 +1395,31 @@ select.input option {
 /* ── The league filter ──────────────────────────────────────────────────────
    Sits on top of the whole board rather than replacing it: most rows carry no
    squad at all, so a squad-only view would hide most of the season.
+
+   Named `filter-chip`, not `chip`: this is a toggle button, and the read-only
+   tag on the question header is a different component that happens to share a
+   word. While both were `.chip` the later block here won the cascade on colour,
+   background and border, so `.chip--hard` never rendered and every difficulty
+   read as the same grey pill.
    ──────────────────────────────────────────────────────────────────────────── */
 
 .league-filter {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
+  /*
+    These wrap to two rows once a squad list gets long. A chip draws 30.5px, so
+    a 0.4rem row gap puts rows 36.9px apart while each hit area is 44px — they
+    would overlap, and the top of a lower chip would become unhittable. 0.85rem
+    takes the pitch to 44.1px, where they meet without overlapping. Same
+    reasoning as `.lamps--vote`, and the same reason it is a fixed value rather
+    than `:has()`.
+  */
+  row-gap: 0.85rem;
 }
 
-.chip {
+.filter-chip {
+  position: relative;
   font-family: var(--tech);
   font-weight: 600;
   font-size: 0.72rem;
@@ -1244,17 +1428,32 @@ select.input option {
   color: var(--ink-soft);
   background: transparent;
   border: 1px solid var(--edge);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 0.35rem 0.8rem;
   cursor: pointer;
 }
 
-.chip:hover {
+/*
+  30.5px drawn, 44px under a thumb, by the same transparent overlay the vote
+  pills use. Bounded to the chip's own width so neighbours cannot overlap
+  sideways; `.league-filter` opens its row gap for the vertical case.
+*/
+.filter-chip::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 44px;
+  transform: translateY(-50%);
+}
+
+.filter-chip:hover {
   color: var(--ink);
   border-color: var(--cyan-dim);
 }
 
-.chip--on {
+.filter-chip--on {
   color: var(--ink);
   border-color: var(--amber);
   background: rgb(36 26 4 / 0.65);
@@ -1335,7 +1534,7 @@ select.input option {
   padding: 0.85rem 1rem;
   border: 1px solid var(--edge);
   border-left: 3px solid var(--cyan-dim);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   background: linear-gradient(180deg, var(--panel), rgb(7 26 46 / 0.45));
   animation: settle 340ms ease backwards;
 }
@@ -1387,7 +1586,7 @@ select.input option {
   align-items: baseline;
   gap: 0.35rem;
   padding: 0.2rem 0.5rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--edge);
   background: rgb(1 6 16 / 0.65);
   font-family: var(--tech);
@@ -1560,7 +1759,7 @@ select.input option {
   font-size: 0.66rem;
   letter-spacing: 0.08em;
   padding: 0.28rem 0.3rem;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   border: 1px solid rgb(18 64 95 / 0.55);
   color: var(--ink-dim);
   background: rgb(4 16 31 / 0.6);
@@ -1673,7 +1872,7 @@ select.input option {
   padding: 0.75rem 1rem;
   border: 1px solid var(--edge);
   border-left: 3px solid var(--cyan-dim);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   background: linear-gradient(90deg, var(--panel), rgb(7 26 46 / 0.45));
   position: relative;
   overflow: hidden;
@@ -1906,11 +2105,12 @@ select.input option {
 }
 
 .riser::after {
-  content: '';
-  position: absolute;
-  inset: auto 0.6rem 0.4rem 0.6rem;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  --lit-edge-x: 0.6rem;
+  --lit-edge-y: 0.4rem;
+  /* No radius, unlike the other four: the riser's strip runs the full width of
+     a podium step and a rounded end would read as a gap at the corner. */
+  --lit-edge-radius: 0;
+  --lit-edge-fill: linear-gradient(90deg, transparent, var(--cyan), transparent);
 }
 
 /* Third, then second, then the winner — the reveal builds to the middle. */
@@ -2293,7 +2493,7 @@ select.input option {
 
 .lamp {
   padding: 0.2rem 0.5rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--edge);
   background: rgb(4 16 31 / 0.9);
   font-family: var(--tech);
@@ -2328,11 +2528,52 @@ select.input option {
   font-size: 0.66rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  position: relative;
+}
+
+/*
+  Drawn at 24px because it borrows `.lamp`, which is a label. That is the right
+  size on the strip and the wrong size under a thumb — and this pair sits a few
+  millimetres from Standings, which is 90px of amber, so a near-miss does not
+  just fail to vote, it leaves the screen.
+
+  So the hit area is grown without touching the drawing: a transparent box
+  centred on the pill, 44px tall, which is what both Apple and Google ask for.
+  Padding would have worked too and was rejected — it would inflate the pill
+  itself, and the pill is deliberately the same object as the lamps it replaces.
+
+  Bounded to the pill's own width, so the two verdicts cannot overlap each
+  other sideways. `.lamps--vote` below handles the one case that could overlap
+  them vertically.
+*/
+.lamp--vote::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 44px;
+  transform: translateY(-50%);
 }
 
 .lamp--vote:hover:not(.lamp--in) {
   border-color: var(--cyan);
   color: var(--ink);
+}
+
+/*
+  The vote strip only. `.lamps` is shared with the answer lamps, which wrap to
+  two and three rows on a phone and are *labels* — their 0.3rem row gap is the
+  right one and must not move.
+
+  A vote strip that wraps is different: rows would sit 28.8px apart while each
+  hit area is 44px, so they would overlap and the top of a lower pill would
+  become unhittable. 1.25rem takes the pitch to 44px, where they meet without
+  overlapping. A modifier rather than `:has()`, so there is no support question
+  on the one thing that stops a tap landing on the wrong verdict.
+*/
+.lamps--vote {
+  row-gap: 1.25rem;
 }
 
 /* Not a control — the word in front of the pair. */
@@ -2378,7 +2619,7 @@ select.input option {
 .squads__bar {
   display: flex;
   height: 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   overflow: hidden;
   background: rgb(4 16 31 / 0.9);
   border: 1px solid var(--edge);
@@ -2416,7 +2657,7 @@ select.input option {
 .squads__dot {
   width: 7px;
   height: 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--ink-dim);
   transform: translateY(-1px);
 }
@@ -2641,7 +2882,7 @@ select.input option {
     letter-spacing: 0.14em;
     color: var(--ink-dim);
     border: 1px solid var(--edge);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     padding: 0.12rem 0.5rem;
     opacity: 0;
     transition: opacity 140ms ease;
@@ -2683,7 +2924,7 @@ select.input option {
     letter-spacing: 0.1em;
     border: 1px solid var(--edge);
     border-bottom-width: 2px;
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     padding: 0.05rem 0.4rem;
     margin-right: 0.3rem;
     color: var(--ink-soft);

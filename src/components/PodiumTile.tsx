@@ -6,7 +6,7 @@ const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'] as const;
  * lands: dropped away rather than merely dimmed, so the two survivors carry the
  * whole screen.
  */
-export type TileState = 'idle' | 'picked' | 'correct' | 'wrong' | 'dim' | 'hushed' | 'gone';
+export type TileState = 'idle' | 'picked' | 'correct' | 'wrong' | 'hushed' | 'gone';
 
 /** One player shown landing on this lectern during the reveal replay. */
 export interface TileArrival {
@@ -63,7 +63,6 @@ const CLASS_FOR_STATE: Record<TileState, string> = {
   picked: 'tile--picked',
   correct: 'tile--correct',
   wrong: 'tile--wrong',
-  dim: 'tile--dim',
   hushed: 'tile--hushed',
   gone: 'tile--gone',
 };

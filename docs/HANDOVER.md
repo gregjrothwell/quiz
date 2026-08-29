@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 20 August 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 28 August 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -41,10 +41,12 @@ and the hook says so if this one grows.
 | the shareable result card, and how it gets to the player | [`decisions/final-card.md`](decisions/final-card.md) |
 | what to build next, and what each idea costs | [`decisions/ideas-review.md`](decisions/ideas-review.md) |
 | whether an idea was already turned down | [`decisions/scope.md`](decisions/scope.md) |
+| upgrading anything in `package.json` | [`decisions/dependencies.md`](decisions/dependencies.md) |
+| the studio set, or any lighting cue | [`decisions/lighting.md`](decisions/lighting.md) |
 
 ## State as of 28 August 2026
 
-**Shipped and played.** 482 tests, clean types and lint, no `any` or `@ts-ignore`.
+**Shipped and played.** 513 tests, clean types and lint, no `any` or `@ts-ignore`.
 
 - **Squads, weekly boards, the average table, the frozen podium and the sealed
   question text are live** (20 August, [PR #2](https://github.com/gregjrothwell/quiz/pull/2)).
@@ -66,9 +68,9 @@ and the hook says so if this one grows.
   and played the same day — `CORRECT · +1,000` at 10.6s in the browser against
   `scored: ClockTest +1000` in the terminal, the two agreeing being the point:
   [`decisions/shared-clock.md`](decisions/shared-clock.md).
-- **Squads score live under the standings.** Built, **rules paste outstanding —
-  and this one takes the game down if it deploys first**, because a join write
-  carrying `squad` is refused outright: [`decisions/live-squads.md`](decisions/live-squads.md).
+- **Squads score live under the standings**, ranked on points ÷ headcount.
+  **Live since 28 August** ([PR #16](https://github.com/gregjrothwell/quiz/pull/16));
+  rules pasted first, which was the whole risk: [`decisions/live-squads.md`](decisions/live-squads.md).
 - **Players vote on a question at the reveal**, and `fold-votes` turns the
   verdicts into a retirement list. **Live since 28 August**, proved end to end:
   [`decisions/question-votes.md`](decisions/question-votes.md).
@@ -78,24 +80,18 @@ and the hook says so if this one grows.
 - **`npm run host-room` scores a real answer now** — it never read the answers
   subcollection, so every reveal it folded scored nobody.
 
-**Measured live, 28 August 2026** (`npm run take-stock`), after a prune of 15
-expired probe rooms:
+**On a branch and not deployed** (28 August, all reviewed and verified locally,
+none of it seen by a second person):
 
-| | |
-|---|---|
-| rooms | 37 — one predates `expiresAt`, unreachable by any TTL policy |
-| vault answers | 13,593 |
-| `season-2` players | 24 |
-| `season-1` / weekly buckets | 4 / W34 7 / W35 16 — **none were reported until 20 August**; `take-stock` named its own season and counted nothing else, so every weekly bucket was invisible from the day weekly boards shipped. It enumerates now |
-| recovery codes / identity claims | **0 / 0** — nobody has ever used the feature |
+- **The verdict pills got a thumb-sized hit area** — they drew at 80×24, the
+  smallest targets in the app: [`decisions/state-of-play.md`](decisions/state-of-play.md#the-ui-measured--28-august-2026).
+- **The rig is operated rather than just lit** — the house dims for the question,
+  and blazes on `finished`: [`decisions/lighting.md`](decisions/lighting.md).
+- **Seven in-range dependency bumps and `globals` 17**; four majors measured and
+  held: [`decisions/dependencies.md`](decisions/dependencies.md).
 
-> **Correction.** This table once listed `rules-check` at 3 and called it the
-> preflight "leaving three rows on every run". **It was not** — those predated
-> the cleanup and no client could remove them. Swept with `prune-rooms`.
-
-> **Correction, 20 August 2026.** This file said both "leaving 3 rooms" and "79
-> rooms are still there". The second predated the prune and was never updated.
-> Both stale readings stay visible in [`decisions/security.md`](decisions/security.md).
+**What is actually in the project right now** — counts, the two slow leaks, and the
+two corrections that came out of miscounting them: [`decisions/cost.md`](decisions/cost.md#measured-live-28-august-2026).
 
 ## Outstanding
 
@@ -107,8 +103,11 @@ expired probe rooms:
    one right answer in it**. Keyboard shortcuts cleared 28 August. The
    **anonymous-account purge is reviewed and the answer is don't**:
    [`decisions/identity.md`](decisions/identity.md).
-4. ~~**A reload drops you out of the room.**~~ **Fixed 28 August**, built not
-   deployed: [`decisions/joining.md`](decisions/joining.md).
+4. ~~**A reload drops you out of the room.**~~ **Fixed and live, 28 August**,
+   verified on production: [`decisions/joining.md`](decisions/joining.md).
+5. **Two colour tokens fail WCAG AA** on every surface — `--ink-dim` and
+   `--cyan-dim`, worst case 3.27 against 4.5. Measured, not fixed; the values
+   that clear it are recorded: [`decisions/state-of-play.md`](decisions/state-of-play.md#the-ui-measured--28-august-2026).
 
 ## Where things are
 

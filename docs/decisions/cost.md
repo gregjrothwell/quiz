@@ -5,6 +5,30 @@
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
 
+## Measured live, 28 August 2026
+
+Moved verbatim out of [`../HANDOVER.md`](../HANDOVER.md) on 28 August 2026, to keep
+that file inside its 150-line budget. The corrections move with the table they
+correct — that is the point of them.
+
+Counted with `npm run take-stock`, after a prune of 15 expired probe rooms:
+
+| | |
+|---|---|
+| rooms | 37 — one predates `expiresAt`, unreachable by any TTL policy |
+| vault answers | 13,593 |
+| `season-2` players | 24 |
+| `season-1` / weekly buckets | 4 / W34 7 / W35 16 — **none were reported until 20 August**; `take-stock` named its own season and counted nothing else, so every weekly bucket was invisible from the day weekly boards shipped. It enumerates now |
+| recovery codes / identity claims | **0 / 0** — nobody has ever used the feature |
+
+> **Correction.** This table once listed `rules-check` at 3 and called it the
+> preflight "leaving three rows on every run". **It was not** — those predated
+> the cleanup and no client could remove them. Swept with `prune-rooms`.
+
+> **Correction, 20 August 2026.** This file said both "leaving 3 rooms" and "79
+> rooms are still there". The second predated the prune and was never updated.
+> Both stale readings stay visible in [`security.md`](security.md).
+
 ## What it all costs, and how much room is left
 
 **Counted 15 August 2026, and it is now one command:**
