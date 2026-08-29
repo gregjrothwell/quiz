@@ -1129,7 +1129,7 @@ select.input option {
     opacity 200ms ease;
 }
 
-.tile:hover:not(:disabled):not(.tile--dim) {
+.tile:hover:not(:disabled) {
   border-color: var(--cyan-dim);
   transform: translateY(-2px);
 }
@@ -1210,15 +1210,14 @@ select.input option {
   box-shadow: 0 0 20px 3px rgb(255 46 77 / 0.85);
 }
 
-.tile--dim {
-  opacity: 0.3;
-}
-
 /*
  * The drum roll. Every lectern but your own pick loses its lamp and sinks a
- * little, so the set is dark at the moment the verdict arrives. Kept as its own
- * state rather than reusing `--dim`, which has to stay readable during the
- * question while this deliberately does not.
+ * little, so the set is dark at the moment the verdict arrives.
+ *
+ * It was kept separate from `--dim`, which had to stay readable during the
+ * question while this deliberately does not. `--dim` has since been deleted —
+ * it was never reachable — so this is now the only state that darkens a
+ * lectern before the verdict.
  */
 .tile--hushed {
   opacity: 0.16;

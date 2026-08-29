@@ -274,9 +274,11 @@ export function QuestionScreen({
       return 'gone';
     }
     if (!myAnswer) return 'idle';
-    // Only the pick itself is marked. The others stay `idle` rather than `dim`
-    // because they are still live — you can change your mind until the clock
-    // stops, and dimming a tile you can still press reads as "unavailable".
+    // Only the pick itself is marked. The others stay `idle` because they are
+    // still live — you can change your mind until the clock stops, and dimming
+    // a tile you can still press reads as "unavailable". There was a `dim`
+    // state for exactly that and this is the reason nothing ever set it, so it
+    // has been removed rather than left as an option someone might reach for.
     return myAnswer.optionIndex === index ? 'picked' : 'idle';
   };
 
