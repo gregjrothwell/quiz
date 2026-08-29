@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 28 August 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 29 August 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -44,7 +44,7 @@ and the hook says so if this one grows.
 | upgrading anything in `package.json` | [`decisions/dependencies.md`](decisions/dependencies.md) |
 | the studio set, or any lighting cue | [`decisions/lighting.md`](decisions/lighting.md) |
 
-## State as of 28 August 2026
+## State as of 29 August 2026
 
 **Shipped and played.** 513 tests, clean types and lint, no `any` or `@ts-ignore`.
 
@@ -80,34 +80,35 @@ and the hook says so if this one grows.
 - **`npm run host-room` scores a real answer now** — it never read the answers
   subcollection, so every reveal it folded scored nobody.
 
-**On a branch and not deployed** (28 August, all reviewed and verified locally,
-none of it seen by a second person):
-
-- **The verdict pills got a thumb-sized hit area** — they drew at 80×24, the
-  smallest targets in the app: [`decisions/state-of-play.md`](decisions/state-of-play.md#the-ui-measured--28-august-2026).
+- **The design review is built** — the `.chip` cascade collision that silently killed
+  the difficulty signal, both dim tokens past AA, a thin-supply warning, the player's
+  reveal, four components named. **Live 29 August** ([PR #17](https://github.com/gregjrothwell/quiz/pull/17)), proved in a real room.
+- **Every interactive target is 44px** — pills, sound toggle, filter chips; the
+  chips needed their row gap opened or wrapped rows would have overlapped: [`decisions/state-of-play.md`](decisions/state-of-play.md#the-ui-measured--28-august-2026).
 - **The rig is operated rather than just lit** — the house dims for the question,
-  and blazes on `finished`: [`decisions/lighting.md`](decisions/lighting.md).
+  and blazes on `finished`. **Live since 29 August**: [`decisions/lighting.md`](decisions/lighting.md).
 - **Seven in-range dependency bumps and `globals` 17**; four majors measured and
-  held: [`decisions/dependencies.md`](decisions/dependencies.md).
+  held: [`decisions/dependencies.md`](decisions/dependencies.md). Shipped inside
+  PR #17 **unverified** — the one part of that merge nobody checked.
 
-**What is actually in the project right now** — counts, the two slow leaks, and the
-two corrections that came out of miscounting them: [`decisions/cost.md`](decisions/cost.md#measured-live-28-august-2026).
+**What is actually in the project right now** — counts, the two slow leaks and the
+corrections that came of miscounting them: [`decisions/cost.md`](decisions/cost.md#measured-live-28-august-2026).
 
 ## Outstanding
 
 1. **A quizmaster dropping out mid-round** needs a browser and `host-room`.
 2. **No Content-Security-Policy.** Deliberate: a `<meta http-equiv>` CSP breaks
    the live app silently and the stale CDN makes it painful to diagnose.
-3. **Nothing needing a second person has been tested** — the review panel, a real
-   quizmaster handover, two squads on one board, and **a rank bonus with more than
-   one right answer in it**. Keyboard shortcuts cleared 28 August. The
+3. **Still needing a second person** — the review panel, a real quizmaster
+   handover, two squads on one board, and **a rank bonus with more than one right
+   answer in it**, still the oldest unproven claim here. A player's reveal *was*
+   proved against a real quizmaster on 29 August. Keyboard shortcuts cleared 28
+   August. The
    **anonymous-account purge is reviewed and the answer is don't**:
    [`decisions/identity.md`](decisions/identity.md).
-4. ~~**A reload drops you out of the room.**~~ **Fixed and live, 28 August**,
-   verified on production: [`decisions/joining.md`](decisions/joining.md).
-5. **Two colour tokens fail WCAG AA** on every surface — `--ink-dim` and
-   `--cyan-dim`, worst case 3.27 against 4.5. Measured, not fixed; the values
-   that clear it are recorded: [`decisions/state-of-play.md`](decisions/state-of-play.md#the-ui-measured--28-august-2026).
+4. ~~**Two colour tokens fail WCAG AA.**~~ **Fixed and live, 29 August** —
+   `--ink-dim` `#7a96bc` at 4.99, `--cyan-dim` `#159fcc` at 4.95, both with
+   headroom rather than at the 4.52/4.51 minimums.
 
 ## Where things are
 
