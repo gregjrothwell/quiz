@@ -46,7 +46,7 @@ and the hook says so if this one grows.
 
 ## State as of 29 August 2026
 
-**Shipped and played.** 513 tests, clean types and lint, no `any` or `@ts-ignore`.
+**Shipped and played.** 514 tests, clean types and lint, no `any` or `@ts-ignore`.
 
 - **Squads, weekly boards, the average table, the frozen podium and the sealed
   question text are live** (20 August, [PR #2](https://github.com/gregjrothwell/quiz/pull/2)).
@@ -57,9 +57,9 @@ and the hook says so if this one grows.
   snapshot; `reveal-probe` is the instrument: [`decisions/vault.md`](decisions/vault.md#the-gate-had-no-margin-and-the-host-was-the-one-who-paid).
 - **Scoring is a rank bonus, not a speed curve** — 500 for correct plus
   500/400/300/200/100 by the order the answers landed. **Live since 20 August**
-  ([PR #6](https://github.com/gregjrothwell/quiz/pull/6)); scored in a live room,
-  but **ranking is still unproven** — that needs two answerers:
-  [`decisions/scoring.md`](decisions/scoring.md).
+  ([PR #6](https://github.com/gregjrothwell/quiz/pull/6)), and **proved with a
+  full field 29 August** — `rank-harness`, seven answerers and a browser, the
+  whole ladder in one question: [`decisions/scoring.md`](decisions/scoring.md#evidence).
 - **The final screen makes a shareable PNG of the round**, chair and all. **Live
   since 20 August** ([PR #7](https://github.com/gregjrothwell/quiz/pull/7)):
   [`decisions/final-card.md`](decisions/final-card.md).
@@ -100,10 +100,10 @@ corrections that came of miscounting them: [`decisions/cost.md`](decisions/cost.
 2. **No Content-Security-Policy.** Deliberate: a `<meta http-equiv>` CSP breaks
    the live app silently and the stale CDN makes it painful to diagnose.
 3. **Still needing a second person** — the review panel, a real quizmaster
-   handover, two squads on one board, and **a rank bonus with more than one right
-   answer in it**, still the oldest unproven claim here. A player's reveal *was*
-   proved against a real quizmaster on 29 August. Keyboard shortcuts cleared 28
-   August. The
+   handover, two squads on one board. **The rank bonus is no longer one of them**:
+   it never needed a person, only a second client, and `rank-harness` makes seven.
+   A player's reveal *was* proved against a real quizmaster on 29 August.
+   Keyboard shortcuts cleared 28 August. The
    **anonymous-account purge is reviewed and the answer is don't**:
    [`decisions/identity.md`](decisions/identity.md).
 4. ~~**Two colour tokens fail WCAG AA.**~~ **Fixed and live, 29 August** —
@@ -126,8 +126,8 @@ docs/decisions/ One subsystem each. Reached from the table above.
 
 Commands: `dev` (port 5273), `test`, `typecheck`, `lint`, `build`, `deploy`,
 `fetch-questions [-- --resort]`, `fetch-otqa`, `seed-vault`, `check-rules`,
-`sync-harness [n]`, `host-room [-- secs]`, `reveal-probe`, `take-stock`,
-`prune-rooms [-- --probe-rows --go]`, `fold-votes [-- --go]`.
+`sync-harness [n]`, `host-room [-- secs]`, `rank-harness [-- --browser]`,
+`reveal-probe`, `take-stock`, `prune-rooms [-- --probe-rows --go]`, `fold-votes [-- --go]`.
 
 `npm test` covers `src/` plus the pure parts of `scripts/`. Anything under
 `scripts/` that touches the network or the live project stays out deliberately;

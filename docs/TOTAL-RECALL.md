@@ -16,6 +16,48 @@ and including 20 August moved *verbatim* to
 old entry to make it fit is the thing the paragraph above forbids. Every one of
 them is still listed below by date, so the chronology reads end to end from here.
 
+## 2026-08-29 — The rank bonus, proved with seven answerers and a browser
+
+**The oldest unproven claim in the project, closed.** Rank scoring shipped on
+20 August and had only ever been scored with one answerer, and one correct
+answer can only ever be first — so every bonus below the top, the tie
+convention and the floor were carried by unit tests alone. Both this file's
+spine and the handover recorded it as *needing a second person*.
+
+It never needed a second person. It needed a second **client**, and three things
+already in the repo made seven of them possible: `sync-harness` shows how to
+stand up N independent Firebase clients; `elapsedMs` is stated by the answering
+device, so the order can be chosen rather than raced; and `seed-vault` seeds
+`hq0` with `'The first one'`, so a harness knows the correct lectern in advance
+without reading a vault no client may read.
+
+`npm run rank-harness` puts the whole ladder in one live question — 1000 / 900 /
+800 / 700 / 700 / 600 and a zero, with the pair at 4,800ms sharing fourth so the
+next distinct time resumes at *sixth*. Expected values are written by hand from
+the table in [`decisions/scoring.md`](decisions/scoring.md), not computed by
+`tallyQuestion`, or the run would only prove the engine agrees with itself.
+Everything is read back with `getDocFromServer`, past a cache holding the
+harness's own writes.
+
+`-- --browser` waits for a real browser to join and stretches the window to 30
+seconds. **Its 600 is the same 600 the terminal reports**, which lands the
+window-independence claim as well: a thirty-second round paid exactly what the
+ten-second one did.
+
+Two findings, both from cross-checks rather than from the report:
+
+- **The harness reproduced the bug `host-room` had carried for weeks.** Its
+  first run folded the reveal without ever reading the answers subcollection and
+  paid the room nothing. It caught itself: a second client re-derived the full
+  ladder from the server's answers while the room's own `lastDeltas` came back
+  `{}`. Two readings that cannot both be true.
+- **`+574` on the player's screen at the reveal.** Not a number the ladder can
+  pay, and it was a tween frame on the way up to 600 — the second screenshot
+  settled it. One reading would have been a confident wrong bug report.
+
+What is still not proved: the fastest-finger rosette on the final screen, since
+this run stops at the reveal.
+
 ## 2026-08-29 — The review's remaining findings, merged and deployed
 
 The rest of the review that needed no design decision: 44px hit areas on the
