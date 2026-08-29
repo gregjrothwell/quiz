@@ -15,6 +15,15 @@ import type { PackId, PackSummary } from '../questions/types';
 const ROUND_LENGTHS = [10, 15, 20, 25] as const;
 
 /**
+ * Below this multiple of the round length a level's pool is thin enough that
+ * consecutive rounds draw largely the same questions; at exactly one multiple
+ * it is the entire bucket, reshuffled, every time. The picker already refuses a
+ * level a pack cannot fill at all — this is the gap between "just enough" and
+ * "enough", which plain "15 available" against a round of 15 reads as.
+ */
+const THIN_SUPPLY_MULTIPLE = 3;
+
+/**
  * Why the window is worth choosing rather than fixing: the vault cannot open
  * before it closes, so a round everybody answers in five seconds still costs the
  * full window on every question.
@@ -209,7 +218,9 @@ export function Lobby({
                       <i>
                         {supply < count
                           ? `${supply} — short of ${count}`
-                          : `${supply.toLocaleString('en-GB')} available`}
+                          : supply < count * THIN_SUPPLY_MULTIPLE
+                            ? `${supply} — expect repeats`
+                            : `${supply.toLocaleString('en-GB')} available`}
                       </i>
                     )}
                   </button>
