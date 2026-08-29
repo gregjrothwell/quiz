@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 28 August 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 29 August 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -15,6 +15,29 @@ and including 20 August moved *verbatim* to
 [`recall/2026-08.md`](recall/2026-08.md) — not reworded, because compressing an
 old entry to make it fit is the thing the paragraph above forbids. Every one of
 them is still listed below by date, so the chronology reads end to end from here.
+
+## 2026-08-29 — A design review lands, and four of its six get built
+
+Claude Design produced a sixteen-finding UI/UX review on its own canvas. **Getting it into
+Claude Code needed `/design-login` run once from an interactive terminal — the canvas URL alone
+unblocks nothing**, and the failure only surfaces after the design work is done, in the other
+tool. Credential goes to the Keychain, so there is no file to check for.
+
+Built its items 1–4 and 6, each verified in the browser against the built stylesheet rather
+than by tests, which touch no CSS: **`.chip` was declared twice with `.chip--hard` between
+them**, so source order killed the difficulty signal on every question header — a shipped
+feature silently dead. Renamed the league filter to `.filter-chip`. Both dim tokens raised past
+AA with headroom. The level picker now says "expect repeats" below three times the round
+length. The player's reveal, alone among five screens, never said the room was waiting on the
+quizmaster; it does now.
+
+Two things worth carrying. **The review undercounted twice** — three call sites that were four,
+six inline hint styles that were eleven — so its numbers are a lead, not a fact. And **the
+design gallery had every quizmaster/player pair except at the reveal**, which is how the empty
+desk survived: the missing fixture was the reason nobody saw it.
+
+Items 5 (recovery code as a button) and the `--screen`/`--section` merge are left as design
+calls, not renames. Branch `design-review-fixes`, five commits, unmerged.
 
 ## 2026-08-28 — The rig gets operated
 
