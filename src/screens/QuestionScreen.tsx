@@ -458,56 +458,62 @@ export function QuestionScreen({
             )}
           </p>
 
-          <div className="btn-row">
-            {isQuizmaster ? (
-              <>
-                {/*
-                  Nobody in the room needs telling who is driving, but the person
-                  driving does — it is the difference between waiting for the
-                  quizmaster and being the quizmaster.
-                */}
-                <span className="onair" aria-hidden="true">
-                  <span className="onair__lamp" />
-                  On air
-                </span>
+          {isQuizmaster ? (
+            <div className="btn-row">
+              {/*
+                Nobody in the room needs telling who is driving, but the person
+                driving does — it is the difference between waiting for the
+                quizmaster and being the quizmaster.
+              */}
+              <span className="onair" aria-hidden="true">
+                <span className="onair__lamp" />
+                On air
+              </span>
 
-                {/*
-                  Skip is deliberately not exposed. The rules cannot restrict
-                  writes to the quizmaster without storing their uid, so a button
-                  here is a button anyone in DevTools can press — and one player
-                  who dislikes a question should not be able to void it for the
-                  room. The engine action stays (and stays tested) in case it is
-                  wanted behind a proper permission model later.
-                */}
-                {revealed ? (
-                  <button type="button" className="btn btn--primary" onClick={onNext}>
-                    Standings
-                  </button>
-                ) : (
-                  /*
-                    Revealing early is no longer possible, and that is the price
-                    of the vault: the rules refuse to confirm an answer until the
-                    server agrees the room's answer window is up, and no
-                    device — this one included — holds it before then. The button
-                    stays visible as a retry for a reveal that errored, since the
-                    clock running out fires one automatically.
-                  */
-                  <button
-                    type="button"
-                    className="btn btn--primary"
-                    disabled={!clock.expired || revealing}
-                    onClick={onReveal}
-                  >
-                    {!clock.expired
-                      ? `Reveal in ${clock.secondsLeft}s`
-                      : revealing
-                        ? 'Revealing…'
-                        : 'Reveal'}
-                  </button>
-                )}
-              </>
-            ) : null}
-          </div>
+              {/*
+                Skip is deliberately not exposed. The rules cannot restrict
+                writes to the quizmaster without storing their uid, so a button
+                here is a button anyone in DevTools can press — and one player
+                who dislikes a question should not be able to void it for the
+                room. The engine action stays (and stays tested) in case it is
+                wanted behind a proper permission model later.
+              */}
+              {revealed ? (
+                <button type="button" className="btn btn--primary" onClick={onNext}>
+                  Standings
+                </button>
+              ) : (
+                /*
+                  Revealing early is no longer possible, and that is the price
+                  of the vault: the rules refuse to confirm an answer until the
+                  server agrees the room's answer window is up, and no
+                  device — this one included — holds it before then. The button
+                  stays visible as a retry for a reveal that errored, since the
+                  clock running out fires one automatically.
+                */
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  disabled={!clock.expired || revealing}
+                  onClick={onReveal}
+                >
+                  {!clock.expired
+                    ? `Reveal in ${clock.secondsLeft}s`
+                    : revealing
+                      ? 'Revealing…'
+                      : 'Reveal'}
+                </button>
+              )}
+            </div>
+          ) : revealed ? (
+            /*
+              The quizmaster's desk carries a Standings button here; without
+              this the slot is simply empty, so the one screen where the whole
+              room is waiting on one person is the only one that does not say
+              so. The lobby, the scoreboard and the final screen all do.
+            */
+            <p className="muted">Waiting for the quizmaster to show the standings…</p>
+          ) : null}
         </div>
       </div>
     </>
