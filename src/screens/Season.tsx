@@ -93,14 +93,14 @@ export function Season({ youUid, onBack }: SeasonProps) {
       <div className="league-filter" role="group" aria-label="Which board">
         <button
           type="button"
-          className={showing === 'season' ? 'chip chip--on' : 'chip'}
+          className={showing === 'season' ? 'filter-chip filter-chip--on' : 'filter-chip'}
           onClick={() => setShowing('season')}
         >
           Season
         </button>
         <button
           type="button"
-          className={showing === 'week' ? 'chip chip--on' : 'chip'}
+          className={showing === 'week' ? 'filter-chip filter-chip--on' : 'filter-chip'}
           onClick={() => setShowing('week')}
         >
           This week

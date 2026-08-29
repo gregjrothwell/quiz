@@ -1303,6 +1303,12 @@ select.input option {
 /* ── The league filter ──────────────────────────────────────────────────────
    Sits on top of the whole board rather than replacing it: most rows carry no
    squad at all, so a squad-only view would hide most of the season.
+
+   Named `filter-chip`, not `chip`: this is a toggle button, and the read-only
+   tag on the question header is a different component that happens to share a
+   word. While both were `.chip` the later block here won the cascade on colour,
+   background and border, so `.chip--hard` never rendered and every difficulty
+   read as the same grey pill.
    ──────────────────────────────────────────────────────────────────────────── */
 
 .league-filter {
@@ -1311,7 +1317,7 @@ select.input option {
   gap: 0.4rem;
 }
 
-.chip {
+.filter-chip {
   font-family: var(--tech);
   font-weight: 600;
   font-size: 0.72rem;
@@ -1325,12 +1331,12 @@ select.input option {
   cursor: pointer;
 }
 
-.chip:hover {
+.filter-chip:hover {
   color: var(--ink);
   border-color: var(--cyan-dim);
 }
 
-.chip--on {
+.filter-chip--on {
   color: var(--ink);
   border-color: var(--amber);
   background: rgb(36 26 4 / 0.65);

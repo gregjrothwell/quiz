@@ -83,7 +83,7 @@ export function LeagueBoard({ rows, youPlayerId }: LeagueBoardProps) {
         <div className="league-filter" role="group" aria-label="Filter by squad">
           <button
             type="button"
-            className={squad === '' ? 'chip chip--on' : 'chip'}
+            className={squad === '' ? 'filter-chip filter-chip--on' : 'filter-chip'}
             onClick={() => setSquad('')}
           >
             Everyone
@@ -92,7 +92,7 @@ export function LeagueBoard({ rows, youPlayerId }: LeagueBoardProps) {
             <button
               key={name}
               type="button"
-              className={squadKey(name) === squadKey(squad) ? 'chip chip--on' : 'chip'}
+              className={squadKey(name) === squadKey(squad) ? 'filter-chip filter-chip--on' : 'filter-chip'}
               onClick={() => setSquad(name)}
             >
               {name}
