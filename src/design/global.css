@@ -42,7 +42,17 @@
   --body: 'Archivo', 'Helvetica Neue', sans-serif;
 
   --gutter: clamp(1rem, 4vw, 3rem);
+  /*
+     Panels, buttons and inputs. The other two named steps are below; the
+     asymmetric pairs (`8px 8px 3px 3px` and friends) stay written out, because
+     a lectern rounded at the top and square at the base is the studio idea
+     working rather than a value wanting a name.
+  */
   --radius: 6px;
+  /* Small surfaces: chips, awards, standings rows, rungs, the legend. */
+  --radius-sm: 3px;
+  /* Anything with fully round ends. */
+  --radius-pill: 999px;
   --shadow-lift: 0 22px 44px -22px rgb(0 0 0 / 0.95);
 }
 
@@ -846,13 +856,40 @@ select.input option {
   box-shadow: 0 16px 30px -18px #000, inset 0 1px 0 rgb(255 255 255 / 0.07);
 }
 
-.plate::after {
+/*
+  The lit edge — a strip of house cyan along the base of a surface, and the
+  clearest signature in the set. It was written out five times: `.plate`,
+  `.pack`, `.pick`, `.tile` and `.riser`, at three heights, four insets and
+  three radii. Those differences were not disagreements; they were five
+  separate authorings of one idea, and the cost was that a sixth surface would
+  have been authored from scratch too.
+
+  Declared once here. A component sets only what it differs on, through the
+  four custom properties below — every value is the one that component already
+  had, so this moves nothing on screen. The defaults are `.pack` and `.pick`,
+  which were byte-identical to each other.
+
+  This has to stay above every `--modifier::after` that overrides it: those
+  match at the same specificity and are settled by source order.
+*/
+.plate::after,
+.pack::after,
+.pick::after,
+.tile::after,
+.riser::after {
   content: '';
   position: absolute;
-  inset: auto 0 0 0;
-  height: 3px;
-  border-radius: 0 0 3px 3px;
-  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  inset: auto var(--lit-edge-x, 0.7rem) var(--lit-edge-y, 0.3rem);
+  height: var(--lit-edge-height, 3px);
+  border-radius: var(--lit-edge-radius, 3px);
+  background: var(--lit-edge-fill, rgb(41 214 255 / 0.25));
+}
+
+.plate::after {
+  --lit-edge-x: 0;
+  --lit-edge-y: 0;
+  --lit-edge-radius: 0 0 3px 3px;
+  --lit-edge-fill: linear-gradient(90deg, transparent, var(--cyan), transparent);
   box-shadow: 0 0 16px 2px rgb(41 214 255 / 0.7);
 }
 
@@ -903,15 +940,6 @@ select.input option {
   border-radius: 8px 8px 3px 3px;
   padding: 0.9rem 1rem 1rem;
   transition: border-color 140ms ease, transform 140ms ease;
-}
-
-.pack::after {
-  content: '';
-  position: absolute;
-  inset: auto 0.7rem 0.3rem 0.7rem;
-  height: 3px;
-  border-radius: 3px;
-  background: rgb(41 214 255 / 0.25);
 }
 
 .pack:hover {
@@ -971,15 +999,6 @@ select.input option {
   border: 1px solid var(--edge);
   background: linear-gradient(180deg, var(--panel-hi), var(--panel));
   transition: border-color 140ms ease, transform 140ms ease;
-}
-
-.pick::after {
-  content: '';
-  position: absolute;
-  inset: auto 0.7rem 0.3rem 0.7rem;
-  height: 3px;
-  border-radius: 3px;
-  background: rgb(41 214 255 / 0.25);
 }
 
 .pick:hover:not(:disabled) {
@@ -1077,7 +1096,7 @@ select.input option {
   color: #a9e8ff;
   background: rgb(41 214 255 / 0.12);
   border: 1px solid rgb(41 214 255 / 0.4);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   padding: 0.28rem 0.7rem;
 }
 
@@ -1136,12 +1155,11 @@ select.input option {
 
 /* The lit front edge of the lectern. */
 .tile::after {
-  content: '';
-  position: absolute;
-  inset: auto 0.8rem 0.35rem 0.8rem;
-  height: 4px;
-  border-radius: 4px;
-  background: linear-gradient(90deg, transparent, rgb(41 214 255 / 0.45), transparent);
+  --lit-edge-x: 0.8rem;
+  --lit-edge-y: 0.35rem;
+  --lit-edge-height: 4px;
+  --lit-edge-radius: 4px;
+  --lit-edge-fill: linear-gradient(90deg, transparent, rgb(41 214 255 / 0.45), transparent);
   transition: background 200ms ease, box-shadow 200ms ease;
 }
 
@@ -1274,7 +1292,7 @@ select.input option {
   padding: 0.85rem 1rem;
   border: 1px solid var(--edge);
   border-top: 3px solid var(--cyan-dim);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   background: linear-gradient(180deg, var(--panel), rgb(7 26 46 / 0.45));
   animation: settle 340ms ease backwards;
 }
@@ -1410,7 +1428,7 @@ select.input option {
   color: var(--ink-soft);
   background: transparent;
   border: 1px solid var(--edge);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 0.35rem 0.8rem;
   cursor: pointer;
 }
@@ -1516,7 +1534,7 @@ select.input option {
   padding: 0.85rem 1rem;
   border: 1px solid var(--edge);
   border-left: 3px solid var(--cyan-dim);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   background: linear-gradient(180deg, var(--panel), rgb(7 26 46 / 0.45));
   animation: settle 340ms ease backwards;
 }
@@ -1568,7 +1586,7 @@ select.input option {
   align-items: baseline;
   gap: 0.35rem;
   padding: 0.2rem 0.5rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--edge);
   background: rgb(1 6 16 / 0.65);
   font-family: var(--tech);
@@ -1741,7 +1759,7 @@ select.input option {
   font-size: 0.66rem;
   letter-spacing: 0.08em;
   padding: 0.28rem 0.3rem;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   border: 1px solid rgb(18 64 95 / 0.55);
   color: var(--ink-dim);
   background: rgb(4 16 31 / 0.6);
@@ -1854,7 +1872,7 @@ select.input option {
   padding: 0.75rem 1rem;
   border: 1px solid var(--edge);
   border-left: 3px solid var(--cyan-dim);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   background: linear-gradient(90deg, var(--panel), rgb(7 26 46 / 0.45));
   position: relative;
   overflow: hidden;
@@ -2087,11 +2105,12 @@ select.input option {
 }
 
 .riser::after {
-  content: '';
-  position: absolute;
-  inset: auto 0.6rem 0.4rem 0.6rem;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  --lit-edge-x: 0.6rem;
+  --lit-edge-y: 0.4rem;
+  /* No radius, unlike the other four: the riser's strip runs the full width of
+     a podium step and a rounded end would read as a gap at the corner. */
+  --lit-edge-radius: 0;
+  --lit-edge-fill: linear-gradient(90deg, transparent, var(--cyan), transparent);
 }
 
 /* Third, then second, then the winner — the reveal builds to the middle. */
@@ -2474,7 +2493,7 @@ select.input option {
 
 .lamp {
   padding: 0.2rem 0.5rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--edge);
   background: rgb(4 16 31 / 0.9);
   font-family: var(--tech);
@@ -2600,7 +2619,7 @@ select.input option {
 .squads__bar {
   display: flex;
   height: 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   overflow: hidden;
   background: rgb(4 16 31 / 0.9);
   border: 1px solid var(--edge);
@@ -2638,7 +2657,7 @@ select.input option {
 .squads__dot {
   width: 7px;
   height: 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--ink-dim);
   transform: translateY(-1px);
 }
@@ -2863,7 +2882,7 @@ select.input option {
     letter-spacing: 0.14em;
     color: var(--ink-dim);
     border: 1px solid var(--edge);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     padding: 0.12rem 0.5rem;
     opacity: 0;
     transition: opacity 140ms ease;
@@ -2905,7 +2924,7 @@ select.input option {
     letter-spacing: 0.1em;
     border: 1px solid var(--edge);
     border-bottom-width: 2px;
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     padding: 0.05rem 0.4rem;
     margin-right: 0.3rem;
     color: var(--ink-soft);
