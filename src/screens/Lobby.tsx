@@ -163,7 +163,7 @@ export function Lobby({
         */}
         {autoJoined && youName ? (
           <div className="stack">
-            <p className="muted" style={{ fontSize: '0.85rem', margin: 0 }}>
+            <p className="muted hint">
               The link brought you straight in as <strong>{youName}</strong>
               {squad ? <>, playing for {squad}</> : null}.
             </p>
@@ -255,7 +255,7 @@ export function Lobby({
               short, including the quizmaster. The answer is not on any device
               until the window has closed. See docs/decisions/answer-window.md.
             */}
-            <p className="muted" style={{ fontSize: '0.85rem', margin: 0 }}>
+            <p className="muted hint">
               Every question runs the full {durationSecs} seconds — the answer is locked away
               until then, so it can&rsquo;t be revealed early.
             </p>
@@ -276,7 +276,7 @@ export function Lobby({
               ))}
             </div>
             {selected && available < count ? (
-              <p className="muted" style={{ fontSize: '0.85rem', margin: 0 }}>
+              <p className="muted hint">
                 {selected.title} has {available} at this level, so the round will be{' '}
                 {effectiveCount}.
               </p>

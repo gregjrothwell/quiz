@@ -87,7 +87,7 @@ export function SquadPanel({ playerId, current, onChanged }: SquadPanelProps) {
 
       {save.state === 'error' ? <p className="notice">{save.message}</p> : null}
 
-      <p className="muted" style={{ fontSize: '0.85rem' }}>
+      <p className="muted hint hint--apart">
         Changing this fixes every week from here on. A week already played keeps the squad it was
         played under.
       </p>

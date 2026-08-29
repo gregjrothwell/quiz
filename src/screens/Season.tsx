@@ -81,7 +81,7 @@ export function Season({ youUid, onBack }: SeasonProps) {
       <header className="row row--between">
         <div>
           <p className="eyebrow">The season</p>
-          <h1 className="display" style={{ fontSize: 'clamp(2rem, 7vw, 3.4rem)' }}>
+          <h1 className="display display--screen">
             Standings
           </h1>
         </div>
@@ -146,7 +146,7 @@ export function Season({ youUid, onBack }: SeasonProps) {
 
       {youUid ? <RecoveryPanel uid={youUid} onClaimed={onClaimed} /> : null}
 
-      <p className="muted" style={{ fontSize: '0.85rem' }}>
+      <p className="muted hint hint--apart">
         There is no sign-up, so a record starts out belonging to one browser — a new laptop,
         cleared site data or a private window begins a fresh one. A recovery code is how it
         moves.

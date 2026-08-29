@@ -200,7 +200,7 @@ export function Final({
     <>
       <header>
         <p className="eyebrow">{room.packTitle ?? 'That’s the round'}</p>
-        <h1 className="display" style={{ fontSize: 'clamp(2.4rem, 11vw, 5rem)' }}>
+        <h1 className="display display--hero">
           {winnerName
             ? leaders.length > 1
               ? `${winnerName} — dead heat`
@@ -279,7 +279,7 @@ export function Final({
       {/* Said once, here, because this is the moment there is a record worth
           keeping — and the season table is where the code lives. Not a prompt or
           a dialog: nobody has ever thanked a quiz for interrupting the podium. */}
-      <p className="muted" style={{ fontSize: '0.85rem' }}>
+      <p className="muted hint hint--apart">
         That’s gone onto the season table, which is tied to this browser. Grab a recovery code
         there if you ever play from anywhere else.
       </p>

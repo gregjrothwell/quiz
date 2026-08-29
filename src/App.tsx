@@ -777,7 +777,7 @@ function Game() {
         warning nobody would see and the room quietly filled with ghosts.
       */}
       {presenceWorking ? null : (
-        <p className="muted" style={{ fontSize: '0.85rem', margin: 0 }}>
+        <p className="muted hint">
           Can&rsquo;t track who&rsquo;s still here, so anyone who closes their tab will stay in the
           list. The round plays normally.
         </p>

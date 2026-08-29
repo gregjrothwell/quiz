@@ -459,6 +459,37 @@ textarea {
 }
 
 /*
+  `.display` carries no size of its own, so every heading used to write its own
+  clamp() at the call site — four of them as inline style objects in TSX, where
+  the stylesheet could not see them. These are those sizes, named and moved,
+  values unchanged.
+
+  Five steps is more than a scale wants. `--screen` and `--section` are within
+  0.2rem of each other at both ends and are the obvious merge; that is a design
+  call about which headings should match, not a rename, so it is deliberately
+  not made here.
+*/
+.display--hero {
+  font-size: clamp(2.4rem, 11vw, 5rem);
+}
+
+.display--screen {
+  font-size: clamp(2rem, 7vw, 3.4rem);
+}
+
+.display--section {
+  font-size: clamp(1.8rem, 7vw, 3rem);
+}
+
+.display--panel {
+  font-size: 1.6rem;
+}
+
+.display--inline {
+  font-size: clamp(1.3rem, 5vw, 1.9rem);
+}
+
+/*
  * Chrome and gold are painted through the text with background-clip, which
  * rules out text-shadow — a shadow would be clipped away with everything else.
  * The glow is a drop-shadow filter on the wrapper instead.
@@ -528,6 +559,25 @@ textarea {
 
 .muted {
   color: var(--ink-dim);
+}
+
+/*
+  The small print under a control. Was an inline `{ fontSize: '0.85rem',
+  margin: 0 }` repeated eleven times across eight files — a component that had
+  never been named, which is also why a change to its size meant eleven edits.
+
+  Zero margin is the common case: these sit inside a gapped `.stack`, where a
+  paragraph's own margin doubles the spacing. `--apart` keeps the browser
+  default for the three that trail a block rather than belonging to one, so
+  naming this changes no spacing anywhere.
+*/
+.hint {
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.hint--apart {
+  margin-block: 1em;
 }
 
 /* ── Controls ───────────────────────────────────────────────────────────── */

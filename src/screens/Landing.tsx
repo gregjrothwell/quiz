@@ -83,7 +83,7 @@ export function Landing({
         either way, in both the two-column and the stacked layout.
       */}
       <section className="panel stack">
-        <h2 className="display" style={{ fontSize: '1.6rem' }}>
+        <h2 className="display display--panel">
           Your name
         </h2>
         <div className="identity">
@@ -155,7 +155,7 @@ export function Landing({
           sitting there belongs to whoever played on it last.
         */}
         {remembered ? (
-          <p className="muted" style={{ fontSize: '0.85rem', margin: 0 }}>
+          <p className="muted hint">
             Remembered from last time — change it if you aren&rsquo;t {remembered}.
           </p>
         ) : null}
@@ -164,14 +164,14 @@ export function Landing({
 
       <div className="split split--two">
         <section className="panel stack">
-          <h2 className="display" style={{ fontSize: '1.6rem' }}>
+          <h2 className="display display--panel">
             Run the show
           </h2>
           {/*
             Deliberately not a restatement of the lede above, which already
             says what running the show involves.
           */}
-          <p className="muted" style={{ fontSize: '0.85rem', margin: 0 }}>
+          <p className="muted hint">
             You&rsquo;ll be the quizmaster, and everyone else joins with your code.
           </p>
           <button
@@ -185,7 +185,7 @@ export function Landing({
         </section>
 
         <section className="panel stack">
-          <h2 className="display" style={{ fontSize: '1.6rem' }}>
+          <h2 className="display display--panel">
             Join a room
           </h2>
           <label className="field">
@@ -205,8 +205,7 @@ export function Landing({
           </label>
           <p
             id="code-hint"
-            className={blocker ? 'nudge' : 'muted'}
-            style={{ fontSize: '0.85rem', margin: 0 }}
+            className={blocker ? 'nudge hint' : 'muted hint'}
           >
             {blocker === 'name'
               ? 'Now put your name in the box above — you need one to join.'

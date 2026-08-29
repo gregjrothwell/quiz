@@ -310,7 +310,7 @@ export function QuestionScreen({
     <>
       <header className="qhead">
         <div className="qhead__meta">
-          <p className="display" style={{ fontSize: 'clamp(1.3rem, 5vw, 1.9rem)' }}>
+          <p className="display display--inline">
             Question {room.index + 1}
             <span className="muted"> / {room.questions.length}</span>
           </p>
@@ -328,7 +328,7 @@ export function QuestionScreen({
           which reads as the round jumping rather than as arriving late.
         */}
         {revealed ? null : joinedMidQuestion ? (
-          <p className="muted" style={{ margin: 0, fontSize: '0.85rem' }}>
+          <p className="muted hint">
             You joined mid-question, so this one is scored as if you answered on the buzzer.
           </p>
         ) : (

@@ -56,7 +56,7 @@ export function Scoreboard({ room, youUid, isQuizmaster, onNext }: ScoreboardPro
         <p className="eyebrow">
           After {room.index + 1} of {room.questions.length}
         </p>
-        <h2 className="display" style={{ fontSize: 'clamp(1.8rem, 7vw, 3rem)' }}>
+        <h2 className="display display--section">
           Standings
         </h2>
       </header>
