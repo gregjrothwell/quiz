@@ -410,6 +410,25 @@ textarea {
   transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
 }
 
+/*
+  Drawn at 36px, which is the right size for a piece of quiet furniture in the
+  corner and 8px short of what Apple and Google ask for under a thumb. Same
+  trick as `.lamp--vote::after`: grow the hit area without touching the drawing,
+  because making the button itself 44px would stop it being quiet furniture.
+
+  Nothing to overlap here — it is absolutely positioned in the corner on its
+  own, so unlike the vote strip this needs no matching gap on a container.
+*/
+.sound::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}
+
 .sound:hover {
   color: var(--cyan);
   border-color: var(--edge);
@@ -1371,9 +1390,19 @@ select.input option {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
+  /*
+    These wrap to two rows once a squad list gets long. A chip draws 30.5px, so
+    a 0.4rem row gap puts rows 36.9px apart while each hit area is 44px — they
+    would overlap, and the top of a lower chip would become unhittable. 0.85rem
+    takes the pitch to 44.1px, where they meet without overlapping. Same
+    reasoning as `.lamps--vote`, and the same reason it is a fixed value rather
+    than `:has()`.
+  */
+  row-gap: 0.85rem;
 }
 
 .filter-chip {
+  position: relative;
   font-family: var(--tech);
   font-weight: 600;
   font-size: 0.72rem;
@@ -1385,6 +1414,21 @@ select.input option {
   border-radius: 999px;
   padding: 0.35rem 0.8rem;
   cursor: pointer;
+}
+
+/*
+  30.5px drawn, 44px under a thumb, by the same transparent overlay the vote
+  pills use. Bounded to the chip's own width so neighbours cannot overlap
+  sideways; `.league-filter` opens its row gap for the vertical case.
+*/
+.filter-chip::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 44px;
+  transform: translateY(-50%);
 }
 
 .filter-chip:hover {
