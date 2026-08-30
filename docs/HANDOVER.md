@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 29 August 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 30 August 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -44,7 +44,7 @@ and the hook says so if this one grows.
 | upgrading anything in `package.json` | [`decisions/dependencies.md`](decisions/dependencies.md) |
 | the studio set, or any lighting cue | [`decisions/lighting.md`](decisions/lighting.md) |
 
-## State as of 29 August 2026
+## State as of 30 August 2026
 
 **Shipped and played.** 514 tests, clean types and lint, no `any` or `@ts-ignore`.
 
@@ -57,9 +57,9 @@ and the hook says so if this one grows.
   snapshot; `reveal-probe` is the instrument: [`decisions/vault.md`](decisions/vault.md#the-gate-had-no-margin-and-the-host-was-the-one-who-paid).
 - **Scoring is a rank bonus, not a speed curve** — 500 for correct plus
   500/400/300/200/100 by the order the answers landed. **Live since 20 August**
-  ([PR #6](https://github.com/gregjrothwell/quiz/pull/6)), and **proved with a
-  full field 29 August** — `rank-harness`, seven answerers and a browser, the
-  whole ladder in one question: [`decisions/scoring.md`](decisions/scoring.md#evidence).
+  ([PR #6](https://github.com/gregjrothwell/quiz/pull/6)); **full field 29 August**,
+  Ada 1,000 and fastest finger at 1.2s on the same screen 30 August:
+  [`decisions/scoring.md`](decisions/scoring.md#evidence).
 - **The final screen makes a shareable PNG of the round**, chair and all. **Live
   since 20 August** ([PR #7](https://github.com/gregjrothwell/quiz/pull/7)):
   [`decisions/final-card.md`](decisions/final-card.md).

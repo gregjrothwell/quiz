@@ -1,6 +1,6 @@
 # The ideas review
 
-> **Owner: Greg Rothwell. Last updated: 28 August 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 30 August 2026. Budget: 250 lines.**
 
 Written after the office's first real round on the season work: what to do next, why, and what
 each costs against the Spark free tier.
@@ -31,11 +31,10 @@ highest value of anything in this file" and that was right. [`shared-clock.md`](
 
 ### Nothing needing a second person has been tested
 
-**Four of the five still stand**: the review panel, squad-vs-squad, a quizmaster handover, and a
+**Four still stand**: the review panel, squad-vs-squad, a quizmaster handover, and a
 recovery code moving between browsers. ~~Keyboard shortcuts~~ cleared 28 August, answering with
-`a` and `c` in a live round. A fifth has been added by shipping rank scoring: **nobody has seen
-the rank bonus award an order**, because that needs two correct answers in one room and every
-round so far has had one answerer.
+`a` and `c` in a live round. ~~**nobody has seen the rank bonus award an order**~~ — **seen 29–30
+August**, `rank-harness`: Ada 1,000 and fastest finger on the same finished screen.
 
 ## The ideas
 

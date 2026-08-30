@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 29 August 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 30 August 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -15,6 +15,22 @@ and including 20 August moved *verbatim* to
 [`recall/2026-08.md`](recall/2026-08.md) — not reworded, because compressing an
 old entry to make it fit is the thing the paragraph above forbids. Every one of
 them is still listed below by date, so the chronology reads end to end from here.
+
+## 2026-08-30 — Fastest finger agrees with the rank bonus, on the finished screen
+
+The 29 August run stopped at the reveal, so the rosette was still a unit-test claim.
+`rank-harness` now writes `next` twice after the ladder holds — scoreboard, then
+`finished` — and `awardsFor` is run on the same server-read answers the bonuses used,
+not on `tallyQuestion`. Expected Ada at 1,200ms, written by hand.
+
+Room `7FK5` on the live site. Witness joined over reCAPTCHA, answered correctly at
+15,814ms, paid 600. **Ada takes it** at 1,000, and the same screen reads **Fastest
+finger / Ada / In on the buzzer at 1.2 seconds.** Accessibility tree and a scrolled
+screenshot, not `getComputedStyle`.
+
+Criterion 7 closed. The harness still does not call `recordGame`; the browser does,
+for Witness, which is the cost of a final screen.
+→ [`decisions/scoring.md`](decisions/scoring.md)
 
 ## 2026-08-29 — The rank bonus, proved with seven answerers and a browser
 

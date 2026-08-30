@@ -34,10 +34,14 @@
  * `docs/decisions/scoring.md`, not computed by `tallyQuestion`.** Deriving them
  * from the function under test would only prove the engine agrees with itself.
  * What this asks is whether the shipped, live path pays what the document
- * promised the room.
+ * promised the room. After the reveal it plays the round to `finished`, so the
+ * fastest-finger rosette can be checked against those same answers — that was
+ * the gap the 29 August run left, because it stopped at the reveal.
  *
- * Not part of the build or the test suite: it talks to the live project. It
- * never calls `recordGame`, so nothing here reaches the season table.
+ * Not part of the build or the test suite: it talks to the live project. The
+ * harness itself never calls `recordGame`. A `--browser` run that reaches
+ * `finished` will, from the browser, for that one player — that is the cost of
+ * seeing the final screen, and the name in the room is what lands on the board.
  */
 
 import { initializeApp, deleteApp, type FirebaseApp } from 'firebase/app';
@@ -59,9 +63,10 @@ import {
 } from 'firebase/firestore';
 import { reduce, type Action } from '../src/engine/reducer';
 import { liveAnswers, type AnswerDoc } from '../src/engine/answers';
+import { awardsFor, type QuestionRecord } from '../src/engine/awards';
 import { tallyQuestion } from '../src/engine/scoring';
 import { createRoom, currentQuestion, type QuizQuestion, type RoomState } from '../src/engine/state';
-import { randomRoomCode } from '../src/engine/roomCode';
+import { joinLink, randomRoomCode } from '../src/engine/roomCode';
 import { resolveAnswer } from '../src/lib/vault';
 
 /** Reads a required value from .env.local, so a missing one fails with a name. */
@@ -294,7 +299,7 @@ async function main(): Promise<void> {
     const expected = CAST.length + 1;
     console.log(`\n=======================================`);
     console.log(`  JOIN THIS ROOM:  ${code}`);
-    console.log(`  https://gregjrothwell.github.io/quiz/`);
+    console.log(`  ${joinLink('https://gregjrothwell.github.io', '/quiz/', code)}`);
     console.log(`=======================================\n`);
     console.log(`${stamp()}  Waiting for a browser to make it ${expected + 1}…`);
 
@@ -487,26 +492,88 @@ async function main(): Promise<void> {
   const asserted = (proof.data() as { answer?: unknown } | undefined)?.answer;
   console.log(`  The reveal document says "${String(asserted)}", and it is immutable ✓`);
 
-  stopRoom();
-  stopAnswers();
-  for (const client of [host, ...players]) await deleteApp(client.app);
+  /*
+    The rank bonus is a per-question claim. Fastest finger is a *round* claim,
+    and the final screen withholds it unless this device saw every question
+    (`sawWholeGame`). A one-question pack is enough: Ada at 1,200ms is the
+    quickest correct answer of the night, and the rosette has to name her on
+    the same screen that has her at 1,000 — that agreement is what 29 August
+    left outstanding, because this harness used to stop at the reveal.
+  */
+  const adaIndex = CAST.findIndex((seat) => seat.name === 'Ada');
+  const ada = players[adaIndex];
+  if (!ada) throw new Error('Ada is missing from the cast');
 
-  if (WAIT_FOR_BROWSER) {
-    console.log('\n  Holding the reveal on screen for 45s so it can be photographed…');
-    await sleep(45_000);
+  const log: QuestionRecord[] = [
+    {
+      index: 0,
+      correctIndex,
+      answers: liveAnswers(room.players, room.index, seen),
+      deltas,
+    },
+  ];
+  const awards = awardsFor(log, Object.keys(room.players));
+  const finger = awards.find((award) => award.id === 'fastest');
+  const namedAda =
+    finger?.id === 'fastest' &&
+    finger.uids.length === 1 &&
+    finger.uids[0] === ada.uid &&
+    finger.elapsedMs === 1_200;
+
+  if (namedAda) {
+    console.log('  Fastest finger is Ada at 1,200ms, from the same answers the bonuses used ✓');
+  } else {
+    const who = finger?.id === 'fastest' ? finger.uids.join(',') : 'nobody';
+    const when = finger?.id === 'fastest' ? `${finger.elapsedMs}ms` : '—';
+    failures.push(`fastest finger should be Ada at 1,200ms; the log named ${who} at ${when}`);
   }
 
-  console.log('');
   if (failures.length > 0) {
-    console.log('THE LADDER DOES NOT HOLD:');
+    stopRoom();
+    stopAnswers();
+    for (const client of [host, ...players]) await deleteApp(client.app);
+    console.log('\nTHE LADDER DOES NOT HOLD:');
     for (const failure of failures) console.log(`  ✗ ${failure}`);
     process.exitCode = 1;
     return;
   }
 
+  const waitForPhase = async (phase: RoomState['phase']): Promise<void> => {
+    for (let waited = 0; waited < 10_000; waited += 200) {
+      if (view.latest?.phase === phase) return;
+      await sleep(200);
+    }
+    throw new Error(`room never reached ${phase} (was ${view.latest?.phase ?? 'nothing'})`);
+  };
+
+  console.log(`\n${stamp()}  >>> WRITING next (to standings)`);
+  await dispatch([{ type: 'next', at: Date.now() }]);
+  await waitForPhase('scoreboard');
+
+  console.log(`${stamp()}  >>> WRITING next (to finished)`);
+  await dispatch([{ type: 'next', at: Date.now() }]);
+  await waitForPhase('finished');
+
+  const ended = await getDocFromServer(reference);
+  if (ended.data()?.phase !== 'finished') {
+    throw new Error(`server phase is ${String(ended.data()?.phase)}, not finished`);
+  }
+  console.log(`${stamp()}  Room ${code} is finished. Ada at 1,000 and fastest finger at 1.2s.`);
+  console.log('    On screen: “Fastest finger” / Ada / “In on the buzzer at 1.2 seconds.”');
+
+  if (WAIT_FOR_BROWSER) {
+    console.log('\n  Holding the final screen for 45s so it can be photographed…');
+    await sleep(45_000);
+  }
+
+  stopRoom();
+  stopAnswers();
+  for (const client of [host, ...players]) await deleteApp(client.app);
+
   console.log(
-    `The rank bonus holds in room ${code}: 1000 / 900 / 800 / 700 / 700 / 600 and a zero,\n` +
-      'paid by the live project, read back from the server, and re-derived by a second client.',
+    `\nThe rank bonus holds in room ${code}: 1000 / 900 / 800 / 700 / 700 / 600 and a zero,\n` +
+      'paid by the live project, read back from the server, and re-derived by a second client.\n' +
+      'Fastest finger is Ada at 1.2s, on the same answers, with the round at finished.',
   );
 }
 

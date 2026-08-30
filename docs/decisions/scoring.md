@@ -1,6 +1,6 @@
 # Scoring
 
-> **Owner: Greg Rothwell. Last updated: 29 August 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 30 August 2026. Budget: 250 lines.**
 
 **Status: built 20 August 2026.** Decision recorded in
 [`ideas-review.md`](ideas-review.md#1-rank-based-scoring--chosen) and the
@@ -222,8 +222,15 @@ Two things the run caught, both by cross-check rather than by the report:
   frame counting up to 600, and the second screenshot settled it. One reading would have been
   a confident wrong bug report.
 
-**Still outstanding:** the final screen's fastest-finger rosette, which needs a round played
-to `finished` — this one stops at the reveal.
+**The rosette, 30 August 2026.** The 29 August run stopped at the reveal. The harness now
+plays on to `finished`. Room `7FK5`, live site, Witness in a real browser over reCAPTCHA:
+Ada **1,000** on the podium and **Fastest finger / Ada / In on the buzzer at 1.2 seconds.**
+on the same screen. Witness answered correctly at 15,814ms — seventh, so the floor, **600**
+on the standings against the terminal's `was paid 600`. That is criterion 7, and it is
+the same agreement the shared clock used.
+
+The browser banks its own season row on `finished`. Witness is on the board; that is the
+cost of seeing the screen, not a leak from the harness.
 
 **No rules change, so `check-rules` is unaffected** — but run it before deploying anyway, on
 the standing principle that the repo copy is not what Firebase is running.
