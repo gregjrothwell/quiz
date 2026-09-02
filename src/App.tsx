@@ -28,6 +28,7 @@ import {
 } from './lib/rememberedSquad';
 import { useFinalSnapshot } from './lib/useFinalSnapshot';
 import { useGameLog } from './lib/useGameLog';
+import { NO_HISTORY } from './engine/askedHistory';
 import { loadAsked, loadForm, recordAsked, recordGame, type Banked } from './lib/season';
 import { play } from './lib/sound';
 import { loadPackQuestions, usePackIndex } from './lib/usePacks';
@@ -403,8 +404,14 @@ function Game() {
           // A history this round cannot read is a round that repeats a
           // question, which is a far smaller problem than a round that will not
           // start — so this failure is swallowed rather than reported.
-          const asked = await loadAsked(packId).catch(() => new Set<string>());
-          const questions = buildQuizQuestions(pool, count, level, Math.random, asked);
+          //
+          // `NO_HISTORY` rather than an empty set, and the distinction is not
+          // cosmetic: `recordAsked` writes the document whole, so a failure that
+          // arrives here looking like "this pack has never been played" gets
+          // written back as exactly that, wiping the real history. It says "we
+          // do not know", and the write below declines to guess.
+          const asked = await loadAsked(packId).catch(() => NO_HISTORY);
+          const questions = buildQuizQuestions(pool, count, level, Math.random, asked.ids);
 
           /*
             The opening titles, and the reason the round does not simply start

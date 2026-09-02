@@ -9,6 +9,11 @@ import {
   runTransaction,
   setDoc,
 } from 'firebase/firestore';
+import {
+  askedToWrite,
+  seenHistory,
+  type AskedHistory,
+} from '../engine/askedHistory';
 import type { Honours } from '../engine/awards';
 import type { FormRecord } from '../engine/form';
 import { bankGame, foldRecords, type GameOutcome, type PlayerRecord } from '../engine/records';
@@ -297,16 +302,6 @@ export async function mergeRecords(from: string, into: string): Promise<boolean>
   return merged;
 }
 
-/**
- * How many question ids to remember per pack.
- *
- * Deliberately not "all of them". The point is to stop last month's questions
- * coming round again, not to guarantee a pack is exhausted before anything
- * repeats — and a list that grows without limit eventually costs more to carry
- * than the repetition costs to sit through. 400 covers roughly six months of a
- * weekly round and still leaves every pack something fresh to draw on.
- */
-const ASKED_LIMIT = 400;
 
 function askedDoc(packId: string) {
   return doc(firestore(), 'seasons', SEASON, 'asked', packId);
@@ -320,23 +315,24 @@ function askedDoc(packId: string) {
  * only by whoever is starting a round, so it costs one document read per game
  * rather than one per player.
  *
- * A failure here is deliberately swallowed by the caller: a round that repeats
- * a question is a much smaller problem than a round that will not start.
+ * **Throws rather than degrading.** It used to hand back an empty set on
+ * failure, which the caller could not tell from a pack that had genuinely never
+ * been played — and then wrote that emptiness back over the real history. The
+ * caller still swallows the failure for the round; what it must not do is treat
+ * it as knowledge. See {@link AskedHistory}.
  */
-export async function loadAsked(packId: string): Promise<Set<string>> {
+export async function loadAsked(packId: string): Promise<AskedHistory> {
   const snapshot = await getDoc(askedDoc(packId));
-  if (!snapshot.exists()) return new Set();
+  if (!snapshot.exists()) return seenHistory(new Set());
 
   const { ids } = snapshot.data() as { ids?: unknown };
-  return new Set(Array.isArray(ids) ? ids.filter((id): id is string => typeof id === 'string') : []);
+  return seenHistory(
+    new Set(Array.isArray(ids) ? ids.filter((id): id is string => typeof id === 'string') : []),
+  );
 }
 
 /**
- * Records what a round served, newest first, capped at {@link ASKED_LIMIT}.
- *
- * Written whole rather than appended with `arrayUnion` because the cap has to
- * be applied somewhere, and `arrayUnion` has no notion of oldest. Ordering the
- * array newest-first means the cap drops the questions nobody remembers anyway.
+ * Records what a round served, on top of what the season already remembered.
  *
  * **`previous` is passed in rather than read here**, because the caller has
  * already read it — `selectQuestions` needs the same set to choose what to
@@ -345,20 +341,22 @@ export async function loadAsked(packId: string): Promise<Set<string>> {
  * two rooms opening the same pack in the same season within that window would
  * see one overwrite the other's history. The cost of losing that race is a
  * repeated question, which is what this whole mechanism is a best effort
- * against in the first place — the caller already swallows a failure here for
- * the same reason.
+ * against in the first place.
+ *
+ * **Writes nothing when the history could not be read**, which is the whole of
+ * `askedToWrite`. A `setDoc` here replaces the document, so a merge against a
+ * history that was never actually read is not a smaller write — it is the
+ * deletion of every id the season had banked.
  */
 export async function recordAsked(
   packId: string,
   ids: readonly string[],
-  previous: ReadonlySet<string>,
+  previous: AskedHistory,
 ): Promise<void> {
-  const merged = [...ids, ...[...previous].filter((id) => !ids.includes(id))];
+  const merged = askedToWrite(ids, previous);
+  if (!merged) return;
 
-  await setDoc(askedDoc(packId), {
-    ids: merged.slice(0, ASKED_LIMIT),
-    at: Date.now(),
-  });
+  await setDoc(askedDoc(packId), { ids: merged, at: Date.now() });
 }
 
 /**
