@@ -90,9 +90,14 @@ when it reached its budget.
 Done. The brief was to go over the app the way a lead developer would before it
 gets played at work, and fix what a review would fairly call a problem.
 
-**Both rulesets are published and verified.** `npm run check-rules` reports 13 of
-13, including the six denials that are new. Re-run it after any rules change —
-the repo copy is still only a copy, and the console is still the source of truth.
+**Both rulesets are published and verified.** `npm run check-rules` reported 13
+of 13 on the day of the review, including the six denials that were new. It
+defines **48 checks as of 2 September 2026**, and 51 once the wager's three
+land — the number has moved with every feature that added a rule, and the counts
+in this file (13 here, 36 at the top) are older dates rather than a
+disagreement. **Read the count off `check-rules`, not off this file.** Re-run it
+after any rules change — the repo copy is still only a copy, and the console is
+still the source of truth.
 
 Verified after publishing, against the live project:
 
@@ -181,10 +186,17 @@ and `check-rules` confirmed the semantics, which between them cover it.
    take the quiz down for the office for a day.
 
    Still open around it:
-   - **The Realtime Database is not enforced**, only Firestore. It holds
-     presence only, so the blast radius is ghosts in a lobby rather than the
-     read budget, but it is not covered.
-   - **Authentication is not enforced.** The negative test still signed in.
+   - ~~**The Realtime Database is not enforced**, only Firestore.~~ **Enforced
+     20 August 2026** — see the head of this file. Left visible rather than
+     deleted, because the paragraph below it is the reason this correction is
+     worth making at all.
+   - ~~**Authentication is not enforced.** The negative test still signed in.~~
+     **Enforced 20 August 2026**, hours after being turned on; `appcheck-probe`
+     is now refused at sign-in. **Corrected 2 September 2026** — both bullets
+     had stood for a fortnight under a heading that says "still open", directly
+     contradicting this file's own summary at the top. A doc that disagrees with
+     itself is worse than one that is merely out of date: the reader cannot tell
+     which half to trust, and this file asks to be trusted before the code.
    - **No rate limiting**, and no budget: **on Spark there is no bill to run up
      and no budget to set** — budgets live in Cloud Billing, which a free
      project has no account for. The substitute is the console's usage alerts.
