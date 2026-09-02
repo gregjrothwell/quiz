@@ -483,6 +483,48 @@ describe('selectQuestions with a season history', () => {
     expect([...ranks].sort((a, b) => a - b)).toEqual(ranks);
   });
 
+  test('a ramped round uses every fresh question before reaching for a repeat', () => {
+    // #given a pack whose fresh questions cannot fill a ramp on their own
+    const pool = spread({ easy: 6, medium: 6, hard: 6 });
+    const asked = new Set(pool.slice(0, 12).map((question) => question.id));
+    const fresh = pool.filter((question) => !asked.has(question.id));
+
+    // #when a ramped round of twelve is built
+    const picked = selectQuestions(pool, 12, 'ramp', seededRng(9), asked);
+    const ids = new Set(picked.map((question) => question.id));
+
+    // #then not one of the six unseen questions was passed over for a repeat.
+    // The ramp used to shuffle fresh and seen questions together inside each
+    // difficulty, so a repeat could be served while a fresh one sat there.
+    expect(fresh.every((question) => ids.has(question.id))).toBe(true);
+  });
+
+  test('an exhausted difficulty is substituted, not repeated', () => {
+    /*
+      #given a pack whose hard bucket the season has served in full while the
+      rest is barely touched. Measured on the live history, 2 September 2026:
+      Best of British had served 54 of its 54 easy questions and General
+      Knowledge 48 of its 59 hard ones, against medium buckets still over a
+      thousand deep. This is the shape the office is actually playing.
+    */
+    const pool = spread({ easy: 20, medium: 20, hard: 5 });
+    const asked = new Set(
+      pool.filter((question) => question.difficulty === 'hard').map((question) => question.id),
+    );
+
+    // #when a ramped round of ten is built
+    const picked = selectQuestions(pool, 10, 'ramp', seededRng(4), asked);
+
+    /*
+      #then it is full length and contains no repeat at all. The ladder loses its
+      top rung, which is a real cost — but serving a hard question the room saw
+      last week, every week, is the louder one, and with buckets this thin that
+      is exactly what a per-difficulty fallback to repeats would do.
+    */
+    expect(picked).toHaveLength(10);
+    expect(picked.filter((question) => asked.has(question.id))).toEqual([]);
+  });
+
   test('an empty history behaves exactly as before', () => {
     // #given a pool and no history at all
     const pool = spread({ easy: 20, medium: 0, hard: 0 });

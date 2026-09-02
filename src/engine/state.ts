@@ -297,7 +297,24 @@ export function shuffle<T>(items: readonly T[], rng: Rng = Math.random): T[] {
  */
 export type Level = Difficulty | 'mixed' | 'ramp';
 
-export const LEVELS = ['mixed', 'easy', 'medium', 'hard', 'ramp'] as const;
+/**
+ * The levels the lobby offers, which is deliberately not every `Level`.
+ *
+ * **`easy` and `hard` were withdrawn on 2 September 2026, on a measurement.**
+ * Only about 4,000 of the 14,176 published questions carry a real rating — the
+ * OpenTriviaQA half is unrated and defaults to `medium` — so those two levels
+ * were promising a depth the corpus does not have. `asked-probe` cross-
+ * referenced against the packs put numbers on it: Best of British had served
+ * **54 of its 54** easy questions and Sport **12 of its 15** hard ones, so
+ * picking either was a round of near-total repeats however well the history
+ * worked. `ideas-review.md` had already called them "honestly deletable".
+ *
+ * The `Level` type keeps them, and so does `selectQuestions` — `ramp` buckets by
+ * difficulty internally, and this comes back the moment `stats/{questionId}`
+ * gives the corpus a rating the office earned. Withdrawing the tiles is the
+ * whole change; nothing persists a level, so no round in flight is affected.
+ */
+export const LEVELS = ['mixed', 'medium', 'ramp'] as const;
 
 /** Share of a ramped round spent at each end before the middle takes the rest. */
 const RAMP_EDGE_SHARE = 0.3;
@@ -331,25 +348,52 @@ function bucketByDifficulty(
  * whatever is left over if a level ran short — a pack with no hard questions
  * still yields a full-length round rather than a truncated one. The final sort
  * is stable, so the shuffle within each level survives it.
+ *
+ * **Fresh questions and repeats are two passes, not one merged pool.** Merged,
+ * `bucketByDifficulty` shuffles a repeat in beside a fresh question of the same
+ * level and can serve the repeat while the fresh one is still sitting there.
+ * Every fresh question the pack has is used before any repeat is considered.
+ *
+ * The order inside a pass is the point of the second half. A level whose fresh
+ * bucket has run dry is topped up from the level with the most left — it does
+ * **not** reach for a repeat of its own kind while other fresh questions exist.
+ * On the packs the office plays that distinction is the whole game: the thin
+ * `easy` and `hard` buckets are exhausted while `medium` is a thousand deep, so
+ * a per-difficulty fallback would repeat a question every single round.
  */
-function buildRamp(pool: readonly SealedQuestion[], count: number, rng: Rng): SealedQuestion[] {
-  const buckets = bucketByDifficulty(pool, rng);
+function buildRamp(
+  fresh: readonly SealedQuestion[],
+  repeats: readonly SealedQuestion[],
+  count: number,
+  rng: Rng,
+): SealedQuestion[] {
   const plan = rampPlan(count);
   const picked: SealedQuestion[] = [];
 
-  for (const level of DIFFICULTIES) {
-    picked.push(...buckets[level].splice(0, plan[level]));
-  }
+  for (const pool of [fresh, repeats]) {
+    const buckets = bucketByDifficulty(pool, rng);
 
-  // Draw the shortfall from whichever level still has the most to give, so a
-  // thin pack degrades towards its own shape instead of towards one level.
-  while (picked.length < count) {
-    const fullest = DIFFICULTIES.reduce((best, level) =>
-      buckets[level].length > buckets[best].length ? level : best,
-    );
-    const next = buckets[fullest].shift();
-    if (!next) break;
-    picked.push(next);
+    for (const level of DIFFICULTIES) {
+      const held = picked.filter((question) => question.difficulty === level).length;
+      // Capped by the round as well as by the plan. On the second pass the two
+      // are not the same: a first pass that overfilled one level from its own
+      // top-up leaves the plan asking for more than the round has room for.
+      const room = Math.min(Math.max(0, plan[level] - held), count - picked.length);
+      picked.push(...buckets[level].splice(0, room));
+    }
+
+    // Draw the shortfall from whichever level still has the most to give, so a
+    // thin pack degrades towards its own shape instead of towards one level.
+    while (picked.length < count) {
+      const fullest = DIFFICULTIES.reduce((best, level) =>
+        buckets[level].length > buckets[best].length ? level : best,
+      );
+      const next = buckets[fullest].shift();
+      if (!next) break;
+      picked.push(next);
+    }
+
+    if (picked.length >= count) break;
   }
 
   return picked.sort((a, b) => DIFFICULTY_RANK[a.difficulty] - DIFFICULTY_RANK[b.difficulty]);
@@ -406,11 +450,11 @@ export function selectQuestions(
 
   // A ramp has to be built from the whole set it will draw on, or topping up
   // afterwards would append hard questions to the end of an already-sorted
-  // round and break the climb.
-  if (level === 'ramp') {
-    const preferred = fresh.length >= wanted ? fresh : [...fresh, ...repeats];
-    return buildRamp(preferred, wanted, rng);
-  }
+  // round and break the climb. It takes both halves and decides for itself when
+  // a repeat is unavoidable — the gate used to be `fresh.length >= wanted` over
+  // the *pool*, which says nothing about whether any one difficulty still has a
+  // fresh question in it.
+  if (level === 'ramp') return buildRamp(fresh, repeats, wanted, rng);
 
   const picked = shuffle(fresh, rng).slice(0, wanted);
   if (picked.length >= wanted) return picked;
