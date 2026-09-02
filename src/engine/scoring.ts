@@ -40,6 +40,33 @@ export function rankBonus(position: number): number {
 }
 
 /**
+ * The stakes the last question offers, as a percentage of the points held.
+ *
+ * **A share rather than a number of points, and that is the load-bearing
+ * decision.** You cannot stake what you do not have, so a game total can never
+ * go negative — which leaves `points >= 0` and `best <= maxBest()` in
+ * `firestore.rules` exactly as they are. An absolute stake breaks both and costs
+ * a second ruleset paste; this one costs a bound on a single new field.
+ */
+export const WAGER_SHARES = [0, 25, 50, 100] as const;
+
+/**
+ * What a player actually put on the question, in points.
+ *
+ * Clamped rather than trusted. `wager` rides the answer document, which the
+ * player writes, and the ruleset bounds it to 0-100 — but a client one deploy
+ * behind, or a crafted one, is handled here so that every device reaches the
+ * same number from the same document. Rounded, because a share of an odd score
+ * is not a whole number and a fractional point would show up as a total that
+ * does not add up.
+ */
+export function stakeFor(score: number, wager: number | undefined): number {
+  if (!wager || wager <= 0) return 0;
+  const share = Math.min(100, wager);
+  return Math.round((Math.max(0, score) * share) / 100);
+}
+
+/**
  * Points each player earned on one question.
  *
  * Correct answers are ranked against each other by `elapsedMs` and paid
@@ -74,9 +101,23 @@ export function tallyQuestion(params: {
    */
   correctIndex: number;
   answers: Record<string, Answer>;
+  /**
+   * What each player held going into this question — and, by being present at
+   * all, the signal that this question is being played for stakes.
+   *
+   * **Absent on every question but the last, and on every round with the wager
+   * switched off.** `wager` is a field the player writes, and nothing in the
+   * ruleset can say which question it belongs to without a `get()` on every
+   * answer write. Deciding here instead means a wager sent on question one is
+   * ignored, identically, by every device that scores the round.
+   */
+  scores?: Record<string, number>;
 }): Record<string, number> {
-  const { correctIndex, answers } = params;
+  const { correctIndex, answers, scores } = params;
   const deltas: Record<string, number> = {};
+
+  const stake = (uid: string, answer: Answer): number =>
+    (scores ? stakeFor(scores[uid] ?? 0, answer.wager) : 0);
 
   const correct = Object.entries(answers)
     .filter(([, answer]) => answer.optionIndex === correctIndex)
@@ -90,11 +131,18 @@ export function tallyQuestion(params: {
       position = i + 1;
       previousElapsed = answer.elapsedMs;
     }
-    deltas[uid] = BASE_POINTS + rankBonus(position);
+    deltas[uid] = BASE_POINTS + rankBonus(position) + stake(uid, answer);
   });
 
   for (const [uid, answer] of Object.entries(answers)) {
-    if (answer.optionIndex !== correctIndex) deltas[uid] = 0;
+    // A wrong answer keeps an explicit entry either way. `verdictFor` tells
+    // `wrong` from `lost` by whether the key is here at all, so a losing stake
+    // has to be a number in the map rather than an absence — and a stake of
+    // nothing has to stay `0` rather than becoming `-0`.
+    if (answer.optionIndex !== correctIndex) {
+      const lost = stake(uid, answer);
+      deltas[uid] = lost > 0 ? -lost : 0;
+    }
   }
 
   return deltas;

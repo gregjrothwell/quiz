@@ -230,7 +230,7 @@ async function main(): Promise<void> {
     host,
     code,
     [
-      { type: 'selectPack', packId: 'general-knowledge', packTitle: 'GK', questions: QUESTIONS },
+      { type: 'selectPack', packId: 'general-knowledge', packTitle: 'GK', questions: QUESTIONS, wagerEnabled: false },
       { type: 'start', at: Date.now(), gameId: 'harness-game', durationSecs: DEFAULT_DURATION_SECS },
     ],
     staleView,

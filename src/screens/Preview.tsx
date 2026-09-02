@@ -265,6 +265,35 @@ export function Preview() {
       ),
     },
     {
+      /*
+        The stake band, on the last question of a round played for stakes.
+
+        Here because the gallery is what a design review actually looks at, and
+        the last one found the empty quizmaster's desk only on the screens that
+        had a fixture — the reveal had none, which is how it survived. A control
+        that appears on one question in fifteen would never be seen otherwise.
+      */
+      title: 'Question · played for stakes',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'question',
+            questionOpenedAt: 1_000,
+            index: QUESTIONS.length - 1,
+            wagerEnabled: true,
+          })}
+          youUid="greg"
+          isQuizmaster={false}
+          clock={CLOCK}
+          revealed={false}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
       title: 'Question · walked in on it',
       node: (
         <QuestionScreen

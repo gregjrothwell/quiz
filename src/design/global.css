@@ -2330,6 +2330,28 @@ select.input option {
   gap: 1.5rem;
 }
 
+/*
+  The stake band, above the lecterns on the last question.
+
+  Amber rather than the cyan the rest of the question screen runs on, because it
+  is the one control here that changes what the question is worth — it should
+  not read as another piece of the furniture. Centred so it reads as a caption
+  to the podiums beneath it rather than a form.
+*/
+.wager {
+  align-items: center;
+  border: 1px solid var(--amber);
+  border-radius: var(--radius);
+  background: rgb(255 178 38 / 0.06);
+  padding: 0.85rem 1rem;
+  margin-block-end: 1.25rem;
+  text-align: center;
+}
+
+.wager .eyebrow {
+  color: var(--amber-bright);
+}
+
 
 .grow {
   flex: 1;

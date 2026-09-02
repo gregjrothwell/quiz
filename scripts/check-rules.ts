@@ -285,6 +285,76 @@ function buildChecks(probes: Probes): Check[] {
         }),
     },
     {
+      /*
+        The check that says whether the wager needs a *second* paste, and the
+        reason it is worth spending a live write on: `wagerEnabled` is a new
+        field on the room document, and the room document is what took the game
+        down when squads shipped. `wellFormed()` bounds the fields it names and
+        does not `hasOnly` the document's keys — this proves that against the
+        published ruleset rather than against a reading of the repo copy.
+      */
+      label: 'Firestore   · open a room that is played for stakes',
+      expect: 'allow',
+      hint: 'the published firestore.rules refuses a room document carrying '
+        + '`wagerEnabled` — the wager needs a second paste after all, and until '
+        + 'it happens no round can be started at all',
+      run: () =>
+        updateDoc(doc(db, 'rooms', LIVE_ROOM), {
+          code: LIVE_ROOM,
+          phase: 'lobby',
+          players: { [uid]: { name: 'Rules check', joinedAt: Date.now() } },
+          packId: null,
+          packTitle: null,
+          questions: [],
+          index: 0,
+          questionOpenedAt: null,
+          scores: { [uid]: 0 },
+          lastDeltas: {},
+          skipped: [],
+          gameId: 'rules-check',
+          wagerEnabled: true,
+        }),
+    },
+    {
+      label: 'Firestore   · stake points on your own answer',
+      expect: 'allow',
+      hint: 'firestore.rules has not taken `wager` into the answers hasOnly list '
+        + '— the whole answer write is refused, so on the last question of a '
+        + 'round played for stakes nobody scores at all',
+      run: async () => {
+        const reference = doc(db, 'rooms', 'ZZZZ', 'answers', uid);
+        await setDoc(reference, { optionIndex: 0, elapsedMs: 10, questionIndex: 0, wager: 50 });
+        // Swept rather than left, for the reason the vote case gives.
+        return deleteDoc(reference);
+      },
+    },
+    {
+      label: 'Firestore   · stake more than all of it',
+      expect: 'deny',
+      hint: 'firestore.rules is missing the 0-100 bound on `wager` — a share '
+        + 'above 100 would let a losing answer drive a score below zero, which '
+        + 'the season row refuses outright',
+      run: () =>
+        setDoc(doc(db, 'rooms', 'ZZZZ', 'answers', uid), {
+          optionIndex: 0,
+          elapsedMs: 10,
+          questionIndex: 0,
+          wager: 101,
+        }),
+    },
+    {
+      label: 'Firestore   · stake something that is not a number',
+      expect: 'deny',
+      hint: 'firestore.rules is missing the `is int` check on `wager`',
+      run: () =>
+        setDoc(doc(db, 'rooms', 'ZZZZ', 'answers', uid), {
+          optionIndex: 0,
+          elapsedMs: 10,
+          questionIndex: 0,
+          wager: 'all of it',
+        }),
+    },
+    {
       label: "Firestore   · write another player's answer",
       expect: 'deny',
       hint: 'firestore.rules lets one player overwrite another player’s answer',

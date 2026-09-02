@@ -4,6 +4,7 @@ import { tallyQuestion } from './scoring';
 import {
   currentQuestion,
   isDurationAllowed,
+  isWagerQuestion,
   questionDurationMs,
   type Player,
   type QuizQuestion,
@@ -26,7 +27,13 @@ export type Action =
   /** Back to the lobby controls, for a quizmaster who has changed their mind. */
   | { type: 'clearTitles' }
   | { type: 'leave'; uid: string }
-  | { type: 'selectPack'; packId: PackId; packTitle: string; questions: QuizQuestion[] }
+  | {
+      type: 'selectPack';
+      packId: PackId;
+      packTitle: string;
+      questions: QuizQuestion[];
+      wagerEnabled: boolean;
+    }
   /**
    * `durationSecs` is settled here and nowhere else. The security rules pin it
    * for as long as a question is open, so the one write that may change it is
@@ -34,7 +41,7 @@ export type Action =
    * quizmaster makes deliberately.
    */
   | { type: 'start'; at: number; gameId: string; durationSecs: number }
-  | { type: 'answer'; uid: string; optionIndex: number; elapsedMs: number }
+  | { type: 'answer'; uid: string; optionIndex: number; elapsedMs: number; wager?: number }
   /**
    * `correctIndex` arrives from the vault, not from the room. Only the client
    * that ran the reveal knows it, and writing it into the question is how
@@ -68,11 +75,11 @@ export function reduce(state: RoomState, action: Action): RoomState {
     case 'leave':
       return leave(state, action.uid);
     case 'selectPack':
-      return selectPack(state, action.packId, action.packTitle, action.questions);
+      return selectPack(state, action.packId, action.packTitle, action.questions, action.wagerEnabled);
     case 'start':
       return start(state, action.at, action.gameId, action.durationSecs);
     case 'answer':
-      return answer(state, action.uid, action.optionIndex, action.elapsedMs);
+      return answer(state, action.uid, action.optionIndex, action.elapsedMs, action.wager);
     case 'reveal':
       return reveal(state, action.correctIndex, action.questionId);
     case 'skip':
@@ -137,9 +144,10 @@ function selectPack(
   packId: PackId,
   packTitle: string,
   questions: QuizQuestion[],
+  wagerEnabled: boolean,
 ): RoomState {
   if (state.phase !== 'lobby') return state;
-  return { ...state, packId, packTitle, questions };
+  return { ...state, packId, packTitle, questions, wagerEnabled };
 }
 
 /**
@@ -200,7 +208,13 @@ function start(state: RoomState, at: number, gameId: string, durationSecs: numbe
  * leisure — which would make the speed score meaningless. Overwriting makes the
  * trade honest and visible: you can change, and it costs you.
  */
-function answer(state: RoomState, uid: string, optionIndex: number, elapsedMs: number): RoomState {
+function answer(
+  state: RoomState,
+  uid: string,
+  optionIndex: number,
+  elapsedMs: number,
+  wager?: number,
+): RoomState {
   if (state.phase !== 'question') return state;
   if (!state.players[uid]) return state;
 
@@ -212,7 +226,16 @@ function answer(state: RoomState, uid: string, optionIndex: number, elapsedMs: n
   // zero, so a laggy client is not punished differently from a silent one.
   if (elapsedMs > questionDurationMs(state)) return state;
 
-  return { ...state, answers: { ...state.answers, [uid]: { optionIndex, elapsedMs } } };
+  // The stake is kept only on the question that is actually played for it.
+  // Dropping it here as well as ignoring it in `tallyQuestion` means a wager
+  // sent on the wrong question never enters room state at all, so no screen can
+  // render one that will not be paid.
+  const staked = isWagerQuestion(state) && wager !== undefined ? { wager } : {};
+
+  return {
+    ...state,
+    answers: { ...state.answers, [uid]: { optionIndex, elapsedMs, ...staked } },
+  };
 }
 
 function reveal(state: RoomState, correctIndex: number, questionId: string): RoomState {
@@ -257,7 +280,15 @@ function reveal(state: RoomState, correctIndex: number, questionId: string): Roo
   // the clock, so a ten-second round and a twenty-second one pay identically. The
   // window still bounds what may be answered at all — `answer` above refuses
   // anything past it — it just no longer decides what an answer is worth.
-  const deltas = tallyQuestion({ correctIndex, answers: eligible });
+  // `scores` is passed only on the question the room agreed to play for
+  // stakes, and its presence is what turns a `wager` on an answer document into
+  // points. Every client reaches the same decision from the same document, so
+  // the reveal stays a pure function of what the room already holds.
+  const deltas = tallyQuestion({
+    correctIndex,
+    answers: eligible,
+    ...(isWagerQuestion(state) ? { scores: state.scores } : {}),
+  });
 
   const scores = { ...state.scores };
   for (const [uid, delta] of Object.entries(deltas)) {

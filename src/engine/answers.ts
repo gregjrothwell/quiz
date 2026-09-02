@@ -35,7 +35,16 @@ export function liveAnswers(
   for (const [uid, answer] of Object.entries(docs)) {
     if (answer.questionIndex !== index) continue;
     if (!players[uid]) continue;
-    live[uid] = { optionIndex: answer.optionIndex, elapsedMs: answer.elapsedMs };
+    // Rebuilt field by field on purpose, so a stray field on the document
+    // cannot reach the reducer — which means a new one has to be added here
+    // deliberately. `wager` is spread conditionally rather than written as
+    // `wager: answer.wager`, so an answer without one keeps the exact shape
+    // every round before the wager produced.
+    live[uid] = {
+      optionIndex: answer.optionIndex,
+      elapsedMs: answer.elapsedMs,
+      ...(answer.wager === undefined ? {} : { wager: answer.wager }),
+    };
   }
 
   return live;

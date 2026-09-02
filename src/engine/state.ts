@@ -115,6 +115,15 @@ export interface Answer {
    * timestamp means mismatched laptop clocks cannot distort speed scores.
    */
   elapsedMs: number;
+  /**
+   * The share of their own points the player put on this question, 0-100.
+   *
+   * Rides the answer document rather than a write of its own, which is why the
+   * whole feature costs no extra reads and no extra writes. Optional because
+   * every round before this one has answers without it, and because most
+   * questions are not played for stakes — see {@link isWagerQuestion}.
+   */
+  wager?: number;
 }
 
 /**
@@ -181,6 +190,33 @@ export interface RoomState {
   gameId: string | null;
   /** The opening titles, or null when a round is not being introduced. */
   form: FormDigest | null;
+  /**
+   * Whether the last question of this round is played for stakes.
+   *
+   * Chosen in the lobby and fixed for the round, exactly as the window is —
+   * because the honest objection to a wager is that a good round can be lost on
+   * one question, and the answer to that is that the room agreed to it first.
+   *
+   * On the room document rather than each player's own, and it needs no ruleset
+   * paste: `wellFormed()` bounds the fields it names and does not `hasOnly` the
+   * document's keys, which is the same reason `expiresAt` needed none.
+   */
+  wagerEnabled: boolean;
+}
+
+/**
+ * Whether the question in play is the one being played for stakes.
+ *
+ * The last question and no other, and only when the room agreed to it. Every
+ * device answers this the same way from the room document, which is what lets
+ * the reveal stay a pure function of what every client already holds.
+ */
+export function isWagerQuestion(state: RoomState): boolean {
+  return (
+    state.wagerEnabled
+    && state.questions.length > 0
+    && state.index === state.questions.length - 1
+  );
 }
 
 export function createRoom(code: string): RoomState {
@@ -200,6 +236,7 @@ export function createRoom(code: string): RoomState {
     skipped: [],
     gameId: null,
     form: null,
+    wagerEnabled: false,
   };
 }
 
