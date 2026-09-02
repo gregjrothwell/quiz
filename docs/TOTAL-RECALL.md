@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 29 August 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 2 September 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -15,6 +15,54 @@ and including 20 August moved *verbatim* to
 [`recall/2026-08.md`](recall/2026-08.md) — not reworded, because compressing an
 old entry to make it fit is the thing the paragraph above forbids. Every one of
 them is still listed below by date, so the chronology reads end to end from here.
+
+## 2026-09-02 — The repeats, and a wager that had never existed
+
+Two pieces of office feedback, and both turned out to start from a wrong premise.
+
+**The wager was never built.** Greg had pitched it verbally at the last round and the office
+liked it; someone then suggested betting every round. No code, no branch, no commit on any ref
+— it was `ideas-review.md` §3 and nothing else. Built as costed: last question only, opt-in from
+the lobby, **a share of the points you hold rather than a number of points**, which is what keeps
+a total off negative and keeps this to **one** ruleset paste instead of two. Zero extra reads and
+writes — it rides the answer document. **The paste is outstanding**; `check-rules` fails on its
+allow case until then, and its two deny cases pass *vacuously* in the meantime.
+→ [`decisions/wager.md`](decisions/wager.md)
+
+**The squad suspicion on the repeats was half right, and the wrong half is the useful one.**
+`selectQuestions` is unchanged since 1 August. But `7d25cac` is an ancestor of the squad branch,
+so it reached the office in the same deploy — and it made `recordAsked` take `previous` from the
+caller, where a failed read had already been degraded to an empty set. **One transient failure
+overwrote up to 400 remembered ids with that round's fifteen**, permanently and silently.
+
+**The measurement then moved the work.** `asked-probe` (new, read-only) showed the history was
+in fact accumulating — General Knowledge sat at exactly 400, the old cap, so the fix there was
+raising it to 500, the most the published rules allow without a paste. Cross-referencing the
+asked ids against the packs found the real cause: **Best of British had served 54 of its 54 easy
+questions**, Sport 12 of its 15 hard ones. The Ladder takes 30% from each end every round, and
+only ~4,000 of 14,176 questions carry a real rating. Gentle and Fiendish are withdrawn.
+
+**The plan's per-difficulty repeat fallback was measured and then not built.** With buckets that
+thin it would have served a repeated hard question every single round — injecting repeats into
+the complaint being fixed. Six rounds simulated against the real live history: **zero repeats**.
+What it costs is the ladder itself, which now loses its top rung by round five on General
+Knowledge. That is a `stats/{questionId}` problem, and it is in Outstanding rather than papered
+over.
+
+**Proved by a comparison, not a number**: `tv-and-film` **40 → 55** across one real round in the
+browser. The refusing direction is unit-tested only, because forcing it live would mean
+publishing a broken ruleset — said rather than implied.
+→ [`decisions/repeats.md`](decisions/repeats.md)
+
+**Two corrections and one admission.** The handover had claimed two WCAG failures fixed a week
+earlier and three branches undeployed that were live; `security.md` still said the RTDB and auth
+were unenforced, under a heading saying "still open", a fortnight after its own summary said
+otherwise. All corrected in place. And **the first commit of the repeats work carries all four
+changes while its message names only one** — `git add -A` where three commits were wanted. Not
+rewritten, because that rule does not bend for tidiness; recorded here instead.
+
+29 merged local branches deleted. `cursor/fastest-finger` still holds a 583-line rank harness
+that exists on this disk alone.
 
 ## 2026-08-29 — A design review lands, and four of its six get built
 
@@ -169,99 +217,14 @@ Split at 283 lines against 250: the closed half — decisions taken, what was re
 Spark allows — is now `decisions/scope.md`.
 → [`decisions/ideas-review.md`](decisions/ideas-review.md)
 
-## 2026-08-28 — Voting and auto-join are live, and proved on the deployed site
-
-Rules pasted by Greg, then PRs #9-#12 merged and deployed in order. New bundle `index-Dtk7kXAa`,
-CDN watched until it served it. **`firebase-Cns3pSRr.js` kept its hash across the deploy**,
-which is the split-chunk design in `known-limits.md` doing exactly what it claims.
-
-**`check-rules` after the paste is the evidence that matters.** The two vote *allow* cases
-flipped FAIL -> PASS, and the six *deny* cases stayed PASS — but they now mean something, where
-before the paste they passed vacuously because with no rule at all everything is denied. That
-distinction was called out in the PR rather than reported as eight green ticks.
-
-Proved end to end on the live site, in one round: the link auto-joined as OfficeTest with no
-landing screen; the answer scored `CORRECT · +1,000` at 8.9s against `scored: OfficeTest +1000`
-in the terminal; the vote was clicked 213ms after the reveal landed, the pill lit and the label
-went to "Noted"; and `fold-votes` read it back with the Admin SDK — **`1 verdicts across 1
-questions`, nothing retired**, because one vote is under the five-vote floor. The refusing
-direction, on production.
-
-Catching the 8s reveal window needed a watcher injected into the page — the tool round-trip is
-longer than the window, and two attempts were lost to it before that.
-
-Also: `MEMORY-PROTOCOL.md` and `standards/docs.mdc` now both carry the archive convention, so
-Cursor sees it too.
-
-## 2026-08-28 — The office can vote a question out
-
-Office feedback on question quality. Players rate a question at the reveal; the verdicts fold
-back into the packs as a retirement list. **Built, rules paste outstanding.**
-
-Shape, and the three reasons it is a global collection rather than a room one: no reads (an
-in-room collection is another `Q·N²` term, ~+540 a game at six players), it outlives
-`prune-rooms`, and the uid as document id deduplicates it for free. The document is one field,
-`good` or `bad` — no option index, so it cannot leak what the vault protects. 90 writes a game,
-no reads. `shouldRetire` is 5 votes and 60% bad, in the engine so `npm test` covers it.
-
-**The trap:** deleting a question from `public/packs/` retires nothing, because
-`fetch-questions --resort` rebuilds the packs from `.cache/` and would resurrect it silently.
-So `src/questions/retired.json` is the record and the packs are downstream; `seal.test.ts`
-now checks no retired id is back in a pack. 482 tests.
-
-**Two corrections made while building.** `delete: if false` on the vote path was written first
-and was wrong — it buys nothing, since `update` already lets anyone flip their own verdict, and
-it costs a row no client can remove, which is exactly the `prune-rooms --probe-rows` litter
-this repo already had to sweep once. And `check-rules` currently passes all six *deny* cases
-for the wrong reason: with no rule published, everything is denied. They only prove anything
-after the paste.
-
-`questions.md` hit 259 against its 250 budget, so this **split** into
-`decisions/question-votes.md` rather than being tidied — the harvest pipeline and what the
-office does to it afterwards are different subsystems meeting at `public/packs/`.
-→ [`decisions/question-votes.md`](decisions/question-votes.md)
-
-## 2026-08-28 — The join link goes straight into the room
-
-Office feedback: following the link still costs a press on a screen that already knows both
-answers. `shouldAutoJoin` (`src/engine/autoJoin.ts`) skips it. Written as a **list of
-refusals** — no code, no remembered name, whitespace name, not signed in, not connected, link
-already used, already in a room — because the refusals are the half worth testing. All of them
-fall back to exactly today's landing screen with the code filled in. 11 tests, 459 total.
-
-**The Lurker is the one refusal about the game rather than readiness.** Their side lives in
-session storage on purpose, so a fresh session has a squad and no side; auto-joining would
-bank their week to Lurkers instead of whoever they sat with, and nobody would see it happen.
-Verified live: name and code both present, still refused, and the landing screen put the
-"playing with" picker up. An empty squad is *not* the same case and goes straight in.
-
-Proved in both directions in the browser: a cleared browser lands on the landing screen with
-the code filled; a browser holding a name goes straight in; the lobby then says *"The link
-brought you straight in as Linky, playing for Hermes"* with **Not you? Start again**, which
-returns to the landing screen without re-joining. A room created by hand shows no such line.
-→ [`decisions/joining.md`](decisions/joining.md)
-
-## 2026-08-28 — The shared clock is live, and has been played
-
-Merged [PR #8](https://github.com/gregjrothwell/quiz/pull/8) and deployed. Eight commits: the
-shared clock, the rank-scoring rename, the host-room answers fix. The CDN was watched until it
-served `index-AUAGmZGO.js` rather than assumed.
-
-**First round anybody has played on the shared clock.** Room PMVP, 20s window, answered from
-the keyboard at 10s showing: browser `CORRECT · +1,000` stamped 10.6s, terminal
-`scored: ClockTest +1000` at 10.79s after open. The two agreeing is the evidence; the 0.19s
-gap is write latency. Clears **keyboard shortcuts in a live round**. Ranking still unproven —
-one answerer cannot show an order.
-
-Re-run before merging: 448 tests, `check-rules` both directions, `sync-harness 10` (host +4ms,
-other nine +50–53ms), `reveal-probe` accepted at 10005ms.
-
-**Found, not fixed:** a page reload drops you out of the room — `code` is React state in
-`useRoom` and nothing persists it. Pre-existing. Now in the handover's Outstanding list.
 ## Earlier — the full chronology, archived
 
-Thirty entries, moved on 28 August 2026 and unchanged. Newest first, as above.
+Thirty-four entries, moved on 28 August and 2 September 2026, unchanged. Newest first, as above.
 
+- **2026-08-28** — [Voting and auto-join are live, and proved on the deployed site](recall/2026-08.md#2026-08-28--voting-and-auto-join-are-live-and-proved-on-the-deployed-site)
+- **2026-08-28** — [The office can vote a question out](recall/2026-08.md#2026-08-28--the-office-can-vote-a-question-out)
+- **2026-08-28** — [The join link goes straight into the room](recall/2026-08.md#2026-08-28--the-join-link-goes-straight-into-the-room)
+- **2026-08-28** — [The shared clock is live, and has been played](recall/2026-08.md#2026-08-28--the-shared-clock-is-live-and-has-been-played)
 - **2026-08-20** — [host-room reads the answers, and scores them](recall/2026-08.md#2026-08-20--host-room-reads-the-answers-and-scores-them)
 - **2026-08-20** — [The shared clock, and a harness that scores nothing](recall/2026-08.md#2026-08-20--the-shared-clock-and-a-harness-that-scores-nothing)
 - **2026-08-20** — ["The Ladder" was already taken](recall/2026-08.md#2026-08-20--the-ladder-was-already-taken)

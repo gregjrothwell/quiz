@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 28 August 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 2 September 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -11,13 +11,15 @@ Built to replace Polly in Teams.
 
 **This file is the way in, not the record.** It was 2,422 lines until 20 August
 2026 — more to read than the codebase it describes. Depth is in `decisions/`, the
-dated spine is `TOTAL-RECALL.md` (older half archived in [`recall/`](recall/)),
-and the hook says so if this one grows.
+dated spine is `TOTAL-RECALL.md` (older half in [`recall/`](recall/)), and the
+hook says so if this one grows.
 
 ## Read this before changing
 
 | If you're changing | Read |
 |---|---|
+| repeats, the question history, why a level was withdrawn | [`decisions/repeats.md`](decisions/repeats.md) |
+| staking points on the last question | [`decisions/wager.md`](decisions/wager.md) |
 | the vault, reveals, answer secrecy, **when a client may ask** | [`decisions/vault.md`](decisions/vault.md) |
 | the answer window or its rules | [`decisions/answer-window.md`](decisions/answer-window.md) |
 | the season table, squads, weekly boards, `recordGame`, anything called `team` | [`decisions/season.md`](decisions/season.md) |
@@ -44,13 +46,14 @@ and the hook says so if this one grows.
 | upgrading anything in `package.json` | [`decisions/dependencies.md`](decisions/dependencies.md) |
 | the studio set, or any lighting cue | [`decisions/lighting.md`](decisions/lighting.md) |
 
-## State as of 28 August 2026
+## State as of 2 September 2026
 
-**Shipped and played.** 513 tests, clean types and lint, no `any` or `@ts-ignore`.
+**Shipped and played.** 525 tests on `fix-repeat-questions`, 529 on
+`final-question-wager`; clean types and lint, no `any` or `@ts-ignore`.
 
 - **Squads, weekly boards, the average table, the frozen podium and the sealed
-  question text are live** (20 August, [PR #2](https://github.com/gregjrothwell/quiz/pull/2)).
-- **The answer vault is live**: 13,593 answers, both rulesets published.
+  question text are live** (20 August, [PR #2](https://github.com/gregjrothwell/quiz/pull/2)),
+  and **the answer vault** with them: 13,593 answers, both rulesets published.
 - **App Check enforces on Firestore, the RTDB and auth**; `appcheck-probe` refuses
   at sign-in, which is the proof: [`decisions/app-check-auth.md`](decisions/app-check-auth.md).
 - **The reveal lands on its own, ~0.5s after the clock**, on the server-confirmed
@@ -60,35 +63,29 @@ and the hook says so if this one grows.
   ([PR #6](https://github.com/gregjrothwell/quiz/pull/6)); scored in a live room,
   but **ranking is still unproven** — that needs two answerers:
   [`decisions/scoring.md`](decisions/scoring.md).
-- **The final screen makes a shareable PNG of the round**, chair and all. **Live
-  since 20 August** ([PR #7](https://github.com/gregjrothwell/quiz/pull/7)):
-  [`decisions/final-card.md`](decisions/final-card.md).
-- **Every device counts the same window from the same origin**, corrected for its
-  own clock offset. **Live since 28 August** ([PR #8](https://github.com/gregjrothwell/quiz/pull/8))
-  and played the same day — `CORRECT · +1,000` at 10.6s in the browser against
-  `scored: ClockTest +1000` in the terminal, the two agreeing being the point:
-  [`decisions/shared-clock.md`](decisions/shared-clock.md).
-- **Squads score live under the standings**, ranked on points ÷ headcount.
-  **Live since 28 August** ([PR #16](https://github.com/gregjrothwell/quiz/pull/16));
-  rules pasted first, which was the whole risk: [`decisions/live-squads.md`](decisions/live-squads.md).
-- **Players vote on a question at the reveal**, and `fold-votes` turns the
-  verdicts into a retirement list. **Live since 28 August**, proved end to end:
-  [`decisions/question-votes.md`](decisions/question-votes.md).
-- **A join link goes straight into the room** when the browser already knows its
-  name. **Live since 28 August**:
-  [`decisions/joining.md`](decisions/joining.md).
+- **The final screen makes a shareable PNG of the round.** Live since 20 August
+  ([PR #7](https://github.com/gregjrothwell/quiz/pull/7)): [`decisions/final-card.md`](decisions/final-card.md).
+- **Live since 28 August**, each proved on the deployed site and each with its
+  own file: the **shared clock** ([`shared-clock.md`](decisions/shared-clock.md)),
+  **live squad scoring** on points ÷ headcount ([`live-squads.md`](decisions/live-squads.md)),
+  **voting a question out** ([`question-votes.md`](decisions/question-votes.md)),
+  and **a join link going straight into the room** ([`joining.md`](decisions/joining.md)).
 - **`npm run host-room` scores a real answer now** — it never read the answers
   subcollection, so every reveal it folded scored nobody.
 
-**On a branch and not deployed** (28 August, all reviewed and verified locally,
-none of it seen by a second person):
+- **The verdict pills, the operated lighting rig and the dependency pass all
+  merged and deployed** — `origin/gh-pages` was rebuilt 49 seconds after the
+  merge. This block said "on a branch and not deployed" until 2 September;
+  corrected by checking the branches rather than the prose.
 
-- **The verdict pills got a thumb-sized hit area** — they drew at 80×24, the
-  smallest targets in the app: [`decisions/state-of-play.md`](decisions/state-of-play.md#the-ui-measured--28-august-2026).
-- **The rig is operated rather than just lit** — the house dims for the question,
-  and blazes on `finished`: [`decisions/lighting.md`](decisions/lighting.md).
-- **Seven in-range dependency bumps and `globals` 17**; four majors measured and
-  held: [`decisions/dependencies.md`](decisions/dependencies.md).
+**On a branch, not merged and not deployed** (2 September):
+
+- **The repeats are fixed**: a failed history read can no longer wipe the
+  history, and Gentle and Fiendish are withdrawn because the corpus cannot fill
+  them. Branch `fix-repeat-questions`: [`decisions/repeats.md`](decisions/repeats.md).
+- **The last question can be played for stakes**, at zero extra reads and writes.
+  **Wants `firestore.rules` pasting first.** Branch `final-question-wager`:
+  [`decisions/wager.md`](decisions/wager.md).
 
 **What is actually in the project right now** — counts, the two slow leaks, and the
 two corrections that came out of miscounting them: [`decisions/cost.md`](decisions/cost.md#measured-live-28-august-2026).
@@ -105,9 +102,14 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
    [`decisions/identity.md`](decisions/identity.md).
 4. ~~**A reload drops you out of the room.**~~ **Fixed and live, 28 August**,
    verified on production: [`decisions/joining.md`](decisions/joining.md).
-5. **Two colour tokens fail WCAG AA** on every surface — `--ink-dim` and
-   `--cyan-dim`, worst case 3.27 against 4.5. Measured, not fixed; the values
-   that clear it are recorded: [`decisions/state-of-play.md`](decisions/state-of-play.md#the-ui-measured--28-august-2026).
+5. ~~**Two colour tokens fail WCAG AA.**~~ **Fixed and live**, `5d36bf3`:
+   `--ink-dim` is `#7a96bc` and `--cyan-dim` `#159fcc`, clearing 4.5 on all three
+   surfaces (worst case 4.95, against 3.27 before). Listed as open here until
+   2 September, a week after the fix shipped.
+6. **The Ladder stops climbing** once a pack's thin `easy` or `hard` bucket is
+   spent — it substitutes medium rather than repeating, which is the right
+   trade but is not what the tile promises. Measured over six rounds against the
+   live history; the fix is the `stats/{questionId}` counters, not selection.
 
 ## Where things are
 
@@ -125,12 +127,11 @@ docs/decisions/ One subsystem each. Reached from the table above.
 
 Commands: `dev` (port 5273), `test`, `typecheck`, `lint`, `build`, `deploy`,
 `fetch-questions [-- --resort]`, `fetch-otqa`, `seed-vault`, `check-rules`,
-`sync-harness [n]`, `host-room [-- secs]`, `reveal-probe`, `take-stock`,
-`prune-rooms [-- --probe-rows --go]`, `fold-votes [-- --go]`.
+`sync-harness [n]`, `host-room [-- secs]`, `reveal-probe`, `asked-probe`,
+`take-stock`, `prune-rooms [-- --probe-rows --go]`, `fold-votes [-- --go]`.
 
-`npm test` covers `src/` plus the pure parts of `scripts/`. Anything under
-`scripts/` that touches the network or the live project stays out deliberately;
-`npm test` must keep running offline.
+`npm test` covers `src/` plus the pure parts of `scripts/`. Anything touching the
+network or the live project stays out deliberately; it must keep running offline.
 
 ## If you're picking this up cold
 
