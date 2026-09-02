@@ -48,9 +48,8 @@ hook says so if this one grows.
 
 ## State as of 2 September 2026
 
-**Shipped and played.** 525 tests on `fix-repeat-questions`, 530 on
-`final-question-wager`, **542 merged together with no conflicts**. Types and lint
-clean, no `any` or `@ts-ignore`.
+**Shipped and played.** 542 tests on master, types and lint clean, no `any` or
+`@ts-ignore`.
 
 - **Squads, weekly boards, the average table, the frozen podium and the sealed
   question text are live** (20 August, [PR #2](https://github.com/gregjrothwell/quiz/pull/2)),
@@ -60,10 +59,9 @@ clean, no `any` or `@ts-ignore`.
 - **The reveal lands on its own, ~0.5s after the clock**, on the server-confirmed
   snapshot; `reveal-probe` is the instrument: [`decisions/vault.md`](decisions/vault.md#the-gate-had-no-margin-and-the-host-was-the-one-who-paid).
 - **Scoring is a rank bonus, not a speed curve** — 500 for correct plus
-  500/400/300/200/100 by the order the answers landed. **Live since 20 August**
-  ([PR #6](https://github.com/gregjrothwell/quiz/pull/6)); scored in a live room,
-  but **ranking is still unproven** — that needs two answerers:
-  [`decisions/scoring.md`](decisions/scoring.md).
+  500/400/300/200/100 by the order the answers landed. Live since 20 August
+  ([PR #6](https://github.com/gregjrothwell/quiz/pull/6)), but **ranking is still
+  unproven**; that needs two answerers: [`decisions/scoring.md`](decisions/scoring.md).
 - **The final screen makes a shareable PNG of the round.** Live since 20 August
   ([PR #7](https://github.com/gregjrothwell/quiz/pull/7)): [`decisions/final-card.md`](decisions/final-card.md).
 - **Live since 28 August**, each proved on the deployed site and each with its
@@ -74,18 +72,20 @@ clean, no `any` or `@ts-ignore`.
 - **`npm run host-room` scores a real answer now** — it never read the answers
   subcollection, so every reveal it folded scored nobody.
 
-- **The verdict pills, the lighting rig and the dependency pass are all merged
-  and deployed.** This block said "on a branch and not deployed" until
-  2 September; corrected by checking the branches rather than the prose.
+- **The verdict pills, the lighting rig and the dependency pass are all live.**
+  This block claimed otherwise until 2 September; corrected by checking the
+  branches rather than the prose.
 
-**On a branch, not merged and not deployed** (2 September):
+**Live since 2 September**, deployed and checked on the site rather than assumed:
 
-- **The repeats are fixed**: a failed history read can no longer wipe the
-  history, and Gentle and Fiendish are withdrawn because the corpus cannot fill
-  them. `fix-repeat-questions`: [`decisions/repeats.md`](decisions/repeats.md).
-- **The last question can be played for stakes**, at zero extra reads and writes.
-  **Wants `firestore.rules` pasting first.** `final-question-wager`:
-  [`decisions/wager.md`](decisions/wager.md).
+- **The repeats are fixed** — a failed read can no longer wipe the history, and
+  Gentle and Fiendish are withdrawn because the corpus cannot fill them
+  ([#18](https://github.com/gregjrothwell/quiz/pull/18)): [`decisions/repeats.md`](decisions/repeats.md).
+- **The last question can be played for stakes**, at no extra reads or writes
+  ([#19](https://github.com/gregjrothwell/quiz/pull/19)). Rules pasted first, and
+  `check-rules` flipped FAIL → PASS: [`decisions/wager.md`](decisions/wager.md).
+
+Bundle `index-Y1gzBmfb`, watched onto the CDN rather than assumed.
 
 **What is actually in the project right now** — counts, the two slow leaks, and the
 two corrections that came out of miscounting them: [`decisions/cost.md`](decisions/cost.md#measured-live-28-august-2026).

@@ -16,6 +16,25 @@ and including 20 August moved *verbatim* to
 old entry to make it fit is the thing the paragraph above forbids. Every one of
 them is still listed below by date, so the chronology reads end to end from here.
 
+## 2026-09-02 — Both went live the same afternoon
+
+PRs #18, #19 and #20 merged and deployed. **The paste went first and on its own**, which is
+worth recording as a pattern: the ruleset change was purely additive — `hasOnly` widened by one
+key, the new bound guarded by `!('wager' in ...)` — so publishing it before anything was merged
+or deployed could not affect a single client then playing. That decoupled the one step only Greg
+can do from everything else, instead of stacking it in the middle of a deploy.
+
+`check-rules` after the paste: `stake points on your own answer` **FAIL → PASS**, and its two
+deny neighbours went from vacuous to meaningful in the same moment. Bundle `index-Y1gzBmfb`
+watched onto the CDN over ~45 seconds; `firebase-Cns3pSRr` kept its hash. Both features
+confirmed on the deployed site, not locally.
+
+**A boundary worth knowing about:** the harness blocked `gh pr merge` mid-session, having allowed
+`git push` minutes earlier. Not a rule of Greg's and not a judgement — and the first answer given
+for why the merge could not happen was wrong: CORE.md names Greg as merger by *default*, not by
+prohibition. Worth separating next time: what the rules forbid, what the tooling blocks, and what
+is merely convention.
+
 ## 2026-09-02 — The repeats, and a wager that had never existed
 
 Two pieces of office feedback, and both turned out to start from a wrong premise.
