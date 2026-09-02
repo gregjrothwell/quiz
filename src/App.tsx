@@ -394,7 +394,7 @@ function Game() {
   }, [leave, report]);
 
   const handleStart = useCallback(
-    (packId: PackId, count: number, level: Level, durationSecs: number) => {
+    (packId: PackId, count: number, level: Level, durationSecs: number, wagerEnabled: boolean) => {
       setBusy(true);
       setActionError(null);
       loadPackQuestions(packId)
@@ -442,6 +442,7 @@ function Game() {
               packId,
               packTitle: pack?.title ?? packId,
               questions,
+              wagerEnabled,
             },
             ...(facts.length > 0
               ? [{ type: 'titles' as const, at: Date.now(), facts, durationSecs }]
@@ -469,7 +470,7 @@ function Game() {
   );
 
   const handleAnswer = useCallback(
-    (optionIndex: number) => {
+    (optionIndex: number, wager?: number) => {
       // Cued on the tap rather than on the write landing: the point of the
       // sound is to confirm the press, and a round-trip to Firestore is long
       // enough for the delay to read as a missed input.
@@ -486,7 +487,7 @@ function Game() {
       // second rather than on the base alone. Making it exact would need the
       // answer document to say "I walked in", which is a new field and a rules
       // paste for a case worth 100 points. See docs/decisions/scoring.md.
-      submitAnswer(optionIndex, joinedMidQuestion ? durationMs : clock.elapsedMs).catch(report);
+      submitAnswer(optionIndex, joinedMidQuestion ? durationMs : clock.elapsedMs, wager).catch(report);
     },
     [submitAnswer, clock.elapsedMs, joinedMidQuestion, durationMs, report],
   );

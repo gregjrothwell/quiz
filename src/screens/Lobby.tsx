@@ -74,7 +74,13 @@ interface LobbyProps {
   autoJoined?: boolean;
   /** Only shown, and only alongside {@link autoJoined}. */
   squad?: string;
-  onStart: (packId: PackId, count: number, level: Level, durationSecs: number) => void;
+  onStart: (
+    packId: PackId,
+    count: number,
+    level: Level,
+    durationSecs: number,
+    wagerEnabled: boolean,
+  ) => void;
   onLeave: () => void;
 }
 
@@ -92,6 +98,15 @@ export function Lobby({
   const [packId, setPackId] = useState<PackId | null>(null);
   const [count, setCount] = useState<number>(15);
   const [level, setLevel] = useState<Level>('ramp');
+  /*
+    Off by default, and opt-in from here rather than always on.
+
+    The honest objection to a wager is that a good round can be lost on one
+    question, and the answer is that the room agreed to it before the round
+    started — the same reasoning that made the answer window a choice rather
+    than a constant. Fixed for the round once the show starts.
+  */
+  const [wager, setWager] = useState(false);
   const [durationSecs, setDurationSecs] = useState<number>(DEFAULT_DURATION_SECS);
 
   const youName = youUid ? room.players[youUid]?.name : undefined;
@@ -283,11 +298,41 @@ export function Lobby({
             ) : null}
           </div>
 
+          <div className="stack">
+            <p className="eyebrow">The last question</p>
+            <div className="picker">
+              <button
+                type="button"
+                className="pick"
+                aria-pressed={!wager}
+                onClick={() => setWager(false)}
+              >
+                <b>Played straight</b>
+                <span>Every question worth the same</span>
+              </button>
+              <button
+                type="button"
+                className="pick"
+                aria-pressed={wager}
+                onClick={() => setWager(true)}
+              >
+                <b>Played for stakes</b>
+                <span>Bet your points on the last one</span>
+              </button>
+            </div>
+            {wager ? (
+              <p className="muted hint">
+                Everyone picks how much of their own score to stake before they answer. Get it
+                right and you win it; get it wrong and you lose it. Nobody can drop below zero.
+              </p>
+            ) : null}
+          </div>
+
           <button
             type="button"
             className="btn btn--primary"
             disabled={!packId || busy || playerEntries.length === 0 || effectiveCount === 0}
-            onClick={() => packId && onStart(packId, effectiveCount, level, durationSecs)}
+            onClick={() => packId && onStart(packId, effectiveCount, level, durationSecs, wager)}
           >
             {busy ? 'Loading questions…' : 'Start the show'}
           </button>

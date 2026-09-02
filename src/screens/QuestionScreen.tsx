@@ -7,8 +7,13 @@ import { QuestionVote } from '../components/QuestionVote';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { replayDurationMs, replayTimeline, type Arrival } from '../engine/replay';
 import type { Verdict } from '../engine/questionVote';
-import { verdictFor } from '../engine/scoring';
-import { currentQuestion, questionDurationMs, type RoomState } from '../engine/state';
+import { stakeFor, verdictFor, WAGER_SHARES } from '../engine/scoring';
+import {
+  currentQuestion,
+  isWagerQuestion,
+  questionDurationMs,
+  type RoomState,
+} from '../engine/state';
 import { CLOCK_LEAD_SECONDS, startClock, stopClock, useCue } from '../lib/sound';
 import type { QuestionClock } from '../lib/useQuestionClock';
 import { useReducedMotion } from '../lib/useReducedMotion';
@@ -52,7 +57,7 @@ interface QuestionScreenProps {
    * reveal that has genuinely failed still puts the button back.
    */
   revealing?: boolean;
-  onAnswer: (optionIndex: number) => void;
+  onAnswer: (optionIndex: number, wager?: number) => void;
   onReveal: () => void;
   onNext: () => void;
   /**
@@ -92,6 +97,19 @@ export function QuestionScreen({
 
   const myAnswer = youUid ? room.answers[youUid] : undefined;
   const myDelta = youUid ? (room.lastDeltas[youUid] ?? 0) : 0;
+
+  /*
+    The stake, on the last question of a round the room agreed to play for it.
+
+    Held here rather than written on selection, so choosing a stake costs no
+    Firestore write at all — it rides the answer, which is a write that was
+    happening anyway. Seeded from an answer already in the room so a reload
+    mid-question does not silently reset a bet the player has already placed.
+  */
+  const wagering = isWagerQuestion(room);
+  const held = youUid ? (room.scores[youUid] ?? 0) : 0;
+  const [wager, setWager] = useState(0);
+  const stake = myAnswer?.wager ?? wager;
 
   /*
     Read off the reveal rather than worked out here, because "your answer was not
@@ -236,7 +254,10 @@ export function QuestionScreen({
       // pick as well as make one — and so a late press cannot write past expiry.
       if (pick >= 0 && !revealed && !clock.expired && pick < optionCount) {
         event.preventDefault();
-        onAnswer(pick);
+        // The stake goes with a keyed answer as well as a tapped one. Answering
+        // with `a` is the fastest way to play, so dropping it here would lose
+        // the bet for exactly the players most likely to have placed one.
+        onAnswer(pick, wagering ? stake : undefined);
         return;
       }
 
@@ -251,7 +272,7 @@ export function QuestionScreen({
 
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [revealed, optionCount, isQuizmaster, clock.expired, onAnswer, onReveal, onNext]);
+  }, [revealed, optionCount, isQuizmaster, clock.expired, onAnswer, onReveal, onNext, wagering, stake]);
 
   // Placed after the hooks above: an early return before them would change the
   // hook order between renders.
@@ -303,7 +324,7 @@ export function QuestionScreen({
       // its own now: it used to be covered incidentally, because having answered
       // disabled the tiles and everyone had answered or run out of time.
       disabled={revealed || clock.expired}
-      onPick={onAnswer}
+      onPick={(picked: number) => onAnswer(picked, wagering ? stake : undefined)}
       order={index}
     />
   ));
@@ -384,6 +405,48 @@ export function QuestionScreen({
             nothing but flat panel edges, which read as a stray empty box. There
             is no value between the two that looks like a floor.
           */}
+          {/*
+            The stake sits above the lecterns rather than beside them, because
+            it has to be settled *before* the answer — picking a lectern is what
+            commits it, and a control below the thing it modifies reads as
+            something you do afterwards. Hidden once the answer is out: at the
+            reveal it is a fact, not a choice, and the ticker already tells it.
+          */}
+          {wagering && !revealed ? (
+            <div className="stack wager">
+              <p className="eyebrow">
+                The last question &mdash; how much of your {held.toLocaleString('en-GB')} are you
+                staking?
+              </p>
+              <div className="btn-row">
+                {WAGER_SHARES.map((share) => (
+                  <button
+                    type="button"
+                    key={share}
+                    className={share === stake ? 'btn' : 'btn btn--ghost'}
+                    // Locked with the lecterns, so a stake cannot be moved after
+                    // the clock has run out on the answer it belongs to.
+                    disabled={clock.expired}
+                    aria-pressed={share === stake}
+                    onClick={() => {
+                      setWager(share);
+                      // Already answered? Then the stake is a change to an
+                      // answer that exists, and has to be written to count.
+                      if (myAnswer) onAnswer(myAnswer.optionIndex, share);
+                    }}
+                  >
+                    {share === 0 ? 'Nothing' : `${share}%`}
+                  </button>
+                ))}
+              </div>
+              <p className="muted hint">
+                {stake === 0
+                  ? 'Playing it safe — this one is worth the usual 1,000.'
+                  : `${stakeFor(held, stake).toLocaleString('en-GB')} points on the line.`}
+              </p>
+            </div>
+          ) : null}
+
           <div className="podium">{tiles}</div>
         </div>
 
@@ -436,10 +499,18 @@ export function QuestionScreen({
             {revealed ? (
               <span className={settled ? 'verdict verdict--in' : 'verdict'} data-tone={verdict}>
                 {verdictLabel}
-                {gotItRight ? (
+                {/*
+                  A lost stake has to show its number too. The `+` used to be
+                  hardcoded next to `gotItRight`, so a player who staked half
+                  their score and got it wrong was told "Wrong" and nothing else
+                  — the largest points swing in the game, and the only one the
+                  screen stayed silent about. The ticker counts the magnitude and
+                  the sign is fixed text, so it never animates through zero.
+                */}
+                {gotItRight || myDelta < 0 ? (
                   <>
-                    {' · +'}
-                    <ScoreTicker value={settled ? myDelta : 0} />
+                    {myDelta < 0 ? ' · −' : ' · +'}
+                    <ScoreTicker value={settled ? Math.abs(myDelta) : 0} />
                   </>
                 ) : null}
               </span>

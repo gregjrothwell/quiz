@@ -86,7 +86,7 @@ function startedGame(): RoomState {
     { type: 'join', uid: 'greg', name: 'Greg', at: 100 },
     { type: 'join', uid: 'sam', name: 'Sam', at: 200 },
     { type: 'join', uid: 'priya', name: 'Priya', at: 300 },
-    { type: 'selectPack', packId: 'general-knowledge', packTitle: 'General Knowledge', questions },
+    { type: 'selectPack', packId: 'general-knowledge', packTitle: 'General Knowledge', questions, wagerEnabled: false },
     // Pinned rather than taking the lobby's default, because these games answer
     // as late as twelve seconds in. On a shorter window those answers would
     // simply stop being recorded, and the games would still pass while quietly

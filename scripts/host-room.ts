@@ -197,7 +197,7 @@ async function main(): Promise<void> {
 
   console.log(`${stamp()}  >>> WRITING start`);
   await dispatch([
-    { type: 'selectPack', packId: 'general-knowledge', packTitle: 'GK', questions: QUESTIONS },
+    { type: 'selectPack', packId: 'general-knowledge', packTitle: 'GK', questions: QUESTIONS, wagerEnabled: false },
     { type: 'start', at: Date.now(), gameId: `host-${Date.now()}`, durationSecs: DURATION_SECS },
   ]);
 

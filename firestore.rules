@@ -300,9 +300,20 @@ service cloud.firestore {
         // `elapsedMs` is measured on the answering device and cannot be checked
         // here; the bounds keep nonsense out of the document, they are not an
         // anti-cheat. See docs/HANDOVER.md.
+        // `wager` is the share of their own points a player put on the
+        // question, 0-100. A *share* and not a number of points, deliberately:
+        // it cannot exceed what they hold, so no game total can go negative and
+        // the season row's `points >= 0` and `best <= maxBest()` below are
+        // untouched. An absolute stake would have cost a second paste.
+        //
+        // Which question it belongs to is not checked here and cannot be
+        // cheaply: it would need a `get()` on the room for every answer write.
+        // The engine settles it instead — `isWagerQuestion` honours a stake only
+        // on the last question of a round the room agreed to play for stakes, so
+        // a wager sent on any other is ignored by every client alike.
         allow create, update: if signedIn()
           && request.auth.uid == uid
-          && request.resource.data.keys().hasOnly(['optionIndex', 'elapsedMs', 'questionIndex'])
+          && request.resource.data.keys().hasOnly(['optionIndex', 'elapsedMs', 'questionIndex', 'wager'])
           && request.resource.data.optionIndex is int
           && request.resource.data.optionIndex >= 0
           && request.resource.data.optionIndex < 10
@@ -311,7 +322,11 @@ service cloud.firestore {
           && request.resource.data.elapsedMs <= 600000
           && request.resource.data.questionIndex is int
           && request.resource.data.questionIndex >= 0
-          && request.resource.data.questionIndex < 100;
+          && request.resource.data.questionIndex < 100
+          && (!('wager' in request.resource.data.keys())
+            || (request.resource.data.wager is int
+              && request.resource.data.wager >= 0
+              && request.resource.data.wager <= 100));
 
         allow delete: if signedIn() && request.auth.uid == uid;
       }

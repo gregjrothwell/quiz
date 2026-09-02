@@ -72,7 +72,7 @@ function playingRoom(): RoomState {
     createRoom('ABCD'),
     { type: 'join', uid: 'host', name: 'Greg', at: 100 },
     { type: 'join', uid: 'guest', name: 'Sam', at: 200 },
-    { type: 'selectPack', packId: 'geography', packTitle: 'Geography', questions: QUESTIONS },
+    { type: 'selectPack', packId: 'geography', packTitle: 'Geography', questions: QUESTIONS, wagerEnabled: false },
     { type: 'start', at: 1_000, gameId: 'game-1', durationSecs: DEFAULT_DURATION_SECS },
   );
 }
@@ -224,7 +224,7 @@ describe('start', () => {
     const replayed = apply(
       playingRoom(),
       { type: 'reset' },
-      { type: 'selectPack', packId: 'geography', packTitle: 'Geography', questions: QUESTIONS },
+      { type: 'selectPack', packId: 'geography', packTitle: 'Geography', questions: QUESTIONS, wagerEnabled: false },
       { type: 'start', at: 5_000, gameId: 'game-2', durationSecs: DEFAULT_DURATION_SECS },
     );
 
@@ -240,7 +240,7 @@ describe('the answer window', () => {
       createRoom('ABCD'),
       { type: 'join', uid: 'host', name: 'Greg', at: 100 },
       { type: 'join', uid: 'guest', name: 'Sam', at: 200 },
-      { type: 'selectPack', packId: 'geography', packTitle: 'Geography', questions: QUESTIONS },
+      { type: 'selectPack', packId: 'geography', packTitle: 'Geography', questions: QUESTIONS, wagerEnabled: false },
       { type: 'start', at: 1_000, gameId: 'game-1', durationSecs },
     );
   }
@@ -266,7 +266,7 @@ describe('the answer window', () => {
     const room = apply(
       createRoom('ABCD'),
       { type: 'join', uid: 'host', name: 'Greg', at: 100 },
-      { type: 'selectPack', packId: 'geography', packTitle: 'Geography', questions: QUESTIONS },
+      { type: 'selectPack', packId: 'geography', packTitle: 'Geography', questions: QUESTIONS, wagerEnabled: false },
     );
 
     // #when a round is started below the floor the rules enforce
@@ -750,7 +750,7 @@ describe('the opening titles', () => {
       createRoom('ABCD'),
       { type: 'join', uid: 'host', name: 'Greg', at: 100 },
       { type: 'join', uid: 'guest', name: 'Sam', at: 200 },
-      { type: 'selectPack', packId: 'geography', packTitle: 'Geography', questions: QUESTIONS },
+      { type: 'selectPack', packId: 'geography', packTitle: 'Geography', questions: QUESTIONS, wagerEnabled: false },
     );
   }
 
@@ -863,7 +863,7 @@ describe('the quizmaster keeps the start of the round', () => {
     return apply(
       createRoom('ABCD'),
       { type: 'join', uid: 'host', name: 'Greg', at: 100 },
-      { type: 'selectPack', packId: 'geography', packTitle: 'Geography', questions: QUESTIONS },
+      { type: 'selectPack', packId: 'geography', packTitle: 'Geography', questions: QUESTIONS, wagerEnabled: false },
       { type: 'titles', at: 5_000, facts: FACTS, durationSecs },
     );
   }
@@ -903,7 +903,7 @@ describe('the quizmaster keeps the start of the round', () => {
     const state = apply(
       createRoom('ABCD'),
       { type: 'join', uid: 'host', name: 'Greg', at: 100 },
-      { type: 'selectPack', packId: 'geography', packTitle: 'Geography', questions: QUESTIONS },
+      { type: 'selectPack', packId: 'geography', packTitle: 'Geography', questions: QUESTIONS, wagerEnabled: false },
     );
 
     // #when the titles are put up with it

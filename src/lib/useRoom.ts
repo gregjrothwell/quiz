@@ -36,6 +36,7 @@ import { reapAbsent } from '../engine/presence';
 import {
   LEGACY_DURATION_SECS,
   createRoom,
+  isWagerQuestion,
   questionDurationMs,
   resolveQuizmaster,
   type Answer,
@@ -134,7 +135,7 @@ export interface UseRoom {
   join: (code: string, name: string) => Promise<void>;
   leave: () => Promise<void>;
   dispatch: (action: Action | Action[]) => Promise<void>;
-  submitAnswer: (optionIndex: number, elapsedMs: number) => Promise<void>;
+  submitAnswer: (optionIndex: number, elapsedMs: number, wager?: number) => Promise<void>;
 }
 
 function roomDoc(code: string) {
@@ -182,6 +183,10 @@ function toRoomState(code: string, data: DocumentData, answers: Record<string, A
     // created before this shipped. Defaulted here for the same reason
     // `durationSecs` is: so nothing downstream has to defend against it.
     form: persisted.form ?? null,
+    // Absent in every room created before the wager, and `undefined` is not
+    // `false` — `isWagerQuestion` would read as neither on nor off. Defaulted
+    // here for the same reason `durationSecs` and `form` are.
+    wagerEnabled: persisted.wagerEnabled ?? false,
   };
 }
 
@@ -206,6 +211,7 @@ function toPersisted(state: RoomState): PersistedRoom {
     skipped: state.skipped,
     gameId: state.gameId,
     form: state.form,
+    wagerEnabled: state.wagerEnabled,
   };
 }
 
@@ -758,19 +764,34 @@ export function useRoom(): UseRoom {
    * stop anyone writing late.
    */
   const submitAnswer = useCallback(
-    async (optionIndex: number, elapsedMs: number): Promise<void> => {
+    async (optionIndex: number, elapsedMs: number, wager?: number): Promise<void> => {
       if (!code || !uid || !room) return;
       if (room.phase !== 'question') return;
       if (elapsedMs > questionDurationMs(room)) return;
+
+      // Only the question the room agreed to play for stakes carries one, so a
+      // stake left over in the screen's state cannot ride along on any other.
+      const staked = isWagerQuestion(room) && wager !== undefined ? { wager } : {};
 
       // Pressing the lectern you already chose is not a change, and writing it
       // again would restamp `elapsedMs` to the later moment — quietly costing
       // speed points for a tap that altered nothing. Easy to do by accident: a
       // double-tap on a phone, or pressing again to confirm. It also keeps a
       // fidgety player from fanning a write out to every other client for free.
-      if (room.answers[uid]?.optionIndex === optionIndex) return;
+      //
+      // **The stake has to be part of that comparison.** Changing only the
+      // stake, on the lectern you had already picked, is a real change and used
+      // to be swallowed here in silence — the player would watch their bet do
+      // nothing and find out at the reveal.
+      const held = room.answers[uid];
+      if (held?.optionIndex === optionIndex && held.wager === staked.wager) return;
 
-      const answer: AnswerDoc = { optionIndex, elapsedMs, questionIndex: room.index };
+      const answer: AnswerDoc = {
+        optionIndex,
+        elapsedMs,
+        questionIndex: room.index,
+        ...staked,
+      };
       await setDoc(doc(answersCollection(code), uid), answer);
     },
     [code, uid, room],

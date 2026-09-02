@@ -185,7 +185,7 @@ async function main(): Promise<void> {
 
   const current: RoomState = { ...(view.latest as PersistedRoom), code, answers: {} };
   const actions: Action[] = [
-    { type: 'selectPack', packId: 'general-knowledge', packTitle: 'GK', questions: [QUESTION] },
+    { type: 'selectPack', packId: 'general-knowledge', packTitle: 'GK', questions: [QUESTION], wagerEnabled: false },
     { type: 'start', at: Date.now(), gameId: `probe-${Date.now()}`, durationSecs: DURATION_SECS },
   ];
   const next = actions.reduce(reduce, current);
