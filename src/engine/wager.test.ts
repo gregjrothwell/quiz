@@ -203,3 +203,12 @@ describe('the wager through the reducer', () => {
     expect(played.scores['ann']).toBe(2000);
   });
 });
+
+describe('a stake of nothing', () => {
+  test('scores exactly as an answer with no stake at all', () => {
+    const scores = { a: 1000, b: 1000 };
+    const zero = tallyQuestion({ correctIndex: 1, answers: { a: at(100, 1, 0) }, scores });
+    const absent = tallyQuestion({ correctIndex: 1, answers: { b: at(100, 1) }, scores });
+    expect(zero['a']).toBe(absent['b']);
+  });
+});

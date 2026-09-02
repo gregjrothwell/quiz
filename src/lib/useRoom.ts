@@ -771,7 +771,15 @@ export function useRoom(): UseRoom {
 
       // Only the question the room agreed to play for stakes carries one, so a
       // stake left over in the screen's state cannot ride along on any other.
-      const staked = isWagerQuestion(room) && wager !== undefined ? { wager } : {};
+      //
+      // **A stake of nothing is left off the document entirely**, rather than
+      // written as `wager: 0`. It scores identically either way — `stakeFor`
+      // treats absent and zero alike — but it keeps the answer byte-identical to
+      // every round before the wager for anybody not betting, and it narrows the
+      // blast radius if this is ever deployed before the ruleset is pasted: the
+      // refusal then costs the last question only for the players who actually
+      // staked, instead of for everybody in the room.
+      const staked = isWagerQuestion(room) && wager !== undefined && wager > 0 ? { wager } : {};
 
       // Pressing the lectern you already chose is not a change, and writing it
       // again would restamp `elapsedMs` to the later moment — quietly costing
