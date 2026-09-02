@@ -78,6 +78,11 @@ feature's risk, not because they were hard.
 
 - **A player on zero stakes nothing**, which is precisely the case §3 exists to
   solve. Left to see whether it happens in a real round.
+- **A stake of nothing is left off the answer document**, not written as
+  `wager: 0`. It scores identically, keeps the document byte-identical to every
+  round before this for anybody not betting, and narrows the damage if this is
+  ever deployed before the paste — to the players who staked rather than the
+  whole room.
 - **A faked `elapsedMs` is worth more again.** Rank scoring took it from ~5
   points to 100; a wager multiplies it. Bounding `elapsedMs` server-side
   (`ideas-review.md` §5) is the companion change and is still unbuilt. Flagged so
@@ -93,6 +98,13 @@ feature's risk, not because they were hard.
   control that appears on one question in fifteen would never be reviewed
   otherwise; the last design review found the empty quizmaster's desk only on the
   screens that had a fixture.
+- **The room document takes `wagerEnabled` against the *published* ruleset** —
+  `check-rules` PASSes `open a room that is played for stakes`. That is the check
+  worth having: `wagerEnabled` is a new field on the room document, and the room
+  document is what took the game down when squads shipped. It proves the wager
+  needs one paste, not two, and cannot stop a round being started.
+- `sync-harness 10` after the change: **10/10 joined, 0 dropped**, all ten saw the
+  question within 86ms. Run because this touches the answer write.
 - `check-rules` **FAILs** on `stake points on your own answer` until the paste,
   which is the point. Its two new deny cases **pass vacuously** in the meantime:
   with `wager` absent from the published `hasOnly`, every stake is refused for

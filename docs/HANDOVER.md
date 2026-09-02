@@ -48,8 +48,9 @@ hook says so if this one grows.
 
 ## State as of 2 September 2026
 
-**Shipped and played.** 525 tests on `fix-repeat-questions`, 529 on
-`final-question-wager`; clean types and lint, no `any` or `@ts-ignore`.
+**Shipped and played.** 525 tests on `fix-repeat-questions`, 530 on
+`final-question-wager`, **542 merged together with no conflicts**. Types and lint
+clean, no `any` or `@ts-ignore`.
 
 - **Squads, weekly boards, the average table, the frozen podium and the sealed
   question text are live** (20 August, [PR #2](https://github.com/gregjrothwell/quiz/pull/2)),
@@ -73,18 +74,17 @@ hook says so if this one grows.
 - **`npm run host-room` scores a real answer now** — it never read the answers
   subcollection, so every reveal it folded scored nobody.
 
-- **The verdict pills, the operated lighting rig and the dependency pass all
-  merged and deployed** — `origin/gh-pages` was rebuilt 49 seconds after the
-  merge. This block said "on a branch and not deployed" until 2 September;
-  corrected by checking the branches rather than the prose.
+- **The verdict pills, the lighting rig and the dependency pass are all merged
+  and deployed.** This block said "on a branch and not deployed" until
+  2 September; corrected by checking the branches rather than the prose.
 
 **On a branch, not merged and not deployed** (2 September):
 
 - **The repeats are fixed**: a failed history read can no longer wipe the
   history, and Gentle and Fiendish are withdrawn because the corpus cannot fill
-  them. Branch `fix-repeat-questions`: [`decisions/repeats.md`](decisions/repeats.md).
+  them. `fix-repeat-questions`: [`decisions/repeats.md`](decisions/repeats.md).
 - **The last question can be played for stakes**, at zero extra reads and writes.
-  **Wants `firestore.rules` pasting first.** Branch `final-question-wager`:
+  **Wants `firestore.rules` pasting first.** `final-question-wager`:
   [`decisions/wager.md`](decisions/wager.md).
 
 **What is actually in the project right now** — counts, the two slow leaks, and the
