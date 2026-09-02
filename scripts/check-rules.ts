@@ -285,6 +285,37 @@ function buildChecks(probes: Probes): Check[] {
         }),
     },
     {
+      /*
+        The check that says whether the wager needs a *second* paste, and the
+        reason it is worth spending a live write on: `wagerEnabled` is a new
+        field on the room document, and the room document is what took the game
+        down when squads shipped. `wellFormed()` bounds the fields it names and
+        does not `hasOnly` the document's keys — this proves that against the
+        published ruleset rather than against a reading of the repo copy.
+      */
+      label: 'Firestore   · open a room that is played for stakes',
+      expect: 'allow',
+      hint: 'the published firestore.rules refuses a room document carrying '
+        + '`wagerEnabled` — the wager needs a second paste after all, and until '
+        + 'it happens no round can be started at all',
+      run: () =>
+        updateDoc(doc(db, 'rooms', LIVE_ROOM), {
+          code: LIVE_ROOM,
+          phase: 'lobby',
+          players: { [uid]: { name: 'Rules check', joinedAt: Date.now() } },
+          packId: null,
+          packTitle: null,
+          questions: [],
+          index: 0,
+          questionOpenedAt: null,
+          scores: { [uid]: 0 },
+          lastDeltas: {},
+          skipped: [],
+          gameId: 'rules-check',
+          wagerEnabled: true,
+        }),
+    },
+    {
       label: 'Firestore   · stake points on your own answer',
       expect: 'allow',
       hint: 'firestore.rules has not taken `wager` into the answers hasOnly list '
