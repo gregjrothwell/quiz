@@ -51,7 +51,7 @@ hook says so if this one grows.
 
 **Live** (bundle `index-BOq4sYDx`): chair, take-stock, steal (opt-in, unplayed),
 mute, lobby squad picker, negatives paste (`check-rules` 52/52). Squads, vault,
-App Check, rank bonus, wager, repeats/Gentle+Fiendish withdrawn. 542 tests on
+App Check, rank bonus, wager, repeats/Gentle+Fiendish withdrawn. 572 tests on
 master.
 
 **This branch `melody-round`, not live:** `voices` + hashed `image`; melody pack
