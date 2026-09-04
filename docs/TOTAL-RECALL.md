@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 2 September 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 4 September 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -15,6 +15,29 @@ and including 20 August moved *verbatim* to
 [`recall/2026-08.md`](recall/2026-08.md) — not reworded, because compressing an
 old entry to make it fit is the thing the paragraph above forbids. Every one of
 them is still listed below by date, so the chronology reads end to end from here.
+
+## 2026-09-04 — The chair seats everybody, and the prose was wrong
+
+**Fixed.** `seatedLast` always returned the whole tie for last; both renderers
+collapsed it, so three people tied were one figure labelled "A & B & C". They now
+pile onto the one chair. The viewBox does **not** grow — `.seat__chair` is sized
+by `max-width`, so a wider box renders it shorter and the height is the joke;
+measured 88×127 at one, two and three. Offsets in `engine/seat.ts` so the screen
+and the PNG cannot drift. Room XS4A really did finish with three on zero.
+
+**Correction, and the more useful half of the day.** This session repeated
+`HANDOVER.md`: that the wager and the rank bonus had never been played. **Both
+were false.** Greg said so and one query on `rooms` proved it. The wrong claims
+stay visible in this file's history; Outstanding #3 now names what is genuinely
+untested. The fix is a command rather than a discipline — `take-stock` should
+report recent rounds, ten reads that would have caught every one of them.
+
+**Decided, not built: negative points, through to the season row** — two lines
+out of `firestore.rules`, a `>= -maxPoints()` floor in, paste before deploy.
+Nothing produces a negative yet; a minimum stake would, and needs no paste.
+
+Four round types costed — steal, picture, music, jigsaw. **None is limited by the
+database.** All of it: [`decisions/round-types.md`](decisions/round-types.md).
 
 ## 2026-09-02 — Both went live the same afternoon
 

@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 2 September 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 4 September 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -42,6 +42,7 @@ hook says so if this one grows.
 | the countdown, and whose clock it runs on | [`decisions/shared-clock.md`](decisions/shared-clock.md) |
 | the shareable result card, and how it gets to the player | [`decisions/final-card.md`](decisions/final-card.md) |
 | what to build next, and what each idea costs | [`decisions/ideas-review.md`](decisions/ideas-review.md) |
+| picture, music, jigsaw or steal rounds, and **negative points** | [`decisions/round-types.md`](decisions/round-types.md) |
 | whether an idea was already turned down | [`decisions/scope.md`](decisions/scope.md) |
 | upgrading anything in `package.json` | [`decisions/dependencies.md`](decisions/dependencies.md) |
 | the studio set, or any lighting cue | [`decisions/lighting.md`](decisions/lighting.md) |
@@ -71,7 +72,6 @@ hook says so if this one grows.
   and **a join link going straight into the room** ([`joining.md`](decisions/joining.md)).
 - **`npm run host-room` scores a real answer now** — it never read the answers
   subcollection, so every reveal it folded scored nobody.
-
 - **The verdict pills, the lighting rig and the dependency pass are all live.**
   This block claimed otherwise until 2 September; corrected by checking the
   branches rather than the prose.
@@ -87,6 +87,10 @@ hook says so if this one grows.
 
 Bundle `index-Y1gzBmfb`, watched onto the CDN rather than assumed.
 
+**4 September, on a branch: the chair seats everybody who tied for last**, not one
+figure and an ampersand — room XS4A finished with three on zero. Round types
+costed and negative points decided: [`decisions/round-types.md`](decisions/round-types.md).
+
 **What is actually in the project right now** — counts, the two slow leaks, and the
 two corrections that came out of miscounting them: [`decisions/cost.md`](decisions/cost.md#measured-live-28-august-2026).
 
@@ -95,18 +99,14 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
 1. **A quizmaster dropping out mid-round** needs a browser and `host-room`.
 2. **No Content-Security-Policy.** Deliberate: a `<meta http-equiv>` CSP breaks
    the live app silently and the stale CDN makes it painful to diagnose.
-3. **Nothing needing a second person has been tested** — the review panel, a real
-   quizmaster handover, two squads on one board, and **a rank bonus with more than
-   one right answer in it**. Keyboard shortcuts cleared 28 August. The
-   **anonymous-account purge is reviewed and the answer is don't**:
+3. **Three things still want a second person**: the review panel, a quizmaster
+   handover, two squads on one board. **Not the rank bonus or the wager** — this
+   list called both unplayed until 4 September and the live rooms said otherwise,
+   which nothing but Greg's memory was going to catch:
+   [`decisions/round-types.md`](decisions/round-types.md#the-prose-was-wrong-and-that-is-a-finding).
+   The **anonymous-account purge is reviewed and the answer is don't**:
    [`decisions/identity.md`](decisions/identity.md).
-4. ~~**A reload drops you out of the room.**~~ **Fixed and live, 28 August**,
-   verified on production: [`decisions/joining.md`](decisions/joining.md).
-5. ~~**Two colour tokens fail WCAG AA.**~~ **Fixed and live**, `5d36bf3`:
-   `--ink-dim` is `#7a96bc` and `--cyan-dim` `#159fcc`, clearing 4.5 on all three
-   surfaces (worst case 4.95, against 3.27 before). Listed as open here until
-   2 September, a week after the fix shipped.
-6. **The Ladder stops climbing** once a pack's thin `easy` or `hard` bucket is
+4. **The Ladder stops climbing** once a pack's thin `easy` or `hard` bucket is
    spent — it substitutes medium rather than repeating, which is the right
    trade but is not what the tile promises. Measured over six rounds against the
    live history; the fix is the `stats/{questionId}` counters, not selection.
