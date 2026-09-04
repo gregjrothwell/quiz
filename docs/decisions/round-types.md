@@ -152,17 +152,42 @@ document shape.
 - **Paste first, deploy second.** `bankGame` has no clamp, so no client change is
   needed — which means a deploy *before* the paste silently refuses every
   negative row and loses somebody's night.
-- **Nothing produces a negative yet, and that is the interesting part.** A
-  share-based stake floors at exactly zero, which is *why* players finish level
-  at the bottom — XS4A and YS8F both did. Two routes out:
+- **Nothing produces a negative yet.** A share-based stake floors at exactly
+  zero. Two routes out:
   - **A minimum stake** on the wager question:
     `max(round(score × share / 100), MIN_STAKE)`. **No ruleset paste at all** —
     the wire field is a share and the engine decides what it is worth
-    (`stakeFor`, `scoring.ts:63`). Cheapest, and it targets the case the live
-    rounds actually show.
+    (`stakeFor`, `scoring.ts:63`).
   - **A wrong-answer penalty** on every question. Good arithmetic — guessing
     costs something — but it makes silence a strategy, which is bad theatre for
     an office round.
+
+> ### Correction — negative points do not fix the chair, and the data says so
+>
+> This section first claimed a minimum stake "targets the case the live rounds
+> actually show". **It does not, and the mistake was reasoning instead of
+> looking.** XS4A's last question, read off the room:
+>
+> | | stake | answer | final |
+> |---|---|---|---|
+> | Not Bret | 100% | right | 22,800 |
+> | Greg | 100% | right | 14,100 |
+> | Amier | 100% | wrong | **0** |
+> | Alistair | 100% | wrong | **0** |
+>
+> Amier and Alistair did not lose a fortune on the last question. **They arrived
+> at it already on zero**, and 100% of nothing is nothing — the known limit
+> [`wager.md`](wager.md) already records. They tie at the bottom because they
+> scored nothing across twenty-five questions, and two people who scored nothing
+> are genuinely level.
+>
+> So a minimum stake gives a player on zero something to lose, which is worth
+> having on its own terms. **It does not break this tie** — it moves both of them
+> to the same negative number. Nothing does, because the tie is real.
+>
+> **The chair was the right fix, and it is the whole fix.** Negative points are a
+> separate improvement to the wager, wanted for their own reasons rather than for
+> the bottom of the table. Ranked below accordingly.
 - **Knock-on:** the average table is `points ÷ played` ([`season.md`](season.md)),
   so a negative average becomes reachable. `loadTable` orders by points
   server-side, so the ordering itself still works.
@@ -173,11 +198,13 @@ document shape.
    file exists. [`TOTAL-RECALL.md`](../TOTAL-RECALL.md).
 2. **`take-stock` should report recent rounds.** Not a feature — it is what stops
    the next session getting the state wrong, as this one did. See below.
-3. **The negatives paste + a minimum stake.** Its own PR, because of the paste
-   ordering.
-4. **Steal, auto-targeted.** The wager is proven, and what it proved is that it
-   swings the top while piling the bottom onto zero. A steal spreads the field
-   where the wager concentrates it.
+3. **Steal, auto-targeted.** The wager is proven — and XS4A shows what it does
+   and does not reach: it swung the top by 22,800, and could not touch the two
+   players who had nothing to stake. A steal pays the answerer out of the
+   leader, so it reaches exactly the people a share-based stake cannot.
+4. **The negatives paste + a minimum stake.** Demoted by the correction above —
+   it makes the wager reach a player on zero, which is worth doing, but it does
+   not fix the bottom of the table. Its own PR, because of the paste ordering.
 5. **A melody round.**
 6. **A picture round**, then **jigsaw** on top of it.
 

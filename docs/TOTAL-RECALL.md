@@ -39,6 +39,16 @@ finished with three players on zero. Its scores map does; one of the three had
 left, and scores outlive membership, so `roomStandings` seats two. YS8F is the
 clean two. Wrong in the commit, right in the docs — history is not rewritten.
 
+**A third correction, and it moved the backlog.** The negative-points section
+claimed a minimum stake targets the case the live rounds show. It does not, and
+the mistake was reasoning rather than looking. XS4A's last question: Not Bret and
+Greg both staked 100% and were right, Amier and Alistair both staked 100% and
+were wrong — and finished on **0**, because they reached the last question
+already on zero and 100% of nothing is nothing. They tie at the bottom because
+they scored nothing in twenty-five questions, and two people who scored nothing
+are genuinely level. **Nothing breaks that tie, because the tie is real** — the
+chair was the right fix and the whole fix. Negatives demoted below the steal.
+
 **Decided, not built: negative points, through to the season row** — two lines
 out of `firestore.rules`, a `>= -maxPoints()` floor in, paste before deploy.
 Nothing produces a negative yet; a minimum stake would, and needs no paste.
