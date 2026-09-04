@@ -12,8 +12,8 @@ because what a change was agreed to do is worth reading beside what it did.
 the repo copy is not what Firebase is running — and the CDN was watched until it served
 `index-BMejBzPG.js` rather than assumed.
 
-**Not yet played by anybody.** Ranks need at least two people who answered, so no solo round
-can show one — see [Evidence](#evidence).
+**Proved with a full field on 29 August 2026** — `npm run rank-harness`. It had been the
+oldest unproven claim in the project until then; see [Evidence](#evidence).
 
 ## The story
 
@@ -167,11 +167,71 @@ hand-written deltas from the old curve (`+880`, `+640`, `555`, `795`, `955`), wh
 scoring cannot produce; they are now legal values, because a design gallery showing scores the
 engine cannot generate is a lie in the one place that exists to show what the app looks like.
 
-**Outstanding, and it is the whole point of the change:** a live round with more than one
-person answering. Ranks need at least two, so no solo round can ever show one, and the
-scoreboard's bonuses and the final screen's fastest-finger rosette have to agree on the same
-screen. `npm run host-room -- 15` with a browser alongside — the same evening the review
-panel and squad-vs-squad are waiting on.
+### The full field — 29 August 2026
+
+**Proved.** `npm run rank-harness` puts the entire ladder in one live question, in room
+`9RFD` and again in `MJ8T`:
+
+| Seat | lectern | elapsed | expected | paid | proves |
+|---|---|---|---|---|---|
+| Ada | correct | 1,200ms | 1000 | **1000** | first takes the top bonus |
+| Bo | correct | 2,400ms | 900 | **900** | second takes 400 |
+| Cyd | **wrong** | 3,000ms | 0 | **0** | a wrong answer scores nothing and is *still in the tally* |
+| Dev | correct | 3,600ms | 800 | **800** | third takes 300 |
+| Eli | correct | 4,800ms | 700 | **700** | fourth takes 200 |
+| Fay | correct | 4,800ms | 700 | **700** | a tie shares the rank rather than splitting it |
+| Gus | correct | 7,500ms | 600 | **600** | the next distinct time resumes at *sixth*, so the floor |
+
+Every acceptance criterion above is in that one table except #4, #5 and #7, which no round
+needed to show. **The host answered nothing and is absent from the deltas rather than zero in
+them** — criterion 2, and the distinction `verdictFor` reads to tell `wrong` from `lost`.
+
+Four things about the instrument, because the numbers are only worth what it is worth:
+
+- **The expectations are written by hand from the table at the top of this file**, not
+  computed by `tallyQuestion`. Deriving them from the function under test would only ever
+  prove the engine agrees with itself.
+- **Everything is read back with `getDocFromServer`.** The ordinary `getDoc` would have been
+  served from a cache holding this process's own writes, and could have confirmed the whole
+  run without a byte surviving the trip.
+- **A second client re-derives the deltas** from the answers as *it* reads them off the
+  server — `liveAnswers` then `tallyQuestion`, the two functions the browsers use. That is
+  criterion 6, and no single device can show it.
+- **It never needed a second person.** It needed a second client. `elapsedMs` is stated by
+  the answering device, which this file calls the scheme's one real weakness — and it is
+  exactly what makes a deterministic order possible. The vault seeds `hq0` as
+  `'The first one'`, so the harness knows the right lectern without reading a vault it is
+  not allowed to read.
+
+**And on screen.** `npm run rank-harness -- --browser` waits for a real browser, on the live
+site, over reCAPTCHA attestation rather than a debug token. It answered correctly at
+18,076ms — after every seat, so seventh, so the floor — and the player's reveal read
+`CORRECT · +600` against the terminal's `Browser … was paid 600`. The two agreeing is the
+point, as it was for the shared clock.
+
+That run used a **thirty-second** window and paid every seat exactly what the ten-second run
+paid. Window-independence was a claim in this file (`scoring.ts:44`) and is now a
+measurement.
+
+Two things the run caught, both by cross-check rather than by the report:
+
+- **The harness reproduced the bug `host-room` had carried for weeks** — it folded its first
+  reveal without reading the answers subcollection and paid the room nothing. It caught
+  itself: the second client re-derived the full ladder while the room's own `lastDeltas` came
+  back `{}`. Two readings that cannot both be true.
+- **`+574` on the player's screen**, which is not a number this scheme can pay. It was a tween
+  frame counting up to 600, and the second screenshot settled it. One reading would have been
+  a confident wrong bug report.
+
+**The rosette, 30 August 2026.** The 29 August run stopped at the reveal. The harness now
+plays on to `finished`. Room `7FK5`, live site, Witness in a real browser over reCAPTCHA:
+Ada **1,000** on the podium and **Fastest finger / Ada / In on the buzzer at 1.2 seconds.**
+on the same screen. Witness answered correctly at 15,814ms — seventh, so the floor, **600**
+on the standings against the terminal's `was paid 600`. That is criterion 7, and it is
+the same agreement the shared clock used.
+
+The browser banks its own season row on `finished`. Witness is on the board; that is the
+cost of seeing the screen, not a leak from the harness.
 
 **No rules change, so `check-rules` is unaffected** — but run it before deploying anyway, on
 the standing principle that the repo copy is not what Firebase is running.

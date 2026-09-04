@@ -23,6 +23,7 @@ React 18, TypeScript, Vite, Vitest. Firebase client SDK. Deploy is `gh-pages` fr
 | `npm run reveal-probe` | When the vault's reveal gate actually opens, against the two clocks a client could anchor to |
 | `npm run sync-harness [n]` | *n* concurrent clients against live Firebase |
 | `npm run host-room -- [secs]` | Drive a round from the terminal |
+| `npm run rank-harness [-- --browser]` | Seven answerers in one live question — the whole rank ladder, proved |
 | `npm run seed-vault` | Admin SDK; needs `GOOGLE_APPLICATION_CREDENTIALS` under `.secrets/` |
 | `npm run fold-votes [-- --go]` | What the office voted out. Dry run by default; `--go` writes the blocklist |
 | `npm run deploy` | `build` then `gh-pages` |
