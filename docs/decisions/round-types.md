@@ -28,6 +28,14 @@ is what was already turned down. This is the costing for these four.
 the one that does not compete with the rank bonus. `STEAL_SHARE` is 5% and is
 the dial if it plays wrong; nothing else about the mechanic needs touching.
 
+**Evidence, and the paste-free claim is the part that needed it.** The repo copy
+of `firestore.rules` is not what Firebase is running, and the room document is
+what took the game down when squads shipped — so `check-rules` gained
+`open a room that plays for steals`, a live write carrying `stealEnabled` and
+`lastSteal`. **PASS, 52/52.** `sync-harness 10` after it: **10/10 joined, 0
+dropped, all ten saw the question within 56ms.** Both are commands anybody can
+re-run rather than a paragraph of reasoning.
+
 Three properties worth keeping:
 
 - **Nobody steals from themselves**, so a leader who keeps answering first is

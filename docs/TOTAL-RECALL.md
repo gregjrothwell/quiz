@@ -54,6 +54,13 @@ and after, asserted rather than assumed. Zero reads, zero writes, no paste.
 
 `STEAL_SHARE` is 5% and is the dial. Everything else is settled.
 
+**Proved, not reasoned.** The branch had been claiming "no paste needed" off a
+reading of the repo ruleset, which is the least evidenced thing on it and the
+most expensive to be wrong about — `playerOk` uses `hasOnly`, so a refused room
+write is a room nobody can start or join. `check-rules` now writes a live room
+carrying `stealEnabled` and `lastSteal`: **PASS, 52/52**. `sync-harness 10`
+after it: **10/10, 0 dropped, all ten inside 56ms**.
+
 `lastSteal` sits on the room beside `lastDeltas` because the reveal has to *say*
 what happened — a net delta cannot be read back into "Priya took 500 off you",
 and without it a robbed leader saw "You didn't answer · −500" and no reason.

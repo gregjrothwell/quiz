@@ -62,7 +62,6 @@ hook says so if this one grows.
 - **Scoring is a rank bonus, not a speed curve** — 500 for correct plus
   500/400/300/200/100 by the order they landed, and **played** — see below.
   [`decisions/scoring.md`](decisions/scoring.md).
-- **The final screen makes a shareable PNG** ([`final-card.md`](decisions/final-card.md)).
 - **Live since 28 August**, each proved on the deployed site and each with its
   own file: the **shared clock** ([`shared-clock.md`](decisions/shared-clock.md)),
   **live squad scoring** on points ÷ headcount ([`live-squads.md`](decisions/live-squads.md)),
@@ -71,8 +70,8 @@ hook says so if this one grows.
 - **`npm run host-room` scores a real answer now** — it never read the answers
   subcollection, so every reveal it folded scored nobody.
 - **The verdict pills, the lighting rig and the dependency pass are all live.**
-  This block said otherwise until 2 September — corrected by checking branches,
-  not prose. The same error, twice more, on 4 September.
+  This block said otherwise until 2 September; the same error twice more on
+  4 September. Check the thing, not the prose.
 
 **Live since 2 September**, deployed and checked on the site rather than assumed:
 
@@ -87,7 +86,8 @@ Bundle `index-Y1gzBmfb`, watched onto the CDN rather than assumed.
 The chair seats the whole tie; `take-stock` says what was actually played; the
 glint stays on its riser; the mute button has a ground; the lobby lets a
 link-joiner pick a squad; and **the first right answer steals 5% off the
-leader**. Costings and the negative-points decision:
+leader**. **Proved deployable**: `check-rules` 52/52 with a live room carrying
+the new fields, `sync-harness 10` clean. No paste needed.
 [`decisions/round-types.md`](decisions/round-types.md).
 
 **What is actually in the project right now** — counts, the two slow leaks, and the
