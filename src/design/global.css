@@ -413,10 +413,23 @@ textarea {
   display: grid;
   place-items: center;
   padding: 0;
-  border: 1px solid transparent;
+  /*
+    A ground of its own, and it needs one.
+    
+    This was `background: transparent` with a transparent border over
+    `--ink-dim`, sitting on top of the studio backdrop — which is not a flat
+    colour but beams of light of varying brightness. On a dark stripe it read
+    fine; where a beam passed under it, a dim blue glyph on pale blue all but
+    disappeared. Reported as hard to see, and it was: nothing behind it was
+    constant enough to be a background.
+
+    Dark enough to sit the glyph on a known colour wherever it lands, and still
+    quiet furniture — the corner of the screen is not where the eye should go.
+  */
+  border: 1px solid var(--edge);
   border-radius: var(--radius);
-  background: transparent;
-  color: var(--ink-dim);
+  background: rgb(2 10 20 / 0.62);
+  color: var(--ink-soft);
   transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
 }
 

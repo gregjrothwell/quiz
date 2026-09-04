@@ -3,6 +3,8 @@ import { QrCode } from '../components/QrCode';
 import { RoomLink } from '../components/RoomLink';
 import { joinLink } from '../engine/roomCode';
 import { STEAL_SHARE } from '../engine/scoring';
+import { SQUADS } from '../engine/squad';
+import { rememberSquad, rememberedSquad } from '../lib/rememberedSquad';
 import {
   DEFAULT_DURATION_SECS,
   DURATION_CHOICES,
@@ -117,6 +119,21 @@ export function Lobby({
   */
   const [steal, setSteal] = useState(false);
   const [durationSecs, setDurationSecs] = useState<number>(DEFAULT_DURATION_SECS);
+  /*
+    The way out for somebody who never got asked.
+
+    Auto-join takes a player from a link straight into the room, which skips the
+    landing screen — the only place a squad could be chosen. `App.tsx` says of
+    that path that "the lobby can offer a way out without this needing to know
+    about it", and until now the lobby did not. A player who joined by link with
+    nothing remembered had no way to pick a side at all: `SquadPanel` lives on
+    the season board and only renders for somebody who already has a row there,
+    which a first-timer does not.
+
+    Seeded from the same store the banking reads, so it shows what would actually
+    be recorded rather than an empty control next to a squad they already have.
+  */
+  const [pickedSquad, setPickedSquad] = useState<string>(squad || rememberedSquad());
 
   const youName = youUid ? room.players[youUid]?.name : undefined;
   const quizmasterUid = resolveQuizmaster(room.players);
@@ -189,7 +206,7 @@ export function Lobby({
           <div className="stack">
             <p className="muted hint">
               The link brought you straight in as <strong>{youName}</strong>
-              {squad ? <>, playing for {squad}</> : null}.
+              {pickedSquad ? <>, playing for {pickedSquad}</> : null}.
             </p>
             <div className="btn-row">
               <button type="button" className="btn btn--ghost" onClick={onLeave}>
@@ -306,6 +323,25 @@ export function Lobby({
               </p>
             ) : null}
           </div>
+
+          <label className="field">
+            <span className="field__label">Your squad — for the league table</span>
+            <select
+              className="input"
+              value={pickedSquad}
+              onChange={(event) => {
+                setPickedSquad(event.target.value);
+                rememberSquad(event.target.value);
+              }}
+            >
+              <option value="">Not saying</option>
+              {SQUADS.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </label>
 
           <div className="stack">
             <p className="eyebrow">The last question</p>
