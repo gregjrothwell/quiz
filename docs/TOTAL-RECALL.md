@@ -16,6 +16,38 @@ and including 20 August moved *verbatim* to
 old entry to make it fit is the thing the paragraph above forbids. Every one of
 them is still listed below by date, so the chronology reads end to end from here.
 
+## 2026-09-04 — Melody and picture are live, and the vault was the gate
+
+master `0bf1c5f`, gh-pages `584e80e`, bundle `index-CIOq186A`. #22, #23 and #24
+merged in that order. `seed-vault`: **119 added, 0 changed**, 13,456 already
+correct — the vault now holds 13,712.
+
+**The order was not cosmetic.** Both packs are in `index.json` and the lobby
+offers them, and `resolveAnswer` *throws* when the vault has no doc for a
+question rather than scoring zero. Deploying before the seed would have shipped
+two pickable packs that break at the reveal.
+
+**Proved on the live site, not assumed.** Room `NDH7`, picture round: The Starry
+Night rendered, the clock ran, and the reveal put `tile--correct` on D with the
+other three `tile--gone` — read off the DOM classes rather than computed style,
+which has lied here before. No console errors.
+
+**The CDN was stale again**, exactly as this morning: gh-pages held
+`index-CIOq186A` and served it 200, while live `index.html` still named
+`index-BOq4sYDx`. Caught up on re-fetching. Watch it every time.
+
+**A prediction that was wrong, recorded because it changed the instruction:**
+the Firebase chunk was called as moving to `Byj7wx-B`. It did not — the real
+deploy kept `firebase-Cns3pSRr`. That hash came from a scratch worktree with a
+symlinked `node_modules`, which moved every chunk hash. A build outside the
+project tree is not the build that ships.
+
+**Three green mergeable badges hid a conflict.** GitHub checks a PR against
+master as it stands, not as it will be. #24 read CLEAN and conflicted on
+`scoring.md` once #22 and #23 landed. Simulating the stacked merge in a worktree
+is what caught it. #23 also did not auto-retarget when #22 merged — GitHub only
+does that when the base branch is deleted.
+
 ## 2026-09-04 — The hand-built answers are in the public repo
 
 The vault does not cover melody or picture: their specs are committed, the id is

@@ -49,15 +49,18 @@ hook says so if this one grows.
 
 ## State as of 4 September 2026
 
-**Live** (bundle `index-BOq4sYDx`): chair, take-stock, steal (opt-in, unplayed),
+**Live** (bundle `index-CIOq186A`): chair, take-stock, steal (opt-in, unplayed),
 mute, lobby squad picker, negatives paste (`check-rules` 52/52). Squads, vault,
-App Check, rank bonus, wager, repeats/Gentle+Fiendish withdrawn. 572 tests on
+App Check, rank bonus, wager, repeats/Gentle+Fiendish withdrawn. 653 tests on
 master.
 
-**This branch `melody-round`, not live:** `voices` + hashed `image`; melody pack
-(~70) + picture pack (~49, jigsaw as lobby flag 3×3); lobby force-unmute;
-`authorDied` T−71. `npm run seed-vault` before the new ids score. 652 tests,
-types and lint clean.
+**Melody and picture went live 4 September** (#22, #23, #24): 70 tunes and 49
+stills, `voices` + hashed `image`, jigsaw as a lobby flag, lobby force-unmute,
+`authorDied` T−71. The vault holds 13,712 answers — `seed-vault` added the 119
+on the day. Proved in room `NDH7`: the reveal put `tile--correct` on the right
+still. **The melody half has still never been heard by anybody** — it needs
+ears, and no round has used it. `npm run rank-harness` came back off a stranded
+branch at the same time.
 
 **Shipped and played** otherwise: 13,593 answers, both rulesets published;
 `appcheck-probe` refuses at sign-in; reveal ~0.5s after the clock; scoring is
@@ -85,9 +88,13 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
 4. **The Ladder stops climbing** once a pack's thin `easy` or `hard` bucket is
    spent — it substitutes medium rather than repeating, which is right but is not
    what the tile promises. The fix is `stats/{questionId}`, not selection.
-5. **`npm run seed-vault` before melody or picture can score.** Answers live in
-   gitignored `.cache/hand-vault.json`; the published packs are sealed. The
-   live vault does not have these ids until that runs.
+5. **The melody round has never been played.** The picture half is proved live;
+   the tunes are synthesised and nobody has listened to one, so "it plays" is
+   still an assumption. Any new hand-built pack needs `npm run seed-vault`
+   before its ids can score — `resolveAnswer` throws rather than scoring zero.
+6. **`TOTAL-RECALL.md` is 350 lines against 300.** It wants an archive pass to
+   `recall/2026-09.md` — older entries moved *verbatim* with a dated one-line
+   pointer left behind, not compressed.
 
 ## Where things are
 
