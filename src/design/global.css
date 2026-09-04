@@ -2278,6 +2278,24 @@ select.input option {
   stroke: var(--ink-soft);
 }
 
+/*
+ * The second and third people on the chair, when a round ends in a tie for last.
+ *
+ * Faded rather than given a third ink. The note above is that two inks are what
+ * stop the chair and its occupant becoming a tangle of lines at this size, and a
+ * third would be one more thing to tell apart — where opacity says "further
+ * back" without adding a colour. `--ink-dim` was the obvious alternative and is
+ * wrong: that is the chair's own ink, so the extras would merge into the
+ * furniture rather than sit on it.
+ *
+ * **0.55 is duplicated in `SEAT_BEHIND_ALPHA` in `src/engine/seat.ts`**, which
+ * the shared PNG draws with. Canvas cannot read CSS, the same reason the ink
+ * values at the top of `drawCard.ts` are copied out of here.
+ */
+.seat__sitter--behind {
+  opacity: 0.55;
+}
+
 .seat__name {
   /*
     Allowed to overhang the column, which on a phone is barely wider than the

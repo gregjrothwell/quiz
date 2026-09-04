@@ -110,6 +110,38 @@ describe('cardModel', () => {
     expect(card.chair).toEqual({ names: ['Alex'], score: 100 });
   });
 
+  test('seats everybody who tied for last, not just the first of them', () => {
+    /*
+      #given the finishing scores of live room XS4A — a 25-question round played
+      for stakes on 4 September 2026, where three people staked everything on
+      the last question and landed on nothing.
+
+      A share-based stake floors at exactly zero, so this is not a rare shape:
+      it is what the wager does to the bottom of a table. `wager.md` records "a
+      player on zero stakes nothing" as a known limit and this is the other end
+      of it.
+    */
+    const players = playersNamed('Greg', 'Sam', 'Priya', 'Alex', 'Jo', 'Rach', 'Dev');
+    const scores = {
+      greg: 22_800, sam: 14_100, priya: 8_025, alex: 5_400, jo: 0, rach: 0, dev: 0,
+    };
+
+    // #when the card is modelled
+    const card = modelFor({ players, scores });
+
+    /*
+      #then all three are named and the score is the one they share. The model
+      has always carried the whole tie; both renderers used to collapse it to one
+      figure, so this is what the drawing is now checked against.
+
+      **In uid order, not join order** — `standings` breaks a tie on uid so every
+      device orders the field identically. That is why it is safe to draw the
+      first of them in the chair and the rest piled on: everybody's screen and
+      everybody's shared PNG put the same person in the seat.
+    */
+    expect(card.chair).toEqual({ names: ['Dev', 'Jo', 'Rach'], score: 0 });
+  });
+
   test('seats nobody in a room of three, matching the screen', () => {
     // #given a round small enough that last place is already on a riser
     const players = playersNamed('Greg', 'Sam', 'Priya');

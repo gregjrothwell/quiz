@@ -1,9 +1,44 @@
+import { pileOns, seatLabel } from '../engine/seat';
 import { ScoreTicker } from './ScoreTicker';
 
 interface ChairProps {
-  /** Joined names when a dead heat puts more than one person in it. */
-  name: string;
+  /**
+   * Everyone who finished level at the bottom. A dead heat seats all of them —
+   * `seatedLast` has always returned the whole tie, and this used to be a
+   * pre-joined string, so three people who tied for last were drawn as one.
+   */
+  names: string[];
   score: number;
+}
+
+/**
+ * A second or third person on the chair.
+ *
+ * Head, a stub of torso, and an arm over whoever is already sitting there —
+ * deliberately less than the full profile below. Three complete figures at this
+ * size is exactly the tangle the two-ink note is about, and the slump is the
+ * sitter's characterisation rather than something worth saying three times.
+ *
+ * Drawn behind the sitter and at reduced opacity, so the front figure stays the
+ * one the eye resolves and a chair with one occupant looks exactly as it did.
+ */
+function PileOn({ dx, dy }: { dx: number; dy: number }) {
+  return (
+    <g
+      className="seat__sitter seat__sitter--behind"
+      transform={`translate(${dx} ${dy})`}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="34" cy="18" r="4.5" />
+      <g fill="none" strokeWidth="4.5">
+        <path d="M35 24 33 34" />
+      </g>
+      <g fill="none" strokeWidth="3.5">
+        <path d="M34 27 27 30" />
+      </g>
+    </g>
+  );
 }
 
 /**
@@ -27,8 +62,13 @@ interface ChairProps {
  * is also a fair description of an octopus with a face. In profile there is a
  * backrest, an armrest and a seat before the eye ever reaches the wheels, so the
  * legs are read as the bottom of a chair rather than as limbs of something.
+ *
+ * **A tie for last puts everybody on the one chair**, rather than one figure and
+ * an ampersand. It is funnier than a row of chairs and it costs no width, which
+ * matters: on a phone this whole column is under 6rem. The offsets live in
+ * `engine/seat.ts` so the shared PNG can pile them up identically.
  */
-export function Chair({ name, score }: ChairProps) {
+export function Chair({ names, score }: ChairProps) {
   return (
     <div className="seat">
       {/*
@@ -36,7 +76,7 @@ export function Chair({ name, score }: ChairProps) {
         columns to the floor, so anything stacked on top pushes the chair further
         down the podium. Below it, the label was propping the chair up.
       */}
-      <span className="seat__name">{name}</span>
+      <span className="seat__name">{seatLabel(names)}</span>
       <span className="seat__score">
         <ScoreTicker value={score} from={0} />
       </span>
@@ -60,6 +100,11 @@ export function Chair({ name, score }: ChairProps) {
             <circle cx="44.5" cy="66.5" r="2.3" />
             <circle cx="29" cy="68" r="2.3" />
           </g>
+
+          {/* Before the sitter, so the sitter stays in front of them. */}
+          {pileOns(names.length).map((offset) => (
+            <PileOn key={`${offset.dx},${offset.dy}`} dx={offset.dx} dy={offset.dy} />
+          ))}
 
           {/*
             Head forward of the shoulders and an arm gone limp over the rest.

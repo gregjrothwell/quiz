@@ -1,4 +1,5 @@
 import { cardModel, type CardInput, type CardModel, type CardRosette } from '../engine/card';
+import { pileOns, seatLabel, SEAT_BEHIND_ALPHA } from '../engine/seat';
 
 /**
  * Drawing the card, kept out of the main bundle.
@@ -119,7 +120,14 @@ const RAD = Math.PI / 180;
  * The source viewBox is `6 2 50 72`, so the drawing is translated by that origin
  * before anything else and everything below is in the component's coordinates.
  */
-function drawChair(ctx: CanvasRenderingContext2D, middle: number, floor: number, height: number) {
+function drawChair(
+  ctx: CanvasRenderingContext2D,
+  middle: number,
+  floor: number,
+  height: number,
+  /** How many finished level at the bottom. A dead heat piles them all on. */
+  occupants: number,
+) {
   const scale = height / 72;
 
   ctx.save();
@@ -157,6 +165,29 @@ function drawChair(ctx: CanvasRenderingContext2D, middle: number, floor: number,
     ctx.beginPath();
     ctx.arc(x, y, 2.3, 0, Math.PI * 2);
     ctx.stroke();
+  }
+
+  // Anybody else who tied for last, behind the sitter and faded — the canvas
+  // half of `.seat__sitter--behind`. The offsets come from `engine/seat.ts`
+  // rather than being copied, because they are the part that gets tuned and a
+  // chair that piled up differently here would be the card and the screen
+  // disagreeing about who lost.
+  for (const { dx, dy } of pileOns(occupants)) {
+    ctx.save();
+    ctx.globalAlpha = SEAT_BEHIND_ALPHA;
+    ctx.translate(dx, dy);
+    ctx.strokeStyle = INK_SOFT;
+    ctx.fillStyle = INK_SOFT;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(34, 18, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.lineWidth = 4.5;
+    ctx.stroke(new Path2D('M35 24 33 34'));
+    ctx.lineWidth = 3.5;
+    ctx.stroke(new Path2D('M34 27 27 30'));
+    ctx.restore();
   }
 
   // Head forward of the shoulders and an arm gone limp over the rest. The slump
@@ -213,23 +244,20 @@ function drawPodium(ctx: CanvasRenderingContext2D, card: CardModel, floor: numbe
 
     // Above the chair, not below it: on screen the label sits on top because
     // the column is floor-aligned and anything underneath props the chair up.
+    // Formatted by the same function the screen uses, so a three-way tie reads
+    // "Alice, Bob & Cara" in both places rather than in one.
+    const label = seatLabel(card.chair.names);
+
     ctx.textAlign = 'center';
     ctx.fillStyle = INK_SOFT;
-    fitted(
-      ctx,
-      card.chair.names.join(' & '),
-      (s) => `400 ${s}px ${SHOUT}, Impact, sans-serif`,
-      CHAIR_WIDTH,
-      30,
-      16,
-    );
-    ctx.fillText(card.chair.names.join(' & '), middle, top - 42);
+    fitted(ctx, label, (s) => `400 ${s}px ${SHOUT}, Impact, sans-serif`, CHAIR_WIDTH, 30, 16);
+    ctx.fillText(label, middle, top - 42);
 
     ctx.fillStyle = INK_DIM;
     ctx.font = `600 22px ${TECH}, monospace`;
     ctx.fillText(card.chair.score.toLocaleString('en-GB'), middle, top - 14);
 
-    drawChair(ctx, middle, floor, CHAIR_HEIGHT);
+    drawChair(ctx, middle, floor, CHAIR_HEIGHT, card.chair.names.length);
   }
 
   RISER_ORDER.forEach((rowIndex, slot) => {
