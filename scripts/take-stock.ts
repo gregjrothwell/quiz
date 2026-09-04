@@ -18,6 +18,8 @@
 import { readFileSync } from 'node:fs';
 import { cert, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import { roomStandings, seatedLast } from '../src/engine/scoring';
+import type { Player } from '../src/engine/state';
 
 /**
  * Every bucket under `seasons/`, and how many rows each holds.
@@ -53,6 +55,94 @@ async function seasonBuckets(
 const DAILY_READS = 50_000;
 const DAILY_WRITES = 20_000;
 
+/** How many rounds back the listing below goes. One document read each. */
+const RECENT_ROUNDS = 10;
+
+interface Round {
+  code: string;
+  /** When the last question was opened, which is a server timestamp. */
+  played: string;
+  pack: string;
+  players: number;
+  questions: number;
+  finished: boolean;
+  wager: boolean;
+  /**
+   * Whether a stake was actually paid, and whether the rank bonus actually
+   * awarded an order. **Both are read off the scores rather than trusted.**
+   *
+   * `stakeFor` rounds a percentage of a score to whole points, so it is the only
+   * thing in the game that can produce a total which is not a multiple of 100 —
+   * `14,475` in room FWAP. And every question pays 1,000 to the first correct
+   * answer and 900/800/700/600 to the rest, so a total that is a multiple of 100
+   * but *not* of 1,000 can only have come from a bonus below first — `6,100` in
+   * FUWH, which predates the wager entirely.
+   *
+   * This is here because both of those facts were sitting in the database on
+   * 4 September while `HANDOVER.md` said neither feature had ever been played.
+   * Nothing surfaced them, so nobody's memory was ever going to be corrected by
+   * anything but a real round. See docs/decisions/round-types.md.
+   */
+  staked: boolean;
+  ranked: boolean;
+  /** Everyone level at the bottom, by the same rule the chair uses. */
+  seated: number;
+  lowest: number;
+}
+
+/**
+ * The last {@link RECENT_ROUNDS} rooms, newest first.
+ *
+ * Ordered by `expiresAt` rather than `openedAt` because that is the field the
+ * rest of this script already orders on, so it needs no second index — and the
+ * two agree, `expiresAt` being stamped when the room is made and `openedAt` a
+ * few minutes later when the round actually runs.
+ *
+ * Rooms created before `expiresAt` existed are invisible here, exactly as they
+ * are to the expiry count above: `orderBy` only matches documents carrying the
+ * field. They are also the oldest rooms in the project, so a listing of recent
+ * rounds is the one place that costs nothing.
+ */
+async function recentRounds(db: FirebaseFirestore.Firestore): Promise<Round[]> {
+  const snap = await db
+    .collection('rooms')
+    .orderBy('expiresAt', 'desc')
+    .limit(RECENT_ROUNDS)
+    .get();
+
+  return snap.docs.map((doc) => {
+    const data = doc.data();
+    const players = (data['players'] ?? {}) as Record<string, Player>;
+    const scores = (data['scores'] ?? {}) as Record<string, number>;
+    const values = Object.values(scores);
+    const rows = roomStandings(players, scores);
+    const seated = seatedLast(rows);
+    const openedAt = data['openedAt'] as { toDate(): Date } | undefined;
+
+    return {
+      code: doc.id,
+      played: openedAt ? openedAt.toDate().toISOString().slice(0, 10) : '—',
+      pack: (data['packTitle'] as string | undefined) ?? '',
+      players: Object.keys(players).length,
+      questions: ((data['questions'] ?? []) as unknown[]).length,
+      finished: data['phase'] === 'finished',
+      wager: data['wagerEnabled'] === true,
+      staked: values.some((score) => score % 100 !== 0),
+      ranked: values.some((score) => score % 100 === 0 && score % 1_000 !== 0),
+      seated: seated.length,
+      lowest: seated[0] ? (scores[seated[0]] ?? 0) : 0,
+    };
+  });
+}
+
+/** What the bottom of one round's table looked like, in a column's width. */
+function bottomOf(round: Round): string {
+  if (!round.finished) return 'unfinished';
+  if (round.seated === 0) return '—';
+  if (round.seated === 1) return `one, on ${round.lowest.toLocaleString('en-GB')}`;
+  return `${round.seated} tied on ${round.lowest.toLocaleString('en-GB')}`;
+}
+
 async function main(): Promise<void> {
   const keyPath = process.env['GOOGLE_APPLICATION_CREDENTIALS'];
   if (!keyPath) {
@@ -80,13 +170,14 @@ async function main(): Promise<void> {
     being written: if this stops climbing while `rooms` does, something dropped
     it from the create path.
   */
-  const [rooms, expirable, vault, buckets, recovery, claims] = await Promise.all([
+  const [rooms, expirable, vault, buckets, recovery, claims, rounds] = await Promise.all([
     count('rooms'),
     (await db.collection('rooms').orderBy('expiresAt').count().get()).data().count,
     count('vault'),
     seasonBuckets(db),
     count('recovery'),
     count('claims'),
+    recentRounds(db),
   ]);
 
   /*
@@ -124,6 +215,42 @@ async function main(): Promise<void> {
   if (buckets.length === 0) console.log('  seasons                  none');
   console.log(`  recovery codes           ${recovery.toLocaleString('en-GB')}`);
   console.log(`  identity claims          ${claims.toLocaleString('en-GB')}`);
+
+  /*
+    What was actually played, which is the question this script could not answer
+    until 4 September 2026 — and the reason it could not is the whole point of
+    the block. `HANDOVER.md` said the wager and the rank bonus had never been
+    played; four of the ten rooms below were played for stakes, one of them with
+    nine people, and every count in this script was silent about it.
+
+    Ten document reads, against a script that is otherwise single-digit. That is
+    the cost of never having to take a document's word for it again.
+  */
+  if (rounds.length > 0) {
+    const wagered = rounds.filter((round) => round.wager).length;
+    const staked = rounds.filter((round) => round.staked).length;
+    const ranked = rounds.filter((round) => round.ranked).length;
+    const played = rounds.filter((round) => round.finished).length;
+
+    console.log(`\n  the last ${rounds.length} rooms\n`);
+    console.log('    played       code  pack                 who  Qs  wager  the bottom');
+    for (const round of rounds) {
+      console.log(
+        `    ${round.played.padEnd(12)} ${round.code.padEnd(5)} ${round.pack.slice(0, 19).padEnd(20)}`
+          + ` ${String(round.players).padStart(3)}`
+          + ` ${String(round.questions).padStart(3)}`
+          + `  ${(round.wager ? 'on' : '—').padEnd(6)}`
+          + ` ${bottomOf(round)}`,
+      );
+    }
+
+    console.log(`\n    ${played} finished · ${wagered} opted into the wager`);
+    console.log(
+      `    a stake was actually paid in ${staked}`
+        + ` · the rank bonus awarded an order in ${ranked}`,
+    );
+    console.log('    Both are read off the scores, not the flags — see the `Round` type.');
+  }
 
   /*
     A game is roughly 800–1,500 reads, measured before any of the season work.
