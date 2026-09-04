@@ -373,6 +373,7 @@ export function play(cue: Cue): void {
 }
 
 let clockNodes: { gain: GainNode; sources: OscillatorNode[] } | null = null;
+let sequenceNodes: { gain: GainNode; sources: OscillatorNode[] } | null = null;
 
 /**
  * Starts the closing clock, given the milliseconds actually left on it.
@@ -383,7 +384,51 @@ let clockNodes: { gain: GainNode; sources: OscillatorNode[] } | null = null;
  * stumble. The cost is that it commits to an ending, which is why `stopClock`
  * exists: anything that ends the question early has to come and cancel it.
  */
+/**
+ * Plays an arbitrary note sequence through its own gain node.
+ *
+ * The missing export a melody round needs. Same shape as {@link startClock}:
+ * schedule the lot in one call, cancel with {@link stopSequence}. A muted
+ * player hears nothing — the lobby has to force that issue when a melody
+ * pack actually exists.
+ */
+export function playSequence(voices: Voice[]): void {
+  stopSequence();
+  stopClock();
+  if (muted || voices.length === 0) return;
+
+  const nodes = audio();
+  if (!nodes) return;
+
+  const { ctx, out } = nodes;
+  if (ctx.state === 'suspended') void ctx.resume();
+
+  const gain = ctx.createGain();
+  gain.connect(out);
+
+  const at = ctx.currentTime;
+  const sources = voices.map((voice) => strike(ctx, gain, voice, at));
+
+  sequenceNodes = { gain, sources };
+}
+
+/** Silences a running sequence. Safe to call when there isn't one. */
+export function stopSequence(): void {
+  const running = sequenceNodes;
+  if (!running || !context) return;
+  sequenceNodes = null;
+
+  const now = context.currentTime;
+  running.gain.gain.cancelScheduledValues(now);
+  running.gain.gain.setValueAtTime(running.gain.gain.value, now);
+  running.gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.04);
+
+  for (const source of running.sources) source.stop(now + 0.05);
+  window.setTimeout(() => running.gain.disconnect(), 200);
+}
+
 export function startClock(remainingMs: number): void {
+  stopSequence();
   stopClock();
   if (muted || remainingMs <= 0) return;
 
@@ -435,7 +480,10 @@ export function setMuted(next: boolean): void {
   muted = next;
   // The bed is scheduled to the buzzer the moment it starts, so muting has to
   // reach in and cancel it rather than wait for the next note not to play.
-  if (next) stopClock();
+  if (next) {
+    stopClock();
+    stopSequence();
+  }
   try {
     window.localStorage.setItem(STORAGE_KEY, next ? 'off' : 'on');
   } catch {

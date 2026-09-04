@@ -77,6 +77,11 @@ interface LobbyProps {
   autoJoined?: boolean;
   /** Only shown, and only alongside {@link autoJoined}. */
   squad?: string;
+  /**
+   * Writes the pick onto this device's room entry. Storage is remembered here;
+   * the room write is the caller's, because only `useRoom` can touch the seat.
+   */
+  onPickSquad?: (squad: string) => void;
   onStart: (
     packId: PackId,
     count: number,
@@ -96,6 +101,7 @@ export function Lobby({
   busy,
   autoJoined = false,
   squad = '',
+  onPickSquad,
   onStart,
   onLeave,
 }: LobbyProps) {
@@ -215,6 +221,27 @@ export function Lobby({
             </div>
           </div>
         ) : null}
+
+        <label className="field">
+          <span className="field__label">Your squad — for the live board</span>
+          <select
+            className="input"
+            value={pickedSquad}
+            onChange={(event) => {
+              const next = event.target.value;
+              setPickedSquad(next);
+              rememberSquad(next);
+              onPickSquad?.(next);
+            }}
+          >
+            <option value="">Not saying</option>
+            {SQUADS.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </label>
       </section>
 
       {isQuizmaster ? (
@@ -324,25 +351,6 @@ export function Lobby({
             ) : null}
           </div>
 
-          <label className="field">
-            <span className="field__label">Your squad — for the league table</span>
-            <select
-              className="input"
-              value={pickedSquad}
-              onChange={(event) => {
-                setPickedSquad(event.target.value);
-                rememberSquad(event.target.value);
-              }}
-            >
-              <option value="">Not saying</option>
-              {SQUADS.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
-          </label>
-
           <div className="stack">
             <p className="eyebrow">The last question</p>
             <div className="picker">
@@ -368,7 +376,8 @@ export function Lobby({
             {wager ? (
               <p className="muted hint">
                 Everyone picks how much of their own score to stake before they answer. Get it
-                right and you win it; get it wrong and you lose it. Nobody can drop below zero.
+                right and you win it; get it wrong and you lose it. A player on nothing who
+                stakes still puts 500 on the line.
               </p>
             ) : null}
           </div>

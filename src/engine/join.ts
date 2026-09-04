@@ -86,3 +86,41 @@ export function planJoin({
 
   return { entry, score };
 }
+
+export type SeatSquadPlan =
+  | { kind: 'set'; squad: string }
+  | { kind: 'clear' }
+  | { kind: 'skip' };
+
+/**
+ * What writing a squad onto a seat that already exists should do.
+ *
+ * This is not a rejoin. {@link planJoin} leaves an existing entry untouched so
+ * a reconnect cannot restamp `joinedAt` and move the quizmaster. The live board
+ * still needs a first-time pick that happens *after* the seat was written —
+ * auto-join lands someone in the lobby with no squad, and the picker is the
+ * rest of the join.
+ *
+ * Only the lobby. Once the show starts the side is frozen, which is the
+ * running-total rule in `docs/decisions/live-squads.md`. Changing squad
+ * mid-round still banks the new side and shows the old one.
+ *
+ * Returns a field write, never a new entry, so `joinedAt` cannot move.
+ */
+export function planSeatSquad({
+  existing,
+  phase,
+  squad,
+}: {
+  existing: Player | undefined;
+  phase: Phase;
+  squad: string;
+}): SeatSquadPlan {
+  if (!existing) return { kind: 'skip' };
+  if (phase !== 'lobby') return { kind: 'skip' };
+
+  const held = existing.squad ?? '';
+  if (held === squad) return { kind: 'skip' };
+  if (!squad) return { kind: 'clear' };
+  return { kind: 'set', squad };
+}

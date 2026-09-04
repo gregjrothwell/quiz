@@ -1,6 +1,6 @@
 # Scoring
 
-> **Owner: Greg Rothwell. Last updated: 20 August 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 4 September 2026. Budget: 250 lines.**
 
 **Status: built 20 August 2026.** Decision recorded in
 [`ideas-review.md`](ideas-review.md#1-rank-based-scoring--chosen) and the
@@ -78,8 +78,9 @@ but first of the people who got it right is first.
 3. **Ties share a rank and the next distinct time resumes at the count already awarded** —
    the exact convention `standings()` uses (`scoring.ts:118`). Two players tied on the
    fastest correct answer both score 1000 and the next scores 800.
-4. The maximum for one question stays **1,000**, so `maxBest()` and `best <= points` in
-   `firestore.rules:419` are untouched and **no ruleset paste is needed**.
+4. The maximum for one question stays **1,000**, so `maxBest()` is untouched.
+   `best <= points` was removed on 4 September when a minimum stake could put
+   a season total below a personal best — see [`round-types.md`](round-types.md).
 5. Only room members score. The `eligible` filter in `reducer.ts:239` is unchanged.
 6. Every device computes identical deltas from the same reveal — the reveal is folded once
    and broadcast, but `useGameLog` and the awards re-derive from it on every client, so the

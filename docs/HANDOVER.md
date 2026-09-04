@@ -79,16 +79,13 @@ hook says so if this one grows.
 - **The last question can be played for stakes**, at no extra cost, rules pasted
   first ([#19](https://github.com/gregjrothwell/quiz/pull/19)): [`decisions/wager.md`](decisions/wager.md).
 
-Bundle `index-Y1gzBmfb`, watched onto the CDN rather than assumed.
-
-**4 September — merged to `master` locally, not yet pushed, none of it played.**
+**Live since 4 September**, bundle `index-BOq4sYDx`, watched onto the CDN.
 The chair seats the whole tie; `take-stock` says what was actually played; the
 glint stays on its riser; the mute button has a ground; the lobby lets a
 link-joiner pick a squad; and **the first right answer steals 5% off the
-leader**. **Proved deployable**: `check-rules` 52/52 with a live room carrying
-the new fields, `sync-harness 10` clean, no paste needed. `git push origin master`
-then `npm run deploy` — both refused by the harness here.
-[`decisions/round-types.md`](decisions/round-types.md).
+leader** (opt-in, off by default, and **never yet played**). `check-rules` 52/52
+with a live room carrying the new fields, `sync-harness 10` clean, no paste
+needed. [`decisions/round-types.md`](decisions/round-types.md).
 
 **What is actually in the project right now** — counts, the two slow leaks, and the
 two corrections that came out of miscounting them: [`decisions/cost.md`](decisions/cost.md#measured-live-28-august-2026).
@@ -105,12 +102,7 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
    [`decisions/round-types.md`](decisions/round-types.md#the-prose-was-wrong-and-that-is-a-finding).
    The **anonymous-account purge is reviewed and the answer is don't**:
    [`decisions/identity.md`](decisions/identity.md).
-4. **A link-joiner is missing from the *live* squad board for one round.** Their
-   room entry carries no `squad`, and nothing can write it after a join —
-   `writeSelfIntoRoom` is unexposed and `join` refuses an existing player. The
-   lobby picker (4 Sept) fixes the *banked* rows from the next game on.
-   [`decisions/live-squads.md`](decisions/live-squads.md).
-5. **The Ladder stops climbing** once a pack's thin `easy` or `hard` bucket is
+4. **The Ladder stops climbing** once a pack's thin `easy` or `hard` bucket is
    spent — it substitutes medium rather than repeating, which is right but is not
    what the tile promises. The fix is `stats/{questionId}`, not selection.
 

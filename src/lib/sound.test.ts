@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { CLOCK_LEAD_SECONDS, clockVoices, cueVoices } from './sound';
+import { CLOCK_LEAD_SECONDS, clockVoices, cueVoices, playSequence } from './sound';
 
 /** The pitched walk, which is the one voice every second of the bed has. */
 const bassLine = (remainingMs: number): number[] =>
@@ -101,5 +101,11 @@ describe('clockVoices', () => {
 
     // #then there is nothing to play
     expect(voices).toEqual([]);
+  });
+});
+
+describe('playSequence', () => {
+  test('is the public export a melody round needs', () => {
+    expect(typeof playSequence).toBe('function');
   });
 });

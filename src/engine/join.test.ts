@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { planJoin } from './join';
+import { planJoin, planSeatSquad } from './join';
 import { resolveQuizmaster, type Player } from './state';
 
 /** The room in 6JA5 as it stood when the mid-round join landed. */
@@ -219,5 +219,73 @@ describe('the squad on the entry', () => {
     // #then the seat is untouched, squad included — the same rule that stops a
     // reconnecting quizmaster losing the chair
     expect(plan.entry).toEqual(players.greg);
+  });
+});
+
+describe('planSeatSquad', () => {
+  const seated: Player = { name: 'Sam', joinedAt: 1_786_963_034_402 };
+
+  test('writes a first pick onto a lobby seat that has none', () => {
+    // #given a link-joiner already seated, with no squad on the entry
+    // #when they pick a side in the lobby
+    const plan = planSeatSquad({ existing: seated, phase: 'lobby', squad: 'Hermes' });
+
+    // #then the write is the squad field only — joinedAt is not in the plan
+    expect(plan).toEqual({ kind: 'set', squad: 'Hermes' });
+  });
+
+  test('lets them change their mind while the room is still a lobby', () => {
+    const already: Player = { ...seated, squad: 'Hermes' };
+    const plan = planSeatSquad({ existing: already, phase: 'lobby', squad: 'Bundae' });
+    expect(plan).toEqual({ kind: 'set', squad: 'Bundae' });
+  });
+
+  test('clears a pick that is taken back before the show starts', () => {
+    const already: Player = { ...seated, squad: 'Hermes' };
+    const plan = planSeatSquad({ existing: already, phase: 'lobby', squad: '' });
+    expect(plan).toEqual({ kind: 'clear' });
+  });
+
+  test('does nothing once the show has started', () => {
+    // Frozen at join for the running total. A mid-round change is a storage
+    // write for the bank, not a restamp of the board.
+    const plan = planSeatSquad({
+      existing: seated,
+      phase: 'question',
+      squad: 'Hermes',
+    });
+    expect(plan).toEqual({ kind: 'skip' });
+  });
+
+  test('does not mint a seat for somebody who is not in the room', () => {
+    const plan = planSeatSquad({ existing: undefined, phase: 'lobby', squad: 'Hermes' });
+    expect(plan).toEqual({ kind: 'skip' });
+  });
+
+  test('does not rewrite a squad that is already what they picked', () => {
+    const already: Player = { ...seated, squad: 'Hermes' };
+    const plan = planSeatSquad({ existing: already, phase: 'lobby', squad: 'Hermes' });
+    expect(plan).toEqual({ kind: 'skip' });
+  });
+
+  test('a rejoin still cannot restamp joinedAt', () => {
+    // The two paths stay apart: seating is planJoin, the squad field is this.
+    const players: Record<string, Player> = { sam: seated };
+    const seat = planJoin({
+      players,
+      scores: { sam: 0 },
+      phase: 'lobby',
+      uid: 'sam',
+      name: 'Sam',
+      playerId: 'sam',
+      squad: 'Bundae',
+      restored: null,
+      now: 9_999,
+    });
+    const field = planSeatSquad({ existing: seated, phase: 'lobby', squad: 'Bundae' });
+
+    expect(seat.entry.joinedAt).toBe(seated.joinedAt);
+    expect(field).toEqual({ kind: 'set', squad: 'Bundae' });
+    expect(resolveQuizmaster({ greg: UNDER_WAY.greg as Player, sam: seated })).toBe('greg');
   });
 });
