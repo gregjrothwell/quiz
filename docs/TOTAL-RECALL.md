@@ -16,6 +16,14 @@ and including 20 August moved *verbatim* to
 old entry to make it fit is the thing the paragraph above forbids. Every one of
 them is still listed below by date, so the chronology reads end to end from here.
 
+## 2026-09-04 — The hand-built answers are in the public repo
+
+The vault does not cover melody or picture: their specs are committed, the id is
+`sha1('hand:' + slug)[:12]`, and the slug sits by `correct:`. Verified —
+`sha1('hand:hay-wain')[:12]` = `e26ff5781961`. Not in the bundle, not in
+`public/packs/`. Accepted, not fixed: hiding the specs makes the packs
+unregenerable. [`known-limits.md`](decisions/known-limits.md).
+
 ## 2026-09-04 — Melody, picture, jigsaw (`melody-round`, not live)
 
 70 tunes + 49 stills (jigsaw 3×3 lobby flag). Sealed packs; answers in gitignored

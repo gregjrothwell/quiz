@@ -1,6 +1,6 @@
 # Known limits
 
-> **Owner: Greg Rothwell. Last updated: 28 August 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 4 September 2026. Budget: 250 lines.**
 
 Split out of [`state-of-play.md`](state-of-play.md) on 28 August 2026, when that
 file reached 252 lines against a 250 budget. The text is unchanged apart from one
@@ -110,5 +110,27 @@ behaviour is a bug.
   Celebrities and Gadgets have no *verified* questions, only pending ones. Note
   that `api_count.php` counts pending questions too, so its totals overstate what
   the API will actually serve — don't size a harvest from them.
+- **The melody and picture answers are in the public repo, and the vault does not
+  cover them.** Every other pack's answers exist only in the Firestore vault and a
+  gitignored cache, which is the whole point of the vault. The two hand-built packs
+  cannot work that way: a pack builder has to read its specs from somewhere, so they
+  are committed — 70 in `src/questions/melody-voices.ts` and 49 in
+  `scripts/hand-picture-data.ts`. The id is `sha1('hand:' + slug).slice(0, 12)` and
+  the slug sits on the line above `correct:` in the same file, so a complete
+  id-to-answer map is a few lines of script against a public URL. **Checked, not
+  assumed:** `sha1('hand:hay-wain')[:12]` is `e26ff5781961`, which is the live id
+  for The Hay Wain in `picture.json`.
+- **What that limit is *not*.** The answers do not reach players.
+  `melody-voices.ts` is imported only by its own tests and by `write-hand-packs`,
+  never by app code, and the built bundle carries no `MELODY_SPECS`, no
+  `incorrect`, and no answer strings — grepped against a known sentinel rather
+  than trusted. `public/packs/` stays sealed and `seal.test.ts` still enforces it
+  in both directions. The exposure is the repo, not the site.
+- **Accepted rather than fixed, 4 September 2026.** Moving the specs out of the
+  repo makes the packs unregenerable, and losing 119 hand-built questions to a
+  cleared `.cache/` is a worse failure than a colleague who goes looking for the
+  source of a quiz they are playing. What would change the answer: the repo
+  becoming the obvious place to look, or a night where the result matters enough
+  to be worth cheating for.
 
 ---
