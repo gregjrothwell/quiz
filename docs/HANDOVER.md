@@ -68,7 +68,7 @@ hook says so if this one grows.
   **voting a question out** ([`question-votes.md`](decisions/question-votes.md)),
   and **a join link going straight into the room** ([`joining.md`](decisions/joining.md)).
 - **`npm run host-room` scores a real answer now** — it never read the answers
-  subcollection, so every reveal it folded scored nobody.
+  subcollection, so every reveal folded scored nobody.
 - **The verdict pills, the lighting rig and the dependency pass are all live.**
   This block said otherwise until 2 September; the same error twice more on
   4 September. Check the thing, not the prose.
@@ -82,12 +82,13 @@ hook says so if this one grows.
 
 Bundle `index-Y1gzBmfb`, watched onto the CDN rather than assumed.
 
-**4 September — branch `chair-seats-everyone`, unpushed, none of it played.**
+**4 September — merged to `master` locally, not yet pushed, none of it played.**
 The chair seats the whole tie; `take-stock` says what was actually played; the
 glint stays on its riser; the mute button has a ground; the lobby lets a
 link-joiner pick a squad; and **the first right answer steals 5% off the
 leader**. **Proved deployable**: `check-rules` 52/52 with a live room carrying
-the new fields, `sync-harness 10` clean. No paste needed.
+the new fields, `sync-harness 10` clean, no paste needed. `git push origin master`
+then `npm run deploy` — both refused by the harness here.
 [`decisions/round-types.md`](decisions/round-types.md).
 
 **What is actually in the project right now** — counts, the two slow leaks, and the
