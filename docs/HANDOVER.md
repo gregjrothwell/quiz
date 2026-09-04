@@ -67,8 +67,7 @@ hook says so if this one grows.
   **live squad scoring** on points ÷ headcount ([`live-squads.md`](decisions/live-squads.md)),
   **voting a question out** ([`question-votes.md`](decisions/question-votes.md)),
   and **a join link going straight into the room** ([`joining.md`](decisions/joining.md)).
-- **`npm run host-room` scores a real answer now** — it never read the answers
-  subcollection, so every reveal folded scored nobody.
+- **`npm run host-room` scores a real answer now** — it read no answers before.
 - **The verdict pills, the lighting rig and the dependency pass are all live.**
   This block said otherwise until 2 September; the same error twice more on
   4 September. Check the thing, not the prose.
