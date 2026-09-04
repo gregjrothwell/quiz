@@ -16,15 +16,29 @@ and naming it is the point of this file.
 [`ideas-review.md`](ideas-review.md) is the ranked backlog; [`scope.md`](scope.md)
 is what was already turned down. This is the costing for these four.
 
-## Steal points
+## Steal points — **built 4 September 2026**
 
 | | |
 |---|---|
-| Firebase | **0 reads, 0 writes**, either shape |
-| Ruleset | none (auto-target) · one paste (targeted) |
-| Blocked by | game design, not cost |
+| Firebase | **0 reads, 0 writes** |
+| Ruleset | **none** |
+| Shipped as | auto-targeted, a share, every question of an opted-in round |
 
-Two shapes:
+**Built as the auto-target below**, which is the cheaper of the two shapes and
+the one that does not compete with the rank bonus. `STEAL_SHARE` is 5% and is
+the dial if it plays wrong; nothing else about the mechanic needs touching.
+
+Three properties worth keeping:
+
+- **Nobody steals from themselves**, so a leader who keeps answering first is
+  never pegged back and one who has stopped is. Self-limiting rather than a tax.
+- **It moves points rather than making them** — the round's total is identical
+  before and after, which the wager is not.
+- **`lastSteal` is on the room** because the reveal has to *say* what happened,
+  and a net delta cannot be read back into "Priya took 500 off you". Without it
+  a robbed leader saw "You didn't answer · −500" and no reason.
+
+### The two shapes, as costed
 
 - **Auto-target.** A correct answer takes a share from whoever leads. Pure
   engine — `tallyQuestion` already receives `scores` on wager questions
@@ -196,12 +210,10 @@ document shape.
 
 1. ~~**The chair seats everybody**~~ — **done 4 September**, and the reason this
    file exists. [`TOTAL-RECALL.md`](../TOTAL-RECALL.md).
-2. **`take-stock` should report recent rounds.** Not a feature — it is what stops
-   the next session getting the state wrong, as this one did. See below.
-3. **Steal, auto-targeted.** The wager is proven — and XS4A shows what it does
-   and does not reach: it swung the top by 22,800, and could not touch the two
-   players who had nothing to stake. A steal pays the answerer out of the
-   leader, so it reaches exactly the people a share-based stake cannot.
+2. ~~**`take-stock` reports recent rounds**~~ — **done 4 September.** See below.
+3. ~~**Steal, auto-targeted.**~~ **Built 4 September**, unplayed. XS4A is why:
+   the wager swung the top by 22,800 and could not touch the two players who
+   had nothing to stake.
 4. **The negatives paste + a minimum stake.** Demoted by the correction above —
    it makes the wager reach a player on zero, which is worth doing, but it does
    not fix the bottom of the table. Its own PR, because of the paste ordering.

@@ -16,6 +16,33 @@ and including 20 August moved *verbatim* to
 old entry to make it fit is the thing the paragraph above forbids. Every one of
 them is still listed below by date, so the chronology reads end to end from here.
 
+## 2026-09-04 — The first right answer steals from the leader
+
+**Built, unplayed.** `round-types.md` ranked it third and XS4A is why: the wager
+swung the top by 22,800 and could not touch the two players holding nothing, and
+a share of your own points is worth nothing when you have none. A steal pays the
+answerer out of the leader, so it reaches exactly those people.
+
+Opt-in from the lobby like the wager, but every question rather than the last,
+and the two compose. A **share** of the victim's score — the wager's load-bearing
+decision, so nothing goes below zero and the season row is untouched. **Nobody
+steals from themselves**, which makes it self-limiting rather than a tax. It
+**moves** points rather than making them: the round's total is identical before
+and after, asserted rather than assumed. Zero reads, zero writes, no paste.
+
+`STEAL_SHARE` is 5% and is the dial. Everything else is settled.
+
+`lastSteal` sits on the room beside `lastDeltas` because the reveal has to *say*
+what happened — a net delta cannot be read back into "Priya took 500 off you",
+and without it a robbed leader saw "You didn't answer · −500" and no reason.
+That is the wager's fifth trap, caught this time before it shipped.
+
+**The glint fix**, same day: the winner's riser swept its band of light across
+the whole stage, because it moved the *element* rather than the gradient inside
+it and `.riser` sets no `overflow`. [`decisions/lighting.md`](decisions/lighting.md).
+
+572 tests. Details: [`decisions/round-types.md`](decisions/round-types.md).
+
 ## 2026-09-04 — The chair seats everybody, and the prose was wrong
 
 **Fixed.** `seatedLast` always returned the whole tie for last; both renderers
