@@ -16,6 +16,30 @@ and including 20 August moved *verbatim* to
 old entry to make it fit is the thing the paragraph above forbids. Every one of
 them is still listed below by date, so the chronology reads end to end from here.
 
+## 2026-09-04 — Live, and the CDN lied for a minute
+
+Merged and deployed. `master` at `1743357`, gh-pages at `20155bf`, bundle
+`index-BOq4sYDx`.
+
+**Verified rather than assumed, and the first reading was wrong.** Immediately
+after the deploy the live `index.html` still referenced `index-Y1gzBmfb` — the
+bundle from 2 September. gh-pages already held the new one, so the artifact was
+right and the CDN was stale, which is exactly the failure this project's docs
+warn about and the reason "watch it onto the CDN" is the standing instruction.
+It caught up within a minute of re-fetching.
+
+Checked in this order, because each step rules out a different cause: what is
+*in* the gh-pages commit, then whether the deployed bundle actually contains the
+new strings (`got there first`, `Your squad`), then what the CDN serves, then the
+live page in a browser — 200s on the bundle, the Firebase chunk and the packs,
+landing screen rendered, **no console errors**.
+
+**The Firebase chunk hash did not move** (`firebase-Cns3pSRr`), which is the
+split doing its job: a returning player re-fetches 236 kB, not 724 kB.
+
+**Still never played.** The steal is opt-in and off by default, so tonight it
+changes nothing unless a quizmaster picks it. 5% remains a reasoned guess.
+
 ## 2026-09-04 — The mute button, and a squad nobody could pick
 
 **The mute button** was transparent-on-transparent over the studio backdrop,
