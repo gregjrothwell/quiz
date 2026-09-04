@@ -1,6 +1,6 @@
 # Scoring
 
-> **Owner: Greg Rothwell. Last updated: 30 August 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 4 September 2026. Budget: 250 lines.**
 
 **Status: built 20 August 2026.** Decision recorded in
 [`ideas-review.md`](ideas-review.md#1-rank-based-scoring--chosen) and the
