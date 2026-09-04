@@ -24,6 +24,14 @@ Verified after the move rather than assumed — the three entries diffed byte-fo
 against the spine they left, and all 128 relative links across the spine, both
 archives and the handover resolve.
 
+## 2026-09-04 — "The rest of the file is stale" is not evidence about a line
+
+`ideas-review.md` still said **nobody has seen the rank bonus award an order**. It was corrected
+on 30 August on `cursor/fastest-finger`, which never got a PR, so the wrong claim stood here for
+five days — and was then nearly lost a second time when that branch's docs were judged superseded
+*wholesale* and only its script salvaged. Four of its five doc changes really were superseded;
+this one was not. Judge a file, not a branch.
+
 ## 2026-09-04 — Melody and picture are live, and the vault was the gate
 
 master `0bf1c5f`, gh-pages `584e80e`, bundle `index-CIOq186A`. #22, #23 and #24
