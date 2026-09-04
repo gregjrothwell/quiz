@@ -102,11 +102,7 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
    [`decisions/round-types.md`](decisions/round-types.md#the-prose-was-wrong-and-that-is-a-finding).
    The **anonymous-account purge is reviewed and the answer is don't**:
    [`decisions/identity.md`](decisions/identity.md).
-4. **Negative points need their paste.** Repo rules allow `points >= -maxPoints()`
-   and a 500-point floor on a positive stake. Live rules still have `points >= 0`
-   and `best <= points` — paste before deploy or a lost floor is silently refused.
-   [`decisions/round-types.md`](decisions/round-types.md).
-5. **The Ladder stops climbing** once a pack's thin `easy` or `hard` bucket is
+4. **The Ladder stops climbing** once a pack's thin `easy` or `hard` bucket is
    spent — it substitutes medium rather than repeating, which is right but is not
    what the tile promises. The fix is `stats/{questionId}`, not selection.
 

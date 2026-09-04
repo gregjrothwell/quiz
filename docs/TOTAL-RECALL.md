@@ -16,6 +16,12 @@ and including 20 August moved *verbatim* to
 old entry to make it fit is the thing the paragraph above forbids. Every one of
 them is still listed below by date, so the chronology reads end to end from here.
 
+## 2026-09-04 — The negatives paste landed
+
+`check-rules`: `write a season row that went below zero` **PASS** (allow),
+and `write a season row below -maxPoints()` **PASS** (deny). Outstanding #4
+had been claiming the live rules still refused a negative. They do not.
+
 ## 2026-09-04 — The lobby writes the side, and a stake can go below zero
 
 Branch `squad-write-and-min-stake`, uncommitted.

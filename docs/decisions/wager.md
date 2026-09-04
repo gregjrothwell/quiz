@@ -74,7 +74,7 @@ feature's risk, not because they were hard.
 
 - **A player on zero who picks a positive share now stakes 500**, one correct
   answer. A 0% pick is still nothing. That is the floor that can take a total
-  below zero; the season row needs its paste before this deploys.
+  below zero. The season-row paste landed 4 September.
 - **A stake of nothing is left off the answer document**, not written as
   `wager: 0`. It scores identically, keeps the document byte-identical to every
   round before this for anybody not betting, and narrows the damage if this is
