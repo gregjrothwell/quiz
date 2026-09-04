@@ -100,6 +100,41 @@ same session, both worth knowing before measuring any CSS here:
 - **Programmatic `.focus()` does not trigger `:focus-visible`.** It reports
   `outline: none` and looks like a missing focus style. Press Tab instead.
 
+## The winner's glint was sweeping the whole stage, 4 September 2026
+
+Greg: *"the podium glinting effect looks wrong against the background because
+it's cut off at the top of the podium."* Exactly right, and the cause is one
+missing line rather than the gradient.
+
+`.riser--first::before` was a band of light at `inset: 0`, moved by
+`transform: translateX(-100%)` animating to `100%`. For most of its run the
+element is therefore **not over the riser at all** — and `.riser` sets no
+`overflow`, so the light swept across the third-place riser and the empty stage
+beside it, ending in a hard horizontal line at the winner's riser height. The
+winner's riser is the tallest thing on the row, so that line had nothing to
+belong to and read as a clipping artefact.
+
+**Fixed by moving the gradient inside a box that never moves** —
+`background-size: 300% 100%` and a `glint` keyframe animating
+`background-position` from `100%` to `0`. The gradient is transparent across its
+outer third at each end, so both ends of the travel and the resting state are
+genuinely invisible rather than nearly so.
+
+`overflow: hidden` on the riser would also have worked and was rejected: the
+`::after` lit edge is positioned to sit proud of the riser, and clipping the
+sweep would have clipped that too.
+
+**Checked, not assumed: this was the only one.** The other three `sweep` users
+use the same `inset: 0` + `translateX` pattern, and all three set
+`overflow: hidden` on themselves — `.tile`, `.standing--leader`, and the leader
+row's slow shine. Read off `getComputedStyle` in the live preview rather than by
+eye, which is the habit [the section below](#measuring-this-getcomputedstyle-lied)
+exists to enforce.
+
+Verified by freezing the animation at 20%, 50% and 90% with a paused
+`animation-delay` and looking at each frame, because a 1.1-second sweep behind a
+0.9-second delay is not something a screenshot catches by luck.
+
 ## Not verified
 
 That `mood={room.phase}` lights up in a real room. It is typed, and the CSS is

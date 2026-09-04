@@ -2141,15 +2141,54 @@ select.input option {
  * has finished arriving — the podium builds third, second, first, and the sweep
  * is the full stop on that sequence rather than something competing with it.
  */
+/*
+ * **The band travels inside a box that never moves.**
+ *
+ * It used to be `transform: translateX(-100%)` animated to `100%` on a box at
+ * `inset: 0` — so for most of its run the element was somewhere other than on
+ * top of the riser, and `.riser` sets no `overflow`. The light swept across the
+ * third-place riser and the empty stage beside it, ending in a hard horizontal
+ * line at the winner's riser height, which is taller than anything next to it.
+ * Reported as "cut off at the top of the podium", and that is exactly what it
+ * was: a rectangle of light with nothing to belong to.
+ *
+ * Moving the gradient within a fixed box fixes it without clipping. `overflow:
+ * hidden` on the riser would also have worked and would have cost the `::after`
+ * lit edge, which is positioned to sit proud of it.
+ *
+ * The gradient is transparent for its outer third at each end and the box shows
+ * one third of it at a time, so both ends of the travel — and the resting state
+ * the animation falls back to — are genuinely invisible rather than nearly so.
+ */
 .riser--first::before {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: 8px 8px 0 0;
   pointer-events: none;
-  background: linear-gradient(100deg, transparent 25%, rgb(255 212 121 / 0.35) 50%, transparent 75%);
-  transform: translateX(-100%);
-  animation: sweep 1100ms cubic-bezier(0.3, 0.7, 0.3, 1) 900ms 1 backwards;
+  background: linear-gradient(
+    100deg,
+    transparent 0 35%,
+    rgb(255 212 121 / 0.35) 50%,
+    transparent 65% 100%
+  );
+  background-size: 300% 100%;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  animation: glint 1100ms cubic-bezier(0.3, 0.7, 0.3, 1) 900ms 1 backwards;
+}
+
+/*
+ * Left to right, as the old `translateX` was. Separate from `sweep` rather than
+ * sharing it: that one moves an element and four other things still want it.
+ */
+@keyframes glint {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
 }
 
 .riser__pos {
