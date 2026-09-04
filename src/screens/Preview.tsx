@@ -475,6 +475,43 @@ export function Preview() {
     },
     {
       /*
+        Robbed. Greg was leading, never answered, and Priya got there first — so
+        he is 500 down on a question he did not play, and the only thing that can
+        say why is `lastSteal`.
+
+        Here for the reason `wager.md` gives for its own stake-band fixture: a
+        steal shows for exactly two people in the room, so without a fixture it
+        is the one screen nobody ever reviews. It is also the case that repeats
+        the wager's fifth trap — the biggest swing on screen being the one the
+        screen stays quiet about.
+      */
+      title: 'Reveal · the leader gets robbed',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'reveal',
+            stealEnabled: true,
+            scores: { greg: 9_500, sam: 3_100, priya: 2_300, alex: 1_800 },
+            answers: {
+              priya: { optionIndex: 2, elapsedMs: 2_300 },
+              sam: { optionIndex: 3, elapsedMs: 4_100 },
+            },
+            lastDeltas: { priya: 1_500, sam: 0, greg: -500 },
+            lastSteal: { from: 'greg', to: 'priya', points: 500 },
+          })}
+          youUid="greg"
+          isQuizmaster={false}
+          clock={CLOCK}
+          revealed
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      /*
         The answer that was written inside the window and was not in the room
         when the question was scored. Greg picked the right lectern and has no
         delta, which used to render as "Correct · +0".

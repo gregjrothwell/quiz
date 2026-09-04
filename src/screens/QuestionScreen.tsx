@@ -123,6 +123,25 @@ export function QuestionScreen({
     uid: youUid,
   });
   const gotItRight = verdict === 'correct';
+
+  /*
+    What the steal did, in a sentence, and only to the two people it touched.
+
+    Read off `room.lastSteal` rather than worked out here: `stealFor` needs the
+    scores as they stood going into the question and by now they have moved. The
+    victim is the case that needs it — without this a leader who never answered
+    reads "You didn't answer · −500" and is told nothing about where the points
+    went, which is the wager's fifth trap repeating itself.
+  */
+  const steal = room.lastSteal;
+  const stealLine =
+    revealed && steal && youUid
+      ? steal.from === youUid
+        ? `${room.players[steal.to]?.name ?? 'Somebody'} got there first and took ${steal.points.toLocaleString('en-GB')} off you.`
+        : steal.to === youUid
+          ? `You took ${steal.points.toLocaleString('en-GB')} off ${room.players[steal.from]?.name ?? 'the leader'}.`
+          : null
+      : null;
   const verdictLabel =
     verdict === 'correct'
       ? 'Correct'
@@ -530,6 +549,10 @@ export function QuestionScreen({
               'Pick an answer'
             )}
           </p>
+
+          {stealLine ? (
+            <p className={settled ? 'steal steal--in' : 'steal'}>{stealLine}</p>
+          ) : null}
 
           {isQuizmaster ? (
             <div className="btn-row">

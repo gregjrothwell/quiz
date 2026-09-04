@@ -1,9 +1,10 @@
 import type { PackId } from '../questions/types';
 import type { FormFact } from './form';
-import { tallyQuestion } from './scoring';
+import { stealFor, tallyQuestion } from './scoring';
 import {
   currentQuestion,
   isDurationAllowed,
+  isStealQuestion,
   isWagerQuestion,
   questionDurationMs,
   type Player,
@@ -33,6 +34,7 @@ export type Action =
       packTitle: string;
       questions: QuizQuestion[];
       wagerEnabled: boolean;
+      stealEnabled: boolean;
     }
   /**
    * `durationSecs` is settled here and nowhere else. The security rules pin it
@@ -75,7 +77,14 @@ export function reduce(state: RoomState, action: Action): RoomState {
     case 'leave':
       return leave(state, action.uid);
     case 'selectPack':
-      return selectPack(state, action.packId, action.packTitle, action.questions, action.wagerEnabled);
+      return selectPack(
+        state,
+        action.packId,
+        action.packTitle,
+        action.questions,
+        action.wagerEnabled,
+        action.stealEnabled,
+      );
     case 'start':
       return start(state, action.at, action.gameId, action.durationSecs);
     case 'answer':
@@ -145,9 +154,10 @@ function selectPack(
   packTitle: string,
   questions: QuizQuestion[],
   wagerEnabled: boolean,
+  stealEnabled: boolean,
 ): RoomState {
   if (state.phase !== 'lobby') return state;
-  return { ...state, packId, packTitle, questions, wagerEnabled };
+  return { ...state, packId, packTitle, questions, wagerEnabled, stealEnabled };
 }
 
 /**
@@ -189,6 +199,7 @@ function start(state: RoomState, at: number, gameId: string, durationSecs: numbe
     gameId,
     answers: {},
     lastDeltas: {},
+    lastSteal: null,
     // The titles have done their job the moment the first question is up, and
     // leaving them on the document would put them back on screen at the end of
     // the round, when `reset` returns the room to the lobby.
@@ -284,10 +295,25 @@ function reveal(state: RoomState, correctIndex: number, questionId: string): Roo
   // stakes, and its presence is what turns a `wager` on an answer document into
   // points. Every client reaches the same decision from the same document, so
   // the reveal stays a pure function of what the room already holds.
+  /*
+    The steal, resolved here rather than inside `tallyQuestion` so that `scores`
+    keeps its one job there — its presence is what turns a stake into points, and
+    a steal is nothing to do with stakes.
+
+    `stealFor` reads the same `{correctIndex, answers, scores}` every client
+    holds at this moment, so the reveal stays a pure function of the room and the
+    screen can call it again to say who lost what without any of it being
+    written down. Null on every question of a round nobody opted into.
+  */
+  const steal = isStealQuestion(state)
+    ? stealFor({ correctIndex, answers: eligible, scores: state.scores })
+    : null;
+
   const deltas = tallyQuestion({
     correctIndex,
     answers: eligible,
     ...(isWagerQuestion(state) ? { scores: state.scores } : {}),
+    steal,
   });
 
   const scores = { ...state.scores };
@@ -308,6 +334,7 @@ function reveal(state: RoomState, correctIndex: number, questionId: string): Roo
     questions,
     questionOpenedAt: null,
     lastDeltas: deltas,
+    lastSteal: steal,
     scores,
   };
 }
@@ -337,6 +364,7 @@ function skip(state: RoomState): RoomState {
     questionOpenedAt: null,
     answers: {},
     lastDeltas: {},
+    lastSteal: null,
     scores,
     skipped: [...state.skipped, question.id],
   };
@@ -350,7 +378,7 @@ function next(state: RoomState, at: number): RoomState {
   if (state.phase === 'scoreboard') {
     const nextIndex = state.index + 1;
     if (nextIndex >= state.questions.length) {
-      return { ...state, phase: 'finished', answers: {}, lastDeltas: {} };
+      return { ...state, phase: 'finished', answers: {}, lastDeltas: {}, lastSteal: null };
     }
     return {
       ...state,
@@ -359,6 +387,7 @@ function next(state: RoomState, at: number): RoomState {
       questionOpenedAt: at,
       answers: {},
       lastDeltas: {},
+      lastSteal: null,
     };
   }
 
@@ -376,6 +405,7 @@ function reset(state: RoomState): RoomState {
     questionOpenedAt: null,
     answers: {},
     lastDeltas: {},
+    lastSteal: null,
     form: null,
     scores: Object.fromEntries(Object.keys(state.players).map((uid) => [uid, 0])),
     skipped: [],

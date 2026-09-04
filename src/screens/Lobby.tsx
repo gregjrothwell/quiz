@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { QrCode } from '../components/QrCode';
 import { RoomLink } from '../components/RoomLink';
 import { joinLink } from '../engine/roomCode';
+import { STEAL_SHARE } from '../engine/scoring';
 import {
   DEFAULT_DURATION_SECS,
   DURATION_CHOICES,
@@ -80,6 +81,7 @@ interface LobbyProps {
     level: Level,
     durationSecs: number,
     wagerEnabled: boolean,
+    stealEnabled: boolean,
   ) => void;
   onLeave: () => void;
 }
@@ -107,6 +109,13 @@ export function Lobby({
     than a constant. Fixed for the round once the show starts.
   */
   const [wager, setWager] = useState(false);
+  /*
+    Off by default and opt-in for the same reason as the wager above, but it is
+    a different kind of choice and the room should know which: this one runs on
+    every question rather than the last, so it changes the whole round's shape
+    rather than adding a moment to the end of it.
+  */
+  const [steal, setSteal] = useState(false);
   const [durationSecs, setDurationSecs] = useState<number>(DEFAULT_DURATION_SECS);
 
   const youName = youUid ? room.players[youUid]?.name : undefined;
@@ -328,11 +337,44 @@ export function Lobby({
             ) : null}
           </div>
 
+          <div className="stack">
+            <p className="eyebrow">Chasing the leader</p>
+            <div className="picker">
+              <button
+                type="button"
+                className="pick"
+                aria-pressed={!steal}
+                onClick={() => setSteal(false)}
+              >
+                <b>Nobody loses points</b>
+                <span>You only ever score your own</span>
+              </button>
+              <button
+                type="button"
+                className="pick"
+                aria-pressed={steal}
+                onClick={() => setSteal(true)}
+              >
+                <b>First right answer steals</b>
+                <span>Take {STEAL_SHARE}% off whoever is top</span>
+              </button>
+            </div>
+            {steal ? (
+              <p className="muted hint">
+                Every question, whoever gets it right first takes {STEAL_SHARE}% of the leader’s
+                score off them. The leader cannot steal from themselves, so staying in front is
+                its own risk. Nothing is created or destroyed — the points just change hands.
+              </p>
+            ) : null}
+          </div>
+
           <button
             type="button"
             className="btn btn--primary"
             disabled={!packId || busy || playerEntries.length === 0 || effectiveCount === 0}
-            onClick={() => packId && onStart(packId, effectiveCount, level, durationSecs, wager)}
+            onClick={() =>
+              packId && onStart(packId, effectiveCount, level, durationSecs, wager, steal)
+            }
           >
             {busy ? 'Loading questions…' : 'Start the show'}
           </button>

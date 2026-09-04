@@ -1,4 +1,5 @@
 import type { FormFact } from './form';
+import type { Steal } from './scoring';
 import {
   DIFFICULTIES,
   type Difficulty,
@@ -179,6 +180,20 @@ export interface RoomState {
   scores: Record<string, number>;
   /** Points gained on the most recent question, for the reveal animation. */
   lastDeltas: Record<string, number>;
+  /**
+   * The transfer the most recent question carried, or null for a question that
+   * carried none.
+   *
+   * A sibling of `lastDeltas` and here for the same reason: the reveal has to be
+   * able to *say* what happened, and a net delta cannot be read back into "Rach
+   * took 500 off Greg". Without it a leader who never answered sees "You didn't
+   * answer · −500" and nothing about why, which is the wager's fifth trap —
+   * the biggest swing on the screen being the one it stays quiet about.
+   *
+   * Recomputing it on the screen is not an option: `stealFor` needs the scores
+   * as they stood *going into* the question, and by the reveal they have moved.
+   */
+  lastSteal: Steal | null;
   /** Ids of questions the quizmaster threw out, so they never score. */
   skipped: string[];
   /**
@@ -202,6 +217,19 @@ export interface RoomState {
    * document's keys, which is the same reason `expiresAt` needed none.
    */
   wagerEnabled: boolean;
+  /**
+   * Whether the fastest correct answer takes a share off whoever is leading.
+   *
+   * Chosen in the lobby and fixed for the round, exactly as the wager and the
+   * window are. On the room document and needing no ruleset paste, for the
+   * reason above: `wellFormed()` bounds the fields it names and does not
+   * `hasOnly` the document's keys.
+   *
+   * Unlike the wager this runs on **every** question rather than the last, and
+   * it can be played alongside one — they are independent. A stake doubles your
+   * own points; a steal moves somebody else's.
+   */
+  stealEnabled: boolean;
 }
 
 /**
@@ -219,6 +247,21 @@ export function isWagerQuestion(state: RoomState): boolean {
   );
 }
 
+/**
+ * Whether the question in play carries a steal.
+ *
+ * Every question of a round the room opted into, which is the difference from
+ * {@link isWagerQuestion} and is deliberate: the wager is a single moment at the
+ * end, and this is a running pressure on whoever is in front.
+ *
+ * It needs no guard for the opening questions. `stealFor` takes a share of what
+ * the leader holds, so on a table still level on zero it moves nothing and
+ * returns null of its own accord.
+ */
+export function isStealQuestion(state: RoomState): boolean {
+  return state.stealEnabled && state.questions.length > 0;
+}
+
 export function createRoom(code: string): RoomState {
   return {
     code,
@@ -233,10 +276,12 @@ export function createRoom(code: string): RoomState {
     answers: {},
     scores: {},
     lastDeltas: {},
+    lastSteal: null,
     skipped: [],
     gameId: null,
     form: null,
     wagerEnabled: false,
+    stealEnabled: false,
   };
 }
 

@@ -2364,6 +2364,27 @@ select.input option {
   font-variant-numeric: tabular-nums;
 }
 
+/*
+ * What the steal did, under the verdict.
+ *
+ * Deliberately quiet: the verdict above it is the headline and this is the
+ * explanation, so it takes the dim ink and a smaller size rather than competing.
+ * It appears for exactly two people in the room — the one who took the points
+ * and the one who lost them — and for nobody else.
+ */
+.steal {
+  margin: 0.2rem 0 0;
+  font-family: var(--tech);
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+  color: var(--ink-dim);
+  opacity: 0;
+}
+
+.steal--in {
+  animation: rise 420ms cubic-bezier(0.2, 0.8, 0.2, 1) 120ms forwards;
+}
+
 /* ── Utility ────────────────────────────────────────────────────────────── */
 
 .row {

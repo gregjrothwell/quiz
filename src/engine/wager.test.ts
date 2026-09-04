@@ -137,6 +137,7 @@ function roomPlayingForStakes(wagerEnabled: boolean): RoomState {
       packTitle: 'General Knowledge',
       questions: QUESTIONS,
       wagerEnabled,
+      stealEnabled: false,
     },
     { type: 'start', at: 1_000, gameId: 'game-1', durationSecs: 20 },
   );
