@@ -16,6 +16,28 @@ and including 20 August moved *verbatim* to
 old entry to make it fit is the thing the paragraph above forbids. Every one of
 them is still listed below by date, so the chronology reads end to end from here.
 
+## 2026-09-04 — The mute button, and a squad nobody could pick
+
+**The mute button** was transparent-on-transparent over the studio backdrop,
+which is beams of light rather than a flat colour: fine on a dark stripe,
+invisible where a beam passed under it. It has a dark ground and an edge now.
+
+**The squad gap is the one that cost data.** Auto-join, shipped 28 August, takes
+a player from a link straight into the room — skipping the landing screen, which
+was the only place a squad could be chosen. `App.tsx` even says of that path that
+"the lobby can offer a way out without this needing to know about it". The lobby
+never did: its `squad` prop only *displayed* "playing for X". The other control,
+`SquadPanel`, lives on the season board and renders only for somebody who already
+has a row there — which a first-timer does not. So a link-joiner with nothing
+remembered could not pick a side at all, and banked without one. **A feature
+shipped in August quietly removed the only route to another one.**
+
+Fixed with a picker in the lobby writing the same store the banking reads.
+**Half-fixed, honestly:** the *live* squad board still misses them for the round
+they fix it in, because it reads `players.{uid}.squad` off the room and nothing
+can write that after a join — `writeSelfIntoRoom` is unexposed and the reducer's
+`join` deliberately refuses an existing player. Outstanding #4.
+
 ## 2026-09-04 — The first right answer steals from the leader
 
 **Built, unplayed.** `round-types.md` ranked it third and XS4A is why: the wager

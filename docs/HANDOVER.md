@@ -52,19 +52,17 @@ hook says so if this one grows.
 **Shipped and played.** 542 tests on master, types and lint clean, no `any` or
 `@ts-ignore`.
 
-- **Squads, weekly boards, the average table, the frozen podium and the sealed
-  question text are live** (20 August, [PR #2](https://github.com/gregjrothwell/quiz/pull/2)),
-  and **the answer vault** with them: 13,593 answers, both rulesets published.
+- **Squads, weekly boards, the average table, the frozen podium, the sealed
+  question text and the answer vault are live** (20 August, [PR #2](https://github.com/gregjrothwell/quiz/pull/2)):
+  13,593 answers, both rulesets published.
 - **App Check enforces on Firestore, the RTDB and auth**; `appcheck-probe` refuses
   at sign-in, which is the proof: [`decisions/app-check-auth.md`](decisions/app-check-auth.md).
-- **The reveal lands on its own, ~0.5s after the clock**, on the server-confirmed
-  snapshot; `reveal-probe` is the instrument: [`decisions/vault.md`](decisions/vault.md#the-gate-had-no-margin-and-the-host-was-the-one-who-paid).
+- **The reveal lands on its own, ~0.5s after the clock**; `reveal-probe` is the
+  instrument: [`decisions/vault.md`](decisions/vault.md#the-gate-had-no-margin-and-the-host-was-the-one-who-paid).
 - **Scoring is a rank bonus, not a speed curve** — 500 for correct plus
-  500/400/300/200/100 by the order the answers landed. Live since 20 August
-  ([PR #6](https://github.com/gregjrothwell/quiz/pull/6)), but **ranking is still
-  unproven**; that needs two answerers: [`decisions/scoring.md`](decisions/scoring.md).
-- **The final screen makes a shareable PNG of the round.** Live since 20 August
-  ([PR #7](https://github.com/gregjrothwell/quiz/pull/7)): [`decisions/final-card.md`](decisions/final-card.md).
+  500/400/300/200/100 by the order they landed, and **played** — see below.
+  [`decisions/scoring.md`](decisions/scoring.md).
+- **The final screen makes a shareable PNG** ([`final-card.md`](decisions/final-card.md)).
 - **Live since 28 August**, each proved on the deployed site and each with its
   own file: the **shared clock** ([`shared-clock.md`](decisions/shared-clock.md)),
   **live squad scoring** on points ÷ headcount ([`live-squads.md`](decisions/live-squads.md)),
@@ -73,23 +71,24 @@ hook says so if this one grows.
 - **`npm run host-room` scores a real answer now** — it never read the answers
   subcollection, so every reveal it folded scored nobody.
 - **The verdict pills, the lighting rig and the dependency pass are all live.**
-  This block claimed otherwise until 2 September; corrected by checking the
-  branches rather than the prose.
+  This block said otherwise until 2 September — corrected by checking branches,
+  not prose. The same error, twice more, on 4 September.
 
 **Live since 2 September**, deployed and checked on the site rather than assumed:
 
-- **The repeats are fixed** — a failed read can no longer wipe the history, and
-  Gentle and Fiendish are withdrawn because the corpus cannot fill them
-  ([#18](https://github.com/gregjrothwell/quiz/pull/18)): [`decisions/repeats.md`](decisions/repeats.md).
-- **The last question can be played for stakes**, at no extra reads or writes
-  ([#19](https://github.com/gregjrothwell/quiz/pull/19)). Rules pasted first, and
-  `check-rules` flipped FAIL → PASS: [`decisions/wager.md`](decisions/wager.md).
+- **The repeats are fixed**, and Gentle and Fiendish withdrawn because the corpus
+  cannot fill them ([#18](https://github.com/gregjrothwell/quiz/pull/18)): [`decisions/repeats.md`](decisions/repeats.md).
+- **The last question can be played for stakes**, at no extra cost, rules pasted
+  first ([#19](https://github.com/gregjrothwell/quiz/pull/19)): [`decisions/wager.md`](decisions/wager.md).
 
 Bundle `index-Y1gzBmfb`, watched onto the CDN rather than assumed.
 
-**4 September, on a branch, none of it played.** The chair seats the whole tie;
-`take-stock` says what was played; the glint stays on its riser; and **the first
-right answer steals 5% off the leader**: [`decisions/round-types.md`](decisions/round-types.md).
+**4 September — branch `chair-seats-everyone`, unpushed, none of it played.**
+The chair seats the whole tie; `take-stock` says what was actually played; the
+glint stays on its riser; the mute button has a ground; the lobby lets a
+link-joiner pick a squad; and **the first right answer steals 5% off the
+leader**. Costings and the negative-points decision:
+[`decisions/round-types.md`](decisions/round-types.md).
 
 **What is actually in the project right now** — counts, the two slow leaks, and the
 two corrections that came out of miscounting them: [`decisions/cost.md`](decisions/cost.md#measured-live-28-august-2026).
@@ -106,22 +105,23 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
    [`decisions/round-types.md`](decisions/round-types.md#the-prose-was-wrong-and-that-is-a-finding).
    The **anonymous-account purge is reviewed and the answer is don't**:
    [`decisions/identity.md`](decisions/identity.md).
-4. **The Ladder stops climbing** once a pack's thin `easy` or `hard` bucket is
-   spent — it substitutes medium rather than repeating, which is the right
-   trade but is not what the tile promises. Measured over six rounds against the
-   live history; the fix is the `stats/{questionId}` counters, not selection.
+4. **A link-joiner is missing from the *live* squad board for one round.** Their
+   room entry carries no `squad`, and nothing can write it after a join —
+   `writeSelfIntoRoom` is unexposed and `join` refuses an existing player. The
+   lobby picker (4 Sept) fixes the *banked* rows from the next game on.
+   [`decisions/live-squads.md`](decisions/live-squads.md).
+5. **The Ladder stops climbing** once a pack's thin `easy` or `hard` bucket is
+   spent — it substitutes medium rather than repeating, which is right but is not
+   what the tile promises. The fix is `stats/{questionId}`, not selection.
 
 ## Where things are
 
 ```
 src/engine/     Pure TS game rules — no React, no Firebase. All the logic worth testing.
-src/lib/        Firebase wiring (useRoom), pack loading, the question clock, the house audio,
-                and the remembered name — the one other thing kept in localStorage besides
-                the sound preference, and written to the same pattern.
+src/lib/        Firebase wiring (useRoom), packs, the clock, audio, and the name,
+                squad and sound preference kept in localStorage.
 src/screens/    One component per phase + a design gallery (Preview).
-src/questions/  Pack types and the classification rules, with tests.
 src/design/     One stylesheet, design tokens at the top.
-scripts/        Build-time question harvest, and the multi-client test harnesses.
 docs/decisions/ One subsystem each. Reached from the table above.
 ```
 
