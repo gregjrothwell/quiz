@@ -88,9 +88,8 @@ hook says so if this one grows.
 Bundle `index-Y1gzBmfb`, watched onto the CDN rather than assumed.
 
 **4 September, on a branch, none of it played.** The chair seats the whole tie;
-`take-stock` says what was played; the winner's glint stays on its riser; and
-**the first right answer steals 5% off the leader**. Costings and the
-negative-points decision: [`decisions/round-types.md`](decisions/round-types.md).
+`take-stock` says what was played; the glint stays on its riser; and **the first
+right answer steals 5% off the leader**: [`decisions/round-types.md`](decisions/round-types.md).
 
 **What is actually in the project right now** — counts, the two slow leaks, and the
 two corrections that came out of miscounting them: [`decisions/cost.md`](decisions/cost.md#measured-live-28-august-2026).
