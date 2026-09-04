@@ -144,10 +144,16 @@ export function Final({
     this screen now works from the frozen snapshot.
   */
   const seated = seatedLast(rows);
-  const seatedName = seated
+  /*
+    The whole tie, not a joined string. `seatedLast` has always returned everyone
+    level at the bottom — this was pre-joining them with an ampersand, so three
+    people who tied for last were drawn as one figure with a long label. Live
+    rooms XS4A and YS8F both finished tied at the bottom.
+  */
+  const seatedNames = seated
     .map((uid) => players[uid]?.name)
-    .filter(Boolean)
-    .join(' & ');
+    .filter((name): name is string => Boolean(name));
+  // Off the first, which is safe by construction: everyone seated is level.
   const seatedScore = seated[0] ? (scores[seated[0]] ?? 0) : 0;
 
   // Keyed on the game so a second round in the same room gets its own fanfare,
@@ -210,7 +216,7 @@ export function Final({
       </header>
 
       {hasPodium ? (
-        <div className={seatedName ? 'finale finale--seated' : 'finale'}>
+        <div className={seatedNames.length > 0 ? 'finale finale--seated' : 'finale'}>
           {podium.map(({ height, entry }) => {
             const player = entry ? players[entry.uid] : undefined;
             if (!entry || !player) return <div key={height} />;
@@ -226,7 +232,7 @@ export function Final({
             );
           })}
 
-          {seatedName ? <Chair name={seatedName} score={seatedScore} /> : null}
+          {seatedNames.length > 0 ? <Chair names={seatedNames} score={seatedScore} /> : null}
         </div>
       ) : null}
 

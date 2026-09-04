@@ -67,6 +67,73 @@ export function stakeFor(score: number, wager: number | undefined): number {
 }
 
 /**
+ * The share of the leader's points a steal takes.
+ *
+ * **A share of the victim's score, not a number of points** — the same
+ * load-bearing decision the wager rests on, for the same reason: you cannot take
+ * what somebody does not have, so a steal can never push anyone below zero and
+ * `points >= 0` on the season row is untouched.
+ *
+ * Five per cent, and the number is the part most worth arguing with. It fires at
+ * most once a question and only when somebody other than the leader is quickest,
+ * so on a fifteen-question round it lands maybe nine times: a leader on 10,000
+ * who never answers first keeps about 63% of it. Against a question worth 1,000
+ * that is a real pull without being the whole game. **If it plays wrong, this is
+ * the dial** — the rest of the mechanic does not need touching.
+ */
+export const STEAL_SHARE = 5;
+
+/** A transfer of points from the leader to whoever got there first. */
+export interface Steal {
+  /** Whoever led going into the question. */
+  from: string;
+  /** The fastest correct answer. */
+  to: string;
+  points: number;
+}
+
+/**
+ * What one question's steal moves, or null when it moves nothing.
+ *
+ * The fastest correct answer takes {@link STEAL_SHARE} per cent of whatever the
+ * leader held going into the question. **Nobody steals from themselves**, which
+ * is what makes the mechanic self-limiting rather than a tax: a leader who keeps
+ * winning questions is never pegged back, and one who has stopped answering is.
+ *
+ * A pure function of `{correctIndex, answers, scores}` — the same three things
+ * every device already holds at the reveal, which is `scoring.md` AC#6 and the
+ * reason the reveal screen can call this itself to say what happened rather than
+ * needing the transfer written into the room.
+ *
+ * The victim is `standings()[0]`, so a tie for the lead is broken on uid exactly
+ * as everything else here breaks one. That matters more than it looks: a steal
+ * that picked a different victim per device would put the room's scoreboards
+ * permanently out of step, and nothing would say why.
+ */
+export function stealFor(params: {
+  correctIndex: number;
+  answers: Record<string, Answer>;
+  /** What each player held going into this question. */
+  scores: Record<string, number>;
+}): Steal | null {
+  const { correctIndex, answers, scores } = params;
+
+  const first = Object.entries(answers)
+    .filter(([, answer]) => answer.optionIndex === correctIndex)
+    .sort(([aUid, a], [bUid, b]) => (a.elapsedMs - b.elapsedMs) || aUid.localeCompare(bUid))[0];
+
+  if (!first) return null;
+
+  const leader = standings(scores)[0];
+  if (!leader || leader.uid === first[0]) return null;
+
+  const points = Math.round((Math.max(0, leader.score) * STEAL_SHARE) / 100);
+  if (points <= 0) return null;
+
+  return { from: leader.uid, to: first[0], points };
+}
+
+/**
  * Points each player earned on one question.
  *
  * Correct answers are ranked against each other by `elapsedMs` and paid
@@ -112,8 +179,17 @@ export function tallyQuestion(params: {
    * ignored, identically, by every device that scores the round.
    */
   scores?: Record<string, number>;
+  /**
+   * The transfer this question carries, already resolved by {@link stealFor}.
+   *
+   * **Passed rather than derived here**, so `scores` keeps its single meaning:
+   * its presence is what turns a `wager` on an answer document into points, and
+   * a steal has nothing to do with stakes. Deriving both from the same argument
+   * would make it impossible to play one without the other.
+   */
+  steal?: Steal | null;
 }): Record<string, number> {
-  const { correctIndex, answers, scores } = params;
+  const { correctIndex, answers, scores, steal } = params;
   const deltas: Record<string, number> = {};
 
   const stake = (uid: string, answer: Answer): number =>
@@ -143,6 +219,22 @@ export function tallyQuestion(params: {
       const lost = stake(uid, answer);
       deltas[uid] = lost > 0 ? -lost : 0;
     }
+  }
+
+  /*
+    The transfer, applied last so it lands on top of whatever the question was
+    already worth. It moves points rather than making them — the same number
+    leaves one player as reaches the other, so a round's total is untouched.
+
+    The victim can be somebody who never answered, which puts a uid into this map
+    that has no answer behind it. That is safe and was checked rather than
+    assumed: `verdictFor` returns `silent` on a missing answer before it ever
+    looks at these keys, so the `lost`-versus-`wrong` distinction it draws from
+    their presence is unaffected.
+  */
+  if (steal) {
+    deltas[steal.to] = (deltas[steal.to] ?? 0) + steal.points;
+    deltas[steal.from] = (deltas[steal.from] ?? 0) - steal.points;
   }
 
   return deltas;

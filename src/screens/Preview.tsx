@@ -58,6 +58,21 @@ const PLAYERS = {
 };
 
 /**
+ * Seven, which is what it takes to see the chair hold more than one person:
+ * three on risers, one clear of the tie, and three level at the bottom.
+ *
+ * The four above cannot show it at all — `seatedLast` refuses to seat a tie that
+ * reaches into the podium, so in a room of four a shared last place is not a
+ * shared last place, it is a dead heat for third.
+ */
+const SEATED_ROOM = {
+  ...PLAYERS,
+  jo: { name: 'Jo', joinedAt: 500, squad: 'Bundae' },
+  rach: { name: 'Rach', joinedAt: 600 },
+  dev: { name: 'Dev', joinedAt: 700, squad: 'Hermes' },
+};
+
+/**
  * A full round in a full office, which is the shape the screens are actually
  * used at and the one the four-player fixtures above quietly flatter. Fifteen
  * rungs and a long prompt is what pushed the desk below the fold on the
@@ -460,6 +475,43 @@ export function Preview() {
     },
     {
       /*
+        Robbed. Greg was leading, never answered, and Priya got there first — so
+        he is 500 down on a question he did not play, and the only thing that can
+        say why is `lastSteal`.
+
+        Here for the reason `wager.md` gives for its own stake-band fixture: a
+        steal shows for exactly two people in the room, so without a fixture it
+        is the one screen nobody ever reviews. It is also the case that repeats
+        the wager's fifth trap — the biggest swing on screen being the one the
+        screen stays quiet about.
+      */
+      title: 'Reveal · the leader gets robbed',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'reveal',
+            stealEnabled: true,
+            scores: { greg: 9_500, sam: 3_100, priya: 2_300, alex: 1_800 },
+            answers: {
+              priya: { optionIndex: 2, elapsedMs: 2_300 },
+              sam: { optionIndex: 3, elapsedMs: 4_100 },
+            },
+            lastDeltas: { priya: 1_500, sam: 0, greg: -500 },
+            lastSteal: { from: 'greg', to: 'priya', points: 500 },
+          })}
+          youUid="greg"
+          isQuizmaster={false}
+          clock={CLOCK}
+          revealed
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      /*
         The answer that was written inside the window and was not in the room
         when the question was scored. Greg picked the right lectern and has no
         delta, which used to render as "Correct · +0".
@@ -537,6 +589,48 @@ export function Preview() {
             phase: 'finished',
             index: 1,
             players: { greg: PLAYERS.greg, priya: PLAYERS.priya },
+          })}
+          youUid="greg"
+          isQuizmaster
+          log={[]}
+          onPlayAgain={noop}
+          onLeave={noop}
+          onSeason={noop}
+        />
+      ),
+    },
+    {
+      /*
+        A three-way tie for last, and it is not a hypothetical: these are the
+        finishing scores of live room XS4A — a 25-question round played for
+        stakes on 4 September 2026, whose scores map holds three zeros. All
+        three are members here, which is the shape the drawing has to hold;
+        live, one of them had left by the time this was read back.
+
+        Here for the reason `wager.md` gives for its own stake-band fixture: a
+        shape that turns up in a minority of rounds is never reviewed unless the
+        gallery has one. Until this existed the chair drew a single figure
+        whatever the size of the tie, and nothing on any screen showed it.
+      */
+      title: 'Final · a three-way tie for last',
+      node: (
+        <Final
+          banked={null}
+          youPlayerId="greg"
+          snapshot={null}
+          room={mockRoom({
+            phase: 'finished',
+            index: 1,
+            players: SEATED_ROOM,
+            scores: {
+              greg: 22_800,
+              sam: 14_100,
+              priya: 8_025,
+              alex: 5_400,
+              jo: 0,
+              rach: 0,
+              dev: 0,
+            },
           })}
           youUid="greg"
           isQuizmaster

@@ -413,10 +413,23 @@ textarea {
   display: grid;
   place-items: center;
   padding: 0;
-  border: 1px solid transparent;
+  /*
+    A ground of its own, and it needs one.
+    
+    This was `background: transparent` with a transparent border over
+    `--ink-dim`, sitting on top of the studio backdrop — which is not a flat
+    colour but beams of light of varying brightness. On a dark stripe it read
+    fine; where a beam passed under it, a dim blue glyph on pale blue all but
+    disappeared. Reported as hard to see, and it was: nothing behind it was
+    constant enough to be a background.
+
+    Dark enough to sit the glyph on a known colour wherever it lands, and still
+    quiet furniture — the corner of the screen is not where the eye should go.
+  */
+  border: 1px solid var(--edge);
   border-radius: var(--radius);
-  background: transparent;
-  color: var(--ink-dim);
+  background: rgb(2 10 20 / 0.62);
+  color: var(--ink-soft);
   transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
 }
 
@@ -2141,15 +2154,54 @@ select.input option {
  * has finished arriving — the podium builds third, second, first, and the sweep
  * is the full stop on that sequence rather than something competing with it.
  */
+/*
+ * **The band travels inside a box that never moves.**
+ *
+ * It used to be `transform: translateX(-100%)` animated to `100%` on a box at
+ * `inset: 0` — so for most of its run the element was somewhere other than on
+ * top of the riser, and `.riser` sets no `overflow`. The light swept across the
+ * third-place riser and the empty stage beside it, ending in a hard horizontal
+ * line at the winner's riser height, which is taller than anything next to it.
+ * Reported as "cut off at the top of the podium", and that is exactly what it
+ * was: a rectangle of light with nothing to belong to.
+ *
+ * Moving the gradient within a fixed box fixes it without clipping. `overflow:
+ * hidden` on the riser would also have worked and would have cost the `::after`
+ * lit edge, which is positioned to sit proud of it.
+ *
+ * The gradient is transparent for its outer third at each end and the box shows
+ * one third of it at a time, so both ends of the travel — and the resting state
+ * the animation falls back to — are genuinely invisible rather than nearly so.
+ */
 .riser--first::before {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: 8px 8px 0 0;
   pointer-events: none;
-  background: linear-gradient(100deg, transparent 25%, rgb(255 212 121 / 0.35) 50%, transparent 75%);
-  transform: translateX(-100%);
-  animation: sweep 1100ms cubic-bezier(0.3, 0.7, 0.3, 1) 900ms 1 backwards;
+  background: linear-gradient(
+    100deg,
+    transparent 0 35%,
+    rgb(255 212 121 / 0.35) 50%,
+    transparent 65% 100%
+  );
+  background-size: 300% 100%;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  animation: glint 1100ms cubic-bezier(0.3, 0.7, 0.3, 1) 900ms 1 backwards;
+}
+
+/*
+ * Left to right, as the old `translateX` was. Separate from `sweep` rather than
+ * sharing it: that one moves an element and four other things still want it.
+ */
+@keyframes glint {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
 }
 
 .riser__pos {
@@ -2278,6 +2330,24 @@ select.input option {
   stroke: var(--ink-soft);
 }
 
+/*
+ * The second and third people on the chair, when a round ends in a tie for last.
+ *
+ * Faded rather than given a third ink. The note above is that two inks are what
+ * stop the chair and its occupant becoming a tangle of lines at this size, and a
+ * third would be one more thing to tell apart — where opacity says "further
+ * back" without adding a colour. `--ink-dim` was the obvious alternative and is
+ * wrong: that is the chair's own ink, so the extras would merge into the
+ * furniture rather than sit on it.
+ *
+ * **0.55 is duplicated in `SEAT_BEHIND_ALPHA` in `src/engine/seat.ts`**, which
+ * the shared PNG draws with. Canvas cannot read CSS, the same reason the ink
+ * values at the top of `drawCard.ts` are copied out of here.
+ */
+.seat__sitter--behind {
+  opacity: 0.55;
+}
+
 .seat__name {
   /*
     Allowed to overhang the column, which on a phone is barely wider than the
@@ -2305,6 +2375,27 @@ select.input option {
   font-weight: 700;
   font-size: 0.85rem;
   font-variant-numeric: tabular-nums;
+}
+
+/*
+ * What the steal did, under the verdict.
+ *
+ * Deliberately quiet: the verdict above it is the headline and this is the
+ * explanation, so it takes the dim ink and a smaller size rather than competing.
+ * It appears for exactly two people in the room — the one who took the points
+ * and the one who lost them — and for nobody else.
+ */
+.steal {
+  margin: 0.2rem 0 0;
+  font-family: var(--tech);
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+  color: var(--ink-dim);
+  opacity: 0;
+}
+
+.steal--in {
+  animation: rise 420ms cubic-bezier(0.2, 0.8, 0.2, 1) 120ms forwards;
 }
 
 /* ── Utility ────────────────────────────────────────────────────────────── */

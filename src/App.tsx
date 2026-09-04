@@ -395,7 +395,14 @@ function Game() {
   }, [leave, report]);
 
   const handleStart = useCallback(
-    (packId: PackId, count: number, level: Level, durationSecs: number, wagerEnabled: boolean) => {
+    (
+      packId: PackId,
+      count: number,
+      level: Level,
+      durationSecs: number,
+      wagerEnabled: boolean,
+      stealEnabled: boolean,
+    ) => {
       setBusy(true);
       setActionError(null);
       loadPackQuestions(packId)
@@ -450,6 +457,7 @@ function Game() {
               packTitle: pack?.title ?? packId,
               questions,
               wagerEnabled,
+              stealEnabled,
             },
             ...(facts.length > 0
               ? [{ type: 'titles' as const, at: Date.now(), facts, durationSecs }]

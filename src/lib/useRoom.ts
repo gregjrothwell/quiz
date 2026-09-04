@@ -187,6 +187,12 @@ function toRoomState(code: string, data: DocumentData, answers: Record<string, A
     // `false` — `isWagerQuestion` would read as neither on nor off. Defaulted
     // here for the same reason `durationSecs` and `form` are.
     wagerEnabled: persisted.wagerEnabled ?? false,
+    // Absent in every room created before the steal, and defaulted for the
+    // same reason as the line above.
+    stealEnabled: persisted.stealEnabled ?? false,
+    // `null` rather than undefined: Firestore rejects undefined outright, and
+    // every room from before the steal has no field at all.
+    lastSteal: persisted.lastSteal ?? null,
   };
 }
 
@@ -212,6 +218,8 @@ function toPersisted(state: RoomState): PersistedRoom {
     gameId: state.gameId,
     form: state.form,
     wagerEnabled: state.wagerEnabled,
+    stealEnabled: state.stealEnabled,
+    lastSteal: state.lastSteal,
   };
 }
 

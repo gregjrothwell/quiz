@@ -316,6 +316,45 @@ function buildChecks(probes: Probes): Check[] {
         }),
     },
     {
+      /*
+        The same check for the steal, and it earns its live write for the same
+        reason: `stealEnabled` and `lastSteal` are two more new fields on the
+        room document, which is the document that took the game down when squads
+        shipped. `lastSteal` is the one worth naming — it is a nested *object*
+        rather than a scalar, and nothing in `wellFormed()` inspects it, so this
+        is the check that says so against the published ruleset rather than
+        against a reading of the repo copy.
+
+        Both directions matter here. If this PASSes, the steal deploys with no
+        paste at all. If it FAILs, the branch takes the game down on deploy —
+        `playerOk` uses `hasOnly`, so a refused room write is a room nobody can
+        start and nobody can join.
+      */
+      label: 'Firestore   · open a room that plays for steals',
+      expect: 'allow',
+      hint: 'the published firestore.rules refuses a room document carrying '
+        + '`stealEnabled` or `lastSteal` — the steal needs a paste after all, '
+        + 'and until it happens no round can be started at all',
+      run: () =>
+        updateDoc(doc(db, 'rooms', LIVE_ROOM), {
+          code: LIVE_ROOM,
+          phase: 'lobby',
+          players: { [uid]: { name: 'Rules check', joinedAt: Date.now() } },
+          packId: null,
+          packTitle: null,
+          questions: [],
+          index: 0,
+          questionOpenedAt: null,
+          scores: { [uid]: 0 },
+          lastDeltas: {},
+          skipped: [],
+          gameId: 'rules-check',
+          wagerEnabled: false,
+          stealEnabled: true,
+          lastSteal: { from: uid, to: uid, points: 50 },
+        }),
+    },
+    {
       label: 'Firestore   · stake points on your own answer',
       expect: 'allow',
       hint: 'firestore.rules has not taken `wager` into the answers hasOnly list '

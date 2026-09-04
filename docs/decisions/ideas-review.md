@@ -9,6 +9,11 @@ each costs against the Spark free tier.
 deliberately not built, and what the Spark tier allows. Read that before proposing something
 that was already turned down. This file is the open half.
 
+**§4 and the picture-round bullet were re-costed on 4 September**, alongside two ideas that
+were not here at all — stealing points and a jigsaw round — plus the decision to allow negative
+points. All four in [`round-types.md`](round-types.md); the melody round's licensing in
+particular is far less restrictive than §4 assumed.
+
 > **It said "nothing here is built" until 28 August 2026.** Five of these have now shipped, and
 > they are marked where they stand rather than deleted — an idea's costing is worth keeping once
 > you can check it against what the thing actually took. **Shipped: rank scoring and the PNG card

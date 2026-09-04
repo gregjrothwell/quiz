@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { QrCode } from '../components/QrCode';
 import { RoomLink } from '../components/RoomLink';
 import { joinLink } from '../engine/roomCode';
+import { STEAL_SHARE } from '../engine/scoring';
+import { SQUADS } from '../engine/squad';
+import { rememberSquad, rememberedSquad } from '../lib/rememberedSquad';
 import {
   DEFAULT_DURATION_SECS,
   DURATION_CHOICES,
@@ -80,6 +83,7 @@ interface LobbyProps {
     level: Level,
     durationSecs: number,
     wagerEnabled: boolean,
+    stealEnabled: boolean,
   ) => void;
   onLeave: () => void;
 }
@@ -107,7 +111,29 @@ export function Lobby({
     than a constant. Fixed for the round once the show starts.
   */
   const [wager, setWager] = useState(false);
+  /*
+    Off by default and opt-in for the same reason as the wager above, but it is
+    a different kind of choice and the room should know which: this one runs on
+    every question rather than the last, so it changes the whole round's shape
+    rather than adding a moment to the end of it.
+  */
+  const [steal, setSteal] = useState(false);
   const [durationSecs, setDurationSecs] = useState<number>(DEFAULT_DURATION_SECS);
+  /*
+    The way out for somebody who never got asked.
+
+    Auto-join takes a player from a link straight into the room, which skips the
+    landing screen — the only place a squad could be chosen. `App.tsx` says of
+    that path that "the lobby can offer a way out without this needing to know
+    about it", and until now the lobby did not. A player who joined by link with
+    nothing remembered had no way to pick a side at all: `SquadPanel` lives on
+    the season board and only renders for somebody who already has a row there,
+    which a first-timer does not.
+
+    Seeded from the same store the banking reads, so it shows what would actually
+    be recorded rather than an empty control next to a squad they already have.
+  */
+  const [pickedSquad, setPickedSquad] = useState<string>(squad || rememberedSquad());
 
   const youName = youUid ? room.players[youUid]?.name : undefined;
   const quizmasterUid = resolveQuizmaster(room.players);
@@ -180,7 +206,7 @@ export function Lobby({
           <div className="stack">
             <p className="muted hint">
               The link brought you straight in as <strong>{youName}</strong>
-              {squad ? <>, playing for {squad}</> : null}.
+              {pickedSquad ? <>, playing for {pickedSquad}</> : null}.
             </p>
             <div className="btn-row">
               <button type="button" className="btn btn--ghost" onClick={onLeave}>
@@ -298,6 +324,25 @@ export function Lobby({
             ) : null}
           </div>
 
+          <label className="field">
+            <span className="field__label">Your squad — for the league table</span>
+            <select
+              className="input"
+              value={pickedSquad}
+              onChange={(event) => {
+                setPickedSquad(event.target.value);
+                rememberSquad(event.target.value);
+              }}
+            >
+              <option value="">Not saying</option>
+              {SQUADS.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </label>
+
           <div className="stack">
             <p className="eyebrow">The last question</p>
             <div className="picker">
@@ -328,11 +373,44 @@ export function Lobby({
             ) : null}
           </div>
 
+          <div className="stack">
+            <p className="eyebrow">Chasing the leader</p>
+            <div className="picker">
+              <button
+                type="button"
+                className="pick"
+                aria-pressed={!steal}
+                onClick={() => setSteal(false)}
+              >
+                <b>Nobody loses points</b>
+                <span>You only ever score your own</span>
+              </button>
+              <button
+                type="button"
+                className="pick"
+                aria-pressed={steal}
+                onClick={() => setSteal(true)}
+              >
+                <b>First right answer steals</b>
+                <span>Take {STEAL_SHARE}% off whoever is top</span>
+              </button>
+            </div>
+            {steal ? (
+              <p className="muted hint">
+                Every question, whoever gets it right first takes {STEAL_SHARE}% of the leader’s
+                score off them. The leader cannot steal from themselves, so staying in front is
+                its own risk. Nothing is created or destroyed — the points just change hands.
+              </p>
+            ) : null}
+          </div>
+
           <button
             type="button"
             className="btn btn--primary"
             disabled={!packId || busy || playerEntries.length === 0 || effectiveCount === 0}
-            onClick={() => packId && onStart(packId, effectiveCount, level, durationSecs, wager)}
+            onClick={() =>
+              packId && onStart(packId, effectiveCount, level, durationSecs, wager, steal)
+            }
           >
             {busy ? 'Loading questions…' : 'Start the show'}
           </button>
