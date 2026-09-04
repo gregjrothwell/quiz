@@ -66,7 +66,7 @@ describe('the published packs are sealed', () => {
   // Guards the guard. A glob that quietly matched nothing would make every
   // assertion below pass while checking not one thing.
   test('there are packs to check', () => {
-    expect(packFiles.length).toBe(10);
+    expect(packFiles.length).toBe(12);
   });
 
   test.each(packFiles)('%s ships no answer', (name) => {
@@ -84,6 +84,42 @@ describe('the published packs are sealed', () => {
       (q) => !Array.isArray(q.options) || q.options.length < 2,
     );
     expect(unplayable.map((q) => q.id)).toEqual([]);
+  });
+});
+
+describe('hand-built packs', () => {
+  const HASH_FILE = /^[0-9a-f]{64}\.(jpe?g|png|webp)$/i;
+
+  test('melody ships enough tunes for three default rounds, all triangle, no Happy Birthday', () => {
+    const pack = JSON.parse(readFileSync(join(PACKS, 'melody.json'), 'utf8')) as {
+      questions: { options: string[]; question: string; voices?: { type: string }[] }[];
+    };
+    expect(pack.questions.length).toBeGreaterThanOrEqual(45);
+    for (const question of pack.questions) {
+      expect(question.voices?.length).toBeGreaterThan(0);
+      expect(question.voices?.every((voice) => voice.type === 'triangle')).toBe(true);
+    }
+    const namedBirthday = pack.questions.some(
+      (question) =>
+        /birthday/i.test(question.question)
+        || question.options.some((option) => /birthday/i.test(option)),
+    );
+    expect(namedBirthday).toBe(false);
+  });
+
+  test('picture filenames are content hashes and never name the work', () => {
+    const pack = JSON.parse(readFileSync(join(PACKS, 'picture.json'), 'utf8')) as {
+      questions: { image?: string; jigsaw?: boolean; credit?: string }[];
+    };
+    expect(pack.questions.length).toBeGreaterThanOrEqual(45);
+    const named =
+      /hay-wain|eiffel|starry|sunflower|wave|scream|stonehenge|temeraire|marble|salisbury|constable|turner|gogh|hokusai|munch|monet|manet|degas|cezanne|seurat|klimt|vermeer|whistler|gainsborough|botticelli|rembrandt|delacroix|bruegel|friedrich|velazquez|goya|gericault|renoir|stubbs|holbein|leighton|hubble|apollo|cassini|fuji|venus|gothic|kiss/i;
+    for (const question of pack.questions) {
+      expect(question.image).toMatch(HASH_FILE);
+      expect(question.image).not.toMatch(named);
+    }
+    expect(pack.questions.filter((question) => question.jigsaw).length).toBeGreaterThanOrEqual(45);
+    expect(pack.questions.filter((question) => question.credit).length).toBe(1);
   });
 });
 
@@ -154,5 +190,10 @@ describe('the check itself refuses a broken pack', () => {
     expect(sealBreaches(sealed)).toEqual([]);
     expect(sealed.options).toHaveLength(4);
     expect(sealed.options).toContain('Paris');
+  });
+
+  test('`image` is seal-safe and `answerImage` is not', () => {
+    expect(sealBreaches({ image: 'abc.jpg', voices: [] })).toEqual([]);
+    expect(sealBreaches({ answerImage: 'abc.jpg' })).toEqual(['answerImage']);
   });
 });

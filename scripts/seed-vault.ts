@@ -32,6 +32,7 @@ import { getFirestore as getAdminFirestore } from 'firebase-admin/firestore';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { doc, getFirestore, writeBatch } from 'firebase/firestore';
+import { HAND_VAULT_CACHE } from './write-hand-packs';
 
 const VAULT_CACHE = join(import.meta.dirname, '..', '.cache', 'vault.json');
 
@@ -70,7 +71,9 @@ async function loadAnswers(): Promise<Record<string, string>> {
   }
 
   const harvested = JSON.parse(raw) as Record<string, string>;
-  return { ...harvested, ...HARNESS_ANSWERS };
+  const handRaw = await readFile(HAND_VAULT_CACHE, 'utf8').catch(() => null);
+  const hand = handRaw ? (JSON.parse(handRaw) as Record<string, string>) : {};
+  return { ...harvested, ...hand, ...HARNESS_ANSWERS };
 }
 
 interface Outcome {

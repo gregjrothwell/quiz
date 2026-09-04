@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { PicturePrompt } from '../components/PicturePrompt';
 import { AnswerLamps } from '../components/AnswerLamps';
 import { ArcTimer } from '../components/ArcTimer';
 import { Ladder } from '../components/Ladder';
@@ -14,7 +15,7 @@ import {
   questionDurationMs,
   type RoomState,
 } from '../engine/state';
-import { CLOCK_LEAD_SECONDS, startClock, stopClock, useCue } from '../lib/sound';
+import { CLOCK_LEAD_SECONDS, playSequence, startClock, stopClock, stopSequence, useCue } from '../lib/sound';
 import type { QuestionClock } from '../lib/useQuestionClock';
 import { useReducedMotion } from '../lib/useReducedMotion';
 
@@ -236,26 +237,37 @@ export function QuestionScreen({
    * second copy a fraction of a beat behind the first. The ref is what makes
    * that safe, since the effect re-runs every time the clock reading changes.
    */
-  const { remainingMs } = clock;
+  const { remainingMs, elapsedMs } = clock;
   const clockKey = `${room.gameId ?? ''}:${room.index}`;
   const startedClockRef = useRef<string | null>(null);
+  const voices = question?.voices;
+  const hasMelody = Boolean(voices && voices.length > 0);
 
   useEffect(() => {
     if (revealed || startedClockRef.current === clockKey) return;
+    if (hasMelody) {
+      startedClockRef.current = clockKey;
+      playSequence(voices ?? []);
+      return;
+    }
     if (remainingMs <= 0 || remainingMs > CLOCK_LEAD_MS) return;
     startedClockRef.current = clockKey;
     startClock(remainingMs);
-  }, [revealed, clockKey, remainingMs]);
+  }, [revealed, clockKey, remainingMs, hasMelody, voices]);
 
   // Nothing else stops it. A reveal that arrives early, a question that ends
   // while this screen is being torn down, and StrictMode's remount in
   // development all land here — and clearing the ref on the way out is what
   // lets the effect above start a fresh bed rather than count itself done.
   useEffect(() => {
-    if (revealed) stopClock();
+    if (revealed) {
+      stopClock();
+      stopSequence();
+    }
     return () => {
       startedClockRef.current = null;
       stopClock();
+      stopSequence();
     };
   }, [revealed]);
 
@@ -414,6 +426,19 @@ export function QuestionScreen({
           <h1 key={question.id} className="prompt">
             {question.prompt}
           </h1>
+
+          {question.image ? (
+            <PicturePrompt
+              image={question.image}
+              jigsaw={Boolean(room.jigsawEnabled && question.jigsaw)}
+              questionId={question.id}
+              gameId={room.gameId ?? ''}
+              elapsedMs={elapsedMs}
+              durationMs={questionDurationMs(room)}
+              revealed={revealed}
+              {...(question.credit ? { credit: question.credit } : {})}
+            />
+          ) : null}
 
           {/*
             There was a gloss-floor reflection here — a flipped second copy of

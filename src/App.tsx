@@ -403,6 +403,7 @@ function Game() {
       durationSecs: number,
       wagerEnabled: boolean,
       stealEnabled: boolean,
+      jigsawEnabled: boolean,
     ) => {
       setBusy(true);
       setActionError(null);
@@ -419,7 +420,10 @@ function Game() {
           // written back as exactly that, wiping the real history. It says "we
           // do not know", and the write below declines to guess.
           const asked = await loadAsked(packId).catch(() => NO_HISTORY);
-          const questions = buildQuizQuestions(pool, count, level, Math.random, asked.ids);
+          const playable = jigsawEnabled
+            ? pool.filter((question) => question.jigsaw === true)
+            : pool;
+          const questions = buildQuizQuestions(playable, count, level, Math.random, asked.ids);
 
           /*
             The opening titles, and the reason the round does not simply start
@@ -459,6 +463,7 @@ function Game() {
               questions,
               wagerEnabled,
               stealEnabled,
+              jigsawEnabled,
             },
             ...(facts.length > 0
               ? [{ type: 'titles' as const, at: Date.now(), facts, durationSecs }]

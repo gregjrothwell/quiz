@@ -297,6 +297,29 @@ describe('buildQuizQuestions', () => {
     // #then each has four tiles to render
     expect(counts).toEqual([4, 4, 4]);
   });
+
+  test('copies melody and picture fields off a sealed question', () => {
+    const voices = [{ type: 'triangle' as const, from: 440, start: 0, duration: 0.3, gain: 0.7, cutoff: 2400 }];
+    const sealed = sealQuestion({
+      id: 'hand-1',
+      question: 'Name this.',
+      correct: 'A',
+      incorrect: ['B', 'C', 'D'],
+      category: 'Melody',
+      difficulty: 'easy',
+      source: 'hand',
+      voices,
+      image: 'aaa.jpg',
+      credit: 'Photo: someone, CC BY 2.0',
+      jigsaw: true,
+    });
+    const [built] = buildQuizQuestions([sealed], 1, 'mixed', seededRng(1));
+    expect(built?.voices).toEqual(voices);
+    expect(built?.image).toBe('aaa.jpg');
+    expect(built?.credit).toBe('Photo: someone, CC BY 2.0');
+    expect(built?.jigsaw).toBe(true);
+    expect(built?.correctIndex).toBeNull();
+  });
 });
 
 /** A pool with a known spread: `easy` easy, `medium` medium, `hard` hard. */

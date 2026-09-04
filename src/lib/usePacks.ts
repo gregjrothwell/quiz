@@ -8,9 +8,15 @@ import type {
 
 export type { PackSummary };
 
-function packUrl(file: string): string {
+export function packUrl(file: string): string {
   // BASE_URL carries the '/quiz/' prefix that GitHub Pages serves the app under.
   return `${import.meta.env.BASE_URL}packs/${file}`;
+}
+
+/** Content-hashed stills live next to the sealed JSON. */
+export function packImageUrl(filename: string): string {
+  const safe = filename.replace(/^.*[/\\]/, '');
+  return packUrl(`images/${safe}`);
 }
 
 /**

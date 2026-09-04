@@ -5,6 +5,7 @@ import { joinLink } from '../engine/roomCode';
 import { STEAL_SHARE } from '../engine/scoring';
 import { SQUADS } from '../engine/squad';
 import { rememberSquad, rememberedSquad } from '../lib/rememberedSquad';
+import { useSound } from '../lib/sound';
 import {
   DEFAULT_DURATION_SECS,
   DURATION_CHOICES,
@@ -55,7 +56,10 @@ const LEVEL_META: Record<Level, { title: string; blurb: string }> = {
  * draw on everything; a flat level is capped by its own bucket, which is what
  * stops "Fiendish, 20" quietly turning into a six-question round.
  */
-export function availableFor(pack: PackSummary, level: Level): number {
+export function availableFor(pack: PackSummary, level: Level, jigsaw = false): number {
+  if (jigsaw && (level === 'mixed' || level === 'ramp') && pack.jigsawCount != null) {
+    return pack.jigsawCount;
+  }
   if (level === 'mixed' || level === 'ramp') return pack.count;
   return pack.counts[level];
 }
@@ -89,6 +93,7 @@ interface LobbyProps {
     durationSecs: number,
     wagerEnabled: boolean,
     stealEnabled: boolean,
+    jigsawEnabled: boolean,
   ) => void;
   onLeave: () => void;
 }
@@ -124,6 +129,7 @@ export function Lobby({
     rather than adding a moment to the end of it.
   */
   const [steal, setSteal] = useState(false);
+  const [jigsaw, setJigsaw] = useState(false);
   const [durationSecs, setDurationSecs] = useState<number>(DEFAULT_DURATION_SECS);
   /*
     The way out for somebody who never got asked.
@@ -140,6 +146,7 @@ export function Lobby({
     be recorded rather than an empty control next to a squad they already have.
   */
   const [pickedSquad, setPickedSquad] = useState<string>(squad || rememberedSquad());
+  const { muted, toggle } = useSound();
 
   const youName = youUid ? room.players[youUid]?.name : undefined;
   const quizmasterUid = resolveQuizmaster(room.players);
@@ -148,7 +155,7 @@ export function Lobby({
     ([, a], [, b]) => a.joinedAt - b.joinedAt,
   );
   const selected = packs.find((pack) => pack.id === packId);
-  const available = selected ? availableFor(selected, level) : 0;
+  const available = selected ? availableFor(selected, level, jigsaw) : 0;
   const effectiveCount = Math.min(count, available);
   const link = joinLink(window.location.origin, import.meta.env.BASE_URL, room.code);
 
@@ -242,6 +249,26 @@ export function Lobby({
             ))}
           </select>
         </label>
+
+        {/*
+          A muted player cannot hear a melody at all. The preference lives in
+          localStorage and the AudioContext needs a gesture, so this is the
+          place that can actually fix both — a click on this button unmutes
+          and unlocks. Start is blocked while Name that Tune is selected and
+          sound is still off.
+        */}
+        {muted ? (
+          <div className="stack">
+            <p className="muted hint">
+              Sound is off. Name that Tune is silent unless you turn it on.
+            </p>
+            <div className="btn-row">
+              <button type="button" className="btn" onClick={toggle}>
+                Turn sound on
+              </button>
+            </div>
+          </div>
+        ) : null}
       </section>
 
       {isQuizmaster ? (
@@ -255,7 +282,10 @@ export function Lobby({
                   key={pack.id}
                   className="pack"
                   aria-pressed={pack.id === packId}
-                  onClick={() => setPackId(pack.id)}
+                  onClick={() => {
+                    setPackId(pack.id);
+                    if (pack.id !== 'picture') setJigsaw(false);
+                  }}
                 >
                   <span className="pack__title">{pack.title}</span>
                   <span className="pack__blurb">{pack.blurb}</span>
@@ -269,7 +299,7 @@ export function Lobby({
             <p className="eyebrow">Set the level</p>
             <div className="picker">
               {LEVELS.map((option) => {
-                const supply = selected ? availableFor(selected, option) : null;
+                const supply = selected ? availableFor(selected, option, jigsaw) : null;
                 const meta = LEVEL_META[option];
                 return (
                   <button
@@ -413,15 +443,58 @@ export function Lobby({
             ) : null}
           </div>
 
+          {packId === 'picture' ? (
+            <div className="stack">
+              <p className="eyebrow">How the pictures show</p>
+              <div className="picker">
+                <button
+                  type="button"
+                  className="pick"
+                  aria-pressed={!jigsaw}
+                  onClick={() => setJigsaw(false)}
+                >
+                  <b>As stills</b>
+                  <span>The whole image from the start</span>
+                </button>
+                <button
+                  type="button"
+                  className="pick"
+                  aria-pressed={jigsaw}
+                  onClick={() => setJigsaw(true)}
+                >
+                  <b>As a 3×3 jigsaw</b>
+                  <span>Tiles settle as the clock runs</span>
+                </button>
+              </div>
+              {jigsaw ? (
+                <p className="muted hint">
+                  Same pictures, scrambled the same way on every device. Answering early is
+                  reading a more broken image — that is the rank bonus doing its job.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
           <button
             type="button"
             className="btn btn--primary"
-            disabled={!packId || busy || playerEntries.length === 0 || effectiveCount === 0}
+            disabled={
+              !packId
+              || busy
+              || playerEntries.length === 0
+              || effectiveCount === 0
+              || (packId === 'melody' && muted)
+            }
             onClick={() =>
-              packId && onStart(packId, effectiveCount, level, durationSecs, wager, steal)
+              packId &&
+              onStart(packId, effectiveCount, level, durationSecs, wager, steal, jigsaw)
             }
           >
-            {busy ? 'Loading questions…' : 'Start the show'}
+            {busy
+              ? 'Loading questions…'
+              : packId === 'melody' && muted
+                ? 'Turn sound on first'
+                : 'Start the show'}
           </button>
         </section>
       ) : (

@@ -1,3 +1,7 @@
+import type { Voice } from '../lib/sound';
+
+export type { Voice };
+
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
 export const DIFFICULTIES = ['easy', 'medium', 'hard'] as const;
@@ -16,6 +20,8 @@ export interface PackSummary {
   blurb: string;
   count: number;
   counts: DifficultyCounts;
+  /** Picture pack: how many stills survive a 3×3. Absent on text packs. */
+  jigsawCount?: number;
 }
 
 export const PACK_IDS = [
@@ -29,7 +35,15 @@ export const PACK_IDS = [
   'science',
   'history',
   'geography',
+  'melody',
+  'picture',
 ] as const;
+
+/**
+ * Packs written by hand, not by `fetch-questions`. A re-harvest must not
+ * overwrite their JSON or drop them from `index.json`.
+ */
+export const HAND_BUILT_PACK_IDS = ['melody', 'picture'] as const;
 
 export type PackId = (typeof PACK_IDS)[number];
 
@@ -61,9 +75,20 @@ export interface Question {
    * builds its result field by field, so this stays in the build scripts.
    */
   source: QuestionSource;
+  /** Melody pack: the synth sequence. Never an answer. */
+  voices?: Voice[];
+  /** Picture pack: content-hashed filename under `public/packs/images/`. */
+  image?: string;
+  /**
+   * On-screen credit when the licence requires it (CC BY). PD-Art / CC0 / NASA
+   * stay in ATTRIBUTION.md only.
+   */
+  credit?: string;
+  /** Picture pack: this still is a 3×3 jigsaw, not just a still. */
+  jigsaw?: boolean;
 }
 
-export type QuestionSource = 'opentdb' | 'opentriviaqa';
+export type QuestionSource = 'opentdb' | 'opentriviaqa' | 'hand';
 
 /**
  * A question as published. The four options are there; which one is right is
@@ -79,17 +104,26 @@ export interface SealedQuestion {
   options: string[];
   category: string;
   difficulty: Difficulty;
+  voices?: Voice[];
+  image?: string;
+  credit?: string;
+  jigsaw?: boolean;
 }
 
 /** Puts the options in an order that says nothing about which one is right. */
 export function sealQuestion(question: Question): SealedQuestion {
-  return {
+  const sealed: SealedQuestion = {
     id: question.id,
     question: question.question,
     options: [question.correct, ...question.incorrect].sort((a, b) => a.localeCompare(b)),
     category: question.category,
     difficulty: question.difficulty,
   };
+  if (question.voices && question.voices.length > 0) sealed.voices = question.voices;
+  if (question.image) sealed.image = question.image;
+  if (question.credit) sealed.credit = question.credit;
+  if (question.jigsaw) sealed.jigsaw = true;
+  return sealed;
 }
 
 export interface Pack {
@@ -116,4 +150,6 @@ export const PACK_META: Record<PackId, { title: string; blurb: string }> = {
   science: { title: 'Science', blurb: 'Nature, numbers and machines.' },
   history: { title: 'History', blurb: 'Everything that already happened.' },
   geography: { title: 'Geography', blurb: 'Places, borders and capitals.' },
+  melody: { title: 'Name that Tune', blurb: 'Public-domain melodies, played by the house synth.' },
+  picture: { title: 'Picture Round', blurb: 'Paintings, a landmark and a photograph. Optional 3×3 jigsaw.' },
 };

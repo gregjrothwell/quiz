@@ -47,45 +47,25 @@ hook says so if this one grows.
 | upgrading anything in `package.json` | [`decisions/dependencies.md`](decisions/dependencies.md) |
 | the studio set, or any lighting cue | [`decisions/lighting.md`](decisions/lighting.md) |
 
-## State as of 2 September 2026
+## State as of 4 September 2026
 
-**Shipped and played.** 542 tests on master, types and lint clean, no `any` or
-`@ts-ignore`.
+**Live** (bundle `index-BOq4sYDx`): chair, take-stock, steal (opt-in, unplayed),
+mute, lobby squad picker, negatives paste (`check-rules` 52/52). Squads, vault,
+App Check, rank bonus, wager, repeats/Gentle+Fiendish withdrawn. 572 tests on
+master.
 
-- **Squads, weekly boards, the average table, the frozen podium, the sealed
-  question text and the answer vault are live** (20 August, [PR #2](https://github.com/gregjrothwell/quiz/pull/2)):
-  13,593 answers, both rulesets published.
-- **App Check enforces on Firestore, the RTDB and auth**; `appcheck-probe` refuses
-  at sign-in, which is the proof: [`decisions/app-check-auth.md`](decisions/app-check-auth.md).
-- **The reveal lands on its own, ~0.5s after the clock**; `reveal-probe` is the
-  instrument: [`decisions/vault.md`](decisions/vault.md#the-gate-had-no-margin-and-the-host-was-the-one-who-paid).
-- **Scoring is a rank bonus, not a speed curve** — 500 for correct plus
-  500/400/300/200/100 by the order they landed, and **played** — see below.
-  [`decisions/scoring.md`](decisions/scoring.md).
-- **Live since 28 August**, each proved on the deployed site and each with its
-  own file: the **shared clock** ([`shared-clock.md`](decisions/shared-clock.md)),
-  **live squad scoring** on points ÷ headcount ([`live-squads.md`](decisions/live-squads.md)),
-  **voting a question out** ([`question-votes.md`](decisions/question-votes.md)),
-  and **a join link going straight into the room** ([`joining.md`](decisions/joining.md)).
-- **`npm run host-room` scores a real answer now** — it read no answers before.
-- **The verdict pills, the lighting rig and the dependency pass are all live.**
-  This block said otherwise until 2 September; the same error twice more on
-  4 September. Check the thing, not the prose.
+**This branch `melody-round`, not live:** `voices` + hashed `image`; melody pack
+(~70) + picture pack (~49, jigsaw as lobby flag 3×3); lobby force-unmute;
+`authorDied` T−71. `npm run seed-vault` before the new ids score. 652 tests,
+types and lint clean.
 
-**Live since 2 September**, deployed and checked on the site rather than assumed:
-
-- **The repeats are fixed**, and Gentle and Fiendish withdrawn because the corpus
-  cannot fill them ([#18](https://github.com/gregjrothwell/quiz/pull/18)): [`decisions/repeats.md`](decisions/repeats.md).
-- **The last question can be played for stakes**, at no extra cost, rules pasted
-  first ([#19](https://github.com/gregjrothwell/quiz/pull/19)): [`decisions/wager.md`](decisions/wager.md).
-
-**Live since 4 September**, bundle `index-BOq4sYDx`, watched onto the CDN.
-The chair seats the whole tie; `take-stock` says what was actually played; the
-glint stays on its riser; the mute button has a ground; the lobby lets a
-link-joiner pick a squad; and **the first right answer steals 5% off the
-leader** (opt-in, off by default, and **never yet played**). `check-rules` 52/52
-with a live room carrying the new fields, `sync-harness 10` clean, no paste
-needed. [`decisions/round-types.md`](decisions/round-types.md).
+**Shipped and played** otherwise: 13,593 answers, both rulesets published;
+`appcheck-probe` refuses at sign-in; reveal ~0.5s after the clock; scoring is
+500 + rank 500/400/300/200/100. Files: [`scoring.md`](decisions/scoring.md),
+[`app-check-auth.md`](decisions/app-check-auth.md), [`vault.md`](decisions/vault.md),
+[`repeats.md`](decisions/repeats.md), [`wager.md`](decisions/wager.md),
+[`round-types.md`](decisions/round-types.md). Shared clock, live squads, votes
+and join-into-room since 28 August. Check the thing, not the prose.
 
 **What is actually in the project right now** — counts, the two slow leaks, and the
 two corrections that came out of miscounting them: [`decisions/cost.md`](decisions/cost.md#measured-live-28-august-2026).
@@ -105,6 +85,9 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
 4. **The Ladder stops climbing** once a pack's thin `easy` or `hard` bucket is
    spent — it substitutes medium rather than repeating, which is right but is not
    what the tile promises. The fix is `stats/{questionId}`, not selection.
+5. **`npm run seed-vault` before melody or picture can score.** Answers live in
+   gitignored `.cache/hand-vault.json`; the published packs are sealed. The
+   live vault does not have these ids until that runs.
 
 ## Where things are
 
@@ -120,7 +103,8 @@ docs/decisions/ One subsystem each. Reached from the table above.
 Commands: `dev` (port 5273), `test`, `typecheck`, `lint`, `build`, `deploy`,
 `fetch-questions [-- --resort]`, `fetch-otqa`, `seed-vault`, `check-rules`,
 `sync-harness [n]`, `host-room [-- secs]`, `reveal-probe`, `asked-probe`,
-`take-stock`, `prune-rooms [-- --probe-rows --go]`, `fold-votes [-- --go]`.
+`take-stock`, `prune-rooms [-- --probe-rows --go]`, `fold-votes [-- --go]`,
+`write-hand-packs`.
 
 `npm test` covers `src/` plus the pure parts of `scripts/`. Anything touching the
 network or the live project stays out deliberately; it must keep running offline.

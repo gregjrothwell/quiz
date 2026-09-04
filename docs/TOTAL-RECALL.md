@@ -16,6 +16,26 @@ and including 20 August moved *verbatim* to
 old entry to make it fit is the thing the paragraph above forbids. Every one of
 them is still listed below by date, so the chronology reads end to end from here.
 
+## 2026-09-04 — The hand-built answers are in the public repo
+
+The vault does not cover melody or picture: their specs are committed, the id is
+`sha1('hand:' + slug)[:12]`, and the slug sits by `correct:`. Verified —
+`sha1('hand:hay-wain')[:12]` = `e26ff5781961`. Not in the bundle, not in
+`public/packs/`. Accepted, not fixed: hiding the specs makes the packs
+unregenerable. [`known-limits.md`](decisions/known-limits.md).
+
+## 2026-09-04 — Melody, picture, jigsaw (`melody-round`, not live)
+
+70 tunes + 49 stills (jigsaw 3×3 lobby flag). Sealed packs; answers in gitignored
+`.cache/hand-vault.json`. Seed the vault before they score. Lobby blocks Start
+while muted. "Died before 1956" is right today (CDPA s.12; T−71). Pack newest
+composed deaths: Elgar/Holst 1934; Prokofiev 1953 is in. Charleston / Parker
+unencoded. [`round-types.md`](decisions/round-types.md).
+
+## 2026-09-04 — Correction: squad-write was committed
+
+`7c27b62` on `squad-write-and-min-stake`. Unpushed. The squad-write entry below said uncommitted.
+
 ## 2026-09-04 — The negatives paste landed
 
 `check-rules`: `write a season row that went below zero` **PASS** (allow),
