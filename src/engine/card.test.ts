@@ -113,8 +113,12 @@ describe('cardModel', () => {
   test('seats everybody who tied for last, not just the first of them', () => {
     /*
       #given the finishing scores of live room XS4A — a 25-question round played
-      for stakes on 4 September 2026, where three people staked everything on
-      the last question and landed on nothing.
+      for stakes on 4 September 2026, whose scores map holds three zeros.
+
+      Two of those three are still listed in the room; scores outlive membership
+      on purpose, so `roomStandings` filters the third out and the chair seats
+      two. Either count is more than one, which is the case that was drawing a
+      single figure.
 
       A share-based stake floors at exactly zero, so this is not a rare shape:
       it is what the wager does to the bottom of a table. `wager.md` records "a

@@ -566,8 +566,9 @@ export function Preview() {
       /*
         A three-way tie for last, and it is not a hypothetical: these are the
         finishing scores of live room XS4A — a 25-question round played for
-        stakes on 4 September 2026, where three people staked everything on the
-        last question and landed on nothing.
+        stakes on 4 September 2026, whose scores map holds three zeros. All
+        three are members here, which is the shape the drawing has to hold;
+        live, one of them had left by the time this was read back.
 
         Here for the reason `wager.md` gives for its own stake-band fixture: a
         shape that turns up in a minority of rounds is never reviewed unless the

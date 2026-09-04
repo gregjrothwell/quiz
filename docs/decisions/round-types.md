@@ -153,8 +153,8 @@ document shape.
   needed — which means a deploy *before* the paste silently refuses every
   negative row and loses somebody's night.
 - **Nothing produces a negative yet, and that is the interesting part.** A
-  share-based stake floors at exactly zero, which is *why* three players finished
-  XS4A level. Two routes out:
+  share-based stake floors at exactly zero, which is *why* players finish level
+  at the bottom — XS4A and YS8F both did. Two routes out:
   - **A minimum stake** on the wager question:
     `max(round(score × share / 100), MIN_STAKE)`. **No ruleset paste at all** —
     the wire field is a share and the engine decides what it is worth
@@ -190,7 +190,7 @@ so in one query:
 | Room | Players | Qs | Wager | Notable |
 |---|---|---|---|---|
 | `FWAP` | 9 | 15 | on | 14,475 — `stakeFor` is the only thing that makes a score that is not a multiple of 100 |
-| `XS4A` | 6 | 25 | on | **three players on zero**, and 8,025 |
+| `XS4A` | 6 | 25 | on | **three zeros in the scores map**, two still in the room; and 8,025 |
 | `K8BD` | 5 | 15 | on | one on zero |
 | `YS8F` | 6 | 20 | off | two on zero — ties at the bottom predate the wager |
 | `FUWH` | 8 | 15 | off | 6,100 / 3,700 / 5,600 — a total ending in anything but `000` needs a rank bonus below first |

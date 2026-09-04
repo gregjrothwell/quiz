@@ -148,7 +148,7 @@ export function Final({
     The whole tie, not a joined string. `seatedLast` has always returned everyone
     level at the bottom — this was pre-joining them with an ampersand, so three
     people who tied for last were drawn as one figure with a long label. Live
-    round XS4A finished exactly that way.
+    rooms XS4A and YS8F both finished tied at the bottom.
   */
   const seatedNames = seated
     .map((uid) => players[uid]?.name)

@@ -88,7 +88,7 @@ hook says so if this one grows.
 Bundle `index-Y1gzBmfb`, watched onto the CDN rather than assumed.
 
 **4 September, on a branch: the chair seats everybody who tied for last**, not one
-figure and an ampersand — room XS4A finished with three on zero. Round types
+figure and an ampersand — rooms XS4A and YS8F both finished tied at the bottom. Round types
 costed and negative points decided: [`decisions/round-types.md`](decisions/round-types.md).
 
 **What is actually in the project right now** — counts, the two slow leaks, and the
