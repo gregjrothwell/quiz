@@ -302,9 +302,10 @@ service cloud.firestore {
         // anti-cheat. See docs/HANDOVER.md.
         // `wager` is the share of their own points a player put on the
         // question, 0-100. A *share* and not a number of points, deliberately:
-        // it cannot exceed what they hold, so no game total can go negative and
-        // the season row's `points >= 0` and `best <= maxBest()` below are
-        // untouched. An absolute stake would have cost a second paste.
+        // the wire field stays a percentage and the engine decides what it is
+        // worth, including a 500-point floor on a positive stake. That floor
+        // is what can put a season total below zero, which is why `points`
+        // is bounded by `-maxPoints()` rather than 0.
         //
         // Which question it belongs to is not checked here and cannot be
         // cheaply: it would need a `get()` on the room for every answer write.
@@ -520,16 +521,18 @@ service cloud.firestore {
         && request.resource.data.played <= maxPlayed()
         && request.resource.data.wins is int
         && request.resource.data.wins >= 0
-        // You cannot have won more rounds than you played, or scored more in one
-        // game than you have scored in total.
+        // You cannot have won more rounds than you played. `best <= points`
+        // went on 4 September: a lost minimum stake can put the total below
+        // a personal best, and `best` stays a maximum against a zero floor.
         && request.resource.data.wins <= request.resource.data.played
         && request.resource.data.points is int
-        && request.resource.data.points >= 0
+        // Binary minus, not unary: the console compiler rejects `-maxPoints()`
+        // with Unexpected EOF still expecting an operator.
+        && request.resource.data.points >= (0 - maxPoints())
         && request.resource.data.points <= maxPoints()
         && request.resource.data.best is int
         && request.resource.data.best >= 0
         && request.resource.data.best <= maxBest()
-        && request.resource.data.best <= request.resource.data.points
         && request.resource.data.lastGame is string
         && request.resource.data.lastGame.size() <= 64
         && request.resource.data.lastPlayed is number

@@ -43,12 +43,21 @@ export function rankBonus(position: number): number {
  * The stakes the last question offers, as a percentage of the points held.
  *
  * **A share rather than a number of points, and that is the load-bearing
- * decision.** You cannot stake what you do not have, so a game total can never
- * go negative — which leaves `points >= 0` and `best <= maxBest()` in
- * `firestore.rules` exactly as they are. An absolute stake breaks both and costs
- * a second ruleset paste; this one costs a bound on a single new field.
+ * decision.** You cannot stake what you do not have *unless* the floor applies — a
+ * player on nothing who picks a positive share still puts {@link MIN_STAKE}
+ * on the line, which is how a total goes negative. A 0% pick is still
+ * nothing. The season row's floor is `-maxPoints()`, not zero.
  */
 export const WAGER_SHARES = [0, 25, 50, 100] as const;
+
+/**
+ * What a positive stake is worth when the share of the score would be less.
+ *
+ * One correct answer. A player on zero who goes in on the last question
+ * still has something to lose. A 0% pick does not pay this — the floor
+ * must not make "stake nothing" a lie.
+ */
+export const MIN_STAKE = 500;
 
 /**
  * What a player actually put on the question, in points.
@@ -63,7 +72,8 @@ export const WAGER_SHARES = [0, 25, 50, 100] as const;
 export function stakeFor(score: number, wager: number | undefined): number {
   if (!wager || wager <= 0) return 0;
   const share = Math.min(100, wager);
-  return Math.round((Math.max(0, score) * share) / 100);
+  const portion = Math.round((Math.max(0, score) * share) / 100);
+  return Math.max(portion, MIN_STAKE);
 }
 
 /**

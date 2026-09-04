@@ -31,7 +31,7 @@ import {
   rememberDelta,
   type ClockDeltas,
 } from '../engine/roomClock';
-import { planJoin } from '../engine/join';
+import { planJoin, planSeatSquad } from '../engine/join';
 import { reapAbsent } from '../engine/presence';
 import {
   LEGACY_DURATION_SECS,
@@ -136,6 +136,7 @@ export interface UseRoom {
   leave: () => Promise<void>;
   dispatch: (action: Action | Action[]) => Promise<void>;
   submitAnswer: (optionIndex: number, elapsedMs: number, wager?: number) => Promise<void>;
+  writeOwnSquad: (squad: string) => Promise<void>;
 }
 
 function roomDoc(code: string) {
@@ -730,6 +731,33 @@ export function useRoom(): UseRoom {
     [uid, adoptName, writeSelfIntoRoom],
   );
 
+  /**
+   * Writes this device's squad onto its existing seat, and nowhere else.
+   *
+   * Auto-join seats a link-joiner before they can pick a side, so the lobby
+   * picker has to stamp `players.{uid}.squad` after the fact. That is a field
+   * write, not a rejoin: `planJoin` leaves an existing entry untouched so a
+   * reconnect cannot restamp `joinedAt` and move the quizmaster.
+   *
+   * Only the lobby. Once the show starts the side is frozen.
+   */
+  const writeOwnSquad = useCallback(
+    async (squad: string): Promise<void> => {
+      if (!code || !uid || !room) return;
+      const plan = planSeatSquad({
+        existing: room.players[uid],
+        phase: room.phase,
+        squad: sideFor(squad, rememberedPlayingWith()),
+      });
+      if (plan.kind === 'skip') return;
+
+      await updateDoc(roomDoc(code), {
+        [`players.${uid}.squad`]: plan.kind === 'clear' ? deleteField() : plan.squad,
+      });
+    },
+    [code, uid, room],
+  );
+
   const leave = useCallback(async (): Promise<void> => {
     if (!code || !uid) return;
     const leavingCode = code;
@@ -869,5 +897,6 @@ export function useRoom(): UseRoom {
     leave,
     dispatch,
     submitAnswer,
+    writeOwnSquad,
   };
 }

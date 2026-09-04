@@ -371,8 +371,7 @@ function buildChecks(probes: Probes): Check[] {
       label: 'Firestore   · stake more than all of it',
       expect: 'deny',
       hint: 'firestore.rules is missing the 0-100 bound on `wager` — a share '
-        + 'above 100 would let a losing answer drive a score below zero, which '
-        + 'the season row refuses outright',
+        + 'above 100 is not a share',
       run: () =>
         setDoc(doc(db, 'rooms', 'ZZZZ', 'answers', uid), {
           optionIndex: 0,
@@ -433,6 +432,24 @@ function buildChecks(probes: Probes): Check[] {
       expect: 'deny',
       hint: 'firestore.rules is missing the season range checks',
       run: () => setDoc(ownSeasonRow, { ...validSeasonRow, played: 1, wins: 99 }),
+    },
+    {
+      // A lost minimum stake is the first thing that writes a negative. The
+      // allow case FAILs against the published ruleset until the paste —
+      // `points >= 0` and `best <= points` are still live. That is the point.
+      label: 'Firestore   · write a season row that went below zero',
+      expect: 'allow',
+      hint: 'firestore.rules still has points >= 0 or best <= points — a lost '
+        + 'minimum stake refuses the season row and the night is lost. Paste '
+        + 'the repo copy before deploying the client that produces a negative.',
+      run: () => setDoc(ownSeasonRow, { ...validSeasonRow, points: -500, best: 1000 }),
+    },
+    {
+      label: 'Firestore   · write a season row below -maxPoints()',
+      expect: 'deny',
+      hint: 'firestore.rules is missing the -maxPoints() floor — a crafted '
+        + 'client can write any negative',
+      run: () => setDoc(ownSeasonRow, { ...validSeasonRow, points: -200000000, best: 0 }),
     },
     {
       label: "Firestore   · write someone else's season row",

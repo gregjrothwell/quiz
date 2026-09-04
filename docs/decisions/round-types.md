@@ -222,9 +222,9 @@ document shape.
 3. ~~**Steal, auto-targeted.**~~ **Built 4 September**, unplayed. XS4A is why:
    the wager swung the top by 22,800 and could not touch the two players who
    had nothing to stake.
-4. **The negatives paste + a minimum stake.** Demoted by the correction above —
-   it makes the wager reach a player on zero, which is worth doing, but it does
-   not fix the bottom of the table. Its own PR, because of the paste ordering.
+4. ~~**The negatives paste + a minimum stake.**~~ **Built.** `MIN_STAKE` is 500;
+   a 0% pick still stakes nothing. **Paste outstanding** — `points >= -maxPoints()`,
+   `best <= points` gone. Demoted by the correction above: it does not fix the chair.
 5. **A melody round.**
 6. **A picture round**, then **jigsaw** on top of it.
 

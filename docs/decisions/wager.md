@@ -1,6 +1,6 @@
 # The wager
 
-> **Owner: Greg Rothwell. Last updated: 2 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 4 September 2026. Budget: 250 lines.**
 
 `ideas-review.md` §3, built. One question — the last — where you stake a share of
 your points, so the bottom of the table is still mathematically alive at question
@@ -22,15 +22,11 @@ Greg's call: **final question only for now, while we find out how it plays.**
 The load-bearing decision, and it is about the ruleset rather than the game.
 
 A stake is a percentage of what the player already holds — nothing, a quarter,
-half, or all of it. You cannot stake what you do not have, so:
-
-- a game total can never go negative, leaving `points >= 0` untouched
-  (`firestore.rules`, the season row);
-- a fifteen-question round tops out near 30,000 against `maxBest()` of 100,000,
-  leaving `best <= maxBest()` untouched.
-
-An **absolute** stake breaks both and costs a second ruleset paste. This costs
-one: `'wager'` into the answers `hasOnly` list, plus `is int` and a 0-100 bound.
+half, or all of it. The wire field stays a share so a second paste is not
+needed for the *value*. **4 September:** a positive share now floors at 500,
+so a player on zero can finish below zero. `points >= 0` and `best <= points`
+come out of the season row; `points >= -maxPoints()` goes in. A 0% pick is
+still nothing. `best <= maxBest()` is untouched.
 
 ## Cost: nothing
 
@@ -76,8 +72,9 @@ feature's risk, not because they were hard.
 
 ## Known limits, deliberately
 
-- **A player on zero stakes nothing**, which is precisely the case §3 exists to
-  solve. Left to see whether it happens in a real round.
+- **A player on zero who picks a positive share now stakes 500**, one correct
+  answer. A 0% pick is still nothing. That is the floor that can take a total
+  below zero; the season row needs its paste before this deploys.
 - **A stake of nothing is left off the answer document**, not written as
   `wager: 0`. It scores identically, keeps the document byte-identical to every
   round before this for anybody not betting, and narrows the damage if this is

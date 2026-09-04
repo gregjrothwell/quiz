@@ -147,6 +147,24 @@ describe('bankGame', () => {
     expect(banked.best).toBe(banked.points);
     expect(banked.best).toBeLessThanOrEqual(banked.points);
   });
+
+  test('a lost floor can put the season total below zero', () => {
+    const existing = record({ played: 3, points: 0, best: 0 });
+    const banked = bankGame(existing, outcome({ score: -500 }));
+    expect(banked.points).toBe(-500);
+    // best is a maximum against a zero floor, so it stays put
+    expect(banked.best).toBe(0);
+  });
+
+  test('best can sit above a negative total', () => {
+    // The case that made `best <= points` wrong: one good night, then a floor
+    // lost from nothing.
+    const existing = record({ played: 1, points: 1_000, best: 1_000 });
+    const banked = bankGame(existing, outcome({ score: -500 }));
+    expect(banked.points).toBe(500);
+    expect(banked.best).toBe(1_000);
+    expect(banked.best).toBeGreaterThan(banked.points);
+  });
 });
 
 describe('foldRecords', () => {

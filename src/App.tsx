@@ -176,6 +176,7 @@ function Game() {
     leave,
     dispatch,
     submitAnswer,
+    writeOwnSquad,
   } = useRoom();
   const { packs, error: packsError } = usePackIndex();
 
@@ -817,6 +818,10 @@ function Game() {
           busy={busy}
           autoJoined={autoJoined}
           squad={rememberedSquad()}
+          onPickSquad={(next) => {
+            rememberSquad(next);
+            void writeOwnSquad(next).catch(report);
+          }}
           onStart={handleStart}
           onLeave={handleLeave}
         />

@@ -16,6 +16,26 @@ and including 20 August moved *verbatim* to
 old entry to make it fit is the thing the paragraph above forbids. Every one of
 them is still listed below by date, so the chronology reads end to end from here.
 
+## 2026-09-04 — The lobby writes the side, and a stake can go below zero
+
+Branch `squad-write-and-min-stake`, uncommitted.
+
+**The live squad hole.** Auto-join seats a link-joiner before they pick a side,
+and `planJoin` leaves an existing entry untouched so a reconnect cannot move
+the quizmaster. The lobby picker only wrote storage, and only the quizmaster
+could see it. `planSeatSquad` writes `players.{uid}.squad` onto the existing
+seat, lobby only; `joinedAt` is not in the plan. The picker is in front of
+everybody now.
+
+**A positive stake floors at 500.** A 0% pick is still nothing. A player on
+zero who goes in on the last question can finish at −500, and `bankGame`
+already had no clamp. Repo `firestore.rules`: `points >= -maxPoints()`,
+`best <= points` gone. **Paste before deploy.** `check-rules` gained the allow
+case (FAIL until the paste) and the `−maxPoints()` deny.
+
+`playSequence` is exported for a melody round. No tunes, no pictures, no
+force-unmute in the lobby — those wait on content.
+
 ## 2026-09-04 — Live, and the CDN lied for a minute
 
 Merged and deployed. `master` at `1743357`, gh-pages at `20155bf`, bundle

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { reduce, type Action } from './reducer';
-import { stakeFor, tallyQuestion, WAGER_SHARES } from './scoring';
+import { MIN_STAKE, stakeFor, tallyQuestion, WAGER_SHARES } from './scoring';
 import { createRoom, isWagerQuestion, type QuizQuestion, type RoomState } from './state';
 
 const at = (elapsedMs: number, optionIndex: number, wager?: number) => ({
@@ -22,20 +22,30 @@ describe('stakeFor', () => {
   });
 
   /*
-    The bound that keeps this to one ruleset paste. A stake can never exceed the
-    points held, so a game total cannot go negative and `points >= 0` in
-    `firestore.rules` is untouched. A crafted client sending 900 is clamped by
-    every device identically rather than being trusted or refused.
+    A crafted client sending 900 is clamped to 100% by every device identically
+    rather than being trusted or refused. The share still cannot exceed all of
+    it; the floor is what can take a total below zero.
   */
-  test('cannot exceed the points held, whatever the client claims', () => {
+  test('cannot claim a share above all of it', () => {
     expect(stakeFor(1000, 900)).toBe(1000);
     expect(stakeFor(1000, -50)).toBe(0);
   });
 
-  test('a player on nothing can stake nothing', () => {
-    expect(stakeFor(0, 100)).toBe(0);
-    // And a negative total, which nothing should produce, cannot mint points.
-    expect(stakeFor(-500, 100)).toBe(0);
+  test('a player on nothing who stakes still puts the floor on the line', () => {
+    expect(stakeFor(0, 100)).toBe(MIN_STAKE);
+    expect(stakeFor(0, 25)).toBe(MIN_STAKE);
+    // A negative total cannot mint a stake larger than the floor.
+    expect(stakeFor(-500, 100)).toBe(MIN_STAKE);
+  });
+
+  test('a 0% pick is still nothing, even on zero', () => {
+    expect(stakeFor(0, 0)).toBe(0);
+    expect(stakeFor(0, undefined)).toBe(0);
+    expect(stakeFor(2000, 0)).toBe(0);
+  });
+
+  test('a share that already beats the floor is left alone', () => {
+    expect(stakeFor(10_000, 25)).toBe(2500);
   });
 
   test('the shares offered are all inside the bound', () => {
@@ -98,17 +108,22 @@ describe('tallyQuestion with stakes', () => {
     expect(undone).toEqual(scores);
   });
 
-  test('nobody can be driven below zero by losing a stake', () => {
-    const board = { a: 1200, b: 50, c: 0 };
-    const wrong = {
-      a: at(100, 9, 100),
-      b: at(100, 9, 100),
-      c: at(100, 9, 100),
-    };
-    const deltas = tallyQuestion({ correctIndex: 1, answers: wrong, scores: board });
-    for (const uid of Object.keys(board)) {
-      expect((board[uid as keyof typeof board]) + (deltas[uid] ?? 0)).toBeGreaterThanOrEqual(0);
-    }
+  test('a lost floor takes a player on nothing below zero', () => {
+    const deltas = tallyQuestion({
+      correctIndex: 1,
+      answers: { a: at(100, 9, 100) },
+      scores: { a: 0 },
+    });
+    expect(deltas['a']).toBe(-MIN_STAKE);
+  });
+
+  test('a 0% pick on nothing still scores zero, not the floor', () => {
+    const deltas = tallyQuestion({
+      correctIndex: 1,
+      answers: { a: at(100, 9, 0) },
+      scores: { a: 0 },
+    });
+    expect(deltas['a']).toBe(0);
   });
 });
 
@@ -188,11 +203,43 @@ describe('the wager through the reducer', () => {
 
     // Ann had 1,000, staked all of it and was right: 500 + 500 + 1,000 on top.
     expect(played.scores['ann']).toBe(3000);
-    // Bo had 900, staked all of it and was wrong. Nobody goes below nothing.
+    // Bo had 900, staked all of it and was wrong: 900 − 900.
     expect(played.scores['bo']).toBe(0);
 
     // And the quizmaster throwing the question out puts the board back exactly.
     expect(apply(played, { type: 'skip' }).scores).toEqual(before);
+  });
+
+  test('a player who arrived on nothing and lost the floor finishes below zero', () => {
+    const opened = apply(
+      createRoom('WGR1'),
+      { type: 'join', uid: 'ann', name: 'Ann', at: 100 },
+      { type: 'join', uid: 'cam', name: 'Cam', at: 150 },
+      {
+        type: 'selectPack',
+        packId: 'general-knowledge',
+        packTitle: 'General Knowledge',
+        questions: QUESTIONS,
+        wagerEnabled: true,
+        stealEnabled: false,
+      },
+      { type: 'start', at: 1_000, gameId: 'game-1', durationSecs: 20 },
+    );
+    const last = apply(
+      opened,
+      { type: 'answer', uid: 'ann', optionIndex: 0, elapsedMs: 1_000 },
+      { type: 'reveal', correctIndex: 0, questionId: 'q0' },
+      { type: 'next', at: 2_000 },
+      { type: 'next', at: 3_000 },
+    );
+    expect(last.scores['cam']).toBe(0);
+
+    const played = apply(
+      last,
+      { type: 'answer', uid: 'cam', optionIndex: 3, elapsedMs: 1_000, wager: 100 },
+      { type: 'reveal', correctIndex: 0, questionId: 'q1' },
+    );
+    expect(played.scores['cam']).toBe(-MIN_STAKE);
   });
 
   test('a round that never opted in scores the last question as any other', () => {

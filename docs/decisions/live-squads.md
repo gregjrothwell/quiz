@@ -1,6 +1,6 @@
 # Squads during the round
 
-> **Owner: Greg Rothwell. Last updated: 28 August 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 4 September 2026. Budget: 250 lines.**
 
 Split out of [`season.md`](season.md) on 28 August 2026, which reached 282 lines
 against a 250 budget when this was added. That file is the season *record* — what
@@ -75,6 +75,11 @@ rather than fixed. It could not happen before, because there was no live board.
 restamps it, the same rule `name` and `joinedAt` follow. So somebody who changes
 squad mid-round keeps the side they joined under until the next round, which is
 the right answer for a running total anyway.
+
+**Exception, lobby only, 4 September 2026.** Auto-join seats a link-joiner
+before they can pick a side, so `planSeatSquad` writes `players.{uid}.squad`
+onto the existing seat — a field write, not a rejoin, and not a restamp of
+`joinedAt`. Once the show starts the side is frozen again.
 
 ### This one takes the game down if it deploys before the paste
 >

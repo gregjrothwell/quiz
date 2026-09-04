@@ -264,6 +264,22 @@ export function Preview() {
       ),
     },
     {
+      title: 'Lobby · link-joiner',
+      node: (
+        <Lobby
+          room={mockRoom({ phase: 'lobby' })}
+          youUid="priya"
+          isQuizmaster={false}
+          packs={PACKS}
+          busy={false}
+          autoJoined
+          onPickSquad={noop}
+          onStart={noop}
+          onLeave={noop}
+        />
+      ),
+    },
+    {
       title: 'Question · unanswered',
       node: (
         <QuestionScreen
