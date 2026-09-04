@@ -16,6 +16,54 @@ and including 20 August moved *verbatim* to
 old entry to make it fit is the thing the paragraph above forbids. Every one of
 them is still listed below by date, so the chronology reads end to end from here.
 
+**Split again on 4 September 2026**, at 350 lines. The two 2 September entries
+went to [`recall/2026-09.md`](recall/2026-09.md) and 29 August joined
+[`recall/2026-08.md`](recall/2026-08.md), which is why that file is no longer
+titled "up to 28 August". Same rule, same reason: moved whole, not shortened.
+Verified after the move rather than assumed — the three entries diffed byte-for-byte
+against the spine they left, and all 128 relative links across the spine, both
+archives and the handover resolve.
+
+## 2026-09-04 — "The rest of the file is stale" is not evidence about a line
+
+`ideas-review.md` still said **nobody has seen the rank bonus award an order**. It was corrected
+on 30 August on `cursor/fastest-finger`, which never got a PR, so the wrong claim stood here for
+five days — and was then nearly lost a second time when that branch's docs were judged superseded
+*wholesale* and only its script salvaged. Four of its five doc changes really were superseded;
+this one was not. Judge a file, not a branch.
+
+## 2026-09-04 — Melody and picture are live, and the vault was the gate
+
+master `0bf1c5f`, gh-pages `584e80e`, bundle `index-CIOq186A`. #22, #23 and #24
+merged in that order. `seed-vault`: **119 added, 0 changed**, 13,456 already
+correct — the vault now holds 13,712.
+
+**The order was not cosmetic.** Both packs are in `index.json` and the lobby
+offers them, and `resolveAnswer` *throws* when the vault has no doc for a
+question rather than scoring zero. Deploying before the seed would have shipped
+two pickable packs that break at the reveal.
+
+**Proved on the live site, not assumed.** Room `NDH7`, picture round: The Starry
+Night rendered, the clock ran, and the reveal put `tile--correct` on D with the
+other three `tile--gone` — read off the DOM classes rather than computed style,
+which has lied here before. No console errors.
+
+**The CDN was stale again**, exactly as this morning: gh-pages held
+`index-CIOq186A` and served it 200, while live `index.html` still named
+`index-BOq4sYDx`. Caught up on re-fetching. Watch it every time.
+
+**A prediction that was wrong, recorded because it changed the instruction:**
+the Firebase chunk was called as moving to `Byj7wx-B`. It did not — the real
+deploy kept `firebase-Cns3pSRr`. That hash came from a scratch worktree with a
+symlinked `node_modules`, which moved every chunk hash. A build outside the
+project tree is not the build that ships.
+
+**Three green mergeable badges hid a conflict.** GitHub checks a PR against
+master as it stands, not as it will be. #24 read CLEAN and conflicted on
+`scoring.md` once #22 and #23 landed. Simulating the stacked merge in a worktree
+is what caught it. #23 also did not auto-retarget when #22 merged — GitHub only
+does that when the base branch is deleted.
+
 ## 2026-09-04 — The hand-built answers are in the public repo
 
 The vault does not cover melody or picture: their specs are committed, the id is
@@ -182,100 +230,14 @@ Nothing produces a negative yet; a minimum stake would, and needs no paste.
 Four round types costed — steal, picture, music, jigsaw. **None is limited by the
 database.** All of it: [`decisions/round-types.md`](decisions/round-types.md).
 
-## 2026-09-02 — Both went live the same afternoon
-
-PRs #18, #19 and #20 merged and deployed. **The paste went first and on its own**, which is
-worth recording as a pattern: the ruleset change was purely additive — `hasOnly` widened by one
-key, the new bound guarded by `!('wager' in ...)` — so publishing it before anything was merged
-or deployed could not affect a single client then playing. That decoupled the one step only Greg
-can do from everything else, instead of stacking it in the middle of a deploy.
-
-`check-rules` after the paste: `stake points on your own answer` **FAIL → PASS**, and its two
-deny neighbours went from vacuous to meaningful in the same moment. Bundle `index-Y1gzBmfb`
-watched onto the CDN over ~45 seconds; `firebase-Cns3pSRr` kept its hash. Both features
-confirmed on the deployed site, not locally.
-
-**A boundary worth knowing about:** the harness blocked `gh pr merge` mid-session, having allowed
-`git push` minutes earlier. Not a rule of Greg's and not a judgement — and the first answer given
-for why the merge could not happen was wrong: CORE.md names Greg as merger by *default*, not by
-prohibition. Worth separating next time: what the rules forbid, what the tooling blocks, and what
-is merely convention.
-
-## 2026-09-02 — The repeats, and a wager that had never existed
-
-Two pieces of office feedback, and both turned out to start from a wrong premise.
-
-**The wager was never built.** Greg had pitched it verbally at the last round and the office
-liked it; someone then suggested betting every round. No code, no branch, no commit on any ref
-— it was `ideas-review.md` §3 and nothing else. Built as costed: last question only, opt-in from
-the lobby, **a share of the points you hold rather than a number of points**, which is what keeps
-a total off negative and keeps this to **one** ruleset paste instead of two. Zero extra reads and
-writes — it rides the answer document. **The paste is outstanding**; `check-rules` fails on its
-allow case until then, and its two deny cases pass *vacuously* in the meantime.
-→ [`decisions/wager.md`](decisions/wager.md)
-
-**The squad suspicion on the repeats was half right, and the wrong half is the useful one.**
-`selectQuestions` is unchanged since 1 August. But `7d25cac` is an ancestor of the squad branch,
-so it reached the office in the same deploy — and it made `recordAsked` take `previous` from the
-caller, where a failed read had already been degraded to an empty set. **One transient failure
-overwrote up to 400 remembered ids with that round's fifteen**, permanently and silently.
-
-**The measurement then moved the work.** `asked-probe` (new, read-only) showed the history was
-in fact accumulating — General Knowledge sat at exactly 400, the old cap, so the fix there was
-raising it to 500, the most the published rules allow without a paste. Cross-referencing the
-asked ids against the packs found the real cause: **Best of British had served 54 of its 54 easy
-questions**, Sport 12 of its 15 hard ones. The Ladder takes 30% from each end every round, and
-only ~4,000 of 14,176 questions carry a real rating. Gentle and Fiendish are withdrawn.
-
-**The plan's per-difficulty repeat fallback was measured and then not built.** With buckets that
-thin it would have served a repeated hard question every single round — injecting repeats into
-the complaint being fixed. Six rounds simulated against the real live history: **zero repeats**.
-What it costs is the ladder itself, which now loses its top rung by round five on General
-Knowledge. That is a `stats/{questionId}` problem, and it is in Outstanding rather than papered
-over.
-
-**Proved by a comparison, not a number**: `tv-and-film` **40 → 55** across one real round in the
-browser. The refusing direction is unit-tested only, because forcing it live would mean
-publishing a broken ruleset — said rather than implied.
-→ [`decisions/repeats.md`](decisions/repeats.md)
-
-**Two corrections and one admission.** The handover had claimed two WCAG failures fixed a week
-earlier and three branches undeployed that were live; `security.md` still said the RTDB and auth
-were unenforced, under a heading saying "still open", a fortnight after its own summary said
-otherwise. All corrected in place. And **the first commit of the repeats work carries all four
-changes while its message names only one** — `git add -A` where three commits were wanted. Not
-rewritten, because that rule does not bend for tidiness; recorded here instead.
-
-29 merged local branches deleted. `cursor/fastest-finger` still holds a 583-line rank harness
-that exists on this disk alone.
-
-## 2026-08-29 — A design review lands, and four of its six get built
-
-Claude Design produced a sixteen-finding UI/UX review on its own canvas. **Getting it into
-Claude Code needed `/design-login` run once from an interactive terminal — the canvas URL alone
-unblocks nothing**, and the failure only surfaces after the design work is done, in the other
-tool. Credential goes to the Keychain, so there is no file to check for.
-
-Built its items 1–4 and 6, each verified in the browser against the built stylesheet rather
-than by tests, which touch no CSS: **`.chip` was declared twice with `.chip--hard` between
-them**, so source order killed the difficulty signal on every question header — a shipped
-feature silently dead. Renamed the league filter to `.filter-chip`. Both dim tokens raised past
-AA with headroom. The level picker now says "expect repeats" below three times the round
-length. The player's reveal, alone among five screens, never said the room was waiting on the
-quizmaster; it does now.
-
-Two things worth carrying. **The review undercounted twice** — three call sites that were four,
-six inline hint styles that were eleven — so its numbers are a lead, not a fact. And **the
-design gallery had every quizmaster/player pair except at the reveal**, which is how the empty
-desk survived: the missing fixture was the reason nobody saw it.
-
-Items 5 (recovery code as a button) and the `--screen`/`--section` merge are left as design
-calls, not renames. Branch `design-review-fixes`, five commits, unmerged.
-
 ## Earlier — the full chronology, archived
 
-Thirty-four entries, moved on 28 August and 2 September 2026, unchanged. Newest first, as above.
+Thirty-seven entries, moved on 28 August, 2 September and 4 September 2026,
+unchanged. Newest first, as above.
 
+- **2026-09-02** — [Both went live the same afternoon](recall/2026-09.md#2026-09-02--both-went-live-the-same-afternoon)
+- **2026-09-02** — [The repeats, and a wager that had never existed](recall/2026-09.md#2026-09-02--the-repeats-and-a-wager-that-had-never-existed)
+- **2026-08-29** — [A design review lands, and four of its six get built](recall/2026-08.md#2026-08-29--a-design-review-lands-and-four-of-its-six-get-built)
 - **2026-08-28** — [The rig gets operated](recall/2026-08.md#2026-08-28--the-rig-gets-operated)
 - **2026-08-28** — [A UI audit, and the verdict pills get a thumb](recall/2026-08.md#2026-08-28--a-ui-audit-and-the-verdict-pills-get-a-thumb)
 - **2026-08-28** — [A dependency pass, and four majors held back](recall/2026-08.md#2026-08-28--a-dependency-pass-and-four-majors-held-back)

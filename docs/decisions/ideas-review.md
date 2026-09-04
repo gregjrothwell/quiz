@@ -1,6 +1,6 @@
 # The ideas review
 
-> **Owner: Greg Rothwell. Last updated: 28 August 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 4 September 2026. Budget: 250 lines.**
 
 Written after the office's first real round on the season work: what to do next, why, and what
 each costs against the Spark free tier.
@@ -36,11 +36,12 @@ highest value of anything in this file" and that was right. [`shared-clock.md`](
 
 ### Nothing needing a second person has been tested
 
-**Four of the five still stand**: the review panel, squad-vs-squad, a quizmaster handover, and a
+**Four still stand**: the review panel, squad-vs-squad, a quizmaster handover, and a
 recovery code moving between browsers. ~~Keyboard shortcuts~~ cleared 28 August, answering with
-`a` and `c` in a live round. A fifth has been added by shipping rank scoring: **nobody has seen
-the rank bonus award an order**, because that needs two correct answers in one room and every
-round so far has had one answerer.
+`a` and `c` in a live round. ~~A fifth, from shipping rank scoring: **nobody has seen the rank
+bonus award an order**~~ — **cleared 29 August** by `npm run rank-harness`, seven seats in one
+live question, bonuses and rosette agreeing on screen: [`scoring.md`](scoring.md#the-full-field--29-august-2026).
+It stood wrong here for five days on a branch that never got a PR.
 
 ## The ideas
 
@@ -220,8 +221,8 @@ seen by more than one person at once.
 **Do first, and none of it is a feature:**
 
 1. **A real round with the office on it.** Voting, auto-join and the shared clock are all live
-   and none has met a full room. It also clears four of the five two-person gaps and the rank
-   bonus at the same time, for no code.
+   and none has met a full room. It clears the four remaining two-person gaps for no code. The
+   rank bonus is no longer among them — `rank-harness` cleared it on 29 August.
 2. **Thresholds from real votes** (§11) — one command, but it must happen before the first
    `--go`, because retirement is permanent.
 3. ~~**The reload bug** (§10)~~ — **done 28 August**, the same day it was written down.
