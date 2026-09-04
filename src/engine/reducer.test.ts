@@ -253,6 +253,43 @@ describe('the answer window', () => {
     expect(room.durationSecs).toBe(DEFAULT_DURATION_SECS);
   });
 
+  test('a new room has the jigsaw off', () => {
+    expect(createRoom('ABCD').jigsawEnabled).toBe(false);
+  });
+
+  test('selectPack without jigsawEnabled leaves it off', () => {
+    const room = apply(
+      createRoom('ABCD'),
+      { type: 'join', uid: 'host', name: 'Greg', at: 100 },
+      {
+        type: 'selectPack',
+        packId: 'picture',
+        packTitle: 'Picture Round',
+        questions: QUESTIONS,
+        wagerEnabled: false,
+        stealEnabled: false,
+      },
+    );
+    expect(room.jigsawEnabled).toBe(false);
+  });
+
+  test('selectPack can turn the jigsaw on', () => {
+    const room = apply(
+      createRoom('ABCD'),
+      { type: 'join', uid: 'host', name: 'Greg', at: 100 },
+      {
+        type: 'selectPack',
+        packId: 'picture',
+        packTitle: 'Picture Round',
+        questions: QUESTIONS,
+        wagerEnabled: false,
+        stealEnabled: false,
+        jigsawEnabled: true,
+      },
+    );
+    expect(room.jigsawEnabled).toBe(true);
+  });
+
   test('starting a round fixes the window the quizmaster chose', () => {
     // #given a round started on ten seconds
     const room = briskRoom(10);

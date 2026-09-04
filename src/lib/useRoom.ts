@@ -191,6 +191,7 @@ function toRoomState(code: string, data: DocumentData, answers: Record<string, A
     // Absent in every room created before the steal, and defaulted for the
     // same reason as the line above.
     stealEnabled: persisted.stealEnabled ?? false,
+    jigsawEnabled: persisted.jigsawEnabled ?? false,
     // `null` rather than undefined: Firestore rejects undefined outright, and
     // every room from before the steal has no field at all.
     lastSteal: persisted.lastSteal ?? null,
@@ -220,6 +221,7 @@ function toPersisted(state: RoomState): PersistedRoom {
     form: state.form,
     wagerEnabled: state.wagerEnabled,
     stealEnabled: state.stealEnabled,
+    jigsawEnabled: state.jigsawEnabled,
     lastSteal: state.lastSteal,
   };
 }

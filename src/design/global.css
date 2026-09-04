@@ -1130,6 +1130,41 @@ select.input option {
   text-shadow: 0 2px 24px rgb(0 0 0 / 0.9);
 }
 
+.still {
+  margin: 0.5rem 0 0;
+  max-width: min(100%, 28rem);
+}
+
+.still__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 0.35rem;
+  background: rgb(0 0 0 / 0.35);
+}
+
+.still__credit {
+  margin-top: 0.4rem;
+  font-size: 0.8rem;
+  color: rgb(255 255 255 / 0.72);
+}
+
+.jigsaw {
+  display: grid;
+  gap: 2px;
+  aspect-ratio: 1;
+  width: 100%;
+  border-radius: 0.35rem;
+  overflow: hidden;
+  background: rgb(0 0 0 / 0.35);
+}
+
+.jigsaw__tile {
+  aspect-ratio: 1;
+  background-size: 300% 300%;
+  background-repeat: no-repeat;
+}
+
 /* ── Lecterns ───────────────────────────────────────────────────────────── */
 
 .podium {

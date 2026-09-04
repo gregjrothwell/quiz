@@ -16,6 +16,18 @@ and including 20 August moved *verbatim* to
 old entry to make it fit is the thing the paragraph above forbids. Every one of
 them is still listed below by date, so the chronology reads end to end from here.
 
+## 2026-09-04 — Melody, picture, jigsaw (`melody-round`, not live)
+
+70 tunes + 49 stills (jigsaw 3×3 lobby flag). Sealed packs; answers in gitignored
+`.cache/hand-vault.json`. Seed the vault before they score. Lobby blocks Start
+while muted. "Died before 1956" is right today (CDPA s.12; T−71). Pack newest
+composed deaths: Elgar/Holst 1934; Prokofiev 1953 is in. Charleston / Parker
+unencoded. [`round-types.md`](decisions/round-types.md).
+
+## 2026-09-04 — Correction: squad-write was committed
+
+`7c27b62` on `squad-write-and-min-stake`. Unpushed. The squad-write entry below said uncommitted.
+
 ## 2026-09-04 — The negatives paste landed
 
 `check-rules`: `write a season row that went below zero` **PASS** (allow),

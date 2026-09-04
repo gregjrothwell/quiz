@@ -71,25 +71,23 @@ clamp is needed anywhere.
 | | |
 |---|---|
 | Firebase | **0** |
-| Pages | ~30 MB a round (10 players × 15 images × 200 kB) against a **100 GB/month** soft limit and a **1 GB** site cap — checked against GitHub's published limits, not recalled |
+| Pages | costing assumed 200 kB/still; 44 of 49 are over (max 793 kB, pack 16.4 MB). Site cap is 1 GB; bandwidth is the real one |
 | Ruleset | **none** — question keys are not inspected |
-| Blocked by | sourcing and licensing |
+| Blocked by | — 49 stills on `melody-round`, not live until seed-vault |
 
 Three things to get right, none of them cost:
 
 1. **The filename is a new seal leak.** `eiffel-tower.jpg` appears in the room
-   document and in the DOM. Content-hash the filenames at harvest.
+   document and in the DOM. Content-hash the filenames at pack-build.
 2. **The seal test forbids keys matching `/correct|answer|incorrect|solution/i`
    at any depth** (`seal.test.ts:43`). `image` passes; `answerImage` fails.
 3. **A new pack touches three places** — the `PACK_IDS` union and `PACK_META`
-   (`types.ts:21`), and the hardcoded `expect(packFiles.length).toBe(10)` at
-   `seal.test.ts:69`.
+   (`types.ts`), and `expect(packFiles.length).toBe(12)` at `seal.test.ts`.
 
-**The real cost is not code.** No CC BY-SA corpus of four-option picture questions
-exists; the text packs are ~1,500 questions each and a picture pack is hand-built.
-Wikimedia Commons is the realistic source, and per-image attribution is a licence
-obligation, so it needs UI. A flags or landmarks pack of ~100 public-domain
-images is the honest first version.
+**Built, not a 100-image pack.** Hand-built `picture` pack: 49 stills
+under `public/packs/images/{sha256}.{ext}` (48 jigsaw). `image` is seal-safe.
+Attribution in `ATTRIBUTION.md`; CC BY also on-screen (`credit`). Jigsaw is a
+lobby flag on this pack, not a second copy of the files. Harvest must not overwrite it.
 
 ## Music round
 
@@ -102,23 +100,32 @@ Two different ideas wearing one name.
 - **Recorded clips — ruled out.** Copyright in the recording, on a public repo,
   with the files served from Pages.
 
-### The licensing, which is much less restrictive than it first looks
+### The licensing (CDPA, checked 4 September 2026)
 
-An earlier draft of this said "pre-1900" and that was wrong. Checked against
-gov.uk rather than stated from memory: **UK copyright in a musical work runs for
-the life of the composer plus 70 years.** The separate 70-years-from-publication
-term covers *sound recordings*. Two consequences:
+An earlier draft said "pre-1900" and that was wrong. Primary text, not memory:
+**s.12(2)** — copyright in a musical work expires at the end of the calendar
+year 70 years after the author's death. Died 1955 → expired 31 Dec 2025 → PD
+from 1 Jan 2026. Died 1956 → still in copyright today (expires 31 Dec 2026).
+**"Died before 1956" is exactly right on 4 Sep 2026.** Formula: in year T,
+died in (T−71) or earlier. `tune-rights.ts` holds `TUNE_RIGHTS_YEAR`.
 
-- **A synth rendition is a new performance, so the recording term never
-  applies.** Only the composition matters — "no recorded clips" is not a
-  restriction on this round at all.
-- **The test is per-tune, not per-era: did the composer die before 1956, or is
-  the tune traditional?** That is a large and recognisable pool — Gershwin
-  (d. 1937), Elgar (d. 1934), Holst (d. 1934), Joplin (d. 1917), Sousa (d. 1932,
-  and so the Monty Python theme), Ravel (d. 1937) — plus the whole folk, carol
-  and nursery-rhyme canon, and modern exceptions like *Happy Birthday*, released
-  into the public domain in 2016. **The pack build checks each tune against that
-  test**, rather than against a cutoff year somebody picked.
+**s.13A** (sound recordings, 70 years from publication) does not apply — we
+synthesise `Voice[]`, we do not ship a recording. It would, if we ever used a
+YouTube clip or mp3. **s.10A + s.12(8):** a song's music *and* lyrics last
+until 70 years after the last of the **author of the musical work** and the
+lyricist. Instrumentals are author-only. A triangle-wave transcription of a
+PD melody is our encoding (s.21); it does not revive the underlying work,
+provided we copy the PD melody and not a still-in-copyright arrangement.
+Lyrics are a separate literary work (s.3); we play notes. Titles as MCQ
+options are not a literary work.
+
+The pool includes Gershwin *instrumentals* (d. 1937), Ravel *Boléro*, Strauss
+(d. 1949, answered as 2001), Alford (d. 1945), Elgar/Holst, Joplin, Sousa,
+folk/carols, music hall. Gershwin *songs* are not — Ira d. 1983. Living
+writers (Arctic Monkeys, Williams, Norman) stay out on **copyright**, not
+taste. Charleston / Parker unencoded (taste / US 95-year). Pages is
+US-hosted; UK CDPA test unless Greg wants the stricter of UK+US.
+Traditional: s.12(3), s.57. Crown: s.163. Database right on 70 items: no.
 
 ### Three blockers, none of them the database
 
@@ -131,25 +138,18 @@ term covers *sound recordings*. Two consequences:
    questions.
 3. Melodies are hand-encoded note sequences. Cheap per tune, but content work.
 
-The only missing code is a public `playSequence(voices: Voice[])`. `startClock`
-(`sound.ts:386`) is the template — it already schedules an arbitrary array
-through its own `GainNode` and can cancel it.
+**Built 4 September.** Taste pass then PD-via-fame: 70 tunes (was 46).
+`playSequence` / `stopSequence` mute the clock bed. Lobby blocks Start while
+muted. Vaughan Williams (d. 1958) fails the test. Happy Birthday is a fixture.
 
-## Jigsaw / scramble round
+## Jigsaw / scramble round — **built 4 September 2026**
 
 **Strictly downstream of the picture round** — same images, different
-presentation, nothing extra in the database.
+presentation, nothing extra in the database. `room.jigsawEnabled`, lobby toggle
+when the picture pack is selected. 3×3. Seed from `question.id` + `gameId`.
+Progressive settle on the shared clock; Salisbury is still-only.
 
-The risk is not cost: **the scramble must be identical on every device**, or
-players see different puzzles and the rank bonus is unfair. Seed it from
-`question.id` + `gameId`, both of which every client already holds;
-`selectQuestions` already takes an injectable `Rng` (`state.ts:401`), so the
-pattern exists.
-
-The good version is a **progressive** unscramble driven by the shared clock —
-tiles settle as the window runs, so answering early is worth more. That fits rank
-scoring better than anything else here, and the shared clock that makes it
-possible only shipped on 28 August.
+The scramble must be identical on every device, or the rank bonus is unfair.
 
 **Do not let it become a drag-the-pieces puzzle.** The vault compares one string
 against one option string (`vault.ts:65`, `firestore.rules:388`). An ordering
@@ -225,8 +225,8 @@ document shape.
 4. ~~**The negatives paste + a minimum stake.**~~ **Built, and pasted.**
    `MIN_STAKE` is 500; a 0% pick still stakes nothing. `check-rules` both
    directions 4 September. Demoted by the correction above: it does not fix the chair.
-5. **A melody round.**
-6. **A picture round**, then **jigsaw** on top of it.
+5. ~~**A melody round.**~~ **Built 4 September**, on `melody-round`, not live.
+6. ~~**A picture round**, then **jigsaw** on top of it.~~ **Built with it.**
 
 ## The prose was wrong, and that is a finding
 

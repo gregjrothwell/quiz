@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { CLOCK_LEAD_SECONDS, clockVoices, cueVoices, playSequence } from './sound';
+import { HAPPY_BIRTHDAY } from '../questions/melody-voices';
 
 /** The pitched walk, which is the one voice every second of the bed has. */
 const bassLine = (remainingMs: number): number[] =>
@@ -107,5 +108,12 @@ describe('clockVoices', () => {
 describe('playSequence', () => {
   test('is the public export a melody round needs', () => {
     expect(typeof playSequence).toBe('function');
+  });
+});
+
+describe('Happy Birthday', () => {
+  test('is a smoke-test fixture, not a published pack tune', () => {
+    expect(HAPPY_BIRTHDAY.every((voice) => voice.type === 'triangle')).toBe(true);
+    expect(HAPPY_BIRTHDAY.length).toBeGreaterThan(0);
   });
 });

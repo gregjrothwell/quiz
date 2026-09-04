@@ -5,6 +5,7 @@ import {
   type Difficulty,
   type PackId,
   type SealedQuestion,
+  type Voice,
 } from '../questions/types';
 
 export type Phase = 'lobby' | 'question' | 'reveal' | 'scoreboard' | 'finished';
@@ -147,6 +148,10 @@ export interface QuizQuestion {
   correctIndex: number | null;
   category: string;
   difficulty: Difficulty;
+  voices?: Voice[];
+  image?: string;
+  credit?: string;
+  jigsaw?: boolean;
 }
 
 export interface RoomState {
@@ -230,6 +235,13 @@ export interface RoomState {
    * own points; a steal moves somebody else's.
    */
   stealEnabled: boolean;
+  /**
+   * Whether the picture pack is shown as a 3×3 that settles on the clock.
+   *
+   * Same questions, same files — not a second pack. Off by default. Needs no
+   * ruleset paste: `wellFormed()` does not `hasOnly` the room's keys.
+   */
+  jigsawEnabled: boolean;
 }
 
 /**
@@ -282,6 +294,7 @@ export function createRoom(code: string): RoomState {
     form: null,
     wagerEnabled: false,
     stealEnabled: false,
+    jigsawEnabled: false,
   };
 }
 
@@ -560,12 +573,19 @@ export function buildQuizQuestions(
   rng: Rng = Math.random,
   asked: ReadonlySet<string> = new Set(),
 ): QuizQuestion[] {
-  return selectQuestions(pool, count, level, rng, asked).map((question) => ({
-    id: question.id,
-    prompt: question.question,
-    options: shuffle(question.options, rng),
-    correctIndex: null,
-    category: question.category,
-    difficulty: question.difficulty,
-  }));
+  return selectQuestions(pool, count, level, rng, asked).map((question) => {
+    const built: QuizQuestion = {
+      id: question.id,
+      prompt: question.question,
+      options: shuffle(question.options, rng),
+      correctIndex: null,
+      category: question.category,
+      difficulty: question.difficulty,
+    };
+    if (question.voices && question.voices.length > 0) built.voices = question.voices;
+    if (question.image) built.image = question.image;
+    if (question.credit) built.credit = question.credit;
+    if (question.jigsaw) built.jigsaw = true;
+    return built;
+  });
 }

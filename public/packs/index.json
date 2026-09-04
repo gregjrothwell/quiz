@@ -108,5 +108,28 @@
       "medium": 884,
       "hard": 208
     }
+  },
+  {
+    "id": "melody",
+    "title": "Name that Tune",
+    "blurb": "Public-domain melodies, played by the house synth.",
+    "count": 70,
+    "counts": {
+      "easy": 38,
+      "medium": 32,
+      "hard": 0
+    }
+  },
+  {
+    "id": "picture",
+    "title": "Picture Round",
+    "blurb": "Paintings, a landmark and a photograph. Optional 3×3 jigsaw.",
+    "count": 49,
+    "counts": {
+      "easy": 27,
+      "medium": 22,
+      "hard": 0
+    },
+    "jigsawCount": 48
   }
 ]

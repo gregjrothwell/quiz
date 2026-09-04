@@ -16,6 +16,7 @@ import { sortIntoPacks } from './classify';
 import { harvestOpenTriviaQA } from './opentriviaqa';
 import {
   DIFFICULTIES,
+  HAND_BUILT_PACK_IDS,
   PACK_META,
   sealQuestion,
   type Difficulty,
@@ -25,6 +26,7 @@ import {
   type Question,
 } from '../src/questions/types';
 import { retiredIds } from '../src/questions/retired';
+import { mergeIndex, readHandBuiltSummaries, readHandVault } from './write-hand-packs';
 
 const API = 'https://opentdb.com';
 const OUT_DIR = join(import.meta.dirname, '..', 'public', 'packs');
@@ -248,6 +250,9 @@ async function writeVault(packs: ReadonlyMap<string, Question[]>): Promise<void>
     for (const question of questions) answers[question.id] = question.correct;
   }
 
+  const hand = await readHandVault();
+  Object.assign(answers, hand);
+
   await mkdir(CACHE_DIR, { recursive: true });
   await writeFile(VAULT_CACHE, `${JSON.stringify(answers)}\n`, 'utf8');
   console.log(`\nVault written: ${Object.keys(answers).length} answers → ${VAULT_CACHE}`);
@@ -278,6 +283,7 @@ async function writePacks(rawPool: Question[]): Promise<void> {
   const written: PackSummary[] = [];
 
   for (const [packId, questions] of [...packs.entries()].sort()) {
+    if ((HAND_BUILT_PACK_IDS as readonly string[]).includes(packId)) continue;
     const meta = PACK_META[packId];
     // Sealed on the way out. The published pack lists the options and says
     // nothing about which is right; the answers go to the vault instead.
@@ -297,8 +303,18 @@ async function writePacks(rawPool: Question[]): Promise<void> {
     });
   }
 
-  await writeFile(join(OUT_DIR, 'index.json'), `${JSON.stringify(written, null, 2)}\n`, 'utf8');
-  await writeFile(join(OUT_DIR, 'ATTRIBUTION.md'), ATTRIBUTION, 'utf8');
+  const index = mergeIndex(written, await readHandBuiltSummaries());
+  await writeFile(join(OUT_DIR, 'index.json'), `${JSON.stringify(index, null, 2)}\n`, 'utf8');
+  const existingAttribution = await readFile(join(OUT_DIR, 'ATTRIBUTION.md'), 'utf8').catch(
+    () => ATTRIBUTION,
+  );
+  const stillsAt = existingAttribution.indexOf('## Picture-round stills');
+  const stills = stillsAt >= 0 ? existingAttribution.slice(stillsAt).trim() : '';
+  await writeFile(
+    join(OUT_DIR, 'ATTRIBUTION.md'),
+    stills ? `${ATTRIBUTION.trimEnd()}\n\n${stills}\n` : ATTRIBUTION,
+    'utf8',
+  );
   await writeVault(packs);
 
   console.log(`\nSorted ${pool.length} unique questions.`);
@@ -310,7 +326,7 @@ async function writePacks(rawPool: Question[]): Promise<void> {
       `${dropped.offTopicSport} sport with no UK-followed sport in it, ` +
       `${dropped.capped} over the pack cap.\n`,
   );
-  for (const pack of written) {
+  for (const pack of index) {
     const spread = DIFFICULTIES.map((level) => `${level[0]}${pack.counts[level]}`).join(' ');
     console.log(`  ${pack.id.padEnd(20)} ${String(pack.count).padStart(5)}   ${spread}`);
   }

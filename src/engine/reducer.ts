@@ -35,6 +35,7 @@ export type Action =
       questions: QuizQuestion[];
       wagerEnabled: boolean;
       stealEnabled: boolean;
+      jigsawEnabled?: boolean;
     }
   /**
    * `durationSecs` is settled here and nowhere else. The security rules pin it
@@ -84,6 +85,7 @@ export function reduce(state: RoomState, action: Action): RoomState {
         action.questions,
         action.wagerEnabled,
         action.stealEnabled,
+        action.jigsawEnabled ?? false,
       );
     case 'start':
       return start(state, action.at, action.gameId, action.durationSecs);
@@ -155,9 +157,10 @@ function selectPack(
   questions: QuizQuestion[],
   wagerEnabled: boolean,
   stealEnabled: boolean,
+  jigsawEnabled: boolean,
 ): RoomState {
   if (state.phase !== 'lobby') return state;
-  return { ...state, packId, packTitle, questions, wagerEnabled, stealEnabled };
+  return { ...state, packId, packTitle, questions, wagerEnabled, stealEnabled, jigsawEnabled };
 }
 
 /**
