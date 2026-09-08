@@ -1,6 +1,6 @@
 # Voting on questions
 
-> **Owner: Greg Rothwell. Last updated: 28 August 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 8 September 2026. Budget: 250 lines.**
 
 Split out of [`questions.md`](questions.md) on 28 August 2026, which reached 259
 lines against a 250 budget when this was added to it. The text is unchanged;
@@ -79,4 +79,29 @@ Nothing stops somebody voting `bad` from the console fifteen times under
 different uids, and the five-vote floor is the only thing blunting it. And the
 thresholds will not have been tested against real data until a round has been
 played and voted on.
+
+## Dry run, 8 September 2026
+
+`npm run fold-votes` against `quiz-d686e`, no `--go`. The 28 August proof was
+**1 verdict across 1 question**. This run:
+
+```
+32 verdicts across 27 questions.
+
+What each threshold would retire:
+
+   3 votes,  50% bad →    2
+   3 votes,  60% bad →    2
+   5 votes,  50% bad →    0
+   5 votes,  60% bad →    0   <- the one in force
+   5 votes,  75% bad →    0
+   8 votes,  75% bad →    0
+
+0 newly over the line:
+```
+
+32 / 27 is about 1.2 votes a question. The two a 3-vote floor would take are
+the only cluster; nothing has five. That floor exists to blunt a second
+browser, and this run does not give a reason to lower it. **Too few votes to
+pick a threshold.** `shouldRetire` stays 5 and 60%. Blocklist unwritten.
 

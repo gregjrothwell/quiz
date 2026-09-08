@@ -34,6 +34,10 @@ re-run on the 8th against the files as they actually are, not inherited from the
 September entries (the CDN, the mute button, the steal) went to
 [`recall/2026-09.md`](recall/2026-09.md), whole, links repointed.
 
+## 2026-09-08 — fold-votes dry run: too thin to pick (branch `fold-votes-dry-run`)
+
+32 verdicts across 27 questions; live 5/60% retires 0; a 3-vote floor would take 2. No `--go`. [`question-votes.md`](decisions/question-votes.md#dry-run-8-september-2026).
+
 ## 2026-09-08 — Live: the round is kept, and the tune can be heard again (`index-BDZpMBAG`)
 
 Greg pasted the `games` block; `check-rules` **65/65**, the allow case flipped.

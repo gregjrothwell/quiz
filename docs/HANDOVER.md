@@ -111,7 +111,8 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
    deterrent, so the only test that means anything is whether it changes his
    behaviour in the next round: [`decisions/first-touch.md`](decisions/first-touch.md).
 8. **Nothing has been kept yet.** The block is pasted and live; the first record
-   lands when a round reaches `finished` on `index-BDZpMBAG`. `read-games` shows it.
+   lands when a round reaches `finished` on `index-BDZpMBAG`. `read-games --last 5` still empty 8 Sep.
+9. **fold-votes dry run 8 Sep:** 32/27; live 5/60% retires 0. Too thin to pick. No `--go`.
 
 ## Where things are
 
