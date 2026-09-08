@@ -15,7 +15,15 @@ import {
   questionDurationMs,
   type RoomState,
 } from '../engine/state';
-import { CLOCK_LEAD_SECONDS, playSequence, startClock, stopClock, stopSequence, useCue } from '../lib/sound';
+import {
+  CLOCK_LEAD_SECONDS,
+  playSequence,
+  startClock,
+  stopClock,
+  stopSequence,
+  useCue,
+  useSound,
+} from '../lib/sound';
 import type { QuestionClock } from '../lib/useQuestionClock';
 import { useReducedMotion } from '../lib/useReducedMotion';
 
@@ -255,6 +263,31 @@ export function QuestionScreen({
     startClock(remainingMs);
   }, [revealed, clockKey, remainingMs, hasMelody, voices]);
 
+  /**
+   * Hearing the tune again, on request.
+   *
+   * The effect above plays a melody exactly once, and guards itself against
+   * playing twice — which was right, and also meant that on 8 September a room
+   * of eight got a median 3.45 seconds of tune and then eleven seconds of
+   * silence, with no way to ask for it back. Miss the opening bar, or arrive
+   * with your audio still locked, and the question was over for you. See
+   * docs/decisions/melody-round.md.
+   *
+   * Deliberately not gated on the ref: this is the one path that is *meant* to
+   * play the sequence again. `playSequence` stops any copy already running, so
+   * pressing twice restarts the tune rather than stacking it. A muted player is
+   * unmuted first, because a button that does nothing is worse than no button —
+   * and the tap is a user gesture, which is exactly what a suspended audio
+   * context has been waiting for.
+   */
+  const { muted, toggle: toggleMuted } = useSound();
+  const canReplay = hasMelody && !revealed && !clock.expired;
+  const replayMelody = (): void => {
+    if (!hasMelody) return;
+    if (muted) toggleMuted();
+    playSequence(voices ?? []);
+  };
+
   // Nothing else stops it. A reveal that arrives early, a question that ends
   // while this screen is being torn down, and StrictMode's remount in
   // development all land here — and clearing the ref on the way out is what
@@ -292,6 +325,17 @@ export function QuestionScreen({
         return;
       }
 
+      // The same two lines as the button's `replayMelody`, inlined rather than
+      // shared: a function in this effect's dependencies would re-subscribe the
+      // listener on every render. A held key would restart the tune on every
+      // repeat, which is a stutter rather than a replay.
+      if (key === 'r' && canReplay && !event.repeat) {
+        event.preventDefault();
+        if (muted) toggleMuted();
+        playSequence(voices ?? []);
+        return;
+      }
+
       if (!isQuizmaster) return;
       if (key === ' ' || key === 'enter') {
         event.preventDefault();
@@ -303,7 +347,21 @@ export function QuestionScreen({
 
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [revealed, optionCount, isQuizmaster, clock.expired, onAnswer, onReveal, onNext, wagering, stake]);
+  }, [
+    revealed,
+    optionCount,
+    isQuizmaster,
+    clock.expired,
+    onAnswer,
+    onReveal,
+    onNext,
+    wagering,
+    stake,
+    canReplay,
+    muted,
+    toggleMuted,
+    voices,
+  ]);
 
   // Placed after the hooks above: an early return before them would change the
   // hook order between renders.
@@ -429,6 +487,26 @@ export function QuestionScreen({
             {question.prompt}
           </h1>
 
+          {/*
+            Where a picture question shows its picture, a melody question offers
+            its tune again. Above the lecterns because it belongs to the
+            question, not to the answer; disabled with them at the buzzer rather
+            than removed, so nothing jumps when the clock runs out. Hidden at the
+            reveal: by then the tune is the answer's business, not the player's.
+          */}
+          {hasMelody && !revealed ? (
+            <div className="btn-row">
+              <button
+                type="button"
+                className="btn btn--ghost"
+                disabled={clock.expired}
+                onClick={replayMelody}
+              >
+                {muted ? 'Unmute and hear it again' : 'Hear it again'}
+              </button>
+            </div>
+          ) : null}
+
           {question.image ? (
             <PicturePrompt
               image={question.image}
@@ -503,6 +581,11 @@ export function QuestionScreen({
         <span>
           <kbd>A</kbd>–<kbd>D</kbd> answer
         </span>
+        {hasMelody && !revealed ? (
+          <span>
+            <kbd>R</kbd> hear it again
+          </span>
+        ) : null}
         {isQuizmaster ? (
           <span>
             <kbd>Space</kbd>

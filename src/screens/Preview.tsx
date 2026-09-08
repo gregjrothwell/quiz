@@ -45,6 +45,29 @@ const QUESTIONS: QuizQuestion[] = [
   },
 ];
 
+/**
+ * A melody question, so the gallery shows the one control no other kind of
+ * question has. The tune is four notes written here rather than imported from
+ * `melody-voices.ts`, which carries every answer in the pack and must never
+ * reach a bundle — `known-limits.md` greps the build for exactly that.
+ */
+const MELODY_QUESTION: QuizQuestion = {
+  id: 'tune-1',
+  prompt: 'Name this tune.',
+  options: ['Eine kleine Nachtmusik', 'Für Elise', 'Ode to Joy', 'The Blue Danube'],
+  correctIndex: null,
+  category: 'Melody',
+  difficulty: 'easy',
+  voices: [329.63, 329.63, 349.23, 392.0].map((from, index) => ({
+    type: 'triangle' as const,
+    from,
+    start: index * 0.3,
+    duration: 0.28,
+    gain: 0.7,
+    cutoff: 2400,
+  })),
+};
+
 /*
   Two squads and one unaligned player, which is the shape that exercises the
   squad bar properly: Priya has never named a side, so her points are her own
@@ -314,6 +337,34 @@ export function Preview() {
             wagerEnabled: true,
           })}
           youUid="greg"
+          isQuizmaster={false}
+          clock={CLOCK}
+          revealed={false}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      /*
+        The melody round's one extra control. It was missing on 8 September and
+        eight people sat through eleven seconds of silence a question — see
+        docs/decisions/melody-round.md — so it earns a fixture of its own.
+      */
+      title: 'Question · melody, hear it again',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'question',
+            questionOpenedAt: 1_000,
+            packId: 'melody',
+            packTitle: 'Name that Tune',
+            questions: [MELODY_QUESTION],
+            index: 0,
+          })}
+          youUid="priya"
           isQuizmaster={false}
           clock={CLOCK}
           revealed={false}
