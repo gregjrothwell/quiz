@@ -235,7 +235,7 @@ Later the same day, so "nothing below is started" above was true when written
 and is not now. Step 2 landed in `App.tsx` beside `recordGame`, not `useRoom`.
 
 1. **Keep the round** — built, branch `keep-the-round`. Paste the `games` block,
-   `check-rules` 65/65, merge, deploy. [`game-record.md`](game-record.md).
+   `check-rules` 65/65, merge, deploy. `game-record.md`, on that branch.
 2. **Melody: hear it again** — built, branch `melody-replay`, stacked on 1.
    Shipped whole, not A/B'd: [`melody-round.md`](melody-round.md). No paste.
 3. **Needs the office or the data**: a real round (`firstMs`, picker, picture,
