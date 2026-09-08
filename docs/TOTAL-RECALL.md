@@ -16,6 +16,14 @@ and including 20 August moved *verbatim* to
 old entry to make it fit is the thing the paragraph above forbids. Every one of
 them is still listed below by date, so the chronology reads end to end from here.
 
+## 2026-09-08 — Spamming A–D at question start is a free lottery ticket
+
+Not fast fingers: a pick can be changed, so a lucky 50ms guess wins the rank
+bonus and an unlucky one is revised away at no cost. Measured against `3QDV`'s
+own 379 points per chance, that is +41% today and −34% if a pick were final.
+Proposed: one pick per question. Awaiting Greg —
+[`answer-spam.md`](decisions/answer-spam.md).
+
 ## 2026-09-08 — The melody round was played, and abandoned after four
 
 Eight players, fifteen questions set, stopped at four, then they went and played

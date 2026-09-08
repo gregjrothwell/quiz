@@ -44,6 +44,7 @@ hook says so if this one grows.
 | what to build next, and what each idea costs | [`decisions/ideas-review.md`](decisions/ideas-review.md) |
 | picture, music, jigsaw or steal rounds, and **negative points** | [`decisions/round-types.md`](decisions/round-types.md) |
 | why the melody round played badly, before changing it | [`decisions/melody-round.md`](decisions/melody-round.md) |
+| whether an answer can be changed, and the spam exploit | [`decisions/answer-spam.md`](decisions/answer-spam.md) |
 | whether an idea was already turned down | [`decisions/scope.md`](decisions/scope.md) |
 | upgrading anything in `package.json` | [`decisions/dependencies.md`](decisions/dependencies.md) |
 | the studio set, or any lighting cue | [`decisions/lighting.md`](decisions/lighting.md) |
