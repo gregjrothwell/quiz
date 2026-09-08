@@ -169,13 +169,11 @@ a lectern, or Tab onto one before the question opens and press Enter. Either is
 one press at ~50ms, which is the entire requirement. Same shape as the rate
 limit — it removes the tell.
 
-Not worthless, and worth saying so: mashing keys is something a player drifts
-into, whereas parking a cursor over a lectern and clicking blind is a deliberate
-act, and fewer people do the second. But it costs every honest desktop player
-their fast input — the shortcuts exist because "desktop is the primary surface,
-so the whole round is playable from the keyboard"
-([`QuestionScreen.tsx:275`](../../src/screens/QuestionScreen.tsx#L275)) — to buy
-a little self-awareness, and it closes nothing.
+Not worthless: mashing keys is something a player drifts into, where parking a
+cursor and clicking blind is deliberate, and fewer people do the second. But it
+buys that self-awareness with every honest desktop player's fast input — the
+shortcuts exist because "desktop is the primary surface, so the whole round is
+playable from the keyboard" ([`QuestionScreen.tsx:275`](../../src/screens/QuestionScreen.tsx#L275)).
 
 ## The option that costs honest players nothing: show it
 
