@@ -34,6 +34,17 @@ re-run on the 8th against the files as they actually are, not inherited from the
 September entries (the CDN, the mute button, the steal) went to
 [`recall/2026-09.md`](recall/2026-09.md), whole, links repointed.
 
+## 2026-09-08 — Live: the round is kept, and the tune can be heard again (`index-BDZpMBAG`)
+
+Greg pasted the `games` block; `check-rules` **65/65**, the allow case flipped.
+#31, #32 and #33 merged in that order, each diff checked locally against the
+master it was about to land on — GitHub's file list for #32 was stale and named
+a file that did not differ. Deployed 19:47; the CDN served `index-B3Tfo0Nu` for
+fifty seconds and caught up at 19:48. The bundle carries `Hear it again`,
+`games`, `writtenBy`, `finishedAt` and no `MELODY_SPECS`; the Firebase chunk is
+unmoved at `firebase-Cns3pSRr`; the packs 200. `sync-harness 10`: **10/10, 0
+dropped, all ten inside 71ms**. Nothing kept yet — that needs a round to finish.
+
 ## 2026-09-08 — The melody round can be heard again (branch `melody-replay`)
 
 **Hear it again**, under the prompt while the clock runs, `R` on the keyboard;

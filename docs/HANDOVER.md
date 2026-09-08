@@ -54,15 +54,15 @@ hook says so if this one grows.
 
 ## State as of 8 September 2026
 
-**Live** (bundle `index-B3Tfo0Nu`): `firstMs` — the reveal marks a pick
-committed under a second, scored nowhere
-([`first-touch.md`](decisions/first-touch.md)); the pack picker four to a row.
-Rules pasted and `check-rules` **58/58** before the deploy, in that order.
-Unplayed with people. Also chair, take-stock, steal (opt-in, unplayed), mute,
-lobby squad picker, negatives paste. Squads, vault, App Check, rank bonus,
-wager, repeats/Gentle+Fiendish withdrawn. **675 tests on master, 726 on
-`keep-the-round`**; `check-rules` is **65 cases, 64/65 until the `games` block
-is pasted** (Outstanding #8) — the 52/52 here until 8 September predated three merges.
+**Live** (bundle `index-BDZpMBAG`, 8 September 19:48): the round is **kept** —
+one `games/{gameId}` per finished game, read back by `read-games`
+([`game-record.md`](decisions/game-record.md)); **Hear it again** on melody
+questions ([`melody-round.md`](decisions/melody-round.md)); `firstMs` and the
+pack picker from earlier the same day. Rules pasted, `check-rules` **65/65**,
+merged, deployed, `sync-harness 10` 10/10 inside 71ms — in that order. All four
+unplayed with people. Also chair, take-stock, steal (opt-in, unplayed), mute,
+lobby squad picker, negatives paste; squads, vault, App Check, rank bonus, wager;
+repeats/Gentle+Fiendish withdrawn. **726 tests on master.**
 
 **Melody and picture are live and have been played** — `voices` + hashed
 `image`; melody pack (70) + picture pack (49, jigsaw as lobby flag 3×3); lobby
@@ -104,14 +104,14 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
    lobby and breaks at the reveal. Melody and picture are already seeded: the
    vault held 13,712 on 4 September, 119 of them added that day. Answers live in
    gitignored `.cache/hand-vault.json`; the published packs are sealed.
-6. **The melody round: replay built on `melody-replay`, the rest open.** Eight
+6. **The melody round: replay is live and unplayed, the rest open.** Eight
    abandoned it after four of fifteen on 8 September. Pool, distractors and clip
    length are still unchosen: [`decisions/melody-round.md`](decisions/melody-round.md).
 7. **`firstMs` and the pack picker are live and unplayed.** The marker is a
    deterrent, so the only test that means anything is whether it changes his
    behaviour in the next round: [`decisions/first-touch.md`](decisions/first-touch.md).
-8. **The round is kept only once the `games` block is pasted** — until then every
-   record is refused silently and only `check-rules` says so. Paste, 65/65, merge.
+8. **Nothing has been kept yet.** The block is pasted and live; the first record
+   lands when a round reaches `finished` on `index-BDZpMBAG`. `read-games` shows it.
 
 ## Where things are
 

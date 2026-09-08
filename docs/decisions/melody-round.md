@@ -5,8 +5,9 @@
 Built 4 September ([`round-types.md`](round-types.md#music-round)), played for
 the first time on **8 September 2026**, and it did not work. This is the
 feedback and the measurements behind it. Logged first, on Greg's instruction;
-**the cheapest fix — hearing it again — is built on branch `melody-replay`**,
-see the end. The pool and the distractors are still as they were.
+**the cheapest fix — hearing it again — is live since 8 September 19:48
+(`index-BDZpMBAG`), unplayed**, see the end. The pool and the distractors are
+still as they were.
 
 ## What happened
 
