@@ -4,8 +4,9 @@
 
 Built 4 September ([`round-types.md`](round-types.md#music-round)), played for
 the first time on **8 September 2026**, and it did not work. This is the
-feedback and the measurements behind it. **Nothing is fixed yet** — Greg's
-instruction was to log it.
+feedback and the measurements behind it. Logged first, on Greg's instruction;
+**the cheapest fix — hearing it again — is built on branch `melody-replay`**,
+see the end. The pool and the distractors are still as they were.
 
 ## What happened
 
@@ -131,3 +132,44 @@ Same failure as the one already written up in
 [`round-types.md`](round-types.md#the-prose-was-wrong-and-that-is-a-finding) —
 the prose said unplayed, the live project said otherwise, and one query settled
 it. That is twice now.
+
+## Built 8 September 2026 — hear it again, for everybody
+
+Option 1 above, shipped to every player rather than to half of them.
+`QuestionScreen` offers **Hear it again** under the prompt of a melody question
+while the clock runs (`R` on the keyboard), disabled with the lecterns at the
+buzzer and gone at the reveal. `playSequence` already stops whatever is
+playing before it starts, so a second press restarts the tune rather than
+stacking it; the once-only guard on the automatic play is untouched. A muted
+player is unmuted by the press and hears it — the button that does nothing was
+the alternative — and the press is the user gesture a suspended audio context
+was waiting for, which closes the "arrived with audio locked, heard nothing,
+no way to ask" case as well as the missed opening bar.
+
+**Why not the A/B the research proposed.** `what-to-build-next.md`
+([PR #31](https://github.com/gregjrothwell/quiz/pull/31), unmerged as this is
+written) suggested randomising the replay within the round by
+`hash(gameId, question.id)` so every player met both arms. The instrument is right and the target is wrong: eleven seconds of
+silence on a fifteen-second question is a defect, and a round where half the
+questions offer the button and half do not looks broken to the room that has
+already walked out of it once. The replay ships whole. The before is `DTK8` —
+4 questions, 28–46% against 25% for guessing — and the after is whatever
+`npm run read-games` says about the next melody round, now that
+[`game-record.md`](game-record.md) keeps one. Save the within-round A/B for a
+variant players cannot see: cross-composer distractors, which is option 3 and
+is pack regeneration, not a screen change.
+
+**Evidence.** Server-rendered against the gallery fixture
+(`Question · melody, hear it again`) and read off the markup: the button is
+present and enabled with the clock running, present and `disabled` at expiry,
+absent at the reveal and absent on a text question; the legend shows `R` in
+the first two states only. **Not yet done in a browser**: the press itself, and
+the label reading *Hear it again* rather than *Unmute and hear it again* — the
+server snapshot of the mute store is always muted, so the markup shows the
+muted label; the unmuted one is the same expression with the other branch.
+Typecheck, lint and 726 tests clean.
+
+**Still open, and not chosen**: the pool (copyright is why it is classical),
+the distractors (four Bach pieces), the clip length (70 hand-edits), and
+whether the clock bed should come back under the silence after the tune ends —
+a sequence-end callback in `sound.ts`, not done here.

@@ -34,6 +34,16 @@ re-run on the 8th against the files as they actually are, not inherited from the
 September entries (the CDN, the mute button, the steal) went to
 [`recall/2026-09.md`](recall/2026-09.md), whole, links repointed.
 
+## 2026-09-08 — The melody round can be heard again (branch `melody-replay`)
+
+**Hear it again**, under the prompt while the clock runs, `R` on the keyboard;
+disabled at the buzzer, gone at the reveal; unmutes a muted player rather than
+doing nothing. Shipped to everybody, not A/B'd within the round as the research
+suggested — the dead air is a defect and a half-fixed round would look broken to
+the room that walked out. Before is `DTK8`; after is what `read-games` says next
+time. Read off server-rendered markup in four states; not yet pressed in a
+browser. Stacked on `keep-the-round`. [`melody-round.md`](decisions/melody-round.md).
+
 ## 2026-09-08 — The round is kept: `games/{gameId}` (branch `keep-the-round`)
 
 **Built, not live — the `games` block needs its paste first.** One document per
