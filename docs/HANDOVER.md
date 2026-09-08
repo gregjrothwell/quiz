@@ -96,9 +96,18 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
 4. **The Ladder stops climbing** once a pack's thin `easy` or `hard` bucket is
    spent — it substitutes medium rather than repeating, which is right but is not
    what the tile promises. The fix is `stats/{questionId}`, not selection.
-5. **`npm run seed-vault` before melody or picture can score.** Answers live in
-   gitignored `.cache/hand-vault.json`; the published packs are sealed. The
-   live vault does not have these ids until that runs.
+5. **Any new hand-built pack needs `npm run seed-vault` before its ids can
+   score** — `resolveAnswer` *throws* when the vault has no document for a
+   question rather than scoring zero, so an unseeded pack is pickable in the
+   lobby and breaks at the reveal. Melody and picture are already seeded: the
+   vault held 13,712 on 4 September, 119 of them added that day. Answers live in
+   gitignored `.cache/hand-vault.json`; the published packs are sealed.
+6. **The melody round is logged and not fixed.** Eight players abandoned it after
+   four of fifteen on 8 September. Clips, pool and distractors are all implicated
+   and none is chosen: [`decisions/melody-round.md`](decisions/melody-round.md).
+7. **`firstMs` and the pack picker are live and unplayed.** The marker is a
+   deterrent, so the only test that means anything is whether it changes his
+   behaviour in the next round: [`decisions/first-touch.md`](decisions/first-touch.md).
 
 ## Where things are
 
