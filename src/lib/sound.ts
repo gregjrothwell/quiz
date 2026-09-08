@@ -391,11 +391,23 @@ let sequenceNodes: { gain: GainNode; sources: OscillatorNode[] } | null = null;
  * schedule the lot in one call, cancel with {@link stopSequence}. A muted
  * player hears nothing — the lobby has to force that issue when a melody
  * pack actually exists.
+ *
+ * `evenIfMuted` plays this one sequence through a mute **without changing the
+ * stored preference**, for "Hear it again". The alternative — unmuting the
+ * player — is what shipped on 8 September 2026 and it was wrong: `setMuted`
+ * writes to localStorage and nothing puts it back, so one press to hear one
+ * tune left the bed, the buzzer, the stings and the fanfare playing at full
+ * volume for the rest of the round and into the next session. The button
+ * promises one tune; this is that promise and no more of it.
+ *
+ * The call still resumes a suspended context below, which is the other half of
+ * what the press is for: a player who arrived with audio locked has never made
+ * the gesture the browser is waiting for, and this is it.
  */
-export function playSequence(voices: Voice[]): void {
+export function playSequence(voices: Voice[], options: { evenIfMuted?: boolean } = {}): void {
   stopSequence();
   stopClock();
-  if (muted || voices.length === 0) return;
+  if ((muted && !options.evenIfMuted) || voices.length === 0) return;
 
   const nodes = audio();
   if (!nodes) return;
@@ -474,6 +486,17 @@ export function stopClock(): void {
 export function unlock(): void {
   const nodes = audio();
   if (nodes && nodes.ctx.state === 'suspended') void nodes.ctx.resume();
+}
+
+/**
+ * Whether sound is currently off.
+ *
+ * The counterpart to {@link setMuted}, for callers outside React — `useSound`
+ * is the hook a component wants. It exists so the one-shot `evenIfMuted` replay
+ * can be shown *not* to move the stored preference, which is the bug it fixes.
+ */
+export function isMuted(): boolean {
+  return muted;
 }
 
 export function setMuted(next: boolean): void {

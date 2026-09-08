@@ -22,7 +22,6 @@ import {
   stopClock,
   stopSequence,
   useCue,
-  useSound,
 } from '../lib/sound';
 import type { QuestionClock } from '../lib/useQuestionClock';
 import { useReducedMotion } from '../lib/useReducedMotion';
@@ -275,17 +274,20 @@ export function QuestionScreen({
    *
    * Deliberately not gated on the ref: this is the one path that is *meant* to
    * play the sequence again. `playSequence` stops any copy already running, so
-   * pressing twice restarts the tune rather than stacking it. A muted player is
-   * unmuted first, because a button that does nothing is worse than no button —
+   * pressing twice restarts the tune rather than stacking it. A muted player
+   * hears this one tune — a button that does nothing is worse than no button —
    * and the tap is a user gesture, which is exactly what a suspended audio
    * context has been waiting for.
+   *
+   * **It does not unmute them.** That is what shipped on 8 September 2026 and it
+   * outstayed its welcome by fourteen questions and a session: `toggleMuted`
+   * writes the preference to localStorage and nothing restores it. `evenIfMuted`
+   * keeps the press to what the label says.
    */
-  const { muted, toggle: toggleMuted } = useSound();
   const canReplay = hasMelody && !revealed && !clock.expired;
   const replayMelody = (): void => {
     if (!hasMelody) return;
-    if (muted) toggleMuted();
-    playSequence(voices ?? []);
+    playSequence(voices ?? [], { evenIfMuted: true });
   };
 
   // Nothing else stops it. A reveal that arrives early, a question that ends
@@ -325,14 +327,13 @@ export function QuestionScreen({
         return;
       }
 
-      // The same two lines as the button's `replayMelody`, inlined rather than
+      // The same call as the button's `replayMelody`, inlined rather than
       // shared: a function in this effect's dependencies would re-subscribe the
       // listener on every render. A held key would restart the tune on every
       // repeat, which is a stutter rather than a replay.
       if (key === 'r' && canReplay && !event.repeat) {
         event.preventDefault();
-        if (muted) toggleMuted();
-        playSequence(voices ?? []);
+        playSequence(voices ?? [], { evenIfMuted: true });
         return;
       }
 
@@ -358,8 +359,6 @@ export function QuestionScreen({
     wagering,
     stake,
     canReplay,
-    muted,
-    toggleMuted,
     voices,
   ]);
 
@@ -502,7 +501,7 @@ export function QuestionScreen({
                 disabled={clock.expired}
                 onClick={replayMelody}
               >
-                {muted ? 'Unmute and hear it again' : 'Hear it again'}
+                Hear it again
               </button>
             </div>
           ) : null}

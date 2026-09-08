@@ -1,5 +1,12 @@
 import { describe, expect, test } from 'vitest';
-import { CLOCK_LEAD_SECONDS, clockVoices, cueVoices, playSequence } from './sound';
+import {
+  CLOCK_LEAD_SECONDS,
+  clockVoices,
+  cueVoices,
+  isMuted,
+  playSequence,
+  setMuted,
+} from './sound';
 import { HAPPY_BIRTHDAY } from '../questions/melody-voices';
 
 /** The pitched walk, which is the one voice every second of the bed has. */
@@ -108,6 +115,38 @@ describe('clockVoices', () => {
 describe('playSequence', () => {
   test('is the public export a melody round needs', () => {
     expect(typeof playSequence).toBe('function');
+  });
+
+  /*
+    "Hear it again" shipped on 8 September 2026 by calling `toggleMuted()` on a
+    muted player. That writes the preference to localStorage and nothing puts it
+    back, so one press to hear one tune left the bed, the buzzer, the stings and
+    the fanfare audible for the rest of the round and into the next session — in
+    an open-plan office, for somebody who had deliberately muted.
+
+    The button promises one tune. These pin it to that.
+  */
+  test('playing through a mute does not unmute the player', () => {
+    // #given a player who has deliberately turned sound off
+    setMuted(true);
+    expect(isMuted()).toBe(true);
+
+    // #when they ask to hear the tune once
+    playSequence(HAPPY_BIRTHDAY, { evenIfMuted: true });
+
+    // #then they are still muted for everything else
+    expect(isMuted()).toBe(true);
+  });
+
+  test('leaves the preference alone when it plays normally too', () => {
+    // #given a player with sound on
+    setMuted(false);
+
+    // #when a tune plays
+    playSequence(HAPPY_BIRTHDAY, { evenIfMuted: true });
+
+    // #then nothing about their preference moved
+    expect(isMuted()).toBe(false);
   });
 });
 
