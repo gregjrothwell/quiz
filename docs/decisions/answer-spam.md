@@ -59,15 +59,11 @@ problem and the whole fix.
 Each of these was worked through and each fails, for the same reason: *they do
 not charge for the early press.*
 
-- **Rate-limit the keystrokes** — what the report asked for. Four tiles are
-  also four mouse taps, so it moves the cheat to the pointer and stops nobody.
-- **A floor on `elapsedMs`** ("nothing counts before 1s"). The cheat presses at
-  1.05s instead. Placing the floor where it would actually bite means placing
-  it at honest players' reading speed, which punishes the people it is meant to
-  protect.
-- **A cooldown after each pick.** A lockout only costs you if it runs past the
-  time you were going to answer anyway. For somebody guessing at 50ms it never
-  does. Structurally incapable of pricing an early guess.
+- **A floor on `elapsedMs`** ("nothing counts before 1s"). He presses at 1.05s
+  instead. Putting the floor where it would bite means putting it at honest
+  reading speed, which punishes the people it protects.
+- **A cooldown after each pick.** A lockout only costs you if it runs past when
+  you were going to answer anyway, which for a 50ms guesser it never does.
 - **Cap the picks per question** (say two). He presses *once* at 50ms and keeps
   his change in hand. The ticket is still free.
 - **A changed answer forfeits the rank bonus but keeps the 500.** Closest of
@@ -80,14 +76,10 @@ Raised by Greg on 8 September: limit the shortcut to one press a second.
 
 **Four presses and one press are the same bet.** He gets no feedback on whether
 a pick was correct, so he cannot choose between his own presses — he only ever
-keeps the last one, and any single blind pick is 25%. Spamming A–D at 50ms and
-pressing A once at 50ms have identical value. A one-a-second limit leaves him
-pressing once at 50ms, reading, and pressing again at 4s: **EV unchanged at
-534.**
-
-The spamming is the *tell*, not the mechanism. This matters beyond this one
-idea, because it is why every "slow him down" shape fails — the exploit needs
-one press, and no rate limit can stop one press.
+keeps the last one, and any single blind pick is 25%. A one-a-second limit
+leaves him pressing once at 50ms, reading, and pressing again at 4s: **EV
+unchanged at 534.** The spamming is the *tell*, not the mechanism, and that is
+why every "slow him down" shape fails: the exploit needs one press.
 
 ### The part that cannot be fixed, and what it forces
 
@@ -100,12 +92,11 @@ unlucky three quarters: **make the early press binding.** Everything that does
 not bind it leaks, and everything that binds it works. That is the whole
 solution space.
 
-It also disposes of the commit window — "your pick is final until T seconds,
-free after that" — which looks like the subtle answer and is not. At T = 3s he
-waits three seconds and presses blind at 3.05s, which still beat the rank-1
-answer in four of the five rooms sampled: **back to 534.** Pushing T out to 6s
-does close it, but 6s binds five of the eight players in `DTK8` anyway, so it
-is finality wearing a constant.
+It also disposes of the commit window — "final until T, free after". At T = 3s
+he waits three seconds and presses blind at 3.05s, which still beat the rank-1
+answer in four of the five rooms sampled: **back to 534.** T = 6s does close
+it, but binds five of `DTK8`'s eight players anyway — finality wearing a
+constant.
 
 ## Recommendation — the first lectern you touch is your answer
 
@@ -152,27 +143,73 @@ to score at 50ms he has to deliberately lock a blind guess, which is binding,
 which is 250 against 379. Identical arithmetic to finality, arrived at by his
 own explicit choice rather than by a rule catching him out.
 
-What it buys over plain finality:
-
-- **The mis-tap goes away.** Meaning B and hitting C is recoverable, because
-  nothing is committed until you say so.
-- **It is the mechanic the room already understands.** Every quiz show on
-  television asks the question, and the commitment is the drama rather than a
-  penalty.
-- **It writes less, not more.** Today every change of pick is a write fanned
-  out to every client in the room, and the round already grows with the square
-  of the headcount ([`cost.md`](cost.md)). Locking writes **once per question,
-  ever** — no intermediate picks reach Firestore at all. No new field on the
-  answer document, so **no ruleset paste**.
+What it buys over plain finality: **the mis-tap goes away**, because nothing is
+committed until you say so; it is **the mechanic the room already understands**,
+since every quiz show asks it; and it **writes less, not more** — today every
+change of pick is a write fanned out to every client, and the round already
+grows with the square of the headcount ([`cost.md`](cost.md)), whereas locking
+writes once per question and no intermediate pick reaches Firestore. No new
+field, so no ruleset paste. Ranks are unaffected: every stamp moves by the same
+lock action, so the order is the order.
 
 What it costs: **a second action on every question**, for everyone, all night.
 Eight players over fifteen questions is 120 extra presses to stop one person
-cheating, and it slows the beat of a round that is deliberately fast. That is
-the trade, and it is the only one worth arguing about — the arithmetic is
-settled either way.
+cheating, on a round that is deliberately fast. **Greg's call on 8 September was
+that this is probably not worth it**, which is a fair reading — the arithmetic
+is settled either way, and the press is the only part worth arguing about.
 
-Ranks are unaffected: everyone's stamp moves later by the same lock action, so
-the order is the order.
+### Removing the keyboard shortcuts does not close it either
+
+Raised by Greg on 8 September, alongside doubt that a lock press is worth it.
+
+`PodiumTile` is a real `<button type="button">` with an `onClick`
+([`PodiumTile.tsx:92`](../../src/components/PodiumTile.tsx#L92)). With A–D and
+1–4 gone there are still **two** ways to make the same blind early pick: click
+a lectern, or Tab onto one before the question opens and press Enter. Either is
+one press at ~50ms, which is the entire requirement. Same shape as the rate
+limit — it removes the tell.
+
+Not worthless, and worth saying so: mashing keys is something a player drifts
+into, whereas parking a cursor over a lectern and clicking blind is a deliberate
+act, and fewer people do the second. But it costs every honest desktop player
+their fast input — the shortcuts exist because "desktop is the primary surface,
+so the whole round is playable from the keyboard"
+([`QuestionScreen.tsx:275`](../../src/screens/QuestionScreen.tsx#L275)) — to buy
+a little self-awareness, and it closes nothing.
+
+## The option that costs honest players nothing: show it
+
+**Do not restrict the input. Record when somebody first touched a lectern, and
+say so at the reveal.**
+
+The reveal already draws every arrival with its time (`tile__crowd`,
+`QuestionScreen.tsx:343`). Carrying `firstMs` — the elapsed time of your *first*
+pick on that question, alongside the `elapsedMs` of your last — means the replay
+can mark an answer whose first touch was at 0.05s. In a room of eight people who
+all know each other, that ends the behaviour in one round, and it does it
+without a single honest player pressing anything extra.
+
+- **No mechanic to explain, no constant to defend, no press per question.**
+- **Zero extra reads or writes** — one more field on a document already being
+  written.
+- **Scoring is untouched**, so nothing in [`scoring.md`](scoring.md) moves and
+  no honest fast player is ever caught by a rule meant for somebody else.
+
+Two things it needs, and neither is free:
+
+1. **A ruleset paste.** `firstMs` is a new key on the answer document, so it
+   goes into the `hasOnly` list at `firestore.rules:317` with `is number` —
+   exactly the paste the targeted steal was costed at
+   ([`round-types.md`](round-types.md#the-two-shapes-as-costed)).
+   **Paste first, deploy second**: a client writing `firstMs` against rules that
+   have not seen it has every answer refused, which is the whole game.
+2. **A decision about tone that is not a technical one.** Marking a player's
+   answer in front of the room is a social act. Greg knows the office; this file
+   should not decide it for him.
+
+It does **not** stop a determined player — it is a deterrent, not a rule, and
+the arithmetic above is unchanged for anybody willing to be seen doing it. For
+an office quiz that may well be enough.
 
 ## What it touches
 
