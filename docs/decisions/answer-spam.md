@@ -2,8 +2,9 @@
 
 > **Owner: Greg Rothwell. Last updated: 8 September 2026. Budget: 250 lines.**
 
-**Status: proposal. Nothing is built.** Greg reported it on 8 September and
-asked for the best shape before any code.
+**Status: built 8 September 2026 — the exposure, not a restriction.** Greg
+reported it that morning and asked for the best shape before any code; the
+options below are kept as they were argued, and what shipped is at the end.
 
 ## What happened
 
@@ -209,29 +210,15 @@ It does **not** stop a determined player — it is a deterrent, not a rule, and
 the arithmetic above is unchanged for anybody willing to be seen doing it. For
 an office quiz that may well be enough.
 
-## What it touches
+## Built 8 September 2026 — `firstMs`
 
-Not costed against Firebase because it adds nothing; it takes one away.
+**Greg's call: expose it, do not restrict it.** Nothing about answering changes;
+the reveal says when somebody committed. Both restriction shapes above were
+considered and turned down on cost — the lock press for the 120 extra presses a
+night, plain finality for the mis-tap.
 
-| Where | Change |
-|---|---|
-| [`reducer.ts`](../../src/engine/reducer.ts) `answer()` | Refuse when `state.answers[uid]` already exists. The engine is where this wants pinning, so the tests read as rules |
-| [`useRoom.ts`](../../src/lib/useRoom.ts) `submitAnswer` | Same guard, replacing the "identical pick and stake" check that is there now |
-| [`QuestionScreen.tsx`](../../src/screens/QuestionScreen.tsx) | Tiles `disabled` once answered; keyboard returns early; **`if (event.repeat) return;`** so a held key is one press. Worth doing whatever else is decided |
-| The screen, visibly | It must *say* the answer is locked. A press that silently does nothing is the exact failure this codebase keeps writing up |
-| `firestore.rules` | **Optional, and second.** `answers/{uid}` grants `create, update` with no immutability check ([`useRoom.ts:793`](../../src/lib/useRoom.ts#L793)); denying `update` would enforce it against a crafted client too. Different threat from a colleague at a keyboard, and the rules are pasted by hand — [`security.md`](security.md) |
-
-### One knock-on, on the wager question
-
-The stake rides on the answer document, and today it can be moved after
-answering by rewriting the answer
-([`QuestionScreen.tsx:477`](../../src/screens/QuestionScreen.tsx#L477)). A
-final answer makes the stake final with it, so the stake has to be chosen
-*before* the pick. That is already the natural flow — the stake is held in
-local state until you answer rather than written on selection
-([`QuestionScreen.tsx:105`](../../src/screens/QuestionScreen.tsx#L105)) — but
-it is a real change to the wager round and should not be discovered during a
-game. [`wager.md`](wager.md).
+The story, the acceptance criteria, the two traps it dodged and what it does
+**not** cover: [`first-touch.md`](first-touch.md).
 
 ## Evidence behind the numbers
 

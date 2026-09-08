@@ -21,7 +21,7 @@ import {
 } from 'firebase/firestore';
 import { firebaseAuth, firestore, realtimeDb } from '../firebase';
 import { reduce, type Action } from '../engine/reducer';
-import { liveAnswers, type AnswerDoc } from '../engine/answers';
+import { carryFirstMs, firstTouchOf, liveAnswers, type AnswerDoc } from '../engine/answers';
 import { forgetRoom, rememberRoom, rememberedRoom } from './rememberedRoom';
 import { rememberedPlayingWith, rememberedSquad } from './rememberedSquad';
 import { sideFor } from '../engine/squadScore';
@@ -801,6 +801,17 @@ export function useRoom(): UseRoom {
    * That gap existed before, hidden by the one-answer-only rule that happened to
    * stop anyone writing late.
    */
+  /**
+   * The earliest lectern this device has touched on the question in play,
+   * keyed so a new question starts clean without anything having to clear it.
+   *
+   * Exists only because Firestore cannot be read back synchronously — see the
+   * note in `submitAnswer`. Deliberately a ref and not state: nothing renders
+   * from it, and a re-render per keypress during a burst is the last thing the
+   * answering path needs.
+   */
+  const firstTouchRef = useRef<{ key: string; ms: number } | null>(null);
+
   const submitAnswer = useCallback(
     async (optionIndex: number, elapsedMs: number, wager?: number): Promise<void> => {
       if (!code || !uid || !room) return;
@@ -832,10 +843,38 @@ export function useRoom(): UseRoom {
       const held = room.answers[uid];
       if (held?.optionIndex === optionIndex && held.wager === staked.wager) return;
 
+      // The earliest touch this device knows about, from **both** sources.
+      //
+      // The document alone is wrong: a player mashing four keys inside 200ms
+      // gets no round-trip between them, so presses two, three and four would
+      // each see `held` as it was before press one and write nothing — losing
+      // the early touch on exactly the input this field exists to record. The
+      // ref alone is wrong too: it does not survive a reload or a rejoin, and
+      // it is empty on a device that has just picked the room back up.
+      //
+      // So: whichever is earlier, and the ref is written synchronously below
+      // so the next press in a burst can see it.
+      const questionKey = `${room.gameId ?? ''}:${room.index}`;
+      const remembered =
+        firstTouchRef.current?.key === questionKey ? firstTouchRef.current.ms : undefined;
+      const knownFirst = [remembered, held && firstTouchOf(held)].filter(
+        (ms): ms is number => ms !== undefined,
+      );
+      const earliest = knownFirst.length > 0 ? Math.min(...knownFirst) : undefined;
+
+      // Absent until a pick is actually changed, which keeps a first answer
+      // byte-for-byte what it was before this field existed — the same argument
+      // the stake makes above, and the same narrow blast radius if this ever
+      // ships ahead of the ruleset paste.
+      const first = carryFirstMs(earliest, elapsedMs);
+
+      firstTouchRef.current = { key: questionKey, ms: Math.min(earliest ?? elapsedMs, elapsedMs) };
+
       const answer: AnswerDoc = {
         optionIndex,
         elapsedMs,
         questionIndex: room.index,
+        ...first,
         ...staked,
       };
       await setDoc(doc(answersCollection(code), uid), answer);

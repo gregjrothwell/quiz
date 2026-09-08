@@ -16,6 +16,15 @@ and including 20 August moved *verbatim* to
 old entry to make it fit is the thing the paragraph above forbids. Every one of
 them is still listed below by date, so the chronology reads end to end from here.
 
+## 2026-09-08 — `firstMs`: show the snap guess rather than ban it
+
+Greg turned down both restriction shapes on cost and chose exposure. The answer
+document carries when a pick was first committed; the reveal marks anything
+under a second. Nothing is scored, so no honest player can lose to it. The
+document alone was not enough — four presses in 200ms do not round-trip, so a
+synchronous ref backs it. Rules paste **before** deploy. 675 tests, drift test
+forced red and back. [`first-touch.md`](decisions/first-touch.md).
+
 ## 2026-09-08 — Spamming A–D at question start is a free lottery ticket
 
 Not fast fingers: a pick can be changed, so a lucky 50ms guess wins the rank

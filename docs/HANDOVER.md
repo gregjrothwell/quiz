@@ -45,11 +45,17 @@ hook says so if this one grows.
 | picture, music, jigsaw or steal rounds, and **negative points** | [`decisions/round-types.md`](decisions/round-types.md) |
 | why the melody round played badly, before changing it | [`decisions/melody-round.md`](decisions/melody-round.md) |
 | whether an answer can be changed, and the spam exploit | [`decisions/answer-spam.md`](decisions/answer-spam.md) |
+| `firstMs`, and what the reveal says about a snap guess | [`decisions/first-touch.md`](decisions/first-touch.md) |
 | whether an idea was already turned down | [`decisions/scope.md`](decisions/scope.md) |
 | upgrading anything in `package.json` | [`decisions/dependencies.md`](decisions/dependencies.md) |
 | the studio set, or any lighting cue | [`decisions/lighting.md`](decisions/lighting.md) |
 
 ## State as of 8 September 2026
+
+**On `answer-first-touch`, not live:** `firstMs` on the answer document — the
+reveal marks a pick committed under a second, and **the ruleset must be pasted
+before this deploys** or every change of mind in the room is refused.
+[`first-touch.md`](decisions/first-touch.md). 675 tests.
 
 **Live** (bundle `index-CIOq186A`): chair, take-stock, steal (opt-in, unplayed),
 mute, lobby squad picker, negatives paste (`check-rules` 52/52). Squads, vault,

@@ -118,6 +118,24 @@ export interface Answer {
    */
   elapsedMs: number;
   /**
+   * When this player *first* touched a lectern on this question, in the same
+   * units and from the same clock as {@link elapsedMs}.
+   *
+   * **Present only once an answer has been changed.** While a pick stands
+   * unaltered the first touch and the last are the same moment, so writing it
+   * would be writing `elapsedMs` twice — and leaving it off keeps the first
+   * write of every answer byte-identical to every round before this existed,
+   * which is the argument {@link wager} makes for the same reason.
+   *
+   * Read it through `firstTouchOf`, never directly, so absent reads as "the
+   * pick that stands is the only one there ever was".
+   *
+   * It is deliberately **not** scored. Rank still comes from `elapsedMs` alone
+   * — see docs/decisions/answer-spam.md for why exposing a snap guess is the
+   * job here and penalising one is not.
+   */
+  firstMs?: number;
+  /**
    * The share of their own points the player put on this question, 0-100.
    *
    * Rides the answer document rather than a write of its own, which is why the
