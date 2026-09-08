@@ -76,9 +76,11 @@ about: it is a display decision, so no honest player can lose a point to it.
   fires repeatedly. Harmless here — every press after the first is deduped by
   `submitAnswer`, and the first touch is recorded either way — but it is
   hygiene, and it is not done.
-- **A crafted client can lie about `firstMs`**, exactly as it can about
-  `elapsedMs`. Neither is checkable server-side and neither is scored, so this
-  buys a liar nothing; it is not a new threat class.
+- **A crafted client can lie about `firstMs`.** `elapsedMs` now has an arrival
+  floor ([`answer-window.md`](answer-window.md)); `firstMs` does not, because
+  flooring it would refuse an honest change of mind after grace — which is
+  making picks final, which was turned down. Neither is scored, so a tiny
+  `firstMs` on a late change buys a liar nothing on the board.
 - **The wager is untouched.** The stake still rides the answer and can still be
   moved after answering, because nothing here makes an answer final.
 - **It is a deterrent, not a rule.** The arithmetic in this file is unchanged

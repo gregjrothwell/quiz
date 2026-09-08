@@ -1,6 +1,6 @@
 # The configurable answer window
 
-> **Owner: Greg Rothwell. Last updated: 20 August 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 8 September 2026. Budget: 250 lines.**
 
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
@@ -131,4 +131,58 @@ answer".
 
 So: publish `firestore.rules`, run `npm run check-rules`, then `npm run deploy`.
 
----
+## Bound `elapsedMs` against arrival — 8 September 2026
+
+**Built, not live.** The answers write now floors the claimed time:
+
+```
+elapsedMs >= (request.time - openedAt) - 8000
+```
+
+You cannot claim to have answered much faster than the write landed. Rank
+scoring made a fake `elapsedMs` worth 100; this is the companion
+[`ideas-review.md`](ideas-review.md) §5 costed. Picks are not made final —
+a change of mind still restamps, and the restamp has to pass the same floor,
+which is what stops a crafted client keeping 3ms while revising at leisure.
+
+**The grace is eight seconds, not three.** Three was the example in the ideas
+review and would have refused the player the shared clock was built for.
+
+| What was measured | Spread |
+|---|---|
+| `sync-harness 10`, same machine (best case) | host +6–8ms, others +56–86ms; 8 September live: all ten inside **71ms** |
+| Office network, 17 August | **five seconds** for one player |
+| Named flaky write in §5 | answer at 100ms, write lands **four seconds** later |
+
+Eight covers the five-second office delay with three seconds of write delay
+left, and the four-second write with four seconds left. It is still under
+nine, so "claimed 3ms at nine seconds" is refused. A stacked 5s-late clock
+*and* 4s-late write of a 100ms claim would be refused too — after the shared
+clock that player reports ~5s, not 100ms.
+
+Within the grace a fake still works. That is the honest trade: catching the
+impossible claim without taking answers off a slow network.
+
+**`firstMs` does not take this floor.** It is the first touch, not this write.
+Flooring it would refuse an honest change at 12s that first landed at 50ms,
+which is making picks final — turned down in [`answer-spam.md`](answer-spam.md).
+It still cannot be later than `elapsedMs`. The display lie (tiny `firstMs` on
+a late change) is unscored.
+
+**Cost:** one `get()` on the room per answer *write*, ~90 reads a game. The
+**read** rule still has no `get()`; that reasoning is about listeners.
+
+### Paste, then `check-rules`, then you are done
+
+The client already writes device-measured `elapsedMs`. There is no bundle to
+deploy for this to take effect. **Greg pastes `firestore.rules`; nothing else
+pastes.** Then `npm run check-rules`:
+
+- `write an answer whose elapsedMs matches when it landed` must **PASS**
+  (answering still works).
+- `claim to have answered 3ms at nine seconds` FAILs until the paste (the
+  write is still allowed) and flips to **PASS** after — that FAIL is the proof
+  it has not happened. Other deny cases can pass vacuously; this one cannot,
+  because the answers path already exists.
+
+Then deploy if anything else is waiting; this change does not need it.

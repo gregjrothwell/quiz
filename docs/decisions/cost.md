@@ -1,6 +1,6 @@
 # What it costs
 
-> **Owner: Greg Rothwell. Last updated: 20 August 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 8 September 2026. Budget: 250 lines.**
 
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
@@ -116,6 +116,13 @@ have put a second `Q·N²` term next to the answers, roughly doubling the read
 cost of a game to show a tally nobody asked for. Nothing in the app ever reads
 it back; the fold runs on the Admin SDK, out of band.
 [`question-votes.md`](question-votes.md) has the rest.
+
+### What bounding `elapsedMs` added
+
+**One rule `get()` per answer write, and none on the read** — ~90 extra reads a
+game at six players, against 50,000 a day. The read rule is the listener path
+(the Q·N² term); a write is one evaluation. Built 8 September 2026, not live
+until the answers block is pasted. [`answer-window.md`](answer-window.md).
 
 ### What the season work actually added
 

@@ -1,6 +1,6 @@
 # The answer vault
 
-> **Owner: Greg Rothwell. Last updated: 20 August 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 8 September 2026. Budget: 250 lines.**
 
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
@@ -150,8 +150,9 @@ Be precise about this, because it is easy to oversell:
   quicker about it. Closing this needs the future question ids withheld until
   each one opens, which costs the quizmaster role its ability to change hands
   mid-round — a worse trade than the hole. Written down rather than fixed.
-- **Self-reported `elapsedMs`.** Unchanged. Someone can still claim they
-  answered in three milliseconds.
+- **Self-reported `elapsedMs`.** Bounded 8 September 2026 against arrival, 8s
+  grace — a claim of 3ms at nine seconds is refused. A claim inside the grace
+  is still a lie the rules cannot see. [`answer-window.md`](answer-window.md).
 
 What it *does* kill is the ten-second cheat: open DevTools, read `correctIndex`
 off the room snapshot, or fetch `packs/music.json` and search for the prompt.

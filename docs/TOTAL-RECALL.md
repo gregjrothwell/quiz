@@ -34,6 +34,17 @@ re-run on the 8th against the files as they actually are, not inherited from the
 September entries (the CDN, the mute button, the steal) went to
 [`recall/2026-09.md`](recall/2026-09.md), whole, links repointed.
 
+## 2026-09-08 — Bound `elapsedMs` against arrival (branch `bound-elapsed-ms`)
+
+**Built, not live — Greg pastes the answers block.** The write's arrival is a
+lower bound: `elapsedMs >= (request.time - openedAt) - 8000`. Grace is eight
+seconds, not three: harness spread is tens of milliseconds, the 17 August
+office delay was five, the named flaky write is four. `firstMs` does not take
+the floor (that would lock the first pick). One `get()` on the write, none on
+the read. `check-rules` adds an allow that must stay PASS and a 3ms-at-nine-
+seconds deny that FAILs until the paste. No client change, so paste then
+`check-rules` is the whole ship. [`answer-window.md`](decisions/answer-window.md).
+
 ## 2026-09-08 — Live: the round is kept, and the tune can be heard again (`index-BDZpMBAG`)
 
 Greg pasted the `games` block; `check-rules` **65/65**, the allow case flipped.

@@ -1,6 +1,6 @@
 # Known limits
 
-> **Owner: Greg Rothwell. Last updated: 4 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 8 September 2026. Budget: 250 lines.**
 
 Split out of [`state-of-play.md`](state-of-play.md) on 28 August 2026, when that
 file reached 252 lines against a 250 budget. The text is unchanged apart from one
@@ -18,8 +18,9 @@ behaviour is a bug.
   the internet, which is why `list` is no longer granted.
 - **Cheating now takes a script rather than a console.** The answers left the
   packs and the room document — see [the vault](vault.md#turning-the-vault-on) for what
-  that does and does not buy. `elapsedMs` is still self-reported, so a
-  fast-but-wrong answer is honest and a slow-but-claimed-instant one is not.
+  that does and does not buy. `elapsedMs` is still self-reported *within an
+  eight-second grace of arrival*; a claim of 3ms at nine seconds is refused as
+  of the `bound-elapsed-ms` paste. A fast-but-wrong answer is still honest.
 - **~262 kB gzipped across two chunks** — 114 kB of app and 148 kB of Firebase —
   plus 67 kB of fonts. **The split is about the deploy, not the download.** As
   one file, every deploy changed the bundle's hash, so a returning player

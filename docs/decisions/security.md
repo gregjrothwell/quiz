@@ -1,6 +1,6 @@
 # Security
 
-> **Owner: Greg Rothwell. Last updated: 20 August 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 8 September 2026. Budget: 250 lines.**
 
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
@@ -160,6 +160,12 @@ and `check-rules` confirmed the semantics, which between them cover it.
   the rules was considered again and rejected for the same reason as before: it
   costs a document read per answer and would silently reject honest answers
   from anyone on a slow connection, which is worse than the cheat.
+
+  > **Correction, 8 September 2026.** The rejection above stood until rank
+  > scoring made a fake worth 100 and `sync-harness` measured the spread.
+  > Built on `bound-elapsed-ms`: 8s grace, one `get()` on the write, none on
+  > the read. Not live until pasted.
+  > [`answer-window.md`](answer-window.md).
 - **Any member can still rewrite the phase, scores, questions and other players.**
   It follows directly from the quizmaster being derived rather than stored, and
   the reasoning for that is in the table near the top. `wellFormed` now keeps the

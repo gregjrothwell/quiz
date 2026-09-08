@@ -54,7 +54,7 @@ docs/recall/          Archived spine entries, by month. Verbatim, no budget
 
 - No `any`, no `@ts-ignore`, no `@ts-expect-error`.
 - Quizmaster is derived (`resolveQuizmaster`), never stored.
-- Answers live in a subcollection. `elapsedMs` is measured on the answering device, not a wall-clock timestamp.
+- Answers live in a subcollection. `elapsedMs` is measured on the answering device, not a wall-clock timestamp. The rules floor it against the write's arrival (8s grace).
 - A phase transition never writes the `players` map. Membership changes are `players.{uid}` only.
 - **Published packs are sealed: no file in `public/packs/` may contain an answer.**
   They are static files on GitHub Pages, so anything in one is readable by

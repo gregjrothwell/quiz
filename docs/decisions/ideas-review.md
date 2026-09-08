@@ -1,6 +1,6 @@
 # The ideas review
 
-> **Owner: Greg Rothwell. Last updated: 4 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 8 September 2026. Budget: 250 lines.**
 
 Written after the office's first real round on the season work: what to do next, why, and what
 each costs against the Spark free tier.
@@ -97,27 +97,16 @@ used to phase against each other, which a melody would make audible in a way a t
 That was "it wants the shared clock first"; the shared clock shipped on 28 August, so this is
 now unblocked and is the cheapest genuinely *new* thing on the list.
 
-### 5. Bound `elapsedMs` server-side
+### 5. Bound `elapsedMs` server-side — **built 8 September 2026, paste outstanding**
 
-`firestore.rules:291` says elapsed time "cannot be checked here". **Not quite true.** The
-write's arrival is a server-provable lower bound on real elapsed time:
+The write's arrival is a lower bound: `elapsedMs >= (request.time - openedAt) - grace`.
+Grace is **eight seconds** (harness tens of ms; 17 August office five seconds;
+named flaky write four). Three would have refused the player the shared clock
+was built for. [`answer-window.md`](answer-window.md).
 
-```
-elapsedMs >= (request.time - openedAt) - grace
-```
-
-You cannot claim to have answered much faster than your write actually landed. With a
-three-second grace it kills "claimed 3ms at the nine-second mark" and leaves honest slow
-networks alone.
-
-**Cost:** one rule `get()` on the room per answer write — ~90 reads a game against 50,000.
-The answers rule avoids a `get()` today, but that reasoning is about the *read* rule, which is
-evaluated per snapshot per listener; a write rule is one `get()` per write.
-
-**The honest risk, and why this is not automatic:** a flaky client answers at 100ms, its
-write lands four seconds later, and is refused — worse than the cheat it prevents. The grace
-must be generous, and it must be measured against `sync-harness` first, which is the only
-tool reporting the delivery spread it depends on.
+**Cost:** one `get()` per answer write (~90/game); none on the read. `firstMs`
+does not take the floor. **Greg pastes; then `check-rules`.** The 3ms-at-nine-
+seconds deny FAILs until the paste. No client to deploy.
 
 ### 6. Let the office rate its own questions — **half shipped 28 August 2026**
 
@@ -232,8 +221,8 @@ seen by more than one person at once.
 4. ~~**Live squad scoring** (§2)~~ — **built 28 August**, waiting on its paste.
 5. **`stats/{questionId}` writes** (§6) — start collecting now; it is worthless until it has a
    season behind it, which is an argument for doing it early rather than late.
-6. **Bound `elapsedMs` server-side** (§5) — promoted by rank scoring, which took the value of a
-   faked time from ~5 points to 100. Wants `sync-harness` numbers first, and now has them.
+6. ~~**Bound `elapsedMs` server-side** (§5)~~ — **built 8 September 2026**, waiting
+   on its paste. Eight-second grace. [`answer-window.md`](answer-window.md).
 7. **A melody round** (§4) — unblocked by the shared clock, and the cheapest genuinely new
    thing here.
 

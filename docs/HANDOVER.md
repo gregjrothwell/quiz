@@ -21,7 +21,7 @@ hook says so if this one grows.
 | repeats, the question history, why a level was withdrawn | [`decisions/repeats.md`](decisions/repeats.md) |
 | staking points on the last question | [`decisions/wager.md`](decisions/wager.md) |
 | the vault, reveals, answer secrecy, **when a client may ask** | [`decisions/vault.md`](decisions/vault.md) |
-| the answer window or its rules | [`decisions/answer-window.md`](decisions/answer-window.md) |
+| the answer window, its rules, or the elapsedMs arrival floor | [`decisions/answer-window.md`](decisions/answer-window.md) |
 | the season table, squads, weekly boards, `recordGame`, anything called `team` | [`decisions/season.md`](decisions/season.md) |
 | squads **during** the round | [`decisions/live-squads.md`](decisions/live-squads.md) |
 | the opening titles, honours, rosettes | [`decisions/form-and-awards.md`](decisions/form-and-awards.md) |
@@ -112,6 +112,10 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
    behaviour in the next round: [`decisions/first-touch.md`](decisions/first-touch.md).
 8. **Nothing has been kept yet.** The block is pasted and live; the first record
    lands when a round reaches `finished` on `index-BDZpMBAG`. `read-games` shows it.
+9. **Bound `elapsedMs` is built, not live** — branch `bound-elapsed-ms`. Greg
+   pastes the answers block, then `check-rules` (the 3ms-at-nine-seconds deny
+   FAILs until that paste), then done — no client to deploy.
+   [`answer-window.md`](decisions/answer-window.md).
 
 ## Where things are
 
@@ -125,10 +129,8 @@ docs/decisions/ One subsystem each. Reached from the table above.
 ```
 
 Commands: `dev` (port 5273), `test`, `typecheck`, `lint`, `build`, `deploy`,
-`fetch-questions [-- --resort]`, `fetch-otqa`, `seed-vault`, `check-rules`,
-`sync-harness [n]`, `host-room [-- secs]`, `reveal-probe`, `asked-probe`,
-`take-stock`, `prune-rooms [-- --probe-rows --go]`, `fold-votes [-- --go]`,
-`write-hand-packs`, `read-games [-- --last n | --game id | --pack id]`.
+`check-rules`, `sync-harness [n]`, `host-room`, `reveal-probe`, `take-stock`,
+`prune-rooms`, `fold-votes`, `seed-vault`, `read-games`.
 
 `npm test` covers `src/` plus the pure parts of `scripts/`. Anything touching the
 network or the live project stays out deliberately; it must keep running offline.
@@ -142,9 +144,7 @@ sync — the two things that have actually broken in play.
 A solo round in the browser does more than it sounds: it proved `recordGame`
 against the live project on 19 August, repeat-write guard and all.
 
-Two things that have bitten more than once, both with their own file: **the rules
-are published by hand**, so the repo copy is not what Firebase is running
-([`decisions/security.md`](decisions/security.md)); and **the answer window lives
-in `firestore.rules` as well as the client**, where two of the three rules exist
-to close holes that are not obvious from the client side
+Two things that have bitten more than once: **rules are published by hand**
+([`decisions/security.md`](decisions/security.md)), and **the answer window —
+and now the elapsedMs floor — live in `firestore.rules` as well as the client**
 ([`decisions/answer-window.md`](decisions/answer-window.md)).

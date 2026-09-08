@@ -139,16 +139,19 @@ describe('the replay marks a snap pick', () => {
  */
 describe('firstMs agrees with the security rules', () => {
   const RULES = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8');
+  const start = RULES.indexOf('match /answers/{uid}');
+  const end = RULES.indexOf('match /reveal/{questionId}');
+  const answersBlock = RULES.slice(start, end);
 
   it('is in the answer document hasOnly list', () => {
-    const hasOnly = /answers[\s\S]*?hasOnly\(\[([^\]]*)\]\)/.exec(RULES)?.[1];
+    const hasOnly = /hasOnly\(\[([^\]]*)\]\)/.exec(answersBlock)?.[1];
     expect(hasOnly).toBeDefined();
     expect(hasOnly).toContain("'firstMs'");
   });
 
   it('is bounded the same way elapsedMs is, since it is the same clock', () => {
-    const ceiling = /request\.resource\.data\.firstMs <= (\d+)/.exec(RULES)?.[1];
-    const elapsedCeiling = /request\.resource\.data\.elapsedMs <= (\d+)/.exec(RULES)?.[1];
+    const ceiling = /request\.resource\.data\.firstMs <= (\d+)/.exec(answersBlock)?.[1];
+    const elapsedCeiling = /request\.resource\.data\.elapsedMs <= (\d+)/.exec(answersBlock)?.[1];
     expect(ceiling).toBeDefined();
     expect(ceiling).toBe(elapsedCeiling);
   });
@@ -157,7 +160,57 @@ describe('firstMs agrees with the security rules', () => {
     // The deploy-order argument in one assertion. The rules must accept a
     // document with no `firstMs` at all, or publishing them refuses every
     // answer written by the bundle that is live at the time.
-    expect(RULES).toMatch(/!\('firstMs' in request\.resource\.data\.keys\(\)\)/);
+    expect(answersBlock).toMatch(/!\('firstMs' in request\.resource\.data\.keys\(\)\)/);
+  });
+
+  it('cannot claim a first touch later than the stamp that stands', () => {
+    expect(answersBlock).toMatch(/firstMs <= request\.resource\.data\.elapsedMs/);
+  });
+});
+
+/**
+ * The arrival floor on `elapsedMs`. Same reason as the block above: the
+ * ruleset is pasted by hand, so a missing `get()`, a `get()` on the read
+ * rule, or a grace that drifted from the number defended in answer-window.md
+ * would otherwise ship silently.
+ */
+describe('the elapsedMs arrival floor agrees with the security rules', () => {
+  const RULES = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8');
+  const start = RULES.indexOf('match /answers/{uid}');
+  const end = RULES.indexOf('match /reveal/{questionId}');
+  const answersBlock = RULES.slice(start, end);
+
+  it('the answers block is where the floor lives', () => {
+    expect(start).toBeGreaterThan(-1);
+    expect(end).toBeGreaterThan(start);
+    expect(answersBlock).toContain('function arrivalOk()');
+    expect(answersBlock).toContain('function elapsedGraceMs()');
+  });
+
+  it('the answers read rule does not get the room', () => {
+    const read = /allow read: if ([^;]+);/.exec(answersBlock)?.[1];
+    expect(read).toBe('signedIn()');
+  });
+
+  it('the answers write rule gets the room once, for the arrival floor', () => {
+    expect(answersBlock).toMatch(
+      /get\(\/databases\/\$\(database\)\/documents\/rooms\/\$\(code\)\)/,
+    );
+    expect(answersBlock).toMatch(/&& arrivalOk\(\);/);
+  });
+
+  it('the grace is eight seconds, as defended in answer-window.md', () => {
+    const grace = /function elapsedGraceMs\(\) \{ return (\d+); \}/.exec(answersBlock)?.[1];
+    expect(Number(grace)).toBe(8000);
+    expect(Number(grace)).toBeGreaterThan(5000);
+    expect(Number(grace)).toBeLessThan(9000);
+  });
+
+  it('the floor binds elapsedMs only, never firstMs', () => {
+    expect(answersBlock).toMatch(
+      /request\.resource\.data\.elapsedMs\s*>=\s*request\.time\.toMillis\(\)/,
+    );
+    expect(answersBlock).not.toMatch(/firstMs\s*>=\s*request\.time/);
   });
 });
 

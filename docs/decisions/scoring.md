@@ -1,6 +1,6 @@
 # Scoring
 
-> **Owner: Greg Rothwell. Last updated: 4 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 8 September 2026. Budget: 250 lines.**
 
 **Status: built 20 August 2026.** Decision recorded in
 [`ideas-review.md`](ideas-review.md#1-rank-based-scoring--chosen) and the
@@ -129,7 +129,8 @@ makes the existing hole worth exploiting for the first time.
 The companion change is costed in
 [`ideas-review.md`](ideas-review.md#5-bound-elapsedms-server-side): a server-provable lower
 bound, `elapsedMs >= (request.time - openedAt) - grace`, for one rule `get()` per answer
-write. **Not part of this story**, but it should not stay unbuilt for long afterwards.
+write. **Built 8 September 2026** on `bound-elapsed-ms`, paste outstanding —
+[`answer-window.md`](answer-window.md).
 
 ## The tests, written first
 
