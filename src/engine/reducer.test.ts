@@ -356,6 +356,38 @@ describe('the answer window', () => {
     expect(result.answers['guest']?.elapsedMs).toBe(25_000);
   });
 
+  test('carries the first touch across a change of mind', () => {
+    // #given a player who commits at 50ms, before anybody could have read it
+    const room = briskRoom(10);
+    const guessed = reduce(room, { type: 'answer', uid: 'guest', optionIndex: 1, elapsedMs: 50 });
+
+    // #then nothing is written yet — an unchanged pick is its own first touch,
+    // and the answer stays the exact shape it was before this field existed
+    expect(guessed.answers['guest']).toEqual({ optionIndex: 1, elapsedMs: 50 });
+
+    // #when they read the question and move to a different lectern
+    const revised = reduce(guessed, {
+      type: 'answer',
+      uid: 'guest',
+      optionIndex: 2,
+      elapsedMs: 4_000,
+    });
+
+    // #then the moment they first committed survives the change, which is the
+    // only thing that separates a snap guess from an honest answer at 4s
+    expect(revised.answers['guest']).toEqual({ optionIndex: 2, elapsedMs: 4_000, firstMs: 50 });
+
+    // #and a third pick keeps the original 50ms rather than the 4,000ms it
+    // replaces — the earliest touch, not the previous one
+    const again = reduce(revised, {
+      type: 'answer',
+      uid: 'guest',
+      optionIndex: 3,
+      elapsedMs: 6_000,
+    });
+    expect(again.answers['guest']?.firstMs).toBe(50);
+  });
+
   test('rejects an answer past a shortened window', () => {
     // #given a ten-second round
     const room = briskRoom(10);

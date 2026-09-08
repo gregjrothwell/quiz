@@ -1711,6 +1711,25 @@ select.input option {
   color: var(--ink-dim);
 }
 
+/*
+ * A pick committed before anybody could have read the question.
+ *
+ * Deliberately the `wrong` colour rather than a colour of its own. It is not a
+ * seventh tile state and it is not a verdict on the answer — it is the same
+ * "look at this" the room already reads as trouble, on the one number that
+ * carries the claim. The chip still shows what happened and nothing else; the
+ * wording is left to the office.
+ *
+ * Beats `.tile__pick--you i` below by specificity so your own snap is marked
+ * too. Marking everybody else's and quietly not your own would be the one
+ * version of this worth nobody's trust.
+ */
+.tile__pick .tile__snap,
+.tile__pick--you .tile__snap {
+  color: var(--wrong);
+  font-weight: 700;
+}
+
 /* Your own chip, so you can find yourself without reading every name. */
 .tile__pick--you {
   border-color: var(--amber);

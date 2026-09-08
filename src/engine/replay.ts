@@ -1,3 +1,4 @@
+import { firstTouchOf, TOO_FAST_TO_READ_MS } from './answers';
 import type { Answer } from './state';
 
 /**
@@ -12,6 +13,15 @@ export interface Arrival {
   optionIndex: number;
   elapsedMs: number;
   atMs: number;
+  /**
+   * When this player first touched a lectern, and whether that was sooner than
+   * anybody could have read the question.
+   *
+   * Carried on the arrival rather than looked up at render, so the replay stays
+   * a pure function of the answers — the same reason `elapsedMs` is here.
+   */
+  firstMs: number;
+  snap: boolean;
 }
 
 export interface ReplayShape {
@@ -66,6 +76,12 @@ export function replayTimeline(
     optionIndex: answer.optionIndex,
     elapsedMs: answer.elapsedMs,
     atMs: shape.leadMs + ((answer.elapsedMs - earliest) / divisor) * shape.spreadMs,
+    // Both cases the exploit has, in one reading: a snap guess that was kept
+    // shows up here because its `elapsedMs` is the early one, and a snap guess
+    // that was revised shows up because `firstMs` is. Neither moves `atMs` —
+    // the replay still tells the story of when answers actually landed.
+    firstMs: firstTouchOf(answer),
+    snap: firstTouchOf(answer) < TOO_FAST_TO_READ_MS,
   }));
 }
 

@@ -393,6 +393,43 @@ function buildChecks(probes: Probes): Check[] {
         }),
     },
     {
+      label: 'Firestore   · record when you first touched a lectern',
+      expect: 'allow',
+      hint: 'firestore.rules has not taken `firstMs` into the answers hasOnly '
+        + 'list — the whole answer write is refused, so nobody can change their '
+        + 'mind about anything and the round stops dead on the second press',
+      run: async () => {
+        const reference = doc(db, 'rooms', 'ZZZZ', 'answers', uid);
+        await setDoc(reference, { optionIndex: 0, elapsedMs: 4000, questionIndex: 0, firstMs: 50 });
+        // Swept rather than left, for the reason the vote case gives.
+        return deleteDoc(reference);
+      },
+    },
+    {
+      label: 'Firestore   · claim a first touch longer than the round',
+      expect: 'deny',
+      hint: 'firestore.rules is missing the upper bound on `firstMs`',
+      run: () =>
+        setDoc(doc(db, 'rooms', 'ZZZZ', 'answers', uid), {
+          optionIndex: 0,
+          elapsedMs: 10,
+          questionIndex: 0,
+          firstMs: 600001,
+        }),
+    },
+    {
+      label: 'Firestore   · a first touch that is not a number',
+      expect: 'deny',
+      hint: 'firestore.rules is missing the `is int` check on `firstMs`',
+      run: () =>
+        setDoc(doc(db, 'rooms', 'ZZZZ', 'answers', uid), {
+          optionIndex: 0,
+          elapsedMs: 10,
+          questionIndex: 0,
+          firstMs: 'ages ago',
+        }),
+    },
+    {
       label: "Firestore   · write another player's answer",
       expect: 'deny',
       hint: 'firestore.rules lets one player overwrite another player’s answer',

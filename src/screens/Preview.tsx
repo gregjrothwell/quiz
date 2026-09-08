@@ -460,6 +460,43 @@ export function Preview() {
     },
     {
       /*
+        Both halves of a snap guess in one screen, because they look completely
+        different on the document and identical in the room.
+
+        Sam committed at 60ms and it happened to be right — nothing on the
+        answer says so except `elapsedMs` itself, which was already on the chip.
+        Alex committed at 80ms, read the question, and moved at 5.2s: without
+        `firstMs` that answer is indistinguishable from an honest one, and it is
+        the three-quarters case the whole field exists for.
+
+        Greg and Priya are the control. Nothing about their chips changes.
+      */
+      title: 'Reveal · somebody guessed at the gun',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'reveal',
+            answers: {
+              sam: { optionIndex: 0, elapsedMs: 60 },
+              greg: { optionIndex: 2, elapsedMs: 4_100 },
+              alex: { optionIndex: 3, elapsedMs: 5_200, firstMs: 80 },
+              priya: { optionIndex: 0, elapsedMs: 8_900 },
+            },
+            lastDeltas: { sam: 1_000, greg: 0, alex: 0, priya: 900 },
+          })}
+          youUid="greg"
+          isQuizmaster
+          clock={CLOCK}
+          revealed
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      /*
         The same moment as the reveal above, from the other side of the room.
         The gallery had every other quizmaster/player pair and not this one,
         which is how the desk came to be empty here for everybody but the

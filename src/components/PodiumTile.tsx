@@ -14,6 +14,17 @@ export interface TileArrival {
   name: string;
   elapsedMs: number;
   isYou: boolean;
+  /**
+   * When they first touched a lectern, and whether that was sooner than the
+   * question could have been read.
+   *
+   * Only ever *shown* when `snap` is true. An ordinary change of mind is
+   * nobody's business and stays invisible: putting "3.0s → 7.0s" over every
+   * player who reconsidered would turn a marker aimed at one behaviour into
+   * surveillance of a normal one.
+   */
+  firstMs: number;
+  snap: boolean;
 }
 
 interface PodiumTileProps {
@@ -87,6 +98,9 @@ export function PodiumTile({
   arrivals = [],
 }: PodiumTileProps) {
   const letter = LETTERS[index] ?? '?';
+  // Named for the screen reader, since the chips themselves are aria-hidden and
+  // the marker would otherwise exist only for people who can see it.
+  const snappers = arrivals.filter((arrival) => arrival.snap).map((arrival) => arrival.name);
 
   return (
     <button
@@ -111,6 +125,9 @@ export function PodiumTile({
           */}
           <span className="sr-only">
             Picked by {sentence(arrivals.map((arrival) => arrival.name))}
+            {snappers.length > 0
+              ? `. ${sentence(snappers)} committed before the question could be read.`
+              : null}
           </span>
           {arrivals.map((arrival) => (
             <span
@@ -119,7 +136,12 @@ export function PodiumTile({
               aria-hidden="true"
             >
               {arrival.name}
-              <i>{seconds(arrival.elapsedMs)}</i>
+              <i className={arrival.snap ? 'tile__snap' : undefined}>
+                {arrival.snap && arrival.firstMs < arrival.elapsedMs
+                  ? `${seconds(arrival.firstMs)} → `
+                  : null}
+                {seconds(arrival.elapsedMs)}
+              </i>
             </span>
           ))}
         </span>

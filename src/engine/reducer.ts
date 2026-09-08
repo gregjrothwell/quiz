@@ -1,5 +1,6 @@
 import type { PackId } from '../questions/types';
 import type { FormFact } from './form';
+import { carryFirstMs, firstTouchOf } from './answers';
 import { stealFor, tallyQuestion } from './scoring';
 import {
   currentQuestion,
@@ -246,9 +247,17 @@ function answer(
   // render one that will not be paid.
   const staked = isWagerQuestion(state) && wager !== undefined ? { wager } : {};
 
+  // Carried from whatever pick this replaces, so changing your mind leaves the
+  // moment you first committed on the document. It is shown at the reveal and
+  // scored nowhere — see docs/decisions/answer-spam.md.
+  // No staleness to reconcile here the way `useRoom` has to: the reducer's
+  // state is its own and is always current.
+  const holdingAnswer = state.answers[uid];
+  const first = carryFirstMs(holdingAnswer && firstTouchOf(holdingAnswer), elapsedMs);
+
   return {
     ...state,
-    answers: { ...state.answers, [uid]: { optionIndex, elapsedMs, ...staked } },
+    answers: { ...state.answers, [uid]: { optionIndex, elapsedMs, ...first, ...staked } },
   };
 }
 

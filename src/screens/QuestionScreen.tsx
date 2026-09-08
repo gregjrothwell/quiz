@@ -342,6 +342,8 @@ export function QuestionScreen({
         name: room.players[arrival.uid]?.name ?? 'Someone',
         elapsedMs: arrival.elapsedMs,
         isYou: arrival.uid === youUid,
+        firstMs: arrival.firstMs,
+        snap: arrival.snap,
       }));
 
   const tiles = question.options.map((option, index) => (
