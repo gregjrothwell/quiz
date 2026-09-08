@@ -54,12 +54,12 @@ in [`recall/`](recall/)), and the hook says so if this one grows.
 
 ## State as of 8 September 2026
 
-**Not yet deployed, and it is the first thing to ship:** the App Check debug
-token was inlined into every bundle from 15 August and served publicly for 24
-days. Gated, guarded twice, revoked — [`build-secrets.md`](decisions/build-secrets.md).
-**Until that deploy lands, App Check is bypassable on Firestore, the RTDB and auth.**
+**Deployed 8 September as `index-BHU2ry6N`:** the App Check debug token had been
+inlined into every bundle since 15 August. It is out of the live build — old
+bundle now 404s — and guarded twice. **Still to do: revoke and remint it in the
+console.** [`build-secrets.md`](decisions/build-secrets.md).
 
-**Live** (bundle `index-BDZpMBAG`, 8 September 19:48): the round is **kept**
+**Live** (bundle `index-BHU2ry6N`, 8 September): the round is **kept**
 ([`game-record.md`](decisions/game-record.md)); **Hear it again** on melody
 questions ([`melody-round.md`](decisions/melody-round.md)); `firstMs` and the
 pack picker. Rules pasted, `check-rules` **65/65**, merged, deployed,

@@ -63,6 +63,38 @@ are different checks, and passing the first says nothing about the second.
   rewriting it would be a force-push against the never-rewrite rule, to remove a
   string that no longer opens anything.
 
+## Deployed 8 September 2026 — `index-BHU2ry6N`
+
+**Deployed before revoking, deliberately.** The live bundle set
+`globalThis.FIREBASE_APPCHECK_DEBUG_TOKEN` for every visitor, and Google's docs
+are **silent** on whether the SDK then prefers the debug token over the
+configured reCAPTCHA provider — fetched and checked rather than assumed. If it
+does, revoking first would have taken the site down. Deploying first removes the
+token from the bundle and makes the question moot.
+
+`check-bundle` ran inside `deploy` and passed before anything was published,
+which is the guard doing its job on its first real run.
+
+Verified on the live site, each check paired with a control so a silent grep
+could not pass for a clean result:
+
+| | |
+|---|---|
+| served bundle | `index-BHU2ry6N.js`, 200 |
+| debug token | **gone** |
+| API key | **present** — the control, proving the grep finds things |
+| `packs/melody.json` | 200, so the site still works |
+| old `index-BDZpMBAG.js` | **404** — not merely superseded |
+
+**The CDN lagged again**, exactly as on 4 September and earlier the same day:
+`index.html` kept naming the old bundle, and the old file kept returning 200
+with the token in it, for a few minutes after `Published`. The tell was that the
+token grep came back *present* — which is what said "you are looking at the
+stale file", not "the fix failed". Watch it every time.
+
+`gh-pages -d dist` replaces the whole tree, so the token is not in the branch at
+all rather than sitting in a superseded file.
+
 ## Proved in both directions
 
 A guard nobody has watched fail is not a guard.
