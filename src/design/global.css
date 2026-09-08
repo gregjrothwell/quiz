@@ -939,20 +939,72 @@ select.input option {
 
 /* ── Pack picker ────────────────────────────────────────────────────────── */
 
+/*
+ * Flex rather than grid, and the arithmetic is the point.
+ *
+ * `auto-fill, minmax(13rem, 1fr)` resolved to **five** columns inside
+ * `.stage__inner` — measured, 1,120px of grid at a 1,440px viewport. Twelve
+ * packs across five columns is 5 + 5 + 2, so `Name that Tune` and
+ * `Picture Round` — the two newest sets, the ones a quizmaster is most likely
+ * to be looking for — sat alone in the bottom-left corner with two-thirds of
+ * the row empty beside them.
+ *
+ * One, two, three and four all divide twelve exactly, so fixed bases at those
+ * counts fill every row at every width. `justify-content: center` is what
+ * makes it survive a thirteenth pack: the orphan centres under the rows above
+ * instead of hugging the same corner again.
+ *
+ * `flex: 0 1 <basis>` — **no growing**. A short final row keeps the tile width
+ * of the rows above it rather than stretching two tiles across the whole
+ * width, which is the other way this goes wrong. Each basis subtracts a little
+ * more than its share of the gap so sub-pixel rounding can never drop a row to
+ * one fewer tile; the few spare pixels are exactly what `center` absorbs.
+ */
 .packs {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 0.75rem;
-  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
 }
 
+/*
+ * A column, so `.pack__count` can be pushed to the floor of the tile. Grid
+ * already made every tile in a row the same height; what it did not do was put
+ * the same thing at the same height inside them, so the cyan question count
+ * rode up and down with the length of the blurb above it — 86px, 96px, 117px
+ * down three neighbouring tiles. That zigzag is the unevenness, not the tiles.
+ */
 .pack {
   position: relative;
+  display: flex;
+  flex: 0 1 100%;
+  flex-direction: column;
   text-align: left;
   background: linear-gradient(180deg, var(--panel-hi), var(--panel));
   border: 1px solid var(--edge);
   border-radius: 8px 8px 3px 3px;
   padding: 0.9rem 1rem 1rem;
   transition: border-color 140ms ease, transform 140ms ease;
+}
+
+/* Two up as soon as the title stops wrapping, then the counts that divide
+   twelve. The last two match breakpoints already in this file. */
+@media (min-width: 30rem) {
+  .pack {
+    flex-basis: calc(50% - 0.5rem);
+  }
+}
+
+@media (min-width: 44rem) {
+  .pack {
+    flex-basis: calc(33.333% - 0.6rem);
+  }
+}
+
+@media (min-width: 64rem) {
+  .pack {
+    flex-basis: calc(25% - 0.7rem);
+  }
 }
 
 .pack:hover {
@@ -985,7 +1037,13 @@ select.input option {
   margin-top: 0.15rem;
 }
 
+/* `margin-top: auto` is the whole fix for the uneven text: it pins the count to
+   the floor of the tile, so the counts line up across a row however many lines
+   the blurbs above them ran to. `padding-top` keeps a one-line blurb from
+   sitting on top of it in the shortest tile. */
 .pack__count {
+  margin-top: auto;
+  padding-top: 0.55rem;
   font-family: var(--tech);
   font-weight: 700;
   color: var(--cyan);

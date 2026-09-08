@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 4 September 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 8 September 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -15,6 +15,30 @@ and including 20 August moved *verbatim* to
 [`recall/2026-08.md`](recall/2026-08.md) — not reworded, because compressing an
 old entry to make it fit is the thing the paragraph above forbids. Every one of
 them is still listed below by date, so the chronology reads end to end from here.
+
+## 2026-09-08 — Spamming A–D at question start is a free lottery ticket
+
+Not fast fingers: a pick can be changed, so a lucky 50ms guess wins the rank
+bonus and an unlucky one is revised away at no cost. Measured against `3QDV`'s
+own 379 points per chance, that is +41% today and −34% if a pick were final.
+Proposed: one pick per question. Awaiting Greg —
+[`answer-spam.md`](decisions/answer-spam.md).
+
+## 2026-09-08 — The melody round was played, and abandoned after four
+
+Eight players, fifteen questions set, stopped at four, then they went and played
+Science instead and finished it. 8,800 points across 32 chances is 9–15 correct
+against 25% for guessing. Median clip 3.45s (20 of 70 under three), played once,
+with `stopClock()` killing the bed underneath it. Logged, not fixed —
+[`melody-round.md`](decisions/melody-round.md).
+
+## 2026-09-08 — Pack picker: five columns, twelve packs, 5 + 5 + 2
+
+`auto-fill minmax(13rem)` resolved to five columns in `.stage__inner`, stranding
+`Name that Tune` and `Picture Round` bottom-left; and nothing pinned
+`.pack__count`, so it sat at 86/96/117px down neighbouring tiles. Fixed bases of
+1/2/3/4 divide twelve exactly at every width, `margin-top: auto` for the count.
+Measured at six widths, both before and after.
 
 ## 2026-09-04 — The hand-built answers are in the public repo
 

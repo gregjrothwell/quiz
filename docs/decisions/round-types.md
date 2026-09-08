@@ -1,6 +1,6 @@
 # New round types, and what actually blocks them
 
-> **Owner: Greg Rothwell. Last updated: 4 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 8 September 2026. Budget: 250 lines.**
 
 Four ideas raised on 4 September — **stealing points, picture rounds, music
 rounds, jigsaw rounds** — costed against the database, plus the **negative
@@ -141,6 +141,7 @@ Traditional: s.12(3), s.57. Crown: s.163. Database right on 70 items: no.
 **Built 4 September.** Taste pass then PD-via-fame: 70 tunes (was 46).
 `playSequence` / `stopSequence` mute the clock bed. Lobby blocks Start while
 muted. Vaughan Williams (d. 1958) fails the test. Happy Birthday is a fixture.
+**Played 8 September; abandoned after four of fifteen** — [`melody-round.md`](melody-round.md).
 
 ## Jigsaw / scramble round — **built 4 September 2026**
 
