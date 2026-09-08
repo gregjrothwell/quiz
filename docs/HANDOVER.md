@@ -54,15 +54,15 @@ hook says so if this one grows.
 
 ## State as of 8 September 2026
 
-**Live** (bundle `index-BDZpMBAG`, 8 September 19:48): the round is **kept** —
-one `games/{gameId}` per finished game, read back by `read-games`
-([`game-record.md`](decisions/game-record.md)); **Hear it again** on melody
-questions ([`melody-round.md`](decisions/melody-round.md)); `firstMs` and the
-pack picker from earlier the same day. Rules pasted, `check-rules` **65/65**,
-merged, deployed, `sync-harness 10` 10/10 inside 71ms — in that order. All four
-unplayed with people. Also chair, take-stock, steal (opt-in, unplayed), mute,
-lobby squad picker, negatives paste; squads, vault, App Check, rank bonus, wager;
-repeats/Gentle+Fiendish withdrawn. **726 tests on master.**
+**Live** (bundle `index-Df9CfP0K`, 8 September 22:11): season ranks on **form**.
+The 21 existing rows have no `form` field and **vanish from the query until
+each player banks once** — no backfill. ElapsedMs floor already live (rules).
+Also kept rounds ([`game-record.md`](decisions/game-record.md)), **Hear it again**
+([`melody-round.md`](decisions/melody-round.md)), `firstMs`, pack picker. Rules
+pasted, `check-rules` **69/69**, deployed from `paste-seasons-and-elapsed`
+(`24c20b3`); `master` not updated. Also chair, take-stock, steal (opt-in,
+unplayed), mute, lobby squad picker, negatives paste; squads, vault, App Check,
+rank bonus, wager; repeats/Gentle+Fiendish withdrawn. **750 tests on this commit.**
 
 **Melody and picture are live and have been played** — `voices` + hashed
 `image`; melody pack (70) + picture pack (49, jigsaw as lobby flag 3×3); lobby
@@ -111,7 +111,7 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
    deterrent, so the only test that means anything is whether it changes his
    behaviour in the next round: [`decisions/first-touch.md`](decisions/first-touch.md).
 8. **Nothing has been kept yet.** The block is pasted and live; the first record
-   lands when a round reaches `finished` on `index-BDZpMBAG`. `read-games` shows it.
+   lands when a round reaches `finished` on `index-Df9CfP0K`. `read-games` shows it.
 
 ## Where things are
 

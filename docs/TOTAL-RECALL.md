@@ -34,6 +34,15 @@ re-run on the 8th against the files as they actually are, not inherited from the
 September entries (the CDN, the mute button, the steal) went to
 [`recall/2026-09.md`](recall/2026-09.md), whole, links repointed.
 
+## 2026-09-08 — Live: season ranks on form (`index-Df9CfP0K`)
+
+Greg had already pasted `recent`/`form`; `check-rules` **69/69**. Deployed from
+`paste-seasons-and-elapsed` (`24c20b3`) at 22:10; gh-pages `9144785`. CDN served
+`index-BHU2ry6N` at 22:10:28 and caught up at 22:11. Firebase chunk unmoved at
+`firebase-Cns3pSRr`. **Empty board until each of the 21 existing rows banks
+once** — no `form` field, so they vanish from `orderBy('form')`. No backfill.
+ElapsedMs floor already live (rules only). `master` not updated.
+
 ## 2026-09-08 — Rank the season on form, not on average (branch `form-table`)
 
 Best four of the last six, stored `recent` + `form`. **Paste the seasons/players
