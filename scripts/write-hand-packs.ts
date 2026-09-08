@@ -150,6 +150,36 @@ async function existingImagesBySlug(): Promise<Map<string, string>> {
   return found;
 }
 
+/**
+ * Successively harder settings, tried in order until one lands inside the
+ * budget. The first is what shipped before 8 September 2026.
+ */
+const COMPRESS_ATTEMPTS: readonly { edge: number; quality: number }[] = [
+  { edge: MAX_STILL_EDGE, quality: 70 },
+  { edge: MAX_STILL_EDGE, quality: 55 },
+  { edge: 1000, quality: 55 },
+  { edge: 800, quality: 45 },
+];
+
+/**
+ * Brings a still inside {@link MAX_STILL_BYTES}, or says so and stops.
+ *
+ * **The budget used to be a trigger and never an assertion**, which is why 33
+ * of the 49 published stills breached it — the largest at 811,637 bytes against
+ * a 280,000 ceiling, 2.9× over. The old check accepted whatever `sips` returned
+ * as long as it was *smaller than the original*, so a 2 MB download compressed
+ * to 800 kB passed: smaller, and still nowhere near the number this file
+ * declares. Nothing ever compared the two.
+ *
+ * That matters because a picture question drops the still on every device in
+ * the room the moment the question opens, mid-countdown, competing with the
+ * Firestore snapshot that starts the clock. The stage renders about 600px wide,
+ * so these were 2–3× oversized for what anybody sees.
+ *
+ * Throws rather than shrugging when even the hardest attempt misses. A
+ * build-time tool that quietly emits something outside its own budget is the
+ * bug being fixed here, and the message names the still so it can be replaced.
+ */
 async function compressStill(bytes: Buffer, ext: string): Promise<{ bytes: Buffer; ext: string }> {
   if (bytes.length <= MAX_STILL_BYTES && ext !== 'png') return { bytes, ext };
   const scratch = join(CACHE_DIR, 'still-compress');
@@ -158,31 +188,46 @@ async function compressStill(bytes: Buffer, ext: string): Promise<{ bytes: Buffe
   const input = join(scratch, `in-${token}.${ext}`);
   const output = join(scratch, `out-${token}.jpg`);
   await writeFile(input, bytes);
+
+  let best: Buffer | null = null;
   try {
-    await execFileAsync('sips', [
-      '-Z',
-      String(MAX_STILL_EDGE),
-      '-s',
-      'format',
-      'jpeg',
-      '-s',
-      'formatOptions',
-      '70',
-      input,
-      '--out',
-      output,
-    ]);
-    const compressed = await readFile(output);
-    if (compressed.length > 0 && compressed.length < bytes.length) {
-      return { bytes: compressed, ext: 'jpg' };
+    for (const { edge, quality } of COMPRESS_ATTEMPTS) {
+      await execFileAsync('sips', [
+        '-Z',
+        String(edge),
+        '-s',
+        'format',
+        'jpeg',
+        '-s',
+        'formatOptions',
+        String(quality),
+        input,
+        '--out',
+        output,
+      ]);
+      const compressed = await readFile(output);
+      if (compressed.length === 0) continue;
+      if (best === null || compressed.length < best.length) best = compressed;
+      if (compressed.length <= MAX_STILL_BYTES) return { bytes: compressed, ext: 'jpg' };
     }
-  } catch {
-    return { bytes, ext };
+  } catch (cause) {
+    // `sips` is macOS-only. Somewhere without it cannot resize, and shipping an
+    // oversized still silently is what this function exists to stop.
+    throw new Error(
+      `Could not compress a still (${bytes.length} bytes, budget ${MAX_STILL_BYTES}).`,
+      { cause },
+    );
   } finally {
     await unlink(input).catch(() => undefined);
     await unlink(output).catch(() => undefined);
   }
-  return { bytes, ext };
+
+  throw new Error(
+    `A still will not fit the budget: ${best?.length ?? bytes.length} bytes against `
+    + `${MAX_STILL_BYTES}, after ${COMPRESS_ATTEMPTS.length} attempts down to `
+    + `${COMPRESS_ATTEMPTS.at(-1)?.edge}px at quality ${COMPRESS_ATTEMPTS.at(-1)?.quality}. `
+    + 'Replace the source image, or raise MAX_STILL_BYTES deliberately.',
+  );
 }
 
 /** Overlay new hand-pack answers without dropping keys the other pack already vaulted. */
