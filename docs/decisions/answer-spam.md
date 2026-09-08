@@ -244,8 +244,7 @@ Read off the live project on 8 September, not reasoned from the docs.
   7.93.
 - `3QDV` scores: 7,999 · 7,805 · 6,499 · 6,464 · 6,400 · 4,000 · 3,933 · 2,400
   = 45,500 over 15 questions and 8 players.
-- Only the current question's answers survive in `rooms/{code}/answers`, so
-  this is one question per room rather than a full distribution. Reading every
-  answer costs ~13,700 reads against a 50,000/day tier and has taken the game
-  down before ([`cost.md`](cost.md)) — so it was not done, and the sample is
-  small on purpose.
+- Only the current question's answers survive in `rooms/{code}/answers`, so this
+  is one question per room, not a full distribution. Reading every answer costs
+  ~13,700 reads against a 50,000/day tier and has taken the game down before
+  ([`cost.md`](cost.md)) — so the sample is small on purpose.
