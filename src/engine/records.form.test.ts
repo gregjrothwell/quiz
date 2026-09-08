@@ -206,6 +206,8 @@ describe('foldRecords and form', () => {
  * pasted into the console by hand, so the repo copy and the client drift
  * silently — and here the drift is total: `hasOnly` refuses the whole
  * document, so an unlisted `recent` or `form` means nobody's game is banked.
+ * Forced red 8 September 2026 by taking `'form'` out of the list (1 failed,
+ * 17 skipped) and green again on restoring it.
  */
 describe('the season row agrees with the security rules', () => {
   const RULES = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8');
@@ -220,7 +222,7 @@ describe('the season row agrees with the security rules', () => {
   });
 
   test('the hasOnly list is exactly the document the client writes', () => {
-    const hasOnly = /request\.resource\.data\.keys\(\)\.hasOnly\(\[([\s\S]*?)\]\)/.exec(block)?.[1];
+    const hasOnly = /request\.resource\.data\.keys\(\)\.hasOnly\(\s*\[([\s\S]*?)\]\)/.exec(block)?.[1];
     expect(quotedNames(hasOnly)).toEqual([...PLAYER_RECORD_KEYS].sort());
   });
 

@@ -189,6 +189,10 @@ which is the same sentence as a genuinely empty season.
 The week board still `orderBy('points')`. A week is one round, or two at
 most, and form over that is the score.
 
+**The drift test was forced red.** Taking `'form'` out of the `hasOnly` list
+turned `the hasOnly list is exactly the document the client writes` from pass
+to fail; restoring it turned it back.
+
 ### Not covered
 
 - No backfill of `recent` from `games/`. The first kept rounds landed on
