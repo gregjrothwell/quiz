@@ -294,17 +294,60 @@ service cloud.firestore {
         // reaching this path needs the room code, and anyone with the code can
         // simply join. Members seeing each other's answers before the reveal is
         // inherent without server-side logic, and is accepted rather than fixed.
+        //
+        // **This read must not `get()` the room.** The write rule below does,
+        // once per answer; a listener evaluates this per snapshot, which is
+        // the Q·N² term. See docs/decisions/cost.md.
         allow read: if signedIn();
 
+        // The parent room, for the arrival floor. `exists()` first: a `get()`
+        // on a missing document returns null, and reading `.data` off null
+        // errors the rule, which denies. Both hit the same document in one
+        // evaluation, so Firestore caches them as one read.
+        function answerRoom() {
+          return get(/databases/$(database)/documents/rooms/$(code));
+        }
+
+        // How late a write may land after the claimed tap. Eight seconds,
+        // not three: the 17 August office delay was five, the named flaky
+        // write is four, and three would have refused the player the shared
+        // clock was built for. Defended in docs/decisions/answer-window.md.
+        function elapsedGraceMs() { return 8000; }
+
+        // You cannot claim to have answered much faster than this write
+        // actually landed. `elapsedMs` is still measured on the device; this
+        // is a server-provable *lower* bound, not a lock. A change of mind
+        // is still allowed — the restamp has to be consistent with arrival
+        // too, which is what stops a crafted client keeping a 3ms stamp
+        // while revising at leisure.
+        //
+        // `firstMs` is the same clock and does **not** take this floor.
+        // Applying it would refuse an honest change of mind after grace
+        // (first touch at 50ms, revise at 12s), which is making the first
+        // pick final — turned down in docs/decisions/answer-spam.md. It
+        // still cannot be later than the stamp that stands.
+        //
+        // Compared in milliseconds rather than with `duration.value`, same
+        // reason as `windowClosed` on the reveal: a double from the SDK
+        // would error the rule and deny every answer in the room.
+        function arrivalOk() {
+          return exists(/databases/$(database)/documents/rooms/$(code))
+            && answerRoom().data.openedAt is timestamp
+            && request.resource.data.elapsedMs
+                 >= request.time.toMillis()
+                      - answerRoom().data.openedAt.toMillis()
+                      - elapsedGraceMs();
+        }
+
         // You may only write your own answer, and only with a sane shape.
-        // `elapsedMs` is measured on the answering device and cannot be checked
-        // here; the bounds keep nonsense out of the document, they are not an
-        // anti-cheat. See docs/HANDOVER.md.
+        // `elapsedMs` is measured on the answering device; `arrivalOk` is
+        // the anti-cheat the 0–600000 bounds never were. See
+        // docs/decisions/answer-window.md.
         // `firstMs` is when that device first touched a lectern on this
         // question, and is present only once a pick has been changed — the
-        // same optional shape as `wager`, and bounded the same way as
-        // `elapsedMs` for the same reason. It is shown at the reveal and
-        // scored nowhere, so a client that lies about it wins nothing; see
+        // same optional shape as `wager`, and ceiling-bounded the same way
+        // as `elapsedMs`. It is shown at the reveal and scored nowhere, so
+        // a client that lies about it wins nothing; see
         // docs/decisions/answer-spam.md.
         // `wager` is the share of their own points a player put on the
         // question, 0-100. A *share* and not a number of points, deliberately:
@@ -313,11 +356,12 @@ service cloud.firestore {
         // is what can put a season total below zero, which is why `points`
         // is bounded by `-maxPoints()` rather than 0.
         //
-        // Which question it belongs to is not checked here and cannot be
-        // cheaply: it would need a `get()` on the room for every answer write.
-        // The engine settles it instead — `isWagerQuestion` honours a stake only
-        // on the last question of a round the room agreed to play for stakes, so
-        // a wager sent on any other is ignored by every client alike.
+        // Which question it belongs to is still not checked: that would be
+        // a second use of the room `get()` we now pay for the floor, and
+        // the engine already settles it — `isWagerQuestion` honours a stake
+        // only on the last question of a round the room agreed to play for
+        // stakes, so a wager sent on any other is ignored by every client
+        // alike.
         allow create, update: if signedIn()
           && request.auth.uid == uid
           && request.resource.data.keys().hasOnly(['optionIndex', 'elapsedMs', 'questionIndex', 'wager', 'firstMs'])
@@ -337,7 +381,9 @@ service cloud.firestore {
           && (!('firstMs' in request.resource.data.keys())
             || (request.resource.data.firstMs is int
               && request.resource.data.firstMs >= 0
-              && request.resource.data.firstMs <= 600000));
+              && request.resource.data.firstMs <= 600000
+              && request.resource.data.firstMs <= request.resource.data.elapsedMs))
+          && arrivalOk();
 
         allow delete: if signedIn() && request.auth.uid == uid;
       }
