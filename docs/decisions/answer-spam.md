@@ -74,6 +74,39 @@ not charge for the early press.*
   the near-misses, and still profitable: 0.25 × 1,000 + 0.75 × ~250 = **437**,
   against 379 for playing properly.
 
+### Rate-limiting the keys is the one that looks right and does nothing
+
+Raised by Greg on 8 September: limit the shortcut to one press a second.
+
+**Four presses and one press are the same bet.** He gets no feedback on whether
+a pick was correct, so he cannot choose between his own presses — he only ever
+keeps the last one, and any single blind pick is 25%. Spamming A–D at 50ms and
+pressing A once at 50ms have identical value. A one-a-second limit leaves him
+pressing once at 50ms, reading, and pressing again at 4s: **EV unchanged at
+534.**
+
+The spamming is the *tell*, not the mechanism. This matters beyond this one
+idea, because it is why every "slow him down" shape fails — the exploit needs
+one press, and no rate limit can stop one press.
+
+### The part that cannot be fixed, and what it forces
+
+**A lucky unchanged guess is indistinguishable from instant knowledge.** Both
+are one pick, at one time, never revised. No rule can tell them apart, because
+there is nothing to tell apart — the data is identical.
+
+So the lucky quarter is not addressable at all, and the only lever left is the
+unlucky three quarters: **make the early press binding.** Everything that does
+not bind it leaks, and everything that binds it works. That is the whole
+solution space.
+
+It also disposes of the commit window — "your pick is final until T seconds,
+free after that" — which looks like the subtle answer and is not. At T = 3s he
+waits three seconds and presses blind at 3.05s, which still beat the rank-1
+answer in four of the five rooms sampled: **back to 534.** Pushing T out to 6s
+does close it, but 6s binds five of the eight players in `DTK8` anyway, so it
+is finality wearing a constant.
+
 ## Recommendation — the first lectern you touch is your answer
 
 **One pick per question. No changes.**
@@ -108,12 +141,38 @@ question. That is the real price and it is worth Greg's explicit yes rather
 than being buried here. On a phone it is a fat-finger; on a keyboard it is
 rarer.
 
-If that price is too high, the nearest thing that still closes the exploit is
-**a change allowed only within ~1.5 seconds of your own pick**: an honest
-mis-tap is noticed instantly, whereas the information a spammer needs takes
-three or four seconds to read. It leaks a little — partial reading inside the
-grace window — and it costs a constant and an explanation, which is why it is
-the fallback and not the recommendation.
+### Better: pick freely, then lock — "is that your final answer?"
+
+Raised because plain finality is blunt and the mis-tap is the only real
+objection to it. **Move your pick as much as you like; a second, deliberate
+action locks it in, and the lock time is your stamp.**
+
+It gives exactly the same protection. A spammer who hammers A–D locks nothing;
+to score at 50ms he has to deliberately lock a blind guess, which is binding,
+which is 250 against 379. Identical arithmetic to finality, arrived at by his
+own explicit choice rather than by a rule catching him out.
+
+What it buys over plain finality:
+
+- **The mis-tap goes away.** Meaning B and hitting C is recoverable, because
+  nothing is committed until you say so.
+- **It is the mechanic the room already understands.** Every quiz show on
+  television asks the question, and the commitment is the drama rather than a
+  penalty.
+- **It writes less, not more.** Today every change of pick is a write fanned
+  out to every client in the room, and the round already grows with the square
+  of the headcount ([`cost.md`](cost.md)). Locking writes **once per question,
+  ever** — no intermediate picks reach Firestore at all. No new field on the
+  answer document, so **no ruleset paste**.
+
+What it costs: **a second action on every question**, for everyone, all night.
+Eight players over fifteen questions is 120 extra presses to stop one person
+cheating, and it slows the beat of a round that is deliberately fast. That is
+the trade, and it is the only one worth arguing about — the arithmetic is
+settled either way.
+
+Ranks are unaffected: everyone's stamp moves later by the same lock action, so
+the order is the order.
 
 ## What it touches
 
