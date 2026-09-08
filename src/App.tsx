@@ -6,6 +6,7 @@ import { shouldAutoJoin } from './engine/autoJoin';
 import type { Verdict } from './engine/questionVote';
 import { honoursFor, sawWholeGame, NO_HONOURS } from './engine/awards';
 import { formFor } from './engine/form';
+import { foldGameRecord } from './engine/gameRecord';
 import { msUntilRevealGate, revealBackoffMs } from './engine/revealGate';
 import { roomStandings } from './engine/scoring';
 import { codeFromHash } from './engine/roomCode';
@@ -17,6 +18,7 @@ import {
   type Level,
 } from './engine/state';
 import { firestore, isFirebaseConfigured } from './firebase';
+import { keepGameRecord } from './lib/gameRecords';
 import { playerIdFor } from './lib/identity';
 import { recordVote } from './lib/questionVotes';
 import { rememberedName } from './lib/rememberedName';
@@ -202,6 +204,10 @@ function Game() {
   // races a write which actually landed is a no-op rather than a double count.
   const bankedRef = useRef<string | null>(null);
 
+  // The same guard for the round's own record, kept apart from `bankedRef`
+  // because the two writes fail independently and neither should stop the
+  // other retrying.
+  const keptRef = useRef<string | null>(null);
 
   // Built as the game runs, because nothing else keeps a record of it — see
   // useGameLog. Held here rather than in Final so it survives that screen
@@ -747,6 +753,41 @@ function Game() {
         report(cause);
       });
   }, [room, uid, gameLog, finalSnapshot, report]);
+
+  // The round itself, kept — one document per game at `games/{gameId}`, so
+  // that "how did that actually play?" can be answered later from what people
+  // did rather than from what they remember. What goes in it, and why a round
+  // with a skipped question still counts, is `engine/gameRecord.ts`.
+  //
+  // The quizmaster's device and no other. The rules allow `create` and refuse
+  // `update`, so every extra device would be a refused write per game for
+  // nothing. Banking is per-client because each row belongs to its owner; this
+  // document belongs to the round, and one writer is enough.
+  //
+  // Nobody is told when it fails. A refusal is final until the rules change,
+  // so it is not retried — a ruleset that has not been pasted yet would
+  // otherwise be one refused write per room update, forever. Anything else is
+  // retried the way the season write is: on the next room update, not a timer.
+  useEffect(() => {
+    if (!room || !uid || !isQuizmaster || room.phase !== 'finished') return;
+
+    const { gameId } = room;
+    if (!gameId || keptRef.current === gameId) return;
+
+    // The frozen table, for the reason the season write uses it: a player who
+    // presses Leave on the final screen before this lands would otherwise
+    // vanish from the record of a round they played.
+    const players = finalSnapshot?.players ?? room.players;
+    const scores = finalSnapshot?.scores ?? room.scores;
+
+    const record = foldGameRecord({ ...room, players, scores }, gameLog, uid);
+    if (!record) return;
+
+    keptRef.current = gameId;
+    void keepGameRecord(firestore(), gameId, record).then((outcome) => {
+      if (outcome === 'failed') keptRef.current = null;
+    });
+  }, [room, uid, isQuizmaster, gameLog, finalSnapshot]);
 
   if (connection === 'error') {
     return (
