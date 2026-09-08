@@ -42,7 +42,7 @@ hook says so if this one grows.
 | the countdown, and whose clock it runs on | [`decisions/shared-clock.md`](decisions/shared-clock.md) |
 | the shareable result card, and how it gets to the player | [`decisions/final-card.md`](decisions/final-card.md) |
 | what to build next, and what each idea costs | [`decisions/ideas-review.md`](decisions/ideas-review.md) |
-| the next three, and why A/B testing is blocked | [`decisions/what-to-build-next.md`](decisions/what-to-build-next.md) |
+| the next three, why A/B testing is blocked, **and how to pick it up** | [`decisions/what-to-build-next.md`](decisions/what-to-build-next.md#picking-this-up--cursor-or-a-fresh-session) |
 | picture, music, jigsaw or steal rounds, and **negative points** | [`decisions/round-types.md`](decisions/round-types.md) |
 | why the melody round played badly, before changing it | [`decisions/melody-round.md`](decisions/melody-round.md) |
 | whether an answer can be changed, and the spam exploit | [`decisions/answer-spam.md`](decisions/answer-spam.md) |
