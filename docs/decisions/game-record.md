@@ -4,8 +4,9 @@
 
 Built 8 September 2026 on branch `keep-the-round`, from the research in
 [`what-to-build-next.md`](what-to-build-next.md) (PR #31, merged into this branch
-so the two spine entries could sit together). **Not live until the `games` block
-is pasted** — see the order of operations at the end.
+so the two spine entries could sit together). **Live since 19:48 the same day,
+bundle `index-BDZpMBAG`**, rules pasted first — the order at the end was
+followed. Nothing kept yet: that needs a round to reach `finished`.
 
 ## The finding it answers
 
@@ -172,13 +173,19 @@ text, melody and picture side by side.
   account, queries `games` ordered by `finishedAt`, prints *Nothing kept yet*.
   The populated path — the per-question table and the by-kind tally — has run
   only against fixtures in the test suite, not against a live document.
+- **After the paste, same evening: `check-rules` 65/65**, `keep a finished round`
+  PASS and the six deny cases now proving something. Merged (#32), deployed as
+  `index-BDZpMBAG`; the CDN lied for fifty seconds. `sync-harness 10`: 10/10,
+  0 dropped, all ten inside 71ms.
 
 ## The order of operations, and it is not optional
+
+Steps 1–3 done on 8 September 2026, in this order. Step 4 is the office's.
 
 1. **Paste `firestore.rules`** into the console.
 2. `npm run check-rules` — **65/65**, the allow case flipped. Deny cases prove
    nothing before this step and everything after it.
-3. Merge and deploy. Watch the CDN; it has lied twice.
+3. Merge and deploy. Watch the CDN; it has lied three times now.
 4. Play a round. `npm run read-games` afterwards is the first real evidence.
 
 Deploying before the paste loses nothing and shows nothing: every write is
