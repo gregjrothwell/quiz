@@ -235,3 +235,11 @@ Read off the live project on 8 September, not reasoned from the docs.
   is one question per room, not a full distribution. Reading every answer costs
   ~13,700 reads against a 50,000/day tier and has taken the game down before
   ([`cost.md`](cost.md)) — so the sample is small on purpose.
+
+## 8 September 2026 — held keys, not a restriction
+
+`event.repeat` is now checked on A–D, 1–4 and quizmaster space/enter, matching
+R. A held key no longer fans answer writes or skips questions. This is not a
+rate limit, not one-answer-only, and `elapsedMs` still restamps on a change.
+Those were considered above and turned down; this is hygiene for the key-repeat
+event the browser fires while a key is down.

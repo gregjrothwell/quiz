@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { PicturePrompt } from '../components/PicturePrompt';
 import { AnswerLamps } from '../components/AnswerLamps';
 import { ArcTimer } from '../components/ArcTimer';
@@ -251,17 +251,38 @@ export function QuestionScreen({
   const voices = question?.voices;
   const hasMelody = Boolean(voices && voices.length > 0);
 
+  /**
+   * Restart the clock bed after a melody clip, against the time left *now*.
+   *
+   * The clip-end callback must not close over remainingMs from the press —
+   * on a median 3.45s tune that would schedule the bed three seconds early.
+   * Bumping this counter re-renders, so the effect below reads the clock as
+   * it is when the last note finishes.
+   */
+  const [melodyEndedAt, setMelodyEndedAt] = useState(0);
+  const resumedMelodyEndRef = useRef(0);
+  const resumeBedAfterMelody = useCallback((): void => {
+    setMelodyEndedAt((n) => n + 1);
+  }, []);
+
   useEffect(() => {
     if (revealed || startedClockRef.current === clockKey) return;
     if (hasMelody) {
       startedClockRef.current = clockKey;
-      playSequence(voices ?? []);
+      playSequence(voices ?? [], resumeBedAfterMelody);
       return;
     }
     if (remainingMs <= 0 || remainingMs > CLOCK_LEAD_MS) return;
     startedClockRef.current = clockKey;
     startClock(remainingMs);
-  }, [revealed, clockKey, remainingMs, hasMelody, voices]);
+  }, [revealed, clockKey, remainingMs, hasMelody, voices, resumeBedAfterMelody]);
+
+  useEffect(() => {
+    if (melodyEndedAt === 0 || melodyEndedAt === resumedMelodyEndRef.current) return;
+    resumedMelodyEndRef.current = melodyEndedAt;
+    if (revealed || clock.expired || remainingMs <= 0) return;
+    startClock(remainingMs);
+  }, [melodyEndedAt, revealed, clock.expired, remainingMs]);
 
   /**
    * Hearing the tune again, on request.
@@ -275,7 +296,8 @@ export function QuestionScreen({
    *
    * Deliberately not gated on the ref: this is the one path that is *meant* to
    * play the sequence again. `playSequence` stops any copy already running, so
-   * pressing twice restarts the tune rather than stacking it. A muted player is
+   * pressing twice restarts the tune rather than stacking it, and the bed waits
+   * for this clip the same way it waited for the first. A muted player is
    * unmuted first, because a button that does nothing is worse than no button —
    * and the tap is a user gesture, which is exactly what a suspended audio
    * context has been waiting for.
@@ -285,7 +307,7 @@ export function QuestionScreen({
   const replayMelody = (): void => {
     if (!hasMelody) return;
     if (muted) toggleMuted();
-    playSequence(voices ?? []);
+    playSequence(voices ?? [], resumeBedAfterMelody);
   };
 
   // Nothing else stops it. A reveal that arrives early, a question that ends
@@ -316,7 +338,7 @@ export function QuestionScreen({
       const pick = letter >= 0 ? letter : digit;
       // Gated on the clock rather than on having answered, so a key can change a
       // pick as well as make one — and so a late press cannot write past expiry.
-      if (pick >= 0 && !revealed && !clock.expired && pick < optionCount) {
+      if (pick >= 0 && !event.repeat && !revealed && !clock.expired && pick < optionCount) {
         event.preventDefault();
         // The stake goes with a keyed answer as well as a tapped one. Answering
         // with `a` is the fastest way to play, so dropping it here would lose
@@ -332,13 +354,14 @@ export function QuestionScreen({
       if (key === 'r' && canReplay && !event.repeat) {
         event.preventDefault();
         if (muted) toggleMuted();
-        playSequence(voices ?? []);
+        playSequence(voices ?? [], resumeBedAfterMelody);
         return;
       }
 
       if (!isQuizmaster) return;
       if (key === ' ' || key === 'enter') {
         event.preventDefault();
+        if (event.repeat) return;
         if (revealed) onNext();
         // Matches the button: the vault will not open before the clock does.
         else if (clock.expired) onReveal();
@@ -361,6 +384,7 @@ export function QuestionScreen({
     muted,
     toggleMuted,
     voices,
+    resumeBedAfterMelody,
   ]);
 
   // Placed after the hooks above: an early return before them would change the

@@ -171,6 +171,20 @@ muted label; the unmuted one is the same expression with the other branch.
 Typecheck, lint and 726 tests clean.
 
 **Still open, and not chosen**: the pool (copyright is why it is classical),
-the distractors (four Bach pieces), the clip length (70 hand-edits), and
-whether the clock bed should come back under the silence after the tune ends —
-a sequence-end callback in `sound.ts`, not done here.
+the distractors (four Bach pieces), and the clip length (70 hand-edits). The
+clock bed after the tune is built — see below.
+
+## Built 8 September 2026 — the clock bed comes back after the clip
+
+The leftover from Hear it again. `playSequence` takes an `onEnded` callback,
+armed as a timer from `sequenceDurationMs` rather than oscillator `onended`
+(stopping a voice to cancel a replay also fires `onended`, which would restart
+the bed after mute, reveal or a re-tap). After the clip, if the question is
+still open, `QuestionScreen` calls `startClock` with the **current** remaining
+time, not the time at clip start. Replay waits the same way. `stopClock` /
+`stopSequence` / mute disarm the callback; `startClock` still stops a running
+sequence first, and only the melody resume reaches it after that callback has
+already been cleared, so non-melody questions are unchanged.
+
+Gallery fixture `Question · melody, time’s up` is the disabled button at the
+buzzer, so the bed-must-not-return state is visible without a live room.

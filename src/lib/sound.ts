@@ -374,25 +374,48 @@ export function play(cue: Cue): void {
 
 let clockNodes: { gain: GainNode; sources: OscillatorNode[] } | null = null;
 let sequenceNodes: { gain: GainNode; sources: OscillatorNode[] } | null = null;
+let sequenceEndTimer: number | null = null;
+let sequenceOnEnded: (() => void) | null = null;
 
 /**
- * Starts the closing clock, given the milliseconds actually left on it.
+ * Milliseconds from the first attack to the last voice going quiet.
  *
- * The whole bed is scheduled in one call rather than a note at a time, so the
- * pulse is sample-accurate for the rest of the question no matter what the
- * render loop is doing — a dropped frame or a slow snapshot cannot make it
- * stumble. The cost is that it commits to an ending, which is why `stopClock`
- * exists: anything that ends the question early has to come and cancel it.
+ * The melody round's clock bed comes back on this delay, so it has to be
+ * derived from the notes rather than from "when the last oscillator's onended
+ * fires". Stopping an oscillator to cancel a replay also fires onended, and
+ * that would restart the bed after mute, reveal, or a re-tap.
  */
+export function sequenceDurationMs(voices: readonly Voice[]): number {
+  if (voices.length === 0) return 0;
+  let end = 0;
+  for (const voice of voices) {
+    const voiceEnd = voice.start + voice.duration;
+    if (voiceEnd > end) end = voiceEnd;
+  }
+  return Math.round(end * 1000);
+}
+
+function cancelSequenceEnd(): void {
+  if (sequenceEndTimer !== null) {
+    window.clearTimeout(sequenceEndTimer);
+    sequenceEndTimer = null;
+  }
+  sequenceOnEnded = null;
+}
+
 /**
  * Plays an arbitrary note sequence through its own gain node.
  *
- * The missing export a melody round needs. Same shape as {@link startClock}:
- * schedule the lot in one call, cancel with {@link stopSequence}. A muted
- * player hears nothing — the lobby has to force that issue when a melody
- * pack actually exists.
+ * Same shape as {@link startClock}: schedule the lot in one call, cancel with
+ * {@link stopSequence}. A muted player hears nothing — the lobby has to force
+ * that issue when a melody pack actually exists.
+ *
+ * `onEnded` fires once the last note has finished, unless {@link stopSequence}
+ * or {@link stopClock} cancelled it first. {@link playSequence} itself stops
+ * whatever is already running, so a re-tap restarts the tune rather than
+ * stacking it, and the previous callback does not fire.
  */
-export function playSequence(voices: Voice[]): void {
+export function playSequence(voices: Voice[], onEnded?: () => void): void {
   stopSequence();
   stopClock();
   if (muted || voices.length === 0) return;
@@ -410,10 +433,29 @@ export function playSequence(voices: Voice[]): void {
   const sources = voices.map((voice) => strike(ctx, gain, voice, at));
 
   sequenceNodes = { gain, sources };
+
+  if (onEnded === undefined) return;
+
+  sequenceOnEnded = onEnded;
+  sequenceEndTimer = window.setTimeout(() => {
+    sequenceEndTimer = null;
+    const running = sequenceNodes;
+    sequenceNodes = null;
+    const ended = sequenceOnEnded;
+    sequenceOnEnded = null;
+    // The oscillators already stop themselves. Drop the gain after the
+    // envelope has finished so a later startClock's stopSequence is a no-op
+    // rather than fading a sequence that is already over — that was the
+    // fight: startClock calls stopSequence, and stopSequence used to cancel
+    // this callback if it was still armed.
+    if (running) window.setTimeout(() => running.gain.disconnect(), 200);
+    ended?.();
+  }, sequenceDurationMs(voices));
 }
 
 /** Silences a running sequence. Safe to call when there isn't one. */
 export function stopSequence(): void {
+  cancelSequenceEnd();
   const running = sequenceNodes;
   if (!running || !context) return;
   sequenceNodes = null;
@@ -427,6 +469,19 @@ export function stopSequence(): void {
   window.setTimeout(() => running.gain.disconnect(), 200);
 }
 
+/**
+ * Starts the closing clock, given the milliseconds actually left on it.
+ *
+ * The whole bed is scheduled in one call rather than a note at a time, so the
+ * pulse is sample-accurate for the rest of the question no matter what the
+ * render loop is doing — a dropped frame or a slow snapshot cannot make it
+ * stumble. The cost is that it commits to an ending, which is why `stopClock`
+ * exists: anything that ends the question early has to come and cancel it.
+ *
+ * Still calls {@link stopSequence} first, so a non-melody question cannot
+ * layer the bed on a leftover tune. A melody's resume path only reaches here
+ * after the sequence has already ended and disarmed its callback.
+ */
 export function startClock(remainingMs: number): void {
   stopSequence();
   stopClock();
@@ -451,6 +506,10 @@ export function startClock(remainingMs: number): void {
 
 /** Silences a running clock. Safe to call when there isn't one. */
 export function stopClock(): void {
+  // A melody's bed-resume is armed as a timer on the sequence. Cancelling the
+  // clock (reveal, mute, unmount) has to disarm that too, or the clip ending
+  // would start a bed under a question that is already over.
+  cancelSequenceEnd();
   const running = clockNodes;
   if (!running || !context) return;
   clockNodes = null;

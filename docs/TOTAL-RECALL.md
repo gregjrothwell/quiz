@@ -34,6 +34,13 @@ re-run on the 8th against the files as they actually are, not inherited from the
 September entries (the CDN, the mute button, the steal) went to
 [`recall/2026-09.md`](recall/2026-09.md), whole, links repointed.
 
+## 2026-09-08 — Clock bed after the melody, and held keys (branch `clock-bed-and-key-repeat`)
+
+After a melody clip the nine-second bed comes back, scheduled from the time
+left *now*. Replay waits for the clip the same way. `event.repeat` on A–D, 1–4
+and space/enter so a held key does not fan writes or skip. Not live.
+[`melody-round.md`](decisions/melody-round.md), [`answer-spam.md`](decisions/answer-spam.md).
+
 ## 2026-09-08 — Live: the round is kept, and the tune can be heard again (`index-BDZpMBAG`)
 
 Greg pasted the `games` block; `check-rules` **65/65**, the allow case flipped.

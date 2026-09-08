@@ -171,6 +171,7 @@ function mockRoom(overrides: Partial<RoomState> = {}): RoomState {
 }
 
 const CLOCK = { elapsedMs: 6_000, remainingMs: 14_000, secondsLeft: 14, expired: false };
+const CLOCK_UP = { elapsedMs: 15_000, remainingMs: 0, secondsLeft: 0, expired: true };
 
 /**
  * A two-question game built to earn all four rosettes: Greg in on the buzzer and
@@ -367,6 +368,34 @@ export function Preview() {
           youUid="priya"
           isQuizmaster={false}
           clock={CLOCK}
+          revealed={false}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      /*
+        The buzzer on a melody question. Hear it again is still on screen so
+        nothing jumps, but it is disabled with the lecterns, and the clock bed
+        must not come back under a question that has already ended.
+      */
+      title: 'Question · melody, time’s up',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'question',
+            questionOpenedAt: 1_000,
+            packId: 'melody',
+            packTitle: 'Name that Tune',
+            questions: [MELODY_QUESTION],
+            index: 0,
+          })}
+          youUid="priya"
+          isQuizmaster={false}
+          clock={CLOCK_UP}
           revealed={false}
           onAnswer={noop}
           onReveal={noop}

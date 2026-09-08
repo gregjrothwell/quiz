@@ -237,13 +237,14 @@ and is not now. Step 2 landed in `App.tsx` beside `recordGame`, not `useRoom`.
 1. **Keep the round** — built, branch `keep-the-round`. Paste the `games` block,
    `check-rules` 65/65, merge, deploy. `game-record.md`, on that branch.
 2. **Melody: hear it again** — built, branch `melody-replay`, stacked on 1.
-   Shipped whole, not A/B'd: [`melody-round.md`](melody-round.md). No paste.
+   Clock bed after the clip and `event.repeat`: `clock-bed-and-key-repeat`, not
+   live. [`melody-round.md`](melody-round.md).
 3. **Needs the office or the data**: a real round (`firstMs`, picker, picture,
    melody, two squads, review panel); `fold-votes` dry run before any `--go`;
    `read-games` on the next melody round, then choose clips / pool / distractors;
-   the Ladder as a build-time fold of `games/`; the `event.repeat` guard.
+   the Ladder as a build-time fold of `games/`.
 4. **Backlog by value** (`ideas-review.md`): §5 bound `elapsedMs`, §8 ask for the
-   recovery code, §9 form table, §12 vote tally; clock bed after the tune; ghost
-   racing is now buildable from `games/`.
+   recovery code, §9 form table, §12 vote tally; ghost racing is now buildable
+   from `games/`.
 5. **Closed** (`scope.md`, `answer-spam.md`): Daily Five, auto-advance, a server,
    A/B on the wager, every restriction on answering, the purge, a `<meta>` CSP.

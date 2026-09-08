@@ -104,9 +104,9 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
    lobby and breaks at the reveal. Melody and picture are already seeded: the
    vault held 13,712 on 4 September, 119 of them added that day. Answers live in
    gitignored `.cache/hand-vault.json`; the published packs are sealed.
-6. **The melody round: replay is live and unplayed, the rest open.** Eight
-   abandoned it after four of fifteen on 8 September. Pool, distractors and clip
-   length are still unchosen: [`decisions/melody-round.md`](decisions/melody-round.md).
+6. **The melody round: replay is live and unplayed.** Clock bed after the clip
+   is on `clock-bed-and-key-repeat`, not live. Pool, distractors and clip length
+   still unchosen: [`decisions/melody-round.md`](decisions/melody-round.md).
 7. **`firstMs` and the pack picker are live and unplayed.** The marker is a
    deterrent, so the only test that means anything is whether it changes his
    behaviour in the next round: [`decisions/first-touch.md`](decisions/first-touch.md).

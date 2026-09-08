@@ -72,10 +72,10 @@ about: it is a display decision, so no honest player can lose a point to it.
 
 ## Not covered
 
-- **`event.repeat` is still unguarded** on the keyboard handler, so a held key
-  fires repeatedly. Harmless here — every press after the first is deduped by
-  `submitAnswer`, and the first touch is recorded either way — but it is
-  hygiene, and it is not done.
+- **`event.repeat` is now gated** (8 September, branch `clock-bed-and-key-repeat`)
+  on A–D, 1–4 and quizmaster space/enter, as well as R. A held key no longer
+  fans writes or skips questions. Not a restriction on changing a pick —
+  [`answer-spam.md`](answer-spam.md).
 - **A crafted client can lie about `firstMs`**, exactly as it can about
   `elapsedMs`. Neither is checkable server-side and neither is scored, so this
   buys a liar nothing; it is not a new threat class.
