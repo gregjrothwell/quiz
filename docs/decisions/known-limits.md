@@ -154,3 +154,26 @@ already came back `{"easy":5,"medium":7,"hard":3}`.
 **Accepted, not fixed** — Greg's call, 8 September: recorded here rather than
 surfaced in the lobby. The real repair is a difficulty the office earned, which
 is the `games/` fold, not a warning label.
+
+## 33 of the 49 published stills are over their own budget
+
+**Found and half-fixed 8 September 2026.** `write-hand-packs.ts` declares
+`MAX_STILL_BYTES = 280_000`, and two thirds of the shipped stills breach it —
+the largest at **811,637 bytes**, 2.9× over, 16.4 MB across the pack.
+
+The cause was that the budget was a **trigger and never an assertion**:
+`compressStill` ran `sips` on anything over the ceiling, then accepted the
+result if it was *smaller than the original*. A 2 MB download compressed to
+800 kB passed that test. Nothing ever compared the output to the budget.
+
+**The generator is fixed** — escalating quality and edge until the result fits,
+throwing by name if it cannot. **The published stills are not**: they are
+content-hashed, so they only change when `npm run write-hand-packs` is re-run,
+which re-downloads from Commons and the Met. Question ids are `sha1('hand:' +
+slug)` and unaffected, so **no vault re-seed is needed** — only `picture.json`
+and the filenames move.
+
+Until that run happens, a picture question still drops an average 345 kB still
+on every device mid-countdown, for a stage that renders about 600px wide. **The
+picture round has never been played with people**, so this has not yet cost
+anybody a question.

@@ -36,37 +36,39 @@ September entries (the CDN, the mute button, the steal) went to
 
 ## 2026-09-08 — The debug token was in the live bundle, and the melody round was played on the wrong level
 
-**A full security and optimisation audit, from the live project and the deployed
-artefact rather than the docs.** Two findings led it.
+**A full security and optimisation audit, read off the live project and the
+deployed artefact rather than the docs.** Two findings led it.
 
-**The App Check debug token was served publicly for 24 days.** `src/firebase.ts`
-read it unconditionally, Vite inlines every `VITE_` variable at build time, and
-`deploy` builds where `.env.local` lives — so it shipped, in all 16 deploys from
-15 August. Rebuilding the un-gated source reproduced `index-BDZpMBAG` exactly,
-the hash that was live. **App Check went enforcing on 16 August, the day after**,
-so it has never been the control the docs describe. The 15 August review said
-secrets were clean and was right *about the repo*; the build was never checked.
-Gated behind `import.meta.env.DEV`, guarded by a test and by `check-bundle` in
-`deploy`, both forced red first — and one assertion was caught passing vacuously
-on the un-gated source. History left alone: a revoked token is inert.
+**The App Check debug token was served publicly for 24 days.** Read
+unconditionally in `src/firebase.ts`; Vite inlines every `VITE_` variable at
+build time and `deploy` builds where `.env.local` lives, so it shipped in all 16
+deploys from 15 August. Rebuilding the un-gated source reproduced the live hash
+`index-BDZpMBAG` exactly. **Enforcement began on 16 August, the day after**, so
+it has never been the control the docs describe — and the 15 August review was
+right *about the repo*; the build was never checked. Now gated behind
+`import.meta.env.DEV` with two guards, both forced red first, one of which was
+caught passing vacuously. History left alone: a revoked token is inert.
 [`build-secrets.md`](decisions/build-secrets.md).
 
-**`DTK8` was played on Standard** — `{"medium": 15}` — so the melody round that
-eight people abandoned used none of the pack's 38 easy tunes. The level was an
-active choice; the lobby defaults to The Ladder. Confirmed with the real
-selector offline, `mixed` ruled out over 200 seeded runs, and cross-checked
-against `NDH7`. Clip length does *not* move with level, so replay and level are
-two independent halves. Next melody round goes on The Ladder.
-[`melody-round.md`](decisions/melody-round.md).
+**`DTK8` was played on Standard** — `{"medium": 15}` — so the melody round eight
+people abandoned used none of the pack's 38 easy tunes. An active choice: the
+lobby defaults to The Ladder. Confirmed with the real selector offline, `mixed`
+ruled out over 200 seeded runs, cross-checked against `NDH7`. Clip length does
+*not* move with level, so replay and level are independent halves. **Next melody
+round goes on The Ladder.** [`melody-round.md`](decisions/melody-round.md).
 
-**Also fixed:** a quizmaster reload was stripping `firstMs` and `wager` from the
-kept record, because `parseAnswer` rebuilt two fields of four — the instrument
-meant to measure the melody round had a hole in exactly the case `firstMs`
-exists for. **734 tests.** Recorded and not built: the steal robs players who
-have left the room; `games/`, `asked` and `questionVotes` take unbounded
-documents; nothing memoises and the clock re-renders the tree at 10 Hz; `motion`
-is 39.6 kB gzip preloaded for the scoreboard; 33 of 49 stills breach a budget
-the generator already declares. Full audit in the session plan.
+**Also fixed.** A quizmaster reload was stripping `firstMs` and `wager` from the
+kept record — `parseAnswer` rebuilt two fields of four, so the instrument meant
+to measure the melody round had a hole in exactly the case `firstMs` exists for.
+**Hear it again no longer unmutes you permanently.** And the still budget is now
+an assertion rather than a trigger — `compressStill` accepted anything *smaller
+than the original*, which is how 33 of 49 stills breach a ceiling the file
+declares. Generator fixed; the stills change only when it is re-run. **736 tests.**
+
+**Recorded, not built:** the steal robs players who have left the room; `games/`,
+`asked` and `questionVotes` take unbounded documents; nothing memoises and the
+clock re-renders the tree at 10 Hz; `motion` is 39.6 kB gzip preloaded for the
+scoreboard. Full audit in the session plan.
 
 ## 2026-09-08 — Live: the round is kept, and the tune can be heard again (`index-BDZpMBAG`)
 

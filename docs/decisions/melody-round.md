@@ -200,11 +200,22 @@ Option 1 above, shipped to every player rather than to half of them.
 while the clock runs (`R` on the keyboard), disabled with the lecterns at the
 buzzer and gone at the reveal. `playSequence` already stops whatever is
 playing before it starts, so a second press restarts the tune rather than
-stacking it; the once-only guard on the automatic play is untouched. A muted
-player is unmuted by the press and hears it — the button that does nothing was
-the alternative — and the press is the user gesture a suspended audio context
-was waiting for, which closes the "arrived with audio locked, heard nothing,
-no way to ask" case as well as the missed opening bar.
+stacking it; the once-only guard on the automatic play is untouched. The press
+is the user gesture a suspended audio context was waiting for, which closes the
+"arrived with audio locked, heard nothing, no way to ask" case as well as the
+missed opening bar.
+
+**Corrected 8 September 2026 — it used to unmute you, permanently.** As first
+built, a muted player was unmuted by the press: `toggleMuted()` writes the
+preference to localStorage and nothing put it back, so one press to hear one
+tune left the bed, the buzzer, the stings and the fanfare audible for the
+remaining fourteen questions **and into the next session** — in an open-plan
+office, for somebody who had deliberately turned sound off. The button promised
+one tune and delivered a settings change. It now plays that one sequence through
+the mute (`playSequence(..., { evenIfMuted: true })`) and leaves the preference
+alone; the label is simply *Hear it again*. `isMuted()` exists so the test can
+prove the preference did not move, and it was forced red against the old
+behaviour first.
 
 **Why not the A/B the research proposed.**
 [`what-to-build-next.md`](what-to-build-next.md) suggested randomising the
