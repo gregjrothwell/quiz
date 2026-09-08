@@ -33,6 +33,7 @@ in [`recall/`](recall/)), and the hook says so if this one grows.
 | voting on a question, retiring one | [`decisions/question-votes.md`](decisions/question-votes.md) |
 | rules, App Check on Firestore and the RTDB, anything security-shaped | [`decisions/security.md`](decisions/security.md) |
 | **why a clean repo does not mean a clean deploy** | [`decisions/build-secrets.md`](decisions/build-secrets.md) |
+| **what the 8 September audit found and did not fix** | [`decisions/audit-backlog.md`](decisions/audit-backlog.md) |
 | App Check on **authentication** specifically | [`decisions/app-check-auth.md`](decisions/app-check-auth.md) |
 | anything that adds reads or writes | [`decisions/cost.md`](decisions/cost.md) |
 | — before assuming a thing is a style choice | [`decisions/gotchas.md`](decisions/gotchas.md) |
@@ -62,24 +63,22 @@ console.** [`build-secrets.md`](decisions/build-secrets.md).
 **Live** (bundle `index-BHU2ry6N`, 8 September): the round is **kept**
 ([`game-record.md`](decisions/game-record.md)); **Hear it again** on melody
 questions ([`melody-round.md`](decisions/melody-round.md)); `firstMs` and the
-pack picker. Rules pasted, `check-rules` **65/65**, merged, deployed,
+pack picker. Rules pasted, `check-rules` **64/64**, merged, deployed,
 `sync-harness 10` 10/10 inside 71ms — in that order. All four unplayed with
 people. Also chair, take-stock, steal (opt-in, unplayed), mute, lobby squad
 picker, negatives paste; squads, vault, rank bonus, wager;
 repeats/Gentle+Fiendish withdrawn. **734 tests on master.**
 
-**Melody is live and has been played, and did not work** — `voices` + hashed
-`image`; melody pack (70) + picture pack (49, jigsaw 3×3); `authorDied` T−71.
-It was played on **Standard**, so none of the 38 easy tunes were served; the
-next one goes on The Ladder — [`melody-round.md`](decisions/melody-round.md).
-Picture is still unplayed with people.
+**Melody is live, has been played, and did not work** — melody pack (70) +
+picture pack (49, jigsaw 3×3), `authorDied` T−71. It was played on **Standard**,
+so none of the 38 easy tunes were served; the next goes on The Ladder —
+[`melody-round.md`](decisions/melody-round.md). Picture is still unplayed.
 
 **Shipped and played** otherwise: 13,593 answers, both rulesets published;
 reveal ~0.5s after the clock; scoring is 500 + rank 500/400/300/200/100; shared
 clock, live squads, votes and join-into-room since 28 August. Files:
-[`scoring.md`](decisions/scoring.md), [`app-check-auth.md`](decisions/app-check-auth.md),
-[`vault.md`](decisions/vault.md), [`repeats.md`](decisions/repeats.md),
-[`wager.md`](decisions/wager.md), [`round-types.md`](decisions/round-types.md).
+[`scoring.md`](decisions/scoring.md), [`vault.md`](decisions/vault.md),
+[`repeats.md`](decisions/repeats.md), [`round-types.md`](decisions/round-types.md).
 Check the thing, not the prose.
 
 **What is actually in the project right now** — counts, the two slow leaks, and the
@@ -87,7 +86,8 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
 
 ## Outstanding
 
-1. **A quizmaster dropping out mid-round** needs a browser and `host-room`.
+1. **The audit backlog** — [`decisions/audit-backlog.md`](decisions/audit-backlog.md),
+   self-contained for Cursor. A quizmaster dropping out still needs `host-room`.
 2. **No Content-Security-Policy.** Deliberate, and re-confirmed 8 September: no
    injection sink exists in `src/`. GitHub Pages cannot set headers at all.
 3. **Three things still want a second person**: the review panel, a quizmaster
