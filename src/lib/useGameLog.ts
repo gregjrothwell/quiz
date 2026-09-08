@@ -22,11 +22,37 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+/**
+ * Rebuilds one stored answer, field by field.
+ *
+ * **Every optional field has to be listed here or it is silently dropped.**
+ * `storeLog` serialises `room.answers` whole, so session storage holds
+ * `firstMs` and `wager` — this side is what decides whether they survive. It
+ * read `optionIndex` and `elapsedMs` alone until 8 September 2026, which was
+ * harmless while the log only fed the awards (they read `elapsedMs`) and stopped
+ * being harmless the moment `foldGameRecord` began folding the same log into a
+ * permanent `games/{gameId}` document.
+ *
+ * What that cost: a quizmaster who reloaded mid-round kept a round whose
+ * answers had no `firstMs`, so `read-games` reported no snap guesses at all —
+ * and the case it loses is the *revised* snap, which is precisely the one
+ * `firstMs` exists to catch. A guess left standing survived by accident,
+ * because its `elapsedMs` is already under the threshold.
+ *
+ * An absent field carries **no key** rather than `undefined`, the same shape
+ * `recordedAnswers` builds in `engine/gameRecord.ts` and for the same reason:
+ * Firestore refuses to write `undefined`, and this object is on its way there.
+ */
 function parseAnswer(value: unknown): Answer | null {
   if (!isObject(value)) return null;
-  const { optionIndex, elapsedMs } = value;
+  const { optionIndex, elapsedMs, firstMs, wager } = value;
   if (typeof optionIndex !== 'number' || typeof elapsedMs !== 'number') return null;
-  return { optionIndex, elapsedMs };
+  return {
+    optionIndex,
+    elapsedMs,
+    ...(typeof firstMs === 'number' ? { firstMs } : {}),
+    ...(typeof wager === 'number' ? { wager } : {}),
+  };
 }
 
 function parseAnswers(value: unknown): Record<string, Answer> {
