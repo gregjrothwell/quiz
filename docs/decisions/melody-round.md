@@ -146,10 +146,10 @@ the alternative — and the press is the user gesture a suspended audio context
 was waiting for, which closes the "arrived with audio locked, heard nothing,
 no way to ask" case as well as the missed opening bar.
 
-**Why not the A/B the research proposed.** `what-to-build-next.md`
-([PR #31](https://github.com/gregjrothwell/quiz/pull/31), unmerged as this is
-written) suggested randomising the replay within the round by
-`hash(gameId, question.id)` so every player met both arms. The instrument is right and the target is wrong: eleven seconds of
+**Why not the A/B the research proposed.**
+[`what-to-build-next.md`](what-to-build-next.md) suggested randomising the
+replay within the round by `hash(gameId, question.id)` so every player met both
+arms. The instrument is right and the target is wrong: eleven seconds of
 silence on a fifteen-second question is a defect, and a round where half the
 questions offer the button and half do not looks broken to the room that has
 already walked out of it once. The replay ships whole. The before is `DTK8` —
