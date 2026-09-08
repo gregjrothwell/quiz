@@ -49,6 +49,17 @@ cases pass vacuously until it is. `npm run read-games` reads it back on the
 Admin SDK and ran clean against the live project: *Nothing kept yet.* Drift test
 forced red and back. [`game-record.md`](decisions/game-record.md).
 
+## 2026-09-08 — A/B testing is blocked on one gap, and it is not the framework
+
+`rooms/{code}/answers/{uid}` is overwritten every question, so a finished round
+holds only the last one — the questions and the right answers both survive, the
+responses do not. Fix is one write at the end of a game into a global `games/`
+collection, never a room subcollection (a second `Q·N²` term). Also measured: the
+wager is a skill test, 0%/25-50%/100% hitting 29/50/62%, so staking blind makes
+it a lottery — and at 6.5 stakes a round it would take 37 wager rounds against
+five ever played. Test per-question things, never per-round things.
+[`what-to-build-next.md`](decisions/what-to-build-next.md).
+
 ## 2026-09-08 — Live: `firstMs` and the pack picker (`index-B3Tfo0Nu`)
 
 Rules pasted first, `check-rules` **58/58** with the allow case passing, then

@@ -3,9 +3,9 @@
 > **Owner: Greg Rothwell. Last updated: 8 September 2026. Budget: 250 lines.**
 
 Built 8 September 2026 on branch `keep-the-round`, from the research in
-`what-to-build-next.md` — on [PR #31](https://github.com/gregjrothwell/quiz/pull/31)
-as this is written, not yet on master. **Not live until the `games` block is
-pasted** — see the order of operations at the end.
+[`what-to-build-next.md`](what-to-build-next.md) (PR #31, merged into this branch
+so the two spine entries could sit together). **Not live until the `games` block
+is pasted** — see the order of operations at the end.
 
 ## The finding it answers
 
