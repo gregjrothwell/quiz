@@ -52,15 +52,15 @@ hook says so if this one grows.
 
 ## State as of 8 September 2026
 
-**On `answer-first-touch`, not live:** `firstMs` on the answer document — the
-reveal marks a pick committed under a second, and **the ruleset must be pasted
-before this deploys** or every change of mind in the room is refused.
-[`first-touch.md`](decisions/first-touch.md). 675 tests.
-
-**Live** (bundle `index-CIOq186A`): chair, take-stock, steal (opt-in, unplayed),
-mute, lobby squad picker, negatives paste (`check-rules` 52/52). Squads, vault,
-App Check, rank bonus, wager, repeats/Gentle+Fiendish withdrawn. **653 tests on
-master.**
+**Live** (bundle `index-B3Tfo0Nu`): `firstMs` — the reveal marks a pick
+committed under a second, scored nowhere
+([`first-touch.md`](decisions/first-touch.md)); the pack picker four to a row.
+Rules pasted and `check-rules` **58/58** before the deploy, in that order.
+Unplayed with people. Also chair, take-stock, steal (opt-in, unplayed), mute,
+lobby squad picker, negatives paste. Squads, vault, App Check, rank bonus,
+wager, repeats/Gentle+Fiendish withdrawn. **675 tests on master**, and
+`check-rules` is **58 cases** — the 52/52 this file carried until 8 September
+predated three merges.
 
 **Melody and picture are live and have been played** — `voices` + hashed
 `image`; melody pack (70) + picture pack (49, jigsaw as lobby flag 3×3); lobby
