@@ -566,6 +566,57 @@ function buildChecks(probes: Probes): Check[] {
       run: () => setDoc(ownSeasonRow, { ...validSeasonRow, played: 1, fastest: 99 }),
     },
     {
+      // The allow case FAILS against the published ruleset until the paste —
+      // `hasOnly` does not yet list `recent` or `form`. That is the point.
+      // Paste, watch this flip, then deploy. A deploy first refuses every bank.
+      label: 'Firestore   · write a season row carrying form',
+      expect: 'allow',
+      hint: 'firestore.rules has not taken `recent`/`form` into the season row '
+        + 'hasOnly list — every bank from this bundle is refused, so nobody’s '
+        + 'game lands on the board. Paste the repo copy before deploying.',
+      run: () =>
+        setDoc(ownSeasonRow, {
+          ...validSeasonRow,
+          played: 4,
+          wins: 1,
+          recent: [
+            { gameId: 'g1', score: 1000, at: 1 },
+            { gameId: 'g2', score: 2000, at: 2 },
+            { gameId: 'g3', score: 1500, at: 3 },
+            { gameId: 'g4', score: 1800, at: 4 },
+          ],
+          form: 6300,
+        }),
+    },
+    {
+      label: 'Firestore   · write a season row with more than six recent scores',
+      expect: 'deny',
+      hint: 'firestore.rules is missing the size bound on `recent` — a crafted '
+        + 'client can inflate the form window without limit',
+      run: () =>
+        setDoc(ownSeasonRow, {
+          ...validSeasonRow,
+          played: 7,
+          recent: [1, 2, 3, 4, 5, 6, 7].map((n) => ({
+            gameId: `g${n}`,
+            score: 1000,
+            at: n,
+          })),
+          form: 4000,
+        }),
+    },
+    {
+      label: 'Firestore   · write a season row whose form is not an int',
+      expect: 'deny',
+      hint: 'firestore.rules is missing the `is int` check on `form`',
+      run: () =>
+        setDoc(ownSeasonRow, {
+          ...validSeasonRow,
+          recent: [{ gameId: 'g1', score: 1000, at: 1 }],
+          form: 'hot',
+        }),
+    },
+    {
       // The whole identity mechanism in one check. `recovery` documents are
       // create-only and only for an identity the writer already holds, which is
       // what stops somebody reading a playerId off the season table — they are

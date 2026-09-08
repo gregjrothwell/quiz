@@ -34,6 +34,13 @@ re-run on the 8th against the files as they actually are, not inherited from the
 September entries (the CDN, the mute button, the steal) went to
 [`recall/2026-09.md`](recall/2026-09.md), whole, links repointed.
 
+## 2026-09-08 — Rank the season on form, not on average (branch `form-table`)
+
+Best four of the last six, stored `recent` + `form`. **Paste the seasons/players
+`hasOnly` list before deploying** — same trap as live squads / `firstMs`.
+`orderBy('form')`, no composite index. Qualifier still three rounds. Depth:
+[`season.md`](decisions/season.md).
+
 ## 2026-09-08 — Live: the round is kept, and the tune can be heard again (`index-BDZpMBAG`)
 
 Greg pasted the `games` block; `check-rules` **65/65**, the allow case flipped.

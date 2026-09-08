@@ -582,11 +582,56 @@ service cloud.firestore {
           && request.resource.data.get(field, 0) <= request.resource.data.played;
       }
 
+      // Best four of the last six. Optional: every live row predates the
+      // fields, and a client one deploy behind writes none. Required would
+      // lock those rows out. The *new* client writes both on every bank, so
+      // the published hasOnly list refuses those writes until this block is
+      // pasted — paste, then check-rules, then deploy. Same order as firstMs
+      // and keep-the-round. Rules cannot walk a list, so the six slots are
+      // unrolled; an entry past size() is skipped, not read.
+      function recentEntryOk(entry) {
+        return entry is map
+          && entry.keys().hasOnly(['gameId', 'score', 'at'])
+          && entry.gameId is string
+          && entry.gameId.size() > 0
+          && entry.gameId.size() <= 64
+          && entry.score is int
+          && entry.score >= (0 - maxBest())
+          && entry.score <= maxBest()
+          && entry.at is number;
+      }
+
+      function recentSlotOk(i) {
+        return request.resource.data.recent.size() <= i
+          || recentEntryOk(request.resource.data.recent[i]);
+      }
+
+      function recentOk() {
+        return !('recent' in request.resource.data.keys())
+          || (request.resource.data.recent is list
+            && request.resource.data.recent.size() <= 6
+            && request.resource.data.recent.size() <= request.resource.data.played
+            && recentSlotOk(0)
+            && recentSlotOk(1)
+            && recentSlotOk(2)
+            && recentSlotOk(3)
+            && recentSlotOk(4)
+            && recentSlotOk(5));
+      }
+
+      function formOk() {
+        return !('form' in request.resource.data.keys())
+          || (request.resource.data.form is int
+            && request.resource.data.form >= (0 - maxBest() * 4)
+            && request.resource.data.form <= maxBest() * 4);
+      }
+
       allow create, update: if signedIn()
         && ownsPlayer(playerId)
         && request.resource.data.keys().hasOnly(
              ['name', 'played', 'wins', 'points', 'best', 'lastGame', 'lastPlayed',
-              'fastest', 'comeback', 'loneWolf', 'contrarian', 'team'])
+              'fastest', 'comeback', 'loneWolf', 'contrarian', 'team',
+              'recent', 'form'])
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0
         && request.resource.data.name.size() <= 40
@@ -628,7 +673,9 @@ service cloud.firestore {
         // feature has to be carried through `PlayerRecord` on the same day, or
         // it will appear to work and quietly clear itself overnight.
         && request.resource.data.get('team', '') is string
-        && request.resource.data.get('team', '').size() <= 40;
+        && request.resource.data.get('team', '').size() <= 40
+        && recentOk()
+        && formOk();
 
       // Removing your own row is the only way anybody can take a display name
       // back off a shared board without console access. Someone else's row still
