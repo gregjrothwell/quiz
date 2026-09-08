@@ -10,9 +10,8 @@ Built to replace Polly in Teams.
 - **Firebase project:** `quiz-d686e` (Firestore + Realtime Database in europe-west1 + Anonymous auth)
 
 **This file is the way in, not the record.** It was 2,422 lines until 20 August
-2026 — more to read than the codebase it describes. Depth is in `decisions/`, the
-dated spine is `TOTAL-RECALL.md` (older half in [`recall/`](recall/)), and the
-hook says so if this one grows.
+2026. Depth is in `decisions/`, the dated spine is `TOTAL-RECALL.md` (older half
+in [`recall/`](recall/)), and the hook says so if this one grows.
 
 ## Read this before changing
 
@@ -33,6 +32,7 @@ hook says so if this one grows.
 | packs, harvesting, classification | [`decisions/questions.md`](decisions/questions.md) |
 | voting on a question, retiring one | [`decisions/question-votes.md`](decisions/question-votes.md) |
 | rules, App Check on Firestore and the RTDB, anything security-shaped | [`decisions/security.md`](decisions/security.md) |
+| **why a clean repo does not mean a clean deploy** | [`decisions/build-secrets.md`](decisions/build-secrets.md) |
 | App Check on **authentication** specifically | [`decisions/app-check-auth.md`](decisions/app-check-auth.md) |
 | anything that adds reads or writes | [`decisions/cost.md`](decisions/cost.md) |
 | — before assuming a thing is a style choice | [`decisions/gotchas.md`](decisions/gotchas.md) |
@@ -54,31 +54,33 @@ hook says so if this one grows.
 
 ## State as of 8 September 2026
 
-**Live** (bundle `index-BDZpMBAG`, 8 September 19:48): the round is **kept** —
-one `games/{gameId}` per finished game, read back by `read-games`
+**Not yet deployed, and it is the first thing to ship:** the App Check debug
+token was inlined into every bundle from 15 August and served publicly for 24
+days. Gated, guarded twice, revoked — [`build-secrets.md`](decisions/build-secrets.md).
+**Until that deploy lands, App Check is bypassable on Firestore, the RTDB and auth.**
+
+**Live** (bundle `index-BDZpMBAG`, 8 September 19:48): the round is **kept**
 ([`game-record.md`](decisions/game-record.md)); **Hear it again** on melody
 questions ([`melody-round.md`](decisions/melody-round.md)); `firstMs` and the
-pack picker from earlier the same day. Rules pasted, `check-rules` **65/65**,
-merged, deployed, `sync-harness 10` 10/10 inside 71ms — in that order. All four
-unplayed with people. Also chair, take-stock, steal (opt-in, unplayed), mute,
-lobby squad picker, negatives paste; squads, vault, App Check, rank bonus, wager;
-repeats/Gentle+Fiendish withdrawn. **726 tests on master.**
+pack picker. Rules pasted, `check-rules` **65/65**, merged, deployed,
+`sync-harness 10` 10/10 inside 71ms — in that order. All four unplayed with
+people. Also chair, take-stock, steal (opt-in, unplayed), mute, lobby squad
+picker, negatives paste; squads, vault, rank bonus, wager;
+repeats/Gentle+Fiendish withdrawn. **734 tests on master.**
 
-**Melody and picture are live and have been played** — `voices` + hashed
-`image`; melody pack (70) + picture pack (49, jigsaw as lobby flag 3×3); lobby
-force-unmute; `authorDied` T−71. This block said "branch `melody-round`, not
-live" until 8 September; PR #23 merged on the 4th and deployed, and the office
-played a melody round on the 8th. **The melody round did not work** —
-[`melody-round.md`](decisions/melody-round.md). Picture is still unplayed with
-people.
+**Melody is live and has been played, and did not work** — `voices` + hashed
+`image`; melody pack (70) + picture pack (49, jigsaw 3×3); `authorDied` T−71.
+It was played on **Standard**, so none of the 38 easy tunes were served; the
+next one goes on The Ladder — [`melody-round.md`](decisions/melody-round.md).
+Picture is still unplayed with people.
 
 **Shipped and played** otherwise: 13,593 answers, both rulesets published;
-`appcheck-probe` refuses at sign-in; reveal ~0.5s after the clock; scoring is
-500 + rank 500/400/300/200/100. Files: [`scoring.md`](decisions/scoring.md),
-[`app-check-auth.md`](decisions/app-check-auth.md), [`vault.md`](decisions/vault.md),
-[`repeats.md`](decisions/repeats.md), [`wager.md`](decisions/wager.md),
-[`round-types.md`](decisions/round-types.md). Shared clock, live squads, votes
-and join-into-room since 28 August. Check the thing, not the prose.
+reveal ~0.5s after the clock; scoring is 500 + rank 500/400/300/200/100; shared
+clock, live squads, votes and join-into-room since 28 August. Files:
+[`scoring.md`](decisions/scoring.md), [`app-check-auth.md`](decisions/app-check-auth.md),
+[`vault.md`](decisions/vault.md), [`repeats.md`](decisions/repeats.md),
+[`wager.md`](decisions/wager.md), [`round-types.md`](decisions/round-types.md).
+Check the thing, not the prose.
 
 **What is actually in the project right now** — counts, the two slow leaks, and the
 two corrections that came out of miscounting them: [`decisions/cost.md`](decisions/cost.md#measured-live-28-august-2026).
@@ -86,8 +88,8 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
 ## Outstanding
 
 1. **A quizmaster dropping out mid-round** needs a browser and `host-room`.
-2. **No Content-Security-Policy.** Deliberate: a `<meta http-equiv>` CSP breaks
-   the live app silently and the stale CDN makes it painful to diagnose.
+2. **No Content-Security-Policy.** Deliberate, and re-confirmed 8 September: no
+   injection sink exists in `src/`. GitHub Pages cannot set headers at all.
 3. **Three things still want a second person**: the review panel, a quizmaster
    handover, two squads on one board. **Not the rank bonus or the wager** — this
    list called both unplayed until 4 September and the live rooms said otherwise,
@@ -99,19 +101,17 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
    spent — it substitutes medium rather than repeating, which is right but is not
    what the tile promises. The fix is a fold of `games/` into a real difficulty, not selection.
 5. **Any new hand-built pack needs `npm run seed-vault` before its ids can
-   score** — `resolveAnswer` *throws* when the vault has no document for a
-   question rather than scoring zero, so an unseeded pack is pickable in the
-   lobby and breaks at the reveal. Melody and picture are already seeded: the
-   vault held 13,712 on 4 September, 119 of them added that day. Answers live in
-   gitignored `.cache/hand-vault.json`; the published packs are sealed.
-6. **The melody round: replay is live and unplayed, the rest open.** Eight
-   abandoned it after four of fifteen on 8 September. Pool, distractors and clip
-   length are still unchosen: [`decisions/melody-round.md`](decisions/melody-round.md).
+   score** — `resolveAnswer` *throws* on a missing vault document rather than
+   scoring zero, so an unseeded pack is pickable and breaks at the reveal.
+   Melody and picture are seeded; the vault held 13,712 on 4 September.
+6. **The melody round: play the next one on The Ladder.** It was played on
+   Standard, which served none of the 38 easy tunes. Replay is live and
+   unplayed; pool, distractors and clip length still unchosen.
 7. **`firstMs` and the pack picker are live and unplayed.** The marker is a
    deterrent, so the only test that means anything is whether it changes his
    behaviour in the next round: [`decisions/first-touch.md`](decisions/first-touch.md).
-8. **Nothing has been kept yet.** The block is pasted and live; the first record
-   lands when a round reaches `finished` on `index-BDZpMBAG`. `read-games` shows it.
+8. **Nothing has been kept yet** — `read-games` says so. The block is pasted and
+   live, so the first record lands when a round next reaches `finished`.
 
 ## Where things are
 
@@ -128,7 +128,7 @@ Commands: `dev` (port 5273), `test`, `typecheck`, `lint`, `build`, `deploy`,
 `fetch-questions [-- --resort]`, `fetch-otqa`, `seed-vault`, `check-rules`,
 `sync-harness [n]`, `host-room [-- secs]`, `reveal-probe`, `asked-probe`,
 `take-stock`, `prune-rooms [-- --probe-rows --go]`, `fold-votes [-- --go]`,
-`write-hand-packs`, `read-games [-- --last n | --game id | --pack id]`.
+`write-hand-packs`, `read-games [-- --last n]`, `check-bundle`.
 
 `npm test` covers `src/` plus the pure parts of `scripts/`. Anything touching the
 network or the live project stays out deliberately; it must keep running offline.

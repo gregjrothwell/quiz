@@ -133,6 +133,17 @@ and `check-rules` confirmed the semantics, which between them cover it.
   the Realtime Database, which are governed only by the rules below. The key
   being public is fine; believing it is restricted is not.
 
+### The build shipped a secret for 24 days
+
+**8 September 2026.** The App Check debug token was inlined into the deployed
+bundle from 15 August and served publicly until it was gated and revoked. The
+claim above that no `AIza`-shaped literal appears in any commit is **true and
+about the repo** — and the repo was never the leak channel. Every audit here
+scoped itself to `master`; the build was what published it.
+
+Full account, the four-way verification and the two guards that now stand:
+[`build-secrets.md`](build-secrets.md).
+
 ### Fixed
 
 | Fix | Why it mattered |

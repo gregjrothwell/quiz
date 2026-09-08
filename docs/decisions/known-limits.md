@@ -134,3 +134,23 @@ behaviour is a bug.
   to be worth cheating for.
 
 ---
+
+## The Ladder cannot climb on melody or picture
+
+**Measured 8 September 2026.** `rampPlan(15)` asks for five `hard` questions.
+**The melody and picture packs contain none at all** — melody is 38 easy / 32
+medium / 0 hard, picture 27 / 22 / 0 — so the ramp fills from what is left and
+serves **10 easy then 5 medium**, permanently. The tile says *"Builds across the
+round"* and on those two packs that is wrong on every run, not eventually.
+
+Confirmed by running `selectQuestions` offline, and observed live: room `NDH7`
+(picture, Ladder) holds exactly `{"easy":10,"medium":5}`.
+
+This is the sharp end of `HANDOVER.md` outstanding item 4, which describes a
+bucket being *spent*. On a pack with a genuinely empty level it was never full.
+Sport is the spendable case: 15 hard is three Ladder rounds, and room `VW97`
+already came back `{"easy":5,"medium":7,"hard":3}`.
+
+**Accepted, not fixed** — Greg's call, 8 September: recorded here rather than
+surfaced in the lobby. The real repair is a difficulty the office earned, which
+is the `games/` fold, not a warning label.

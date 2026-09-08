@@ -31,6 +31,61 @@ matter — the room says something the complaint did not.
 played Science instead.** That is the strongest thing in this file and it is
 not something anybody said out loud.
 
+## There is a fourth cause, it dominates, and it is free to fix
+
+**Added 8 September 2026, from the live room rather than the complaint.** The
+three causes below — clip length, the pool, the distractors — were all real and
+all incomplete. The room document says something none of them do.
+
+**`DTK8` was played on Standard.** Its fifteen questions are `{"medium": 15}`.
+The melody pack is **38 easy · 32 medium · 0 hard**, so the round that eight
+people walked out of used **none of the 38 easy tunes**.
+
+| What Standard served | What `easy` holds |
+|---|---|
+| four Bach pieces | Für Elise / Ode to Joy / The Blue Danube |
+| three Gershwin and a Rachmaninoff | Frère Jacques / Alouette / Au clair de la lune |
+| Jerusalem / Rule Britannia / Nimrod / Pomp | Pop Goes the Weasel / London Bridge |
+| Pearl Fishers / BA / Flower Duet / Lakmé | Amazing Grace / Auld Lang Syne / When the Saints |
+
+**It was an active choice, not the default.** `Lobby.tsx` opens every lobby on
+`ramp` — The Ladder — and nothing persists the level between rounds. Somebody
+moved it to Standard for that round.
+
+**Confirmed by running the real selector offline**, not reasoned about:
+
+```
+melody   ramp    {"easy":10,"medium":5}   eeeeeeeeeemmmmm
+melody   medium  {"medium":15}            mmmmmmmmmmmmmmm   ← what DTK8 got
+```
+
+`mixed` was ruled out rather than assumed: **0 of 200 seeded `mixed` rounds came
+back all-medium.** And the prediction was cross-checked against a room nobody
+was arguing about — `NDH7` (picture, Ladder) holds exactly `{"easy":10,"medium":5}`,
+the shape the ramp is supposed to produce on a pack with no hard questions.
+
+**The two halves are independent, and only one of them was fixed.** Clip length
+does not move with the level:
+
+| | median clip | under 3s |
+|---|---|---|
+| easy (38) | 3.54s | 8 of 38 |
+| medium (32) | 3.23s | 12 of 32 |
+
+So **"Hear it again" aims at the dead air and the level aims at the pool.** They
+are different problems and the second costs nothing.
+
+**The evening ran its own comparison.** `3QDV` — Science, same eight people, same
+night — was a **Ladder** round (`{"easy":5,"medium":5,"hard":5}`) and went the
+full fifteen for 45,500 points. `DTK8` was Standard and stopped at four. The pack
+differs too, so this is not controlled and is not offered as proof; it is the
+only A/B that actually happened and it points one way.
+
+**Next melody round: play it on The Ladder.** That is the experiment, it needs no
+code, and `read-games` will say what it did. Note what the Ladder cannot do on
+this pack — with no hard questions it serves 10 easy then 5 medium and never
+climbs, which is [`known-limits.md`](known-limits.md).
+
 ## "Nobody knew any" is very nearly literal
 
 Four questions across eight players is 32 chances to answer. The room scored
@@ -84,9 +139,13 @@ seconds — because two things compound:
    keyed on `gameId:index` and guards the effect specifically so a re-render
    cannot stack a second copy. Correct for its purpose, and it also means there
    is no replay — miss the opening bar and the question is over for you.
-2. **There is no clock bed underneath it.** `playSequence` calls `stopClock()`
-   ([`sound.ts:396`](../../src/lib/sound.ts#L396)) so the nine-second backing
-   does not fight the tune. On a melody question the room therefore gets ~3.5
+2. **There is no clock bed underneath it.** *(Mechanism corrected 8 September
+   2026 — the effect is as described, the cause named here was wrong, and
+   anybody fixing it from this line would have opened the wrong file.)* It is
+   not `playSequence`'s `stopClock()` — that is a no-op here, because the bed
+   was **never started**. `startedClockRef` in `QuestionScreen` gates two things
+   at once: the melody branch sets it and returns, so `startClock` is never
+   reached on a melody question at all. On a melody question the room therefore gets ~3.5
    seconds of triangle wave and then **actual silence** — quieter than any
    other round type, at the moment when nobody knows the answer.
 
