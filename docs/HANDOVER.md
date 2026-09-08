@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 4 September 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 8 September 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -43,21 +43,25 @@ hook says so if this one grows.
 | the shareable result card, and how it gets to the player | [`decisions/final-card.md`](decisions/final-card.md) |
 | what to build next, and what each idea costs | [`decisions/ideas-review.md`](decisions/ideas-review.md) |
 | picture, music, jigsaw or steal rounds, and **negative points** | [`decisions/round-types.md`](decisions/round-types.md) |
+| why the melody round played badly, before changing it | [`decisions/melody-round.md`](decisions/melody-round.md) |
 | whether an idea was already turned down | [`decisions/scope.md`](decisions/scope.md) |
 | upgrading anything in `package.json` | [`decisions/dependencies.md`](decisions/dependencies.md) |
 | the studio set, or any lighting cue | [`decisions/lighting.md`](decisions/lighting.md) |
 
-## State as of 4 September 2026
+## State as of 8 September 2026
 
-**Live** (bundle `index-BOq4sYDx`): chair, take-stock, steal (opt-in, unplayed),
+**Live** (bundle `index-CIOq186A`): chair, take-stock, steal (opt-in, unplayed),
 mute, lobby squad picker, negatives paste (`check-rules` 52/52). Squads, vault,
-App Check, rank bonus, wager, repeats/Gentle+Fiendish withdrawn. 572 tests on
-master.
+App Check, rank bonus, wager, repeats/Gentle+Fiendish withdrawn. **653 tests on
+master.**
 
-**This branch `melody-round`, not live:** `voices` + hashed `image`; melody pack
-(~70) + picture pack (~49, jigsaw as lobby flag 3×3); lobby force-unmute;
-`authorDied` T−71. `npm run seed-vault` before the new ids score. 652 tests,
-types and lint clean.
+**Melody and picture are live and have been played** — `voices` + hashed
+`image`; melody pack (70) + picture pack (49, jigsaw as lobby flag 3×3); lobby
+force-unmute; `authorDied` T−71. This block said "branch `melody-round`, not
+live" until 8 September; PR #23 merged on the 4th and deployed, and the office
+played a melody round on the 8th. **The melody round did not work** —
+[`melody-round.md`](decisions/melody-round.md). Picture is still unplayed with
+people.
 
 **Shipped and played** otherwise: 13,593 answers, both rulesets published;
 `appcheck-probe` refuses at sign-in; reveal ~0.5s after the clock; scoring is
