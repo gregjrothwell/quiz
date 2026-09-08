@@ -16,6 +16,15 @@ and including 20 August moved *verbatim* to
 old entry to make it fit is the thing the paragraph above forbids. Every one of
 them is still listed below by date, so the chronology reads end to end from here.
 
+## 2026-09-08 — Live: `firstMs` and the pack picker (`index-B3Tfo0Nu`)
+
+Rules pasted first, `check-rules` **58/58** with the allow case passing, then
+merged and deployed — that order, because `hasOnly` would otherwise refuse every
+changed answer in the room. Greg's first paste was truncated at line 562 of 575
+and the console said so; the second landed. PR #27 was closed as collateral when
+`--delete-branch` removed the base branch a stacked PR pointed at; reopened as
+#28. Unplayed with people.
+
 ## 2026-09-08 — `firstMs`: show the snap guess rather than ban it
 
 Greg turned down both restriction shapes on cost and chose exposure. The answer
