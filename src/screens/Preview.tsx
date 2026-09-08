@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { ColdOpen } from '../components/ColdOpen';
 import { LeagueBoard } from '../components/LeagueBoard';
+import { RecoveryAsk } from '../components/RecoveryAsk';
 import { RecoveryPanel } from '../components/RecoveryPanel';
 import { SquadPanel } from '../components/SquadPanel';
 import { WeekTable } from '../components/WeekBoard';
@@ -837,6 +838,85 @@ export function Preview() {
     {
       title: 'Recovery · nothing saved yet',
       node: <RecoveryPanel uid="greg" onClaimed={noop} initialCode={null} />,
+    },
+    {
+      /*
+        First time this browser banks a win: one line, one button, podium still
+        visible. Clicking inlines the recovery panel rather than a dialog.
+      */
+      title: 'Final · first win, save a code',
+      node: (
+        <Final
+          banked={{ season: 'season-2', week: '2026-W36', squad: 'Hermes' }}
+          youPlayerId="greg"
+          snapshot={null}
+          room={mockRoom({
+            phase: 'finished',
+            index: 1,
+            scores: { greg: 4_000, sam: 3_100, priya: 1_800, alex: 2_400 },
+          })}
+          youUid="greg"
+          isQuizmaster
+          log={[]}
+          onPlayAgain={noop}
+          onLeave={noop}
+          onSeason={noop}
+          identityAsk="save"
+        />
+      ),
+    },
+    {
+      title: 'Final · first win, already asked',
+      node: (
+        <Final
+          banked={{ season: 'season-2', week: '2026-W36', squad: 'Hermes' }}
+          youPlayerId="greg"
+          snapshot={null}
+          room={mockRoom({
+            phase: 'finished',
+            index: 1,
+            scores: { greg: 4_000, sam: 3_100, priya: 1_800, alex: 2_400 },
+          })}
+          youUid="greg"
+          isQuizmaster
+          log={[]}
+          onPlayAgain={noop}
+          onLeave={noop}
+          onSeason={noop}
+        />
+      ),
+    },
+    {
+      /*
+        Code in storage, no claims/{uid} for this visit — banking would be
+        refused. Shown on a finish that is not a win, because re-claim is not
+        a winner's privilege.
+      */
+      title: 'Final · re-claim',
+      node: (
+        <Final
+          banked={null}
+          youPlayerId="greg-id"
+          snapshot={null}
+          room={mockRoom({ phase: 'finished', index: 1 })}
+          youUid="greg"
+          isQuizmaster
+          log={[]}
+          onPlayAgain={noop}
+          onLeave={noop}
+          onSeason={noop}
+          identityAsk="reclaim"
+        />
+      ),
+    },
+    {
+      title: 'Season · restore a stored code',
+      node: (
+        <>
+          <RecoveryAsk kind="reclaim" uid="greg" onClaimed={noop} />
+          <RecoveryPanel uid="greg" onClaimed={noop} initialCode="ABCD3F7H" />
+        </>
+      ),
     },
     {
       title: 'Final · the round in review',

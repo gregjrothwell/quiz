@@ -20,6 +20,7 @@ import {
 import { firestore, isFirebaseConfigured } from './firebase';
 import { keepGameRecord } from './lib/gameRecords';
 import { playerIdFor } from './lib/identity';
+import { useIdentityAsk } from './lib/useIdentityAsk';
 import { recordVote } from './lib/questionVotes';
 import { rememberedName } from './lib/rememberedName';
 import {
@@ -192,6 +193,8 @@ function Game() {
   // minute to midnight on a Sunday belongs to the week that has just ended, not
   // to the one starting while the podium is still on screen.
   const [banked, setBanked] = useState<(Banked & { gameId: string }) | null>(null);
+  const [bankedWin, setBankedWin] = useState(false);
+  const [claimNonce, setClaimNonce] = useState(0);
 
   // Which game this device has already banked, or is in the middle of banking,
   // so a re-render on the final screen cannot bank it twice. The season document
@@ -723,13 +726,15 @@ function Game() {
     const leadScore = rows[0]?.score ?? 0;
     const mine = rows.find((entry) => entry.uid === uid);
 
+    const won = leadScore > 0 && mine?.position === 1;
+
     recordGame({
       playerId: playerIdFor(uid),
       name: player.name,
       gameId,
       score: scores[uid] ?? 0,
       // A round where nobody scored is not a win for everybody.
-      won: leadScore > 0 && mine?.position === 1,
+      won,
       // Empty means "keep whatever the record says" rather than "no squad", so
       // a regular playing from a second device cannot silently clear theirs.
       squad: rememberedSquad(),
@@ -743,7 +748,10 @@ function Game() {
         ? honoursFor(gameLog, Object.keys(players), uid)
         : NO_HONOURS,
     })
-      .then((written) => setBanked({ ...written, gameId }))
+      .then((written) => {
+        setBanked({ ...written, gameId });
+        setBankedWin(won);
+      })
       .catch((cause: unknown) => {
         // Put the game back within reach of another attempt. Nothing retries on
         // a timer — the next room update or a reload is what tries again — so
@@ -752,7 +760,7 @@ function Game() {
         bankedRef.current = null;
         report(cause);
       });
-  }, [room, uid, gameLog, finalSnapshot, report]);
+  }, [room, uid, gameLog, finalSnapshot, report, claimNonce]);
 
   // The round itself, kept — one document per game at `games/{gameId}`, so
   // that "how did that actually play?" can be answered later from what people
@@ -789,6 +797,22 @@ function Game() {
     });
   }, [room, uid, isQuizmaster, gameLog, finalSnapshot]);
 
+  const thisGameBanked = Boolean(room && banked && banked.gameId === room.gameId);
+  const identityAsk = useIdentityAsk(uid, {
+    won: thisGameBanked && bankedWin,
+    banked: thisGameBanked,
+    gameId: room?.gameId ?? null,
+    refresh: claimNonce,
+  });
+
+  const handleIdentityClaimed = useCallback(() => {
+    // The season write may already have been refused under the old uid. Clearing
+    // the guard lets the effect try again now that claims/{uid} exists.
+    bankedRef.current = null;
+    setActionError(null);
+    setClaimNonce((n) => n + 1);
+  }, []);
+
   if (connection === 'error') {
     return (
       <Stage>
@@ -809,7 +833,12 @@ function Game() {
     return (
       <Stage>
         <Suspense fallback={<Loading what="the season" />}>
-          <Season youUid={uid} onBack={() => setShowSeason(false)} />
+          <Season
+            youUid={uid}
+            identityAsk={identityAsk === 'reclaim' ? 'reclaim' : null}
+            onIdentityClaimed={handleIdentityClaimed}
+            onBack={() => setShowSeason(false)}
+          />
         </Suspense>
       </Stage>
     );
@@ -913,6 +942,8 @@ function Game() {
             onPlayAgain={() => void dispatch({ type: 'reset' }).catch(report)}
             onLeave={handleLeave}
             onSeason={() => setShowSeason(true)}
+            identityAsk={identityAsk}
+            onIdentityClaimed={handleIdentityClaimed}
           />
         )) || (
           /*

@@ -34,6 +34,15 @@ re-run on the 8th against the files as they actually are, not inherited from the
 September entries (the CDN, the mute button, the steal) went to
 [`recall/2026-09.md`](recall/2026-09.md), whole, links repointed.
 
+## 2026-09-08 — Ask for the recovery code (branch `ask-recovery-code`)
+
+One line on the final screen the first time this browser banks a win, persisted
+in `vibequiz.recoveryAsked`; not a dialog. Re-claim when localStorage still has
+a claimed `playerId` and a code but `claims/{uid}` is missing — the gap
+[`identity.md`](decisions/identity.md#a-recovery-code-would-not-fully-save-them-either)
+reasoned about. Offline test of that shape; no anonymous account was deleted.
+Not live. Not minted for everybody.
+
 ## 2026-09-08 — Live: the round is kept, and the tune can be heard again (`index-BDZpMBAG`)
 
 Greg pasted the `games` block; `check-rules` **65/65**, the allow case flipped.

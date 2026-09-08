@@ -1,6 +1,6 @@
 # Durable identity
 
-> **Owner: Greg Rothwell. Last updated: 20 August 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 8 September 2026. Budget: 250 lines.**
 
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
@@ -221,16 +221,23 @@ does not exist and `playerId != newUid`, so **both branches fail and the write i
 refused.**
 
 The player would keep their history, see an error when a game tried to bank, and
-have to re-enter their recovery code to mint `claims/{newUid}`. Nothing in the
-app prompts them to. The code is still in their localStorage, so recovery is
-possible — it is just neither automatic nor discoverable.
+have to present the recovery code again to mint `claims/{newUid}`. The code is
+still in localStorage.
 
-Verifying this properly means deleting a real anonymous account and watching what
-the next visit does. That deletes somebody's row if the reasoning is wrong, so it
-has not been done.
+**Prompted, 8 September 2026** — still reasoned from the rules, still not tested
+against a deleted anonymous account. The app treats "claimed playerId in storage,
+recovery code in storage, no `claims/{uid}` for this uid" as a re-claim and
+offers one button that presents the stored code. Offline test covers that shape.
+A real purge is still not done.
+
+### Asking them to save one
+
+Zero codes because nothing asked. One line on the final screen the first time
+this browser banks a win (`position === 1` and a score above zero), persisted as
+`vibequiz.recoveryAsked`. Not a dialog. Not minted for everybody.
 
 ### If it is ever turned on
 
-Have people claim recovery codes **first**, and only then enable it — and fix the
-re-claim gap above, because otherwise every claimed player silently loses the
-ability to bank a game thirty days after their last visit.
+Have people claim recovery codes **first**, and only then enable it. The re-claim
+prompt above is the other half of that — without it every claimed player loses
+the ability to bank thirty days after their last visit.

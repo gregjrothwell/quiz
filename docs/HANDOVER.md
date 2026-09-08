@@ -94,7 +94,7 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
    which nothing but Greg's memory was going to catch:
    [`decisions/round-types.md`](decisions/round-types.md#the-prose-was-wrong-and-that-is-a-finding).
    The **anonymous-account purge is reviewed and the answer is don't**:
-   [`decisions/identity.md`](decisions/identity.md).
+   [`decisions/identity.md`](decisions/identity.md). Recovery ask: `ask-recovery-code`.
 4. **The Ladder stops climbing** once a pack's thin `easy` or `hard` bucket is
    spent — it substitutes medium rather than repeating, which is right but is not
    what the tile promises. The fix is a fold of `games/` into a real difficulty, not selection.

@@ -1,6 +1,6 @@
 # The ideas review
 
-> **Owner: Greg Rothwell. Last updated: 4 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 8 September 2026. Budget: 250 lines.**
 
 Written after the office's first real round on the season work: what to do next, why, and what
 each costs against the Spark free tier.
@@ -150,14 +150,12 @@ a two-week head start already.
 
 The round leaves the tab as an image. [`final-card.md`](final-card.md).
 
-### 8. Ask for the recovery code
+### 8. Ask for the recovery code — **built 8 September 2026, not live**
 
-Zero codes and zero claims, because nothing has ever asked anyone to save one. One line on
-the final screen the first time somebody wins. That is the feature's missing 10%. Fix the
-untested gap while you are there:
-[`identity.md`](identity.md#a-recovery-code-would-not-fully-save-them-either) reasons that a
-purged account with a stored code fails both `ownsPlayer` branches with nothing prompting a
-re-claim.
+Zero codes because nothing had asked. One line on the final screen the first time this
+browser banks a win (`vibequiz.recoveryAsked`); not a dialog. Re-claim when a stored
+code would not write: [`identity.md`](identity.md#a-recovery-code-would-not-fully-save-them-either).
+Not minted for everybody. Branch `ask-recovery-code`.
 
 ### 9. Rank on form, not on average
 
@@ -237,9 +235,9 @@ seen by more than one person at once.
 7. **A melody round** (§4) — unblocked by the shared clock, and the cheapest genuinely new
    thing here.
 
-**Then §3, §8, §9 and §12 in whatever order the office asks for.** §8 is worth a mention every
-time this list is read: **still 0 recovery codes and 0 identity claims**, because nothing has
-ever asked anybody to save one, and one line on the final screen is the whole feature.
+**Then §3, §8, §9 and §12 in whatever order the office asks for.** §8 is built on
+`ask-recovery-code`, not live: one line on a first banked win, plus re-claim. Live still
+has **0 recovery codes and 0 identity claims** until this ships and someone saves one.
 
 Evidence: `check-rules` in both directions after every paste — and note that **its deny cases
 pass vacuously when a rule is missing entirely**, which is how a paste can look verified when it

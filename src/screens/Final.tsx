@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Awards } from '../components/Awards';
 import { WeekBoard } from '../components/WeekBoard';
 import { Chair } from '../components/Chair';
+import { RecoveryAsk } from '../components/RecoveryAsk';
 import { Review } from '../components/Review';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { Standings } from '../components/Standings';
@@ -11,6 +12,7 @@ import type { RoomState } from '../engine/state';
 // Type-only, so the drawing module itself stays out of this chunk.
 import type * as DrawCard from '../lib/drawCard';
 import type { Delivery } from '../lib/drawCard';
+import type { IdentityAskKind } from '../lib/identity';
 import type { Banked } from '../lib/season';
 import type { FinalSnapshot } from '../lib/useFinalSnapshot';
 import { useCue } from '../lib/sound';
@@ -49,6 +51,13 @@ interface FinalProps {
   onPlayAgain: () => void;
   onLeave: () => void;
   onSeason: () => void;
+  /**
+   * Save-your-code or re-claim, derived by the app. Unset in every gallery
+   * fixture that is not specifically those states, so `#/preview` cannot mark
+   * this browser as already asked.
+   */
+  identityAsk?: IdentityAskKind | null;
+  onIdentityClaimed?: (playerId: string) => void;
 }
 
 /**
@@ -101,6 +110,8 @@ export function Final({
   onPlayAgain,
   onLeave,
   onSeason,
+  identityAsk = null,
+  onIdentityClaimed,
 }: FinalProps) {
   const players = snapshot?.players ?? room.players;
   const scores = snapshot?.scores ?? room.scores;
@@ -282,13 +293,16 @@ export function Final({
         </button>
       </div>
 
-      {/* Said once, here, because this is the moment there is a record worth
-          keeping — and the season table is where the code lives. Not a prompt or
-          a dialog: nobody has ever thanked a quiz for interrupting the podium. */}
-      <p className="muted hint hint--apart">
-        That’s gone onto the season table, which is tied to this browser. Grab a recovery code
-        there if you ever play from anywhere else.
-      </p>
+      {/* One line, one button, and only when it matters — first banked win, or
+          a stored code that would not write. Not a dialog: nobody has ever
+          thanked a quiz for interrupting the podium. */}
+      {identityAsk && youUid ? (
+        <RecoveryAsk
+          kind={identityAsk}
+          uid={youUid}
+          onClaimed={onIdentityClaimed ?? (() => undefined)}
+        />
+      ) : null}
     </>
   );
 }

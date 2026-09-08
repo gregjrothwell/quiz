@@ -30,6 +30,7 @@ import { mergeRecords } from './season';
 
 const PLAYER_ID_KEY = 'vibequiz.playerId';
 const RECOVERY_KEY = 'vibequiz.recovery';
+const ASKED_KEY = 'vibequiz.recoveryAsked';
 
 function read(key: string): string | null {
   try {
@@ -58,15 +59,86 @@ function write(key: string, value: string): void {
  * behaviour is byte-for-byte what it was before any of this existed.
  */
 export function playerIdFor(uid: string): string {
-  return read(PLAYER_ID_KEY) ?? uid;
+  return storedPlayerId() ?? uid;
 }
 
 export function hasClaimedIdentity(uid: string): boolean {
   return playerIdFor(uid) !== uid;
 }
 
+/** The claimed playerId, or null if this browser has never claimed one. */
+export function storedPlayerId(): string | null {
+  return read(PLAYER_ID_KEY);
+}
+
 export function storedRecoveryCode(): string | null {
   return read(RECOVERY_KEY);
+}
+
+/**
+ * Whether this browser has already been asked to save a recovery code.
+ *
+ * Set the first time the final screen offers it, so a later win does not ask
+ * again. Private windows that cannot persist still see the offer every time,
+ * which is the same limitation the remembered name already carries.
+ */
+export function hasBeenAskedToSaveRecovery(): boolean {
+  return read(ASKED_KEY) === '1';
+}
+
+export function markAskedToSaveRecovery(): void {
+  write(ASKED_KEY, '1');
+}
+
+export type IdentityAskKind = 'save' | 'reclaim';
+
+/**
+ * One line on the final screen, the first time this browser banks a win.
+ *
+ * Smaller than "any season row worth keeping": a finish that is not first does
+ * not ask. A code already in storage does not ask. The season table still
+ * mints on demand for anyone who wants one later.
+ */
+export function shouldAskToSaveRecovery(input: {
+  won: boolean;
+  banked: boolean;
+  alreadyAsked: boolean;
+  storedCode: string | null;
+}): boolean {
+  return input.won && input.banked && !input.alreadyAsked && input.storedCode === null;
+}
+
+/**
+ * After an anonymous-uid change, localStorage can still hold a claimed playerId
+ * and a recovery code while `claims/{newUid}` is missing. `ownsPlayer` then
+ * fails both branches — uid mismatch, no claim — and banking is refused.
+ *
+ * `claimPlayerId` is null when that document does not exist. Reasoned from the
+ * rules; the test feeds this shape rather than deleting an anonymous account.
+ */
+export function needsReclaim(input: {
+  uid: string;
+  storedPlayerId: string | null;
+  storedCode: string | null;
+  claimPlayerId: string | null;
+}): boolean {
+  if (!input.storedPlayerId || !input.storedCode) return false;
+  if (input.storedPlayerId === input.uid) return false;
+  return input.claimPlayerId !== input.storedPlayerId;
+}
+
+/**
+ * This browser's `claims/{uid}` playerId, or null if there is not one.
+ *
+ * Readable only by this uid. A missing document is the re-claim case, not an
+ * error — most browsers have never claimed anything.
+ */
+export async function readOwnClaim(uid: string): Promise<string | null> {
+  const snapshot = await getDoc(claimDoc(uid));
+  if (!snapshot.exists()) return null;
+
+  const { playerId } = snapshot.data() as { playerId?: unknown };
+  return typeof playerId === 'string' && playerId.length > 0 ? playerId : null;
 }
 
 function recoveryDoc(code: string) {

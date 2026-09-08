@@ -1,20 +1,27 @@
 import { useCallback, useEffect, useState } from 'react';
 import { LeagueBoard } from '../components/LeagueBoard';
 import { WeekBoard } from '../components/WeekBoard';
+import { RecoveryAsk } from '../components/RecoveryAsk';
 import { RecoveryPanel } from '../components/RecoveryPanel';
 import { SquadPanel } from '../components/SquadPanel';
-import { playerIdFor } from '../lib/identity';
+import { playerIdFor, type IdentityAskKind } from '../lib/identity';
 import { weekId } from '../engine/week';
 import { loadTable, type SeasonRow } from '../lib/season';
 
 interface SeasonProps {
   youUid: string | null;
   onBack: () => void;
+  /**
+   * Re-claim only. The first-win save ask belongs on the podium; this screen
+   * already has the full panel for anyone who wants a code.
+   */
+  identityAsk?: IdentityAskKind | null;
+  onIdentityClaimed?: (playerId: string) => void;
 }
 
 type Load = { state: 'loading' } | { state: 'ready'; rows: SeasonRow[] } | { state: 'error'; message: string };
 
-export function Season({ youUid, onBack }: SeasonProps) {
+export function Season({ youUid, onBack, identityAsk = null, onIdentityClaimed }: SeasonProps) {
   const [load, setLoad] = useState<Load>({ state: 'loading' });
 
   const [reloads, setReloads] = useState(0);
@@ -142,6 +149,17 @@ export function Season({ youUid, onBack }: SeasonProps) {
       */}
       {load.state === 'ready' && youRow ? (
         <SquadPanel playerId={youRow.playerId} current={youRow.squad} onChanged={reload} />
+      ) : null}
+
+      {youUid && identityAsk === 'reclaim' ? (
+        <RecoveryAsk
+          kind="reclaim"
+          uid={youUid}
+          onClaimed={(playerId) => {
+            onClaimed(playerId);
+            onIdentityClaimed?.(playerId);
+          }}
+        />
       ) : null}
 
       {youUid ? <RecoveryPanel uid={youUid} onClaimed={onClaimed} /> : null}
