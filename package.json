@@ -20,6 +20,7 @@
     "write-hand-packs": "tsx scripts/write-hand-packs.ts",
     "write-melody-pack": "tsx scripts/write-melody-pack.ts",
     "fold-votes": "tsx --env-file=.env.local scripts/fold-votes.ts",
+    "read-games": "tsx --env-file=.env.local scripts/read-games.ts",
     "sync-harness": "tsx --env-file=.env.local scripts/sync-harness.ts",
     "host-room": "tsx --env-file=.env.local scripts/host-room.ts",
     "rank-harness": "tsx --env-file=.env.local scripts/rank-harness.ts",

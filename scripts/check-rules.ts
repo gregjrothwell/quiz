@@ -180,6 +180,48 @@ async function openProbeQuestion(
   });
 }
 
+/**
+ * A finished round as the client files it — one question, one answer each —
+ * with the writer and the seats as a check needs them. The shape is
+ * `GameRecord` in `src/engine/gameRecord.ts` plus `finishedAt`, which is the
+ * server's stamp because the rules pin it to `request.time`. Not imported from
+ * the engine: a literal here is what lets this script prove the *published*
+ * ruleset accepts what the client writes, rather than what the repo says it
+ * should.
+ */
+function probeGame(
+  writtenBy: string,
+  players: Record<string, { name: string }>,
+): Record<string, unknown> {
+  const uids = Object.keys(players);
+  return {
+    roomCode: PROBE_ROOM,
+    packId: 'science',
+    packTitle: 'Rules check',
+    durationSecs: 15,
+    wagerEnabled: false,
+    stealEnabled: false,
+    jigsawEnabled: false,
+    players,
+    scores: Object.fromEntries(uids.map((uid) => [uid, 1000])),
+    questions: [
+      {
+        id: PROBE_QUESTION,
+        index: 0,
+        category: 'General Knowledge',
+        difficulty: 'easy',
+        kind: 'text',
+        correctIndex: 0,
+        skipped: false,
+        answers: Object.fromEntries(uids.map((uid) => [uid, { optionIndex: 0, elapsedMs: 4000 }])),
+        deltas: Object.fromEntries(uids.map((uid) => [uid, 1000])),
+      },
+    ],
+    writtenBy,
+    finishedAt: serverTimestamp(),
+  };
+}
+
 function required(name: string): string {
   const value = process.env[name];
   if (!value) throw new Error(`${name} is not set — run with --env-file=.env.local`);
@@ -232,6 +274,7 @@ interface Probes {
   uidB: string;
   dbB: Firestore;
   probeCode: string;
+  probeGameId: string;
   presence: DatabaseReference;
   ownSeasonRow: DocumentReference;
   ownWeekRow: DocumentReference;
@@ -247,7 +290,8 @@ interface Probes {
  */
 function buildChecks(probes: Probes): Check[] {
   const {
-    uid, db, rtdb, uidB, dbB, probeCode, presence, ownSeasonRow, ownWeekRow, validSeasonRow,
+    uid, db, rtdb, uidB, dbB, probeCode, probeGameId, presence, ownSeasonRow, ownWeekRow,
+    validSeasonRow,
   } = probes;
 
   return [
@@ -815,6 +859,88 @@ function buildChecks(probes: Probes): Check[] {
         getDocs(query(collection(db, 'questionVotes', 'rules-check-question', 'votes'), limit(1))),
     },
     {
+      /*
+        The check that says whether a finished round is being kept at all. The
+        client swallows a refusal on purpose — a record for later must not put
+        an error over everybody's standings — so with the `games` block
+        unpublished every round is silently lost and nothing on screen says so.
+        This allow case is the only thing that does. The deny cases below pass
+        vacuously until the block exists, and prove nothing before it does.
+      */
+      label: 'Firestore   · keep a finished round',
+      expect: 'allow',
+      hint: 'firestore.rules is missing the games block — every finished round '
+        + 'is refused silently and `read-games` will never have anything to say',
+      run: async () => {
+        const reference = doc(db, 'games', probeGameId);
+        await setDoc(reference, probeGame(uid, { [uid]: { name: 'Rules check' } }));
+        // Swept rather than left, for the reason the vote case gives — and the
+        // reason `delete` is granted to the writer at all.
+        return deleteDoc(reference);
+      },
+    },
+    {
+      label: 'Firestore   · file a round as somebody else',
+      expect: 'deny',
+      hint: 'firestore.rules does not pin games.writtenBy to the writer — a record '
+        + 'could be filed in another player’s name, and deleted by them',
+      run: () =>
+        setDoc(doc(db, 'games', `${probeGameId}-as-b`), probeGame(uidB, {
+          [uid]: { name: 'Rules check' },
+          [uidB]: { name: 'Somebody else' },
+        })),
+    },
+    {
+      label: 'Firestore   · file a round you were not in',
+      expect: 'deny',
+      hint: 'firestore.rules lets a uid keep a round it was not a player in',
+      run: () =>
+        setDoc(doc(db, 'games', `${probeGameId}-absent`), probeGame(uid, {
+          [uidB]: { name: 'Somebody else' },
+        })),
+    },
+    {
+      label: 'Firestore   · attach an extra field to a kept round',
+      expect: 'deny',
+      hint: 'firestore.rules does not hasOnly the games document — anything could '
+        + 'be smuggled in beside the round, in a document nothing bounds below '
+        + 'the top level',
+      run: () =>
+        setDoc(doc(db, 'games', `${probeGameId}-extra`), {
+          ...probeGame(uid, { [uid]: { name: 'Rules check' } }),
+          notes: 'a field the fold never writes',
+        }),
+    },
+    {
+      label: 'Firestore   · rewrite a kept round',
+      expect: 'deny',
+      hint: 'firestore.rules grants update on games — a record could be edited '
+        + 'after the fact, which is the one thing a record is for not being',
+      run: async () => {
+        const reference = doc(db, 'games', `${probeGameId}-rewrite`);
+        await setDoc(reference, probeGame(uid, { [uid]: { name: 'Rules check' } }));
+        try {
+          await updateDoc(reference, { packTitle: 'Rewritten' });
+        } finally {
+          await deleteDoc(reference);
+        }
+      },
+    },
+    {
+      label: 'Firestore   · read a kept round',
+      expect: 'deny',
+      hint: 'firestore.rules grants read on games — the collection is written and '
+        + 'never read by a client; `read-games` uses the Admin SDK',
+      run: () => getDoc(doc(db, 'games', probeGameId)),
+    },
+    {
+      label: 'Firestore   · list the kept rounds',
+      expect: 'deny',
+      hint: 'firestore.rules grants list on games — every round ever played, with '
+        + 'every player’s name and every answer, in one query',
+      run: () => getDocs(query(collection(db, 'games'), limit(1))),
+    },
+    {
       label: 'Realtime DB · write presence',
       expect: 'allow',
       hint: 'publish database.rules.json — closed tabs will never be cleaned up',
@@ -979,6 +1105,17 @@ async function main(): Promise<void> {
    */
   const probeCode = `RC${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 
+  /**
+   * Fresh per run for the same reason: a kept round cannot be updated, so a
+   * fixed id would exist from the second run onwards and the allow check would
+   * be refused as a rewrite rather than accepted as a record. Each check that
+   * creates one deletes it, which the rules permit to the uid that wrote it.
+   * Every run signs in as a new uid, so a document a crashed run leaves behind
+   * is one only the service account can remove — the season-row problem again,
+   * and the reason the delete happens in a `finally`.
+   */
+  const probeGameId = `rules-check-game-${Math.random().toString(36).slice(2, 8)}`;
+
   const presence = ref(rtdb, `presence/${PROBE_ROOM}/${uid}`);
   const ownSeasonRow = doc(db, 'seasons', ANY_SEASON, 'players', uid);
   const ownWeekRow = doc(db, 'seasons', PROBE_WEEK, 'players', uid);
@@ -994,7 +1131,8 @@ async function main(): Promise<void> {
   };
 
   const checks = buildChecks({
-    uid, db, rtdb, uidB, dbB, probeCode, presence, ownSeasonRow, ownWeekRow, validSeasonRow,
+    uid, db, rtdb, uidB, dbB, probeCode, probeGameId, presence, ownSeasonRow, ownWeekRow,
+    validSeasonRow,
   });
 
   const failed = await runChecks(checks);

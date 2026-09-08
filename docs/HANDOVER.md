@@ -48,6 +48,7 @@ hook says so if this one grows.
 | whether an answer can be changed, and the spam exploit | [`decisions/answer-spam.md`](decisions/answer-spam.md) |
 | `firstMs`, and what the reveal says about a snap guess | [`decisions/first-touch.md`](decisions/first-touch.md) |
 | whether an idea was already turned down | [`decisions/scope.md`](decisions/scope.md) |
+| what a finished round left behind, and reading it back | [`decisions/game-record.md`](decisions/game-record.md) |
 | upgrading anything in `package.json` | [`decisions/dependencies.md`](decisions/dependencies.md) |
 | the studio set, or any lighting cue | [`decisions/lighting.md`](decisions/lighting.md) |
 
@@ -59,9 +60,9 @@ committed under a second, scored nowhere
 Rules pasted and `check-rules` **58/58** before the deploy, in that order.
 Unplayed with people. Also chair, take-stock, steal (opt-in, unplayed), mute,
 lobby squad picker, negatives paste. Squads, vault, App Check, rank bonus,
-wager, repeats/Gentle+Fiendish withdrawn. **675 tests on master**, and
-`check-rules` is **58 cases** — the 52/52 this file carried until 8 September
-predated three merges.
+wager, repeats/Gentle+Fiendish withdrawn. **675 tests on master, 726 on
+`keep-the-round`**; `check-rules` is **65 cases, 64/65 until the `games` block
+is pasted** (Outstanding #8) — the 52/52 here until 8 September predated three merges.
 
 **Melody and picture are live and have been played** — `voices` + hashed
 `image`; melody pack (70) + picture pack (49, jigsaw as lobby flag 3×3); lobby
@@ -96,7 +97,7 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
    [`decisions/identity.md`](decisions/identity.md).
 4. **The Ladder stops climbing** once a pack's thin `easy` or `hard` bucket is
    spent — it substitutes medium rather than repeating, which is right but is not
-   what the tile promises. The fix is `stats/{questionId}`, not selection.
+   what the tile promises. The fix is a fold of `games/` into a real difficulty, not selection.
 5. **Any new hand-built pack needs `npm run seed-vault` before its ids can
    score** — `resolveAnswer` *throws* when the vault has no document for a
    question rather than scoring zero, so an unseeded pack is pickable in the
@@ -109,6 +110,8 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
 7. **`firstMs` and the pack picker are live and unplayed.** The marker is a
    deterrent, so the only test that means anything is whether it changes his
    behaviour in the next round: [`decisions/first-touch.md`](decisions/first-touch.md).
+8. **The round is kept only once the `games` block is pasted** — until then every
+   record is refused silently and only `check-rules` says so. Paste, 65/65, merge.
 
 ## Where things are
 
@@ -125,7 +128,7 @@ Commands: `dev` (port 5273), `test`, `typecheck`, `lint`, `build`, `deploy`,
 `fetch-questions [-- --resort]`, `fetch-otqa`, `seed-vault`, `check-rules`,
 `sync-harness [n]`, `host-room [-- secs]`, `reveal-probe`, `asked-probe`,
 `take-stock`, `prune-rooms [-- --probe-rows --go]`, `fold-votes [-- --go]`,
-`write-hand-packs`.
+`write-hand-packs`, `read-games [-- --last n | --game id | --pack id]`.
 
 `npm test` covers `src/` plus the pure parts of `scripts/`. Anything touching the
 network or the live project stays out deliberately; it must keep running offline.

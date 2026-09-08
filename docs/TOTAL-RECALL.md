@@ -29,6 +29,26 @@ the wrong file is the thing this document exists to stop. The link check was
 re-run on the 8th against the files as they actually are, not inherited from the
 4th.
 
+**Split a third time, 8 September 2026**, at 288 with two entries about to land
+— this one and PR #31's — that would have taken it past 300. The three oldest 4
+September entries (the CDN, the mute button, the steal) went to
+[`recall/2026-09.md`](recall/2026-09.md), whole, links repointed.
+
+## 2026-09-08 — The round is kept: `games/{gameId}` (branch `keep-the-round`)
+
+**Built, not live — the `games` block needs its paste first.** One document per
+finished round, written by the quizmaster's device, global and never read by a
+client. It holds every response the answers subcollection destroys: per question
+the id, difficulty, kind, correct index, each player's pick, time, `firstMs` and
+stake. A round with a skipped question is still kept, marked, because the skip
+is the tool most likely to be reached for on a tune nobody knew — gating on
+`sawWholeGame` would have lost the melody round this exists to explain.
+`check-rules` **64/65** against the live rules: the allow case `keep a finished
+round` FAILs with the block unpublished, exactly as it should, and six deny
+cases pass vacuously until it is. `npm run read-games` reads it back on the
+Admin SDK and ran clean against the live project: *Nothing kept yet.* Drift test
+forced red and back. [`game-record.md`](decisions/game-record.md).
+
 ## 2026-09-08 — A/B testing is blocked on one gap, and it is not the framework
 
 `rooms/{code}/answers/{uid}` is overwritten every question, so a finished round
@@ -168,91 +188,14 @@ case (FAIL until the paste) and the `−maxPoints()` deny.
 `playSequence` is exported for a melody round. No tunes, no pictures, no
 force-unmute in the lobby — those wait on content.
 
-## 2026-09-04 — Live, and the CDN lied for a minute
-
-Merged and deployed. `master` at `1743357`, gh-pages at `20155bf`, bundle
-`index-BOq4sYDx`.
-
-**Verified rather than assumed, and the first reading was wrong.** Immediately
-after the deploy the live `index.html` still referenced `index-Y1gzBmfb` — the
-bundle from 2 September. gh-pages already held the new one, so the artifact was
-right and the CDN was stale, which is exactly the failure this project's docs
-warn about and the reason "watch it onto the CDN" is the standing instruction.
-It caught up within a minute of re-fetching.
-
-Checked in this order, because each step rules out a different cause: what is
-*in* the gh-pages commit, then whether the deployed bundle actually contains the
-new strings (`got there first`, `Your squad`), then what the CDN serves, then the
-live page in a browser — 200s on the bundle, the Firebase chunk and the packs,
-landing screen rendered, **no console errors**.
-
-**The Firebase chunk hash did not move** (`firebase-Cns3pSRr`), which is the
-split doing its job: a returning player re-fetches 236 kB, not 724 kB.
-
-**Still never played.** The steal is opt-in and off by default, so tonight it
-changes nothing unless a quizmaster picks it. 5% remains a reasoned guess.
-
-## 2026-09-04 — The mute button, and a squad nobody could pick
-
-**The mute button** was transparent-on-transparent over the studio backdrop,
-which is beams of light rather than a flat colour: fine on a dark stripe,
-invisible where a beam passed under it. It has a dark ground and an edge now.
-
-**The squad gap is the one that cost data.** Auto-join, shipped 28 August, takes
-a player from a link straight into the room — skipping the landing screen, which
-was the only place a squad could be chosen. `App.tsx` even says of that path that
-"the lobby can offer a way out without this needing to know about it". The lobby
-never did: its `squad` prop only *displayed* "playing for X". The other control,
-`SquadPanel`, lives on the season board and renders only for somebody who already
-has a row there — which a first-timer does not. So a link-joiner with nothing
-remembered could not pick a side at all, and banked without one. **A feature
-shipped in August quietly removed the only route to another one.**
-
-Fixed with a picker in the lobby writing the same store the banking reads.
-**Half-fixed, honestly:** the *live* squad board still misses them for the round
-they fix it in, because it reads `players.{uid}.squad` off the room and nothing
-can write that after a join — `writeSelfIntoRoom` is unexposed and the reducer's
-`join` deliberately refuses an existing player. Outstanding #4.
-
-## 2026-09-04 — The first right answer steals from the leader
-
-**Built, unplayed.** `round-types.md` ranked it third and XS4A is why: the wager
-swung the top by 22,800 and could not touch the two players holding nothing, and
-a share of your own points is worth nothing when you have none. A steal pays the
-answerer out of the leader, so it reaches exactly those people.
-
-Opt-in from the lobby like the wager, but every question rather than the last,
-and the two compose. A **share** of the victim's score — the wager's load-bearing
-decision, so nothing goes below zero and the season row is untouched. **Nobody
-steals from themselves**, which makes it self-limiting rather than a tax. It
-**moves** points rather than making them: the round's total is identical before
-and after, asserted rather than assumed. Zero reads, zero writes, no paste.
-
-`STEAL_SHARE` is 5% and is the dial. Everything else is settled.
-
-**Proved, not reasoned.** The branch had been claiming "no paste needed" off a
-reading of the repo ruleset, which is the least evidenced thing on it and the
-most expensive to be wrong about — `playerOk` uses `hasOnly`, so a refused room
-write is a room nobody can start or join. `check-rules` now writes a live room
-carrying `stealEnabled` and `lastSteal`: **PASS, 52/52**. `sync-harness 10`
-after it: **10/10, 0 dropped, all ten inside 56ms**.
-
-`lastSteal` sits on the room beside `lastDeltas` because the reveal has to *say*
-what happened — a net delta cannot be read back into "Priya took 500 off you",
-and without it a robbed leader saw "You didn't answer · −500" and no reason.
-That is the wager's fifth trap, caught this time before it shipped.
-
-**The glint fix**, same day: the winner's riser swept its band of light across
-the whole stage, because it moved the *element* rather than the gradient inside
-it and `.riser` sets no `overflow`. [`decisions/lighting.md`](decisions/lighting.md).
-
-572 tests. Details: [`decisions/round-types.md`](decisions/round-types.md).
-
 ## Earlier — the full chronology, archived
 
-Thirty-eight entries, moved on 28 August, 2 September and 8 September 2026,
+Forty-one entries, moved on 28 August, 2 September and 8 September 2026 (twice),
 unchanged. Newest first, as above.
 
+- **2026-09-04** — [Live, and the CDN lied for a minute](recall/2026-09.md#2026-09-04--live-and-the-cdn-lied-for-a-minute)
+- **2026-09-04** — [The mute button, and a squad nobody could pick](recall/2026-09.md#2026-09-04--the-mute-button-and-a-squad-nobody-could-pick)
+- **2026-09-04** — [The first right answer steals from the leader](recall/2026-09.md#2026-09-04--the-first-right-answer-steals-from-the-leader)
 - **2026-09-04** — [The chair seats everybody, and the prose was wrong](recall/2026-09.md#2026-09-04--the-chair-seats-everybody-and-the-prose-was-wrong)
 - **2026-09-02** — [Both went live the same afternoon](recall/2026-09.md#2026-09-02--both-went-live-the-same-afternoon)
 - **2026-09-02** — [The repeats, and a wager that had never existed](recall/2026-09.md#2026-09-02--the-repeats-and-a-wager-that-had-never-existed)

@@ -459,6 +459,70 @@ service cloud.firestore {
       allow delete: if request.auth != null && request.auth.uid == uid;
     }
 
+    // ── The round, kept ──────────────────────────────────────────────────────
+    //
+    // One document per finished game, written by the quizmaster's device when
+    // the room reaches `finished` and read by nobody but `npm run read-games`.
+    // The answers subcollection is overwritten every question, so this is the
+    // only place a round's responses survive — the reason every "did that
+    // feature play well?" has ended on "hard to say". See
+    // `src/engine/gameRecord.ts` for what it holds and
+    // `src/lib/gameRecords.ts` for why it is global rather than in the room.
+    //
+    // Bounded at the top level only. Rules cannot walk a list, so what is
+    // inside `questions` is trusted — the same trust as the room's own
+    // `questions` array, and capped by the same 1 MiB document limit. The
+    // headcount and question-count ceilings mirror `maxPlayers()` and
+    // `maxQuestions()`, which are scoped to `/rooms` and cannot be reached here.
+    //
+    // `finishedAt == request.time` pins the stamp to the server's clock.
+    // `writtenBy` must be the writer and must be in the game: a record of a
+    // round you were not in is not yours to file.
+    //
+    // `update` is refused so a record cannot be rewritten after the fact.
+    // `delete` is allowed to the writer, for the reason the vote block gives
+    // above: `check-rules` creates one of these on every run, and a row no
+    // client can remove is permanent litter. It costs nothing worth protecting
+    // — a record is self-reported, exactly as a season row is.
+    match /games/{gameId} {
+      function gameOk() {
+        return request.resource.data.keys().hasOnly([
+            'roomCode', 'packId', 'packTitle', 'durationSecs', 'wagerEnabled',
+            'stealEnabled', 'jigsawEnabled', 'players', 'scores', 'questions',
+            'writtenBy', 'finishedAt',
+          ])
+          && request.resource.data.keys().hasAll([
+            'roomCode', 'packId', 'packTitle', 'durationSecs', 'wagerEnabled',
+            'stealEnabled', 'jigsawEnabled', 'players', 'scores', 'questions',
+            'writtenBy', 'finishedAt',
+          ])
+          && request.resource.data.roomCode is string
+          && request.resource.data.roomCode.size() <= 32
+          && request.resource.data.packId is string
+          && request.resource.data.packId.size() <= 64
+          && request.resource.data.packTitle is string
+          && request.resource.data.packTitle.size() <= 128
+          && request.resource.data.durationSecs is int
+          && request.resource.data.wagerEnabled is bool
+          && request.resource.data.stealEnabled is bool
+          && request.resource.data.jigsawEnabled is bool
+          && request.resource.data.players is map
+          && request.resource.data.players.size() <= 60
+          && request.resource.data.scores is map
+          && request.resource.data.scores.size() <= 60
+          && request.resource.data.questions is list
+          && request.resource.data.questions.size() <= 50
+          && request.resource.data.writtenBy == request.auth.uid
+          && request.auth.uid in request.resource.data.players
+          && request.resource.data.finishedAt == request.time;
+      }
+
+      allow read: if false;
+      allow create: if request.auth != null && gameOk();
+      allow update: if false;
+      allow delete: if request.auth != null && resource.data.writtenBy == request.auth.uid;
+    }
+
     // Season standings. Unlike room scores, these can be locked down properly:
     // a player writes only their own row, so the rules enforce exactly the
     // invariant the app relies on. The values themselves are still self-
