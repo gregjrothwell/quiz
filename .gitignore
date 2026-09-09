@@ -18,3 +18,4 @@ CLAUDE.md
 .cursor/rules/typescript.mdc
 .cursor/rules/testing.mdc
 .cursor/rules/docs.mdc
+.cursor/rules/session-close.mdc
