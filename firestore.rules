@@ -431,17 +431,24 @@ service cloud.firestore {
     // breakdown would make the modal answer guessable and hand back precisely
     // what the vault exists to protect.
     //
-    // `read` is denied outright, to clients and to the app alike. Nothing shows
-    // a tally — the fold that turns these into a retirement list runs on the
-    // Admin SDK, which is not subject to these rules at all — and a collection
-    // nobody can enumerate is a collection nobody can mine. Granting `list`
-    // later is one paste, and is what a live tally would need.
+    // `get` stays denied: a client must not read another uid's verdict
+    // document. `list` is granted to anyone signed in, because a
+    // `getCountFromServer` is the same permission as listing the matching
+    // documents — Firebase's aggregation rules say so, and there is no
+    // count-only operation in the rules language. That is the paste a live
+    // tally needs. Unsigned requests stay denied. There is still no listener;
+    // the client asks twice (good vs bad) at the reveal and otherwise writes.
     //
     // The document id is the voter's uid, so one person's opinion of a question
     // counts once. `update` is allowed for the same reason it is on an answer:
     // changing your mind is not cheating.
     match /questionVotes/{questionId}/votes/{uid} {
-      allow read: if false;
+      allow get: if false;
+
+      // Signed-in only. A count with a `limit` is a capped count, so the
+      // `request.query.limit` trick cannot allow counting while refusing
+      // `getDocs` of the same query. Bound to auth rather than left open.
+      allow list: if request.auth != null;
 
       allow create, update: if request.auth != null
         && request.auth.uid == uid

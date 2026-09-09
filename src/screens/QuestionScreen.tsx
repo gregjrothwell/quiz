@@ -7,7 +7,7 @@ import { PodiumTile, type TileArrival, type TileState } from '../components/Podi
 import { QuestionVote } from '../components/QuestionVote';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { replayDurationMs, replayTimeline, type Arrival } from '../engine/replay';
-import type { Verdict } from '../engine/questionVote';
+import type { Verdict, VoteTally } from '../engine/questionVote';
 import { stakeFor, verdictFor, WAGER_SHARES } from '../engine/scoring';
 import {
   currentQuestion,
@@ -81,6 +81,14 @@ interface QuestionScreenProps {
    * omitted.
    */
   onVote: (verdict: Verdict) => void;
+  /**
+   * How the corpus has voted on this question. Passed through to the vote
+   * strip; `null` is today's UI. Optional so the gallery's older reveal
+   * fixtures stay the waiting state without each one naming it.
+   */
+  voteCounts?: VoteTally | null;
+  /** Gallery only: start the strip already having voted. */
+  initialVote?: Verdict | null;
 }
 
 /**
@@ -100,6 +108,8 @@ export function QuestionScreen({
   onReveal,
   onNext,
   onVote,
+  voteCounts = null,
+  initialVote = null,
 }: QuestionScreenProps) {
   const question = currentQuestion(room);
   const optionCount = question?.options.length ?? 0;
@@ -612,7 +622,12 @@ export function QuestionScreen({
             the last one's answer. Cheaper and clearer than lifting the choice
             into state the parent would then have to reset.
           */
-          <QuestionVote key={room.index} onVote={onVote} />
+          <QuestionVote
+            key={room.index}
+            onVote={onVote}
+            counts={voteCounts}
+            initialVerdict={initialVote}
+          />
         ) : (
           <AnswerLamps players={room.players} answers={room.answers} youUid={youUid} />
         )}

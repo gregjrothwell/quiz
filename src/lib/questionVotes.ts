@@ -1,5 +1,13 @@
-import { doc, setDoc, type Firestore } from 'firebase/firestore';
-import type { Verdict } from '../engine/questionVote';
+import {
+  collection,
+  doc,
+  getCountFromServer,
+  query,
+  setDoc,
+  where,
+  type Firestore,
+} from 'firebase/firestore';
+import type { Verdict, VoteTally } from '../engine/questionVote';
 
 /**
  * Where a player's opinion of a question goes.
@@ -7,11 +15,11 @@ import type { Verdict } from '../engine/questionVote';
  * **A global collection, not a room subcollection**, and each of the three
  * reasons is specific to this project:
  *
- * - **It costs no reads.** Every client already holds an unfiltered
+ * - **It is not a listener.** Every client already holds an unfiltered
  *   `onSnapshot` on the room's answers, which is the `Q·N²` term in
  *   `docs/decisions/cost.md`. A second in-room collection would add another one
- *   — about 540 more reads a game at six players, 2,700 at twelve — to show a
- *   tally nobody asked for. This path is written and never read by a client.
+ *   — about 540 more reads a game at six players, 2,700 at twelve. Votes stay
+ *   global so the reveal can ask for a count without anyone listening.
  * - **It outlives the room.** `prune-rooms` deletes rooms and their
  *   subcollections; votes banked inside one would be deleted by the tool whose
  *   whole job is deleting rooms, which is a slow way to collect nothing.
@@ -27,12 +35,22 @@ import type { Verdict } from '../engine/questionVote';
  * back exactly what the vault protects. A verdict is written after the reveal
  * and says nothing whatever about the answer.
  *
+ * At the reveal the client counts, it does not fetch documents: two
+ * `getCountFromServer` queries (good vs bad). Firebase treats a count as the
+ * same permission as listing the matching documents, so `list` is granted to
+ * signed-in clients and `get` of a vote document stays denied. There is no
+ * listener. Failures degrade to no numbers — the round is the thing that matters.
+ *
  * **`Firestore` is a parameter for the reason `vault.ts` says it is**: nothing
  * here may reach `src/firebase.ts`, which reads `import.meta.env` in its module
  * body and so kills any script that imports it at any depth.
  */
 function voteDoc(db: Firestore, questionId: string, uid: string) {
   return doc(db, 'questionVotes', questionId, 'votes', uid);
+}
+
+function votesCol(db: Firestore, questionId: string) {
+  return collection(db, 'questionVotes', questionId, 'votes');
 }
 
 /**
@@ -59,5 +77,38 @@ export async function recordVote(
     await setDoc(voteDoc(db, questionId, uid), { verdict });
   } catch {
     // Deliberately silent. See above.
+  }
+}
+
+/**
+ * How many people have called this question good, and how many rubbish.
+ *
+ * Two aggregate counts rather than one, because the reveal wants each side
+ * and a total does not split. No documents are read, and nothing is listened
+ * to — a listener on a global collection is the `Q·N²` term this path exists
+ * to avoid.
+ *
+ * **Returns `null` on any failure**, including the `list` grant not having
+ * been pasted yet. The caller treats that as today's UI: the buttons, no
+ * numbers, no error over the reveal.
+ */
+export async function fetchVoteTally(
+  db: Firestore,
+  questionId: string,
+): Promise<VoteTally | null> {
+  try {
+    const votes = votesCol(db, questionId);
+    const [goodSnap, badSnap] = await Promise.all([
+      getCountFromServer(query(votes, where('verdict', '==', 'good'))),
+      getCountFromServer(query(votes, where('verdict', '==', 'bad'))),
+    ]);
+    return {
+      good: goodSnap.data().count,
+      bad: badSnap.data().count,
+    };
+  } catch (cause: unknown) {
+    // Paste not landed, offline, App Check — same as `recordVote`.
+    void cause;
+    return null;
   }
 }

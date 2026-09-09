@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { VERDICTS, type Verdict } from '../engine/questionVote';
+import { VERDICTS, type Verdict, type VoteTally } from '../engine/questionVote';
 
 /**
  * What the room thought of the question, asked once the answer is out.
@@ -14,8 +14,10 @@ import { VERDICTS, type Verdict } from '../engine/questionVote';
  * moment they see the answer, not a minute later looking at a table.
  *
  * The choice is held here rather than lifted, and the parent resets it by
- * remounting on the question index. Nothing else needs to know: the write is
- * fire-and-forget, and no other screen shows a tally.
+ * remounting on the question index. Counts come from the parent: two aggregate
+ * reads at the reveal, never a listener, and `null` means the numbers are not
+ * there — waiting, or the count was refused — so the buttons look as they did
+ * before the tally existed.
  */
 const LABELS: Record<Verdict, string> = {
   good: 'Good one',
@@ -24,10 +26,22 @@ const LABELS: Record<Verdict, string> = {
 
 interface QuestionVoteProps {
   onVote: (verdict: Verdict) => void;
+  /**
+   * How the corpus has voted on this question. `null` hides the numbers
+   * rather than drawing zeroes: a refused count must look like today's UI,
+   * not like a room that has not voted.
+   */
+  counts?: VoteTally | null;
+  /** Gallery only: start already having voted. Live play starts unchosen. */
+  initialVerdict?: Verdict | null;
 }
 
-export function QuestionVote({ onVote }: QuestionVoteProps) {
-  const [chosen, setChosen] = useState<Verdict | null>(null);
+export function QuestionVote({
+  onVote,
+  counts = null,
+  initialVerdict = null,
+}: QuestionVoteProps) {
+  const [chosen, setChosen] = useState<Verdict | null>(initialVerdict);
 
   return (
     <div className="lamps lamps--vote">
@@ -51,6 +65,7 @@ export function QuestionVote({ onVote }: QuestionVoteProps) {
           }}
         >
           {LABELS[verdict]}
+          {counts != null ? <span className="lamp__n">{counts[verdict]}</span> : null}
         </button>
       ))}
     </div>

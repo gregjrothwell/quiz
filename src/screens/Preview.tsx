@@ -644,6 +644,69 @@ export function Preview() {
       ),
     },
     {
+      /*
+        The tally at the reveal, waiting. This is also what the strip looks
+        like when the count is refused — the list grant is a paste, and a
+        missing paste must not put an error over the answer.
+      */
+      title: 'Reveal · vote, waiting',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'reveal',
+            answers: {
+              sam: { optionIndex: 2, elapsedMs: 2_300 },
+              greg: { optionIndex: 2, elapsedMs: 4_100 },
+              alex: { optionIndex: 3, elapsedMs: 5_200 },
+              priya: { optionIndex: 0, elapsedMs: 8_900 },
+            },
+            lastDeltas: { sam: 0, greg: 0, alex: 0, priya: 1_000 },
+          })}
+          youUid="greg"
+          isQuizmaster
+          clock={CLOCK}
+          revealed
+          voteCounts={null}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      /*
+        Voted, and the corpus has a view: four said good, two said rubbish.
+        Social pressure on the vote itself is the point; Skip stays off the
+        strip. The numbers sit on the pills, not as a percentage.
+      */
+      title: 'Reveal · how it voted',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'reveal',
+            answers: {
+              sam: { optionIndex: 2, elapsedMs: 2_300 },
+              greg: { optionIndex: 2, elapsedMs: 4_100 },
+              alex: { optionIndex: 3, elapsedMs: 5_200 },
+              priya: { optionIndex: 0, elapsedMs: 8_900 },
+            },
+            lastDeltas: { sam: 0, greg: 0, alex: 0, priya: 1_000 },
+          })}
+          youUid="greg"
+          isQuizmaster
+          clock={CLOCK}
+          revealed
+          voteCounts={{ good: 4, bad: 2 }}
+          initialVote="good"
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
       title: 'Standings',
       node: (
         <Scoreboard

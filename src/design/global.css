@@ -2808,6 +2808,17 @@ select.input option {
   padding-left: 0;
 }
 
+/*
+  The running count, on the pill, not a percentage and not a separate strip.
+  Tabular so 9 → 10 does not shove Rubbish sideways. Letter-spacing reset
+  because `.lamp` tracks 0.1em, which makes a single digit look lost.
+*/
+.lamp__n {
+  margin-left: 0.4em;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Your own name, so you can find yourself in a row of ten without reading it. */
 .lamp--you {
   border-color: var(--amber);

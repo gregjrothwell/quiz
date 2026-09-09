@@ -3,7 +3,7 @@ import { ColdOpen } from './components/ColdOpen';
 import { Stage } from './components/Stage';
 import { arrivalFor, walkedIn, NO_ARRIVAL, type Arrival } from './engine/arrival';
 import { shouldAutoJoin } from './engine/autoJoin';
-import type { Verdict } from './engine/questionVote';
+import type { Verdict, VoteTally } from './engine/questionVote';
 import { honoursFor, sawWholeGame, NO_HONOURS } from './engine/awards';
 import { formFor } from './engine/form';
 import { foldGameRecord } from './engine/gameRecord';
@@ -20,7 +20,7 @@ import {
 import { firestore, isFirebaseConfigured } from './firebase';
 import { keepGameRecord } from './lib/gameRecords';
 import { playerIdFor } from './lib/identity';
-import { recordVote } from './lib/questionVotes';
+import { fetchVoteTally, recordVote } from './lib/questionVotes';
 import { rememberedName } from './lib/rememberedName';
 import {
   rememberPlayingWith,
@@ -192,6 +192,15 @@ function Game() {
   // minute to midnight on a Sunday belongs to the week that has just ended, not
   // to the one starting while the podium is still on screen.
   const [banked, setBanked] = useState<(Banked & { gameId: string }) | null>(null);
+
+  /**
+   * How the corpus has voted on the question now on screen. `null` until a
+   * count lands — and stays `null` if the list grant has not been pasted, so
+   * the reveal looks as it does today. Never a listener: two aggregates at
+   * the reveal, and again after this device votes.
+   */
+  const [voteTally, setVoteTally] = useState<VoteTally | null>(null);
+  const voteTallySeq = useRef(0);
 
   // Which game this device has already banked, or is in the middle of banking,
   // so a re-render on the final screen cannot bank it twice. The season document
@@ -522,14 +531,11 @@ function Game() {
   /**
    * What this player thought of the question just revealed.
    *
-   * Written straight out and never read back. There is no tally on any screen,
-   * which is what keeps this free: the collection is global rather than in the
-   * room, so it adds no listener and no reads at all — one write per player per
-   * question, ninety a game against twenty thousand a day. The argument in full
-   * is in `src/lib/questionVotes.ts`.
-   *
-   * Failures are swallowed inside `recordVote`. A verdict is a nicety collected
-   * during the reveal and must never put an error over the top of the round.
+   * Written straight out; the tally is counted, not listened to. Two
+   * `getCountFromServer` queries at the reveal (and again after this tap),
+   * never a snapshot on `questionVotes`. Failures are swallowed inside
+   * `recordVote` / `fetchVoteTally` — a nicety must never put an error over
+   * the round. The argument in full is in `src/lib/questionVotes.ts`.
    */
   const handleVote = useCallback(
     (verdict: Verdict) => {
@@ -537,10 +543,31 @@ function Game() {
       const question = room ? currentQuestion(room) : null;
       if (!question) return;
 
-      void recordVote(firestore(), question.id, uid, verdict);
+      const questionId = question.id;
+      const seq = ++voteTallySeq.current;
+      void (async () => {
+        await recordVote(firestore(), questionId, uid, verdict);
+        const next = await fetchVoteTally(firestore(), questionId);
+        if (seq === voteTallySeq.current) setVoteTally(next);
+      })();
     },
     [uid, room],
   );
+
+  const revealedQuestionId =
+    room && room.phase === 'reveal' ? (currentQuestion(room)?.id ?? null) : null;
+
+  useEffect(() => {
+    if (!revealedQuestionId) {
+      setVoteTally(null);
+      return;
+    }
+    const questionId = revealedQuestionId;
+    const seq = ++voteTallySeq.current;
+    void fetchVoteTally(firestore(), questionId).then((tally) => {
+      if (seq === voteTallySeq.current) setVoteTally(tally);
+    });
+  }, [revealedQuestionId]);
 
   /**
    * Which question this device is already revealing, so the expiry effect and
@@ -891,6 +918,7 @@ function Game() {
             onReveal={() => void handleReveal().catch(report)}
             onNext={() => void dispatch({ type: 'next', at: Date.now() }).catch(report)}
             onVote={handleVote}
+            voteCounts={voteTally}
           />
         )) ||
         (room.phase === 'scoreboard' && (
