@@ -34,6 +34,14 @@ re-run on the 8th against the files as they actually are, not inherited from the
 September entries (the CDN, the mute button, the steal) went to
 [`recall/2026-09.md`](recall/2026-09.md), whole, links repointed.
 
+## 2026-09-09 — Live: iTunes Name that Tune, flags, sleeves (`index-6odlsKCm`)
+
+Pushed `itunes-tunes-and-flags` (`10260ce`), then `npm run deploy`. gh-pages
+`6dd46ce`. CDN served `index-Df9CfP0K` for about a minute, then
+`index-6odlsKCm`. Firebase chunk unmoved (`firebase-Cns3pSRr`). Packs 200:
+tunes, flags, sleeves on `index.json`. Vault already held the new ids (206
+added, 0 changed). **master still at `e19d518` until the PR merges.** Unplayed.
+
 ## 2026-09-09 — Vault topped up for tunes, flags, sleeves
 
 `seed-vault` against `quiz-d686e`, service account, one run: **206 added, 0

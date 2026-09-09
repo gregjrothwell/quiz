@@ -187,5 +187,5 @@ does not cover a public Pages quiz.
 
 `tunes` stole the lobby name. `melody` is **Classical**. Mute gate covers both.
 Hear it again / `R` still works. 79 GB-store tracks, distractors from other
-artists. **`seed-vault` before this pack can score.** `itunes-probe` is live
-and out of `npm test`.
+artists. Vault seeded 9 September (206 added). Live the same day as
+`index-6odlsKCm`. `itunes-probe` is live and out of `npm test`.

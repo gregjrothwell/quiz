@@ -54,12 +54,13 @@ hook says so if this one grows.
 
 ## State as of 9 September 2026
 
-**Live** is still bundle `index-BDZpMBAG` (8 September). Branch
-`itunes-tunes-and-flags` is local, not deployed: **Name that Tune** is now
-iTunes 30s previews (79); synth pack retitled **Classical**; **Flags** (76,
-hashed, no jigsaw); **Sleeves** (52, mzstatic hotlink); picture retitled
-**Fine Art**. **On the box** is not shipped — GB iTunes Search returns 0 movies.
-Vault topped up 9 September: **206 added, 0 changed** (was 13,712). No push.
+**Live** is `index-6odlsKCm` (9 September, gh-pages `6dd46ce`). **Name that Tune**
+is iTunes 30s previews (79); synth pack is **Classical**; **Flags** (76, hashed,
+no jigsaw); **Sleeves** (52, mzstatic hotlink); picture is **Fine Art**. **On the
+box** is not shipped — GB iTunes Search returns 0 movies. Vault topped up the
+same morning: **206 added, 0 changed** (was 13,712). Firebase chunk unmoved at
+`firebase-Cns3pSRr`. Branch `itunes-tunes-and-flags` is pushed; **master is
+behind until the PR merges.**
 
 **Melody and picture are live and have been played** — `voices` + hashed
 `image`. The melody round did not work — [`melody-round.md`](decisions/melody-round.md).
@@ -94,13 +95,13 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
 5. **Hand-built packs still need a seed after any *new* ids.** `tunes` / `flags`
    / `sleeves` were seeded 9 September (**206 added, 0 changed**). Melody and
    picture already were. An unseeded pack still breaks at reveal.
-6. **Name that Tune is iTunes on this branch, not live.** Classical keeps the
-   synth. [`decisions/melody-round.md`](decisions/melody-round.md).
+6. **Name that Tune is iTunes, live, unplayed.** Classical keeps the synth.
+   [`decisions/melody-round.md`](decisions/melody-round.md).
 7. **`firstMs` and the pack picker are live and unplayed.** The marker is a
    deterrent, so the only test that means anything is whether it changes his
    behaviour in the next round: [`decisions/first-touch.md`](decisions/first-touch.md).
 8. **Nothing has been kept yet.** The block is pasted and live; the first record
-   lands when a round reaches `finished` on `index-BDZpMBAG`. `read-games` shows it.
+   lands when a round reaches `finished` on `index-6odlsKCm`. `read-games` shows it.
 
 ## Where things are
 
