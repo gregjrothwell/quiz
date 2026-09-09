@@ -1,0 +1,93 @@
+import type { Difficulty } from '../src/questions/types';
+
+export interface FlagSpec {
+  slug: string;
+  prompt: string;
+  correct: string;
+  incorrect: string[];
+  difficulty: Difficulty;
+  /** ISO 3166-1 alpha-2, or gb-eng / gb-sct / gb-wls / gb-nir. */
+  code: string;
+}
+
+const COUNTRY = 'Which country is this?';
+const FLAG = 'Which flag is this?';
+
+export const FLAG_SPECS: FlagSpec[] = [
+  { slug: 'gb', prompt: COUNTRY, correct: 'United Kingdom', incorrect: ['Australia', 'New Zealand', 'France'], difficulty: 'easy', code: 'gb' },
+  { slug: 'eng', prompt: FLAG, correct: 'England', incorrect: ['United Kingdom', 'Georgia', 'Northern Ireland'], difficulty: 'easy', code: 'gb-eng' },
+  { slug: 'sct', prompt: FLAG, correct: 'Scotland', incorrect: ['Greece', 'Israel', 'Finland'], difficulty: 'easy', code: 'gb-sct' },
+  { slug: 'wls', prompt: FLAG, correct: 'Wales', incorrect: ['Bhutan', 'China', 'Portugal'], difficulty: 'easy', code: 'gb-wls' },
+  { slug: 'nir', prompt: FLAG, correct: 'Northern Ireland', incorrect: ['England', 'Republic of Ireland', 'Wales'], difficulty: 'medium', code: 'gb-nir' },
+  { slug: 'ie', prompt: COUNTRY, correct: 'Ireland', incorrect: ['Ivory Coast', 'Italy', 'India'], difficulty: 'easy', code: 'ie' },
+  { slug: 'fr', prompt: COUNTRY, correct: 'France', incorrect: ['Netherlands', 'Russia', 'Italy'], difficulty: 'easy', code: 'fr' },
+  { slug: 'de', prompt: COUNTRY, correct: 'Germany', incorrect: ['Belgium', 'Spain', 'Lithuania'], difficulty: 'easy', code: 'de' },
+  { slug: 'it', prompt: COUNTRY, correct: 'Italy', incorrect: ['Mexico', 'Hungary', 'Ireland'], difficulty: 'easy', code: 'it' },
+  { slug: 'es', prompt: COUNTRY, correct: 'Spain', incorrect: ['Portugal', 'Mexico', 'Sri Lanka'], difficulty: 'easy', code: 'es' },
+  { slug: 'us', prompt: COUNTRY, correct: 'United States', incorrect: ['Malaysia', 'Liberia', 'Chile'], difficulty: 'easy', code: 'us' },
+  { slug: 'ca', prompt: COUNTRY, correct: 'Canada', incorrect: ['Peru', 'Switzerland', 'Japan'], difficulty: 'easy', code: 'ca' },
+  { slug: 'au', prompt: COUNTRY, correct: 'Australia', incorrect: ['New Zealand', 'United Kingdom', 'Fiji'], difficulty: 'easy', code: 'au' },
+  { slug: 'nz', prompt: COUNTRY, correct: 'New Zealand', incorrect: ['Australia', 'United Kingdom', 'Greece'], difficulty: 'medium', code: 'nz' },
+  { slug: 'jp', prompt: COUNTRY, correct: 'Japan', incorrect: ['Bangladesh', 'Palau', 'South Korea'], difficulty: 'easy', code: 'jp' },
+  { slug: 'cn', prompt: COUNTRY, correct: 'China', incorrect: ['Vietnam', 'North Korea', 'Kyrgyzstan'], difficulty: 'easy', code: 'cn' },
+  { slug: 'in', prompt: COUNTRY, correct: 'India', incorrect: ['Niger', 'Ireland', 'Mexico'], difficulty: 'easy', code: 'in' },
+  { slug: 'br', prompt: COUNTRY, correct: 'Brazil', incorrect: ['Argentina', 'Portugal', 'South Africa'], difficulty: 'easy', code: 'br' },
+  { slug: 'za', prompt: COUNTRY, correct: 'South Africa', incorrect: ['Kenya', 'Zimbabwe', 'Brazil'], difficulty: 'easy', code: 'za' },
+  { slug: 'mx', prompt: COUNTRY, correct: 'Mexico', incorrect: ['Italy', 'Iran', 'Hungary'], difficulty: 'easy', code: 'mx' },
+  { slug: 'gr', prompt: COUNTRY, correct: 'Greece', incorrect: ['Uruguay', 'Israel', 'Scotland'], difficulty: 'easy', code: 'gr' },
+  { slug: 'se', prompt: COUNTRY, correct: 'Sweden', incorrect: ['Denmark', 'Norway', 'Finland'], difficulty: 'easy', code: 'se' },
+  { slug: 'ch', prompt: COUNTRY, correct: 'Switzerland', incorrect: ['Denmark', 'Tonga', 'Canada'], difficulty: 'easy', code: 'ch' },
+  { slug: 'nl', prompt: COUNTRY, correct: 'Netherlands', incorrect: ['Luxembourg', 'France', 'Russia'], difficulty: 'easy', code: 'nl' },
+  { slug: 'be', prompt: COUNTRY, correct: 'Belgium', incorrect: ['Germany', 'Chad', 'Romania'], difficulty: 'medium', code: 'be' },
+  { slug: 'pt', prompt: COUNTRY, correct: 'Portugal', incorrect: ['Spain', 'Brazil', 'Sri Lanka'], difficulty: 'easy', code: 'pt' },
+  { slug: 'pl', prompt: COUNTRY, correct: 'Poland', incorrect: ['Indonesia', 'Monaco', 'Malta'], difficulty: 'medium', code: 'pl' },
+  { slug: 'tr', prompt: COUNTRY, correct: 'Turkey', incorrect: ['Tunisia', 'Pakistan', 'Algeria'], difficulty: 'medium', code: 'tr' },
+  { slug: 'ar', prompt: COUNTRY, correct: 'Argentina', incorrect: ['Uruguay', 'Honduras', 'Nicaragua'], difficulty: 'medium', code: 'ar' },
+  { slug: 'eg', prompt: COUNTRY, correct: 'Egypt', incorrect: ['Syria', 'Yemen', 'Iraq'], difficulty: 'medium', code: 'eg' },
+  { slug: 'kr', prompt: COUNTRY, correct: 'South Korea', incorrect: ['Japan', 'North Korea', 'China'], difficulty: 'medium', code: 'kr' },
+  { slug: 'no', prompt: COUNTRY, correct: 'Norway', incorrect: ['Iceland', 'Denmark', 'Finland'], difficulty: 'medium', code: 'no' },
+  { slug: 'fi', prompt: COUNTRY, correct: 'Finland', incorrect: ['Sweden', 'Iceland', 'Norway'], difficulty: 'medium', code: 'fi' },
+  { slug: 'dk', prompt: COUNTRY, correct: 'Denmark', incorrect: ['Switzerland', 'Norway', 'Sweden'], difficulty: 'medium', code: 'dk' },
+  { slug: 'at', prompt: COUNTRY, correct: 'Austria', incorrect: ['Latvia', 'Lebanon', 'Canada'], difficulty: 'medium', code: 'at' },
+  { slug: 'cz', prompt: COUNTRY, correct: 'Czechia', incorrect: ['Philippines', 'Slovakia', 'Chile'], difficulty: 'medium', code: 'cz' },
+  { slug: 'hu', prompt: COUNTRY, correct: 'Hungary', incorrect: ['Italy', 'Bulgaria', 'Iran'], difficulty: 'medium', code: 'hu' },
+  { slug: 'jm', prompt: COUNTRY, correct: 'Jamaica', incorrect: ['South Africa', 'Mozambique', 'Tanzania'], difficulty: 'medium', code: 'jm' },
+  { slug: 'ke', prompt: COUNTRY, correct: 'Kenya', incorrect: ['South Sudan', 'Malawi', 'Uganda'], difficulty: 'medium', code: 'ke' },
+  { slug: 'ng', prompt: COUNTRY, correct: 'Nigeria', incorrect: ['Ireland', 'Ivory Coast', 'Cameroon'], difficulty: 'medium', code: 'ng' },
+  { slug: 'ua', prompt: COUNTRY, correct: 'Ukraine', incorrect: ['Sweden', 'Colombia', 'Kazakhstan'], difficulty: 'medium', code: 'ua' },
+  { slug: 'il', prompt: COUNTRY, correct: 'Israel', incorrect: ['Scotland', 'Argentina', 'Greece'], difficulty: 'medium', code: 'il' },
+  { slug: 'sa', prompt: COUNTRY, correct: 'Saudi Arabia', incorrect: ['Pakistan', 'Afghanistan', 'Iran'], difficulty: 'medium', code: 'sa' },
+  { slug: 'ru', prompt: COUNTRY, correct: 'Russia', incorrect: ['Netherlands', 'Slovakia', 'France'], difficulty: 'easy', code: 'ru' },
+  { slug: 'is', prompt: COUNTRY, correct: 'Iceland', incorrect: ['Norway', 'Finland', 'Sweden'], difficulty: 'hard', code: 'is' },
+  { slug: 'lu', prompt: COUNTRY, correct: 'Luxembourg', incorrect: ['Netherlands', 'Russia', 'France'], difficulty: 'hard', code: 'lu' },
+  { slug: 'ro', prompt: COUNTRY, correct: 'Romania', incorrect: ['Chad', 'Andorra', 'Moldova'], difficulty: 'hard', code: 'ro' },
+  { slug: 'td', prompt: COUNTRY, correct: 'Chad', incorrect: ['Romania', 'Andorra', 'Moldova'], difficulty: 'hard', code: 'td' },
+  { slug: 'ci', prompt: COUNTRY, correct: 'Ivory Coast', incorrect: ['Ireland', 'Italy', 'Niger'], difficulty: 'hard', code: 'ci' },
+  { slug: 'id', prompt: COUNTRY, correct: 'Indonesia', incorrect: ['Poland', 'Monaco', 'Singapore'], difficulty: 'hard', code: 'id' },
+  { slug: 'mc', prompt: COUNTRY, correct: 'Monaco', incorrect: ['Indonesia', 'Poland', 'Singapore'], difficulty: 'hard', code: 'mc' },
+  { slug: 'ne', prompt: COUNTRY, correct: 'Niger', incorrect: ['India', 'Ireland', 'Ivory Coast'], difficulty: 'hard', code: 'ne' },
+  { slug: 'si', prompt: COUNTRY, correct: 'Slovenia', incorrect: ['Slovakia', 'Russia', 'Serbia'], difficulty: 'hard', code: 'si' },
+  { slug: 'sk', prompt: COUNTRY, correct: 'Slovakia', incorrect: ['Slovenia', 'Russia', 'Serbia'], difficulty: 'hard', code: 'sk' },
+  { slug: 'co', prompt: COUNTRY, correct: 'Colombia', incorrect: ['Ecuador', 'Venezuela', 'Ukraine'], difficulty: 'hard', code: 'co' },
+  { slug: 'ec', prompt: COUNTRY, correct: 'Ecuador', incorrect: ['Colombia', 'Venezuela', 'Bolivia'], difficulty: 'hard', code: 'ec' },
+  { slug: 've', prompt: COUNTRY, correct: 'Venezuela', incorrect: ['Colombia', 'Ecuador', 'Armenia'], difficulty: 'hard', code: 've' },
+  { slug: 'sn', prompt: COUNTRY, correct: 'Senegal', incorrect: ['Mali', 'Guinea', 'Cameroon'], difficulty: 'hard', code: 'sn' },
+  { slug: 'ml', prompt: COUNTRY, correct: 'Mali', incorrect: ['Senegal', 'Guinea', 'Cameroon'], difficulty: 'hard', code: 'ml' },
+  { slug: 'gn', prompt: COUNTRY, correct: 'Guinea', incorrect: ['Mali', 'Senegal', 'Cameroon'], difficulty: 'hard', code: 'gn' },
+  { slug: 'cl', prompt: COUNTRY, correct: 'Chile', incorrect: ['Cuba', 'Peru', 'Costa Rica'], difficulty: 'medium', code: 'cl' },
+  { slug: 'cu', prompt: COUNTRY, correct: 'Cuba', incorrect: ['Chile', 'North Korea', 'Panama'], difficulty: 'medium', code: 'cu' },
+  { slug: 'pk', prompt: COUNTRY, correct: 'Pakistan', incorrect: ['Turkey', 'Saudi Arabia', 'Algeria'], difficulty: 'medium', code: 'pk' },
+  { slug: 'bd', prompt: COUNTRY, correct: 'Bangladesh', incorrect: ['Japan', 'Palau', 'Vietnam'], difficulty: 'hard', code: 'bd' },
+  { slug: 'vn', prompt: COUNTRY, correct: 'Vietnam', incorrect: ['China', 'Morocco', 'Kyrgyzstan'], difficulty: 'medium', code: 'vn' },
+  { slug: 'th', prompt: COUNTRY, correct: 'Thailand', incorrect: ['Costa Rica', 'North Korea', 'Netherlands'], difficulty: 'medium', code: 'th' },
+  { slug: 'ph', prompt: COUNTRY, correct: 'Philippines', incorrect: ['Czechia', 'Malaysia', 'Cuba'], difficulty: 'hard', code: 'ph' },
+  { slug: 'my', prompt: COUNTRY, correct: 'Malaysia', incorrect: ['United States', 'Liberia', 'Uruguay'], difficulty: 'hard', code: 'my' },
+  { slug: 'sg', prompt: COUNTRY, correct: 'Singapore', incorrect: ['Indonesia', 'Poland', 'Tunisia'], difficulty: 'hard', code: 'sg' },
+  { slug: 'hr', prompt: COUNTRY, correct: 'Croatia', incorrect: ['Serbia', 'Slovakia', 'Slovenia'], difficulty: 'medium', code: 'hr' },
+  { slug: 'rs', prompt: COUNTRY, correct: 'Serbia', incorrect: ['Russia', 'Slovakia', 'Croatia'], difficulty: 'hard', code: 'rs' },
+  { slug: 'ge', prompt: COUNTRY, correct: 'Georgia', incorrect: ['England', 'Tonga', 'Switzerland'], difficulty: 'hard', code: 'ge' },
+  { slug: 'am', prompt: COUNTRY, correct: 'Armenia', incorrect: ['Lithuania', 'Colombia', 'Bolivia'], difficulty: 'hard', code: 'am' },
+  { slug: 'lt', prompt: COUNTRY, correct: 'Lithuania', incorrect: ['Ethiopia', 'Ghana', 'Bolivia'], difficulty: 'hard', code: 'lt' },
+  { slug: 'ee', prompt: COUNTRY, correct: 'Estonia', incorrect: ['Finland', 'Sierra Leone', 'Gabon'], difficulty: 'hard', code: 'ee' },
+  { slug: 'lv', prompt: COUNTRY, correct: 'Latvia', incorrect: ['Austria', 'Lebanon', 'Canada'], difficulty: 'hard', code: 'lv' },
+];

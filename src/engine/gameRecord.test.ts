@@ -370,4 +370,12 @@ describe('kindOf', () => {
   test('an empty voices list is not a melody', () => {
     expect(kindOf({ voices: [] })).toBe('text');
   });
+
+  test('a question with an iTunes preview is a melody', () => {
+    expect(kindOf({ previewUrl: 'https://audio-ssl.itunes.apple.com/x.m4a' })).toBe('melody');
+  });
+
+  test('a question with iTunes artwork is a picture', () => {
+    expect(kindOf({ artworkUrl: 'https://is1-ssl.mzstatic.com/image/thumb/x.jpg' })).toBe('picture');
+  });
 });

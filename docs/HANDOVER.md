@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 8 September 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 9 September 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -52,25 +52,18 @@ hook says so if this one grows.
 | upgrading anything in `package.json` | [`decisions/dependencies.md`](decisions/dependencies.md) |
 | the studio set, or any lighting cue | [`decisions/lighting.md`](decisions/lighting.md) |
 
-## State as of 8 September 2026
+## State as of 9 September 2026
 
-**Live** (bundle `index-BDZpMBAG`, 8 September 19:48): the round is **kept** —
-one `games/{gameId}` per finished game, read back by `read-games`
-([`game-record.md`](decisions/game-record.md)); **Hear it again** on melody
-questions ([`melody-round.md`](decisions/melody-round.md)); `firstMs` and the
-pack picker from earlier the same day. Rules pasted, `check-rules` **65/65**,
-merged, deployed, `sync-harness 10` 10/10 inside 71ms — in that order. All four
-unplayed with people. Also chair, take-stock, steal (opt-in, unplayed), mute,
-lobby squad picker, negatives paste; squads, vault, App Check, rank bonus, wager;
-repeats/Gentle+Fiendish withdrawn. **726 tests on master.**
+**Live** is still bundle `index-BDZpMBAG` (8 September). Branch
+`itunes-tunes-and-flags` is local, not deployed: **Name that Tune** is now
+iTunes 30s previews (79); synth pack retitled **Classical**; **Flags** (76,
+hashed, no jigsaw); **Sleeves** (52, mzstatic hotlink); picture retitled
+**Fine Art**. **On the box** is not shipped — GB iTunes Search returns 0 movies.
+Vault topped up 9 September: **206 added, 0 changed** (was 13,712). No push.
 
 **Melody and picture are live and have been played** — `voices` + hashed
-`image`; melody pack (70) + picture pack (49, jigsaw as lobby flag 3×3); lobby
-force-unmute; `authorDied` T−71. This block said "branch `melody-round`, not
-live" until 8 September; PR #23 merged on the 4th and deployed, and the office
-played a melody round on the 8th. **The melody round did not work** —
-[`melody-round.md`](decisions/melody-round.md). Picture is still unplayed with
-people.
+`image`. The melody round did not work — [`melody-round.md`](decisions/melody-round.md).
+Picture is still unplayed with people. The iTunes round has not been played.
 
 **Shipped and played** otherwise: 13,593 answers, both rulesets published;
 `appcheck-probe` refuses at sign-in; reveal ~0.5s after the clock; scoring is
@@ -98,15 +91,11 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
 4. **The Ladder stops climbing** once a pack's thin `easy` or `hard` bucket is
    spent — it substitutes medium rather than repeating, which is right but is not
    what the tile promises. The fix is a fold of `games/` into a real difficulty, not selection.
-5. **Any new hand-built pack needs `npm run seed-vault` before its ids can
-   score** — `resolveAnswer` *throws* when the vault has no document for a
-   question rather than scoring zero, so an unseeded pack is pickable in the
-   lobby and breaks at the reveal. Melody and picture are already seeded: the
-   vault held 13,712 on 4 September, 119 of them added that day. Answers live in
-   gitignored `.cache/hand-vault.json`; the published packs are sealed.
-6. **The melody round: replay is live and unplayed, the rest open.** Eight
-   abandoned it after four of fifteen on 8 September. Pool, distractors and clip
-   length are still unchosen: [`decisions/melody-round.md`](decisions/melody-round.md).
+5. **Hand-built packs still need a seed after any *new* ids.** `tunes` / `flags`
+   / `sleeves` were seeded 9 September (**206 added, 0 changed**). Melody and
+   picture already were. An unseeded pack still breaks at reveal.
+6. **Name that Tune is iTunes on this branch, not live.** Classical keeps the
+   synth. [`decisions/melody-round.md`](decisions/melody-round.md).
 7. **`firstMs` and the pack picker are live and unplayed.** The marker is a
    deterrent, so the only test that means anything is whether it changes his
    behaviour in the next round: [`decisions/first-touch.md`](decisions/first-touch.md).
@@ -128,7 +117,8 @@ Commands: `dev` (port 5273), `test`, `typecheck`, `lint`, `build`, `deploy`,
 `fetch-questions [-- --resort]`, `fetch-otqa`, `seed-vault`, `check-rules`,
 `sync-harness [n]`, `host-room [-- secs]`, `reveal-probe`, `asked-probe`,
 `take-stock`, `prune-rooms [-- --probe-rows --go]`, `fold-votes [-- --go]`,
-`write-hand-packs`, `read-games [-- --last n | --game id | --pack id]`.
+`write-hand-packs`, `write-melody-pack`, `write-tunes-pack`, `write-flags-pack`,
+`write-sleeves-pack`, `itunes-probe`, `read-games [-- --last n | --game id | --pack id]`.
 
 `npm test` covers `src/` plus the pure parts of `scripts/`. Anything touching the
 network or the live project stays out deliberately; it must keep running offline.

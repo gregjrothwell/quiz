@@ -170,6 +170,12 @@ export interface QuizQuestion {
   image?: string;
   credit?: string;
   jigsaw?: boolean;
+  previewUrl?: string;
+  storeUrl?: string;
+  trackId?: number;
+  previewStart?: number;
+  artworkUrl?: string;
+  posterCrop?: boolean;
 }
 
 export interface RoomState {
@@ -604,6 +610,14 @@ export function buildQuizQuestions(
     if (question.image) built.image = question.image;
     if (question.credit) built.credit = question.credit;
     if (question.jigsaw) built.jigsaw = true;
+    if (question.previewUrl) built.previewUrl = question.previewUrl;
+    if (question.storeUrl) built.storeUrl = question.storeUrl;
+    if (question.trackId !== undefined) built.trackId = question.trackId;
+    if (question.previewStart !== undefined && question.previewStart > 0) {
+      built.previewStart = question.previewStart;
+    }
+    if (question.artworkUrl) built.artworkUrl = question.artworkUrl;
+    if (question.posterCrop) built.posterCrop = true;
     return built;
   });
 }

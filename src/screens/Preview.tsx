@@ -68,6 +68,55 @@ const MELODY_QUESTION: QuizQuestion = {
   })),
 };
 
+const TUNES_QUESTION: QuizQuestion = {
+  id: 'itunes-1',
+  prompt: 'Name this tune.',
+  options: ['Mr. Brightside', 'Take Me Out', 'Last Nite', 'Somebody Told Me'],
+  correctIndex: null,
+  category: 'Name that Tune',
+  difficulty: 'easy',
+  previewUrl: 'https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/b2/1a/e8/b21ae8eb-9d11-2aaf-cc48-0e8ca210c485/mzaf_18420207698003017244.plus.aac.p.m4a',
+  storeUrl: 'https://music.apple.com/gb/album/1440717563?i=1440717826',
+  trackId: 1440717826,
+};
+
+const FLAGS_QUESTION: QuizQuestion = {
+  id: 'flag-1',
+  prompt: 'Which country is this?',
+  options: ['United Kingdom', 'Australia', 'New Zealand', 'France'],
+  correctIndex: null,
+  category: 'Flags',
+  difficulty: 'easy',
+  image: '40f489612f69fbc813eeed23ac802f7d0c2fea379b8fc04d311237ed41a1756a.png',
+};
+
+const SLEEVES_QUESTION: QuizQuestion = {
+  id: 'sleeve-1',
+  prompt: 'Which album is this?',
+  options: ['Abbey Road', 'Let It Be', 'Sgt. Pepper’s Lonely Hearts Club Band', 'Revolver'],
+  correctIndex: null,
+  category: 'Sleeves',
+  difficulty: 'easy',
+  artworkUrl:
+    'https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/48/53/43/485343e3-dd6a-0034-faec-f4b6403f8108/13UMGIM63890.rgb.jpg/600x600bb.jpg',
+  storeUrl: 'https://music.apple.com/gb/album/1474815798',
+  trackId: 1474815798,
+};
+
+const SCREENS_QUESTION: QuizQuestion = {
+  id: 'screen-1',
+  prompt: 'Which film is this?',
+  options: ['Jaws', 'Jurassic Park', 'Alien', 'The Meg'],
+  correctIndex: null,
+  category: 'Film',
+  difficulty: 'easy',
+  artworkUrl:
+    'https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/07/1a/5a/071a5aee-6e42-060c-35b9-6a6e45b9ea59/06UMGIM10441.rgb.jpg/600x600bb.jpg',
+  storeUrl: 'https://music.apple.com/gb/movie/1',
+  trackId: 1,
+  posterCrop: true,
+};
+
 /*
   Two squads and one unaligned player, which is the shape that exercises the
   squad bar properly: Priya has never named a side, so her points are her own
@@ -155,6 +204,35 @@ const PACKS: PackSummary[] = [
     blurb: 'Pitches, tracks and podiums.',
     count: 81,
     counts: { easy: 40, medium: 41, hard: 0 },
+  },
+  {
+    id: 'tunes',
+    title: 'Name that Tune',
+    blurb: 'Thirty seconds from Apple Music.',
+    count: 79,
+    counts: { easy: 36, medium: 28, hard: 15 },
+  },
+  {
+    id: 'melody',
+    title: 'Classical',
+    blurb: 'Public-domain melodies, played by the house synth.',
+    count: 70,
+    counts: { easy: 38, medium: 32, hard: 0 },
+  },
+  {
+    id: 'flags',
+    title: 'Flags',
+    blurb: 'Countries and the home nations.',
+    count: 76,
+    counts: { easy: 24, medium: 26, hard: 26 },
+  },
+  {
+    id: 'picture',
+    title: 'Fine Art',
+    blurb: 'Paintings, a landmark and a photograph.',
+    count: 49,
+    counts: { easy: 27, medium: 22, hard: 0 },
+    jigsawCount: 48,
   },
 ];
 
@@ -360,8 +438,100 @@ export function Preview() {
             phase: 'question',
             questionOpenedAt: 1_000,
             packId: 'melody',
-            packTitle: 'Name that Tune',
+            packTitle: 'Classical',
             questions: [MELODY_QUESTION],
+            index: 0,
+          })}
+          youUid="priya"
+          isQuizmaster={false}
+          clock={CLOCK}
+          revealed={false}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      title: 'Question · iTunes preview',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'question',
+            questionOpenedAt: 1_000,
+            packId: 'tunes',
+            packTitle: 'Name that Tune',
+            questions: [TUNES_QUESTION],
+            index: 0,
+          })}
+          youUid="priya"
+          isQuizmaster={false}
+          clock={CLOCK}
+          revealed={false}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      title: 'Question · flags',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'question',
+            questionOpenedAt: 1_000,
+            packId: 'flags',
+            packTitle: 'Flags',
+            questions: [FLAGS_QUESTION],
+            index: 0,
+          })}
+          youUid="priya"
+          isQuizmaster={false}
+          clock={CLOCK}
+          revealed={false}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      title: 'Question · sleeves',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'question',
+            questionOpenedAt: 1_000,
+            packId: 'sleeves',
+            packTitle: 'Sleeves',
+            questions: [SLEEVES_QUESTION],
+            index: 0,
+          })}
+          youUid="priya"
+          isQuizmaster={false}
+          clock={CLOCK}
+          revealed={false}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      title: 'Question · screens',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'question',
+            questionOpenedAt: 1_000,
+            packId: 'screens',
+            packTitle: 'On the box',
+            questions: [SCREENS_QUESTION],
             index: 0,
           })}
           youUid="priya"

@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 8 September 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 9 September 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -33,6 +33,21 @@ re-run on the 8th against the files as they actually are, not inherited from the
 — this one and PR #31's — that would have taken it past 300. The three oldest 4
 September entries (the CDN, the mute button, the steal) went to
 [`recall/2026-09.md`](recall/2026-09.md), whole, links repointed.
+
+## 2026-09-09 — Vault topped up for tunes, flags, sleeves
+
+`seed-vault` against `quiz-d686e`, service account, one run: **206 added, 0
+changed**, 13,575 already correct. Was 13,712. The packs themselves are still
+on `itunes-tunes-and-flags`, not deployed.
+
+## 2026-09-09 — iTunes Name that Tune, flags, sleeves (branch `itunes-tunes-and-flags`)
+
+Not live. Not seeded. 15 sealed packs. `tunes` stole the lobby name (79 GB
+previews, streamed, badge, slug stripped). Synth pack is **Classical**. **Flags**
+76 including home nations, hashed, no jigsaw. **Sleeves** 52, mzstatic hotlink,
+never hosted. Picture retitled **Fine Art**. **On the box** writer exists; GB
+Search returns 0 movies so it does not ship. [`round-types.md`](decisions/round-types.md),
+[`melody-round.md`](decisions/melody-round.md).
 
 ## 2026-09-08 — Live: the round is kept, and the tune can be heard again (`index-BDZpMBAG`)
 

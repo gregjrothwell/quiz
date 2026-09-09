@@ -66,7 +66,7 @@ describe('the published packs are sealed', () => {
   // Guards the guard. A glob that quietly matched nothing would make every
   // assertion below pass while checking not one thing.
   test('there are packs to check', () => {
-    expect(packFiles.length).toBe(12);
+    expect(packFiles.length).toBe(15);
   });
 
   test.each(packFiles)('%s ships no answer', (name) => {
@@ -120,6 +120,43 @@ describe('hand-built packs', () => {
     }
     expect(pack.questions.filter((question) => question.jigsaw).length).toBeGreaterThanOrEqual(45);
     expect(pack.questions.filter((question) => question.credit).length).toBe(1);
+  });
+
+  test('tunes stream Apple previews and never name the track in the store URL', () => {
+    const pack = JSON.parse(readFileSync(join(PACKS, 'tunes.json'), 'utf8')) as {
+      questions: { previewUrl?: string; storeUrl?: string; voices?: unknown }[];
+    };
+    expect(pack.questions.length).toBeGreaterThanOrEqual(45);
+    for (const question of pack.questions) {
+      expect(question.previewUrl).toMatch(/^https:\/\/audio-ssl\.itunes\.apple\.com\//);
+      expect(question.storeUrl).toMatch(/^https:\/\/(music|itunes)\.apple\.com\//);
+      expect(question.storeUrl).not.toMatch(/\/album\/[^/]+\/\d+/);
+      expect(question.voices).toBeUndefined();
+    }
+  });
+
+  test('flags are hashed stills and never a jigsaw', () => {
+    const pack = JSON.parse(readFileSync(join(PACKS, 'flags.json'), 'utf8')) as {
+      questions: { image?: string; jigsaw?: boolean }[];
+    };
+    expect(pack.questions.length).toBeGreaterThanOrEqual(45);
+    for (const question of pack.questions) {
+      expect(question.image).toMatch(HASH_FILE);
+      expect(question.jigsaw).toBeUndefined();
+    }
+  });
+
+  test('sleeves hotlink mzstatic and do not host a cover on Pages', () => {
+    const pack = JSON.parse(readFileSync(join(PACKS, 'sleeves.json'), 'utf8')) as {
+      questions: { artworkUrl?: string; image?: string; storeUrl?: string }[];
+    };
+    expect(pack.questions.length).toBeGreaterThanOrEqual(45);
+    for (const question of pack.questions) {
+      expect(question.artworkUrl).toMatch(/^https:\/\/is[0-9]-ssl\.mzstatic\.com\//);
+      expect(question.image).toBeUndefined();
+      expect(question.storeUrl).toMatch(/^https:\/\/(music|itunes)\.apple\.com\//);
+      expect(question.storeUrl).not.toMatch(/\/album\/[^/]+\/\d+/);
+    }
   });
 });
 
@@ -193,7 +230,7 @@ describe('the check itself refuses a broken pack', () => {
   });
 
   test('`image` is seal-safe and `answerImage` is not', () => {
-    expect(sealBreaches({ image: 'abc.jpg', voices: [] })).toEqual([]);
+    expect(sealBreaches({ image: 'abc.jpg', voices: [], previewUrl: 'https://x', storeUrl: 'https://y', artworkUrl: 'https://z' })).toEqual([]);
     expect(sealBreaches({ answerImage: 'abc.jpg' })).toEqual(['answerImage']);
   });
 });

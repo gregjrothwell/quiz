@@ -7,17 +7,26 @@ import {
   tileColumn,
   tileRow,
 } from '../engine/jigsaw';
+import { isItunesArtworkUrl } from '../lib/apple-media';
 import { packImageUrl } from '../lib/usePacks';
 
 interface PicturePromptProps {
-  image: string;
+  image?: string;
+  artworkUrl?: string;
   credit?: string;
   jigsaw: boolean;
+  posterCrop?: boolean;
   questionId: string;
   gameId: string;
   elapsedMs: number;
   durationMs: number;
   revealed: boolean;
+}
+
+function srcFor(image: string | undefined, artworkUrl: string | undefined): string | null {
+  if (artworkUrl && isItunesArtworkUrl(artworkUrl)) return artworkUrl;
+  if (image) return packImageUrl(image);
+  return null;
 }
 
 /**
@@ -26,23 +35,32 @@ interface PicturePromptProps {
  * The scramble is seeded from ids every client already holds, so every device
  * sees the same puzzle. Tiles swap home as the window runs; there is nothing
  * to drag, because the vault can only score one option string.
+ *
+ * Remote artwork is Apple's CDN only. Hashed stills stay on Pages.
  */
 export function PicturePrompt({
   image,
+  artworkUrl,
   credit,
   jigsaw,
+  posterCrop = false,
   questionId,
   gameId,
   elapsedMs,
   durationMs,
   revealed,
 }: PicturePromptProps) {
-  const src = packImageUrl(image);
+  const src = srcFor(image, artworkUrl);
+  if (!src) return null;
 
   if (!jigsaw) {
     return (
       <figure className="still">
-        <img className="still__img" src={src} alt="" />
+        <img
+          className={posterCrop ? 'still__img still__img--poster' : 'still__img'}
+          src={src}
+          alt=""
+        />
         {credit ? <figcaption className="still__credit">{credit}</figcaption> : null}
       </figure>
     );

@@ -1,6 +1,6 @@
 # New round types, and what actually blocks them
 
-> **Owner: Greg Rothwell. Last updated: 8 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 9 September 2026. Budget: 250 lines.**
 
 Four ideas raised on 4 September — **stealing points, picture rounds, music
 rounds, jigsaw rounds** — costed against the database, plus the **negative
@@ -82,23 +82,21 @@ Three things to get right, none of them cost:
 2. **The seal test forbids keys matching `/correct|answer|incorrect|solution/i`
    at any depth** (`seal.test.ts:43`). `image` passes; `answerImage` fails.
 3. **A new pack touches three places** — the `PACK_IDS` union and `PACK_META`
-   (`types.ts`), and `expect(packFiles.length).toBe(12)` at `seal.test.ts`.
+   (`types.ts`), and `expect(packFiles.length).toBe(15)` at `seal.test.ts`.
 
-**Built, not a 100-image pack.** Hand-built `picture` pack: 49 stills
-under `public/packs/images/{sha256}.{ext}` (48 jigsaw). `image` is seal-safe.
-Attribution in `ATTRIBUTION.md`; CC BY also on-screen (`credit`). Jigsaw is a
-lobby flag on this pack, not a second copy of the files. Harvest must not overwrite it.
+**Built, not a 100-image pack.** `picture` lobby title **Fine Art**: 49 hashed stills (48 jigsaw). **Flags** 76, hashed, no jigsaw. **Sleeves** 52, mzstatic hotlink, never hosted. **On the box** does not ship — GB Search returns 0 movies (9 September 2026). Harvest must not overwrite hand-built JSON.
 
 ## Music round
 
 Two different ideas wearing one name.
 
-- **A melody round — recommended.** `src/lib/sound.ts` is a real synth: 493
-  lines, 0.9 kB shipped, no audio assets. Melodies as `Voice[]` sequences cost
-  **zero bytes, zero bandwidth, zero Firebase**. The answer stays one of four
-  option strings, so the vault is untouched.
-- **Recorded clips — ruled out.** Copyright in the recording, on a public repo,
-  with the files served from Pages.
+- **A melody round — recommended, then played, then abandoned.** Synth `Voice[]`.
+  Lobby title is now **Classical**. See [`melody-round.md`](melody-round.md).
+- **iTunes 30s previews — the actual Name that Tune.** Stream Apple's m4a, never
+  host it. Badge + store link. Pack-build bakes `previewUrl`. GB fair dealing
+  does not cover a public quiz; the hook is Apple's promotional grant. Risk is
+  Apple ignoring an IP, not a solicitor-grade licence.
+- **Hosting recorded clips on Pages — still ruled out.**
 
 ### The licensing (CDPA, checked 4 September 2026)
 

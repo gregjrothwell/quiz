@@ -1,6 +1,6 @@
 # The question pipeline
 
-> **Owner: Greg Rothwell. Last updated: 4 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 9 September 2026. Budget: 250 lines.**
 
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
@@ -38,10 +38,21 @@ npm run fetch-otqa
 `--resort` never touches the network, so it uses whatever is already cached; if
 `.cache/opentriviaqa.json` is missing it says so and rebuilds from OpenTDB alone.
 
-**Melody and picture are hand-built**, not harvested. `npm run write-hand-packs`
-writes `public/packs/melody.json` and `picture.json`, hashes stills into
-`images/`, and records answers in `.cache/hand-vault.json`. A re-harvest merges
-those packs into `index.json` and must not overwrite their JSON.
+**Hand-built packs** are not harvested. `HAND_BUILT_PACK_IDS` is the skip list
+for `fetch-questions`. Writers:
+
+| Command | Pack | Answers |
+|---|---|---|
+| `write-melody-pack` | Classical (`melody.json`) | synth `Voice[]` |
+| `write-hand-packs` | Fine Art (`picture.json`) | hashed stills |
+| `write-tunes-pack` | Name that Tune | iTunes previews, ~20 lookups/min |
+| `write-flags-pack` | Flags | hashed Flagcdn rasters |
+| `write-sleeves-pack` | Sleeves | mzstatic hotlinks, never hosted |
+| `write-screens-pack` | On the box | **does not ship** — GB Search returns 0 movies |
+
+Answers merge into `.cache/hand-vault.json`. **`seed-vault` before a new pack
+can score** — `resolveAnswer` throws on a missing vault doc. A re-harvest
+merges hand-built rows into `index.json` and must not overwrite their JSON.
 
 ---
 

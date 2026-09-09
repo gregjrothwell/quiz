@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
+import { isItunesPreviewUrl } from './apple-media';
 
 /**
  * The house audio.
@@ -374,6 +375,7 @@ export function play(cue: Cue): void {
 
 let clockNodes: { gain: GainNode; sources: OscillatorNode[] } | null = null;
 let sequenceNodes: { gain: GainNode; sources: OscillatorNode[] } | null = null;
+let previewEl: HTMLAudioElement | null = null;
 
 /**
  * Starts the closing clock, given the milliseconds actually left on it.
@@ -392,7 +394,61 @@ let sequenceNodes: { gain: GainNode; sources: OscillatorNode[] } | null = null;
  * player hears nothing — the lobby has to force that issue when a melody
  * pack actually exists.
  */
+/**
+ * Streams an iTunes 30s preview. Not decoded through Web Audio — that would
+ * need CORS on Apple's CDN, and we are not allowed to keep a copy anyway.
+ *
+ * Refuses anything that is not Apple's audio host, so a sealed pack cannot
+ * point the room at an arbitrary file. Does not loop: a looping preview is a
+ * soundtrack, which is the entertainment use Apple's terms exclude.
+ */
+export function playPreview(url: string, startSeconds = 0): void {
+  stopPreview();
+  stopSequence();
+  stopClock();
+  if (muted || !isItunesPreviewUrl(url)) return;
+  if (typeof Audio === 'undefined') return;
+
+  const el = new Audio();
+  el.preload = 'auto';
+  el.loop = false;
+  el.src = url;
+  previewEl = el;
+
+  const start = (): void => {
+    if (previewEl !== el) return;
+    if (startSeconds > 0) {
+      try {
+        el.currentTime = startSeconds;
+      } catch {
+        // Seeking before metadata is ready throws on some engines; play anyway.
+      }
+    }
+    void el.play().catch(() => {
+      // Autoplay blocked or the clip 404'd. Hear it again is the way back in.
+    });
+  };
+
+  if (startSeconds > 0) {
+    el.addEventListener('loadedmetadata', start, { once: true });
+    el.load();
+    return;
+  }
+  start();
+}
+
+/** Drops the preview element so the browser does not keep the file around. */
+export function stopPreview(): void {
+  const el = previewEl;
+  previewEl = null;
+  if (!el) return;
+  el.pause();
+  el.removeAttribute('src');
+  el.load();
+}
+
 export function playSequence(voices: Voice[]): void {
+  stopPreview();
   stopSequence();
   stopClock();
   if (muted || voices.length === 0) return;
@@ -428,6 +484,7 @@ export function stopSequence(): void {
 }
 
 export function startClock(remainingMs: number): void {
+  stopPreview();
   stopSequence();
   stopClock();
   if (muted || remainingMs <= 0) return;
@@ -483,6 +540,7 @@ export function setMuted(next: boolean): void {
   if (next) {
     stopClock();
     stopSequence();
+    stopPreview();
   }
   try {
     window.localStorage.setItem(STORAGE_KEY, next ? 'off' : 'on');
