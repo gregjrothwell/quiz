@@ -110,11 +110,7 @@ const SCREENS_QUESTION: QuizQuestion = {
   correctIndex: null,
   category: 'Film',
   difficulty: 'easy',
-  artworkUrl:
-    'https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/07/1a/5a/071a5aee-6e42-060c-35b9-6a6e45b9ea59/06UMGIM10441.rgb.jpg/600x600bb.jpg',
-  storeUrl: 'https://music.apple.com/gb/movie/1',
-  trackId: 1,
-  posterCrop: true,
+  image: '78f0a0c5bb1877d83147d18ab197d1c569775babc4f38814873f1dd1de95cbfc.jpg',
 };
 
 /*
@@ -233,6 +229,13 @@ const PACKS: PackSummary[] = [
     count: 49,
     counts: { easy: 27, medium: 22, hard: 0 },
     jigsawCount: 48,
+  },
+  {
+    id: 'screens',
+    title: 'On the box',
+    blurb: 'Film and TV from a still. Untitled backdrops, no jigsaw.',
+    count: 54,
+    counts: { easy: 37, medium: 16, hard: 1 },
   },
 ];
 

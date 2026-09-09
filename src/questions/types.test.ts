@@ -7,6 +7,7 @@ describe('packNeedsSound', () => {
     expect(packNeedsSound('tunes')).toBe(true);
     expect(packNeedsSound('flags')).toBe(false);
     expect(packNeedsSound('picture')).toBe(false);
+    expect(packNeedsSound('screens')).toBe(false);
     expect(packNeedsSound('music')).toBe(false);
   });
 });

@@ -34,6 +34,19 @@ re-run on the 8th against the files as they actually are, not inherited from the
 September entries (the CDN, the mute button, the steal) went to
 [`recall/2026-09.md`](recall/2026-09.md), whole, links repointed.
 
+## 2026-09-09 — On the box pack written locally
+Recut off Fine Art’s PD-Art era bias. Mixed 1990s–2020s, not a 1960s–80s wall. Seal 16. Not seeded, not live. `seed-vault` needs Greg.
+
+## 2026-09-09 — On the box parked (superseded same day)
+
+Writer was waiting on the key. Pack was then written (54) — see above. Not seeded, not live. Pickup: [`questions.md`](decisions/questions.md#picking-up-on-the-box).
+
+## 2026-09-09 — On the box via TMDB untitled backdrops (branch `on-the-box-tmdb`)
+
+iTunes movie Search is empty in US as well as GB; Lookup only covers leftover
+rentals. TMDB backdrops with `iso_639_1 === null` are the title-free stills.
+Hashed onto Pages like flags. Needs `TMDB_API_KEY`, then seed. Not live.
+
 ## 2026-09-09 — Live: iTunes Name that Tune, flags, sleeves (`index-6odlsKCm`)
 
 Pushed `itunes-tunes-and-flags` (`10260ce`), then `npm run deploy`. gh-pages

@@ -66,7 +66,7 @@ describe('the published packs are sealed', () => {
   // Guards the guard. A glob that quietly matched nothing would make every
   // assertion below pass while checking not one thing.
   test('there are packs to check', () => {
-    expect(packFiles.length).toBe(15);
+    expect(packFiles.length).toBe(16);
   });
 
   test.each(packFiles)('%s ships no answer', (name) => {
@@ -156,6 +156,22 @@ describe('hand-built packs', () => {
       expect(question.image).toBeUndefined();
       expect(question.storeUrl).toMatch(/^https:\/\/(music|itunes)\.apple\.com\//);
       expect(question.storeUrl).not.toMatch(/\/album\/[^/]+\/\d+/);
+    }
+  });
+
+  test('screens are hashed stills, never a jigsaw, and never hotlink TMDB', () => {
+    const packPath = join(PACKS, 'screens.json');
+    const raw = readFileSync(packPath, 'utf8');
+    const pack = JSON.parse(raw) as {
+      questions: { image?: string; jigsaw?: boolean; artworkUrl?: string; storeUrl?: string }[];
+    };
+    expect(pack.questions.length).toBeGreaterThanOrEqual(45);
+    expect(raw).not.toMatch(/tmdbId|image\.tmdb\.org/i);
+    for (const question of pack.questions) {
+      expect(question.image).toMatch(HASH_FILE);
+      expect(question.jigsaw).toBeUndefined();
+      expect(question.artworkUrl).toBeUndefined();
+      expect(question.storeUrl).toBeUndefined();
     }
   });
 });

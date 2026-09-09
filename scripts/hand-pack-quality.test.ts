@@ -39,4 +39,11 @@ describe('hand-built media specs', () => {
   test('screens cover three default rounds, unique slugs, four distinct options', () => {
     assertPlayable(SCREEN_SPECS, 45);
   });
+
+  test('screens mix eras instead of a wall of pre-1990 classics', () => {
+    const years = SCREEN_SPECS.map((spec) => spec.year);
+    expect(years.filter((year) => year < 1990).length).toBeLessThanOrEqual(8);
+    expect(years.filter((year) => year >= 2010).length).toBeGreaterThanOrEqual(20);
+    expect(years.filter((year) => year >= 2020).length).toBeGreaterThanOrEqual(6);
+  });
 });

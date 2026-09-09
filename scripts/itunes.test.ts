@@ -1,10 +1,8 @@
 import { describe, expect, test } from 'vitest';
-import { resolveAlbum, resolveScreen, resolveSong, titleMatches, type ItunesGet } from './itunes';
+import { resolveAlbum, resolveSong, titleMatches, type ItunesGet } from './itunes';
 import { anonymiseStoreUrl } from '../src/lib/apple-media';
-import { buildScreensPack } from './write-screens-pack';
 import { buildSleevesPack } from './write-sleeves-pack';
 import { buildTunesPack } from './write-tunes-pack';
-import { SCREEN_SPECS } from './hand-screens-data';
 import { SLEEVE_SPECS } from './hand-sleeves-data';
 import { TUNE_SPECS } from './hand-tunes-data';
 
@@ -78,45 +76,7 @@ const get: ItunesGet = async (url) => {
       ],
     };
   }
-  if (entity === 'tvSeason') {
-    const spec = SCREEN_SPECS.find((row) => row.term === term && row.kind === 'tvSeason');
-    if (!spec) throw new Error(`unexpected tv term ${term}`);
-    const collectionId = 3000 + SCREEN_SPECS.indexOf(spec);
-    return {
-      results: [
-        {
-          collectionId,
-          collectionName: spec.correct,
-          collectionViewUrl: `https://music.apple.com/gb/tv-season/${spec.slug}/${collectionId}`,
-          artworkUrl100: ART,
-        },
-      ],
-    };
-  }
-    const spec = SCREEN_SPECS.find((row) => row.term === term && row.kind === 'movie');
-    if (spec) {
-      const trackId = 2000 + SCREEN_SPECS.indexOf(spec);
-      return {
-        results: [
-          {
-            trackId,
-            trackName: spec.correct,
-            trackViewUrl: `https://music.apple.com/gb/movie/${spec.slug}/${trackId}`,
-            artworkUrl100: ART,
-          },
-        ],
-      };
-    }
-  return {
-    results: [
-      {
-        trackId: 20,
-        trackName: 'Inception',
-        trackViewUrl: 'https://music.apple.com/gb/movie/inception/20',
-        artworkUrl100: ART,
-      },
-    ],
-  };
+  return { results: [] };
 };
 
 describe('resolveSong', () => {
@@ -140,14 +100,6 @@ describe('resolveAlbum', () => {
   test('upsizes artwork to 600px', async () => {
     const album = await resolveAlbum('hot fuss', 'The Killers', get);
     expect(album.artworkUrl).toContain('600x600bb');
-  });
-});
-
-describe('resolveScreen', () => {
-  test('returns movie artwork', async () => {
-    const film = await resolveScreen('inception', 'movie', get);
-    expect(film.name).toBe('Inception');
-    expect(film.artworkUrl).toContain('mzstatic.com');
   });
 });
 
@@ -182,15 +134,3 @@ describe('buildSleevesPack', () => {
   });
 });
 
-describe('buildScreensPack', () => {
-  test('crops posters and hotlinks artwork', async () => {
-    const { pack } = await buildScreensPack(get);
-    expect(pack.questions.length).toBe(SCREEN_SPECS.length);
-    for (const question of pack.questions) {
-      expect(question.posterCrop).toBe(true);
-      expect(question.artworkUrl).toContain('mzstatic.com');
-      expect(question.image).toBeUndefined();
-      expect('correct' in question).toBe(false);
-    }
-  });
-});

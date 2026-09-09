@@ -31,6 +31,7 @@ hook says so if this one grows.
 | scoring an answer that lands late | [`decisions/late-answers.md`](decisions/late-answers.md) |
 | the review panel or the replay | [`decisions/review-replay.md`](decisions/review-replay.md) |
 | packs, harvesting, classification | [`decisions/questions.md`](decisions/questions.md) |
+| **On the box / TMDB stills, and how to pick it up** | [`decisions/questions.md`](decisions/questions.md#picking-up-on-the-box) |
 | voting on a question, retiring one | [`decisions/question-votes.md`](decisions/question-votes.md) |
 | rules, App Check on Firestore and the RTDB, anything security-shaped | [`decisions/security.md`](decisions/security.md) |
 | App Check on **authentication** specifically | [`decisions/app-check-auth.md`](decisions/app-check-auth.md) |
@@ -56,11 +57,12 @@ hook says so if this one grows.
 
 **Live** is `index-6odlsKCm` (9 September, gh-pages `6dd46ce`). **Name that Tune**
 is iTunes 30s previews (79); synth pack is **Classical**; **Flags** (76, hashed,
-no jigsaw); **Sleeves** (52, mzstatic hotlink); picture is **Fine Art**. **On the
-box** is not shipped — GB iTunes Search returns 0 movies. Vault topped up the
-same morning: **206 added, 0 changed** (was 13,712). Firebase chunk unmoved at
-`firebase-Cns3pSRr`. Branch `itunes-tunes-and-flags` is pushed; **master is
-behind until the PR merges.**
+no jigsaw); **Sleeves** (52, mzstatic hotlink); picture is **Fine Art**. **On the box**
+is hashed TMDB stills on `on-the-box-tmdb` — recut off Fine Art’s PD-Art era
+bias, pack local, **not live and not seeded**. `seed-vault` needs Greg. Vault topped up the same morning: **206
+added, 0 changed** (was 13,712). Firebase chunk unmoved at `firebase-Cns3pSRr`.
+Branch `itunes-tunes-and-flags` is pushed; **master is behind until PR #36
+merges.**
 
 **Melody and picture are live and have been played** — `voices` + hashed
 `image`. The melody round did not work — [`melody-round.md`](decisions/melody-round.md).
@@ -93,8 +95,9 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
    spent — it substitutes medium rather than repeating, which is right but is not
    what the tile promises. The fix is a fold of `games/` into a real difficulty, not selection.
 5. **Hand-built packs still need a seed after any *new* ids.** `tunes` / `flags`
-   / `sleeves` were seeded 9 September (**206 added, 0 changed**). Melody and
-   picture already were. An unseeded pack still breaks at reveal.
+   / `sleeves` were seeded 9 September (**206 added, 0 changed**). **Screens are
+   written (54), not seeded** — pickup in [`questions.md`](decisions/questions.md#picking-up-on-the-box).
+   An unseeded pack still breaks at reveal.
 6. **Name that Tune is iTunes, live, unplayed.** Classical keeps the synth.
    [`decisions/melody-round.md`](decisions/melody-round.md).
 7. **`firstMs` and the pack picker are live and unplayed.** The marker is a
@@ -119,19 +122,21 @@ Commands: `dev` (port 5273), `test`, `typecheck`, `lint`, `build`, `deploy`,
 `sync-harness [n]`, `host-room [-- secs]`, `reveal-probe`, `asked-probe`,
 `take-stock`, `prune-rooms [-- --probe-rows --go]`, `fold-votes [-- --go]`,
 `write-hand-packs`, `write-melody-pack`, `write-tunes-pack`, `write-flags-pack`,
-`write-sleeves-pack`, `itunes-probe`, `read-games [-- --last n | --game id | --pack id]`.
+`write-sleeves-pack`, `write-screens-pack`, `itunes-probe`, `tmdb-probe`,
+`read-games [-- --last n | --game id | --pack id]`.
 
 `npm test` covers `src/` plus the pure parts of `scripts/`. Anything touching the
 network or the live project stays out deliberately; it must keep running offline.
 
 ## If you're picking this up cold
 
-Fastest way to be useful: `npm run check-rules`, then `npm run sync-harness 10`.
-Between them they confirm the rules are published and that ten clients stay in
-sync — the two things that have actually broken in play.
+**Sitting work is On the box**, branch `on-the-box-tmdb`. Pack written (54).
+Needs Greg review, then `seed-vault` (ask), then merge, then `deploy now`.
+Land PR #36 first. Steps: [`questions.md`](decisions/questions.md#picking-up-on-the-box).
 
-A solo round in the browser does more than it sounds: it proved `recordGame`
-against the live project on 19 August, repeat-write guard and all.
+Otherwise: `npm run check-rules`, then `npm run sync-harness 10`. Between them
+they confirm the rules are published and that ten clients stay in sync — the two
+things that have actually broken in play.
 
 Two things that have bitten more than once, both with their own file: **the rules
 are published by hand**, so the repo copy is not what Firebase is running

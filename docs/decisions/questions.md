@@ -48,11 +48,36 @@ for `fetch-questions`. Writers:
 | `write-tunes-pack` | Name that Tune | iTunes previews, ~20 lookups/min |
 | `write-flags-pack` | Flags | hashed Flagcdn rasters |
 | `write-sleeves-pack` | Sleeves | mzstatic hotlinks, never hosted |
-| `write-screens-pack` | On the box | **does not ship** — GB Search returns 0 movies |
+| `write-screens-pack` | On the box | TMDB untitled backdrops, hashed. Needs `TMDB_API_KEY` |
 
 Answers merge into `.cache/hand-vault.json`. **`seed-vault` before a new pack
 can score** — `resolveAnswer` throws on a missing vault doc. A re-harvest
 merges hand-built rows into `index.json` and must not overwrite their JSON.
+
+## Picking up On the box
+
+**9 September 2026.** Branch `on-the-box-tmdb`, off `itunes-tunes-and-flags`
+(`be099b0`). Pack written (54). Live is still `index-6odlsKCm` without this pack.
+[PR #36](https://github.com/gregjrothwell/quiz/pull/36) is the iTunes work so
+master can catch up — **land it first; do not mix the two.**
+
+Recut 9 September: **not a wall of 1960s–80s classics** (Fine Art’s PD-Art
+mistake). Untitled backdrops first; untitled stills; untitled poster + crop last.
+Seal **16**. Vault fragment in `.cache/hand-vault.json` (gitignored). Not live,
+not seeded.
+
+1. **Greg reviews this branch.** Then **`seed-vault`** (ask). One run. Do not
+   re-run to confirm. Writes live Firebase.
+2. After seed: merge, then `deploy now`. Never onto `master` directly. Seed
+   before deploy. Do not commit `.cursor/`.
+3. Re-run `write-screens-pack` if specs change. Cache `.cache/tmdb-lookup.json`
+   omits the API key. `TMDB_API_KEY` in `.env.local` — not a Vite var.
+
+Do not hotlink `image.tmdb.org` from the client. Do not put `tmdbId` on a sealed
+question (enumerable). No jigsaw. No Apple store URL — TMDB is not a store.
+
+iTunes movie Search is empty in US as well as GB; that is why this is TMDB.
+[`round-types.md`](round-types.md).
 
 ---
 
