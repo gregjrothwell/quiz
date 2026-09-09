@@ -34,6 +34,12 @@ re-run on the 8th against the files as they actually are, not inherited from the
 September entries (the CDN, the mute button, the steal) went to
 [`recall/2026-09.md`](recall/2026-09.md), whole, links repointed.
 
+## 2026-09-09 — Live: On the box (`index-CFub7zgz`)
+
+#36 then #37 merged. `seed-vault` once: **78 added, 0 changed**, 13,781 already
+correct (54 screens + 24 other new ids). `npm run deploy`; gh-pages `e2d3bf1`.
+Firebase chunk unmoved (`firebase-Cns3pSRr`). Name that Tune not expanded.
+
 ## 2026-09-09 — On the box pack written locally
 Recut off Fine Art’s PD-Art era bias. Mixed 1990s–2020s, not a 1960s–80s wall. Seal 16. Not seeded, not live. `seed-vault` needs Greg.
 
@@ -199,14 +205,6 @@ master as it stands, not as it will be. #24 read CLEAN and conflicted on
 is what caught it. #23 also did not auto-retarget when #22 merged — GitHub only
 does that when the base branch is deleted.
 
-## 2026-09-04 — The hand-built answers are in the public repo
-
-The vault does not cover melody or picture: their specs are committed, the id is
-`sha1('hand:' + slug)[:12]`, and the slug sits by `correct:`. Verified —
-`sha1('hand:hay-wain')[:12]` = `e26ff5781961`. Not in the bundle, not in
-`public/packs/`. Accepted, not fixed: hiding the specs makes the packs
-unregenerable. [`known-limits.md`](decisions/known-limits.md).
-
 ## 2026-09-04 — Melody, picture, jigsaw (`melody-round`, not live)
 
 70 tunes + 49 stills (jigsaw 3×3 lobby flag). Sealed packs; answers in gitignored
@@ -247,9 +245,10 @@ force-unmute in the lobby — those wait on content.
 
 ## Earlier — the full chronology, archived
 
-Forty-one entries, moved on 28 August, 2 September and 8 September 2026 (twice),
-unchanged. Newest first, as above.
+Forty-two entries, moved on 28 August, 2 September, 8 September 2026 (twice) and
+9 September, unchanged. Newest first, as above.
 
+- **2026-09-04** — [The hand-built answers are in the public repo](recall/2026-09.md#2026-09-04--the-hand-built-answers-are-in-the-public-repo)
 - **2026-09-04** — [Live, and the CDN lied for a minute](recall/2026-09.md#2026-09-04--live-and-the-cdn-lied-for-a-minute)
 - **2026-09-04** — [The mute button, and a squad nobody could pick](recall/2026-09.md#2026-09-04--the-mute-button-and-a-squad-nobody-could-pick)
 - **2026-09-04** — [The first right answer steals from the leader](recall/2026-09.md#2026-09-04--the-first-right-answer-steals-from-the-leader)
