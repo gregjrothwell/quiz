@@ -48,8 +48,15 @@ describe('mergeIndex', () => {
     expect(mergeIndex(harvested, hand)).toEqual(hand);
   });
 
-  test('the hand-built ids are melody and picture', () => {
-    expect(HAND_BUILT_PACK_IDS).toEqual(['melody', 'picture']);
+  test('the hand-built ids include iTunes and flags packs', () => {
+    expect(HAND_BUILT_PACK_IDS).toEqual([
+      'melody',
+      'picture',
+      'tunes',
+      'flags',
+      'sleeves',
+      'screens',
+    ]);
   });
 });
 
@@ -59,6 +66,26 @@ describe('withStillsAttribution', () => {
     const second = withStillsAttribution(first, '## Picture-round stills\n\n- Hay Wain\n- Temeraire\n');
     expect(second.match(/## Picture-round stills/g)).toHaveLength(1);
     expect(second).toContain('Temeraire');
+  });
+
+  test('leaves a later section in place when the stills are rewritten', () => {
+    const doc = `# Trivia
+
+OpenTDB.
+
+## Picture-round stills
+
+- old
+
+## Flags
+
+- Union Jack
+`;
+    const next = withStillsAttribution(doc, '## Picture-round stills\n\n- Hay Wain\n');
+    expect(next).toContain('Hay Wain');
+    expect(next).not.toContain('- old');
+    expect(next).toContain('## Flags');
+    expect(next).toContain('Union Jack');
   });
 });
 

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { CLOCK_LEAD_SECONDS, clockVoices, cueVoices, playSequence } from './sound';
+import { CLOCK_LEAD_SECONDS, clockVoices, cueVoices, playPreview, playSequence, stopPreview } from './sound';
 import { HAPPY_BIRTHDAY } from '../questions/melody-voices';
 
 /** The pitched walk, which is the one voice every second of the bed has. */
@@ -108,6 +108,17 @@ describe('clockVoices', () => {
 describe('playSequence', () => {
   test('is the public export a melody round needs', () => {
     expect(typeof playSequence).toBe('function');
+  });
+});
+
+describe('playPreview', () => {
+  test('is the public export an iTunes round needs', () => {
+    expect(typeof playPreview).toBe('function');
+    expect(typeof stopPreview).toBe('function');
+  });
+
+  test('refuses a URL that is not Apple’s audio CDN', () => {
+    expect(() => playPreview('https://example.com/clip.m4a')).not.toThrow();
   });
 });
 

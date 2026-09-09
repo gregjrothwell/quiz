@@ -1,4 +1,5 @@
 import type { Voice } from '../lib/sound';
+import { anonymiseStoreUrl } from '../lib/apple-media';
 
 export type { Voice };
 
@@ -37,13 +38,29 @@ export const PACK_IDS = [
   'geography',
   'melody',
   'picture',
+  'tunes',
+  'flags',
+  'sleeves',
+  'screens',
 ] as const;
 
 /**
  * Packs written by hand, not by `fetch-questions`. A re-harvest must not
  * overwrite their JSON or drop them from `index.json`.
  */
-export const HAND_BUILT_PACK_IDS = ['melody', 'picture'] as const;
+export const HAND_BUILT_PACK_IDS = [
+  'melody',
+  'picture',
+  'tunes',
+  'flags',
+  'sleeves',
+  'screens',
+] as const;
+
+/** Packs that are silent unless the player can hear the clip. */
+export function packNeedsSound(packId: PackId): boolean {
+  return packId === 'melody' || packId === 'tunes';
+}
 
 export type PackId = (typeof PACK_IDS)[number];
 
@@ -77,7 +94,7 @@ export interface Question {
   source: QuestionSource;
   /** Melody pack: the synth sequence. Never an answer. */
   voices?: Voice[];
-  /** Picture pack: content-hashed filename under `public/packs/images/`. */
+  /** Picture / flags: content-hashed filename under `public/packs/images/`. */
   image?: string;
   /**
    * On-screen credit when the licence requires it (CC BY). PD-Art / CC0 / NASA
@@ -86,6 +103,24 @@ export interface Question {
   credit?: string;
   /** Picture pack: this still is a 3×3 jigsaw, not just a still. */
   jigsaw?: boolean;
+  /**
+   * iTunes 30s preview. Streamed from Apple at play time, never hosted.
+   * Seal-safe: the clip *is* the question.
+   */
+  previewUrl?: string;
+  /** Apple Music / iTunes Store page. Shown next to the preview. */
+  storeUrl?: string;
+  /** iTunes track or collection id, so a pack rebuild can refresh URLs. */
+  trackId?: number;
+  /** Seconds into the preview to start, for clips that open on a long intro. */
+  previewStart?: number;
+  /**
+   * iTunes artwork on Apple's CDN. Sleeves and screens only — never hashed
+   * onto Pages, which would be hosting the cover.
+   */
+  artworkUrl?: string;
+  /** Square crop of a portrait poster, to hide typical title treatment. */
+  posterCrop?: boolean;
 }
 
 export type QuestionSource = 'opentdb' | 'opentriviaqa' | 'hand';
@@ -108,6 +143,12 @@ export interface SealedQuestion {
   image?: string;
   credit?: string;
   jigsaw?: boolean;
+  previewUrl?: string;
+  storeUrl?: string;
+  trackId?: number;
+  previewStart?: number;
+  artworkUrl?: string;
+  posterCrop?: boolean;
 }
 
 /** Puts the options in an order that says nothing about which one is right. */
@@ -123,6 +164,14 @@ export function sealQuestion(question: Question): SealedQuestion {
   if (question.image) sealed.image = question.image;
   if (question.credit) sealed.credit = question.credit;
   if (question.jigsaw) sealed.jigsaw = true;
+  if (question.previewUrl) sealed.previewUrl = question.previewUrl;
+  if (question.storeUrl) sealed.storeUrl = anonymiseStoreUrl(question.storeUrl);
+  if (question.trackId !== undefined) sealed.trackId = question.trackId;
+  if (question.previewStart !== undefined && question.previewStart > 0) {
+    sealed.previewStart = question.previewStart;
+  }
+  if (question.artworkUrl) sealed.artworkUrl = question.artworkUrl;
+  if (question.posterCrop) sealed.posterCrop = true;
   return sealed;
 }
 
@@ -150,6 +199,28 @@ export const PACK_META: Record<PackId, { title: string; blurb: string }> = {
   science: { title: 'Science', blurb: 'Nature, numbers and machines.' },
   history: { title: 'History', blurb: 'Everything that already happened.' },
   geography: { title: 'Geography', blurb: 'Places, borders and capitals.' },
-  melody: { title: 'Name that Tune', blurb: 'Public-domain melodies, played by the house synth.' },
-  picture: { title: 'Picture Round', blurb: 'Paintings, a landmark and a photograph. Optional 3×3 jigsaw.' },
+  melody: {
+    title: 'Classical',
+    blurb: 'Public-domain melodies, played by the house synth.',
+  },
+  picture: {
+    title: 'Fine Art',
+    blurb: 'Paintings, a landmark and a photograph. Optional 3×3 jigsaw.',
+  },
+  tunes: {
+    title: 'Name that Tune',
+    blurb: 'Thirty seconds from Apple Music. Hear it again if you miss the hook.',
+  },
+  flags: {
+    title: 'Flags',
+    blurb: 'Countries and the home nations. No jigsaw — a scrambled Union Jack is still a Union Jack.',
+  },
+  sleeves: {
+    title: 'Sleeves',
+    blurb: 'Name the album from the cover. Artwork streamed from Apple, never stored here.',
+  },
+  screens: {
+    title: 'On the box',
+    blurb: 'Film and TV from the poster, cropped so the title is not the answer.',
+  },
 };

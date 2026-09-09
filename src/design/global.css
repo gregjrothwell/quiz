@@ -1201,6 +1201,37 @@ select.input option {
   background: rgb(0 0 0 / 0.35);
 }
 
+/* Film/TV posters: square from the upper half, so typical title treatment
+   at the foot is out of frame. The question is the image, not the type. */
+.still__img--poster {
+  aspect-ratio: 1;
+  object-fit: cover;
+  object-position: center 22%;
+}
+
+.store-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 0.45rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-pill);
+  background: #000;
+  color: #fff;
+  font-family: var(--tech);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.store-badge:hover,
+.store-badge:focus-visible {
+  color: #fff;
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
 .still__credit {
   margin-top: 0.4rem;
   font-size: 0.8rem;

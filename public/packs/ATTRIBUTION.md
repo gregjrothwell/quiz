@@ -91,3 +91,12 @@ also appears on-screen.
 - John Singer Sargent, Madame X (1883–84). The Met, 16.53, CC0. Sargent d. 1925.
 - Pieter Bruegel the Elder, The Harvesters (1565). The Met, 19.164, CC0.
 - Winslow Homer, The Gulf Stream (1899). The Met, 06.1234, CC0. Homer d. 1910.
+
+## Flags
+
+Public-domain country flags fetched from [Flagcdn](https://flagcdn.com) (Wikipedia /
+Wikimedia rasters) at pack-build and content-hashed into `images/`, same as
+the stills. England, Scotland, Wales and Northern Ireland use Flagcdn's
+`gb-eng` / `gb-sct` / `gb-wls` / `gb-nir` codes. Northern Ireland has
+no official flag; `gb-nir` is the Ulster Banner, used here as the
+recognisable quiz image, not as a statement of status.

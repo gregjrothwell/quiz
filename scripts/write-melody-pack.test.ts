@@ -199,7 +199,7 @@ describe('upsertMelodySummary', () => {
     ];
     const melody = {
       id: 'melody' as const,
-      title: 'Name that Tune',
+      title: 'Classical',
       blurb: 'Public-domain melodies, played by the house synth.',
       count: 70,
       counts: { easy: 28, medium: 28, hard: 0 },

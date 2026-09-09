@@ -3,7 +3,8 @@
  * and merges picture answers into `.cache/hand-vault.json`.
  *
  * Melody is `scripts/write-melody-pack.ts` — this script does not rewrite
- * `melody.json`. Harvest (`fetch-questions`) must not overwrite either pack.
+ * `melody.json`. Harvest (`fetch-questions`) must not overwrite any id in
+ * `HAND_BUILT_PACK_IDS`.
  *
  * Run: `npx tsx scripts/write-hand-packs.ts`
  */
@@ -29,8 +30,8 @@ import {
 } from '../src/questions/types';
 
 const ROOT = join(import.meta.dirname, '..');
-const OUT_DIR = join(ROOT, 'public', 'packs');
-const IMAGE_DIR = join(OUT_DIR, 'images');
+export const OUT_DIR = join(ROOT, 'public', 'packs');
+export const IMAGE_DIR = join(OUT_DIR, 'images');
 const CACHE_DIR = join(ROOT, '.cache');
 export const HAND_VAULT_CACHE = join(CACHE_DIR, 'hand-vault.json');
 
@@ -40,17 +41,17 @@ const execFileAsync = promisify(execFile);
 const MAX_STILL_BYTES = 280_000;
 const MAX_STILL_EDGE = 1200;
 
-function stableId(slug: string): string {
+export function stableId(slug: string): string {
   return createHash('sha1').update(`hand:${slug}`).digest('hex').slice(0, 12);
 }
 
-function countByDifficulty(questions: { difficulty: Difficulty }[]): DifficultyCounts {
+export function countByDifficulty(questions: { difficulty: Difficulty }[]): DifficultyCounts {
   const counts: DifficultyCounts = { easy: 0, medium: 0, hard: 0 };
   for (const question of questions) counts[question.difficulty] += 1;
   return counts;
 }
 
-function summaryFor(pack: Pack): PackSummary {
+export function summaryFor(pack: Pack): PackSummary {
   const jigsawCount = pack.questions.filter((question) => question.jigsaw).length;
   return {
     id: pack.id,
@@ -69,7 +70,7 @@ function toQuestion(
   return { id: stableId(slug), source: 'hand', ...fields };
 }
 
-async function fetchBuffer(url: string): Promise<{ bytes: Buffer; contentType: string }> {
+export async function fetchBuffer(url: string): Promise<{ bytes: Buffer; contentType: string }> {
   const response = await fetch(url, { headers: { 'User-Agent': USER_AGENT } });
   if (!response.ok) throw new Error(`${response.status} fetching ${url}`);
   const bytes = Buffer.from(await response.arrayBuffer());
@@ -116,7 +117,7 @@ async function resolveSourceUrl(source: StillSource): Promise<string> {
   return commonsThumbUrl(source.file);
 }
 
-async function hashAndStore(bytes: Buffer, ext: string): Promise<string> {
+export async function hashAndStore(bytes: Buffer, ext: string): Promise<string> {
   const hash = createHash('sha256').update(bytes).digest('hex');
   const filename = `${hash}.${ext}`;
   await writeFile(join(IMAGE_DIR, filename), bytes);
@@ -150,7 +151,7 @@ async function existingImagesBySlug(): Promise<Map<string, string>> {
   return found;
 }
 
-async function compressStill(bytes: Buffer, ext: string): Promise<{ bytes: Buffer; ext: string }> {
+export async function compressStill(bytes: Buffer, ext: string): Promise<{ bytes: Buffer; ext: string }> {
   if (bytes.length <= MAX_STILL_BYTES && ext !== 'png') return { bytes, ext };
   const scratch = join(CACHE_DIR, 'still-compress');
   await mkdir(scratch, { recursive: true });
@@ -214,13 +215,34 @@ export function mergeIndex(harvested: PackSummary[], hand: PackSummary[]): PackS
   return [...harvested.filter((pack) => !skip.has(pack.id)), ...hand];
 }
 
+export function upsertPackSummary(index: PackSummary[], row: PackSummary): PackSummary[] {
+  const i = index.findIndex((pack) => pack.id === row.id);
+  if (i === -1) return [...index, row];
+  return index.map((pack, idx) => (idx === i ? row : pack));
+}
+
 const STILLS_ATTR_MARKER = '## Picture-round stills';
 
+/**
+ * Replaces the markdown section that starts at `marker` and runs until the
+ * next `## ` heading (or EOF). Picture stills and flags both live in
+ * ATTRIBUTION.md; rewriting one must not wipe the other.
+ */
+export function replaceMarkdownSection(doc: string, marker: string, body: string): string {
+  const start = doc.indexOf(marker);
+  if (start === -1) {
+    return `${doc.trimEnd()}\n\n${body.trim()}\n`;
+  }
+  const rest = doc.slice(start + marker.length);
+  const nextHeading = rest.search(/\n## /);
+  const before = doc.slice(0, start).trimEnd();
+  const after = nextHeading === -1 ? '' : rest.slice(nextHeading).trimStart();
+  const middle = body.trim();
+  return after ? `${before}\n\n${middle}\n\n${after}` : `${before}\n\n${middle}\n`;
+}
+
 export function withStillsAttribution(trivia: string, stillsBody: string): string {
-  const trimmed = trivia.includes(STILLS_ATTR_MARKER)
-    ? trivia.slice(0, trivia.indexOf(STILLS_ATTR_MARKER)).trimEnd()
-    : trivia.trimEnd();
-  return `${trimmed}\n\n${stillsBody.trim()}\n`;
+  return replaceMarkdownSection(trivia, STILLS_ATTR_MARKER, stillsBody);
 }
 
 function stillsAttributionMarkdown(): string {

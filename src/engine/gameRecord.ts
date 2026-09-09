@@ -90,9 +90,13 @@ export const GAME_RECORD_KEYS = [
 /** What the stored document carries, which is the fold plus the server's stamp. */
 export const GAME_DOCUMENT_KEYS = [...GAME_RECORD_KEYS, 'finishedAt'] as const;
 
-export function kindOf(question: Pick<QuizQuestion, 'voices' | 'image'>): QuestionKind {
+export function kindOf(
+  question: Pick<QuizQuestion, 'voices' | 'image' | 'previewUrl' | 'artworkUrl'>,
+): QuestionKind {
   if (question.voices && question.voices.length > 0) return 'melody';
+  if (question.previewUrl) return 'melody';
   if (question.image) return 'picture';
+  if (question.artworkUrl) return 'picture';
   return 'text';
 }
 

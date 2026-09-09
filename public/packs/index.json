@@ -111,7 +111,7 @@
   },
   {
     "id": "melody",
-    "title": "Name that Tune",
+    "title": "Classical",
     "blurb": "Public-domain melodies, played by the house synth.",
     "count": 70,
     "counts": {
@@ -122,7 +122,7 @@
   },
   {
     "id": "picture",
-    "title": "Picture Round",
+    "title": "Fine Art",
     "blurb": "Paintings, a landmark and a photograph. Optional 3×3 jigsaw.",
     "count": 49,
     "counts": {
@@ -131,5 +131,38 @@
       "hard": 0
     },
     "jigsawCount": 48
+  },
+  {
+    "id": "flags",
+    "title": "Flags",
+    "blurb": "Countries and the home nations. No jigsaw — a scrambled Union Jack is still a Union Jack.",
+    "count": 76,
+    "counts": {
+      "easy": 24,
+      "medium": 26,
+      "hard": 26
+    }
+  },
+  {
+    "id": "tunes",
+    "title": "Name that Tune",
+    "blurb": "Thirty seconds from Apple Music. Hear it again if you miss the hook.",
+    "count": 79,
+    "counts": {
+      "easy": 36,
+      "medium": 28,
+      "hard": 15
+    }
+  },
+  {
+    "id": "sleeves",
+    "title": "Sleeves",
+    "blurb": "Name the album from the cover. Artwork streamed from Apple, never stored here.",
+    "count": 52,
+    "counts": {
+      "easy": 16,
+      "medium": 25,
+      "hard": 11
+    }
   }
 ]

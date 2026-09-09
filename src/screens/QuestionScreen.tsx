@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { PicturePrompt } from '../components/PicturePrompt';
+import { StoreBadge } from '../components/StoreBadge';
 import { AnswerLamps } from '../components/AnswerLamps';
 import { ArcTimer } from '../components/ArcTimer';
 import { Ladder } from '../components/Ladder';
@@ -17,9 +18,11 @@ import {
 } from '../engine/state';
 import {
   CLOCK_LEAD_SECONDS,
+  playPreview,
   playSequence,
   startClock,
   stopClock,
+  stopPreview,
   stopSequence,
   useCue,
   useSound,
@@ -249,10 +252,18 @@ export function QuestionScreen({
   const clockKey = `${room.gameId ?? ''}:${room.index}`;
   const startedClockRef = useRef<string | null>(null);
   const voices = question?.voices;
+  const previewUrl = question?.previewUrl;
   const hasMelody = Boolean(voices && voices.length > 0);
+  const hasPreview = Boolean(previewUrl);
+  const hasTune = hasMelody || hasPreview;
 
   useEffect(() => {
     if (revealed || startedClockRef.current === clockKey) return;
+    if (hasPreview && previewUrl) {
+      startedClockRef.current = clockKey;
+      playPreview(previewUrl, question?.previewStart ?? 0);
+      return;
+    }
     if (hasMelody) {
       startedClockRef.current = clockKey;
       playSequence(voices ?? []);
@@ -261,7 +272,16 @@ export function QuestionScreen({
     if (remainingMs <= 0 || remainingMs > CLOCK_LEAD_MS) return;
     startedClockRef.current = clockKey;
     startClock(remainingMs);
-  }, [revealed, clockKey, remainingMs, hasMelody, voices]);
+  }, [
+    revealed,
+    clockKey,
+    remainingMs,
+    hasMelody,
+    hasPreview,
+    previewUrl,
+    voices,
+    question?.previewStart,
+  ]);
 
   /**
    * Hearing the tune again, on request.
@@ -281,11 +301,12 @@ export function QuestionScreen({
    * context has been waiting for.
    */
   const { muted, toggle: toggleMuted } = useSound();
-  const canReplay = hasMelody && !revealed && !clock.expired;
-  const replayMelody = (): void => {
-    if (!hasMelody) return;
+  const canReplay = hasTune && !revealed && !clock.expired;
+  const replayTune = (): void => {
+    if (!hasTune) return;
     if (muted) toggleMuted();
-    playSequence(voices ?? []);
+    if (hasPreview && previewUrl) playPreview(previewUrl, question?.previewStart ?? 0);
+    else playSequence(voices ?? []);
   };
 
   // Nothing else stops it. A reveal that arrives early, a question that ends
@@ -296,11 +317,13 @@ export function QuestionScreen({
     if (revealed) {
       stopClock();
       stopSequence();
+      stopPreview();
     }
     return () => {
       startedClockRef.current = null;
       stopClock();
       stopSequence();
+      stopPreview();
     };
   }, [revealed]);
 
@@ -332,7 +355,8 @@ export function QuestionScreen({
       if (key === 'r' && canReplay && !event.repeat) {
         event.preventDefault();
         if (muted) toggleMuted();
-        playSequence(voices ?? []);
+        if (hasPreview && previewUrl) playPreview(previewUrl, question?.previewStart ?? 0);
+        else playSequence(voices ?? []);
         return;
       }
 
@@ -361,6 +385,9 @@ export function QuestionScreen({
     muted,
     toggleMuted,
     voices,
+    hasPreview,
+    previewUrl,
+    question?.previewStart,
   ]);
 
   // Placed after the hooks above: an early return before them would change the
@@ -494,28 +521,34 @@ export function QuestionScreen({
             than removed, so nothing jumps when the clock runs out. Hidden at the
             reveal: by then the tune is the answer's business, not the player's.
           */}
-          {hasMelody && !revealed ? (
+          {hasTune && !revealed ? (
             <div className="btn-row">
               <button
                 type="button"
                 className="btn btn--ghost"
                 disabled={clock.expired}
-                onClick={replayMelody}
+                onClick={replayTune}
               >
                 {muted ? 'Unmute and hear it again' : 'Hear it again'}
               </button>
             </div>
           ) : null}
 
-          {question.image ? (
+          {question.storeUrl ? (
+            <StoreBadge href={question.storeUrl} kind={hasPreview ? 'listen' : 'view'} />
+          ) : null}
+
+          {question.image || question.artworkUrl ? (
             <PicturePrompt
-              image={question.image}
               jigsaw={Boolean(room.jigsawEnabled && question.jigsaw)}
               questionId={question.id}
               gameId={room.gameId ?? ''}
               elapsedMs={elapsedMs}
               durationMs={questionDurationMs(room)}
               revealed={revealed}
+              {...(question.image ? { image: question.image } : {})}
+              {...(question.artworkUrl ? { artworkUrl: question.artworkUrl } : {})}
+              {...(question.posterCrop ? { posterCrop: true } : {})}
               {...(question.credit ? { credit: question.credit } : {})}
             />
           ) : null}
@@ -581,7 +614,7 @@ export function QuestionScreen({
         <span>
           <kbd>A</kbd>–<kbd>D</kbd> answer
         </span>
-        {hasMelody && !revealed ? (
+        {hasTune && !revealed ? (
           <span>
             <kbd>R</kbd> hear it again
           </span>

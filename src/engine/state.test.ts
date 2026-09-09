@@ -298,7 +298,7 @@ describe('buildQuizQuestions', () => {
     expect(counts).toEqual([4, 4, 4]);
   });
 
-  test('copies melody and picture fields off a sealed question', () => {
+  test('copies melody, picture and iTunes fields off a sealed question', () => {
     const voices = [{ type: 'triangle' as const, from: 440, start: 0, duration: 0.3, gain: 0.7, cutoff: 2400 }];
     const sealed = sealQuestion({
       id: 'hand-1',
@@ -312,12 +312,24 @@ describe('buildQuizQuestions', () => {
       image: 'aaa.jpg',
       credit: 'Photo: someone, CC BY 2.0',
       jigsaw: true,
+      previewUrl: 'https://audio-ssl.itunes.apple.com/itunes-assets/x.m4a',
+      storeUrl: 'https://music.apple.com/gb/album/x/1?i=2',
+      trackId: 2,
+      previewStart: 4,
+      artworkUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music/v4/x/600x600bb.jpg',
+      posterCrop: true,
     });
     const [built] = buildQuizQuestions([sealed], 1, 'mixed', seededRng(1));
     expect(built?.voices).toEqual(voices);
     expect(built?.image).toBe('aaa.jpg');
     expect(built?.credit).toBe('Photo: someone, CC BY 2.0');
     expect(built?.jigsaw).toBe(true);
+    expect(built?.previewUrl).toBe('https://audio-ssl.itunes.apple.com/itunes-assets/x.m4a');
+    expect(built?.storeUrl).toBe('https://music.apple.com/gb/album/1?i=2');
+    expect(built?.trackId).toBe(2);
+    expect(built?.previewStart).toBe(4);
+    expect(built?.artworkUrl).toContain('mzstatic.com');
+    expect(built?.posterCrop).toBe(true);
     expect(built?.correctIndex).toBeNull();
   });
 });

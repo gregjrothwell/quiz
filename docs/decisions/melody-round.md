@@ -1,6 +1,6 @@
 # The melody round, as played
 
-> **Owner: Greg Rothwell. Last updated: 8 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 9 September 2026. Budget: 250 lines.**
 
 Built 4 September ([`round-types.md`](round-types.md#music-round)), played for
 the first time on **8 September 2026**, and it did not work. This is the
@@ -174,3 +174,18 @@ Typecheck, lint and 726 tests clean.
 the distractors (four Bach pieces), the clip length (70 hand-edits), and
 whether the clock bed should come back under the silence after the tune ends —
 a sequence-end callback in `sound.ts`, not done here.
+
+## 9 September 2026 — Name that Tune is now iTunes, Classical keeps the synth
+
+The office walked out of a classical triangle-wave round. The fix that is not
+a longer synth clip is Apple's 30s preview, streamed from
+`audio-ssl.itunes.apple.com`, never put in the repo. Search/lookup is pack-build
+only (~20/min, cached). Play time is `<audio src=previewUrl>`. A store URL with
+the SEO slug stripped sits next to a "Listen on Apple Music" lockup — Apple's
+"proximate to a store badge" rule, and the only clean hook; UK fair dealing
+does not cover a public Pages quiz.
+
+`tunes` stole the lobby name. `melody` is **Classical**. Mute gate covers both.
+Hear it again / `R` still works. 79 GB-store tracks, distractors from other
+artists. Vault seeded 9 September (206 added). Live the same day as
+`index-6odlsKCm`. `itunes-probe` is live and out of `npm test`.

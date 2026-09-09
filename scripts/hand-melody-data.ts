@@ -11,7 +11,7 @@ export {
   type MelodySpec,
 } from '../src/questions/melody-voices';
 
-export const MELODY_PACK_TITLE = 'Name that Tune';
+export const MELODY_PACK_TITLE = 'Classical';
 export const MELODY_PACK_BLURB = 'Public-domain melodies, played by the house synth.';
 
 /** Lobby default in `ROUND_LENGTHS`. Three nights without a repeat need 3× this. */

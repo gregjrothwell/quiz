@@ -14,7 +14,7 @@ import {
   type Level,
   type RoomState,
 } from '../engine/state';
-import type { PackId, PackSummary } from '../questions/types';
+import { packNeedsSound, type PackId, type PackSummary } from '../questions/types';
 
 const ROUND_LENGTHS = [10, 15, 20, 25] as const;
 
@@ -251,16 +251,16 @@ export function Lobby({
         </label>
 
         {/*
-          A muted player cannot hear a melody at all. The preference lives in
-          localStorage and the AudioContext needs a gesture, so this is the
-          place that can actually fix both — a click on this button unmutes
-          and unlocks. Start is blocked while Name that Tune is selected and
-          sound is still off.
+          A muted player cannot hear a melody or an iTunes preview at all. The
+          preference lives in localStorage and the AudioContext needs a gesture,
+          so this is the place that can actually fix both — a click on this
+          button unmutes and unlocks. Start is blocked while a sound pack is
+          selected and sound is still off.
         */}
         {muted ? (
           <div className="stack">
             <p className="muted hint">
-              Sound is off. Name that Tune is silent unless you turn it on.
+              Sound is off. Name that Tune and Classical are silent unless you turn it on.
             </p>
             <div className="btn-row">
               <button type="button" className="btn" onClick={toggle}>
@@ -483,7 +483,7 @@ export function Lobby({
               || busy
               || playerEntries.length === 0
               || effectiveCount === 0
-              || (packId === 'melody' && muted)
+              || (packId !== null && packNeedsSound(packId) && muted)
             }
             onClick={() =>
               packId &&
@@ -492,7 +492,7 @@ export function Lobby({
           >
             {busy
               ? 'Loading questions…'
-              : packId === 'melody' && muted
+              : packId !== null && packNeedsSound(packId) && muted
                 ? 'Turn sound on first'
                 : 'Start the show'}
           </button>
