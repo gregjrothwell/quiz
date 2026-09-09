@@ -84,7 +84,7 @@ Three things to get right, none of them cost:
 3. **A new pack touches three places** — the `PACK_IDS` union and `PACK_META`
    (`types.ts`), and `expect(packFiles.length).toBe(16)` at `seal.test.ts`.
 
-**Built, not a 100-image pack.** `picture` lobby title **Fine Art**: 49 hashed stills (48 jigsaw) — almost all PD-Art 15th–1930s, because Commons/Met stills were legal to hash, not because a 2026 office would know them. **Flags** 76, hashed, no jigsaw. **Sleeves** 52, mzstatic hotlink, never hosted. **On the box** recut off that mistake: mixed eras, untitled TMDB backdrops (stills, then cropped poster), hashed like flags, on `on-the-box-tmdb`. Not live until seeded and deployed. Harvest must not overwrite hand-built JSON.
+**Built, not a 100-image pack.** `picture` lobby title **Fine Art**: 49 hashed stills (48 jigsaw) — almost all PD-Art 15th–1930s, because Commons/Met stills were legal to hash, not because a 2026 office would know them. **Flags** 76, hashed, no jigsaw. **Sleeves** 52, mzstatic hotlink, never hosted. **On the box** recut off that mistake: mixed eras, untitled TMDB backdrops (stills, then cropped poster), hashed like flags, live 9 September as `index-CFub7zgz`. Harvest must not overwrite hand-built JSON.
 
 ## Music round
 
