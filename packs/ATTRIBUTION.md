@@ -100,3 +100,11 @@ the stills. England, Scotland, Wales and Northern Ireland use Flagcdn's
 `gb-eng` / `gb-sct` / `gb-wls` / `gb-nir` codes. Northern Ireland has
 no official flag; `gb-nir` is the Ulster Banner, used here as the
 recognisable quiz image, not as a statement of status.
+
+## On the box
+
+Film and TV stills fetched from [TMDB](https://www.themoviedb.org) at pack-build
+and content-hashed into `images/`, same as the flags. Untitled backdrops only
+— a language tag on TMDB is usually titled keyart, which would print the
+answer. This product uses the TMDB API but is not endorsed or certified by
+TMDB. The stills remain studio copyright; hashing them is a seal, not a licence.
