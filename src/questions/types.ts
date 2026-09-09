@@ -115,8 +115,8 @@ export interface Question {
   /** Seconds into the preview to start, for clips that open on a long intro. */
   previewStart?: number;
   /**
-   * iTunes artwork on Apple's CDN. Sleeves and screens only — never hashed
-   * onto Pages, which would be hosting the cover.
+   * iTunes artwork on Apple's CDN. Sleeves only — never hashed onto Pages,
+   * which would be hosting the cover.
    */
   artworkUrl?: string;
   /** Square crop of a portrait poster, to hide typical title treatment. */
@@ -221,6 +221,6 @@ export const PACK_META: Record<PackId, { title: string; blurb: string }> = {
   },
   screens: {
     title: 'On the box',
-    blurb: 'Film and TV from the poster, cropped so the title is not the answer.',
+    blurb: 'Film and TV from a still. Untitled backdrops, no jigsaw.',
   },
 };
