@@ -171,6 +171,11 @@ the tail of the average board is silently wrong. A stored form figure could be o
 server-side. Twenty-one rows today, so not urgent — but it is why this is worth more than it
 looks.
 
+**Building on `form-table`, 8 September 2026.** Paste the seasons/players `hasOnly`
+list before deploying — the client writes `recent` and `form` on every bank, so
+the published ruleset refuses those writes until the paste. Depth:
+[`season.md`](season.md#rank-on-form-not-on-average--8-september-2026).
+
 ### 10. A reload should not throw you out of the room — **shipped 28 August 2026**
 
 The only bug on this list, and it went out the same day it was written down. The room code

@@ -62,6 +62,14 @@ export interface SeasonRow extends Honours {
   points: number;
   best: number;
   /**
+   * Best four of the last six, or zero on a row that predates the field.
+   *
+   * Stored so the season query can `orderBy` it. Absent reads as zero, which
+   * is what a points-ordered week row (and any legacy season row) shows until
+   * the next bank writes a real figure.
+   */
+  form: number;
+  /**
    * Empty for the many rows that predate squads, or a player who set none.
    *
    * Read from the stored `team` field — see `PlayerRecord`. This is the read
@@ -435,29 +443,33 @@ export function invalidateSeason(): void {
 }
 
 /**
- * One table, highest total first — the season by default, or a week if asked
- * for one. Read on demand rather than subscribed to: standings do not change
- * while you are looking at them, and a live listener on every client is the
- * kind of fan-out this app spends care avoiding.
+ * One table — the season by default, or a week if asked for one. Read on
+ * demand rather than subscribed to: standings do not change while you are
+ * looking at them, and a live listener on every client is the kind of fan-out
+ * this app spends care avoiding.
  *
- * `orderBy('points')` is the right order for a week and the wrong one for the
- * season, which ranks on points ÷ played and is re-sorted by the caller. It
- * stays here because an average cannot be ordered server-side without storing
- * it, and storing it means a new field on the row — which means a rules
- * republish. Fifty rows is well inside what a client can sort.
+ * The season ranks on stored `form` and the week on `points`. A single-field
+ * `orderBy` is an automatic index; there is no composite and no console step
+ * for it. What *does* need the console is the rules paste: `form` is a new
+ * key on a `hasOnly` document, so this query is empty until people bank
+ * against the new ruleset, and those banks are refused until the paste.
  *
  * Handed out as a copy. Nothing sorts or splices it today, but the cache holds
  * the only reference, and an in-place sort added later would quietly corrupt
  * every later read rather than failing where it was written.
  */
-export async function loadTable(bucket: string = SEASON): Promise<SeasonRow[]> {
-  const hit = cached.get(bucket);
+export async function loadTable(
+  bucket: string = SEASON,
+  rank: 'points' | 'form' = 'points',
+): Promise<SeasonRow[]> {
+  const cacheKey = `${bucket}:${rank}`;
+  const hit = cached.get(cacheKey);
   if (hit && Date.now() - hit.at < TABLE_CACHE_MS) return [...hit.rows];
 
   const snapshot = await getDocs(
     query(
       collection(firestore(), 'seasons', bucket, 'players'),
-      orderBy('points', 'desc'),
+      orderBy(rank, 'desc'),
       limit(TABLE_LIMIT),
     ),
   );
@@ -471,6 +483,7 @@ export async function loadTable(bucket: string = SEASON): Promise<SeasonRow[]> {
       wins: data.wins,
       points: data.points,
       best: data.best,
+      form: data.form ?? 0,
       squad: cleanSquad(data.team),
       // Absent on every row written before honours existed, which is most of
       // them, and zero is the honest reading of a row that never counted any.
@@ -481,6 +494,6 @@ export async function loadTable(bucket: string = SEASON): Promise<SeasonRow[]> {
     };
   });
 
-  cached.set(bucket, { rows, at: Date.now() });
+  cached.set(cacheKey, { rows, at: Date.now() });
   return [...rows];
 }
