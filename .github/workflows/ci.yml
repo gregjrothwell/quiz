@@ -20,6 +20,18 @@
 # Publishing uses the `gh-pages` npm package already in devDependencies, the same
 # tool `npm run deploy` uses, so a hand deploy and a CI deploy produce the same
 # artefact the same way and nothing new enters the deploy path.
+#
+# The four majors are deliberately uneven, and levelling them to one number
+# re-breaks this. Node 20 is deprecated, so every action here has to declare
+# `runs.using: node24`, and the major where that happened differs per action:
+# checkout and setup-node at v5, but upload-artifact only at v6 and
+# download-artifact only at v7. Their v5 releases advertise Node 24 *support*
+# while still defaulting to node20 — GitHub's own v6/v7 notes say so in as many
+# words — so pinning the artifact pair to v5 leaves the deprecation warning
+# exactly where it was. Checked against each `action.yml`, not the changelogs.
+# Held at the lowest major that clears node20: the artifact handoff is the
+# mechanism this workflow exists for, and upload v7 / download v8 change how
+# artefacts are zipped and hashed, which is not a ride worth taking for free.
 
 name: CI
 
@@ -37,9 +49,9 @@ jobs:
     name: Verify and build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -76,7 +88,7 @@ jobs:
       # differ from the checked one, which is the whole failure this workstream
       # exists to stop. It is also what lets a future e2e job drive a browser at
       # the exact bundle that is about to go live — see the note at the bottom.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: dist
           path: dist/
@@ -101,16 +113,16 @@ jobs:
       group: gh-pages
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version-file: .nvmrc
           cache: npm
 
       - run: npm ci
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: dist
           path: dist
