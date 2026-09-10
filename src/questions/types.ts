@@ -115,6 +115,17 @@ export interface Question {
   /** Seconds into the preview to start, for clips that open on a long intro. */
   previewStart?: number;
   /**
+   * Seconds to play before stopping, counted from {@link previewStart}.
+   *
+   * There to cut a clip off before the singer says the answer. Apple picks the
+   * preview's 30 seconds to be the most recognisable part of the track, which
+   * for a lot of pop is the chorus, which is where the title is sung — so the
+   * clip that is easiest to place is often the one that gives itself away.
+   * Stopping early keeps Apple's opening, which is the recognisable half, and
+   * loses only the half that was doing the telling. Absent means play out.
+   */
+  previewSeconds?: number;
+  /**
    * iTunes artwork on Apple's CDN. Sleeves only — never hashed onto Pages,
    * which would be hosting the cover.
    */
@@ -147,6 +158,7 @@ export interface SealedQuestion {
   storeUrl?: string;
   trackId?: number;
   previewStart?: number;
+  previewSeconds?: number;
   artworkUrl?: string;
   posterCrop?: boolean;
 }
@@ -169,6 +181,9 @@ export function sealQuestion(question: Question): SealedQuestion {
   if (question.trackId !== undefined) sealed.trackId = question.trackId;
   if (question.previewStart !== undefined && question.previewStart > 0) {
     sealed.previewStart = question.previewStart;
+  }
+  if (question.previewSeconds !== undefined && question.previewSeconds > 0) {
+    sealed.previewSeconds = question.previewSeconds;
   }
   if (question.artworkUrl) sealed.artworkUrl = question.artworkUrl;
   if (question.posterCrop) sealed.posterCrop = true;

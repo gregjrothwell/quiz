@@ -24,6 +24,7 @@
     "write-sleeves-pack": "tsx scripts/write-sleeves-pack.ts",
     "write-screens-pack": "tsx --env-file=.env.local scripts/write-screens-pack.ts",
     "itunes-probe": "tsx scripts/itunes-probe.ts",
+    "tune-audit": "tsx scripts/tune-title-audit.ts",
     "tmdb-probe": "tsx --env-file=.env.local scripts/tmdb-probe.ts",
     "fold-votes": "tsx --env-file=.env.local scripts/fold-votes.ts",
     "read-games": "tsx --env-file=.env.local scripts/read-games.ts",

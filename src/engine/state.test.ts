@@ -316,6 +316,7 @@ describe('buildQuizQuestions', () => {
       storeUrl: 'https://music.apple.com/gb/album/x/1?i=2',
       trackId: 2,
       previewStart: 4,
+      previewSeconds: 9,
       artworkUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music/v4/x/600x600bb.jpg',
       posterCrop: true,
     });
@@ -328,6 +329,7 @@ describe('buildQuizQuestions', () => {
     expect(built?.storeUrl).toBe('https://music.apple.com/gb/album/1?i=2');
     expect(built?.trackId).toBe(2);
     expect(built?.previewStart).toBe(4);
+    expect(built?.previewSeconds).toBe(9);
     expect(built?.artworkUrl).toContain('mzstatic.com');
     expect(built?.posterCrop).toBe(true);
     expect(built?.correctIndex).toBeNull();
