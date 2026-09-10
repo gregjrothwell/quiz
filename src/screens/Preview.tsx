@@ -318,23 +318,29 @@ const REVIEWED_GAME: QuestionRecord[] = [
  * leagues existed — which is what most of the live board still looks like.
  */
 const SEASON_ROWS: SeasonRow[] = [
+  // Rach leads on form (dropped two bad nights of the last six). On average
+  // Joe would, which is the complaint this board exists to stop repeating.
+  { playerId: 'rach', name: 'Rach', squad: 'Hermes', played: 15, wins: 4, points: 100_996,
+    best: 8_400, form: 34_000, fastest: 2, comeback: 1, loneWolf: 1, contrarian: 0 },
+  { playerId: 'joe', name: 'Joe', squad: 'Bundae', played: 5, wins: 2, points: 45_010,
+    best: 9_200, form: 32_000, fastest: 1, comeback: 0, loneWolf: 0, contrarian: 0 },
+  { playerId: 'greg', name: 'Greg', squad: 'Hermes', played: 14, wins: 4, points: 80_000,
+    best: 7_400, form: 30_000, fastest: 2, comeback: 2, loneWolf: 0, contrarian: 1 },
   { playerId: 'sam', name: 'Sam', squad: 'Hermes', played: 12, wins: 5, points: 41_200,
-    best: 8_150, fastest: 3, comeback: 1, loneWolf: 2, contrarian: 0 },
-  { playerId: 'greg', name: 'Greg', squad: 'Hermes', played: 14, wins: 4, points: 38_900,
-    best: 7_400, fastest: 2, comeback: 2, loneWolf: 0, contrarian: 1 },
+    best: 8_150, form: 28_000, fastest: 3, comeback: 1, loneWolf: 2, contrarian: 0 },
   { playerId: 'priya', name: 'Priya', squad: 'Bundae', played: 11, wins: 3, points: 33_100,
-    best: 6_900, fastest: 1, comeback: 0, loneWolf: 1, contrarian: 0 },
+    best: 6_900, form: 24_000, fastest: 1, comeback: 0, loneWolf: 1, contrarian: 0 },
   { playerId: 'alex', name: 'Alex', squad: '', played: 9, wins: 1, points: 24_050,
-    best: 5_200, fastest: 0, comeback: 1, loneWolf: 0, contrarian: 3 },
+    best: 5_200, form: 20_000, fastest: 0, comeback: 1, loneWolf: 0, contrarian: 3 },
   { playerId: 'nadia', name: 'Nadia', squad: 'Lurkers', played: 4, wins: 0, points: 9_800,
-    best: 3_100, fastest: 0, comeback: 0, loneWolf: 0, contrarian: 0 },
-  // Two rounds and a very good one. Ranked on points she is nowhere; ranked on
-  // the average she would lead the board outright, which is the whole reason
-  // the qualifying floor exists — so the fixture has to contain her.
+    best: 3_100, form: 9_800, fastest: 0, comeback: 0, loneWolf: 0, contrarian: 0 },
+  // Two rounds and a very good one. Ranked on form she is nowhere near the
+  // line until the third night — so the fixture has to contain her, same
+  // reason it did when the board ranked on average.
   { playerId: 'tom', name: 'Tom', squad: 'Engineering', played: 2, wins: 2, points: 17_600,
-    best: 9_100, fastest: 1, comeback: 0, loneWolf: 1, contrarian: 0 },
+    best: 9_100, form: 17_600, fastest: 1, comeback: 0, loneWolf: 1, contrarian: 0 },
   { playerId: 'ines', name: 'Inès', squad: '', played: 1, wins: 0, points: 2_300,
-    best: 2_300, fastest: 0, comeback: 0, loneWolf: 0, contrarian: 0 },
+    best: 2_300, form: 2_300, fastest: 0, comeback: 0, loneWolf: 0, contrarian: 0 },
 ];
 
 const noop = (): void => undefined;

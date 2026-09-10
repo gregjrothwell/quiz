@@ -1,14 +1,12 @@
 /**
  * How the season table is ordered.
  *
- * It used to rank on lifetime points, which rewards turning up rather than
- * playing well: ten mediocre rounds beat three good ones, and the only way to
- * climb was to keep showing up. Ranking on points ÷ played says something about
- * how somebody plays instead of how often.
- *
- * `played` has been stored since the first version of the board, so this costs
- * no new field, no rules republish and no migration — the number to rank on was
- * already in the table.
+ * Lifetime points rewarded turning up: ten mediocre rounds beat three good
+ * ones. Points ÷ played was the first fix, and it inverted the problem — the
+ * people who turned up most lost (Joe 8th→1st, Rach 2nd→10th on the live
+ * rows). Form is the second: best four of the last six, stored on the row so
+ * the query can `orderBy` it. The average functions below remain because the
+ * tests pin the old rule; the season screen ranks with {@link rankByForm}.
  */
 
 /**
@@ -46,10 +44,17 @@ export function averageFor(row: { points: number; played: number }): number {
 }
 
 export interface RankedTable<T> {
-  /** Ranked, best average first. */
+  /** Ranked, best first. */
   ranked: T[];
   /** Too few rounds to rank, ordered the same way and shown below the table. */
   provisional: T[];
+}
+
+/** The fields form ranking needs. `form` is the stored figure, not recomputed. */
+interface Formed {
+  form: number;
+  played: number;
+  name: string;
 }
 
 /**
@@ -94,5 +99,39 @@ export function rankByAverage<T extends Scored>(rows: readonly T[]): RankedTable
   return {
     ranked: ranked.sort(byAverage),
     provisional: provisional.sort(byAverage),
+  };
+}
+
+function byForm(a: Formed, b: Formed): number {
+  const difference = b.form - a.form;
+  if (difference !== 0) return difference;
+
+  if (b.played !== a.played) return b.played - a.played;
+  return a.name.localeCompare(b.name, 'en-GB');
+}
+
+/**
+ * Splits a table into the part that is ranked and the part that is not yet,
+ * ordered on stored form.
+ *
+ * Qualifier is the same three-round floor the average board used: form with
+ * one or two nights in the window is still computed (the sum of those nights),
+ * but it does not take a position until there are three to judge. Tie-breaks
+ * match {@link rankByAverage} so two devices cannot disagree.
+ *
+ * Takes a readonly array and returns new ones, for the same cache reason as
+ * {@link rankByAverage}.
+ */
+export function rankByForm<T extends Formed>(rows: readonly T[]): RankedTable<T> {
+  const ranked: T[] = [];
+  const provisional: T[] = [];
+
+  for (const row of rows) {
+    (row.played >= MIN_GAMES_TO_QUALIFY ? ranked : provisional).push(row);
+  }
+
+  return {
+    ranked: ranked.sort(byForm),
+    provisional: provisional.sort(byForm),
   };
 }

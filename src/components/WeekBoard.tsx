@@ -41,10 +41,10 @@ type Load =
  * This week's table, on the screen where the week just happened.
  *
  * **Ranked on points, unlike the season board.** A week is one round, or two at
- * most, and an average over that says nothing a total does not — the qualifying
- * floor the season needs would put everybody below the line on the night they
- * played. So this is the one place the query's own `orderBy('points')` is
- * already the order wanted, and nothing is re-sorted.
+ * most, and form over that is the score itself — the qualifying floor the
+ * season needs would put everybody below the line on the night they played.
+ * So this is the one place the query's own `orderBy('points')` is already the
+ * order wanted, and nothing is re-sorted.
  *
  * Costs one read per row, once, on a table holding only the people who played
  * this week — six or so, against fifty on the season board. It shares

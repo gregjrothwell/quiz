@@ -1,6 +1,6 @@
 # Squads, weeks and the season board
 
-> **Owner: Greg Rothwell. Last updated: 20 August 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 8 September 2026. Budget: 250 lines.**
 
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
@@ -35,7 +35,7 @@ though it changes neither.
 |---|---|
 | **The podium freezes** | at the whistle, so somebody pressing Leave no longer rearranges it on every other device |
 | **A weekly board** | `seasons/week-2026-W34/players/{id}` — a week *is* a season id |
-| **The season ranks on points ÷ played** | three rounds to qualify |
+| **The season ranks on form** | best four of the last six; three rounds to qualify |
 | **Teams became Squads** | Hermes, Bundae, Lurkers, from a dropdown |
 | **The week board after the quiz** | filtered to the squad you played for |
 | **The question text is sealed** | while the clock runs, and only while it runs |
@@ -99,11 +99,11 @@ one rule: [`live-squads.md`](live-squads.md).
 
 ### Things that will bite
 
-- **The season board re-sorts in the client.** `loadTable` still asks Firestore
-  for the top fifty *by points*, because an average cannot be ordered
-  server-side without storing it — and storing it means a new field, which means
-  the console. Exact while the board is fifty rows or fewer; it is twenty-one.
-  **Past fifty, the tail of the average board is wrong**, quietly.
+- **The season board used to re-sort in the client.** That was the average
+  board: `loadTable` asked for the top fifty by points, so past fifty the tail
+  was silently wrong. Form is stored and the query is `orderBy('form')` — see
+  below. Until people bank against the pasted ruleset that query is empty,
+  because Firestore omits documents that lack the field.
 - **`setSquad` writes the season row only.** A squad picked in error leaves that
   week's row wrong. Changing it fixes every week after; the wrong one stays
   wrong. Rewriting a banked week means editing a result after the fact, which
@@ -117,130 +117,87 @@ one rule: [`live-squads.md`](live-squads.md).
   chosen, so a stored legacy name would make the picker silently disagree with
   the record. `cleanSquad` stays tolerant because it also runs on the way *out*
   of Firestore, where narrowing would erase legacy rows from the board.
-- **The average board is a rearrangement, not a re-sort.** On the live rows Joe
-  goes 8th → 1st, Greg 1st → 3rd, Rach 2nd → 10th, Bret 7th → 13th. The people
-  who lose are the ones who have turned up most. That is the intended effect and
-  the thing somebody will complain about.
+- **The average board was a rearrangement, not a re-sort.** On the live rows Joe
+  went 8th → 1st, Greg 1st → 3rd, Rach 2nd → 10th, Bret 7th → 13th. The people
+  who lost were the ones who had turned up most. That was the intended effect
+  of ranking on points ÷ played, and the complaint form exists to answer.
 
-### What the seal on the question text does and does not buy
+The August ship (seal, `host-room`, teams as free text) moved to
+[`season-shipped.md`](season-shipped.md) on 8 September 2026, whole, when this
+file needed the room.
 
-`user-select: none` plus `onCopy`/`onCut`, on the prompt and the options, **only
-while the question is open**. It kills select → copy → paste into a search box
-or an LLM, which takes about four seconds and is the only cheat anybody in an
-office would actually try mid-question.
+## Rank on form, not on average — 8 September 2026
 
-It stops **nothing else** — view-source, DevTools, the network tab, a screenshot
-through OCR, or typing the question out. Anyone willing to do those was already
-willing to harvest OpenTDB, which is the real ceiling and is
-[documented](vault.md#what-it-does-not-stop).
+**Not** the opening titles. Those are [`form-and-awards.md`](form-and-awards.md).
+This is the season table: best four of the last six, golf's dropped scores,
+from [ideas-review §9](ideas-review.md).
 
-It lifts at the reveal deliberately: the answer is on screen by then, and
-copying a good question to send to somebody afterwards is legitimate. The room
-code, the join link, the standings and the round in review are untouched.
+### The arithmetic
 
-### `npm run host-room` was broken for weeks — fixed 20 August 2026
+`recent` is an array of `{ gameId, score, at }`, last six, oldest first.
+`form` is the sum of the best four of those scores. Fewer than four rounds
+sums them all — three good nights are three good nights. Qualifier is still
+**three games played**, same floor as the average board: form is computed
+with one or two nights, but it does not take a position until there are
+three to judge.
 
-It imported `resolveAnswer` from `src/lib/vault`, which imported `src/firebase`,
-which reads `import.meta.env` — undefined outside Vite. It died on the first
-import with `Cannot read properties of undefined (reading
-'VITE_FIREBASE_API_KEY')`, long before a line of its own code ran.
+`gameId` is what keeps `lastGame` honest: a repeat write, and a claim that
+would otherwise push the same night twice, no-ops on the window. `at` is
+what lets `foldRecords` merge two devices into one chronological last-six
+rather than taking only the newer side (which would wipe a phone's form the
+moment a laptop claimed it after one night) or concatenating them (which
+would overflow the bound or invent an order).
 
-**The damage was not one broken command.** This file named that harness as the
-way to test three separate things — a quizmaster dropping out mid-round, the
-keyboard shortcuts in a live game, and the vault's own gate from the terminal —
-so all three were untestable, and the file recorded them as merely *untested*,
-which is a much smaller-sounding thing.
+Pure, beside `bankGame` in `src/engine/records.ts`. The transaction in
+`src/lib/season.ts` still does nothing but decide which documents it applies
+to.
 
-**The fix was one import.** `vault.ts` already took its `Firestore` as a
-parameter; the only thing reaching for the app's singleton was a one-line
-convenience wrapper, `openTheVault`, with a single call site. Deleting it and
-calling `resolveAnswer(firestore(), …)` from `App.tsx` left the module pure, and
-nothing else changed. The lesson is the cheap one: **a single import at the top
-of a file is enough to make a module unusable outside the browser**, however
-carefully the functions below it were parameterised.
+### Paste, then check-rules, then deploy
 
-**`scripts/imports.test.ts` is what stops it coming back.** It walks the import
-graph of every script and fails if any of them reaches `src/firebase.ts` at any
-depth. Nothing else would: `npm test` covers `src/` and the pure parts of
-`scripts/`, and the harnesses themselves talk to the live project and are kept
-out on purpose, so no suite ever imports them. The guard was checked in both
-directions — the import was put back deliberately and the test went red on
-`scripts/host-room.ts` before being restored.
+`recent` and `form` go on the season document's `hasOnly` list. They are
+**optional in the rules** so a row written before them, and a client one
+deploy behind, still bank. They are **always written by this client**, so
+the *published* ruleset refuses every bank until the list is pasted.
 
-**Proved by running it**, 20 August 2026: room `PY7G`, a browser joined, and the
-harness ran its whole scripted sequence and exited clean — start, wait out the
-gate, **`>>> ASKING the vault` to `>>> WRITING reveal` in 225 ms**, then two
-advances. That reveal is the terminal vault path, which had never executed once
-since the vault shipped.
+Same trap as live squads and `firstMs`. **This cannot go live before the
+paste.** There is no write-without-the-field-then-backfill path: both writers
+use `set`, and a field the client does not name is erased by the next game.
 
-Note what the harness does and does not do, since the name oversells it: it
-takes **one** question through the vault and then advances twice. It is a way to
-watch a browser being an ordinary player while something else runs the game, not
-a way to play a whole round unattended.
+Order:
 
-### Regression pass, 20 August 2026
+1. Paste `firestore.rules` (`match /seasons/{season}/players/{playerId}` only).
+2. `npm run check-rules` — watch **write a season row carrying form** flip
+   from FAIL to PASS. The two new deny cases (oversized `recent`, non-int
+   `form`) pass against the old ruleset for the wrong reason (`hasOnly`
+   refuses the unknown keys) and for the right one after the paste.
+3. Then deploy.
 
-`typecheck`, `lint`, **356 tests**, `npm run build` all clean. No `any`, no
-`@ts-ignore`. `firestore.rules`, `firestore.seed.rules`, `database.rules.json`
-and `package.json` are untouched by the whole branch.
+A deploy first refuses every `recordGame` write. The week bucket uses the
+same rule, so both halves of the night fail together.
 
-- `npm run check-rules` — **36/36**, both directions, twice.
-- `npm run sync-harness 10` — ten clients, all ten joined, all ten saw the round
-  start **within 63 ms**, none dropped.
-- The whole `#/preview` gallery renders with no console errors and no sideways
-  body scroll at 1280, 375 and 320 px.
-- The bundle grew about **3 kB gzipped** (app chunk 114 → 117 kB).
+### The query
 
-One correction to this file: it says `check-rules` runs 36 checks and to count
-them with `grep -c "label:"`. That grep counted the `label: string` on the type
-declaration, so it was 35 before this branch and is 36 now that the weekly
-bucket check exists.
+Season `loadTable` is `orderBy('form', 'desc')`, limit fifty. Single-field:
+Firestore indexes it automatically, **no composite index, no console step
+for the index**. The console step is the paste.
 
----
+Documents without `form` are omitted. After the paste, the twenty-one live
+rows vanish from the season board until each player banks once. That is the
+cost of not backfilling. The empty copy reads "Nothing on the board yet",
+which is the same sentence as a genuinely empty season.
 
+The week board still `orderBy('points')`. A week is one round, or two at
+most, and form over that is the score.
 
-### Teams — shipped, 15 August 2026
+**The drift test was forced red.** Taking `'form'` out of the `hasOnly` list
+turned `the hasOnly list is exactly the document the client writes` from pass
+to fail; restoring it turned it back.
 
-Greg's idea. **Not** teams playing together: teams as in groups at work —
-Engineering against Marketing — so the board can be read as your league rather
-than the whole office.
+### Not covered
 
-**It needed no console step, which was the whole point of bounding `team` in the
-rules a fortnight before writing a line of it.** The season row is validated with
-`keys().hasOnly([...])`, so any new field on it is refused until the rules are
-re-pasted by hand, and that paste has broken this game twice. Publishing the
-bound early made this a client-only change.
-
-Set in an optional box beside the name on the landing screen, remembered per
-browser exactly as the name is, and written onto the season record when a game
-banks.
-
-**Free text rather than a fixed list**, because the list would have to be
-configured somewhere and every office needs a different one. The cost is
-obvious — "Engineering", "engineering" and " Engineering " are three leagues on a
-board that should show one — so grouping runs on `teamKey`, a trimmed lowercase
-key, while each row still shows the spelling it was given. Nothing cleverer than
-that: collapsing "Eng" into "Engineering" would need a dictionary, and quietly
-merging two teams somebody meant to keep apart is worse than showing both.
-
-Three decisions worth keeping:
-
-- **The filter sits on top of the whole board rather than replacing it.** Most
-  rows carry no team at all — every row written before today, and everybody who
-  leaves the box blank — so a team-only view would hide most of the season, and
-  the office-wide table is what the league is currently for.
-- **An empty team means "keep what the record says", not "clear it".** The team
-  lives on the record but is remembered per browser, so a regular who set theirs
-  on a laptop and then played from a phone would otherwise wipe it by banking one
-  game, and would have no idea they had. Taking a team off is a deliberate edit.
-- **Filtered in the client, not in the query.** `TABLE_LIMIT` is fifty and the
-  table is read on demand, so a `where` clause would make nothing faster and
-  would need a composite index built by hand in the console.
-
-`LeagueBoard` is extracted from the season screen so `#/preview` can render it on
-fixtures — `Season` fetches, which is why it had never been in the gallery, and
-the board is the half with layout worth checking.
-
----
-
----
+- No backfill of `recent` from `games/`. The first kept rounds landed on
+  8 September; folding them into form is a later job, and it would need the
+  admin SDK.
+- A claim that merges two seats from the *same* room keeps one `gameId` in
+  the window and still sums `played` — pre-existing, rare.
+- Opening-titles "form" is unchanged. Different word.

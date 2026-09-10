@@ -5,7 +5,7 @@ import { RecoveryPanel } from '../components/RecoveryPanel';
 import { SquadPanel } from '../components/SquadPanel';
 import { playerIdFor } from '../lib/identity';
 import { weekId } from '../engine/week';
-import { loadTable, type SeasonRow } from '../lib/season';
+import { loadTable, SEASON, type SeasonRow } from '../lib/season';
 
 interface SeasonProps {
   youUid: string | null;
@@ -54,7 +54,7 @@ export function Season({ youUid, onBack }: SeasonProps) {
   useEffect(() => {
     let cancelled = false;
 
-    loadTable()
+    loadTable(SEASON, 'form')
       .then((rows) => {
         if (!cancelled) setLoad({ state: 'ready', rows });
       })

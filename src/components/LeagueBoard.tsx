@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MIN_GAMES_TO_QUALIFY, averageFor, rankByAverage } from '../engine/table';
+import { MIN_GAMES_TO_QUALIFY, rankByForm } from '../engine/table';
 import { squadKey, squadsOf } from '../engine/squad';
 import type { SeasonRow } from '../lib/season';
 
@@ -24,12 +24,12 @@ const COLUMNS = 9;
  * everybody who never picked one — so a squad-only view would hide most of the
  * season, and the office-wide table is what the board is currently for.
  *
- * **Ranked on the average, ordered by the query on points.** `loadTable` asks
- * Firestore for the top fifty by total, because an average cannot be ordered
- * server-side without storing it and storing it means a rules republish. The
- * re-sort here is therefore exact only while the board fits inside that fifty —
- * true today at twenty-odd rows, and worth knowing before the fifty-first
- * person joins.
+ * **Ranked on form, ordered by the query on form.** `loadTable` asks Firestore
+ * for the top fifty by the stored figure — best four of the last six — which
+ * is the quiet bugfix on the old average board: that one asked for the top
+ * fifty by *points* and re-sorted in the client, so past fifty the tail was
+ * silently wrong. Points and played stay on the table; they are just not
+ * what it is ordered on.
  */
 export function LeagueBoard({ rows, youPlayerId }: LeagueBoardProps) {
   const [squad, setSquad] = useState('');
@@ -41,7 +41,7 @@ export function LeagueBoard({ rows, youPlayerId }: LeagueBoardProps) {
 
   // Filtered first, then ranked, so a league's table reads 1, 2, 3 rather than
   // carrying the positions those rows held on the office-wide board.
-  const { ranked, provisional } = rankByAverage(shown);
+  const { ranked, provisional } = rankByForm(shown);
 
   const cells = (row: SeasonRow, position: string) => {
     const rosettes = row.fastest + row.comeback + row.loneWolf + row.contrarian;
@@ -59,12 +59,8 @@ export function LeagueBoard({ rows, youPlayerId }: LeagueBoardProps) {
             table's headline styling for free — and at 375px that put the
             ranking number off the right-hand edge, so the phone showed an order
             with no visible reason for it. The styling moved to the cell rather
-            than the cell to the styling.
-
-            Rounded to a whole number: scores run to five figures, so a decimal
-            place is noise. The ordering uses the exact value, so two rows can
-            show the same number with one above the other. */}
-        <td className="season__ranked">{Math.round(averageFor(row)).toLocaleString('en-GB')}</td>
+            than the cell to the styling. Form is already a whole number. */}
+        <td className="season__ranked">{row.form.toLocaleString('en-GB')}</td>
         {/* A dash rather than an empty cell, here and for the rosettes, because
             a blank reads as a rendering fault where a dash reads as "none". */}
         <td>{row.squad || '—'}</td>
@@ -112,7 +108,7 @@ export function LeagueBoard({ rows, youPlayerId }: LeagueBoardProps) {
                   <span className="sr-only">Position</span>
                 </th>
                 <th scope="col">Contender</th>
-                <th scope="col">Average</th>
+                <th scope="col">Form</th>
                 <th scope="col">Squad</th>
                 <th scope="col">Played</th>
                 <th scope="col">Wins</th>
