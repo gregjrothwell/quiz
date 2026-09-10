@@ -49,18 +49,41 @@ export default defineConfig({
     },
   },
   test: {
-    environment: 'node',
-    // `scripts/` is included for the pure parts of the build-time code — the
-    // OpenTriviaQA parser and its encoding fallback, which silently corrupt
-    // questions when wrong. Anything under `scripts/` that talks to the network
-    // or the live project stays untested here on purpose; `npm test` must keep
-    // running offline.
-    // `.tsx` is matched even though there are no component tests yet. The glob
+    // Two projects so the jsdom setup file cannot leak into node tests.
+    // `src/lib/sound.test.ts` and the engine suite run in node on purpose —
+    // they must not load a DOM setup, and the suite as a whole must not switch
+    // to jsdom.
+    //
+    // `scripts/` is included in the node project for the pure parts of the
+    // build-time code — the OpenTriviaQA parser and its encoding fallback,
+    // which silently corrupt questions when wrong. Anything under `scripts/`
+    // that talks to the network or the live project stays untested here on
+    // purpose; `npm test` must keep running offline.
+    //
+    // `.tsx` is its own project, not a second glob on the node one. The glob
     // is the trap: written without it, the first `.test.tsx` anybody adds is
     // collected by nothing and passes by never running — the same shape as the
-    // two vacuous guards caught on 8 September. A component test still needs
-    // `environment: 'jsdom'`, which is deliberately not added until there is one
-    // to run. See `docs/decisions/audit-backlog.md`.
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'scripts/**/*.test.ts'],
+    // two vacuous guards caught on 8 September. `setupFiles` lives only on
+    // `dom` for the same reason the environments are split: jest-dom matchers
+    // belong in a document.
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'node',
+          environment: 'node',
+          include: ['src/**/*.test.ts', 'scripts/**/*.test.ts'],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'dom',
+          environment: 'jsdom',
+          include: ['src/**/*.test.tsx'],
+          setupFiles: ['./src/test/setup.ts'],
+        },
+      },
+    ],
   },
 });

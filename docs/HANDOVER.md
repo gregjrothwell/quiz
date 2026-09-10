@@ -36,7 +36,7 @@ in [`recall/`](recall/)).
 | rules, App Check on Firestore and the RTDB, anything security-shaped | [`decisions/security.md`](decisions/security.md) |
 | App Check on **authentication** specifically | [`decisions/app-check-auth.md`](decisions/app-check-auth.md) |
 | the debug token, `check-bundle`, why a deploy must not come off `master` | [`decisions/debug-token-leak.md`](decisions/debug-token-leak.md) |
-| **the CI deploy, the secret check, and why Playwright gets the emulator** | [`decisions/ci-deploy.md`](decisions/ci-deploy.md) · [`audit-backlog.md`](decisions/audit-backlog.md) |
+| **the CI deploy, the secret check, Playwright, the emulator** | [`ci-deploy.md`](decisions/ci-deploy.md) · [`audit-backlog.md`](decisions/audit-backlog.md) · [`emulators.md`](decisions/emulators.md) |
 | anything that adds reads or writes | [`decisions/cost.md`](decisions/cost.md) |
 | — before assuming a style choice, a bug, or a claim in here | [`gotchas.md`](decisions/gotchas.md) · [`known-limits.md`](decisions/known-limits.md) · [`state-of-play.md`](decisions/state-of-play.md) |
 | what a question is worth, and why it is not a speed curve | [`decisions/scoring.md`](decisions/scoring.md) |

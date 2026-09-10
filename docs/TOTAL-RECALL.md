@@ -39,6 +39,17 @@ body where it happened rather than here: three 4 September batches, then the
 whole 2026-09-08 day when the debug-token deploy needed the room. All verbatim to
 [`recall/2026-09.md`](recall/2026-09.md).
 
+## 2026-09-10 — Playwright prerequisites: jsdom, emulators, e2e job
+
+Recorded order from [`audit-backlog.md`](decisions/audit-backlog.md): glob (already),
+jsdom component tests, emulator, Playwright. Built on `cursor/playwright-prereqs`.
+Runtime flag `window.__QUIZ_EMULATORS__ === true`, host hardcoded `127.0.0.1`, so
+e2e drives the exact `dist/` that ships. CI job `e2e` needs `verify`, Temurin 21,
+Chromium only; `deploy` now needs e2e too. No debug token named in the workflow.
+Depth: [`emulators.md`](decisions/emulators.md). Smoke proved against a production
+`dist/`: landing + create-room on the emulators. **Not covered:** vault seed, a
+fifteen-question round, App Check (emulators don't).
+
 ## 2026-09-10 — Node 20 deprecation: the four actions clear it at three different majors
 
 Bumped CI off the deprecated node20 runtime. Levelling all four to v5 would have

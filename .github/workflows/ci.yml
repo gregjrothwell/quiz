@@ -16,7 +16,8 @@
 # to add it for an end-to-end runner, the answer is the Firebase emulator —
 # docs/decisions/audit-backlog.md.
 #
-# Actions used are GitHub's own (checkout, setup-node, upload/download-artifact).
+# Actions used are GitHub's own (checkout, setup-node, setup-java,
+# upload/download-artifact).
 # Publishing uses the `gh-pages` npm package already in devDependencies, the same
 # tool `npm run deploy` uses, so a hand deploy and a CI deploy produce the same
 # artefact the same way and nothing new enters the deploy path.
@@ -86,8 +87,9 @@ jobs:
       # Built once, here, and handed onward. The job that publishes must not
       # rebuild: a second build is a second chance for the shipped artefact to
       # differ from the checked one, which is the whole failure this workstream
-      # exists to stop. It is also what lets a future e2e job drive a browser at
-      # the exact bundle that is about to go live — see the note at the bottom.
+      # exists to stop. The e2e job downloads this same artefact and serves it
+      # with vite preview, so the browser drives the exact bundle that is about
+      # to go live.
       - uses: actions/upload-artifact@v6
         with:
           name: dist
@@ -95,9 +97,49 @@ jobs:
           retention-days: 7
           if-no-files-found: error
 
+  # Talks to the Firebase emulator, never the live project. Must never name the
+  # App Check debug-token environment variable — `check-bundle` refuses a build
+  # if this file does. Give the runner the emulator, not a token.
+  # Java 21 is for the Firestore emulator. setup-java is v5 (node24), not v4.
+  e2e:
+    name: Playwright against emulators
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: dist
+          path: dist
+
+      - run: npx playwright install --with-deps chromium
+
+      - run: npm run e2e
+
+      - uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          if-no-files-found: ignore
+
   deploy:
     name: Publish to gh-pages
-    needs: verify
+    needs: [verify, e2e]
     if: >-
       github.event_name == 'workflow_dispatch'
       || (github.event_name == 'push' && github.ref == 'refs/heads/master')
@@ -155,21 +197,3 @@ jobs:
             --user "GitHub Actions <actions@github.com>" \
             --repo "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
             --message "Deploy ${GITHUB_SHA}"
-
-# ---------------------------------------------------------------------------
-# The e2e job that is deliberately not here yet.
-#
-# Recorded order (docs/decisions/audit-backlog.md): widen the Vitest glob, add
-# component tests under Vitest, and only then Playwright. The glob is widened;
-# the component tests are not written.
-#
-# When it arrives it belongs between `verify` and `deploy` — `needs: verify`,
-# downloading the same `dist` artifact and serving it with `npm run preview`, so
-# the browser drives the exact bundle that is about to ship.
-#
-# It must talk to the Firebase emulator, never the live project and never an App
-# Check debug token. A runner that needs to attest wanting a debug token in its
-# environment is the same mistake that put one on GitHub Pages twice, with a
-# different filename on it. `check-bundle` refuses a build if any workflow names
-# that variable, so this is enforced rather than merely written down.
-# ---------------------------------------------------------------------------
