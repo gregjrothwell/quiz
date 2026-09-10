@@ -55,6 +55,12 @@ export default defineConfig({
     // questions when wrong. Anything under `scripts/` that talks to the network
     // or the live project stays untested here on purpose; `npm test` must keep
     // running offline.
-    include: ['src/**/*.test.ts', 'scripts/**/*.test.ts'],
+    // `.tsx` is matched even though there are no component tests yet. The glob
+    // is the trap: written without it, the first `.test.tsx` anybody adds is
+    // collected by nothing and passes by never running — the same shape as the
+    // two vacuous guards caught on 8 September. A component test still needs
+    // `environment: 'jsdom'`, which is deliberately not added until there is one
+    // to run. See `docs/decisions/audit-backlog.md`.
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'scripts/**/*.test.ts'],
   },
 });
