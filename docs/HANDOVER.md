@@ -65,10 +65,10 @@ is **Fine Art**. Firebase chunk unmoved at `firebase-Cns3pSRr`.
 **Name that Tune has been played and it worked** — `CX5E`, 65% over 10 of 10
 questions, the first round the game has ever *kept*. Branch
 `music-volume-and-clips` has the three notes off it: default volume 0.35 with a
-slider under the corner switch, a `previewSeconds` cut so a clip stops before it
-sings its own title, and **79 songs → 177**. Not deployed, **and the 98 new ids
-are not in the vault** — that breaks at reveal until seeded.
-[`tunes-round.md`](decisions/tunes-round.md).
+slider under the corner switch; **79 songs → 177**; and every clip measured by
+`tune-audit` — 103 clean, 33 trimmed, 31 shifted, **10 unavoidable and left
+alone**. Not deployed, **and the 98 new ids are not in the vault** — that breaks
+at reveal until seeded. [`tunes-round.md`](decisions/tunes-round.md).
 
 **Melody and picture are live and have been played** — `voices` + hashed
 `image`. The melody round did not work — [`melody-round.md`](decisions/melody-round.md).

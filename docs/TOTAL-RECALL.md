@@ -43,11 +43,16 @@ cues unchanged at the default and capped there. **Giveaways**: Apple picks the
 preview to be the most recognisable stretch, which for pop is the chorus, which
 is where the title is sung — `previewSeconds` cuts the clip before it.
 **Songs**: 79 → 177, weighted to `hard` (68/62/47). `resolveSong` now prefers a
-title match, not just an artist. `npm run tune-audit` measures the giveaways
-with `medium.en`; `small.en` heard "Sweet Caroline, good times" as "The sweet,
-terrible life". `melody-round.md` split at 323/250 →
+title match, not just an artist. `npm run tune-audit` measured all 177 —
+**103 clean, 33 trimmed, 31 shifted, 10 unavoidable**. Two checker failures
+found and fixed on the way: Parklife called clean because whisper split the
+title into "pork life", and seventeen clips that transcribed to nothing where
+eleven were only *suppressed* — Shake It Off sings its title six times in ten
+seconds and was counted clean. `small.en` heard "Sweet Caroline, good times" as
+"The sweet, terrible life", which is why the audit runs `medium.en`.
+`melody-round.md` split at 323/250 →
 [`tunes-round.md`](decisions/tunes-round.md), verbatim. **Not seeded** (98 new
-ids), not deployed, PR not raised.
+ids), not deployed.
 
 ## 2026-09-09 — Live: On the box (`index-CFub7zgz`)
 
