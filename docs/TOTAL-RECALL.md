@@ -39,6 +39,17 @@ body where it happened rather than here: three 4 September batches, then the
 whole 2026-09-08 day when the debug-token deploy needed the room. All verbatim to
 [`recall/2026-09.md`](recall/2026-09.md).
 
+## 2026-09-10 — Node 20 deprecation: the four actions clear it at three different majors
+
+Bumped CI off the deprecated node20 runtime. Levelling all four to v5 would have
+fixed half of it: `upload-artifact@v5` and `download-artifact@v5`/`@v6` declare
+node20 despite advertising Node 24 *support*, so they went to **v6** and **v7**
+while checkout and setup-node went to **v5**. Read off each `action.yml`, not the
+changelogs. Proved both ways — the annotations API returns the warning on the
+pre-bump master run and nothing on the bumped one. PR #45; `deploy` skipped on a
+PR, so `download-artifact@v7` is declared-node24 but not yet exercised.
+[`decisions/ci-deploy.md`](decisions/ci-deploy.md).
+
 ## 2026-09-10 — The season form ranking was live, then silently reverted
 
 `rankByForm` shipped 8 September as `index-Df9CfP0K`. The 10 September deploys
