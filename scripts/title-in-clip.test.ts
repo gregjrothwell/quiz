@@ -84,9 +84,27 @@ describe('titleHits', () => {
     const hits = titleHits('Come On Eileen', clip);
 
     // #then the mishearing is still a hit, because the match is phonetic — an
-    // exact compare would have called this clip clean and shipped it
+    // exact compare would have called this clip clean and shipped it. The
+    // window it settles on may run a word wide, so what is asserted is where
+    // the title starts, not the exact text the transcriber produced.
     expect(hits).toHaveLength(1);
-    expect(hits[0]?.heard).toBe('come on and');
+    expect(hits[0]?.start).toBe(9);
+    expect(hits[0]?.heard.startsWith('come on and')).toBe(true);
+  });
+
+  test('finds a one-word title the transcriber split in two', () => {
+    // #given whisper's Parklife, where the shouted title came back as two
+    // words — a one-word window could only ever see "pork" or "life"
+    const clip = transcript('you should cut down on your pork life mate get some exercise', 1);
+
+    // #when the title is looked for
+    const hits = titleHits('Parklife', clip);
+
+    // #then the pair is matched as one, because windows either side of the
+    // title's own length are tried. This clip was called clean before that,
+    // and it is the fastest median in the round it was played in.
+    expect(hits).toHaveLength(1);
+    expect(hits[0]?.heard).toBe('pork life');
   });
 
   test('a mishearing that changes the consonants too is missed, and that is the limit', () => {

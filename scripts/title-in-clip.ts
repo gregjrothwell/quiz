@@ -106,6 +106,23 @@ export function thresholdFor(titleWords: number): number {
   return 0.66;
 }
 
+/**
+ * What a window that is not the title's own length has to clear on top.
+ *
+ * A wider or narrower window has a degree of freedom the exact one does not,
+ * and it is where every false positive in the corpus came from: "dance you
+ * can" scoring 0.80 against Dancing Queen, "thought I heard you" 0.67 against
+ * Stay Another Day, "there's freedom" 0.67 against There She Goes — none of
+ * which is the title, and all three of which are off-length.
+ *
+ * 0.07 removes all three and keeps every true match, measured across 79
+ * transcripts. It leaves a split one-word title needing 0.99, which is to say
+ * a title the transcriber split but otherwise heard perfectly — Parklife as
+ * "pork life" — and not one it split *and* misheard. That is the honest edge
+ * of what a transcript can settle.
+ */
+const OFF_LENGTH_PENALTY = 0.07;
+
 export interface TranscriptWord {
   word: string;
   start: number;
@@ -135,29 +152,57 @@ export function titleHits(title: string, transcript: TranscriptWord[]): TitleHit
     .map((entry) => ({ ...entry, folded: foldWord(entry.word).replace(/\s+/g, '') }))
     .filter((entry) => entry.folded.length > 0 && !STOP.has(entry.folded));
 
+  /*
+    Windows of the title's length, and one either side of it.
+
+    The transcriber does not agree with the sleeve about where words end.
+    Blur's Parklife came back as "pork life mate" — the one-word title split
+    across two tokens, so a one-word window could only ever see "pork" or
+    "life" and the clip was called clean. Two tokens joined score 1.00 against
+    it. The same goes the other way, for a title the transcriber runs together.
+
+    The comparison is on the concatenated key, so the extra or missing word
+    lengthens or shortens the string and costs similarity by itself. That is
+    what keeps the wider net from catching clean clips.
+  */
+  const sizes = [...new Set([Math.max(1, target.length - 1), target.length, target.length + 1])];
+
   const found: TitleHit[] = [];
-  for (let i = 0; i + target.length <= stream.length; i += 1) {
-    const window = stream.slice(i, i + target.length);
-    const score = similarity(key, phoneticKey(window.map((entry) => entry.folded)));
-    if (score < threshold) continue;
-    found.push({
-      start: window[0]!.start,
-      end: window[window.length - 1]!.end,
-      score: Math.round(score * 100) / 100,
-      heard: window.map((entry) => entry.folded).join(' '),
-    });
+  for (const size of sizes) {
+    const bar = threshold + (size === target.length ? 0 : OFF_LENGTH_PENALTY);
+    for (let i = 0; i + size <= stream.length; i += 1) {
+      const window = stream.slice(i, i + size);
+      const score = similarity(key, phoneticKey(window.map((entry) => entry.folded)));
+      if (score < bar) continue;
+      found.push({
+        start: window[0]!.start,
+        end: window[window.length - 1]!.end,
+        score: Math.round(score * 100) / 100,
+        heard: window.map((entry) => entry.folded).join(' '),
+      });
+    }
   }
 
-  // Overlapping windows around one sung line are one hit, not four.
+  /*
+    Overlapping windows around one sung line are one hit, not four — and the
+    one kept is the best-scoring, not the union of them.
+
+    The union was the first attempt and it drags the start earlier: "I saw the
+    whole of the moon" matches at "whole" with 1.00 and again at "saw" with
+    0.80, because the extra word only costs so much, and unioning them puts the
+    title 1.6 seconds before it is sung. Every cut would then be early by
+    however far the widest window reached. Ties go to the tighter span, which
+    is the window that actually is the title rather than the title plus a
+    neighbour.
+  */
   const merged: TitleHit[] = [];
   for (const hit of found.sort((a, b) => a.start - b.start)) {
     const last = merged[merged.length - 1];
     if (last && hit.start <= last.end + 0.25) {
-      last.end = Math.max(last.end, hit.end);
-      if (hit.score > last.score) {
-        last.score = hit.score;
-        last.heard = hit.heard;
-      }
+      const better =
+        hit.score > last.score
+        || (hit.score === last.score && hit.end - hit.start < last.end - last.start);
+      if (better) merged[merged.length - 1] = { ...hit };
       continue;
     }
     merged.push({ ...hit });
