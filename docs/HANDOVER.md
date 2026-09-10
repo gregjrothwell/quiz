@@ -22,6 +22,7 @@ in [`recall/`](recall/)).
 | the vault, reveals, answer secrecy, **when a client may ask** | [`decisions/vault.md`](decisions/vault.md) |
 | the answer window or its rules | [`decisions/answer-window.md`](decisions/answer-window.md) |
 | the season table, squads, weekly boards, `recordGame`, anything called `team` | [`decisions/season.md`](decisions/season.md) |
+| the season board as it shipped in August, before form ranking | [`decisions/season-shipped.md`](decisions/season-shipped.md) |
 | squads **during** the round | [`decisions/live-squads.md`](decisions/live-squads.md) |
 | the opening titles, honours, rosettes | [`decisions/form-and-awards.md`](decisions/form-and-awards.md) |
 | `playerId`, recovery codes, claiming | [`decisions/identity.md`](decisions/identity.md) |
@@ -35,13 +36,13 @@ in [`recall/`](recall/)).
 | rules, App Check on Firestore and the RTDB, anything security-shaped | [`decisions/security.md`](decisions/security.md) |
 | App Check on **authentication** specifically | [`decisions/app-check-auth.md`](decisions/app-check-auth.md) |
 | the debug token, `check-bundle`, why a deploy must not come off `master` | [`decisions/debug-token-leak.md`](decisions/debug-token-leak.md) |
-| moving the deploy to CI (proposed, not built) | [`decisions/ci-deploy.md`](decisions/ci-deploy.md) |
+| **the CI deploy, the secret check, and why Playwright gets the emulator** | [`decisions/ci-deploy.md`](decisions/ci-deploy.md) · [`audit-backlog.md`](decisions/audit-backlog.md) |
 | anything that adds reads or writes | [`decisions/cost.md`](decisions/cost.md) |
 | — before assuming a style choice, a bug, or a claim in here | [`gotchas.md`](decisions/gotchas.md) · [`known-limits.md`](decisions/known-limits.md) · [`state-of-play.md`](decisions/state-of-play.md) |
 | what a question is worth, and why it is not a speed curve | [`decisions/scoring.md`](decisions/scoring.md) |
 | the countdown, and whose clock it runs on | [`decisions/shared-clock.md`](decisions/shared-clock.md) |
 | the shareable result card, and how it gets to the player | [`decisions/final-card.md`](decisions/final-card.md) |
-| what to build next, what each idea costs, and what was turned down | [`what-to-build-next.md`](decisions/what-to-build-next.md#picking-this-up--cursor-or-a-fresh-session) · [`ideas-review.md`](decisions/ideas-review.md) · [`scope.md`](decisions/scope.md) |
+| what to build next, what each idea costs, and what was turned down | [`what-to-build-next.md`](decisions/what-to-build-next.md) · [`picking-up.md`](decisions/picking-up.md) · [`ideas-review.md`](decisions/ideas-review.md) · [`scope.md`](decisions/scope.md) |
 | picture, music, jigsaw or steal rounds, and **negative points** | [`decisions/round-types.md`](decisions/round-types.md) |
 | why the melody round played badly, before changing it | [`decisions/melody-round.md`](decisions/melody-round.md) |
 | **Name that Tune** — volume, clips that give the answer away, the song list | [`decisions/tunes-round.md`](decisions/tunes-round.md) |
@@ -53,29 +54,28 @@ in [`recall/`](recall/)).
 
 ## State as of 10 September 2026
 
-> **READ FIRST — the debug-token leak is closed, but `master` still re-leaks on
-> deploy.** 10 September: `seal-token-again` deployed (`index-V9wVdhyu`, gh-pages
-> `899a4c3`, bundle grepped clean), Greg revoked the old token and reissued —
-> `.env.local` holds the new one, verified both ways (real users play; a
-> non-safelisted token 403s). **`master` still has the unconditional read and no
-> `check-bundle`**, so a deploy from `master` re-ships a token until
-> `seal-token-again` lands. [`decisions/debug-token-leak.md`](decisions/debug-token-leak.md).
+> **READ FIRST — deploys now come from CI, and the season board is short on
+> purpose.** 10 September: `.github/workflows/ci.yml` builds and publishes from
+> `master`; the token gate, `check-bundle` and `predeploy` are all on `master`,
+> so the leak is closed at the source rather than on a branch.
+> [`decisions/ci-deploy.md`](decisions/ci-deploy.md). **The season board shows
+> one row, not 26** — `orderBy('form')` excludes rows with no `form` field and
+> only rows banked since the form client appear. It refills as people play;
+> there is no backfill. [`decisions/season.md`](decisions/season.md).
 
-**Live is `index-V9wVdhyu`** (10 September, gh-pages `899a4c3`, from
-`seal-token-again` = #39 + the token gate). **16 packs**;
-**Name that Tune 177**; synth is **Classical**; **On the box** (54, hashed TMDB
-stills); **Flags** (76, hashed, no jigsaw); **Sleeves** (52, mzstatic hotlink);
-picture is **Fine Art**. Firebase chunk unmoved at `firebase-Cns3pSRr`.
+**Live is `index-qJCbuGrA`** (10 September, gh-pages `d412adc`, **deployed by
+CI** — the author line on a gh-pages commit now says whether it came from CI or
+a laptop). **16 packs**; **Name that Tune 177**; synth is **Classical**; **On
+the box** (54, hashed TMDB stills); **Flags** (76, hashed, no jigsaw);
+**Sleeves** (52, mzstatic hotlink); picture is **Fine Art**. Firebase chunk
+unmoved at `firebase-Cns3pSRr`.
 
-**Name that Tune has been played and it worked** — `CX5E`, 65% over 10 of 10,
-the first round the game ever *kept*. Its three notes are live: volume 0.35 plus
-a corner slider, **79 songs → 177**, and every clip measured by `tune-audit`
-(103 clean, 33 trimmed, 31 shifted, **10 unavoidable, left alone**). Vault
-seeded. [`tunes-round.md`](decisions/tunes-round.md).
-**[#39](https://github.com/gregjrothwell/quiz/pull/39) open; its content is live
-via `seal-token-again`, master not moved.** Melody and picture are live and
-played; melody did not work ([`melody-round.md`](decisions/melody-round.md)),
-picture is unplayed with people.
+**Name that Tune has been played and it worked** — `CX5E`, 65% over 10 of 10;
+volume, song count and clip windows all in [`tunes-round.md`](decisions/tunes-round.md).
+**The picture round has been played too** — `RX4P`, 9 September, 11 seats, 55%.
+Three docs said it never had; `read-games` said otherwise, the third time the
+prose has drifted from the live project. Melody is live, played, and did not
+work ([`melody-round.md`](decisions/melody-round.md)).
 
 **Shipped and played** otherwise: 13,593 answers; `appcheck-probe` refuses at
 sign-in; reveal ~0.5s after the clock; scoring 500 + rank 500/400/300/200/100.
@@ -84,11 +84,11 @@ Counts and the two slow leaks: [`cost.md`](decisions/cost.md#measured-live-28-au
 
 ## Outstanding
 
-1. **`master` still re-leaks the debug token on deploy** (box above). The gate,
-   its test, `check-bundle` and now `scripts/predeploy.ts` (deploy refuses off
-   master / dirty / behind, `DEPLOY_FROM_BRANCH=1` overrides) are on
-   `seal-token-again`, not `master`. **Do not deploy from `master`** until it
-   lands; close #35. Durable fix is CI — [`decisions/ci-deploy.md`](decisions/ci-deploy.md).
+1. **The season board shows one row of 26** (box above). `orderBy('form')` drops
+   documents without the field and only one player has banked since form
+   ranking. It refills a player per bank — one full round puts most of them
+   back. A backfill script is the alternative and has not been written; the
+   8 September decision was deliberately no backfill.
 2. **A quizmaster dropping out mid-round** needs a browser and `host-room`.
 3. **No Content-Security-Policy.** Deliberate: a `<meta http-equiv>` CSP breaks
    the live app silently and the stale CDN makes that painful to diagnose.
@@ -100,25 +100,25 @@ Counts and the two slow leaks: [`cost.md`](decisions/cost.md#measured-live-28-au
    [`decisions/identity.md`](decisions/identity.md).
 5. **The Ladder stops climbing** once a pack's thin `easy` or `hard` bucket is
    spent — it substitutes medium. The fix is a fold of `games/` into a real
-   difficulty, not selection.
-6. **The repo's `firestore.rules` was behind the console.** Fixed on
-   [`#40`](https://github.com/gregjrothwell/quiz/pull/40): repo brought
-   byte-forward to live (39,218 vs master's 34,889 — the extra is the `elapsedMs`
-   arrival floor), stale checker fixed with it. `check-rules` green both ways
-   10 September, the two allow cases FAIL→PASS. **Still do not paste master's
-   rules over the console** — it would delete a live anti-cheat.
+   difficulty, not selection. **It is a query now, not a build** — but `games/`
+   holds three rounds, so it is gated on playing, not coding.
+6. **Do not paste `master`'s rules over the console.** The repo was behind and
+   is now byte-forward (39,218), but the console is still the source of truth
+   here and a paste in the wrong direction deletes a live anti-cheat.
+   `check-rules` **69/69, both directions, 10 September**.
 7. **Hand-built packs need a seed after any *new* ids.** All current packs are
    seeded as of 10 September. An unseeded pack breaks at reveal.
 8. **`firstMs` and the pack picker are live and unplayed.** The marker is a
    deterrent, so the only test that counts is whether it changes his behaviour
    next round: [`decisions/first-touch.md`](decisions/first-touch.md).
-9. **Branches, 10 September:** 26 local → 13; 31 merged still on the remote.
-   Open PRs: **#39** (tunes, deployed from branch), **#40** (rules sync), **#35**
-   (dead — close it). **Local-only and unpushed**: `paste-seasons-and-elapsed`
-   (the live rules + season-form code that is live nowhere), `ask-recovery-code`,
-   `clock-bed-and-key-repeat` (the clock bed after a melody clip — the open item
-   in [`melody-round.md`](decisions/melody-round.md)), `bound-elapsed-ms`,
-   `fold-votes-dry-run`, `context-standards-route`, `vote-tally` (WIP).
+9. **CI actions warn on deprecated Node 20** — `checkout`, `setup-node` and
+   `upload-artifact` are forced onto 24. Green, but it sits in the deploy path.
+10. **Branches, 10 September:** PRs #35, #39, #40, #41, #42, #43, #44 all closed
+    or merged — **nothing open**. **Still local-only and unpushed**:
+    `ask-recovery-code` (one line on the final screen; live counts are 1 recovery
+    code, 0 claims — the cheapest thing on the list), `clock-bed-and-key-repeat`,
+    `bound-elapsed-ms`, `fold-votes-dry-run`, `context-standards-route`,
+    `vote-tally` (WIP). Four features finished and existing on one laptop.
 
 ## Where things are
 
