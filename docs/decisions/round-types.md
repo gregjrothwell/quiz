@@ -1,6 +1,6 @@
 # New round types, and what actually blocks them
 
-> **Owner: Greg Rothwell. Last updated: 9 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 10 September 2026. Budget: 250 lines.**
 
 Four ideas raised on 4 September — **stealing points, picture rounds, music
 rounds, jigsaw rounds** — costed against the database, plus the **negative
@@ -92,10 +92,12 @@ Two different ideas wearing one name.
 
 - **A melody round — recommended, then played, then abandoned.** Synth `Voice[]`.
   Lobby title is now **Classical**. See [`melody-round.md`](melody-round.md).
-- **iTunes 30s previews — the actual Name that Tune.** Stream Apple's m4a, never
-  host it. Badge + store link. Pack-build bakes `previewUrl`. GB fair dealing
-  does not cover a public quiz; the hook is Apple's promotional grant. Risk is
-  Apple ignoring an IP, not a solicitor-grade licence.
+- **iTunes previews — the actual Name that Tune.** Played 10 September and it
+  worked, 65% over ten questions. Stream Apple's m4a, never host it. Badge +
+  store link. Pack-build bakes `previewUrl`. GB fair dealing does not cover a
+  public quiz; the hook is Apple's promotional grant. Risk is Apple ignoring an
+  IP, not a solicitor-grade licence. Some clips now stop short of Apple's thirty
+  seconds so they do not sing the answer: [`tunes-round.md`](tunes-round.md).
 - **Hosting recorded clips on Pages — still ruled out.**
 
 ### The licensing (CDPA, checked 4 September 2026)
