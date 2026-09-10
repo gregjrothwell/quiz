@@ -34,6 +34,35 @@ artists. Vault seeded 9 September (206 added). Live the same day as
 
 The iTunes round works. Three things came out of it, in his order of priority.
 
+### The scoreboard says so too, and it names the giveaways
+
+`CX5E`, 08:46, **is the first round the game has ever kept** — the `games/`
+block went live on 9 September and nothing had reached `finished` on it until
+this one ([`game-record.md`](game-record.md)).
+
+| | `CX5E` — Name that Tune | `DTK8` — the melody round, 8 September |
+|---|---|---|
+| Seats | 11 | 8 |
+| Questions reached | **10 of 10** | 4 of 15, abandoned |
+| Hit rate | **65%** | 28–46%, against 25% for guessing |
+| Median answer | 4.1s | — |
+
+65% is above the Picture round's 55% and Best of British's 42% the same week.
+Nobody walked out. **That is the "much better this time", measured.**
+
+It also puts a number on the third note, which is the part nobody could have
+said out loud:
+
+```
+ 5  medium   91%  3.6s  Sweet Dreams (Are Made of This) — Eurythmics
+ 8  hard    100%  3.9s  Mad World — Tears for Fears
+```
+
+**Eleven out of eleven on a `hard` question, median 3.9 seconds.** Both sing
+the title in the chorus, and Apple's preview *is* the chorus. A hard question
+the whole room gets in under four seconds is not a hard question; it is a clip
+reading the answer out. Read with `npm run read-games -- --game <id>`.
+
 ### 1. The default volume was covering the Teams call
 
 > "The default volume is set too high. Meaning that you can't hear anybody on

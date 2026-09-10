@@ -62,12 +62,13 @@ TMDB stills (54), seeded and live — **16 packs**; synth is **Classical**;
 **Flags** (76, hashed, no jigsaw); **Sleeves** (52, mzstatic hotlink); picture
 is **Fine Art**. Firebase chunk unmoved at `firebase-Cns3pSRr`.
 
-**Name that Tune has been played and it worked**, which is the first time a
-music round has. Branch `music-volume-and-clips` carries the three notes off it:
-the default volume down to 0.35 with a slider under the corner switch, a
-`previewSeconds` cut so a clip stops before it sings its own title, and **79
-songs → 177**. Not deployed, **and the 98 new ids are not in the vault**, which
-breaks at reveal until they are: [`tunes-round.md`](decisions/tunes-round.md).
+**Name that Tune has been played and it worked** — `CX5E`, 65% over 10 of 10
+questions, the first round the game has ever *kept*. Branch
+`music-volume-and-clips` has the three notes off it: default volume 0.35 with a
+slider under the corner switch, a `previewSeconds` cut so a clip stops before it
+sings its own title, and **79 songs → 177**. Not deployed, **and the 98 new ids
+are not in the vault** — that breaks at reveal until seeded.
+[`tunes-round.md`](decisions/tunes-round.md).
 
 **Melody and picture are live and have been played** — `voices` + hashed
 `image`. The melody round did not work — [`melody-round.md`](decisions/melody-round.md).
@@ -108,17 +109,17 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
 7. **`firstMs` and the pack picker are live and unplayed.** The marker is a
    deterrent, so the only test that means anything is whether it changes his
    behaviour in the next round: [`decisions/first-touch.md`](decisions/first-touch.md).
-8. **Nothing has been kept yet.** The block is pasted and live; the first record
-   lands when a round reaches `finished` on `index-CFub7zgz`. `read-games` shows it.
+8. **The first round is kept.** `CX5E`, 10 September, Name that Tune, 65% over
+   10 questions — and it named the giveaway clips before anyone read the
+   transcripts. `read-games` shows it.
 
 ## Where things are
 
 ```
 src/engine/     Pure TS game rules — no React, no Firebase. All the logic worth testing.
 src/lib/        Firebase wiring (useRoom), packs, the clock, audio, and the name,
-                squad and sound preference kept in localStorage.
+                squad, sound and volume preferences kept in localStorage.
 src/screens/    One component per phase + a design gallery (Preview).
-src/design/     One stylesheet, design tokens at the top.
 docs/decisions/ One subsystem each. Reached from the table above.
 ```
 
@@ -128,7 +129,7 @@ Commands: `dev` (port 5273), `test`, `typecheck`, `lint`, `build`, `deploy`,
 `take-stock`, `prune-rooms [-- --probe-rows --go]`, `fold-votes [-- --go]`,
 `write-hand-packs`, `write-melody-pack`, `write-tunes-pack`, `write-flags-pack`,
 `write-sleeves-pack`, `write-screens-pack`, `itunes-probe`, `tmdb-probe`,
-`read-games [-- --last n | --game id | --pack id]`.
+`tune-audit`, `read-games [-- --last n | --game id | --pack id]`.
 
 `npm test` covers `src/` plus the pure parts of `scripts/`. Anything touching the
 network or the live project stays out deliberately; it must keep running offline.
