@@ -160,14 +160,29 @@ describe('chooseClip', () => {
     expect(choice.previewStart).toBe(2.8);
   });
 
+  test('shifts rather than trimming to a stub', () => {
+    // #given a title at seven seconds, which would trim to a 6.6s clip
+    const choice = chooseClip([{ start: 7, end: 8, score: 1, heard: 'x' }]);
+
+    // #then it starts after the title instead, and the question has music in
+    // it throughout — 3.5 seconds of audio against 11.5 of silence is what
+    // emptied the room on 8 September
+    expect(choice.verdict).toBe('shifted');
+    expect(choice.previewStart).toBe(8.4);
+    expect(choice.previewSeconds).toBeUndefined();
+  });
+
   test('gives up honestly when no window of the clip avoids the title', () => {
-    // #given a title sung at the top and again eight seconds later
+    // #given a title sung four times across the preview, with no eight-second
+    // gap anywhere in reach
     const choice = chooseClip([
       { start: 1, end: 2, score: 1, heard: 'x' },
       { start: 8, end: 9, score: 1, heard: 'x' },
+      { start: 15, end: 16, score: 1, heard: 'x' },
+      { start: 23, end: 24, score: 1, heard: 'x' },
     ]);
 
-    // #then it says so rather than shipping a five-second question
+    // #then it says so rather than shipping a six-second question
     expect(choice.verdict).toBe('unavoidable');
     expect(choice.previewStart).toBe(0);
     expect(choice.previewSeconds).toBeUndefined();

@@ -181,7 +181,16 @@ export interface ClipOptions {
   window?: number;
   /** How long the preview runs. Apple's are 30s. */
   clip?: number;
-  /** Shorter than this is not a fair question, however clean it is. */
+  /**
+   * Shorter than this is not a clip worth playing, however clean it is.
+   *
+   * Eight seconds, and the number comes from the melody round: 3.5 seconds of
+   * audio and 11.5 of silence on a fifteen-second question is what emptied the
+   * room on 8 September. A trim has to leave over half the question with music
+   * in it; anything shorter shifts instead, which fills the whole question at
+   * the cost of Apple's chosen opening. That is the trade, and it is only worth
+   * making when the trim would be a stub.
+   */
   minimum?: number;
 }
 
@@ -199,7 +208,7 @@ export interface ClipOptions {
 export function chooseClip(hits: TitleHit[], options: ClipOptions = {}): ClipChoice {
   const window = options.window ?? 15;
   const clip = options.clip ?? 30;
-  const minimum = options.minimum ?? 6;
+  const minimum = options.minimum ?? 8;
 
   const inPlay = hits.filter((hit) => hit.start < window).sort((a, b) => a.start - b.start);
   if (inPlay.length === 0) {
@@ -235,6 +244,7 @@ export function chooseClip(hits: TitleHit[], options: ClipOptions = {}): ClipCho
     previewStart: start,
     ...(next ? { previewSeconds: seconds } : {}),
     verdict: 'shifted',
-    note: `title at ${first.start.toFixed(1)}s — start at ${start}s`,
+    note: `title at ${first.start.toFixed(1)}s — start at ${start}s`
+      + (next ? `, stop after ${seconds}s` : ''),
   };
 }
