@@ -56,9 +56,25 @@ const appCheckSiteKey: string | undefined = import.meta.env.VITE_FIREBASE_APPCHE
  *
  * Lives in `.env.local`, which is gitignored. It is a real credential: it
  * bypasses attestation entirely.
+ *
+ * **Read only in development, and that gate is the whole point.** Vite inlines
+ * every `VITE_`-prefixed variable into the bundle at build time, and
+ * `npm run deploy` builds on the machine that holds `.env.local` — so reading
+ * this unconditionally published the token to GitHub Pages, where the site is
+ * world-readable. It was live in all sixteen deploys from 15 August to 8
+ * September 2026, alongside the API key and app id that are the other two
+ * inputs to `exchangeDebugToken`. `.gitignore` was never the leak: the repo was
+ * clean the whole time and the build was not.
+ *
+ * `import.meta.env.DEV` is a compile-time constant, so the production branch
+ * folds to `undefined` and the literal never reaches the output. `deploy` greps
+ * the built bundle for it anyway — see `scripts/check-bundle.ts` — because a
+ * gate nobody checks is how this happened the first time. Node scripts are
+ * unaffected: `scripts/appCheck.ts` reads `process.env` on its own path.
  */
-const appCheckDebugToken: string | undefined = import.meta.env
-  .VITE_FIREBASE_APPCHECK_DEBUG_TOKEN;
+const appCheckDebugToken: string | undefined = import.meta.env.DEV
+  ? import.meta.env.VITE_FIREBASE_APPCHECK_DEBUG_TOKEN
+  : undefined;
 
 /**
  * Checked against the raw environment, touching no Firebase API, so the app can
