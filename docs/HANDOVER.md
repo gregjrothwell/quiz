@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 9 September 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 10 September 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -46,6 +46,7 @@ hook says so if this one grows.
 | the next three, why A/B testing is blocked, **and how to pick it up** | [`decisions/what-to-build-next.md`](decisions/what-to-build-next.md#picking-this-up--cursor-or-a-fresh-session) |
 | picture, music, jigsaw or steal rounds, and **negative points** | [`decisions/round-types.md`](decisions/round-types.md) |
 | why the melody round played badly, before changing it | [`decisions/melody-round.md`](decisions/melody-round.md) |
+| **Name that Tune** — volume, clips that give the answer away, the song list | [`decisions/tunes-round.md`](decisions/tunes-round.md) |
 | whether an answer can be changed, and the spam exploit | [`decisions/answer-spam.md`](decisions/answer-spam.md) |
 | `firstMs`, and what the reveal says about a snap guess | [`decisions/first-touch.md`](decisions/first-touch.md) |
 | whether an idea was already turned down | [`decisions/scope.md`](decisions/scope.md) |
@@ -53,27 +54,31 @@ hook says so if this one grows.
 | upgrading anything in `package.json` | [`decisions/dependencies.md`](decisions/dependencies.md) |
 | the studio set, or any lighting cue | [`decisions/lighting.md`](decisions/lighting.md) |
 
-## State as of 9 September 2026
+## State as of 10 September 2026
 
-**Live** is `index-CFub7zgz` (9 September, gh-pages `e2d3bf1`). **On the box**
-is hashed untitled TMDB stills (54), **seeded and live** — **16 packs**. **Name
-that Tune** is iTunes 30s previews (79); synth is **Classical**; **Flags** (76,
-hashed, no jigsaw); **Sleeves** (52, mzstatic hotlink); picture is **Fine Art**.
-Vault this evening: **78 added, 0 changed**, 13,781 already correct (54 screens
-+ 24 other new ids). Firebase chunk unmoved at `firebase-Cns3pSRr`. **#36 and
-#37 are on master.** Name that Tune was not expanded.
+**Live is still `index-CFub7zgz`** (9 September, gh-pages `e2d3bf1`) — nothing
+below this line has been deployed or seeded. **On the box** is hashed untitled
+TMDB stills (54), seeded and live — **16 packs**; synth is **Classical**;
+**Flags** (76, hashed, no jigsaw); **Sleeves** (52, mzstatic hotlink); picture
+is **Fine Art**. Firebase chunk unmoved at `firebase-Cns3pSRr`.
+
+**Name that Tune has been played and it worked**, which is the first time a
+music round has. Branch `music-volume-and-clips` carries the three notes off it:
+the default volume down to 0.35 with a slider under the corner switch, a
+`previewSeconds` cut so a clip stops before it sings its own title, and **79
+songs → 177**. Not deployed, **and the 98 new ids are not in the vault**, which
+breaks at reveal until they are: [`tunes-round.md`](decisions/tunes-round.md).
 
 **Melody and picture are live and have been played** — `voices` + hashed
 `image`. The melody round did not work — [`melody-round.md`](decisions/melody-round.md).
-Picture is still unplayed with people. The iTunes round has not been played.
+Picture is still unplayed with people.
 
 **Shipped and played** otherwise: 13,593 answers, both rulesets published;
 `appcheck-probe` refuses at sign-in; reveal ~0.5s after the clock; scoring is
 500 + rank 500/400/300/200/100. Files: [`scoring.md`](decisions/scoring.md),
 [`app-check-auth.md`](decisions/app-check-auth.md), [`vault.md`](decisions/vault.md),
 [`repeats.md`](decisions/repeats.md), [`wager.md`](decisions/wager.md),
-[`round-types.md`](decisions/round-types.md). Shared clock, live squads, votes
-and join-into-room since 28 August. Check the thing, not the prose.
+[`round-types.md`](decisions/round-types.md). Check the thing, not the prose.
 
 **What is actually in the project right now** — counts, the two slow leaks, and the
 two corrections that came out of miscounting them: [`decisions/cost.md`](decisions/cost.md#measured-live-28-august-2026).
@@ -93,12 +98,13 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
 4. **The Ladder stops climbing** once a pack's thin `easy` or `hard` bucket is
    spent — it substitutes medium rather than repeating, which is right but is not
    what the tile promises. The fix is a fold of `games/` into a real difficulty, not selection.
-5. **Hand-built packs still need a seed after any *new* ids.** `tunes` / `flags`
-   / `sleeves` seeded 9 September morning (**206 added**). **Screens seeded the
-   same evening (78 added, 0 changed).** Do not re-run `seed-vault` to confirm.
-   An unseeded pack still breaks at reveal.
-6. **Name that Tune is iTunes, live, unplayed.** Classical keeps the synth.
-   [`decisions/melody-round.md`](decisions/melody-round.md).
+5. **Hand-built packs still need a seed after any *new* ids.** `flags` /
+   `sleeves` seeded 9 September morning, screens the same evening. **`tunes` is
+   owed one: 98 new ids from the expansion, unseeded.** Do not re-run
+   `seed-vault` on the others to confirm. An unseeded pack breaks at reveal.
+6. **Name that Tune played well on 10 September and its three notes are on a
+   branch, undeployed.** Volume, the clips that give the answer away, and the
+   song count: [`decisions/tunes-round.md`](decisions/tunes-round.md).
 7. **`firstMs` and the pack picker are live and unplayed.** The marker is a
    deterrent, so the only test that means anything is whether it changes his
    behaviour in the next round: [`decisions/first-touch.md`](decisions/first-touch.md).

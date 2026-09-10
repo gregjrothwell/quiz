@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 9 September 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 10 September 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -33,6 +33,21 @@ re-run on the 8th against the files as they actually are, not inherited from the
 — this one and PR #31's — that would have taken it past 300. The three oldest 4
 September entries (the CDN, the mute button, the steal) went to
 [`recall/2026-09.md`](recall/2026-09.md), whole, links repointed.
+
+## 2026-09-10 — Name that Tune worked; volume, giveaways, 177 songs (branch `music-volume-and-clips`)
+
+First music round that played. Three notes. **Volume**: the loud thing was the
+`<audio>` element at 1.0, never the synth cues — no CORS on Apple's CDN so the
+master gain never reached it. Default 0.35, slider under the corner switch,
+cues unchanged at the default and capped there. **Giveaways**: Apple picks the
+preview to be the most recognisable stretch, which for pop is the chorus, which
+is where the title is sung — `previewSeconds` cuts the clip before it.
+**Songs**: 79 → 177, weighted to `hard` (68/62/47). `resolveSong` now prefers a
+title match, not just an artist. `npm run tune-audit` measures the giveaways
+with `medium.en`; `small.en` heard "Sweet Caroline, good times" as "The sweet,
+terrible life". `melody-round.md` split at 323/250 →
+[`tunes-round.md`](decisions/tunes-round.md), verbatim. **Not seeded** (98 new
+ids), not deployed, PR not raised.
 
 ## 2026-09-09 — Live: On the box (`index-CFub7zgz`)
 
@@ -213,35 +228,12 @@ while muted. "Died before 1956" is right today (CDPA s.12; T−71). Pack newest
 composed deaths: Elgar/Holst 1934; Prokofiev 1953 is in. Charleston / Parker
 unencoded. [`round-types.md`](decisions/round-types.md).
 
-## 2026-09-04 — Correction: squad-write was committed
+## 2026-09-04 — Three entries archived
 
-`7c27b62` on `squad-write-and-min-stake`. Unpushed. The squad-write entry below said uncommitted.
-
-## 2026-09-04 — The negatives paste landed
-
-`check-rules`: `write a season row that went below zero` **PASS** (allow),
-and `write a season row below -maxPoints()` **PASS** (deny). Outstanding #4
-had been claiming the live rules still refused a negative. They do not.
-
-## 2026-09-04 — The lobby writes the side, and a stake can go below zero
-
-Branch `squad-write-and-min-stake`, uncommitted.
-
-**The live squad hole.** Auto-join seats a link-joiner before they pick a side,
-and `planJoin` leaves an existing entry untouched so a reconnect cannot move
-the quizmaster. The lobby picker only wrote storage, and only the quizmaster
-could see it. `planSeatSquad` writes `players.{uid}.squad` onto the existing
-seat, lobby only; `joinedAt` is not in the plan. The picker is in front of
-everybody now.
-
-**A positive stake floors at 500.** A 0% pick is still nothing. A player on
-zero who goes in on the last question can finish at −500, and `bankGame`
-already had no clamp. Repo `firestore.rules`: `points >= -maxPoints()`,
-`best <= points` gone. **Paste before deploy.** `check-rules` gained the allow
-case (FAIL until the paste) and the `−maxPoints()` deny.
-
-`playSequence` is exported for a melody round. No tunes, no pictures, no
-force-unmute in the lobby — those wait on content.
+The squad-write correction, the negatives paste (`check-rules` allow **PASS**
+after the paste, which is what made the two deny cases mean anything), and the
+lobby writing the squad plus a stake that can go below zero. Moved whole on
+10 September at 313/300: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## Earlier — the full chronology, archived
 
