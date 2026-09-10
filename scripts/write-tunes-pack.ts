@@ -48,6 +48,9 @@ export async function buildTunesPack(
         storeUrl: song.storeUrl,
         trackId: song.trackId,
         ...(spec.previewStart && spec.previewStart > 0 ? { previewStart: spec.previewStart } : {}),
+        ...(spec.previewSeconds && spec.previewSeconds > 0
+          ? { previewSeconds: spec.previewSeconds }
+          : {}),
       };
       answers[question.id] = spec.correct;
       questions.push(sealQuestion(question));

@@ -8,7 +8,9 @@ export interface TuneSpec {
   difficulty: Difficulty;
   artist: string;
   term: string;
+  /** Both measured by `npm run tune-audit`, not guessed. See `tunes-round.md`. */
   previewStart?: number;
+  previewSeconds?: number;
 }
 
 export const TUNES_ROUND_LENGTH = 15;

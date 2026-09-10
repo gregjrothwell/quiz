@@ -40,6 +40,27 @@ describe('hand-built media specs', () => {
     assertPlayable(SCREEN_SPECS, 45);
   });
 
+  test('every tune clip window fits inside Apple’s thirty seconds', () => {
+    // #given the offsets the title audit wrote into the specs
+    const clipped = TUNE_SPECS.filter(
+      (spec) => spec.previewStart !== undefined || spec.previewSeconds !== undefined,
+    );
+
+    // #then each one names a real stretch of a 30-second preview. A start past
+    // the end is a silent question; a cut past the end is a cut that never
+    // fires, and both are a mistyped number rather than a measured one.
+    for (const spec of clipped) {
+      const start = spec.previewStart ?? 0;
+      expect(start).toBeGreaterThanOrEqual(0);
+      expect(start).toBeLessThan(22);
+      if (spec.previewSeconds !== undefined) {
+        // Eight seconds is the shortest clip `chooseClip` will hand back.
+        expect(spec.previewSeconds).toBeGreaterThanOrEqual(8);
+        expect(start + spec.previewSeconds).toBeLessThanOrEqual(30);
+      }
+    }
+  });
+
   test('screens mix eras instead of a wall of pre-1990 classics', () => {
     const years = SCREEN_SPECS.map((spec) => spec.year);
     expect(years.filter((year) => year < 1990).length).toBeLessThanOrEqual(8);
