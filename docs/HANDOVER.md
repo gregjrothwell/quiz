@@ -58,10 +58,10 @@ in [`recall/`](recall/)).
 > purpose.** 10 September: `.github/workflows/ci.yml` builds and publishes from
 > `master`; the token gate, `check-bundle` and `predeploy` are all on `master`,
 > so the leak is closed at the source rather than on a branch.
-> [`decisions/ci-deploy.md`](decisions/ci-deploy.md). **The season board shows
-> one row, not 26** — `orderBy('form')` excludes rows with no `form` field and
-> only rows banked since the form client appear. It refills as people play;
-> there is no backfill. [`decisions/season.md`](decisions/season.md).
+> [`decisions/ci-deploy.md`](decisions/ci-deploy.md). **The season board's form
+> figures are estimates** on every row but one — the scores they are defined
+> over were never stored, so they were seeded from `best` and the mean and decay
+> as people bank. [`decisions/season.md`](decisions/season.md).
 
 **Live is `index-qJCbuGrA`** (10 September, gh-pages `d412adc`, **deployed by
 CI** — the author line on a gh-pages commit now says whether it came from CI or
@@ -83,10 +83,10 @@ Counts and the two slow leaks: [`cost.md`](decisions/cost.md#measured-live-28-au
 
 ## Outstanding
 
-1. **The season board shows one row of 26** (box above). `orderBy('form')` drops
-   rows without the field; it refills a player per bank, so one full round puts
-   most back. A backfill is the alternative and is unwritten — 8 September chose
-   deliberately not to.
+1. **29 of 30 season rows carry an *estimated* `form`**, seeded by
+   `npm run backfill-form` — the scores it is defined over were never stored, so
+   these are invented and decay as people bank. Real ones were not overwritten
+   ([`season.md`](decisions/season.md)).
 2. **A quizmaster dropping out mid-round** needs a browser and `host-room`.
 3. **No Content-Security-Policy.** Deliberate: a `<meta http-equiv>` CSP breaks
    the live app silently and the stale CDN makes that painful to diagnose.

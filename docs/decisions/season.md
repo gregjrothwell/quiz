@@ -201,3 +201,39 @@ to fail; restoring it turned it back.
 - A claim that merges two seats from the *same* room keeps one `gameId` in
   the window and still sums `played` — pre-existing, rare.
 - Opening-titles "form" is unchanged. Different word.
+
+## The form figures on old rows are estimates, 10 September 2026
+
+**25 of 26 `season-2` rows and all four `season-1` rows had no `form`**, so
+`orderBy('form')` excluded them and the live board showed **one row**. They were
+seeded by `npm run backfill-form` (dry run by default, `-- --go` to write).
+
+**It is an estimate and not a recovery, and that distinction is the point.**
+`form` is the sum of the best four of a player's last six *round scores*, and
+those per-round scores were never stored — only the running `played`, `points`
+and `best` survive. There is nothing to recompute from. What was written:
+
+    form = best + mean × min(FORM_KEPT - 1, played - 1)
+
+Their real best round, plus as many average nights as their record supports. A
+one-round player gets exactly their one round, which is what the real formula
+would also give them.
+
+**What it gets wrong.** It understates strong players and overstates streaky
+ones, because a mean is not a best-four. For one round it also reinstates the
+average-shaped ranking that form ranking exists to replace — each seeded row is
+displaced by real data the first time that player banks, so it decays rather
+than persisting.
+
+**The one row with real data is penalised by this.** Ghost Quizzer had banked
+once under the form client, so their genuine `form` is 6,578 — one round — and
+they now sit below players whose 13-to-41-round records were estimated across
+four nights. Real figures were not overwritten, which is the right call, but it
+means the only honest row ranks worst until they play again.
+
+**Nothing marks a row as estimated.** `firestore.rules` validates the season
+document with `hasOnly`, so an extra key would make that player's next bank
+fail. This section is the record; the data cannot carry it.
+
+One row (`hey`, one round, zero points, zero best) has nothing to estimate from
+and is still absent from the board.

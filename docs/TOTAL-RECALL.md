@@ -39,6 +39,21 @@ body where it happened rather than here: three 4 September batches, then the
 whole 2026-09-08 day when the debug-token deploy needed the room. All verbatim to
 [`recall/2026-09.md`](recall/2026-09.md).
 
+## 2026-09-10 — Season form seeded on old rows, and they are estimates
+
+The board showed **one row of 30** after form ranking was restored, because
+`orderBy('form')` drops documents without the field. `npm run backfill-form`
+(dry run by default) seeded 28; 29 of 30 rows now rank.
+
+**Not a backfill — an invention, deliberately labelled.** The per-round scores
+`form` is defined over were never stored, so `best + mean × min(3, played - 1)`
+is the closest thing the surviving totals support. It decays as people bank real
+rounds. The one row with a *real* form (Ghost Quizzer, 6,578 from a single
+round) was not overwritten and now ranks below estimated rows — correct, and
+unfair-looking until they play again. No field marks a row as estimated:
+`hasOnly` in the rules would fail that player's next bank.
+[`season.md`](decisions/season.md).
+
 ## 2026-09-10 — Deploys come from CI now (`index-qJCbuGrA`)
 
 `.github/workflows/ci.yml`. `verify` (master, **every PR**, dispatch) runs
