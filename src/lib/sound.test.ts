@@ -217,6 +217,109 @@ describe('volume', () => {
   });
 });
 
+describe('playPreview’s cut', () => {
+  /** Stands in for the <audio> element, with a driveable clock. */
+  class FakeAudio {
+    preload = '';
+    loop = false;
+    volume = 1;
+    src = '';
+    currentTime = 0;
+    paused = true;
+    listeners: Record<string, Array<{ handler: () => void; once: boolean }>> = {};
+    addEventListener(type: string, handler: () => void, options?: { once?: boolean }): void {
+      (this.listeners[type] ??= []).push({ handler, once: options?.once === true });
+    }
+    fire(type: string): void {
+      const bound = this.listeners[type] ?? [];
+      this.listeners[type] = bound.filter((entry) => !entry.once);
+      for (const entry of bound) entry.handler();
+    }
+    /** A browser reaches metadata shortly after `load()`; so does this. */
+    load(): void {
+      this.fire('loadedmetadata');
+    }
+    pause(): void {
+      this.paused = true;
+    }
+    removeAttribute(): void {}
+    play(): Promise<void> {
+      this.paused = false;
+      return Promise.resolve();
+    }
+    /** What the browser does four times a second while a clip runs. */
+    tick(to: number): void {
+      this.currentTime = to;
+      this.fire('timeupdate');
+    }
+  }
+
+  function withFakeAudio(run: (made: FakeAudio[]) => void): void {
+    const made: FakeAudio[] = [];
+    const globals = globalThis as { Audio?: unknown };
+    const original = globals.Audio;
+    globals.Audio = class extends FakeAudio {
+      constructor() {
+        super();
+        made.push(this);
+      }
+    };
+    try {
+      run(made);
+    } finally {
+      stopPreview();
+      if (original === undefined) delete globals.Audio;
+      else globals.Audio = original;
+    }
+  }
+
+  test('stops the clip at the cut, so the sung title never plays', () => {
+    withFakeAudio((made) => {
+      // #given a clip told to stop after 9 seconds, because that is where the
+      // singer says the answer
+      playPreview('https://audio-ssl.itunes.apple.com/clip.m4a', 0, 9);
+      const el = made[0];
+      expect(el).toBeDefined();
+
+      // #when the clip reaches the second before the cut
+      el?.tick(8.7);
+
+      // #then it is still playing
+      expect(el?.paused).toBe(false);
+
+      // #when it reaches the cut
+      el?.tick(9.1);
+
+      // #then it stops
+      expect(el?.paused).toBe(true);
+    });
+  });
+
+  test('counts the cut from the start offset, not from zero', () => {
+    withFakeAudio((made) => {
+      // #given a clip that starts 6s in and runs for 5
+      playPreview('https://audio-ssl.itunes.apple.com/clip.m4a', 6, 5);
+      const el = made[0];
+
+      // #when it is at 10s of the preview — 4s of playing
+      el?.tick(10);
+      expect(el?.paused).toBe(false);
+
+      // #when it is at 11s — 5s of playing
+      el?.tick(11.2);
+      expect(el?.paused).toBe(true);
+    });
+  });
+
+  test('plays out when no cut is given', () => {
+    withFakeAudio((made) => {
+      playPreview('https://audio-ssl.itunes.apple.com/clip.m4a');
+      made[0]?.tick(29.5);
+      expect(made[0]?.paused).toBe(false);
+    });
+  });
+});
+
 describe('Happy Birthday', () => {
   test('is a smoke-test fixture, not a published pack tune', () => {
     expect(HAPPY_BIRTHDAY.every((voice) => voice.type === 'triangle')).toBe(true);
