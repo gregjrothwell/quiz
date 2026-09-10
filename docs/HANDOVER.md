@@ -34,6 +34,7 @@ in [`recall/`](recall/)).
 | voting on a question, retiring one | [`decisions/question-votes.md`](decisions/question-votes.md) |
 | rules, App Check on Firestore and the RTDB, anything security-shaped | [`decisions/security.md`](decisions/security.md) |
 | App Check on **authentication** specifically | [`decisions/app-check-auth.md`](decisions/app-check-auth.md) |
+| the debug token, `check-bundle`, why a deploy must not come off `master` | [`decisions/debug-token-leak.md`](decisions/debug-token-leak.md) |
 | anything that adds reads or writes | [`decisions/cost.md`](decisions/cost.md) |
 | — before assuming a style choice, a bug, or a claim in here | [`gotchas.md`](decisions/gotchas.md) · [`known-limits.md`](decisions/known-limits.md) · [`state-of-play.md`](decisions/state-of-play.md) |
 | what a question is worth, and why it is not a speed curve | [`decisions/scoring.md`](decisions/scoring.md) |
@@ -51,16 +52,17 @@ in [`recall/`](recall/)).
 
 ## State as of 10 September 2026
 
-> **READ FIRST — the live bundle is leaking the App Check debug token.** The
-> 10 September deploy came off `master`, which reads
-> `VITE_FIREBASE_APPCHECK_DEBUG_TOKEN` unconditionally; Vite inlines it at build
-> time and `deploy` builds on the machine holding `.env.local`. Grepped the
-> served bundle: one hit. **The fix is pushed on `seal-token-again` and is NOT
-> deployed** — `npm run deploy` from that branch, **then revoke and reissue the
-> token in the console.** It has been world-readable, and taking it out of the
-> bundle does not un-publish it.
+> **READ FIRST — the leaked App Check debug token still needs killing in the
+> console.** Bundle half done: `seal-token-again` deployed 10 September
+> (`index-V9wVdhyu`, gh-pages `899a4c3`), served bundle grepped clean, live app
+> verified. Open half is **Greg's** — revoke and reissue at console → App Check →
+> Manage debug tokens (world-readable for weeks; the bundle fix does not
+> un-publish it), new value into `.env.local` after. **`master` still re-leaks on
+> deploy** until `seal-token-again` lands:
+> [`decisions/debug-token-leak.md`](decisions/debug-token-leak.md).
 
-**Live is `index-C3jZR3XU`** (10 September, gh-pages `9ba0638`). **16 packs**;
+**Live is `index-V9wVdhyu`** (10 September, gh-pages `899a4c3`, from
+`seal-token-again` = #39 + the token gate). **16 packs**;
 **Name that Tune 177**; synth is **Classical**; **On the box** (54, hashed TMDB
 stills); **Flags** (76, hashed, no jigsaw); **Sleeves** (52, mzstatic hotlink);
 picture is **Fine Art**. Firebase chunk unmoved at `firebase-Cns3pSRr`.
@@ -70,10 +72,10 @@ the first round the game ever *kept*. Its three notes are live: volume 0.35 plus
 a corner slider, **79 songs → 177**, and every clip measured by `tune-audit`
 (103 clean, 33 trimmed, 31 shifted, **10 unavoidable, left alone**). Vault
 seeded. [`tunes-round.md`](decisions/tunes-round.md).
-**[#39](https://github.com/gregjrothwell/quiz/pull/39) open; deployed from the
-branch, master not moved.** Melody and picture are live and played; melody did
-not work ([`melody-round.md`](decisions/melody-round.md)), picture is unplayed
-with people.
+**[#39](https://github.com/gregjrothwell/quiz/pull/39) open; its content is live
+via `seal-token-again`, master not moved.** Melody and picture are live and
+played; melody did not work ([`melody-round.md`](decisions/melody-round.md)),
+picture is unplayed with people.
 
 **Shipped and played** otherwise: 13,593 answers; `appcheck-probe` refuses at
 sign-in; reveal ~0.5s after the clock; scoring 500 + rank 500/400/300/200/100.
@@ -82,13 +84,11 @@ Counts and the two slow leaks: [`cost.md`](decisions/cost.md#measured-live-28-au
 
 ## Outstanding
 
-1. **The debug-token leak above comes first.** `seal-token-again` has the
-   `import.meta.env.DEV` gate, its test, and `scripts/check-bundle.ts`, with
-   `deploy` running the check between `build` and `gh-pages`. Proved both ways:
-   a clean build exits 0, a planted token exits 1 and names the file. **This
-   shipped once before** — live in sixteen deploys from 15 August, fixed on
-   `seal-the-debug-token`, and that branch was never merged, so deploying from
-   master put it straight back.
+1. **The token revoke (box above) is the open half.** The gate, its test and
+   `check-bundle` are deployed and `deploy` runs the check; `master` still has
+   neither, so **do not deploy from `master`** until `seal-token-again` lands.
+   #35 is the first, superseded attempt's PR — close it.
+   [`decisions/debug-token-leak.md`](decisions/debug-token-leak.md).
 2. **A quizmaster dropping out mid-round** needs a browser and `host-room`.
 3. **No Content-Security-Policy.** Deliberate: a `<meta http-equiv>` CSP breaks
    the live app silently and the stale CDN makes that painful to diagnose.
@@ -101,23 +101,23 @@ Counts and the two slow leaks: [`cost.md`](decisions/cost.md#measured-live-28-au
 5. **The Ladder stops climbing** once a pack's thin `easy` or `hard` bucket is
    spent — it substitutes medium. The fix is a fold of `games/` into a real
    difficulty, not selection.
-6. **The repo's `firestore.rules` is behind the console — do not paste it.**
-   Live is 39,218 bytes against master's 34,889; the extra is the `elapsedMs`
-   arrival floor, and pasting master over it would delete a live anti-cheat.
-   Live is byte-identical to that file on `paste-seasons-and-elapsed`. The two
-   `check-rules` FAILs are the **checker** being stale, not the rules — fixed
-   and proved green on `sync-rules-with-console`.
+6. **The repo's `firestore.rules` was behind the console.** Fixed on
+   [`#40`](https://github.com/gregjrothwell/quiz/pull/40): repo brought
+   byte-forward to live (39,218 vs master's 34,889 — the extra is the `elapsedMs`
+   arrival floor), stale checker fixed with it. `check-rules` green both ways
+   10 September, the two allow cases FAIL→PASS. **Still do not paste master's
+   rules over the console** — it would delete a live anti-cheat.
 7. **Hand-built packs need a seed after any *new* ids.** All current packs are
    seeded as of 10 September. An unseeded pack breaks at reveal.
 8. **`firstMs` and the pack picker are live and unplayed.** The marker is a
    deterrent, so the only test that counts is whether it changes his behaviour
    next round: [`decisions/first-touch.md`](decisions/first-touch.md).
-9. **Branches, 10 September:** 26 local → 13, merged ones deleted; 31 merged
-   still on the remote. **Local-only and unpushed**: `paste-seasons-and-elapsed`
-   (the live rules + season-form code that is live nowhere),
-   `sync-rules-with-console`, `ask-recovery-code`, `clock-bed-and-key-repeat`
-   (the clock bed after a melody clip — the open item in
-   [`melody-round.md`](decisions/melody-round.md)), `bound-elapsed-ms`,
+9. **Branches, 10 September:** 26 local → 13; 31 merged still on the remote.
+   Open PRs: **#39** (tunes, deployed from branch), **#40** (rules sync), **#35**
+   (dead — close it). **Local-only and unpushed**: `paste-seasons-and-elapsed`
+   (the live rules + season-form code that is live nowhere), `ask-recovery-code`,
+   `clock-bed-and-key-repeat` (the clock bed after a melody clip — the open item
+   in [`melody-round.md`](decisions/melody-round.md)), `bound-elapsed-ms`,
    `fold-votes-dry-run`, `context-standards-route`, `vote-tally` (WIP).
 
 ## Where things are
@@ -136,14 +136,14 @@ network or the live project stays out, so it keeps running offline.
 
 ## If you're picking this up cold
 
-**Deploy `seal-token-again` first** (box at the top), then revoke the token in
-the console. Then `npm run check-rules` (from `sync-rules-with-console`, or two allow cases
-fail for the wrong reason) and `npm run sync-harness 10` — the rules being
-published and ten clients staying in sync are the two things that have actually
-broken in play. Do not re-run `seed-vault`; everything is seeded.
+**The token leak's bundle half is deployed and verified** (box at the top) — the
+open half is Greg revoking the token in the console. Then, if rules matter to
+what you're doing: `npm run check-rules` from `sync-rules-with-console` / #40 (or
+two allow cases fail for the wrong reason) and `npm run sync-harness 10` — both
+ran green 10 September (10/10, 0 dropped). Do not re-run `seed-vault`; everything
+is seeded.
 
 Bitten more than once: **the rules are published by hand**, so the repo copy is
-not what Firebase runs — and on 10 September that drift ran the *other* way, the
-console ahead of the repo ([`security.md`](decisions/security.md)). And **the
-answer window lives in `firestore.rules` as well as the client**
+not what Firebase runs ([`security.md`](decisions/security.md)); **the answer
+window lives in `firestore.rules` as well as the client**
 ([`answer-window.md`](decisions/answer-window.md)).
