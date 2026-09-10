@@ -34,6 +34,35 @@ re-run on the 8th against the files as they actually are, not inherited from the
 September entries (the CDN, the mute button, the steal) went to
 [`recall/2026-09.md`](recall/2026-09.md), whole, links repointed.
 
+## 2026-09-10 — Correction: the console was ahead of the repo, not behind
+
+The entry below says the live ruleset is behind `firestore.rules` and needs a
+console paste. **That is wrong, and acting on it would have deleted a live
+anti-cheat.** Left standing rather than edited, per the rule at the top.
+
+Read the live ruleset back through the Firebase Rules API: **39,218 bytes live
+against master's 34,889.** The extra is the `elapsedMs` arrival floor —
+`arrivalOk`, `answerRoom`, `elapsedGraceMs`. **Both** files already list
+`wager` and `firstMs` in the answers `hasOnly`, so the field I named as missing
+was never missing; I read the failure hint instead of the ruleset.
+
+Live is **byte-identical** to `firestore.rules` on the local branch
+`paste-seasons-and-elapsed` — pasted 8 September, never pushed, never merged.
+So the two `check-rules` FAILs were the **checker** being stale: it writes
+`elapsedMs: 10` into a room whose `openedAt` is tens of seconds old by then,
+and the floor correctly refuses it. **The failing checks were the rule
+working.** That same branch had already updated the checker.
+
+`sync-rules-with-console` (off master, **local, unpushed**) takes
+`firestore.rules` + `check-rules.ts` from it. Result: *"Both rulesets are live,
+and still refusing what they should"* — the two allow cases FAIL → PASS, and
+the floor proved both ways. No match block lost.
+
+Also checked, because today's deploy came off master: **it did not revert the
+season-form work.** The league board reads "Average" in `index-C3jZR3XU` and in
+`index-CFub7zgz` alike, so `rankByForm` has been off master since 9 September.
+It was live for one day as `index-Df9CfP0K`.
+
 ## 2026-09-10 — Live: volume, clip cuts, 177 songs (`index-C3jZR3XU`)
 
 Seeded first: **95 added**, then after the slug fix **4 added, 1 changed**.
@@ -196,21 +225,11 @@ own 379 points per chance, that is +41% today and −34% if a pick were final.
 Proposed: one pick per question. Awaiting Greg —
 [`answer-spam.md`](decisions/answer-spam.md).
 
-## 2026-09-08 — The melody round was played, and abandoned after four
+## 2026-09-08 — Two entries archived
 
-Eight players, fifteen questions set, stopped at four, then they went and played
-Science instead and finished it. 8,800 points across 32 chances is 9–15 correct
-against 25% for guessing. Median clip 3.45s (20 of 70 under three), played once,
-with `stopClock()` killing the bed underneath it. Logged, not fixed —
-[`melody-round.md`](decisions/melody-round.md).
-
-## 2026-09-08 — Pack picker: five columns, twelve packs, 5 + 5 + 2
-
-`auto-fill minmax(13rem)` resolved to five columns in `.stage__inner`, stranding
-`Name that Tune` and `Picture Round` bottom-left; and nothing pinned
-`.pack__count`, so it sat at 86/96/117px down neighbouring tiles. Fixed bases of
-1/2/3/4 divide twelve exactly at every width, `margin-top: auto` for the count.
-Measured at six widths, both before and after.
+The melody round played and abandoned after four questions, and the pack picker
+at five columns. Moved whole on 10 September at 309/300:
+[`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-04 — Three more entries archived
 

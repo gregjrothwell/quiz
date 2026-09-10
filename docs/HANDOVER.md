@@ -67,7 +67,7 @@ default volume 0.35 with a slider under the corner switch; **79 songs → 177**;
 every clip measured by `tune-audit` — 103 clean, 33 trimmed, 31 shifted, **10
 unavoidable and left alone**. Vault seeded (95, then 4 + **1 changed**).
 [`tunes-round.md`](decisions/tunes-round.md). **[#39](https://github.com/gregjrothwell/quiz/pull/39)
-is open — deployed from the branch, master not moved.**
+open; deployed from the branch, master not moved.**
 
 **Melody and picture are live and have been played** — `voices` + hashed
 `image`. The melody round did not work — [`melody-round.md`](decisions/melody-round.md).
@@ -90,27 +90,27 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
    the live app silently and the stale CDN makes it painful to diagnose.
 3. **Three things still want a second person**: the review panel, a quizmaster
    handover, two squads on one board. **Not the rank bonus or the wager** — this
-   list called both unplayed until 4 September and the live rooms said otherwise,
-   which nothing but Greg's memory was going to catch:
+   list called both unplayed until 4 September and the live rooms said otherwise:
    [`decisions/round-types.md`](decisions/round-types.md#the-prose-was-wrong-and-that-is-a-finding).
    The **anonymous-account purge is reviewed and the answer is don't**:
    [`decisions/identity.md`](decisions/identity.md).
 4. **The Ladder stops climbing** once a pack's thin `easy` or `hard` bucket is
-   spent — it substitutes medium rather than repeating, which is right but is not
-   what the tile promises. The fix is a fold of `games/` into a real difficulty, not selection.
-5. **`check-rules` fails two *allow* cases and needs a console paste.** `stake
-   points on your own answer` and `record when you first touched a lectern`.
-   `firestore.rules:323` lists `wager` and `firstMs` in the answers `hasOnly`;
-   **the live ruleset does not**. So a staked answer and a changed-mind answer
-   are both refused outright. Pre-existing, found 10 September.
+   spent — it substitutes medium rather than repeating. The fix is a fold of
+   `games/` into a real difficulty, not selection.
+5. **The repo's `firestore.rules` is behind the console — do not paste it.**
+   Live is 39,218 bytes against master's 34,889; the extra is the `elapsedMs`
+   arrival floor, and pasting master over it would delete a live anti-cheat.
+   Live is byte-identical to `firestore.rules` on the local branch
+   `paste-seasons-and-elapsed`, pasted 8 September and never merged. The two
+   `check-rules` FAILs are the **checker** being stale, not the rules. Fixed
+   and proved green on local branch `sync-rules-with-console` (unpushed).
 6. **Hand-built packs need a seed after any *new* ids.** All current packs are
    seeded as of 10 September. An unseeded pack breaks at reveal.
 7. **`firstMs` and the pack picker are live and unplayed.** The marker is a
    deterrent, so the only test that means anything is whether it changes his
    behaviour in the next round: [`decisions/first-touch.md`](decisions/first-touch.md).
-8. **The first round is kept.** `CX5E`, 10 September, Name that Tune, 65% over
-   10 questions — and it named the giveaway clips before anyone read the
-   transcripts. `read-games` shows it.
+8. **The first round is kept.** `CX5E`, 10 September, 65% over 10 questions —
+   and it named the giveaway clips before any transcript was read.
 
 ## Where things are
 
@@ -141,9 +141,10 @@ Otherwise: `npm run check-rules`, then `npm run sync-harness 10`. Between them
 they confirm the rules are published and that ten clients stay in sync — the two
 things that have actually broken in play.
 
-Two things that have bitten more than once, both with their own file: **the rules
-are published by hand**, so the repo copy is not what Firebase is running
-([`decisions/security.md`](decisions/security.md)); and **the answer window lives
-in `firestore.rules` as well as the client**, where two of the three rules exist
-to close holes that are not obvious from the client side
+Two things that have bitten more than once: **the rules are published by hand**,
+so the repo copy is not what Firebase is running — and on 10 September that
+drift was found running the *other* way, the console ahead of the repo
+([`decisions/security.md`](decisions/security.md)). And **the answer window
+lives in `firestore.rules` as well as the client**, where two of the three rules
+close holes that are not obvious from the client side
 ([`decisions/answer-window.md`](decisions/answer-window.md)).
