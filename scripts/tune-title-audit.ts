@@ -157,12 +157,24 @@ async function main(): Promise<void> {
 
   const verdicts: Record<string, number> = { clean: 0, trimmed: 0, shifted: 0, unavoidable: 0 };
   const changes: string[] = [];
+  /*
+    A clip with no words in it is not a clip that passed — it is a clip nothing
+    could be found in, and the two look identical in a count of `clean`.
+
+    They are usually real: Apple's preview of Blue Monday sits in the synth
+    section, and Ain't No Mountain High Enough opens on the arrangement. But a
+    transcriber that fell over produces exactly the same empty file, so they
+    are listed rather than folded into the clean tally, and somebody can play
+    the three of them rather than all 177.
+  */
+  const silent: string[] = [];
   for (const row of list) {
     const transcript = await readTranscript(row.slug);
     if (transcript === null) {
       console.log(`  ${row.slug}: no transcript`);
       continue;
     }
+    if (transcript.length < 4) silent.push(row.slug);
     const hits = titleHits(row.title, transcript);
     const choice = chooseClip(hits, { window });
     verdicts[choice.verdict] = (verdicts[choice.verdict] ?? 0) + 1;
@@ -181,6 +193,12 @@ async function main(): Promise<void> {
 
   console.log(`\nOn a ${window}s window, of ${list.length} tunes:`);
   for (const [verdict, count] of Object.entries(verdicts)) console.log(`  ${verdict}: ${count}`);
+  if (silent.length > 0) {
+    console.log(
+      `\nNo words heard in ${silent.length} — counted clean, but nothing was looked at.`
+      + ` Play these rather than trust them:\n  ${silent.join(', ')}`,
+    );
+  }
   console.log(`\nPaste into hand-tunes-data.ts:\n${changes.join('\n')}`);
 }
 
