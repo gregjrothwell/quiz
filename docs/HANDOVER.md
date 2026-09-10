@@ -52,14 +52,13 @@ in [`recall/`](recall/)).
 
 ## State as of 10 September 2026
 
-> **READ FIRST — the leaked App Check debug token still needs killing in the
-> console.** Bundle half done: `seal-token-again` deployed 10 September
-> (`index-V9wVdhyu`, gh-pages `899a4c3`), served bundle grepped clean, live app
-> verified. Open half is **Greg's** — revoke and reissue at console → App Check →
-> Manage debug tokens (world-readable for weeks; the bundle fix does not
-> un-publish it), new value into `.env.local` after. **`master` still re-leaks on
-> deploy** until `seal-token-again` lands:
-> [`decisions/debug-token-leak.md`](decisions/debug-token-leak.md).
+> **READ FIRST — the debug-token leak is closed, but `master` still re-leaks on
+> deploy.** 10 September: `seal-token-again` deployed (`index-V9wVdhyu`, gh-pages
+> `899a4c3`, bundle grepped clean), Greg revoked the old token and reissued —
+> `.env.local` holds the new one, verified both ways (real users play; a
+> non-safelisted token 403s). **`master` still has the unconditional read and no
+> `check-bundle`**, so a deploy from `master` re-ships a token until
+> `seal-token-again` lands. [`decisions/debug-token-leak.md`](decisions/debug-token-leak.md).
 
 **Live is `index-V9wVdhyu`** (10 September, gh-pages `899a4c3`, from
 `seal-token-again` = #39 + the token gate). **16 packs**;
@@ -84,11 +83,11 @@ Counts and the two slow leaks: [`cost.md`](decisions/cost.md#measured-live-28-au
 
 ## Outstanding
 
-1. **The token revoke (box above) is the open half.** The gate, its test and
-   `check-bundle` are deployed and `deploy` runs the check; `master` still has
-   neither, so **do not deploy from `master`** until `seal-token-again` lands.
-   #35 is the first, superseded attempt's PR — close it.
-   [`decisions/debug-token-leak.md`](decisions/debug-token-leak.md).
+1. **`master` still re-leaks the debug token on deploy** (box above). The gate,
+   its test and `check-bundle` are deployed but only on `seal-token-again` —
+   `master` has the unconditional read and no check. **Do not deploy from
+   `master`** until that branch lands. #35 is the superseded first attempt's
+   PR — close it. [`decisions/debug-token-leak.md`](decisions/debug-token-leak.md).
 2. **A quizmaster dropping out mid-round** needs a browser and `host-room`.
 3. **No Content-Security-Policy.** Deliberate: a `<meta http-equiv>` CSP breaks
    the live app silently and the stale CDN makes that painful to diagnose.
@@ -136,12 +135,12 @@ network or the live project stays out, so it keeps running offline.
 
 ## If you're picking this up cold
 
-**The token leak's bundle half is deployed and verified** (box at the top) — the
-open half is Greg revoking the token in the console. Then, if rules matter to
-what you're doing: `npm run check-rules` from `sync-rules-with-console` / #40 (or
-two allow cases fail for the wrong reason) and `npm run sync-harness 10` — both
-ran green 10 September (10/10, 0 dropped). Do not re-run `seed-vault`; everything
-is seeded.
+**The token leak is closed** (box at the top) — what's left is getting the gate
+onto `master` so a deploy from there is safe. Then, if rules matter to what
+you're doing: `npm run check-rules` from `sync-rules-with-console` / #40 (or two
+allow cases fail for the wrong reason) and `npm run sync-harness 10` — both ran
+green 10 September (10/10, 0 dropped). Do not re-run `seed-vault`; everything is
+seeded.
 
 Bitten more than once: **the rules are published by hand**, so the repo copy is
 not what Firebase runs ([`security.md`](decisions/security.md)); **the answer

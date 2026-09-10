@@ -69,17 +69,29 @@ succeeded):
 on master, **a deploy from master re-leaks the token.** `#40` does not fix this —
 it is the rules sync, a different branch.
 
-## The console half — still open as of 10 September
+## The console half — done, 10 September 2026
 
-Taking the token out of the bundle does not un-publish it. It was world-readable
-for weeks and must be assumed compromised. **Revoke and reissue it** at Firebase
-console → App Check → Manage debug tokens. That is the half that actually closes
-the hole, and it is Greg's — it needs the console.
+Taking the token out of the bundle does not un-publish it — it was world-readable
+for weeks and had to be assumed compromised. Greg **revoked and reissued** it at
+console → App Check → Manage debug tokens, and put the new value in `.env.local`.
 
-After the reissue, the new value goes in `.env.local`. Until then `npm run dev`
-and every live harness (`check-rules`, `sync-harness`, `appcheck-probe`,
-`reveal-probe`, `seed-vault` uses the Admin SDK and is unaffected) authenticate
-on the old token.
+Verified both directions:
+
+- **Allow.** Live site via the real reCAPTCHA path — a room was created, no
+  console errors, so a real player's anonymous auth + App Check + Firestore all
+  work. `npm run sync-harness 3` on the new `.env.local` token: *"debug token
+  accepted"*, 3/3.
+- **Deny.** `npm run appcheck-probe` (no token) still refused at auth. And
+  `sync-harness` with a deliberately non-safelisted token:
+  `exchangeDebugToken returned 403`, `auth/firebase-app-check-token-is-invalid` —
+  **which is the exact path a revoked token now takes.** Revoked = not
+  safelisted = 403.
+
+Not done: presenting the literal revoked string and watching that specific value
+403. It was a foregone conclusion once the console showed it gone, and pulling a
+dead secret out of gh-pages history to prove it was not worth the handling.
+
+`seed-vault` uses the Admin SDK and never touched the debug token.
 
 ## Why the token isn't just removed
 

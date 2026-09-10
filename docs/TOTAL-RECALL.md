@@ -39,6 +39,16 @@ body where it happened rather than here: three 4 September batches, then the
 whole 2026-09-08 day when the debug-token deploy needed the room. All verbatim to
 [`recall/2026-09.md`](recall/2026-09.md).
 
+## 2026-09-10 — Token revoked and reissued; leak closed
+
+Follows the entry below, which was written while it was still open. Greg revoked
+the old debug token in the console and reissued; `.env.local` holds the new one.
+Verified: live site plays via the real reCAPTCHA path (room created, no errors),
+`sync-harness 3` accepts the new token, `appcheck-probe` still refused, and
+`sync-harness` with a non-safelisted token gets `exchangeDebugToken` 403 — the
+same path a revoked token now takes. **`master` still re-leaks on deploy** until
+`seal-token-again` lands; that is the only piece left.
+
 ## 2026-09-10 — Live: the debug-token gate (`index-V9wVdhyu`), and #40 for the rules
 
 Greg said run it. `npm run deploy` from `seal-token-again` — `build`,
