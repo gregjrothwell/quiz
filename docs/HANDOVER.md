@@ -70,12 +70,11 @@ the box** (54, hashed TMDB stills); **Flags** (76, hashed, no jigsaw);
 **Sleeves** (52, mzstatic hotlink); picture is **Fine Art**. Firebase chunk
 unmoved at `firebase-Cns3pSRr`.
 
-**Name that Tune has been played and it worked** — `CX5E`, 65% over 10 of 10;
-volume, song count and clip windows all in [`tunes-round.md`](decisions/tunes-round.md).
-**The picture round has been played too** — `RX4P`, 9 September, 11 seats, 55%.
-Three docs said it never had; `read-games` said otherwise, the third time the
-prose has drifted from the live project. Melody is live, played, and did not
-work ([`melody-round.md`](decisions/melody-round.md)).
+**Played and kept, all three rounds the game has ever recorded:** Name that Tune
+`CX5E` 65% ([`tunes-round.md`](decisions/tunes-round.md)), Picture `RX4P` 55%,
+Best of British `RX4P` 42%. **The picture round had been played all along** and
+three docs said otherwise — `read-games` settled it, the third such drift. Melody
+is live, played, and did not work ([`melody-round.md`](decisions/melody-round.md)).
 
 **Shipped and played** otherwise: 13,593 answers; `appcheck-probe` refuses at
 sign-in; reveal ~0.5s after the clock; scoring 500 + rank 500/400/300/200/100.
@@ -85,36 +84,38 @@ Counts and the two slow leaks: [`cost.md`](decisions/cost.md#measured-live-28-au
 ## Outstanding
 
 1. **The season board shows one row of 26** (box above). `orderBy('form')` drops
-   documents without the field and only one player has banked since form
-   ranking. It refills a player per bank — one full round puts most of them
-   back. A backfill script is the alternative and has not been written; the
-   8 September decision was deliberately no backfill.
+   rows without the field; it refills a player per bank, so one full round puts
+   most back. A backfill is the alternative and is unwritten — 8 September chose
+   deliberately not to.
 2. **A quizmaster dropping out mid-round** needs a browser and `host-room`.
 3. **No Content-Security-Policy.** Deliberate: a `<meta http-equiv>` CSP breaks
    the live app silently and the stale CDN makes that painful to diagnose.
 4. **Three things still want a second person**: the review panel, a quizmaster
-   handover, two squads on one board. **Not the rank bonus or the wager**, which
-   this list called unplayed until the live rooms said otherwise:
-   [`decisions/round-types.md`](decisions/round-types.md#the-prose-was-wrong-and-that-is-a-finding).
-   The **anonymous-account purge is reviewed and the answer is don't**:
-   [`decisions/identity.md`](decisions/identity.md).
-5. **The Ladder stops climbing** once a pack's thin `easy` or `hard` bucket is
-   spent — it substitutes medium. The fix is a fold of `games/` into a real
-   difficulty, not selection. **It is a query now, not a build** — but `games/`
-   holds three rounds, so it is gated on playing, not coding.
-6. **Do not paste `master`'s rules over the console.** The repo was behind and
-   is now byte-forward (39,218), but the console is still the source of truth
-   here and a paste in the wrong direction deletes a live anti-cheat.
-   `check-rules` **69/69, both directions, 10 September**.
-7. **Hand-built packs need a seed after any *new* ids.** All current packs are
-   seeded as of 10 September. An unseeded pack breaks at reveal.
-8. **`firstMs` and the pack picker are live and unplayed.** The marker is a
-   deterrent, so the only test that counts is whether it changes his behaviour
-   next round: [`decisions/first-touch.md`](decisions/first-touch.md).
-9. **CI actions warn on deprecated Node 20** — `checkout`, `setup-node` and
-   `upload-artifact` are forced onto 24. Green, but it sits in the deploy path.
-10. **Branches, 10 September:** PRs #35, #39, #40, #41, #42, #43, #44 all closed
-    or merged — **nothing open**. **Still local-only and unpushed**:
+   handover, two squads on one board. **Not the rank bonus or the wager** —
+   [`round-types.md`](decisions/round-types.md#the-prose-was-wrong-and-that-is-a-finding).
+   **Anonymous-account purge: reviewed, and the answer is don't**
+   ([`identity.md`](decisions/identity.md)).
+5. **The Ladder stops climbing** once a pack's thin `easy`/`hard` bucket is
+   spent — it substitutes medium. The fix is a fold of `games/` into real
+   difficulty, **a query now rather than a build** — but `games/` holds three
+   rounds, so it is gated on playing, not coding.
+6. **Do not paste `master`'s rules over the console.** The repo is byte-forward
+   (39,218) but the console is the source of truth; a paste the wrong way deletes
+   a live anti-cheat. `check-rules` **69/69 both ways, 10 September**.
+7. **Hand-built packs need a seed after any *new* ids.** All seeded as of
+   10 September; an unseeded pack breaks at reveal.
+8. **`firstMs` and the pack picker are live and unplayed.** It is a deterrent,
+   so the only test is whether his behaviour changes next round:
+   [`first-touch.md`](decisions/first-touch.md).
+9. **CI actions on deprecated Node 20** —
+   [`#45`](https://github.com/gregjrothwell/quiz/pull/45) bumps them and its
+   `verify` run is green, but it **conflicts**: #44 touched the same workflow
+   after that branch was cut. Merge `master` into it. Its finding is worth
+   keeping — the four actions need **different** majors (checkout/setup-node v5,
+   upload-artifact v6, download-artifact v7), because v5 of the artifact pair
+   advertises Node 24 support while still defaulting to node20.
+10. **Branches, 10 September:** #35 and #39 closed; #40, #41, #42, #43, #44, #46
+    merged. **`#45` is the only one open**, and it conflicts. **Still local-only and unpushed**:
     `ask-recovery-code` (one line on the final screen; live counts are 1 recovery
     code, 0 claims — the cheapest thing on the list), `clock-bed-and-key-repeat`,
     `bound-elapsed-ms`, `fold-votes-dry-run`, `context-standards-route`,
