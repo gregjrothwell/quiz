@@ -160,6 +160,44 @@ token hardcoded into a source file lands in the allowlist as well as the bundle,
 so the one case it looks like it would catch is the one it cannot. Recorded so it
 is not re-proposed.
 
+### The Node 20 bump: the four majors are not the same number
+
+**10 September 2026.** Every run was annotated *"Node.js 20 is deprecated ...
+being forced to run on Node.js 24"*, naming `checkout@v4`, `setup-node@v4`,
+`upload-artifact@v4` on `verify` and `download-artifact@v4` on `deploy`.
+
+The obvious fix — level all four to v5 — fixes half of it and leaves the
+annotation in place naming different versions.
+
+| Action | Now | First major declaring `runs.using: node24` |
+|---|---|---|
+| `actions/checkout` | v5 | v5 |
+| `actions/setup-node` | v5 | v5 |
+| `actions/upload-artifact` | **v6** | v6 — **v5 still declares node20** |
+| `actions/download-artifact` | **v7** | v7 — **v5 and v6 still declare node20** |
+
+`upload-artifact@v5` and `download-artifact@v5`/`@v6` advertise Node 24
+*support* while defaulting to the old runtime. GitHub's own notes for the next
+major say so: *"v5 had preliminary support for Node.js 24, however this action
+was by default still running on Node.js 20."* Read off each `action.yml` at the
+tag and cross-checked against a second source, per [`EVIDENCE`](../../CLAUDE.md);
+the changelogs alone would have sent this to v5 and left the warning up.
+
+Held at the **lowest** major that clears node20, not the newest. `upload@v7` and
+`download@v8` change how artefacts are zipped (direct unzipped uploads) and
+hashed (digest mismatch now fails by default), and the artefact handoff is the
+mechanism this workflow exists for. Downloading by `name` is untouched by
+`download@v5`'s breaking path fix, which only changed downloads by **ID**.
+`setup-node@v5`'s new automatic package-manager caching is inert here: there is
+no `packageManager` field in `package.json` and `cache: npm` is set explicitly.
+
+Proved both directions on PR #45: the annotations API returns the warning on the
+pre-bump `master` run (34502837316, both jobs) and nothing at all on the bumped
+run (34503460465) — a query that found nothing on a run known to carry it would
+have proved nothing. **Not covered:** `deploy` is skipped on a `pull_request`, so
+`download-artifact@v7` was not exercised in a run. Its node24 declaration is read
+from `action.yml`, and the first master merge is what will exercise it.
+
 ### Playwright: the emulator, never a debug token
 
 `audit-backlog.md` recorded two blockers — there was no CI, and an E2E runner

@@ -39,6 +39,17 @@ body where it happened rather than here: three 4 September batches, then the
 whole 2026-09-08 day when the debug-token deploy needed the room. All verbatim to
 [`recall/2026-09.md`](recall/2026-09.md).
 
+## 2026-09-10 — Node 20 deprecation: the four actions clear it at three different majors
+
+Bumped CI off the deprecated node20 runtime. Levelling all four to v5 would have
+fixed half of it: `upload-artifact@v5` and `download-artifact@v5`/`@v6` declare
+node20 despite advertising Node 24 *support*, so they went to **v6** and **v7**
+while checkout and setup-node went to **v5**. Read off each `action.yml`, not the
+changelogs. Proved both ways — the annotations API returns the warning on the
+pre-bump master run and nothing on the bumped one. PR #45; `deploy` skipped on a
+PR, so `download-artifact@v7` is declared-node24 but not yet exercised.
+[`decisions/ci-deploy.md`](decisions/ci-deploy.md).
+
 ## 2026-09-10 — Season form seeded on old rows, and they are estimates
 
 The board showed **one row of 30** after form ranking was restored, because
@@ -162,30 +173,8 @@ Landed as #40. Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-10 — Live: volume, clip cuts, 177 songs (`index-C3jZR3XU`)
 
-Seeded first: **95 added**, then after the slug fix **4 added, 1 changed**.
-`npm run deploy`; gh-pages `9ba0638`. CDN served the new bundle within a minute.
-Firebase chunk unmoved (`firebase-Cns3pSRr`). Verified against the live site,
-not the local build: slider at 35 with nothing stored, switch unmoved at
-x1220/y24, packs 177/76/52, pack still sealed, and two real clips cut on time —
-11.9→11.91s and 24.4→24.6s, worst tick 0.269s.
-
-**[#39](https://github.com/gregjrothwell/quiz/pull/39) is open and master has
-not moved** — `gh pr merge` was refused by the harness, so the merge is Greg's.
-Deployed from the branch, same as 9 September.
-
-**`check-rules` fails two allow cases and they are not this branch's.**
-`firestore.rules:323` has `wager` and `firstMs` in the answers `hasOnly`; the
-live ruleset does not, so a staked answer and a changed-mind answer are both
-refused. The denies pass, which — same as 2 September — is what tells you the
-rule is absent rather than wrong. Needs a console paste.
-
-**A slug was serving the wrong answer.** `stableId` is `sha1('hand:' + slug)`,
-and `am` was the Arctic Monkeys album in `sleeves` and Armenia in `flags`. Live
-vault held "AM", so the Armenia question had marked the room wrong since
-9 September. Three more (`thriller`, `back-in-black`, `born-to-run`) came from
-today's expansion, benign only because album and song share a title. Fixed with
-the `-album` convention `sleeves` already used; a test now refuses a repeated
-slug across any hand pack.
+The tunes release, superseded the same day by the token-gate deploy and then by
+CI. Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-10 — Name that Tune worked; volume, giveaways, 177 songs (branch `music-volume-and-clips`)
 
