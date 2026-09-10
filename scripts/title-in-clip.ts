@@ -218,8 +218,19 @@ export interface ClipChoice {
   note: string;
 }
 
-/** A hair of air before the word, because `timeupdate` only fires ~4×/second. */
-const LEAD = 0.4;
+/**
+ * Air in front of the word, because the cut cannot land exactly on it.
+ *
+ * Two sources of slop, both measured rather than guessed. `timeupdate` fired
+ * every 0.26s on a real Apple clip in Chrome, so the pause happens up to a tick
+ * after the cut — 10.84s against a 10.6s cut, checked in the browser. And
+ * whisper's word timestamps are themselves worth a tenth or two.
+ *
+ * 0.6 is roughly twice the observed tick and covers a slower one under load.
+ * It was 0.4, which worked but left 0.16s between the pause and the word, and
+ * a fifth of a second is not margin — it is luck.
+ */
+const LEAD = 0.6;
 
 export interface ClipOptions {
   /**

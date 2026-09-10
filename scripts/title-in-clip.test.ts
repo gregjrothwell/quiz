@@ -166,7 +166,7 @@ describe('chooseClip', () => {
     // melody round unplayable
     expect(choice.verdict).toBe('trimmed');
     expect(choice.previewStart).toBe(0);
-    expect(choice.previewSeconds).toBe(10.6);
+    expect(choice.previewSeconds).toBe(10.4);
   });
 
   test('shifts past the title when it is sung too early to trim around', () => {
@@ -175,7 +175,7 @@ describe('chooseClip', () => {
 
     // #then the clip starts after it instead
     expect(choice.verdict).toBe('shifted');
-    expect(choice.previewStart).toBe(2.8);
+    expect(choice.previewStart).toBe(3);
   });
 
   test('shifts rather than trimming to a stub', () => {
@@ -186,7 +186,7 @@ describe('chooseClip', () => {
     // it throughout — 3.5 seconds of audio against 11.5 of silence is what
     // emptied the room on 8 September
     expect(choice.verdict).toBe('shifted');
-    expect(choice.previewStart).toBe(8.4);
+    expect(choice.previewStart).toBe(8.6);
     expect(choice.previewSeconds).toBeUndefined();
   });
 
