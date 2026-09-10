@@ -151,13 +151,25 @@ function lookupUrl(id: number): string {
   return `https://itunes.apple.com/lookup?id=${id}&country=${ITUNES_COUNTRY}`;
 }
 
+/**
+ * The GB store's preview for a song.
+ *
+ * `expectTitle` is how a pack says which of an artist's songs it meant.
+ * Without it this takes Apple's first result by that artist and trusts the
+ * ranking, which is a coin toss on a prolific one — and a tune question whose
+ * clip is the wrong song by the right band is simply wrong, silently, with the
+ * pack still building green. Preferred rather than required: it falls back to
+ * the artist-only match, so a title Apple spells differently still resolves the
+ * way it did before this existed.
+ */
 export async function resolveSong(
   term: string,
   artist: string,
   get: ItunesGet = defaultItunesGet,
+  expectTitle?: string,
 ): Promise<ResolvedSong> {
   const data = asList(await get(searchUrl({ term, entity: 'song', media: 'music', explicit: 'No' })));
-  const match = data.results?.find(
+  const usable = (data.results ?? []).filter(
     (row) =>
       row.kind === 'song'
       && typeof row.trackId === 'number'
@@ -166,6 +178,11 @@ export async function resolveSong(
       && typeof row.trackName === 'string'
       && artistMatches(row.artistName, artist),
   );
+  const match =
+    (expectTitle === undefined
+      ? undefined
+      : usable.find((row) => titleMatches(row.trackName, expectTitle)))
+    ?? usable[0];
   if (!match || match.trackId === undefined || !match.previewUrl || !match.trackViewUrl || !match.trackName || !match.artistName) {
     throw new Error(`No GB preview for “${term}” by ${artist}`);
   }

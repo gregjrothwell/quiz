@@ -261,7 +261,7 @@ export function QuestionScreen({
     if (revealed || startedClockRef.current === clockKey) return;
     if (hasPreview && previewUrl) {
       startedClockRef.current = clockKey;
-      playPreview(previewUrl, question?.previewStart ?? 0);
+      playPreview(previewUrl, question?.previewStart ?? 0, question?.previewSeconds);
       return;
     }
     if (hasMelody) {
@@ -281,6 +281,7 @@ export function QuestionScreen({
     previewUrl,
     voices,
     question?.previewStart,
+    question?.previewSeconds,
   ]);
 
   /**
@@ -305,7 +306,7 @@ export function QuestionScreen({
   const replayTune = (): void => {
     if (!hasTune) return;
     if (muted) toggleMuted();
-    if (hasPreview && previewUrl) playPreview(previewUrl, question?.previewStart ?? 0);
+    if (hasPreview && previewUrl) playPreview(previewUrl, question?.previewStart ?? 0, question?.previewSeconds);
     else playSequence(voices ?? []);
   };
 
@@ -355,7 +356,7 @@ export function QuestionScreen({
       if (key === 'r' && canReplay && !event.repeat) {
         event.preventDefault();
         if (muted) toggleMuted();
-        if (hasPreview && previewUrl) playPreview(previewUrl, question?.previewStart ?? 0);
+        if (hasPreview && previewUrl) playPreview(previewUrl, question?.previewStart ?? 0, question?.previewSeconds);
         else playSequence(voices ?? []);
         return;
       }
@@ -388,6 +389,7 @@ export function QuestionScreen({
     hasPreview,
     previewUrl,
     question?.previewStart,
+    question?.previewSeconds,
   ]);
 
   // Placed after the hooks above: an early return before them would change the

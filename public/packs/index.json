@@ -146,12 +146,12 @@
   {
     "id": "tunes",
     "title": "Name that Tune",
-    "blurb": "Thirty seconds from Apple Music. Hear it again if you miss the hook.",
-    "count": 79,
+    "blurb": "A clip from Apple Music. Hear it again if you miss the hook.",
+    "count": 177,
     "counts": {
-      "easy": 36,
-      "medium": 28,
-      "hard": 15
+      "easy": 68,
+      "medium": 62,
+      "hard": 47
     }
   },
   {

@@ -1,5 +1,16 @@
-import { describe, expect, test } from 'vitest';
-import { CLOCK_LEAD_SECONDS, clockVoices, cueVoices, playPreview, playSequence, stopPreview } from './sound';
+import { afterEach, describe, expect, test } from 'vitest';
+import {
+  CLOCK_LEAD_SECONDS,
+  DEFAULT_VOLUME,
+  clampVolume,
+  clockVoices,
+  cueVoices,
+  masterGainFor,
+  playPreview,
+  playSequence,
+  setVolume,
+  stopPreview,
+} from './sound';
 import { HAPPY_BIRTHDAY } from '../questions/melody-voices';
 
 /** The pitched walk, which is the one voice every second of the bed has. */
@@ -119,6 +130,193 @@ describe('playPreview', () => {
 
   test('refuses a URL that is not Apple’s audio CDN', () => {
     expect(() => playPreview('https://example.com/clip.m4a')).not.toThrow();
+  });
+});
+
+describe('volume', () => {
+  afterEach(() => {
+    setVolume(DEFAULT_VOLUME);
+    stopPreview();
+  });
+
+  test('starts well below the top, which is the whole complaint', () => {
+    // #given the level a player who has never touched the slider plays at
+    // #then it is a music bed under a call, not a full-scale master
+    expect(DEFAULT_VOLUME).toBeGreaterThan(0);
+    expect(DEFAULT_VOLUME).toBeLessThan(0.5);
+  });
+
+  test('a stored level outside 0–1 is clamped rather than trusted', () => {
+    expect(clampVolume(-3)).toBe(0);
+    expect(clampVolume(4)).toBe(1);
+    expect(clampVolume(Number.NaN)).toBe(DEFAULT_VOLUME);
+  });
+
+  test('leaves the cues exactly where they were at the default', () => {
+    // #given the master gain the house cues have always been balanced against
+    const before = 0.22;
+
+    // #when the slider sits where it starts
+    // #then nothing about a buzzer or a fanfare has changed
+    expect(masterGainFor(DEFAULT_VOLUME)).toBeCloseTo(before, 10);
+  });
+
+  test('scales the cues down but never up, so a summed cue cannot clip', () => {
+    // #given the slider dragged to each end
+    // #then quieter follows the slider
+    expect(masterGainFor(0)).toBe(0);
+    expect(masterGainFor(DEFAULT_VOLUME / 2)).toBeCloseTo(0.11, 10);
+
+    // #and louder does not: the loudest voice is 1.1 relative and several ring
+    // at once, so lifting the master past its balanced value clips at the
+    // destination. Above the default the slider is the music's alone.
+    expect(masterGainFor(1)).toBe(masterGainFor(DEFAULT_VOLUME));
+  });
+
+  test('a preview starts at the slider position, not at full scale', () => {
+    // #given a fake audio element, because the preview is an <audio> tag and
+    // not a Web Audio node — Apple's CDN sends no CORS header, so the master
+    // gain cannot reach it and this is the only place its level is set
+    const made: Array<{ volume: number; src: string }> = [];
+    class FakeAudio {
+      preload = '';
+      loop = false;
+      volume = 1;
+      src = '';
+      constructor() {
+        made.push(this as unknown as { volume: number; src: string });
+      }
+      addEventListener(): void {}
+      load(): void {}
+      pause(): void {}
+      removeAttribute(): void {}
+      play(): Promise<void> {
+        return Promise.resolve();
+      }
+    }
+    const globals = globalThis as { Audio?: unknown };
+    const original = globals.Audio;
+    globals.Audio = FakeAudio;
+
+    try {
+      // #when a clip is played with the slider left alone
+      playPreview('https://audio-ssl.itunes.apple.com/clip.m4a');
+
+      // #then it plays at the default, not at 1 — which is what covered the
+      // Teams call on 10 September 2026
+      expect(made).toHaveLength(1);
+      expect(made[0]?.volume).toBe(DEFAULT_VOLUME);
+
+      // #and moving the slider mid-clip moves the clip that is already running
+      setVolume(0.1);
+      expect(made[0]?.volume).toBeCloseTo(0.1, 10);
+    } finally {
+      if (original === undefined) delete globals.Audio;
+      else globals.Audio = original;
+    }
+  });
+});
+
+describe('playPreview’s cut', () => {
+  /** Stands in for the <audio> element, with a driveable clock. */
+  class FakeAudio {
+    preload = '';
+    loop = false;
+    volume = 1;
+    src = '';
+    currentTime = 0;
+    paused = true;
+    listeners: Record<string, Array<{ handler: () => void; once: boolean }>> = {};
+    addEventListener(type: string, handler: () => void, options?: { once?: boolean }): void {
+      (this.listeners[type] ??= []).push({ handler, once: options?.once === true });
+    }
+    fire(type: string): void {
+      const bound = this.listeners[type] ?? [];
+      this.listeners[type] = bound.filter((entry) => !entry.once);
+      for (const entry of bound) entry.handler();
+    }
+    /** A browser reaches metadata shortly after `load()`; so does this. */
+    load(): void {
+      this.fire('loadedmetadata');
+    }
+    pause(): void {
+      this.paused = true;
+    }
+    removeAttribute(): void {}
+    play(): Promise<void> {
+      this.paused = false;
+      return Promise.resolve();
+    }
+    /** What the browser does four times a second while a clip runs. */
+    tick(to: number): void {
+      this.currentTime = to;
+      this.fire('timeupdate');
+    }
+  }
+
+  function withFakeAudio(run: (made: FakeAudio[]) => void): void {
+    const made: FakeAudio[] = [];
+    const globals = globalThis as { Audio?: unknown };
+    const original = globals.Audio;
+    globals.Audio = class extends FakeAudio {
+      constructor() {
+        super();
+        made.push(this);
+      }
+    };
+    try {
+      run(made);
+    } finally {
+      stopPreview();
+      if (original === undefined) delete globals.Audio;
+      else globals.Audio = original;
+    }
+  }
+
+  test('stops the clip at the cut, so the sung title never plays', () => {
+    withFakeAudio((made) => {
+      // #given a clip told to stop after 9 seconds, because that is where the
+      // singer says the answer
+      playPreview('https://audio-ssl.itunes.apple.com/clip.m4a', 0, 9);
+      const el = made[0];
+      expect(el).toBeDefined();
+
+      // #when the clip reaches the second before the cut
+      el?.tick(8.7);
+
+      // #then it is still playing
+      expect(el?.paused).toBe(false);
+
+      // #when it reaches the cut
+      el?.tick(9.1);
+
+      // #then it stops
+      expect(el?.paused).toBe(true);
+    });
+  });
+
+  test('counts the cut from the start offset, not from zero', () => {
+    withFakeAudio((made) => {
+      // #given a clip that starts 6s in and runs for 5
+      playPreview('https://audio-ssl.itunes.apple.com/clip.m4a', 6, 5);
+      const el = made[0];
+
+      // #when it is at 10s of the preview — 4s of playing
+      el?.tick(10);
+      expect(el?.paused).toBe(false);
+
+      // #when it is at 11s — 5s of playing
+      el?.tick(11.2);
+      expect(el?.paused).toBe(true);
+    });
+  });
+
+  test('plays out when no cut is given', () => {
+    withFakeAudio((made) => {
+      playPreview('https://audio-ssl.itunes.apple.com/clip.m4a');
+      made[0]?.tick(29.5);
+      expect(made[0]?.paused).toBe(false);
+    });
   });
 });
 

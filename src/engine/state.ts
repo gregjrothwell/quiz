@@ -174,6 +174,8 @@ export interface QuizQuestion {
   storeUrl?: string;
   trackId?: number;
   previewStart?: number;
+  /** Seconds to play before stopping, from `previewStart`. See `types.ts`. */
+  previewSeconds?: number;
   artworkUrl?: string;
   posterCrop?: boolean;
 }
@@ -615,6 +617,9 @@ export function buildQuizQuestions(
     if (question.trackId !== undefined) built.trackId = question.trackId;
     if (question.previewStart !== undefined && question.previewStart > 0) {
       built.previewStart = question.previewStart;
+    }
+    if (question.previewSeconds !== undefined && question.previewSeconds > 0) {
+      built.previewSeconds = question.previewSeconds;
     }
     if (question.artworkUrl) built.artworkUrl = question.artworkUrl;
     if (question.posterCrop) built.posterCrop = true;

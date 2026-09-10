@@ -14,9 +14,25 @@ import { isItunesPreviewUrl } from './apple-media';
 export type Cue = 'lock' | 'gong' | 'correct' | 'wrong' | 'sting' | 'fanfare';
 
 const STORAGE_KEY = 'vibequiz.sound';
+const VOLUME_KEY = 'vibequiz.volume';
 
 /** Quiet enough to play at a desk without anyone reaching for the volume key. */
 const MASTER_GAIN = 0.22;
+
+/**
+ * Where the volume slider starts, 0–1.
+ *
+ * A commercial master played back at `HTMLAudioElement.volume = 1` is roughly
+ * as loud as the machine goes, and on 10 September 2026 a room played a tunes
+ * round over a Teams call and could not hear each other while a clip ran. The
+ * synth cues were never the problem — they have always been scaled by
+ * {@link MASTER_GAIN} — so the number that had to come down was the one nobody
+ * had set: the preview element's, which defaults to full.
+ *
+ * 0.35 is about −9 dB, which is the usual place to sit a music bed under
+ * speech. It is a starting point, not a ceiling: the slider goes to 1.
+ */
+export const DEFAULT_VOLUME = 0.35;
 
 /**
  * One oscillator's worth of a cue. `to` bends the pitch across the note, which
@@ -295,9 +311,44 @@ function readMuted(): boolean {
   }
 }
 
+/** Anything unreadable, out of range or not a number falls back to the default. */
+export function clampVolume(value: number): number {
+  if (!Number.isFinite(value)) return DEFAULT_VOLUME;
+  return Math.min(1, Math.max(0, value));
+}
+
+function readVolume(): number {
+  try {
+    const stored = window.localStorage.getItem(VOLUME_KEY);
+    if (stored === null) return DEFAULT_VOLUME;
+    const parsed = Number.parseFloat(stored);
+    return Number.isFinite(parsed) ? clampVolume(parsed) : DEFAULT_VOLUME;
+  } catch {
+    return DEFAULT_VOLUME;
+  }
+}
+
 let context: AudioContext | null = null;
 let master: GainNode | null = null;
 let muted = readMuted();
+let volume = readVolume();
+
+/**
+ * The master gain the synth cues run at, for a given slider position.
+ *
+ * The cues are balanced against each other relative to {@link MASTER_GAIN}, and
+ * that balance has been played for weeks without complaint, so the slider's
+ * default has to leave them exactly where they are — hence dividing by
+ * {@link DEFAULT_VOLUME} rather than scaling {@link MASTER_GAIN} directly.
+ *
+ * Capped there too. Above the default the slider only lifts the music: the
+ * loudest cue voice is at 1.1 relative and several ring at once, so a master
+ * of 0.63 (what an uncapped 1.0 would give) sums past unity and clips hard at
+ * the destination. Nobody has ever asked for a louder buzzer.
+ */
+export function masterGainFor(level: number): number {
+  return MASTER_GAIN * Math.min(1, clampVolume(level) / DEFAULT_VOLUME);
+}
 
 const listeners = new Set<() => void>();
 
@@ -317,7 +368,7 @@ function audio(): { ctx: AudioContext; out: GainNode } | null {
   if (!context || !master) {
     context = new AudioContext();
     master = context.createGain();
-    master.gain.value = MASTER_GAIN;
+    master.gain.value = masterGainFor(volume);
     master.connect(context.destination);
   }
 
@@ -402,7 +453,7 @@ let previewEl: HTMLAudioElement | null = null;
  * point the room at an arbitrary file. Does not loop: a looping preview is a
  * soundtrack, which is the entertainment use Apple's terms exclude.
  */
-export function playPreview(url: string, startSeconds = 0): void {
+export function playPreview(url: string, startSeconds = 0, seconds?: number): void {
   stopPreview();
   stopSequence();
   stopClock();
@@ -412,8 +463,33 @@ export function playPreview(url: string, startSeconds = 0): void {
   const el = new Audio();
   el.preload = 'auto';
   el.loop = false;
+  // Set before `src`, so a clip that starts the instant it can never gets one
+  // frame at full volume. This element is not routed through the AudioContext
+  // — Apple's CDN sends no CORS header, so it cannot be — which is why the
+  // master gain does not reach it and this line has to exist at all.
+  el.volume = volume;
   el.src = url;
   previewEl = el;
+
+  /*
+    Stopping the clip before the singer gives the answer away.
+
+    `timeupdate` rather than a timer: a timer would measure wall-clock from the
+    play call, and the clip does not start there — it starts when Apple's CDN
+    has delivered enough of it, and a player on a slow connection would have
+    the cut land early, or mid-word, or not at all. `currentTime` is the only
+    clock that is actually the clip's.
+
+    It fires four times a second or so, which is why the cut is placed with a
+    little air in front of the word rather than exactly on it.
+  */
+  if (seconds !== undefined && seconds > 0) {
+    const stopAt = startSeconds + seconds;
+    el.addEventListener('timeupdate', () => {
+      if (previewEl !== el) return;
+      if (el.currentTime >= stopAt) stopPreview();
+    });
+  }
 
   const start = (): void => {
     if (previewEl !== el) return;
@@ -533,6 +609,25 @@ export function unlock(): void {
   if (nodes && nodes.ctx.state === 'suspended') void nodes.ctx.resume();
 }
 
+/**
+ * Moves the volume, live.
+ *
+ * Reaches into whatever is already sounding rather than waiting for the next
+ * cue: the whole point is that somebody is turning it down *while* a clip is
+ * covering the person talking on the call.
+ */
+export function setVolume(next: number): void {
+  volume = clampVolume(next);
+  if (master) master.gain.value = masterGainFor(volume);
+  if (previewEl) previewEl.volume = volume;
+  try {
+    window.localStorage.setItem(VOLUME_KEY, String(volume));
+  } catch {
+    // A preference that cannot be stored still applies for this session.
+  }
+  notify();
+}
+
 export function setMuted(next: boolean): void {
   muted = next;
   // The bed is scheduled to the buzzer the moment it starts, so muting has to
@@ -578,6 +673,9 @@ export interface SoundControls {
   muted: boolean;
   toggle: () => void;
   play: (cue: Cue) => void;
+  /** 0–1. What the slider shows and what a preview plays at. */
+  volume: number;
+  setVolume: (next: number) => void;
 }
 
 export function useSound(): SoundControls {
@@ -585,6 +683,15 @@ export function useSound(): SoundControls {
     subscribe,
     () => muted,
     () => true,
+  );
+  // The server snapshot is the default rather than the stored value: there is
+  // no localStorage during a render on the server, and a slider that hydrates
+  // to a different position than it rendered at is a mismatch React will warn
+  // about and a thumb that visibly jumps.
+  const level = useSyncExternalStore(
+    subscribe,
+    () => volume,
+    () => DEFAULT_VOLUME,
   );
 
   const toggle = useCallback(() => {
@@ -594,5 +701,5 @@ export function useSound(): SoundControls {
     setMuted(!isMuted);
   }, [isMuted]);
 
-  return { muted: isMuted, toggle, play };
+  return { muted: isMuted, toggle, play, volume: level, setVolume };
 }

@@ -21,6 +21,7 @@ React 18, TypeScript, Vite, Vitest. Firebase client SDK. Deploy is `gh-pages` fr
 | `npm run check-rules` | Live project: both rulesets, **both directions** |
 | `npm run appcheck-probe` | What App Check actually enforces, from an unattested client |
 | `npm run reveal-probe` | When the vault's reveal gate actually opens, against the two clocks a client could anchor to |
+| `npm run tune-audit` | Where each tunes clip sings its own title, and the `previewSeconds` that cuts it off. Needs `whisper` |
 | `npm run sync-harness [n]` | *n* concurrent clients against live Firebase |
 | `npm run host-room -- [secs]` | Drive a round from the terminal |
 | `npm run rank-harness [-- --browser]` | Seven answerers in one live question — the whole rank ladder, proved |

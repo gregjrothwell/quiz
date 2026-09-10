@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 9 September 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 10 September 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -33,6 +33,132 @@ re-run on the 8th against the files as they actually are, not inherited from the
 — this one and PR #31's — that would have taken it past 300. The three oldest 4
 September entries (the CDN, the mute button, the steal) went to
 [`recall/2026-09.md`](recall/2026-09.md), whole, links repointed.
+
+**Then repeatedly through 10 September**, each recorded as a dated pointer in the
+body where it happened rather than here: three 4 September batches, then the
+whole 2026-09-08 day when the debug-token deploy needed the room. All verbatim to
+[`recall/2026-09.md`](recall/2026-09.md).
+
+## 2026-09-10 — Deploy guard added; CI outlined for later
+
+The interim half of "fix this going forward". `scripts/predeploy.ts` runs first
+in `npm run deploy` and refuses unless on `master`, tree clean, level with
+`origin/master` — `DEPLOY_FROM_BRANCH=1` relaxes the ref checks for a hotfix,
+tree-clean always stands. Pure `evaluateDeployRef` with a test both directions
+(the allow case is the one that proves it discriminates). `check-bundle` now
+exits 1 under `CI` when it has no `.env.local` to grep against, instead of
+passing blind. All on `seal-token-again`; 837 tests green.
+
+The durable fix — deploy from CI so the token is never on the build machine — is
+outlined in [`decisions/ci-deploy.md`](decisions/ci-deploy.md) for a follow-up
+session. Not built.
+
+## 2026-09-10 — Token revoked and reissued; leak closed
+
+Follows the entry below, which was written while it was still open. Greg revoked
+the old debug token in the console and reissued; `.env.local` holds the new one.
+Verified: live site plays via the real reCAPTCHA path (room created, no errors),
+`sync-harness 3` accepts the new token, `appcheck-probe` still refused, and
+`sync-harness` with a non-safelisted token gets `exchangeDebugToken` 403 — the
+same path a revoked token now takes. **`master` still re-leaks on deploy** until
+`seal-token-again` lands; that is the only piece left.
+
+## 2026-09-10 — Live: the debug-token gate (`index-V9wVdhyu`), and #40 for the rules
+
+Greg said run it. `npm run deploy` from `seal-token-again` — `build`,
+`check-bundle` clean, `gh-pages`. gh-pages `9ba0638` → `899a4c3`, CDN swapped
+`index-C3jZR3XU` → `index-V9wVdhyu` on the second poll. **Served bundle grepped
+for the token: 0 hits across all four JS chunks, was 1.** Live app verified —
+created a room, so anonymous auth + App Check attestation + a Firestore write all
+worked, no console errors. Firebase chunk unmoved (`firebase-Cns3pSRr`).
+
+**The console half is still open** — the token was world-readable for weeks and
+the deploy does not un-publish it; revoke + reissue is Greg's. And **`master`
+still re-leaks on deploy**: the gate and `check-bundle` are on `seal-token-again`,
+not master. Full story now in
+[`decisions/debug-token-leak.md`](decisions/debug-token-leak.md).
+
+`sync-rules-with-console` pushed and opened as
+[#40](https://github.com/gregjrothwell/quiz/pull/40). `npm run check-rules`
+against live: **both directions green**, the `wager` and `firstMs` allow cases
+FAIL → PASS, the `elapsedMs` floor proved both ways. `npm run sync-harness 10`:
+**10/10 in the room, 0 missed the question.**
+
+## 2026-09-10 — Correction: the console was ahead of the repo, not behind
+
+The entry below says the live ruleset is behind `firestore.rules` and needs a
+console paste. **That is wrong, and acting on it would have deleted a live
+anti-cheat.** Left standing rather than edited, per the rule at the top.
+
+Read the live ruleset back through the Firebase Rules API: **39,218 bytes live
+against master's 34,889.** The extra is the `elapsedMs` arrival floor —
+`arrivalOk`, `answerRoom`, `elapsedGraceMs`. **Both** files already list
+`wager` and `firstMs` in the answers `hasOnly`, so the field I named as missing
+was never missing; I read the failure hint instead of the ruleset.
+
+Live is **byte-identical** to `firestore.rules` on the local branch
+`paste-seasons-and-elapsed` — pasted 8 September, never pushed, never merged.
+So the two `check-rules` FAILs were the **checker** being stale: it writes
+`elapsedMs: 10` into a room whose `openedAt` is tens of seconds old by then,
+and the floor correctly refuses it. **The failing checks were the rule
+working.** That same branch had already updated the checker.
+
+`sync-rules-with-console` (off master, **local, unpushed**) takes
+`firestore.rules` + `check-rules.ts` from it. Result: *"Both rulesets are live,
+and still refusing what they should"* — the two allow cases FAIL → PASS, and
+the floor proved both ways. No match block lost.
+
+Also checked, because today's deploy came off master: **it did not revert the
+season-form work.** The league board reads "Average" in `index-C3jZR3XU` and in
+`index-CFub7zgz` alike, so `rankByForm` has been off master since 9 September.
+It was live for one day as `index-Df9CfP0K`.
+
+## 2026-09-10 — Live: volume, clip cuts, 177 songs (`index-C3jZR3XU`)
+
+Seeded first: **95 added**, then after the slug fix **4 added, 1 changed**.
+`npm run deploy`; gh-pages `9ba0638`. CDN served the new bundle within a minute.
+Firebase chunk unmoved (`firebase-Cns3pSRr`). Verified against the live site,
+not the local build: slider at 35 with nothing stored, switch unmoved at
+x1220/y24, packs 177/76/52, pack still sealed, and two real clips cut on time —
+11.9→11.91s and 24.4→24.6s, worst tick 0.269s.
+
+**[#39](https://github.com/gregjrothwell/quiz/pull/39) is open and master has
+not moved** — `gh pr merge` was refused by the harness, so the merge is Greg's.
+Deployed from the branch, same as 9 September.
+
+**`check-rules` fails two allow cases and they are not this branch's.**
+`firestore.rules:323` has `wager` and `firstMs` in the answers `hasOnly`; the
+live ruleset does not, so a staked answer and a changed-mind answer are both
+refused. The denies pass, which — same as 2 September — is what tells you the
+rule is absent rather than wrong. Needs a console paste.
+
+**A slug was serving the wrong answer.** `stableId` is `sha1('hand:' + slug)`,
+and `am` was the Arctic Monkeys album in `sleeves` and Armenia in `flags`. Live
+vault held "AM", so the Armenia question had marked the room wrong since
+9 September. Three more (`thriller`, `back-in-black`, `born-to-run`) came from
+today's expansion, benign only because album and song share a title. Fixed with
+the `-album` convention `sleeves` already used; a test now refuses a repeated
+slug across any hand pack.
+
+## 2026-09-10 — Name that Tune worked; volume, giveaways, 177 songs (branch `music-volume-and-clips`)
+
+First music round that played. Three notes. **Volume**: the loud thing was the
+`<audio>` element at 1.0, never the synth cues — no CORS on Apple's CDN so the
+master gain never reached it. Default 0.35, slider under the corner switch,
+cues unchanged at the default and capped there. **Giveaways**: Apple picks the
+preview to be the most recognisable stretch, which for pop is the chorus, which
+is where the title is sung — `previewSeconds` cuts the clip before it.
+**Songs**: 79 → 177, weighted to `hard` (68/62/47). `resolveSong` now prefers a
+title match, not just an artist. `npm run tune-audit` measured all 177 —
+**103 clean, 33 trimmed, 31 shifted, 10 unavoidable**. Two checker failures
+found and fixed on the way: Parklife called clean because whisper split the
+title into "pork life", and seventeen clips that transcribed to nothing where
+eleven were only *suppressed* — Shake It Off sings its title six times in ten
+seconds and was counted clean. `small.en` heard "Sweet Caroline, good times" as
+"The sweet, terrible life", which is why the audit runs `medium.en`.
+`melody-round.md` split at 323/250 →
+[`tunes-round.md`](decisions/tunes-round.md), verbatim. **Not seeded** (98 new
+ids), not deployed.
 
 ## 2026-09-09 — Live: On the box (`index-CFub7zgz`)
 
@@ -76,172 +202,29 @@ never hosted. Picture retitled **Fine Art**. **On the box** writer exists; GB
 Search returns 0 movies so it does not ship. [`round-types.md`](decisions/round-types.md),
 [`melody-round.md`](decisions/melody-round.md).
 
-## 2026-09-08 — Live: the round is kept, and the tune can be heard again (`index-BDZpMBAG`)
+## 2026-09-08 — The whole day, archived
 
-Greg pasted the `games` block; `check-rules` **65/65**, the allow case flipped.
-#31, #32 and #33 merged in that order, each diff checked locally against the
-master it was about to land on — GitHub's file list for #32 was stale and named
-a file that did not differ. Deployed 19:47; the CDN served `index-B3Tfo0Nu` for
-fifty seconds and caught up at 19:48. The bundle carries `Hear it again`,
-`games`, `writtenBy`, `finishedAt` and no `MELODY_SPECS`; the Firebase chunk is
-unmoved at `firebase-Cns3pSRr`; the packs 200. `sync-harness 10`: **10/10, 0
-dropped, all ten inside 71ms**. Nothing kept yet — that needs a round to finish.
+`firstMs` shipped — the snap guess *shown* at the reveal, not banned (Greg chose
+exposure over restriction on cost) — and the A–D spam lottery that exposed;
+`games/{gameId}` built so a finished round survives its answers subcollection,
+and the A/B gap that forced it (test per-question things, never per-round); the
+melody round given **Hear it again**; and all of it live as `index-BDZpMBAG`,
+`check-rules` 65/65. Plus the two moved earlier — the melody round abandoned
+after four, the five-column picker. Moved whole on 10 September at 299/300:
+[`recall/2026-09.md`](recall/2026-09.md).
 
-## 2026-09-08 — The melody round can be heard again (branch `melody-replay`)
+## 2026-09-04 — Three more entries archived
 
-**Hear it again**, under the prompt while the clock runs, `R` on the keyboard;
-disabled at the buzzer, gone at the reveal; unmutes a muted player rather than
-doing nothing. Shipped to everybody, not A/B'd within the round as the research
-suggested — the dead air is a defect and a half-fixed round would look broken to
-the room that walked out. Before is `DTK8`; after is what `read-games` says next
-time. Read off server-rendered markup in four states; not yet pressed in a
-browser. Stacked on `keep-the-round`. [`melody-round.md`](decisions/melody-round.md).
+"The rest of the file is stale" is not evidence about a line; melody and picture
+going live with the vault as the gate; and the `melody-round` branch itself.
+Moved whole on 10 September at 322/300: [`recall/2026-09.md`](recall/2026-09.md).
 
-## 2026-09-08 — The round is kept: `games/{gameId}` (branch `keep-the-round`)
+## 2026-09-04 — Three entries archived
 
-**Built, not live — the `games` block needs its paste first.** One document per
-finished round, written by the quizmaster's device, global and never read by a
-client. It holds every response the answers subcollection destroys: per question
-the id, difficulty, kind, correct index, each player's pick, time, `firstMs` and
-stake. A round with a skipped question is still kept, marked, because the skip
-is the tool most likely to be reached for on a tune nobody knew — gating on
-`sawWholeGame` would have lost the melody round this exists to explain.
-`check-rules` **64/65** against the live rules: the allow case `keep a finished
-round` FAILs with the block unpublished, exactly as it should, and six deny
-cases pass vacuously until it is. `npm run read-games` reads it back on the
-Admin SDK and ran clean against the live project: *Nothing kept yet.* Drift test
-forced red and back. [`game-record.md`](decisions/game-record.md).
-
-## 2026-09-08 — A/B testing is blocked on one gap, and it is not the framework
-
-`rooms/{code}/answers/{uid}` is overwritten every question, so a finished round
-holds only the last one — the questions and the right answers both survive, the
-responses do not. Fix is one write at the end of a game into a global `games/`
-collection, never a room subcollection (a second `Q·N²` term). Also measured: the
-wager is a skill test, 0%/25-50%/100% hitting 29/50/62%, so staking blind makes
-it a lottery — and at 6.5 stakes a round it would take 37 wager rounds against
-five ever played. Test per-question things, never per-round things.
-[`what-to-build-next.md`](decisions/what-to-build-next.md).
-
-## 2026-09-08 — Live: `firstMs` and the pack picker (`index-B3Tfo0Nu`)
-
-Rules pasted first, `check-rules` **58/58** with the allow case passing, then
-merged and deployed — that order, because `hasOnly` would otherwise refuse every
-changed answer in the room. Greg's first paste was truncated at line 562 of 575
-and the console said so; the second landed. PR #27 was closed as collateral when
-`--delete-branch` removed the base branch a stacked PR pointed at; reopened as
-#28. Unplayed with people.
-
-## 2026-09-08 — `firstMs`: show the snap guess rather than ban it
-
-Greg turned down both restriction shapes on cost and chose exposure. The answer
-document carries when a pick was first committed; the reveal marks anything
-under a second. Nothing is scored, so no honest player can lose to it. The
-document alone was not enough — four presses in 200ms do not round-trip, so a
-synchronous ref backs it. Rules paste **before** deploy. 675 tests, drift test
-forced red and back. [`first-touch.md`](decisions/first-touch.md).
-
-## 2026-09-08 — Spamming A–D at question start is a free lottery ticket
-
-Not fast fingers: a pick can be changed, so a lucky 50ms guess wins the rank
-bonus and an unlucky one is revised away at no cost. Measured against `3QDV`'s
-own 379 points per chance, that is +41% today and −34% if a pick were final.
-Proposed: one pick per question. Awaiting Greg —
-[`answer-spam.md`](decisions/answer-spam.md).
-
-## 2026-09-08 — The melody round was played, and abandoned after four
-
-Eight players, fifteen questions set, stopped at four, then they went and played
-Science instead and finished it. 8,800 points across 32 chances is 9–15 correct
-against 25% for guessing. Median clip 3.45s (20 of 70 under three), played once,
-with `stopClock()` killing the bed underneath it. Logged, not fixed —
-[`melody-round.md`](decisions/melody-round.md).
-
-## 2026-09-08 — Pack picker: five columns, twelve packs, 5 + 5 + 2
-
-`auto-fill minmax(13rem)` resolved to five columns in `.stage__inner`, stranding
-`Name that Tune` and `Picture Round` bottom-left; and nothing pinned
-`.pack__count`, so it sat at 86/96/117px down neighbouring tiles. Fixed bases of
-1/2/3/4 divide twelve exactly at every width, `margin-top: auto` for the count.
-Measured at six widths, both before and after.
-
-## 2026-09-04 — "The rest of the file is stale" is not evidence about a line
-
-`ideas-review.md` still said **nobody has seen the rank bonus award an order**. It was corrected
-on 30 August on `cursor/fastest-finger`, which never got a PR, so the wrong claim stood here for
-five days — and was then nearly lost a second time when that branch's docs were judged superseded
-*wholesale* and only its script salvaged. Four of its five doc changes really were superseded;
-this one was not. Judge a file, not a branch.
-
-## 2026-09-04 — Melody and picture are live, and the vault was the gate
-
-master `0bf1c5f`, gh-pages `584e80e`, bundle `index-CIOq186A`. #22, #23 and #24
-merged in that order. `seed-vault`: **119 added, 0 changed**, 13,456 already
-correct — the vault now holds 13,712.
-
-**The order was not cosmetic.** Both packs are in `index.json` and the lobby
-offers them, and `resolveAnswer` *throws* when the vault has no doc for a
-question rather than scoring zero. Deploying before the seed would have shipped
-two pickable packs that break at the reveal.
-
-**Proved on the live site, not assumed.** Room `NDH7`, picture round: The Starry
-Night rendered, the clock ran, and the reveal put `tile--correct` on D with the
-other three `tile--gone` — read off the DOM classes rather than computed style,
-which has lied here before. No console errors.
-
-**The CDN was stale again**, exactly as this morning: gh-pages held
-`index-CIOq186A` and served it 200, while live `index.html` still named
-`index-BOq4sYDx`. Caught up on re-fetching. Watch it every time.
-
-**A prediction that was wrong, recorded because it changed the instruction:**
-the Firebase chunk was called as moving to `Byj7wx-B`. It did not — the real
-deploy kept `firebase-Cns3pSRr`. That hash came from a scratch worktree with a
-symlinked `node_modules`, which moved every chunk hash. A build outside the
-project tree is not the build that ships.
-
-**Three green mergeable badges hid a conflict.** GitHub checks a PR against
-master as it stands, not as it will be. #24 read CLEAN and conflicted on
-`scoring.md` once #22 and #23 landed. Simulating the stacked merge in a worktree
-is what caught it. #23 also did not auto-retarget when #22 merged — GitHub only
-does that when the base branch is deleted.
-
-## 2026-09-04 — Melody, picture, jigsaw (`melody-round`, not live)
-
-70 tunes + 49 stills (jigsaw 3×3 lobby flag). Sealed packs; answers in gitignored
-`.cache/hand-vault.json`. Seed the vault before they score. Lobby blocks Start
-while muted. "Died before 1956" is right today (CDPA s.12; T−71). Pack newest
-composed deaths: Elgar/Holst 1934; Prokofiev 1953 is in. Charleston / Parker
-unencoded. [`round-types.md`](decisions/round-types.md).
-
-## 2026-09-04 — Correction: squad-write was committed
-
-`7c27b62` on `squad-write-and-min-stake`. Unpushed. The squad-write entry below said uncommitted.
-
-## 2026-09-04 — The negatives paste landed
-
-`check-rules`: `write a season row that went below zero` **PASS** (allow),
-and `write a season row below -maxPoints()` **PASS** (deny). Outstanding #4
-had been claiming the live rules still refused a negative. They do not.
-
-## 2026-09-04 — The lobby writes the side, and a stake can go below zero
-
-Branch `squad-write-and-min-stake`, uncommitted.
-
-**The live squad hole.** Auto-join seats a link-joiner before they pick a side,
-and `planJoin` leaves an existing entry untouched so a reconnect cannot move
-the quizmaster. The lobby picker only wrote storage, and only the quizmaster
-could see it. `planSeatSquad` writes `players.{uid}.squad` onto the existing
-seat, lobby only; `joinedAt` is not in the plan. The picker is in front of
-everybody now.
-
-**A positive stake floors at 500.** A 0% pick is still nothing. A player on
-zero who goes in on the last question can finish at −500, and `bankGame`
-already had no clamp. Repo `firestore.rules`: `points >= -maxPoints()`,
-`best <= points` gone. **Paste before deploy.** `check-rules` gained the allow
-case (FAIL until the paste) and the `−maxPoints()` deny.
-
-`playSequence` is exported for a melody round. No tunes, no pictures, no
-force-unmute in the lobby — those wait on content.
+The squad-write correction, the negatives paste (`check-rules` allow **PASS**
+after the paste, which is what made the two deny cases mean anything), and the
+lobby writing the squad plus a stake that can go below zero. Moved whole on
+10 September at 313/300: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## Earlier — the full chronology, archived
 
