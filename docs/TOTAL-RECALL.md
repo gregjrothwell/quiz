@@ -50,6 +50,51 @@ pre-bump master run and nothing on the bumped one. PR #45; `deploy` skipped on a
 PR, so `download-artifact@v7` is declared-node24 but not yet exercised.
 [`decisions/ci-deploy.md`](decisions/ci-deploy.md).
 
+## 2026-09-10 — Deploys come from CI now (`index-qJCbuGrA`)
+
+`.github/workflows/ci.yml`. `verify` (master, **every PR**, dispatch) runs
+typecheck/lint/test/build and **uploads `dist/`**; `deploy` downloads that
+artefact rather than rebuilding, checks it, and publishes with the `gh-pages`
+package — no third-party action in the deploy path. Eight public `VITE_*` as
+repository **variables**; the debug token is not one and never will be. First
+deploy: gh-pages `d412adc`, **authored by GitHub Actions**, which is now how you
+tell a CI deploy from a laptop one at a glance.
+
+**`check-bundle` proves a different thing in CI.** No `.env.local` there, so
+nothing to grep — it asserts the token is not in the build environment at all,
+and refuses if any workflow so much as *names* it. Plus a **canary**: every run
+greps for `VITE_FIREBASE_API_KEY`, which must be found, because a search that
+cannot find a value known to be present proves nothing by finding no token.
+Seven directions proved, in a checkout with no `.env.local`.
+
+**gitleaks was dropped on a measurement**: `public/` + `src/` hold **231
+UUID-shaped question ids**, so any entropy detector fires 231 false positives a
+build. The UUID-subtraction backstop was measured too (residual 0; 1 with a
+planted UUID) and **not shipped** — its allowlist comes from `src/`, so a token
+hardcoded into a source file would be allowlisted alongside the bundle.
+
+**Playwright stays unbuilt and now has a shape.** Two blockers were recorded on
+8 September; this removes "there is no CI". The other is answered by the
+**emulator, never a debug token** — which is why the check is "the token is not
+here" rather than "here is the value to grep for". Vitest glob widened to
+`.tsx` so a component test cannot silently never run.
+[`ci-deploy.md`](decisions/ci-deploy.md), [`audit-backlog.md`](decisions/audit-backlog.md).
+
+## 2026-09-10 — Three corrections the live project made to the docs
+
+**The picture round has been played** — `RX4P`, 9 September, 11 seats, 55% over
+10. Three documents said it never had. **Third time** the prose has drifted from
+the live project, and `read-games` settled it in one call.
+
+**The `elapsedMs` floor is live and three documents called it unbuilt.**
+`arrivalOk` / `elapsedGraceMs` at `firestore.rules:333`, enforcing on every
+answer write. What is unbuilt is the *client* half — neither name appears in
+`src/` — so `bound-elapsed-ms` is about the client, not the rule.
+
+**`docs/decisions/audit-backlog.md` existed only inside PR #35**, 201 lines
+including the Playwright assessment. Rescued before the PR was closed. A
+document living only on a branch is a document one `gh pr close` from gone.
+
 ## 2026-09-10 — The season form ranking was live, then silently reverted
 
 `rankByForm` shipped 8 September as `index-Df9CfP0K`. The 10 September deploys
@@ -70,17 +115,9 @@ banks once**: `orderBy('form')` excludes documents without the field, and all 26
 
 ## 2026-09-10 — Deploy guard added; CI outlined for later
 
-The interim half of "fix this going forward". `scripts/predeploy.ts` runs first
-in `npm run deploy` and refuses unless on `master`, tree clean, level with
-`origin/master` — `DEPLOY_FROM_BRANCH=1` relaxes the ref checks for a hotfix,
-tree-clean always stands. Pure `evaluateDeployRef` with a test both directions
-(the allow case is the one that proves it discriminates). `check-bundle` now
-exits 1 under `CI` when it has no `.env.local` to grep against, instead of
-passing blind. All on `seal-token-again`; 837 tests green.
-
-The durable fix — deploy from CI so the token is never on the build machine — is
-outlined in [`decisions/ci-deploy.md`](decisions/ci-deploy.md) for a follow-up
-session. Not built.
+`scripts/predeploy.ts` — the interim guard, superseded the same day by the CI
+workflow above but still the guard on a hand deploy. Archived whole:
+[`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-10 — Token revoked and reissued; leak closed
 
@@ -115,32 +152,9 @@ FAIL → PASS, the `elapsedMs` floor proved both ways. `npm run sync-harness 10`
 
 ## 2026-09-10 — Correction: the console was ahead of the repo, not behind
 
-The entry below says the live ruleset is behind `firestore.rules` and needs a
-console paste. **That is wrong, and acting on it would have deleted a live
-anti-cheat.** Left standing rather than edited, per the rule at the top.
-
-Read the live ruleset back through the Firebase Rules API: **39,218 bytes live
-against master's 34,889.** The extra is the `elapsedMs` arrival floor —
-`arrivalOk`, `answerRoom`, `elapsedGraceMs`. **Both** files already list
-`wager` and `firstMs` in the answers `hasOnly`, so the field I named as missing
-was never missing; I read the failure hint instead of the ruleset.
-
-Live is **byte-identical** to `firestore.rules` on the local branch
-`paste-seasons-and-elapsed` — pasted 8 September, never pushed, never merged.
-So the two `check-rules` FAILs were the **checker** being stale: it writes
-`elapsedMs: 10` into a room whose `openedAt` is tens of seconds old by then,
-and the floor correctly refuses it. **The failing checks were the rule
-working.** That same branch had already updated the checker.
-
-`sync-rules-with-console` (off master, **local, unpushed**) takes
-`firestore.rules` + `check-rules.ts` from it. Result: *"Both rulesets are live,
-and still refusing what they should"* — the two allow cases FAIL → PASS, and
-the floor proved both ways. No match block lost.
-
-Also checked, because today's deploy came off master: **it did not revert the
-season-form work.** The league board reads "Average" in `index-C3jZR3XU` and in
-`index-CFub7zgz` alike, so `rankByForm` has been off master since 9 September.
-It was live for one day as `index-Df9CfP0K`.
+The rules diagnosis reversed once the console was actually read: 39,218 bytes
+live against master's 34,889, the extra being the `elapsedMs` arrival floor.
+Landed as #40. Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-10 — Live: volume, clip cuts, 177 songs (`index-C3jZR3XU`)
 
@@ -189,47 +203,13 @@ seconds and was counted clean. `small.en` heard "Sweet Caroline, good times" as
 [`tunes-round.md`](decisions/tunes-round.md), verbatim. **Not seeded** (98 new
 ids), not deployed.
 
-## 2026-09-09 — Live: On the box (`index-CFub7zgz`)
+## 2026-09-09 — The whole day, archived
 
-#36 then #37 merged. `seed-vault` once: **78 added, 0 changed**, 13,781 already
-correct (54 screens + 24 other new ids). `npm run deploy`; gh-pages `e2d3bf1`.
-Firebase chunk unmoved (`firebase-Cns3pSRr`). Name that Tune not expanded.
-
-## 2026-09-09 — On the box pack written locally
-Recut off Fine Art’s PD-Art era bias. Mixed 1990s–2020s, not a 1960s–80s wall. Seal 16. Not seeded, not live. `seed-vault` needs Greg.
-
-## 2026-09-09 — On the box parked (superseded same day)
-
-Writer was waiting on the key. Pack was then written (54) — see above. Not seeded, not live. Pickup: [`questions.md`](decisions/questions.md#picking-up-on-the-box).
-
-## 2026-09-09 — On the box via TMDB untitled backdrops (branch `on-the-box-tmdb`)
-
-iTunes movie Search is empty in US as well as GB; Lookup only covers leftover
-rentals. TMDB backdrops with `iso_639_1 === null` are the title-free stills.
-Hashed onto Pages like flags. Needs `TMDB_API_KEY`, then seed. Not live.
-
-## 2026-09-09 — Live: iTunes Name that Tune, flags, sleeves (`index-6odlsKCm`)
-
-Pushed `itunes-tunes-and-flags` (`10260ce`), then `npm run deploy`. gh-pages
-`6dd46ce`. CDN served `index-Df9CfP0K` for about a minute, then
-`index-6odlsKCm`. Firebase chunk unmoved (`firebase-Cns3pSRr`). Packs 200:
-tunes, flags, sleeves on `index.json`. Vault already held the new ids (206
-added, 0 changed). **master still at `e19d518` until the PR merges.** Unplayed.
-
-## 2026-09-09 — Vault topped up for tunes, flags, sleeves
-
-`seed-vault` against `quiz-d686e`, service account, one run: **206 added, 0
-changed**, 13,575 already correct. Was 13,712. The packs themselves are still
-on `itunes-tunes-and-flags`, not deployed.
-
-## 2026-09-09 — iTunes Name that Tune, flags, sleeves (branch `itunes-tunes-and-flags`)
-
-Not live. Not seeded. 15 sealed packs. `tunes` stole the lobby name (79 GB
-previews, streamed, badge, slug stripped). Synth pack is **Classical**. **Flags**
-76 including home nations, hashed, no jigsaw. **Sleeves** 52, mzstatic hotlink,
-never hosted. Picture retitled **Fine Art**. **On the box** writer exists; GB
-Search returns 0 movies so it does not ship. [`round-types.md`](decisions/round-types.md),
-[`melody-round.md`](decisions/melody-round.md).
+iTunes Name that Tune (79 GB previews), Flags (76, hashed), Sleeves (52,
+mzstatic hotlink), picture retitled Fine Art, the vault topped up 206, all live
+as `index-6odlsKCm`; and On the box via TMDB untitled backdrops, built but not
+live. Moved whole on 10 September at 299/300, to keep the CI entry inside
+budget: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-08 — The whole day, archived
 
