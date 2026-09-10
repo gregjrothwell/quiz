@@ -201,13 +201,17 @@ from `action.yml`, and the first master merge is what will exercise it.
 ### Playwright: the emulator, never a debug token
 
 `audit-backlog.md` recorded two blockers — there was no CI, and an E2E runner
-would want an App Check debug token in its environment. This removes the first.
-The second is answered by the **Firebase emulator**, which is why the CI check
-above is shaped as "the token is not here" rather than "here is the token to grep
-for": the guard stays correct when Playwright arrives instead of being the thing
-that has to be unpicked. The `e2e` job slot is sketched at the bottom of the
-workflow with that constraint written beside it, and `check-bundle` enforces it.
+would want an App Check debug token in its environment. CI removed the first.
+The second is the **Firebase emulator**, which is why the CI check is shaped as
+"the token is not here" rather than "here is the token to grep for".
 
-Recorded order still stands: widen the Vitest glob (**done** — `.tsx` is matched,
-so a component test cannot silently never run), add component tests under Vitest
-with `environment: 'jsdom'`, *then* Playwright.
+**Built 10 September 2026** on `cursor/playwright-prereqs`. Recorded order:
+glob (**done**), jsdom component tests (Vitest `dom` project), emulator, then
+Playwright. The e2e job sits between `verify` and `deploy`, downloads the same
+`dist` artefact, and talks to Auth / Firestore / RTDB emulators. `deploy`
+`needs: [verify, e2e]`. No workflow names the debug-token variable;
+`check-bundle` also scans `playwright.config.ts` and `e2e/`.
+
+The switch is a **runtime flag**, not a build-time `VITE_*` — otherwise the
+tested artefact would differ from the one that ships. Depth:
+[`emulators.md`](emulators.md).

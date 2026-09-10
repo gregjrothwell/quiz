@@ -25,6 +25,7 @@ function laptop(over: Partial<BundleFacts> = {}): BundleFacts {
     canary: API_KEY,
     files: { 'dist/assets/index-abc.js': `const k="${API_KEY}";` },
     workflows: {},
+    playwrightFiles: {},
     ...over,
   };
 }
@@ -38,6 +39,7 @@ function ci(over: Partial<BundleFacts> = {}): BundleFacts {
     canary: API_KEY,
     files: { 'dist/assets/index-abc.js': `const k="${API_KEY}";` },
     workflows: { '.github/workflows/ci.yml': 'name: CI\njobs:\n  verify:\n' },
+    playwrightFiles: {},
     ...over,
   };
 }
@@ -66,6 +68,16 @@ describe('the allow direction — a clean build is publishable', () => {
     expect(verdict.notCovered.join(' ')).toContain('were not grepped for');
     expect(verdict.notCovered.join(' ')).toContain('reCAPTCHA allowlist');
   });
+
+  it('passes when e2e files exist but do not name the variable', () => {
+    const verdict = evaluateBundle(ci({
+      playwrightFiles: {
+        'playwright.config.ts': "export default { testDir: 'e2e' };\n",
+        'e2e/smoke.spec.ts': "test('landing', async ({ page }) => { await page.goto('./'); });\n",
+      },
+    }));
+    expect(verdict.ok).toBe(true);
+  });
 });
 
 describe('the deny direction — each rule refuses, and for its own reason', () => {
@@ -93,6 +105,24 @@ describe('the deny direction — each rule refuses, and for its own reason', () 
     expect(verdict.ok).toBe(false);
     if (verdict.ok) return;
     expect(verdict.reason).toContain('.github/workflows/ci.yml');
+  });
+
+  it('refuses when a playwright config names the variable, even unset', () => {
+    const verdict = evaluateBundle(ci({
+      playwrightFiles: { 'playwright.config.ts': `use: { /* ${TOKEN} */ }\n` },
+    }));
+    expect(verdict.ok).toBe(false);
+    if (verdict.ok) return;
+    expect(verdict.reason).toContain('playwright.config.ts');
+  });
+
+  it('refuses when an e2e spec names the variable, even unset', () => {
+    const verdict = evaluateBundle(ci({
+      playwrightFiles: { 'e2e/helpers.ts': `const leaked = process.env.${TOKEN};\n` },
+    }));
+    expect(verdict.ok).toBe(false);
+    if (verdict.ok) return;
+    expect(verdict.reason).toContain('e2e/helpers.ts');
   });
 
   it('refuses when the secret is actually in a built file', () => {

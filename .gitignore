@@ -9,6 +9,15 @@ dist/
 coverage/
 .cache/
 
+# Playwright — the HTML report and the per-run artefacts. Browsers live in the
+# user cache (`npx playwright install`), not here.
+playwright-report/
+test-results/
+blob-report/
+firebase-debug.log
+firestore-debug.log
+database-debug.log
+
 # Service-account key for `npm run seed-vault`. Never commit one.
 .secrets/
 
