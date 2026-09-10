@@ -1,5 +1,16 @@
-import { describe, expect, test } from 'vitest';
-import { CLOCK_LEAD_SECONDS, clockVoices, cueVoices, playPreview, playSequence, stopPreview } from './sound';
+import { afterEach, describe, expect, test } from 'vitest';
+import {
+  CLOCK_LEAD_SECONDS,
+  DEFAULT_VOLUME,
+  clampVolume,
+  clockVoices,
+  cueVoices,
+  masterGainFor,
+  playPreview,
+  playSequence,
+  setVolume,
+  stopPreview,
+} from './sound';
 import { HAPPY_BIRTHDAY } from '../questions/melody-voices';
 
 /** The pitched walk, which is the one voice every second of the bed has. */
@@ -119,6 +130,90 @@ describe('playPreview', () => {
 
   test('refuses a URL that is not Apple’s audio CDN', () => {
     expect(() => playPreview('https://example.com/clip.m4a')).not.toThrow();
+  });
+});
+
+describe('volume', () => {
+  afterEach(() => {
+    setVolume(DEFAULT_VOLUME);
+    stopPreview();
+  });
+
+  test('starts well below the top, which is the whole complaint', () => {
+    // #given the level a player who has never touched the slider plays at
+    // #then it is a music bed under a call, not a full-scale master
+    expect(DEFAULT_VOLUME).toBeGreaterThan(0);
+    expect(DEFAULT_VOLUME).toBeLessThan(0.5);
+  });
+
+  test('a stored level outside 0–1 is clamped rather than trusted', () => {
+    expect(clampVolume(-3)).toBe(0);
+    expect(clampVolume(4)).toBe(1);
+    expect(clampVolume(Number.NaN)).toBe(DEFAULT_VOLUME);
+  });
+
+  test('leaves the cues exactly where they were at the default', () => {
+    // #given the master gain the house cues have always been balanced against
+    const before = 0.22;
+
+    // #when the slider sits where it starts
+    // #then nothing about a buzzer or a fanfare has changed
+    expect(masterGainFor(DEFAULT_VOLUME)).toBeCloseTo(before, 10);
+  });
+
+  test('scales the cues down but never up, so a summed cue cannot clip', () => {
+    // #given the slider dragged to each end
+    // #then quieter follows the slider
+    expect(masterGainFor(0)).toBe(0);
+    expect(masterGainFor(DEFAULT_VOLUME / 2)).toBeCloseTo(0.11, 10);
+
+    // #and louder does not: the loudest voice is 1.1 relative and several ring
+    // at once, so lifting the master past its balanced value clips at the
+    // destination. Above the default the slider is the music's alone.
+    expect(masterGainFor(1)).toBe(masterGainFor(DEFAULT_VOLUME));
+  });
+
+  test('a preview starts at the slider position, not at full scale', () => {
+    // #given a fake audio element, because the preview is an <audio> tag and
+    // not a Web Audio node — Apple's CDN sends no CORS header, so the master
+    // gain cannot reach it and this is the only place its level is set
+    const made: Array<{ volume: number; src: string }> = [];
+    class FakeAudio {
+      preload = '';
+      loop = false;
+      volume = 1;
+      src = '';
+      constructor() {
+        made.push(this as unknown as { volume: number; src: string });
+      }
+      addEventListener(): void {}
+      load(): void {}
+      pause(): void {}
+      removeAttribute(): void {}
+      play(): Promise<void> {
+        return Promise.resolve();
+      }
+    }
+    const globals = globalThis as { Audio?: unknown };
+    const original = globals.Audio;
+    globals.Audio = FakeAudio;
+
+    try {
+      // #when a clip is played with the slider left alone
+      playPreview('https://audio-ssl.itunes.apple.com/clip.m4a');
+
+      // #then it plays at the default, not at 1 — which is what covered the
+      // Teams call on 10 September 2026
+      expect(made).toHaveLength(1);
+      expect(made[0]?.volume).toBe(DEFAULT_VOLUME);
+
+      // #and moving the slider mid-clip moves the clip that is already running
+      setVolume(0.1);
+      expect(made[0]?.volume).toBeCloseTo(0.1, 10);
+    } finally {
+      if (original === undefined) delete globals.Audio;
+      else globals.Audio = original;
+    }
   });
 });
 

@@ -401,13 +401,25 @@ textarea {
    Parked against the rig bar at the top right, on every screen. Deliberately
    quiet furniture: it has to be findable the moment somebody's colleague walks
    past, and invisible the rest of the time.
+
+   The volume sits under the switch, right-aligned to it, so adding it left the
+   switch exactly where the room has learned to look for it. The corner is the
+   only furniture on every screen of a round, which is why the slider is here
+   and not in the lobby: the moment you want it is mid-clip.
    ──────────────────────────────────────────────────────────────────────────── */
 
-.sound {
+.sound-rig {
   position: absolute;
   top: calc(var(--gutter) * 0.5);
   right: calc(var(--gutter) * 0.5);
   z-index: 5;
+  display: grid;
+  justify-items: end;
+  gap: 0.3rem;
+}
+
+.sound {
+  position: relative;
   width: 2.25rem;
   height: 2.25rem;
   display: grid;
@@ -474,6 +486,91 @@ textarea {
 
 .sound--off .sound__cross {
   stroke: var(--ink-dim);
+}
+
+/*
+  The volume, drawn rather than native.
+
+  `appearance: none` on both the track and the thumb, because the two engines
+  disagree about which one carries the background and Safari will otherwise
+  paint its own blue capsule straight through this.
+
+  Narrow on purpose — the width of the switch plus a little, so the pair reads
+  as one control in the corner rather than a widget stuck to the top of the
+  screen.
+
+  The rail is drawn by the track pseudo-element, so `height` here is the hit
+  area rather than the drawing — 44px under a thumb around a 6px rail, the same
+  separation of target from picture as `.sound::after`. `margin: 0` because
+  WebKit gives a range input 2px of its own, which is enough to knock it out of
+  line with the switch above it.
+*/
+.sound-volume {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 5.5rem;
+  height: 2.75rem;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  transition: opacity 160ms ease;
+}
+
+.sound-rig--off .sound-volume {
+  /* Still live: setting the level before unmuting is the sensible order. */
+  opacity: 0.45;
+}
+
+.sound-volume::-webkit-slider-runnable-track {
+  height: 0.35rem;
+  border-radius: 999px;
+  border: 1px solid var(--edge);
+  background: rgb(2 10 20 / 0.62);
+}
+
+.sound-volume::-moz-range-track {
+  height: 0.35rem;
+  border-radius: 999px;
+  border: 1px solid var(--edge);
+  background: rgb(2 10 20 / 0.62);
+}
+
+.sound-volume::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 50%;
+  border: none;
+  background: var(--cyan-dim);
+  /* Half the thumb minus half the track, so it rides centred on the rail. */
+  margin-top: -0.25rem;
+  transition: background-color 160ms ease;
+}
+
+.sound-volume::-moz-range-thumb {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 50%;
+  border: none;
+  background: var(--cyan-dim);
+  transition: background-color 160ms ease;
+}
+
+.sound-volume:hover::-webkit-slider-thumb,
+.sound-volume:focus-visible::-webkit-slider-thumb {
+  background: var(--cyan);
+}
+
+.sound-volume:hover::-moz-range-thumb,
+.sound-volume:focus-visible::-moz-range-thumb {
+  background: var(--cyan);
+}
+
+.sound-volume:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+  border-radius: 999px;
 }
 
 /*
