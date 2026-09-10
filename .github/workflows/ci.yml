@@ -1,0 +1,153 @@
+# Build and deploy from `master`, so what ships is what was reviewed.
+#
+# `npm run deploy` builds on a laptop that holds `.env.local` and ships whatever
+# branch happens to be checked out. The App Check debug token reached GitHub
+# Pages twice through exactly that, and both times the gate that would have
+# stopped it existed — on a branch that was not the one being deployed. See
+# docs/decisions/debug-token-leak.md and docs/decisions/ci-deploy.md.
+#
+# A runner fixes both halves. It has no `.env.local`, so the token is not on the
+# build machine and inlining it is impossible rather than merely gated. And it
+# builds one ref, so "what shipped" and "what was reviewed" cannot drift apart.
+#
+# NOTE: the name of the debug-token variable does not appear anywhere in this
+# file, and `npm run check-bundle` refuses a build if any workflow names it.
+# The deploy job is not supposed to know that variable exists. If you are here
+# to add it for an end-to-end runner, the answer is the Firebase emulator —
+# docs/decisions/audit-backlog.md.
+#
+# Actions used are GitHub's own (checkout, setup-node, upload/download-artifact).
+# Publishing uses the `gh-pages` npm package already in devDependencies, the same
+# tool `npm run deploy` uses, so a hand deploy and a CI deploy produce the same
+# artefact the same way and nothing new enters the deploy path.
+
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run typecheck
+      - run: npm run lint
+
+      # Offline by design. Anything under `scripts/` that talks to the network or
+      # the live project is excluded from the suite on purpose, so this needs no
+      # Firebase credentials of any kind.
+      - run: npm test
+
+      - name: Build
+        # Only the values that are *supposed* to ship. Repository variables, not
+        # secrets: they identify the project, they do not authorise access — the
+        # rules do that. Vite inlines every VITE_-prefixed variable it can see,
+        # which is precisely why this list is written out rather than passed
+        # through wholesale.
+        env:
+          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
+          VITE_FIREBASE_DATABASE_URL: ${{ vars.VITE_FIREBASE_DATABASE_URL }}
+          VITE_FIREBASE_APPCHECK_SITE_KEY: ${{ vars.VITE_FIREBASE_APPCHECK_SITE_KEY }}
+        run: npm run build
+
+      # Built once, here, and handed onward. The job that publishes must not
+      # rebuild: a second build is a second chance for the shipped artefact to
+      # differ from the checked one, which is the whole failure this workstream
+      # exists to stop. It is also what lets a future e2e job drive a browser at
+      # the exact bundle that is about to go live — see the note at the bottom.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7
+          if-no-files-found: error
+
+  deploy:
+    name: Publish to gh-pages
+    needs: verify
+    if: >-
+      github.event_name == 'workflow_dispatch'
+      || (github.event_name == 'push' && github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    permissions:
+      # The repository default is read-only, so this is not decoration: without
+      # it the push to `gh-pages` is rejected.
+      contents: write
+    # Never two deploys writing the branch at once. Not cancel-in-progress: an
+    # interrupted push can leave `gh-pages` half-written, and a queued deploy is
+    # cheaper than a broken site.
+    concurrency:
+      group: gh-pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Check the artefact carries no secret
+        # The API key is public and is inlined by the same mechanism as the
+        # secret, so check-bundle uses it as a canary: if the search cannot find
+        # a value that is definitely there, its silence about anything else is
+        # worthless. Passing it here is what makes this step mean something.
+        env:
+          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
+        run: npm run check-bundle
+
+      - name: Publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npx gh-pages \
+            --dist dist \
+            --user "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>" \
+            --repo "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            --message "Deploy ${GITHUB_SHA}"
+
+# ---------------------------------------------------------------------------
+# The e2e job that is deliberately not here yet.
+#
+# Recorded order (docs/decisions/audit-backlog.md): widen the Vitest glob, add
+# component tests under Vitest, and only then Playwright. The glob is widened;
+# the component tests are not written.
+#
+# When it arrives it belongs between `verify` and `deploy` — `needs: verify`,
+# downloading the same `dist` artifact and serving it with `npm run preview`, so
+# the browser drives the exact bundle that is about to ship.
+#
+# It must talk to the Firebase emulator, never the live project and never an App
+# Check debug token. A runner that needs to attest wanting a debug token in its
+# environment is the same mistake that put one on GitHub Pages twice, with a
+# different filename on it. `check-bundle` refuses a build if any workflow names
+# that variable, so this is enforced rather than merely written down.
+# ---------------------------------------------------------------------------
