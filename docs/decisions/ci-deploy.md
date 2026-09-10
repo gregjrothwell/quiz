@@ -1,8 +1,9 @@
 # Deploy from CI, not a laptop
 
 > **Owner: Greg Rothwell. Last updated: 10 September 2026. Budget: 250 lines.**
-> **Status: proposed, not built.** A loose outline for a follow-up session. The
-> local guard (`scripts/predeploy.ts`) is the interim; this is the durable fix.
+> **Status: built, 10 September 2026** — `.github/workflows/ci.yml`. The outline
+> below is kept; what actually shipped, and the two places the outline was
+> wrong, are in *What was built* at the end.
 
 ## Why
 
@@ -112,3 +113,63 @@ the GitHub UI, or branch protection + auto-merge. It's the
 
 Merge the branch that carries the gate + `check-bundle` + `predeploy.ts` so
 `master` is safe to deploy from, *then* build this on top.
+
+## What was built, 10 September 2026
+
+`.github/workflows/ci.yml`: `verify` (push to `master`, every PR, and
+`workflow_dispatch`) runs `npm ci`, typecheck, lint, test, build, and **uploads
+`dist/` as an artifact**; `deploy` (`needs: verify`, master pushes and manual
+runs only) **downloads that artefact rather than rebuilding**, runs
+`check-bundle`, and publishes with the `gh-pages` package.
+
+Built once and handed on, because a second build is a second chance for the
+shipped bundle to differ from the checked one — and because it is what lets a
+future e2e job drive a browser at the exact bundle about to go live.
+
+`permissions: contents: write` is declared on the deploy job; the repository
+default is read-only and the push is rejected without it. The workflow does not
+call `npm run deploy`: `predeploy.ts` reads `git branch --show-current`, which is
+empty in Actions' detached checkout, so it would refuse every run. It stays the
+guard on the hand path.
+
+### The outline was wrong about gitleaks
+
+**Measured, 10 September: `public/` and `src/` already hold 231 UUID-shaped
+question ids.** Any UUID or high-entropy detector fires 231 false positives on
+every build, and a check that noisy gets ignored — which is worse than not having
+one. Dropped rather than tuned.
+
+What `check-bundle` does under CI instead is prove the token is **not in the
+build environment at all**. A runner can only inline what it was given, so that
+removes the channel rather than inspecting the output afterwards. A workflow that
+so much as *names* the variable fails the same rule.
+
+The other half is a **canary**: every run also greps for `VITE_FIREBASE_API_KEY`,
+which is public, inlined by the same mechanism, and must be found. A search that
+cannot find a value known to be there proves nothing by finding no token. Proved
+in seven directions on 10 September, in a checkout with no `.env.local`: allow;
+token in the environment; no canary value; canary set but absent from the bundle;
+a workflow naming the variable; and the unchanged local path both ways.
+
+### The UUID backstop was measured and not shipped
+
+Subtracting the UUIDs in `public/` + `src/` from those in `dist/` gives a
+residual of **0**, and planting a novel UUID makes it **1**, so the check works.
+It is still not the gate, because **its allowlist is derived from `src/`** — a
+token hardcoded into a source file lands in the allowlist as well as the bundle,
+so the one case it looks like it would catch is the one it cannot. Recorded so it
+is not re-proposed.
+
+### Playwright: the emulator, never a debug token
+
+`audit-backlog.md` recorded two blockers — there was no CI, and an E2E runner
+would want an App Check debug token in its environment. This removes the first.
+The second is answered by the **Firebase emulator**, which is why the CI check
+above is shaped as "the token is not here" rather than "here is the token to grep
+for": the guard stays correct when Playwright arrives instead of being the thing
+that has to be unpicked. The `e2e` job slot is sketched at the bottom of the
+workflow with that constraint written beside it, and `check-bundle` enforces it.
+
+Recorded order still stands: widen the Vitest glob (**done** — `.tsx` is matched,
+so a component test cannot silently never run), add component tests under Vitest
+with `environment: 'jsdom'`, *then* Playwright.
