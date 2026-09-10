@@ -177,7 +177,11 @@ export interface ClipChoice {
 const LEAD = 0.4;
 
 export interface ClipOptions {
-  /** The answer window the round is played on. */
+  /**
+   * The answer window the round is played on — how much of the clip a player
+   * can hear. Defaults to the app's own default; the audit passes the longest
+   * a quizmaster can pick, because auditing wide costs nothing.
+   */
   window?: number;
   /** How long the preview runs. Apple's are 30s. */
   clip?: number;

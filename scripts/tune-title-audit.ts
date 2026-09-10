@@ -133,8 +133,17 @@ async function readTranscript(slug: string): Promise<TranscriptWord[] | null> {
 }
 
 async function main(): Promise<void> {
+  /*
+    Twenty, not the fifteen every round has actually been played on.
+
+    A quizmaster can pick 10, 15 or 20, and auditing at the longest is free:
+    a clip whose only mention lands at 17s gets a cut at 16.6s, which on a
+    fifteen-second question falls after the question has already ended. Over
+    the first 63 transcripts it moved exactly one clip from clean to trimmed
+    and produced no extra `unavoidable`, so the safety is had for nothing.
+  */
   const windowArg = process.argv.indexOf('--window');
-  const window = windowArg > 0 ? Number(process.argv[windowArg + 1]) : 15;
+  const window = windowArg > 0 ? Number(process.argv[windowArg + 1]) : 20;
 
   const list = await rows();
   await fetchPreviews(list);
