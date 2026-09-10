@@ -32,7 +32,11 @@ import type { Pack } from '../src/questions/types';
 const ROOT = join(import.meta.dirname, '..');
 const PREVIEWS = join(ROOT, '.cache', 'tune-previews');
 const TRANSCRIPTS = join(ROOT, '.cache', 'tune-transcripts');
+const FORCED = join(ROOT, '.cache', 'tune-transcripts-forced');
 const MODEL = 'medium.en';
+
+/** Below this, treat a transcript as "nothing heard" rather than "nothing there". */
+const THIN = 4;
 
 interface Row {
   slug: string;
@@ -86,9 +90,12 @@ async function fetchPreviews(list: Row[]): Promise<void> {
  * the CLI takes a list of files and loads it once, so a re-run of 177 tunes is
  * transcription time rather than 177 model loads.
  */
-async function transcribe(missing: string[]): Promise<void> {
+/**
+ * @param force drops whisper's silence detector. See {@link forcePass}.
+ */
+async function transcribe(missing: string[], into: string, force = false): Promise<void> {
   if (missing.length === 0) return;
-  await mkdir(TRANSCRIPTS, { recursive: true });
+  await mkdir(into, { recursive: true });
   console.log(`Transcribing ${missing.length} clips with ${MODEL} — around 20s each.`);
   const args = [
     ...missing.map((slug) => join(PREVIEWS, `${slug}.m4a`)),
@@ -96,8 +103,11 @@ async function transcribe(missing: string[]): Promise<void> {
     '--language', 'en',
     '--word_timestamps', 'True',
     '--output_format', 'json',
-    '--output_dir', TRANSCRIPTS,
+    '--output_dir', into,
     '--verbose', 'False',
+    ...(force
+      ? ['--no_speech_threshold', 'None', '--logprob_threshold', 'None', '--temperature', '0']
+      : []),
   ];
   await new Promise<void>((resolve, reject) => {
     const child = spawn('whisper', args, { stdio: ['ignore', 'inherit', 'inherit'] });
@@ -119,8 +129,8 @@ interface WhisperJson {
   segments?: { words?: { word: string; start: number; end: number }[] }[];
 }
 
-async function readTranscript(slug: string): Promise<TranscriptWord[] | null> {
-  const raw = await readFile(join(TRANSCRIPTS, `${slug}.json`), 'utf8').catch(() => null);
+async function readTranscript(slug: string, dir = TRANSCRIPTS): Promise<TranscriptWord[] | null> {
+  const raw = await readFile(join(dir, `${slug}.json`), 'utf8').catch(() => null);
   if (raw === null) return null;
   const data = JSON.parse(raw) as WhisperJson;
   return (data.segments ?? []).flatMap((segment) =>
@@ -148,12 +158,46 @@ async function main(): Promise<void> {
   const list = await rows();
   await fetchPreviews(list);
 
-  const done = new Set(
-    (await readdir(TRANSCRIPTS).catch(() => [] as string[]))
-      .filter((name) => name.endsWith('.json'))
-      .map((name) => name.replace(/\.json$/, '')),
-  );
-  await transcribe(list.filter((row) => !done.has(row.slug)).map((row) => row.slug));
+  const already = async (dir: string): Promise<Set<string>> =>
+    new Set(
+      (await readdir(dir).catch(() => [] as string[]))
+        .filter((name) => name.endsWith('.json'))
+        .map((name) => name.replace(/\.json$/, '')),
+    );
+
+  const done = await already(TRANSCRIPTS);
+  await transcribe(list.filter((row) => !done.has(row.slug)).map((row) => row.slug), TRANSCRIPTS);
+
+  /*
+    A second pass over anything that came back with almost no words, with
+    whisper's silence detector switched off.
+
+    **This is the pass that stops the audit lying.** On the first run, Shake It
+    Off transcribed to nothing at all — and forced, it is "I'm just gonna shake
+    shake shake shake shake / Shake it off, shake it off". Same model, same
+    clip: `no_speech_threshold` had decided the whole window was not speech and
+    thrown the decode away, and the clip that sings its own title six times in
+    ten seconds was counted clean. Seventeen of 177 came back thin, and eleven
+    of those were suppressed rather than silent.
+
+    Forcing every clip is the wrong fix, and the forced pass proves why: Blue
+    Monday's synth section comes back as "I'm going to go ahead and put this on
+    the back", which is not in the song or anywhere near it. Dropping the
+    detector on genuinely instrumental audio is how a transcriber hallucinates.
+
+    It is safe *here* because of what is being looked for. The matcher wants
+    one specific phrase, and invented filler is not that phrase — a
+    hallucination costs a needless trim at worst, while a suppressed decode
+    ships a clip that sings the answer. The asymmetry is what settles it, not
+    the transcript being trustworthy.
+  */
+  const thin: string[] = [];
+  for (const row of list) {
+    const words = await readTranscript(row.slug);
+    if (words !== null && words.length < THIN) thin.push(row.slug);
+  }
+  const forcedAlready = await already(FORCED);
+  await transcribe(thin.filter((slug) => !forcedAlready.has(slug)), FORCED, true);
 
   const verdicts: Record<string, number> = { clean: 0, trimmed: 0, shifted: 0, unavoidable: 0 };
   const changes: string[] = [];
@@ -169,12 +213,15 @@ async function main(): Promise<void> {
   */
   const silent: string[] = [];
   for (const row of list) {
-    const transcript = await readTranscript(row.slug);
-    if (transcript === null) {
+    const first = await readTranscript(row.slug);
+    if (first === null) {
       console.log(`  ${row.slug}: no transcript`);
       continue;
     }
-    if (transcript.length < 4) silent.push(row.slug);
+    // The forced pass only wins where it actually heard something.
+    const forced = first.length < THIN ? await readTranscript(row.slug, FORCED) : null;
+    const transcript = forced !== null && forced.length > first.length ? forced : first;
+    if (transcript.length < THIN) silent.push(row.slug);
     const hits = titleHits(row.title, transcript);
     const choice = chooseClip(hits, { window });
     verdicts[choice.verdict] = (verdicts[choice.verdict] ?? 0) + 1;
@@ -195,8 +242,9 @@ async function main(): Promise<void> {
   for (const [verdict, count] of Object.entries(verdicts)) console.log(`  ${verdict}: ${count}`);
   if (silent.length > 0) {
     console.log(
-      `\nNo words heard in ${silent.length} — counted clean, but nothing was looked at.`
-      + ` Play these rather than trust them:\n  ${silent.join(', ')}`,
+      `\nNo words heard in ${silent.length}, even with the silence detector off —`
+      + ` counted clean, but nothing was looked at. Play these rather than trust`
+      + ` them:\n  ${silent.join(', ')}`,
     );
   }
   console.log(`\nPaste into hand-tunes-data.ts:\n${changes.join('\n')}`);
