@@ -39,6 +39,20 @@ body where it happened rather than here: three 4 September batches, then the
 whole 2026-09-08 day when the debug-token deploy needed the room. All verbatim to
 [`recall/2026-09.md`](recall/2026-09.md).
 
+## 2026-09-10 — Deploy guard added; CI outlined for later
+
+The interim half of "fix this going forward". `scripts/predeploy.ts` runs first
+in `npm run deploy` and refuses unless on `master`, tree clean, level with
+`origin/master` — `DEPLOY_FROM_BRANCH=1` relaxes the ref checks for a hotfix,
+tree-clean always stands. Pure `evaluateDeployRef` with a test both directions
+(the allow case is the one that proves it discriminates). `check-bundle` now
+exits 1 under `CI` when it has no `.env.local` to grep against, instead of
+passing blind. All on `seal-token-again`; 837 tests green.
+
+The durable fix — deploy from CI so the token is never on the build machine — is
+outlined in [`decisions/ci-deploy.md`](decisions/ci-deploy.md) for a follow-up
+session. Not built.
+
 ## 2026-09-10 — Token revoked and reissued; leak closed
 
 Follows the entry below, which was written while it was still open. Greg revoked

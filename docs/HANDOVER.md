@@ -35,6 +35,7 @@ in [`recall/`](recall/)).
 | rules, App Check on Firestore and the RTDB, anything security-shaped | [`decisions/security.md`](decisions/security.md) |
 | App Check on **authentication** specifically | [`decisions/app-check-auth.md`](decisions/app-check-auth.md) |
 | the debug token, `check-bundle`, why a deploy must not come off `master` | [`decisions/debug-token-leak.md`](decisions/debug-token-leak.md) |
+| moving the deploy to CI (proposed, not built) | [`decisions/ci-deploy.md`](decisions/ci-deploy.md) |
 | anything that adds reads or writes | [`decisions/cost.md`](decisions/cost.md) |
 | — before assuming a style choice, a bug, or a claim in here | [`gotchas.md`](decisions/gotchas.md) · [`known-limits.md`](decisions/known-limits.md) · [`state-of-play.md`](decisions/state-of-play.md) |
 | what a question is worth, and why it is not a speed curve | [`decisions/scoring.md`](decisions/scoring.md) |
@@ -84,10 +85,10 @@ Counts and the two slow leaks: [`cost.md`](decisions/cost.md#measured-live-28-au
 ## Outstanding
 
 1. **`master` still re-leaks the debug token on deploy** (box above). The gate,
-   its test and `check-bundle` are deployed but only on `seal-token-again` —
-   `master` has the unconditional read and no check. **Do not deploy from
-   `master`** until that branch lands. #35 is the superseded first attempt's
-   PR — close it. [`decisions/debug-token-leak.md`](decisions/debug-token-leak.md).
+   its test, `check-bundle` and now `scripts/predeploy.ts` (deploy refuses off
+   master / dirty / behind, `DEPLOY_FROM_BRANCH=1` overrides) are on
+   `seal-token-again`, not `master`. **Do not deploy from `master`** until it
+   lands; close #35. Durable fix is CI — [`decisions/ci-deploy.md`](decisions/ci-deploy.md).
 2. **A quizmaster dropping out mid-round** needs a browser and `host-room`.
 3. **No Content-Security-Policy.** Deliberate: a `<meta http-equiv>` CSP breaks
    the live app silently and the stale CDN makes that painful to diagnose.

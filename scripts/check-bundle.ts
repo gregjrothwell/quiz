@@ -32,7 +32,10 @@
  *
  * Reads `.env.local` off disk rather than through `--env-file`, so `deploy`
  * keeps working on a machine that has no debug token set: nothing configured
- * means nothing to leak, and that is a pass rather than an error.
+ * means nothing to leak, and that is a pass rather than an error — **except
+ * under CI**, where `.env.local` is absent by design and "nothing to check" is
+ * a blind spot, not a clean bill. There it exits 1. A CI deploy wants a real
+ * artefact scanner (gitleaks); see `docs/decisions/ci-deploy.md`.
  */
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -89,6 +92,18 @@ function main(): void {
 
   const configured = FORBIDDEN.filter((name) => (env[name] ?? '').length > 0);
   if (configured.length === 0) {
+    if (process.env.CI) {
+      // `.env.local` is absent in CI by design, so there is nothing here to grep
+      // the bundle against — and a check that cannot see a leak must not report
+      // a pass. A CI deploy needs a real artefact scanner (gitleaks) or the
+      // forbidden values passed in explicitly. See docs/decisions/ci-deploy.md.
+      console.error(
+        '\nRunning under CI with no secret to check the bundle against. This check\n'
+        + 'is blind here and must not pass by default — wire gitleaks into the\n'
+        + 'workflow, or supply the forbidden values. See docs/decisions/ci-deploy.md.\n',
+      );
+      process.exit(1);
+    }
     console.log(`\nNothing to check: no secret from .env.local is set on this machine.\n`);
     return;
   }
