@@ -54,21 +54,20 @@ in [`recall/`](recall/)).
 
 ## State as of 10 September 2026
 
-> **READ FIRST — deploys now come from CI, and the season board is short on
-> purpose.** 10 September: `.github/workflows/ci.yml` builds and publishes from
-> `master`; the token gate, `check-bundle` and `predeploy` are all on `master`,
-> so the leak is closed at the source rather than on a branch.
-> [`decisions/ci-deploy.md`](decisions/ci-deploy.md). **The season board's form
-> figures are estimates** on every row but one — the scores they are defined
-> over were never stored, so they were seeded from `best` and the mean and decay
-> as people bank. [`decisions/season.md`](decisions/season.md).
+> **READ FIRST — deploys come from CI, and e2e on the emulator gates publish.**
+> `.github/workflows/ci.yml` builds from `master`; `deploy` needs `verify` and
+> `e2e`. Token gate, `check-bundle` and `predeploy` are on `master`.
+> [`ci-deploy.md`](decisions/ci-deploy.md) · [`emulators.md`](decisions/emulators.md).
+> **The season board's form figures are estimates** on every row but one — the
+> scores they are defined over were never stored, so they were seeded from `best`
+> and the mean and decay as people bank. [`season.md`](decisions/season.md).
 
-**Live is `index-qJCbuGrA`** (10 September, gh-pages `d412adc`, **deployed by
-CI** — the author line on a gh-pages commit now says whether it came from CI or
-a laptop). **16 packs**; **Name that Tune 177**; synth is **Classical**; **On
-the box** (54, hashed TMDB stills); **Flags** (76, hashed, no jigsaw);
-**Sleeves** (52, mzstatic hotlink); picture is **Fine Art**. Firebase chunk
-unmoved at `firebase-Cns3pSRr`.
+**Live is `index-Du6MwR-e`** (10 September, gh-pages `8c0a107`, **CI**, #51).
+**16 packs**; **Name that Tune 177**; synth is **Classical**; **On the box**
+(54, hashed TMDB stills); **Flags** (76, hashed, no jigsaw); **Sleeves** (52,
+mzstatic hotlink); picture is **Fine Art**. Firebase chunk moved to
+`firebase-W6iQUl4r` — emulator connect in the client, idle unless Playwright
+sets `window.__QUIZ_EMULATORS__`.
 
 **Played and kept, all three rounds the game has ever recorded:** Name that Tune
 `CX5E` 65% ([`tunes-round.md`](decisions/tunes-round.md)), Picture `RX4P` 55%,
@@ -107,16 +106,11 @@ Counts and the two slow leaks: [`cost.md`](decisions/cost.md#measured-live-28-au
 8. **`firstMs` and the pack picker are live and unplayed.** It is a deterrent,
    so the only test is whether his behaviour changes next round:
    [`first-touch.md`](decisions/first-touch.md).
-9. **Branches, 10 September:** #35 and #39 closed; #40–#49 merged. **Nothing
-    open.** Every branch that was local-only is now pushed:
-    `ask-recovery-code`, `clock-bed-and-key-repeat`, `bound-elapsed-ms`,
-    `vote-tally`, `fold-votes-dry-run`, `context-standards-route`. Merged local
-    branches deleted; ~40 merged branches remain on the remote and could be
-    pruned. **Still local-only and unpushed**:
-    `ask-recovery-code` (one line on the final screen; live counts are 1 recovery
-    code, 0 claims — the cheapest thing on the list), `clock-bed-and-key-repeat`,
-    `bound-elapsed-ms`, `fold-votes-dry-run`, `context-standards-route`,
-    `vote-tally` (WIP). Four features finished and existing on one laptop.
+9. **Branches, evening 10 September:** #51 merged. **Nothing open.** Pushed,
+   unmerged: `ask-recovery-code` (1 recovery code, 0 claims — cheapest),
+   `clock-bed-and-key-repeat`, `bound-elapsed-ms` (floor already live via #40;
+   do not merge), `fold-votes-dry-run`, `context-standards-route`, `vote-tally`
+   (WIP). ~40 merged remotes could be pruned.
 
 ## Where things are
 
@@ -127,19 +121,18 @@ gallery (`Preview`).
 
 Commands: the table in [`AGENTS.md`](../AGENTS.md), plus `fetch-questions`,
 `fetch-otqa`, `asked-probe`, `take-stock`, `prune-rooms`, `write-*-pack`,
-`check-bundle`, `read-games`.
+`check-bundle`, `read-games`, `e2e`.
 
 `npm test` covers `src/` plus the pure parts of `scripts/`; anything touching the
-network or the live project stays out, so it keeps running offline.
+network or the live project stays out, so it keeps running offline. `npm run e2e`
+needs JDK 21 and talks to emulators, not live.
 
 ## If you're picking this up cold
 
-**The token leak is closed** (box at the top) — what's left is getting the gate
-onto `master` so a deploy from there is safe. Then, if rules matter to what
-you're doing: `npm run check-rules` from `sync-rules-with-console` / #40 (or two
-allow cases fail for the wrong reason) and `npm run sync-harness 10` — both ran
-green 10 September (10/10, 0 dropped). Do not re-run `seed-vault`; everything is
-seeded.
+**The token leak is closed and deploys come from CI.** A merge to `master`
+publishes, after Playwright against the emulators. `npm run check-rules` 69/69
+and `npm run sync-harness 10` (10/10, 0 dropped) on 10 September. Do not re-run
+`seed-vault`.
 
 Bitten more than once: **the rules are published by hand**, so the repo copy is
 not what Firebase runs ([`security.md`](decisions/security.md)); **the answer
