@@ -136,8 +136,8 @@ network or the live project stays out deliberately; it must keep running offline
 
 ## If you're picking this up cold
 
-**On the box is live** as `index-CFub7zgz`, seeded. Unplayed. Do not re-run
-`seed-vault`. Constraints: [`questions.md`](decisions/questions.md#picking-up-on-the-box).
+**On the box is live** as `index-CFub7zgz`, seeded, unplayed — do not re-run
+`seed-vault`: [`questions.md`](decisions/questions.md#picking-up-on-the-box).
 
 Otherwise: `npm run check-rules`, then `npm run sync-harness 10`. Between them
 they confirm the rules are published and that ten clients stay in sync — the two
