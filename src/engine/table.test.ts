@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { MIN_GAMES_TO_QUALIFY, averageFor, rankByAverage } from './table';
+import { MIN_GAMES_TO_QUALIFY, averageFor, rankByAverage, rankByForm } from './table';
 
 function row(name: string, points: number, played: number) {
   return { name, points, played };
@@ -159,5 +159,73 @@ describe('rankByAverage', () => {
     // rounds is held back rather than topping the table on an infinite average
     expect(names(ranked)).toEqual(['Real', 'Nil']);
     expect(names(provisional)).toEqual(['Edited']);
+  });
+});
+
+function formRow(name: string, form: number, played: number, points = 0) {
+  return { name, form, played, points };
+}
+
+describe('rankByForm', () => {
+  test('ranks on form, not on the average or the total', () => {
+    const rows = [
+      formRow('Joe', 32_000, 5, 45_010),
+      formRow('Rach', 34_000, 15, 100_996),
+      formRow('Greg', 30_000, 14, 80_000),
+    ];
+
+    const { ranked } = rankByForm(rows);
+
+    expect(names(ranked)).toEqual(['Rach', 'Joe', 'Greg']);
+    expect(names(rankByAverage(rows).ranked)).toEqual(['Joe', 'Rach', 'Greg']);
+  });
+
+  test('holds back anybody with too few rounds to judge', () => {
+    const rows = [
+      formRow('Greg', 24_000, 3),
+      formRow('Lucky', 17_600, 2),
+    ];
+
+    const { ranked, provisional } = rankByForm(rows);
+
+    expect(names(ranked)).toEqual(['Greg']);
+    expect(names(provisional)).toEqual(['Lucky']);
+  });
+
+  test('qualifies on exactly three rounds, same as the average board', () => {
+    const rows = [
+      formRow('Three', 3_000, MIN_GAMES_TO_QUALIFY),
+      formRow('Two', 17_600, MIN_GAMES_TO_QUALIFY - 1),
+    ];
+
+    const { ranked, provisional } = rankByForm(rows);
+
+    expect(names(ranked)).toEqual(['Three']);
+    expect(names(provisional)).toEqual(['Two']);
+  });
+
+  test('breaks a tied form on who has played more', () => {
+    const rows = [formRow('Few', 24_000, 3), formRow('Many', 24_000, 10)];
+
+    const { ranked } = rankByForm(rows);
+
+    expect(names(ranked)).toEqual(['Many', 'Few']);
+  });
+
+  test('breaks a fully tied row on the name, so no device invents an order', () => {
+    const rows = [formRow('Zoe', 24_000, 3), formRow('Adam', 24_000, 3)];
+
+    const { ranked } = rankByForm(rows);
+
+    expect(names(ranked)).toEqual(['Adam', 'Zoe']);
+  });
+
+  test('does not reorder the array it was given', () => {
+    const rows = [formRow('Joe', 32_000, 5), formRow('Rach', 34_000, 15)];
+    const before = names(rows);
+
+    rankByForm(rows);
+
+    expect(names(rows)).toEqual(before);
   });
 });

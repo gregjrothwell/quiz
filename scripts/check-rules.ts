@@ -119,6 +119,16 @@ const SHORT_WINDOW_SECS = 5;
 /** The server measures the gate on its own clock, so leave it a moment. */
 const GATE_SLACK_MS = 1_500;
 
+/**
+ * How long after `openedAt` the "claimed 3ms" deny must wait so the write is
+ * impossible against an 8-second grace. Shorter than this and a still-unpublished
+ * floor is indistinguishable from a grace that has not been eaten yet.
+ */
+const ARRIVAL_PROOF_WAIT_MS = 9_000;
+
+/** A claimed tap that cannot have beaten the write at {@link ARRIVAL_PROOF_WAIT_MS}. */
+const IMPOSSIBLY_FAST_MS = 3;
+
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
@@ -275,6 +285,8 @@ interface Probes {
   dbB: Firestore;
   probeCode: string;
   probeGameId: string;
+  /** Client clock at the moment `openProbeQuestion` returned, for the arrival-floor wait. */
+  openedAtMs: number;
   presence: DatabaseReference;
   ownSeasonRow: DocumentReference;
   ownWeekRow: DocumentReference;
@@ -290,9 +302,11 @@ interface Probes {
  */
 function buildChecks(probes: Probes): Check[] {
   const {
-    uid, db, rtdb, uidB, dbB, probeCode, probeGameId, presence, ownSeasonRow, ownWeekRow,
-    validSeasonRow,
+    uid, db, rtdb, uidB, dbB, probeCode, probeGameId, openedAtMs, presence, ownSeasonRow,
+    ownWeekRow, validSeasonRow,
   } = probes;
+
+  const ownAnswer = doc(db, 'rooms', LIVE_ROOM, 'answers', uid);
 
   return [
     {
@@ -405,10 +419,9 @@ function buildChecks(probes: Probes): Check[] {
         + '— the whole answer write is refused, so on the last question of a '
         + 'round played for stakes nobody scores at all',
       run: async () => {
-        const reference = doc(db, 'rooms', 'ZZZZ', 'answers', uid);
-        await setDoc(reference, { optionIndex: 0, elapsedMs: 10, questionIndex: 0, wager: 50 });
+        await setDoc(ownAnswer, { optionIndex: 0, elapsedMs: 4000, questionIndex: 0, wager: 50 });
         // Swept rather than left, for the reason the vote case gives.
-        return deleteDoc(reference);
+        return deleteDoc(ownAnswer);
       },
     },
     {
@@ -417,9 +430,9 @@ function buildChecks(probes: Probes): Check[] {
       hint: 'firestore.rules is missing the 0-100 bound on `wager` — a share '
         + 'above 100 is not a share',
       run: () =>
-        setDoc(doc(db, 'rooms', 'ZZZZ', 'answers', uid), {
+        setDoc(ownAnswer, {
           optionIndex: 0,
-          elapsedMs: 10,
+          elapsedMs: 4000,
           questionIndex: 0,
           wager: 101,
         }),
@@ -429,9 +442,9 @@ function buildChecks(probes: Probes): Check[] {
       expect: 'deny',
       hint: 'firestore.rules is missing the `is int` check on `wager`',
       run: () =>
-        setDoc(doc(db, 'rooms', 'ZZZZ', 'answers', uid), {
+        setDoc(ownAnswer, {
           optionIndex: 0,
-          elapsedMs: 10,
+          elapsedMs: 4000,
           questionIndex: 0,
           wager: 'all of it',
         }),
@@ -443,10 +456,9 @@ function buildChecks(probes: Probes): Check[] {
         + 'list — the whole answer write is refused, so nobody can change their '
         + 'mind about anything and the round stops dead on the second press',
       run: async () => {
-        const reference = doc(db, 'rooms', 'ZZZZ', 'answers', uid);
-        await setDoc(reference, { optionIndex: 0, elapsedMs: 4000, questionIndex: 0, firstMs: 50 });
+        await setDoc(ownAnswer, { optionIndex: 0, elapsedMs: 4000, questionIndex: 0, firstMs: 50 });
         // Swept rather than left, for the reason the vote case gives.
-        return deleteDoc(reference);
+        return deleteDoc(ownAnswer);
       },
     },
     {
@@ -454,7 +466,7 @@ function buildChecks(probes: Probes): Check[] {
       expect: 'deny',
       hint: 'firestore.rules is missing the upper bound on `firstMs`',
       run: () =>
-        setDoc(doc(db, 'rooms', 'ZZZZ', 'answers', uid), {
+        setDoc(ownAnswer, {
           optionIndex: 0,
           elapsedMs: 10,
           questionIndex: 0,
@@ -466,12 +478,57 @@ function buildChecks(probes: Probes): Check[] {
       expect: 'deny',
       hint: 'firestore.rules is missing the `is int` check on `firstMs`',
       run: () =>
-        setDoc(doc(db, 'rooms', 'ZZZZ', 'answers', uid), {
+        setDoc(ownAnswer, {
           optionIndex: 0,
           elapsedMs: 10,
           questionIndex: 0,
           firstMs: 'ages ago',
         }),
+    },
+    {
+      /*
+        The paste proof for the arrival floor. A well-formed answer whose
+        claimed time is slower than landing is already allowed today, so this
+        PASSes against the live ruleset *and* after the paste — that is the
+        "do not break answering" half. The deny below is the half that FAILs
+        until Greg pastes: a tightening's unpublished-proof is a write that
+        is still allowed, not a write that is not yet allowed.
+      */
+      label: 'Firestore   · write an answer whose elapsedMs matches when it landed',
+      expect: 'allow',
+      hint: 'the arrival floor is refusing a well-formed answer — grace is too '
+        + 'tight, openedAt was missing, or the answers write now requires '
+        + 'something the client does not send',
+      run: async () => {
+        await setDoc(ownAnswer, { optionIndex: 0, elapsedMs: 4000, questionIndex: 0 });
+        return deleteDoc(ownAnswer);
+      },
+    },
+    {
+      /*
+        Claimed 3ms at nine seconds. Against the live ruleset this write is
+        *allowed*, so the check FAILs until the paste — that FAIL is the proof
+        the floor is unpublished. Deny cases that hit a missing collection
+        pass vacuously; this one does not, because the answers path already
+        exists. After the paste it flips to PASS (denied).
+      */
+      label: 'Firestore   · claim to have answered 3ms at nine seconds',
+      expect: 'deny',
+      hint: 'firestore.rules still allows a claimed elapsedMs much smaller than '
+        + "the write's arrival — the floor is unpublished. This FAIL is the "
+        + 'proof the paste has not happened.',
+      run: async () => {
+        const remaining = ARRIVAL_PROOF_WAIT_MS - (Date.now() - openedAtMs);
+        if (remaining > 0) await sleep(remaining);
+        await setDoc(ownAnswer, {
+          optionIndex: 0,
+          elapsedMs: IMPOSSIBLY_FAST_MS,
+          questionIndex: 0,
+        });
+        // If the write was allowed, sweep it; if it was denied, this is not
+        // reached and there is nothing to sweep.
+        return deleteDoc(ownAnswer);
+      },
     },
     {
       label: "Firestore   · write another player's answer",
@@ -564,6 +621,57 @@ function buildChecks(probes: Probes): Check[] {
       hint: 'firestore.rules is missing the honour bounds on the season row — a '
         + 'trophy shelf can hold more rosettes than there were rounds to win them',
       run: () => setDoc(ownSeasonRow, { ...validSeasonRow, played: 1, fastest: 99 }),
+    },
+    {
+      // The allow case FAILS against the published ruleset until the paste —
+      // `hasOnly` does not yet list `recent` or `form`. That is the point.
+      // Paste, watch this flip, then deploy. A deploy first refuses every bank.
+      label: 'Firestore   · write a season row carrying form',
+      expect: 'allow',
+      hint: 'firestore.rules has not taken `recent`/`form` into the season row '
+        + 'hasOnly list — every bank from this bundle is refused, so nobody’s '
+        + 'game lands on the board. Paste the repo copy before deploying.',
+      run: () =>
+        setDoc(ownSeasonRow, {
+          ...validSeasonRow,
+          played: 4,
+          wins: 1,
+          recent: [
+            { gameId: 'g1', score: 1000, at: 1 },
+            { gameId: 'g2', score: 2000, at: 2 },
+            { gameId: 'g3', score: 1500, at: 3 },
+            { gameId: 'g4', score: 1800, at: 4 },
+          ],
+          form: 6300,
+        }),
+    },
+    {
+      label: 'Firestore   · write a season row with more than six recent scores',
+      expect: 'deny',
+      hint: 'firestore.rules is missing the size bound on `recent` — a crafted '
+        + 'client can inflate the form window without limit',
+      run: () =>
+        setDoc(ownSeasonRow, {
+          ...validSeasonRow,
+          played: 7,
+          recent: [1, 2, 3, 4, 5, 6, 7].map((n) => ({
+            gameId: `g${n}`,
+            score: 1000,
+            at: n,
+          })),
+          form: 4000,
+        }),
+    },
+    {
+      label: 'Firestore   · write a season row whose form is not an int',
+      expect: 'deny',
+      hint: 'firestore.rules is missing the `is int` check on `form`',
+      run: () =>
+        setDoc(ownSeasonRow, {
+          ...validSeasonRow,
+          recent: [{ gameId: 'g1', score: 1000, at: 1 }],
+          form: 'hot',
+        }),
     },
     {
       // The whole identity mechanism in one check. `recovery` documents are
@@ -1096,6 +1204,7 @@ async function main(): Promise<void> {
   // like a reveal refused by the time gate, and prove nothing. On a long window,
   // because a dozen round-trips happen before the last of them runs.
   await openProbeQuestion(db, uid, LONG_WINDOW_SECS);
+  const openedAtMs = Date.now();
 
   /**
    * Fresh per run, because a `recovery` document cannot be updated — a fixed
@@ -1131,8 +1240,8 @@ async function main(): Promise<void> {
   };
 
   const checks = buildChecks({
-    uid, db, rtdb, uidB, dbB, probeCode, probeGameId, presence, ownSeasonRow, ownWeekRow,
-    validSeasonRow,
+    uid, db, rtdb, uidB, dbB, probeCode, probeGameId, openedAtMs, presence, ownSeasonRow,
+    ownWeekRow, validSeasonRow,
   });
 
   const failed = await runChecks(checks);

@@ -39,6 +39,24 @@ body where it happened rather than here: three 4 September batches, then the
 whole 2026-09-08 day when the debug-token deploy needed the room. All verbatim to
 [`recall/2026-09.md`](recall/2026-09.md).
 
+## 2026-09-10 — The season form ranking was live, then silently reverted
+
+`rankByForm` shipped 8 September as `index-Df9CfP0K`. The 10 September deploys
+came off `seal-token-again`, which does not contain it, so **the season board
+has been ranking on raw points ever since and nobody was told**. Found by
+diffing the live tree against the branches rather than by reading: the two
+8 September entries below it had also never reached `master` in any form, spine
+or archive, and are now in [`recall/2026-09.md`](recall/2026-09.md) verbatim.
+
+Nothing was broken by the revert — live `formOk()` treats `form` as optional, so
+banks kept working — which is exactly why it went unnoticed for two days. **This
+is the failure deploy-from-CI exists to stop**, and it is the reason the restore
+rides in on the same session as the workflow.
+
+Restored on `restore-season-form`. **The board is short until each existing row
+banks once**: `orderBy('form')` excludes documents without the field, and all 26
+`season-2` rows predate it. Same as 8 September, and still no backfill.
+
 ## 2026-09-10 — Deploy guard added; CI outlined for later
 
 The interim half of "fix this going forward". `scripts/predeploy.ts` runs first
