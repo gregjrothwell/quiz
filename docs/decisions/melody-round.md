@@ -95,9 +95,16 @@ at all and had no way to ask for it again.
 
 ## What is not known yet
 
-- **The picture round has never been played with people.** `NDH7` on 4
-  September is one player, unfinished — a solo test. Nothing here transfers to
-  it: it has no clip length, no replay problem and no audio unlock.
+- ~~**The picture round has never been played with people.** `NDH7` on 4
+  September is one player, unfinished — a solo test.~~ **Wrong as of
+  10 September 2026.** `read-games` has it: `RX4P`, 9 September, **11 seats, 10
+  questions, 55%** — above Best of British's 42% the same week and below Name
+  that Tune's 65%. The claim above was written on 8 September and was already
+  stale when the round was played the next day. **Third time the prose has
+  drifted from the live project**; the fix is the same as the other two, which
+  is to run `read-games` rather than read this. Nothing here transfers to the
+  picture round anyway: it has no clip length, no replay problem and no audio
+  unlock.
 - **Whether the pool or the presentation is the bigger half.** Both are real;
   which one to spend on is a judgement, not a measurement. Copyright is what
   makes the pool classical — `TUNE_RIGHTS_YEAR`, composers dead before 1956 —
