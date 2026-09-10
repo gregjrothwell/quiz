@@ -56,19 +56,18 @@ hook says so if this one grows.
 
 ## State as of 10 September 2026
 
-**Live is still `index-CFub7zgz`** (9 September, gh-pages `e2d3bf1`) — nothing
-below this line has been deployed or seeded. **On the box** is hashed untitled
-TMDB stills (54), seeded and live — **16 packs**; synth is **Classical**;
-**Flags** (76, hashed, no jigsaw); **Sleeves** (52, mzstatic hotlink); picture
-is **Fine Art**. Firebase chunk unmoved at `firebase-Cns3pSRr`.
+**Live is `index-C3jZR3XU`** (10 September, gh-pages `9ba0638`). **16 packs**;
+**Name that Tune 177**; synth is **Classical**; **On the box** (54, hashed TMDB
+stills); **Flags** (76, hashed, no jigsaw); **Sleeves** (52, mzstatic hotlink);
+picture is **Fine Art**. Firebase chunk unmoved at `firebase-Cns3pSRr`.
 
-**Name that Tune has been played and it worked** — `CX5E`, 65% over 10 of 10
-questions, the first round the game has ever *kept*. Branch
-`music-volume-and-clips` has the three notes off it: default volume 0.35 with a
-slider under the corner switch; **79 songs → 177**; and every clip measured by
-`tune-audit` — 103 clean, 33 trimmed, 31 shifted, **10 unavoidable and left
-alone**. Not deployed, **and the 98 new ids are not in the vault** — that breaks
-at reveal until seeded. [`tunes-round.md`](decisions/tunes-round.md).
+**Name that Tune has been played and it worked** — `CX5E`, 65% over 10 of 10,
+the first round the game has ever *kept*. The three notes off it are **live**:
+default volume 0.35 with a slider under the corner switch; **79 songs → 177**;
+every clip measured by `tune-audit` — 103 clean, 33 trimmed, 31 shifted, **10
+unavoidable and left alone**. Vault seeded (95, then 4 + **1 changed**).
+[`tunes-round.md`](decisions/tunes-round.md). **[#39](https://github.com/gregjrothwell/quiz/pull/39)
+is open — deployed from the branch, master not moved.**
 
 **Melody and picture are live and have been played** — `voices` + hashed
 `image`. The melody round did not work — [`melody-round.md`](decisions/melody-round.md).
@@ -99,13 +98,13 @@ two corrections that came out of miscounting them: [`decisions/cost.md`](decisio
 4. **The Ladder stops climbing** once a pack's thin `easy` or `hard` bucket is
    spent — it substitutes medium rather than repeating, which is right but is not
    what the tile promises. The fix is a fold of `games/` into a real difficulty, not selection.
-5. **Hand-built packs still need a seed after any *new* ids.** `flags` /
-   `sleeves` seeded 9 September morning, screens the same evening. **`tunes` is
-   owed one: 98 new ids from the expansion, unseeded.** Do not re-run
-   `seed-vault` on the others to confirm. An unseeded pack breaks at reveal.
-6. **Name that Tune played well on 10 September and its three notes are on a
-   branch, undeployed.** Volume, the clips that give the answer away, and the
-   song count: [`decisions/tunes-round.md`](decisions/tunes-round.md).
+5. **`check-rules` fails two *allow* cases and needs a console paste.** `stake
+   points on your own answer` and `record when you first touched a lectern`.
+   `firestore.rules:323` lists `wager` and `firstMs` in the answers `hasOnly`;
+   **the live ruleset does not**. So a staked answer and a changed-mind answer
+   are both refused outright. Pre-existing, found 10 September.
+6. **Hand-built packs need a seed after any *new* ids.** All current packs are
+   seeded as of 10 September. An unseeded pack breaks at reveal.
 7. **`firstMs` and the pack picker are live and unplayed.** The marker is a
    deterrent, so the only test that means anything is whether it changes his
    behaviour in the next round: [`decisions/first-touch.md`](decisions/first-touch.md).

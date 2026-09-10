@@ -34,6 +34,33 @@ re-run on the 8th against the files as they actually are, not inherited from the
 September entries (the CDN, the mute button, the steal) went to
 [`recall/2026-09.md`](recall/2026-09.md), whole, links repointed.
 
+## 2026-09-10 — Live: volume, clip cuts, 177 songs (`index-C3jZR3XU`)
+
+Seeded first: **95 added**, then after the slug fix **4 added, 1 changed**.
+`npm run deploy`; gh-pages `9ba0638`. CDN served the new bundle within a minute.
+Firebase chunk unmoved (`firebase-Cns3pSRr`). Verified against the live site,
+not the local build: slider at 35 with nothing stored, switch unmoved at
+x1220/y24, packs 177/76/52, pack still sealed, and two real clips cut on time —
+11.9→11.91s and 24.4→24.6s, worst tick 0.269s.
+
+**[#39](https://github.com/gregjrothwell/quiz/pull/39) is open and master has
+not moved** — `gh pr merge` was refused by the harness, so the merge is Greg's.
+Deployed from the branch, same as 9 September.
+
+**`check-rules` fails two allow cases and they are not this branch's.**
+`firestore.rules:323` has `wager` and `firstMs` in the answers `hasOnly`; the
+live ruleset does not, so a staked answer and a changed-mind answer are both
+refused. The denies pass, which — same as 2 September — is what tells you the
+rule is absent rather than wrong. Needs a console paste.
+
+**A slug was serving the wrong answer.** `stableId` is `sha1('hand:' + slug)`,
+and `am` was the Arctic Monkeys album in `sleeves` and Armenia in `flags`. Live
+vault held "AM", so the Armenia question had marked the room wrong since
+9 September. Three more (`thriller`, `back-in-black`, `born-to-run`) came from
+today's expansion, benign only because album and song share a title. Fixed with
+the `-album` convention `sleeves` already used; a test now refuses a repeated
+slug across any hand pack.
+
 ## 2026-09-10 — Name that Tune worked; volume, giveaways, 177 songs (branch `music-volume-and-clips`)
 
 First music round that played. Three notes. **Volume**: the loud thing was the
@@ -185,53 +212,11 @@ with `stopClock()` killing the bed underneath it. Logged, not fixed —
 1/2/3/4 divide twelve exactly at every width, `margin-top: auto` for the count.
 Measured at six widths, both before and after.
 
-## 2026-09-04 — "The rest of the file is stale" is not evidence about a line
+## 2026-09-04 — Three more entries archived
 
-`ideas-review.md` still said **nobody has seen the rank bonus award an order**. It was corrected
-on 30 August on `cursor/fastest-finger`, which never got a PR, so the wrong claim stood here for
-five days — and was then nearly lost a second time when that branch's docs were judged superseded
-*wholesale* and only its script salvaged. Four of its five doc changes really were superseded;
-this one was not. Judge a file, not a branch.
-
-## 2026-09-04 — Melody and picture are live, and the vault was the gate
-
-master `0bf1c5f`, gh-pages `584e80e`, bundle `index-CIOq186A`. #22, #23 and #24
-merged in that order. `seed-vault`: **119 added, 0 changed**, 13,456 already
-correct — the vault now holds 13,712.
-
-**The order was not cosmetic.** Both packs are in `index.json` and the lobby
-offers them, and `resolveAnswer` *throws* when the vault has no doc for a
-question rather than scoring zero. Deploying before the seed would have shipped
-two pickable packs that break at the reveal.
-
-**Proved on the live site, not assumed.** Room `NDH7`, picture round: The Starry
-Night rendered, the clock ran, and the reveal put `tile--correct` on D with the
-other three `tile--gone` — read off the DOM classes rather than computed style,
-which has lied here before. No console errors.
-
-**The CDN was stale again**, exactly as this morning: gh-pages held
-`index-CIOq186A` and served it 200, while live `index.html` still named
-`index-BOq4sYDx`. Caught up on re-fetching. Watch it every time.
-
-**A prediction that was wrong, recorded because it changed the instruction:**
-the Firebase chunk was called as moving to `Byj7wx-B`. It did not — the real
-deploy kept `firebase-Cns3pSRr`. That hash came from a scratch worktree with a
-symlinked `node_modules`, which moved every chunk hash. A build outside the
-project tree is not the build that ships.
-
-**Three green mergeable badges hid a conflict.** GitHub checks a PR against
-master as it stands, not as it will be. #24 read CLEAN and conflicted on
-`scoring.md` once #22 and #23 landed. Simulating the stacked merge in a worktree
-is what caught it. #23 also did not auto-retarget when #22 merged — GitHub only
-does that when the base branch is deleted.
-
-## 2026-09-04 — Melody, picture, jigsaw (`melody-round`, not live)
-
-70 tunes + 49 stills (jigsaw 3×3 lobby flag). Sealed packs; answers in gitignored
-`.cache/hand-vault.json`. Seed the vault before they score. Lobby blocks Start
-while muted. "Died before 1956" is right today (CDPA s.12; T−71). Pack newest
-composed deaths: Elgar/Holst 1934; Prokofiev 1953 is in. Charleston / Parker
-unencoded. [`round-types.md`](decisions/round-types.md).
+"The rest of the file is stale" is not evidence about a line; melody and picture
+going live with the vault as the gate; and the `melody-round` branch itself.
+Moved whole on 10 September at 322/300: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-04 — Three entries archived
 
