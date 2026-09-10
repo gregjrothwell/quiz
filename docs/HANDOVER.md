@@ -107,15 +107,12 @@ Counts and the two slow leaks: [`cost.md`](decisions/cost.md#measured-live-28-au
 8. **`firstMs` and the pack picker are live and unplayed.** It is a deterrent,
    so the only test is whether his behaviour changes next round:
    [`first-touch.md`](decisions/first-touch.md).
-9. **CI actions on deprecated Node 20** —
-   [`#45`](https://github.com/gregjrothwell/quiz/pull/45) bumps them and its
-   `verify` run is green, but it **conflicts**: #44 touched the same workflow
-   after that branch was cut. Merge `master` into it. Its finding is worth
-   keeping — the four actions need **different** majors (checkout/setup-node v5,
-   upload-artifact v6, download-artifact v7), because v5 of the artifact pair
-   advertises Node 24 support while still defaulting to node20.
-10. **Branches, 10 September:** #35 and #39 closed; #40, #41, #42, #43, #44, #46
-    merged. **`#45` is the only one open**, and it conflicts. **Still local-only and unpushed**:
+9. **Branches, 10 September:** #35 and #39 closed; #40–#49 merged. **Nothing
+    open.** Every branch that was local-only is now pushed:
+    `ask-recovery-code`, `clock-bed-and-key-repeat`, `bound-elapsed-ms`,
+    `vote-tally`, `fold-votes-dry-run`, `context-standards-route`. Merged local
+    branches deleted; ~40 merged branches remain on the remote and could be
+    pruned. **Still local-only and unpushed**:
     `ask-recovery-code` (one line on the final screen; live counts are 1 recovery
     code, 0 claims — the cheapest thing on the list), `clock-bed-and-key-repeat`,
     `bound-elapsed-ms`, `fold-votes-dry-run`, `context-standards-route`,
