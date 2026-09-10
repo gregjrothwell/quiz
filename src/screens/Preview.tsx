@@ -204,7 +204,7 @@ const PACKS: PackSummary[] = [
   {
     id: 'tunes',
     title: 'Name that Tune',
-    blurb: 'Thirty seconds from Apple Music.',
+    blurb: 'A clip from Apple Music.',
     count: 79,
     counts: { easy: 36, medium: 28, hard: 15 },
   },

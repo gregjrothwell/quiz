@@ -224,7 +224,7 @@ export const PACK_META: Record<PackId, { title: string; blurb: string }> = {
   },
   tunes: {
     title: 'Name that Tune',
-    blurb: 'Thirty seconds from Apple Music. Hear it again if you miss the hook.',
+    blurb: 'A clip from Apple Music. Hear it again if you miss the hook.',
   },
   flags: {
     title: 'Flags',
