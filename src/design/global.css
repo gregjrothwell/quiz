@@ -416,6 +416,18 @@ textarea {
   display: grid;
   justify-items: end;
   gap: 0.3rem;
+  /*
+    The switch used to be a 44px square in the corner. The pair is 88×85, and
+    the gap between them is dead space that would now swallow a click on
+    whatever is behind it. Nothing overlaps at 1280 or at 375 — checked — but
+    the corner is where a wide screen puts the top of the page, so the wrapper
+    passes clicks through and only the two controls take them.
+  */
+  pointer-events: none;
+}
+
+.sound-rig > * {
+  pointer-events: auto;
 }
 
 .sound {
