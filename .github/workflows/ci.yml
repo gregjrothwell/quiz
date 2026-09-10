@@ -125,12 +125,22 @@ jobs:
         run: npm run check-bundle
 
       - name: Publish
+        # The author is deliberately not `github-actions[bot]`. `gh-pages` parses
+        # `--user` with RFC 5322, where `[` and `]` are specials, so both the
+        # bracketed display name *and* the bracketed noreply local-part are
+        # rejected — quoting does not rescue either. Checked against the library
+        # rather than guessed.
+        #
+        # A useful side effect: gh-pages commits up to 10 September were authored
+        # by Greg, so the author now says at a glance whether a deploy came from
+        # CI or from somebody's laptop. That is the exact question this whole
+        # workstream exists to answer.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npx gh-pages \
             --dist dist \
-            --user "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>" \
+            --user "GitHub Actions <actions@github.com>" \
             --repo "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
             --message "Deploy ${GITHUB_SHA}"
 
