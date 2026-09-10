@@ -19,6 +19,35 @@ function assertPlayable(
 }
 
 describe('hand-built media specs', () => {
+  test('no slug is used twice across the hand packs', () => {
+    /*
+      #given every hand-built spec in the project
+
+      `stableId` is `sha1('hand:' + slug)` and nothing else, so two packs that
+      reuse a slug produce one question id for two different questions — and
+      the vault is keyed by that id, so the second pack seeded overwrites the
+      first pack's answer.
+
+      This shipped. `am` was the Arctic Monkeys album in `sleeves` and Armenia
+      in `flags`; the vault held "AM", and the Armenia question marked the whole
+      room wrong from 9 September. The sleeves pack already suffixed
+      `parklife-album` and `hotel-california-album` against exactly this, which
+      is the convention — four entries had simply been missed.
+    */
+    const all = [
+      ...TUNE_SPECS.map((spec) => spec.slug),
+      ...FLAG_SPECS.map((spec) => spec.slug),
+      ...SLEEVE_SPECS.map((spec) => spec.slug),
+      ...SCREEN_SPECS.map((spec) => spec.slug),
+    ];
+
+    // #then every one of them is its own question
+    const seen = new Set<string>();
+    const twice = all.filter((slug) => (seen.has(slug) ? true : (seen.add(slug), false)));
+    expect(twice).toEqual([]);
+  });
+
+
   test('tunes cover three default rounds, unique slugs, four distinct options', () => {
     assertPlayable(TUNE_SPECS, TUNES_MIN_PACK);
   });
