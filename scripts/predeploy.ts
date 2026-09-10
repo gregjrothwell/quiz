@@ -122,7 +122,10 @@ function resolveOriginMaster(): string | null {
 function gatherState(): GitState {
   return {
     branch: git(['branch', '--show-current']),
-    treeClean: git(['status', '--porcelain']) === '',
+    // Tracked changes only (`-uno`). Untracked files — `.cursor/`, editor cruft,
+    // `dist/` — are not built into the bundle; uncommitted edits to tracked
+    // source are, and that is what must not ship outside a commit.
+    treeClean: git(['status', '--porcelain', '-uno']) === '',
     headSha: git(['rev-parse', 'HEAD']),
     originMasterSha: resolveOriginMaster(),
   };
