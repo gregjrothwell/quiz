@@ -120,7 +120,6 @@ src/engine/     Pure TS game rules — no React, no Firebase. All the logic wort
 src/lib/        Firebase wiring (useRoom), packs, the clock, audio, and the name,
                 squad, sound and volume preferences kept in localStorage.
 src/screens/    One component per phase + a design gallery (Preview).
-docs/decisions/ One subsystem each. Reached from the table above.
 ```
 
 Commands: `dev` (port 5273), `test`, `typecheck`, `lint`, `build`, `deploy`,
