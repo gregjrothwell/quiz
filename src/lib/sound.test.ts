@@ -8,6 +8,9 @@ import {
   isPreviewBlocked,
   masterGainFor,
   playPreview,
+  positionForVolume,
+  VOLUME_RANGE_DB,
+  volumeForPosition,
   playSequence,
   setVolume,
   stopPreview,
@@ -208,13 +211,91 @@ describe('volume', () => {
       expect(made).toHaveLength(1);
       expect(made[0]?.volume).toBe(DEFAULT_VOLUME);
 
-      // #and moving the slider mid-clip moves the clip that is already running
-      setVolume(0.1);
-      expect(made[0]?.volume).toBeCloseTo(0.1, 10);
+      // #and moving the slider mid-clip moves the clip that is already running.
+      // A value that is not the default, or this proves nothing.
+      setVolume(0.03);
+      expect(made[0]?.volume).toBeCloseTo(0.03, 10);
     } finally {
       if (original === undefined) delete globals.Audio;
       else globals.Audio = original;
     }
+  });
+});
+
+describe('the slider’s travel', () => {
+  /**
+   * The complaint this exists for, 11 September 2026: "the volume adjustment was
+   * right at the bottom of the slider". `HTMLAudioElement.volume` is linear
+   * amplitude and hearing is not, so a linear control puts every level worth
+   * choosing in the bottom tenth of the travel.
+   */
+  test('puts the default in the middle, with room on both sides', () => {
+    expect(positionForVolume(DEFAULT_VOLUME)).toBeCloseTo(0.5, 10);
+  });
+
+  test('ends at silence and at full scale', () => {
+    expect(volumeForPosition(0)).toBe(0);
+    expect(volumeForPosition(1)).toBeCloseTo(1, 10);
+  });
+
+  test('round-trips, so the thumb sits where the level actually is', () => {
+    for (const level of [0, 0.02, 0.032, DEFAULT_VOLUME, 0.35, 0.5, 1]) {
+      expect(volumeForPosition(positionForVolume(level))).toBeCloseTo(level, 10);
+    }
+  });
+
+  /**
+   * The one place it cannot round-trip, stated rather than left to be found. A
+   * decibel scale has no bottom, so the travel has a floor and the stop below it
+   * is off — an amplitude at or under −40 dB has nowhere on the slider to sit
+   * except position 0, which plays as silence.
+   *
+   * Nobody arrives there from the old control: its `step` of 5 made 0.05 the
+   * quietest thing it could be dragged to, five times the floor.
+   */
+  test('anything under the floor reads as off, because the slider has a bottom', () => {
+    expect(positionForVolume(0.01)).toBe(0);
+    expect(volumeForPosition(positionForVolume(0.01))).toBe(0);
+
+    // #and the quietest the old slider could reach is comfortably inside it
+    expect(positionForVolume(0.05)).toBeGreaterThan(0);
+  });
+
+  /**
+   * The property that makes every part of the travel worth using, and the one
+   * the old linear control did not have. A fixed number of decibels per step
+   * means the same *perceived* change wherever the thumb is.
+   */
+  test('every step is the same 2 dB, wherever the thumb is', () => {
+    const stepDb = (from: number): number => {
+      const quieter = volumeForPosition(from);
+      const louder = volumeForPosition(from + 0.05);
+      return 20 * Math.log10(louder / quieter);
+    };
+
+    for (const from of [0.05, 0.25, 0.5, 0.75, 0.9]) {
+      expect(stepDb(from)).toBeCloseTo((VOLUME_RANGE_DB / 100) * 5, 10);
+    }
+  });
+
+  /**
+   * What the old control did, kept as the contrast. On a linear slider the top
+   * half of the travel is a 6 dB change and the bottom twentieth is 26 dB — all
+   * the useful adjustment crushed into the end stop.
+   */
+  test('is not what a linear slider did', () => {
+    const linearTopHalf = 20 * Math.log10(1 / 0.5);
+    const curvedTopHalf = 20 * Math.log10(volumeForPosition(1) / volumeForPosition(0.5));
+
+    expect(linearTopHalf).toBeCloseTo(6.02, 2);
+    expect(curvedTopHalf).toBeCloseTo(20, 10);
+  });
+
+  test('a level chosen by hand before this change keeps its loudness', () => {
+    // #given somebody who had already dragged the old slider down to 0.35
+    // #then the amplitude is untouched — only where the thumb shows moves
+    expect(volumeForPosition(positionForVolume(0.35))).toBeCloseTo(0.35, 10);
+    expect(Math.round(positionForVolume(0.35) * 100)).toBe(77);
   });
 });
 
