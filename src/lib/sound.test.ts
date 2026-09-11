@@ -5,8 +5,12 @@ import {
   clampVolume,
   clockVoices,
   cueVoices,
+  isPreviewBlocked,
   masterGainFor,
   playPreview,
+  positionForVolume,
+  VOLUME_RANGE_DB,
+  volumeForPosition,
   playSequence,
   setVolume,
   stopPreview,
@@ -207,13 +211,97 @@ describe('volume', () => {
       expect(made).toHaveLength(1);
       expect(made[0]?.volume).toBe(DEFAULT_VOLUME);
 
-      // #and moving the slider mid-clip moves the clip that is already running
-      setVolume(0.1);
-      expect(made[0]?.volume).toBeCloseTo(0.1, 10);
+      // #and moving the slider mid-clip moves the clip that is already running.
+      // A value that is not the default, or this proves nothing.
+      setVolume(0.03);
+      expect(made[0]?.volume).toBeCloseTo(0.03, 10);
     } finally {
       if (original === undefined) delete globals.Audio;
       else globals.Audio = original;
     }
+  });
+});
+
+describe('the slider’s travel', () => {
+  /**
+   * The complaint this exists for, 11 September 2026: "the volume adjustment was
+   * right at the bottom of the slider". `HTMLAudioElement.volume` is linear
+   * amplitude and hearing is not, so a linear control puts every level worth
+   * choosing in the bottom tenth of the travel.
+   */
+  test('puts the default in the middle, with room on both sides', () => {
+    expect(positionForVolume(DEFAULT_VOLUME)).toBeCloseTo(0.5, 10);
+  });
+
+  test('ends at silence and at full scale', () => {
+    expect(volumeForPosition(0)).toBe(0);
+    expect(volumeForPosition(1)).toBeCloseTo(1, 10);
+  });
+
+  test('round-trips, so the thumb sits where the level actually is', () => {
+    for (const level of [0, 0.02, 0.032, DEFAULT_VOLUME, 0.35, 0.5, 1]) {
+      expect(volumeForPosition(positionForVolume(level))).toBeCloseTo(level, 10);
+    }
+  });
+
+  /**
+   * The one place it cannot round-trip, stated rather than left to be found. A
+   * decibel scale has no bottom, so the travel has a floor and the stop below it
+   * is off — an amplitude at or under −40 dB has nowhere on the slider to sit
+   * except position 0, which plays as silence.
+   *
+   * Nobody arrives there from the old control: its `step` of 5 made 0.05 the
+   * quietest thing it could be dragged to, five times the floor.
+   */
+  test('anything under the floor reads as off, because the slider has a bottom', () => {
+    expect(positionForVolume(0.01)).toBe(0);
+    expect(volumeForPosition(positionForVolume(0.01))).toBe(0);
+
+    // #and the quietest the old slider could reach is comfortably inside it
+    expect(positionForVolume(0.05)).toBeGreaterThan(0);
+  });
+
+  /**
+   * The property that makes every part of the travel worth using, and the one
+   * the old linear control did not have. A fixed number of decibels per step
+   * means the same *perceived* change wherever the thumb is.
+   */
+  test('every step is the same 2 dB, wherever the thumb is', () => {
+    const stepDb = (from: number): number => {
+      const quieter = volumeForPosition(from);
+      const louder = volumeForPosition(from + 0.05);
+      return 20 * Math.log10(louder / quieter);
+    };
+
+    for (const from of [0.05, 0.25, 0.5, 0.75, 0.9]) {
+      expect(stepDb(from)).toBeCloseTo((VOLUME_RANGE_DB / 100) * 5, 10);
+    }
+  });
+
+  /**
+   * What the old control did, kept as the contrast. On a linear slider the top
+   * half of the travel is a 6 dB change and the bottom twentieth is 26 dB — all
+   * the useful adjustment crushed into the end stop.
+   */
+  test('is not what a linear slider did', () => {
+    const linearTopHalf = 20 * Math.log10(1 / 0.5);
+    const curvedTopHalf = 20 * Math.log10(volumeForPosition(1) / volumeForPosition(0.5));
+
+    expect(linearTopHalf).toBeCloseTo(6.02, 2);
+    expect(curvedTopHalf).toBeCloseTo(20, 10);
+  });
+
+  test('a level chosen by hand before this change keeps its loudness', () => {
+    // #given somebody who had already dragged the old slider down to 0.35
+    // #then the amplitude is untouched — only where the thumb shows moves, from
+    // a third of the way up the old travel to about three quarters of this one
+    expect(volumeForPosition(positionForVolume(0.35))).toBeCloseTo(0.35, 10);
+    expect(Math.round(positionForVolume(0.35) * 100)).toBe(77);
+
+    // The control renders that 77 on a `step={5}` grid, so the thumb itself
+    // settles on 75 — checked in a browser against the built bundle rather than
+    // inferred, because the snap happens in the input and not in this function.
+    // Harmless: the stored amplitude is what plays, and it has not moved.
   });
 });
 
@@ -324,5 +412,112 @@ describe('Happy Birthday', () => {
   test('is a smoke-test fixture, not a published pack tune', () => {
     expect(HAPPY_BIRTHDAY.every((voice) => voice.type === 'triangle')).toBe(true);
     expect(HAPPY_BIRTHDAY.length).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * The silent failure behind "Joe didn't hear the music on the first question",
+ * round CUC4, 11 September 2026. `unlock()` resumes the AudioContext, which the
+ * `<audio>` element does not use — so a page with no gesture on it gets a
+ * `NotAllowedError` that used to go straight into an empty catch.
+ */
+describe('a preview the browser refuses to start', () => {
+  class RefusingAudio {
+    preload = '';
+    loop = false;
+    volume = 1;
+    src = '';
+    currentTime = 0;
+    static reason: { name: string } = { name: 'NotAllowedError' };
+    addEventListener(): void {}
+    load(): void {}
+    pause(): void {}
+    removeAttribute(): void {}
+    play(): Promise<void> {
+      return Promise.reject(RefusingAudio.reason);
+    }
+  }
+
+  async function withRefusingAudio(reason: { name: string }, run: () => Promise<void>): Promise<void> {
+    const globals = globalThis as { Audio?: unknown };
+    const original = globals.Audio;
+    RefusingAudio.reason = reason;
+    globals.Audio = RefusingAudio;
+    try {
+      await run();
+    } finally {
+      stopPreview();
+      playAcceptedClip();
+      if (original === undefined) delete globals.Audio;
+      else globals.Audio = original;
+    }
+  }
+
+  /** A clip the browser is happy to start, through the same public path. */
+  function playAcceptedClip(): void {
+    const globals = globalThis as { Audio?: unknown };
+    globals.Audio = class {
+      preload = '';
+      loop = false;
+      volume = 1;
+      src = '';
+      currentTime = 0;
+      addEventListener(): void {}
+      load(): void {}
+      pause(): void {}
+      removeAttribute(): void {}
+      play(): Promise<void> {
+        return Promise.resolve();
+      }
+    };
+    playPreview('https://audio-ssl.itunes.apple.com/clip.m4a');
+  }
+
+  test('raises the flag, so the screen can say why the question is silent', async () => {
+    await withRefusingAudio({ name: 'NotAllowedError' }, async () => {
+      // #given a page the browser has seen no gesture on
+      expect(isPreviewBlocked()).toBe(false);
+
+      // #when a tunes question opens
+      playPreview('https://audio-ssl.itunes.apple.com/clip.m4a');
+      await Promise.resolve();
+      await Promise.resolve();
+
+      // #then the player is told there is something to press
+      expect(isPreviewBlocked()).toBe(true);
+    });
+  });
+
+  test('stays down for a clip that simply failed, which is ours to fix', async () => {
+    await withRefusingAudio({ name: 'NotSupportedError' }, async () => {
+      // #when the clip 404s or will not decode
+      playPreview('https://audio-ssl.itunes.apple.com/clip.m4a');
+      await Promise.resolve();
+      await Promise.resolve();
+
+      // #then nothing invites a press that would not help
+      expect(isPreviewBlocked()).toBe(false);
+    });
+  });
+
+  /**
+   * Deliberately narrow about what it proves. The notice goes because
+   * `playPreview` lowers the flag for every fresh attempt, not because a later
+   * success raised anything — which is exactly why there is no success branch in
+   * the source. Written this way so nobody reads it as covering one.
+   */
+  test('the next attempt lowers it again, so a notice never outlives its question', async () => {
+    await withRefusingAudio({ name: 'NotAllowedError' }, async () => {
+      playPreview('https://audio-ssl.itunes.apple.com/clip.m4a');
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(isPreviewBlocked()).toBe(true);
+
+      // #when the player presses the button, or the next question opens
+      playAcceptedClip();
+
+      // #then the notice is gone at once, before any play() has settled
+      expect(isPreviewBlocked()).toBe(false);
+    });
   });
 });

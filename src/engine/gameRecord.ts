@@ -16,6 +16,37 @@ export interface RecordedAnswer {
   wager?: number;
 }
 
+/**
+ * What the reveal of one question actually cost, on the device that revealed it.
+ *
+ * Added 11 September 2026, after round `CUC4` had "a couple of very large delays
+ * on revealing the answer" and nothing kept could say which reveals, or which
+ * part of one. A developer's suggestion was OpenTelemetry; the honest answer for
+ * a static site with no backend is that the payload is four integers on one
+ * device, and this document is already being written.
+ *
+ * **It rides inside `questions` deliberately.** The ruleset bounds the game
+ * document at the top level only — it cannot walk a list, so what is inside a
+ * question is trusted — which means this needs no rules change and therefore no
+ * deploy ordering to get right. A new top-level key would have needed both, and
+ * a client that ran ahead of the console would have had every record refused in
+ * silence (`keepGameRecord` swallows a refusal on purpose).
+ *
+ * Every field is milliseconds on the quizmaster's own clock except `attempts`,
+ * and all are whole numbers. Absent on a record written by a client that predates
+ * this, and on a question that was skipped.
+ */
+export interface RevealTiming {
+  /** Local clock expiring → the gate being provably open. Slow means the server's acknowledgement was late. */
+  gateMs: number;
+  /** The vault round trip: four candidate writes, three refused. Healthy is under 300ms. */
+  resolveMs: number;
+  /** The room update that puts the answer on everybody else's screen. */
+  dispatchMs: number;
+  /** 1 unless the vault refused or the connection stalled. */
+  attempts: number;
+}
+
 export interface RecordedQuestion {
   id: string;
   index: number;
@@ -33,6 +64,8 @@ export interface RecordedQuestion {
   skipped: boolean;
   answers: Record<string, RecordedAnswer>;
   deltas: Record<string, number>;
+  /** Absent when this device did not reveal the question, or it was skipped. */
+  reveal?: RevealTiming;
 }
 
 export interface RecordedPlayer {
@@ -101,6 +134,30 @@ export function kindOf(
 }
 
 /**
+ * The reveal timing for a question, rebuilt field by field for the same reason
+ * `recordedAnswers` is: a stray key would ride into a document the rules only
+ * bound at the top level, and a partial timing is worse than none — a reveal
+ * that was still in flight when the round ended has no honest `dispatchMs`.
+ */
+function timingFor(
+  timings: ReadonlyMap<string, RevealTiming>,
+  questionId: string,
+): { reveal: RevealTiming } | Record<string, never> {
+  const timing = timings.get(questionId);
+  if (!timing) return {};
+
+  const whole = (value: number): number => Math.max(0, Math.round(value));
+  return {
+    reveal: {
+      gateMs: whole(timing.gateMs),
+      resolveMs: whole(timing.resolveMs),
+      dispatchMs: whole(timing.dispatchMs),
+      attempts: whole(timing.attempts),
+    },
+  };
+}
+
+/**
  * Rebuilt field by field, as `liveAnswers` does, so a stray field on an answer
  * cannot ride into a document the rules only bound at the top level — and so an
  * answer without a `firstMs` or `wager` carries no key for it rather than an
@@ -157,6 +214,8 @@ export function foldGameRecord(
   room: RoomState,
   log: QuestionRecord[],
   writtenBy: string,
+  /** Keyed by question id. Empty on any device that did not do the revealing. */
+  timings: ReadonlyMap<string, RevealTiming> = new Map(),
 ): GameRecord | null {
   if (room.packId === null || room.packTitle === null) return null;
   if (room.questions.length === 0) return null;
@@ -183,6 +242,10 @@ export function foldGameRecord(
       skipped: wasSkipped,
       answers: record ? recordedAnswers(record.answers) : {},
       deltas: record ? { ...record.deltas } : {},
+      // Omitted rather than written empty, like `firstMs` and `wager` above:
+      // Firestore refuses an `undefined`, and "this client did not reveal it"
+      // and "it revealed instantly" must not look the same in the data.
+      ...(wasSkipped ? {} : timingFor(timings, question.id)),
     });
   }
 

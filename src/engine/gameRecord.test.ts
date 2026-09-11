@@ -7,6 +7,7 @@ import {
   foldGameRecord,
   kindOf,
   type GameRecord,
+  type RevealTiming,
 } from './gameRecord';
 import { createRoom, type Player, type QuizQuestion, type RoomState } from './state';
 
@@ -377,5 +378,72 @@ describe('kindOf', () => {
 
   test('a question with iTunes artwork is a picture', () => {
     expect(kindOf({ artworkUrl: 'https://is1-ssl.mzstatic.com/image/thumb/x.jpg' })).toBe('picture');
+  });
+});
+
+/**
+ * Added 11 September 2026, after "a couple of very large delays on revealing the
+ * answer" and nothing kept that could say which reveal, or which part of one.
+ */
+describe('what the reveal cost', () => {
+  const TIMING: RevealTiming = { gateMs: 90, resolveMs: 260, dispatchMs: 140, attempts: 1 };
+
+  test('rides along with the question it belongs to', () => {
+    const record = foldGameRecord(
+      finishedRoom(),
+      WHOLE_LOG,
+      'greg',
+      new Map([['q1', TIMING]]),
+    );
+
+    expect(record?.questions[0]?.reveal).toEqual(TIMING);
+  });
+
+  /**
+   * "This device did not reveal it" and "it revealed instantly" must not look
+   * the same in the data — and Firestore refuses an `undefined` outright.
+   */
+  test('is absent rather than zeroed on a question this device did not reveal', () => {
+    const record = foldGameRecord(
+      finishedRoom(),
+      WHOLE_LOG,
+      'greg',
+      new Map([['q1', TIMING]]),
+    );
+
+    expect(record?.questions[1]).not.toHaveProperty('reveal');
+  });
+
+  test('is absent throughout when nothing was measured, which is every older round', () => {
+    const record = foldGameRecord(finishedRoom(), WHOLE_LOG, 'greg');
+
+    for (const question of record?.questions ?? []) {
+      expect(question).not.toHaveProperty('reveal');
+    }
+  });
+
+  test('never rides on a skipped question, which was never revealed', () => {
+    const room = finishedRoom({ skipped: ['q2'] });
+    const record = foldGameRecord(room, WHOLE_LOG, 'greg', new Map([['q2', TIMING]]));
+
+    expect(record?.questions[1]?.skipped).toBe(true);
+    expect(record?.questions[1]).not.toHaveProperty('reveal');
+  });
+
+  test('is whole milliseconds, because a float here is noise the rules must carry', () => {
+    const record = foldGameRecord(
+      finishedRoom(),
+      WHOLE_LOG,
+      'greg',
+      new Map([['q1', { gateMs: 89.6, resolveMs: 260.4, dispatchMs: -2, attempts: 1 }]]),
+    );
+
+    expect(record?.questions[0]?.reveal).toEqual({
+      gateMs: 90,
+      resolveMs: 260,
+      // A clock that went backwards is floored rather than written negative.
+      dispatchMs: 0,
+      attempts: 1,
+    });
   });
 });

@@ -5,6 +5,7 @@ import type {
   RecordedAnswer,
   RecordedPlayer,
   RecordedQuestion,
+  RevealTiming,
 } from '../src/engine/gameRecord';
 import { DIFFICULTIES, PACK_IDS, type Difficulty, type PackId } from '../src/questions/types';
 
@@ -40,6 +41,12 @@ export interface QuestionSummary {
   medianElapsedMs: number | null;
   /** Answers whose first touch was under `TOO_FAST_TO_READ_MS`. */
   snaps: number;
+  /**
+   * What the reveal cost on the quizmaster's device, when the record carries it.
+   * Null on every round played before 11 September 2026, and on a skipped
+   * question. See `RevealTiming` in `src/engine/gameRecord.ts`.
+   */
+  reveal: RevealTiming | null;
 }
 
 export interface GameSummary {
@@ -108,6 +115,7 @@ export function summariseQuestion(question: RecordedQuestion, seats: number): Qu
     hitRate: question.skipped ? null : rate(correct, seats),
     medianElapsedMs: median(elapsedOf(question)),
     snaps: answers.filter((answer) => firstTouchOf(answer) < TOO_FAST_TO_READ_MS).length,
+    reveal: question.reveal ?? null,
   };
 }
 
@@ -226,9 +234,33 @@ function parseNumbers(value: unknown): Record<string, number> | null {
   return numbers;
 }
 
+/**
+ * The reveal timing, when the record carries one.
+ *
+ * Absent on every round played before 11 September 2026, which is why a missing
+ * one is `null` rather than a parse failure — refusing to read three good rounds
+ * because they predate a field would be a worse bug than the one this measures.
+ * Present-but-wrong is still refused: a partial timing would be printed as if it
+ * were measured.
+ */
+function parseReveal(value: unknown): RevealTiming | null {
+  if (!isObject(value)) return null;
+  const { gateMs, resolveMs, dispatchMs, attempts } = value;
+  if (
+    typeof gateMs !== 'number'
+    || typeof resolveMs !== 'number'
+    || typeof dispatchMs !== 'number'
+    || typeof attempts !== 'number'
+  ) {
+    return null;
+  }
+  return { gateMs, resolveMs, dispatchMs, attempts };
+}
+
 function parseQuestion(value: unknown): RecordedQuestion | null {
   if (!isObject(value)) return null;
-  const { id, index, category, difficulty, kind, correctIndex, skipped, answers, deltas } = value;
+  const { id, index, category, difficulty, kind, correctIndex, skipped, answers, deltas, reveal } =
+    value;
   if (typeof id !== 'string' || typeof index !== 'number' || typeof category !== 'string') return null;
   if (!isDifficulty(difficulty) || !isKind(kind) || typeof skipped !== 'boolean') return null;
   if (correctIndex !== null && typeof correctIndex !== 'number') return null;
@@ -242,6 +274,7 @@ function parseQuestion(value: unknown): RecordedQuestion | null {
   }
   const parsedDeltas = parseNumbers(deltas);
   if (!parsedDeltas) return null;
+  const parsedReveal = parseReveal(reveal);
 
   return {
     id,
@@ -253,6 +286,7 @@ function parseQuestion(value: unknown): RecordedQuestion | null {
     skipped,
     answers: parsedAnswers,
     deltas: parsedDeltas,
+    ...(parsedReveal === null ? {} : { reveal: parsedReveal }),
   };
 }
 
@@ -308,4 +342,25 @@ export function parseGameRecord(value: unknown): GameRecord | null {
     questions: parsedQuestions,
     writtenBy,
   };
+}
+
+/**
+ * One reveal's cost, compactly: the total, then where it went.
+ *
+ * Printed as a total first because that is the number somebody is scanning for
+ * when they say a reveal was slow; the breakdown is what says whose fault it
+ * was. `x2` and up means the vault refused or the connection stalled and it had
+ * to ask again — the shape that held round `CUC4` on "Revealing…".
+ */
+export function revealCost(reveal: RevealTiming | null): string {
+  // One padding, both paths. Written separately first, and the dash came out a
+  // character wider than the numbers — which is exactly the kind of thing a
+  // column is for and nobody would have noticed reading it.
+  const TOTAL_WIDTH = 6;
+  if (!reveal) return '—'.padStart(TOTAL_WIDTH);
+
+  const total = reveal.gateMs + reveal.resolveMs + reveal.dispatchMs;
+  const tries = reveal.attempts > 1 ? ` x${String(reveal.attempts)}` : '';
+  return `${`${(total / 1000).toFixed(1)}s`.padStart(TOTAL_WIDTH)} `
+    + `(${String(reveal.gateMs)}+${String(reveal.resolveMs)}+${String(reveal.dispatchMs)})${tries}`;
 }

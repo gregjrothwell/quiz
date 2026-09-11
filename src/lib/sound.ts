@@ -20,7 +20,7 @@ const VOLUME_KEY = 'vibequiz.volume';
 const MASTER_GAIN = 0.22;
 
 /**
- * Where the volume slider starts, 0–1.
+ * Where the volume starts, as an amplitude, 0–1.
  *
  * A commercial master played back at `HTMLAudioElement.volume = 1` is roughly
  * as loud as the machine goes, and on 10 September 2026 a room played a tunes
@@ -29,10 +29,74 @@ const MASTER_GAIN = 0.22;
  * {@link MASTER_GAIN} — so the number that had to come down was the one nobody
  * had set: the preview element's, which defaults to full.
  *
- * 0.35 is about −9 dB, which is the usual place to sit a music bed under
- * speech. It is a starting point, not a ceiling: the slider goes to 1.
+ * It came down to 0.35 that day and **that was still too loud**, which is the
+ * second half of the same report on 11 September 2026: "I noticed the volume
+ * adjustment was right at the bottom of the slider." Somebody who has to drag a
+ * control to its end stop has been given the wrong range, not the wrong
+ * default — so both were changed, and the range is the interesting half.
+ *
+ * 0.1 is −20 dB, a proper music bed under speech, and it is deliberately the
+ * **middle** of the slider rather than a third of the way up it: see
+ * {@link volumeForPosition}. Equal room either side, and the room has now twice
+ * wanted less rather than more.
  */
-export const DEFAULT_VOLUME = 0.35;
+export const DEFAULT_VOLUME = 0.1;
+
+/**
+ * How many decibels the slider spans below full scale.
+ *
+ * **`HTMLAudioElement.volume` is linear amplitude and hearing is not.** Halving
+ * the amplitude is about −6 dB, so on a linear slider every useful "under the
+ * person talking" level is crushed into the bottom tenth of the travel and the
+ * top nine tenths are all "too loud" at slightly different rates. That is the
+ * thing Greg felt as the adjustment being at the bottom of the slider.
+ *
+ * 40 dB spread over the travel gives 2 dB a step at the `step={5}` the control
+ * uses — audible, even, and meaningful the whole way along:
+ *
+ * | position | amplitude | |
+ * |---|---|---|
+ * | 100 | 1.0 | full scale, as loud as the machine goes |
+ * | 75 | 0.32 | about where the old default sat |
+ * | **50** | **0.1** | **{@link DEFAULT_VOLUME} — under a call** |
+ * | 25 | 0.032 | background |
+ * | 5 | 0.013 | nearly out |
+ * | 0 | 0 | silent |
+ */
+export const VOLUME_RANGE_DB = 40;
+
+/**
+ * The amplitude a slider position should play at, 0–1 in and 0–1 out.
+ *
+ * Zero is special-cased rather than left to the curve: a decibel scale never
+ * reaches silence, and the bottom of a volume slider has to be off.
+ *
+ * That gives the travel a floor, and it is worth saying out loud: an amplitude
+ * at or below −40 dB (0.01) has nowhere to sit but position 0, so it reads as
+ * off rather than as very quiet. Nobody arrives there from the old control — its
+ * `step` of 5 made 0.05 the quietest level it could be dragged to.
+ */
+export function volumeForPosition(position: number): number {
+  const p = Math.min(1, Math.max(0, position));
+  if (p <= 0) return 0;
+  return 10 ** (((p - 1) * VOLUME_RANGE_DB) / 20);
+}
+
+/**
+ * Where a stored amplitude sits on the slider — the inverse of
+ * {@link volumeForPosition}.
+ *
+ * Needed because the **amplitude** is what is stored, not the position. That
+ * keeps `setVolume`, {@link masterGainFor} and `el.volume` all working in the
+ * one unit they actually apply, and it means somebody who had already tuned
+ * this by hand keeps the loudness they chose — their 0.35 simply shows at 77
+ * rather than at 35.
+ */
+export function positionForVolume(level: number): number {
+  const v = clampVolume(level);
+  if (v <= 0) return 0;
+  return Math.min(1, Math.max(0, 1 + (20 * Math.log10(v)) / VOLUME_RANGE_DB));
+}
 
 /**
  * One oscillator's worth of a cue. `to` bends the pitch across the note, which
@@ -334,6 +398,32 @@ let muted = readMuted();
 let volume = readVolume();
 
 /**
+ * Whether the browser refused to start the last preview.
+ *
+ * `unlock()` resumes the AudioContext, which is what the synth cues and the
+ * Classical round need — and it does nothing at all for the `<audio>` element a
+ * tunes question streams through, because that is a **separate** autoplay gate.
+ * A browser that has seen no interaction on the page refuses `play()` with
+ * `NotAllowedError`, and until 11 September 2026 the rejection was swallowed:
+ * the question ran its fifteen seconds in silence with nothing on screen to say
+ * why.
+ *
+ * Round CUC4, 11 September 2026, answers per question: **7, 8, 9, 9, 9…** Two
+ * players silent on the first question, one on the second, everybody from the
+ * third — people finding the button one at a time. Joe said he did not hear the
+ * music on the first question, and that is the shape of it in the data.
+ *
+ * The likely trigger is the link auto-join: a regular following a link goes
+ * straight into the room without a single click, so the page has no gesture on
+ * it when the first question opens. The feature that removed a press removed the
+ * gesture that unlocks media.
+ *
+ * Read through {@link useSound}, so the question screen can point at the
+ * replay button it already has rather than leaving silence unexplained.
+ */
+let previewBlocked = false;
+
+/**
  * The master gain the synth cues run at, for a given slider position.
  *
  * The cues are balanced against each other relative to {@link MASTER_GAIN}, and
@@ -342,12 +432,51 @@ let volume = readVolume();
  * {@link DEFAULT_VOLUME} rather than scaling {@link MASTER_GAIN} directly.
  *
  * Capped there too. Above the default the slider only lifts the music: the
- * loudest cue voice is at 1.1 relative and several ring at once, so a master
- * of 0.63 (what an uncapped 1.0 would give) sums past unity and clips hard at
- * the destination. Nobody has ever asked for a louder buzzer.
+ * loudest cue voice is at 1.1 relative and several ring at once, so an uncapped
+ * top of the slider sums well past unity and clips hard at the destination.
+ * Nobody has ever asked for a louder buzzer.
+ *
+ * **Lowering the default made the cap matter more, not less.** It divides, so
+ * at the old 0.35 an uncapped 1.0 gave a 0.63 master; at 0.1 it would give 2.2.
+ * The cue balance itself is untouched either way — the whole point of dividing
+ * by the default is that the starting position is a no-op for the cues, so a
+ * round that is not a music round sounds exactly as it always has.
  */
 export function masterGainFor(level: number): number {
   return MASTER_GAIN * Math.min(1, clampVolume(level) / DEFAULT_VOLUME);
+}
+
+/**
+ * Whether a rejected `play()` was the autoplay policy rather than a broken clip.
+ *
+ * Duck-typed on `name` in the same shape as `isPermissionDenied` in
+ * `src/lib/vault.ts`, rather than `instanceof DOMException`: the constructor is
+ * not guaranteed across every engine this runs in, and the check that matters is
+ * what the browser called it.
+ */
+function isAutoplayBlocked(cause: unknown): boolean {
+  return (
+    typeof cause === 'object' &&
+    cause !== null &&
+    'name' in cause &&
+    String((cause as { name: unknown }).name) === 'NotAllowedError'
+  );
+}
+
+/**
+ * Whether the last preview was refused by the autoplay policy.
+ *
+ * The same module state {@link useSound} publishes, reachable without a React
+ * render so a test can drive `playPreview` directly.
+ */
+export function isPreviewBlocked(): boolean {
+  return previewBlocked;
+}
+
+function setPreviewBlocked(next: boolean): void {
+  if (previewBlocked === next) return;
+  previewBlocked = next;
+  notify();
 }
 
 const listeners = new Set<() => void>();
@@ -457,6 +586,10 @@ export function playPreview(url: string, startSeconds = 0, seconds?: number): vo
   stopPreview();
   stopSequence();
   stopClock();
+  // A fresh attempt has not been refused yet. Cleared here rather than left to
+  // the outcome so a clip that plays never inherits the last question's notice;
+  // the worst case is the hint appearing a frame after the refusal.
+  setPreviewBlocked(false);
   if (muted || !isItunesPreviewUrl(url)) return;
   if (typeof Audio === 'undefined') return;
 
@@ -500,8 +633,16 @@ export function playPreview(url: string, startSeconds = 0, seconds?: number): vo
         // Seeking before metadata is ready throws on some engines; play anyway.
       }
     }
-    void el.play().catch(() => {
-      // Autoplay blocked or the clip 404'd. Hear it again is the way back in.
+    // No `then` half: the flag is already down, because `playPreview` lowers it
+    // for every fresh attempt. A success branch here could only ever set false
+    // to false, and an untested branch that cannot fire is worse than no branch.
+    void el.play().catch((cause: unknown) => {
+      // A later question's clip has already taken over; this result is stale.
+      if (previewEl !== el) return;
+      // Only the autoplay refusal is worth a line on screen, and it is the one
+      // the player can actually do something about. A 404 or a decode failure is
+      // ours to fix and telling the room to press a button would be a lie.
+      setPreviewBlocked(isAutoplayBlocked(cause));
     });
   };
 
@@ -676,6 +817,11 @@ export interface SoundControls {
   /** 0–1. What the slider shows and what a preview plays at. */
   volume: number;
   setVolume: (next: number) => void;
+  /**
+   * The browser refused to start the tune, and pressing something is the way in.
+   * Always false when there is no tune to play.
+   */
+  previewBlocked: boolean;
 }
 
 export function useSound(): SoundControls {
@@ -701,5 +847,11 @@ export function useSound(): SoundControls {
     setMuted(!isMuted);
   }, [isMuted]);
 
-  return { muted: isMuted, toggle, play, volume: level, setVolume };
+  const blocked = useSyncExternalStore(
+    subscribe,
+    () => previewBlocked,
+    () => false,
+  );
+
+  return { muted: isMuted, toggle, play, volume: level, setVolume, previewBlocked: blocked };
 }

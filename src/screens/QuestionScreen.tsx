@@ -91,6 +91,19 @@ interface QuestionScreenProps {
  * the tiles stay put and only their lighting changes, so the verdict reads as
  * the same podiums lighting up rather than a new screen.
  */
+/**
+ * What the one tune button says, in each of the three states it has.
+ *
+ * "Hear it again" is a lie to somebody who never heard it once — which is
+ * exactly the player this exists for, and exactly the player least likely to
+ * work out that the button is for them.
+ */
+function playLabel(muted: boolean, blocked: boolean): string {
+  if (muted) return 'Unmute and hear it again';
+  if (blocked) return 'Play the tune';
+  return 'Hear it again';
+}
+
 export function QuestionScreen({
   room,
   youUid,
@@ -301,7 +314,7 @@ export function QuestionScreen({
    * and the tap is a user gesture, which is exactly what a suspended audio
    * context has been waiting for.
    */
-  const { muted, toggle: toggleMuted } = useSound();
+  const { muted, toggle: toggleMuted, previewBlocked } = useSound();
   const canReplay = hasTune && !revealed && !clock.expired;
   const replayTune = (): void => {
     if (!hasTune) return;
@@ -524,15 +537,29 @@ export function QuestionScreen({
             reveal: by then the tune is the answer's business, not the player's.
           */}
           {hasTune && !revealed ? (
-            <div className="btn-row">
-              <button
-                type="button"
-                className="btn btn--ghost"
-                disabled={clock.expired}
-                onClick={replayTune}
-              >
-                {muted ? 'Unmute and hear it again' : 'Hear it again'}
-              </button>
+            <div className="stack">
+              {/*
+                The browser refused to start the clip, which it does silently —
+                so without this line the question is fifteen seconds of nothing
+                with no explanation. The button below is the way back in and it
+                was always there; what was missing was any reason to press it.
+                See the note on `previewBlocked` in src/lib/sound.ts.
+              */}
+              {previewBlocked && !muted ? (
+                <p className="nudge hint" role="status">
+                  Your browser held the sound back until you press something.
+                </p>
+              ) : null}
+              <div className="btn-row">
+                <button
+                  type="button"
+                  className={previewBlocked && !muted ? 'btn' : 'btn btn--ghost'}
+                  disabled={clock.expired}
+                  onClick={replayTune}
+                >
+                  {playLabel(muted, previewBlocked)}
+                </button>
+              </div>
             </div>
           ) : null}
 
