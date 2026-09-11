@@ -36,6 +36,7 @@ import {
   summariseGame,
   tallyByKind,
   type GameSummary,
+  revealCost,
   type KindTally,
 } from './game-report';
 
@@ -147,14 +148,25 @@ function printGame(game: KeptGame, everyQuestion: boolean): void {
 
   if (!everyQuestion) return;
 
-  console.log('\n       #  kind     diff    right  answered  hit   median  snaps');
+  const timed = summary.questions.some((question) => question.reveal !== null);
+  console.log(
+    `\n       #  kind     diff    right  answered  hit   median  snaps${timed ? '   reveal' : ''}`,
+  );
   for (const question of summary.questions) {
     const right = question.skipped ? '  skipped' : `${String(question.correct).padStart(2)}/${question.seats}`;
     console.log(
       `      ${String(question.index).padStart(2)}  ${question.kind.padEnd(8)} ${question.difficulty.padEnd(7)} `
         + `${right.padEnd(9)} ${String(question.answered).padStart(2)}/${question.seats}     `
         + `${percent(question.hitRate)}  ${seconds(question.medianElapsedMs)}   ${String(question.snaps).padStart(2)}`
+        + `${timed ? `  ${revealCost(question.reveal)}` : ''}`
         + `  ${question.id}`,
+    );
+  }
+  if (timed) {
+    console.log(
+      '\n  reveal is gate+resolve+dispatch on the quizmaster\'s device, total first. '
+        + '"x2" and up is a\n  refused or stalled attempt — that is the column to read when somebody says '
+        + 'the answer\n  was slow. Blank means that device was not the one revealing.',
     );
   }
   console.log('');

@@ -6,7 +6,7 @@ import { shouldAutoJoin } from './engine/autoJoin';
 import type { Verdict } from './engine/questionVote';
 import { honoursFor, sawWholeGame, NO_HONOURS } from './engine/awards';
 import { formFor } from './engine/form';
-import { foldGameRecord } from './engine/gameRecord';
+import { foldGameRecord, type RevealTiming } from './engine/gameRecord';
 import { msUntilRevealGate, REVEAL_TIMEOUT_MS, revealBackoffMs } from './engine/revealGate';
 import { roomStandings } from './engine/scoring';
 import { codeFromHash } from './engine/roomCode';
@@ -550,6 +550,22 @@ function Game() {
    */
   const revealingRef = useRef<string | null>(null);
 
+  /**
+   * What each reveal cost, so the next slow round can be read back instead of
+   * guessed at.
+   *
+   * Kept on the quizmaster's device, which is both the only one that reveals and
+   * the only one that writes the game record — so nothing has to travel. Held in
+   * a ref rather than state because nothing renders it: a `setState` per reveal
+   * would re-run the reveal effect for no reason at the worst possible moment.
+   *
+   * Keyed by question id and emptied when the game id changes, so a second round
+   * in the same tab cannot inherit the first one's numbers for a question it
+   * skipped. See `RevealTiming` in `src/engine/gameRecord.ts`.
+   */
+  const revealTimingsRef = useRef(new Map<string, RevealTiming & { expiredAt: number }>());
+  const timingsGameRef = useRef<string | null>(null);
+
   const handleReveal = useCallback(async (): Promise<void> => {
     if (!room || room.phase !== 'question') return;
 
@@ -559,6 +575,27 @@ function Game() {
     const key = `${room.gameId ?? ''}:${room.index}`;
     if (revealingRef.current === key) return;
     revealingRef.current = key;
+
+    const gameId = room.gameId ?? '';
+    if (timingsGameRef.current !== gameId) {
+      revealTimingsRef.current = new Map();
+      timingsGameRef.current = gameId;
+    }
+
+    // `expiredAt` is only meaningful on the first attempt at a question: it is
+    // set by the effect below when the local clock runs out. A reveal fired from
+    // the button before then has nothing to measure the gate against, so it
+    // measures zero rather than a negative.
+    const timing = revealTimingsRef.current.get(question.id) ?? {
+      expiredAt: Date.now(),
+      gateMs: 0,
+      resolveMs: 0,
+      dispatchMs: 0,
+      attempts: 0,
+    };
+    timing.attempts += 1;
+    if (timing.attempts === 1) timing.gateMs = Math.max(0, Date.now() - timing.expiredAt);
+    revealTimingsRef.current.set(question.id, timing);
 
     try {
       // Both halves are Firestore writes, and neither rejects when the line
@@ -572,12 +609,16 @@ function Game() {
           // The answer is not in the room, the pack or this bundle. It comes
           // back from the vault, and only once the server agrees the clock has
           // run out.
+          const startedResolve = Date.now();
           const correctIndex = await resolveAnswer(firestore(), room.code, question);
+          timing.resolveMs = Date.now() - startedResolve;
           // Named rather than assumed: `dispatch` folds over the room as it is
           // when this returns, so that an answer landing during the round trip
           // still counts — and the reducer refuses to score this answer against
           // anything but the question it was asked about.
+          const startedDispatch = Date.now();
           await dispatch({ type: 'reveal', correctIndex, questionId: question.id });
+          timing.dispatchMs = Date.now() - startedDispatch;
         })(),
         REVEAL_TIMEOUT_MS,
         'The reveal',
@@ -660,6 +701,20 @@ function Game() {
   useEffect(() => {
     if (!isQuizmaster || phase !== 'question' || !clock.expired) return;
 
+    // The moment the gate wait is measured from. Stamped here rather than in
+    // `handleReveal` because by the time that runs the wait is already over —
+    // this effect is the only place that sees the local clock run out.
+    const openId = room ? (currentQuestion(room)?.id ?? null) : null;
+    if (openId !== null && !revealTimingsRef.current.has(openId)) {
+      revealTimingsRef.current.set(openId, {
+        expiredAt: Date.now(),
+        gateMs: 0,
+        resolveMs: 0,
+        dispatchMs: 0,
+        attempts: 0,
+      });
+    }
+
     const gate = { confirmedAt: questionConfirmedAt, durationMs, now: Date.now() };
     const wait = msUntilRevealGate(gate);
 
@@ -700,6 +755,7 @@ function Game() {
     handleReveal,
     report,
     retry,
+    room,
   ]);
 
   // Each device banks its own season row. Doing it per-client rather than having
@@ -794,7 +850,12 @@ function Game() {
     const players = finalSnapshot?.players ?? room.players;
     const scores = finalSnapshot?.scores ?? room.scores;
 
-    const record = foldGameRecord({ ...room, players, scores }, gameLog, uid);
+    const record = foldGameRecord(
+      { ...room, players, scores },
+      gameLog,
+      uid,
+      revealTimingsRef.current,
+    );
     if (!record) return;
 
     keptRef.current = gameId;

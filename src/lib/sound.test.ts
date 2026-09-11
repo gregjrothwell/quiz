@@ -293,9 +293,15 @@ describe('the slider’s travel', () => {
 
   test('a level chosen by hand before this change keeps its loudness', () => {
     // #given somebody who had already dragged the old slider down to 0.35
-    // #then the amplitude is untouched — only where the thumb shows moves
+    // #then the amplitude is untouched — only where the thumb shows moves, from
+    // a third of the way up the old travel to about three quarters of this one
     expect(volumeForPosition(positionForVolume(0.35))).toBeCloseTo(0.35, 10);
     expect(Math.round(positionForVolume(0.35) * 100)).toBe(77);
+
+    // The control renders that 77 on a `step={5}` grid, so the thumb itself
+    // settles on 75 — checked in a browser against the built bundle rather than
+    // inferred, because the snap happens in the input and not in this function.
+    // Harmless: the stored amplitude is what plays, and it has not moved.
   });
 });
 
