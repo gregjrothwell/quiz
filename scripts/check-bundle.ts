@@ -75,6 +75,8 @@ export const CANARY = 'VITE_FIREBASE_API_KEY';
 
 const DIST = 'dist';
 const WORKFLOWS = '.github/workflows';
+const PLAYWRIGHT_CONFIG = 'playwright.config.ts';
+const E2E_DIR = 'e2e';
 
 /**
  * The facts the verdict depends on, so the verdict is testable without a disk.
@@ -93,6 +95,11 @@ export interface BundleFacts {
   files: Record<string, string>;
   /** Every file under `.github/workflows/`, path → contents. */
   workflows: Record<string, string>;
+  /**
+   * Playwright config and specs. An E2E runner is how the forbidden name would
+   * re-enter the repo; same rule as workflows.
+   */
+  playwrightFiles: Record<string, string>;
 }
 
 export type Verdict =
@@ -121,17 +128,18 @@ export function evaluateBundle(facts: BundleFacts): Verdict {
     };
   }
 
-  // 2. A workflow that names it is the same failure one commit earlier.
-  const naming = Object.entries(facts.workflows)
+  // 2. A workflow or e2e runner that names it is the same failure one commit earlier.
+  const namedIn = { ...facts.workflows, ...facts.playwrightFiles };
+  const naming = Object.entries(namedIn)
     .filter(([, text]) => FORBIDDEN.some((name) => text.includes(name)))
     .map(([path]) => path);
   if (naming.length > 0) {
     return {
       ok: false,
       reason:
-        `a workflow names a forbidden variable: ${naming.join(', ')}.\n`
-        + '  Even unset, wiring the name into a build step is how it gets a value\n'
-        + '  later. The deploy job must not know this variable exists.',
+        `a workflow or e2e runner names a forbidden variable: ${naming.join(', ')}.\n`
+        + '  Even unset, wiring the name into a build or test step is how it gets a value\n'
+        + '  later. Neither the deploy job nor Playwright must know this variable exists.',
     };
   }
 
@@ -203,7 +211,7 @@ export function evaluateBundle(facts: BundleFacts): Verdict {
     note:
       `${fileCount} file(s) checked. Canary ${CANARY} found in ${canaryHits.length}, so the search works. `
       + (facts.ci
-        ? `No forbidden variable is present in this CI environment, and no workflow names one.`
+        ? `No forbidden variable is present in this CI environment, and no workflow or e2e runner names one.`
         : `${grepped.length} secret(s) grepped for and not found.`),
     notCovered,
   };
@@ -254,6 +262,14 @@ function readAll(dir: string): Record<string, string> {
   return out;
 }
 
+function readExistingFile(path: string): Record<string, string> {
+  try {
+    return { [path]: readFileSync(path, 'latin1') };
+  } catch {
+    return {};
+  }
+}
+
 function gatherFacts(): BundleFacts {
   // `.env.local` first, then the process environment. On a laptop the file is
   // the source; in CI the file is absent and the variables are the source.
@@ -270,6 +286,10 @@ function gatherFacts(): BundleFacts {
     canary: valueOf(CANARY),
     files: readAll(DIST),
     workflows: readAll(WORKFLOWS),
+    playwrightFiles: {
+      ...readExistingFile(PLAYWRIGHT_CONFIG),
+      ...readAll(E2E_DIR),
+    },
   };
 }
 

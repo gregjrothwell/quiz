@@ -18,6 +18,7 @@ React 18, TypeScript, Vite, Vitest. Firebase client SDK. Deploy is `gh-pages` fr
 | `npm run dev` | Vite at `/quiz/`, port 5273 |
 | `npm test` | Vitest, offline. Must keep running without the network |
 | `npm run typecheck` / `lint` / `build` | |
+| `npm run e2e` / `emulators` | Playwright vs `dist/` + local Auth/Firestore/RTDB. Never a debug token |
 | `npm run check-rules` | Live project: both rulesets, **both directions** |
 | `npm run appcheck-probe` | What App Check actually enforces, from an unattested client |
 | `npm run reveal-probe` | When the vault's reveal gate actually opens, against the two clocks a client could anchor to |

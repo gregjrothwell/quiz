@@ -49,11 +49,11 @@ join, Joe silent on question one, and the volume still too loud.
 identical bundle. Firestore leaves a stalled write *pending* rather than
 rejecting it, so the backoff ladder never started and `revealingRef` held the
 quizmaster's own Reveal button shut — the documented rescue was not there.
-`REVEAL_TIMEOUT_MS` turns it back into a rejection both can act on.
-A developer suggested OpenTelemetry; the instinct is right and the instrument is
-wrong for a site with no backend, so the four numbers go in the game record that
-device already writes — **inside `questions`, where the rules cannot reach, so no
-rules change and no deploy ordering**. [`decisions/reveal-delays.md`](decisions/reveal-delays.md).
+`REVEAL_TIMEOUT_MS` turns it back into a rejection both can act on. A developer
+suggested OpenTelemetry; right instinct, wrong instrument for a site with no
+backend, so the four numbers go in the game record that device already writes —
+**inside `questions`, where the rules cannot reach, so no rules change and no
+deploy ordering**. [`decisions/reveal-delays.md`](decisions/reveal-delays.md).
 
 **Joe's silence is in the data**: answers per question 7, 8, 9, 9, 9 — an
 autoplay-unlock ramp. `unlock()` resumes the AudioContext and does nothing for
@@ -69,6 +69,16 @@ sign-in is a guess until somebody asks her what the screen said.
 `8c0a107`, 10 Sep 18:05, `index-Du6MwR-e`, from #51. Not the cause — it gates on
 a boolean flag absent in production — but a deploy landed the evening before and
 the handover did not know.
+## 2026-09-10 — Playwright prerequisites: jsdom, emulators, e2e job
+
+Recorded order from [`audit-backlog.md`](decisions/audit-backlog.md): glob (already),
+jsdom component tests, emulator, Playwright. Built on `cursor/playwright-prereqs`.
+Runtime flag `window.__QUIZ_EMULATORS__ === true`, host hardcoded `127.0.0.1`, so
+e2e drives the exact `dist/` that ships. CI job `e2e` needs `verify`, Temurin 21,
+Chromium only; `deploy` now needs e2e too. No debug token named in the workflow.
+Depth: [`emulators.md`](decisions/emulators.md). Smoke proved against a production
+`dist/`: landing + create-room on the emulators. **Not covered:** vault seed, a
+fifteen-question round, App Check (emulators don't).
 
 ## 2026-09-10 — Node 20 deprecation: the four actions clear it at three different majors
 

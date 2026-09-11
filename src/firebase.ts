@@ -1,8 +1,15 @@
 import { initializeApp, type FirebaseApp } from 'firebase/app';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
-import { getAuth, type Auth } from 'firebase/auth';
-import { getDatabase, type Database } from 'firebase/database';
-import { getFirestore, type Firestore } from 'firebase/firestore';
+import { connectAuthEmulator, getAuth, type Auth } from 'firebase/auth';
+import { connectDatabaseEmulator, getDatabase, type Database } from 'firebase/database';
+import { connectFirestoreEmulator, getFirestore, type Firestore } from 'firebase/firestore';
+
+import {
+  authEmulatorUrl,
+  EMULATOR_HOST,
+  EMULATOR_PORTS,
+  emulatorsWanted,
+} from './lib/emulators';
 
 declare global {
   /**
@@ -121,8 +128,13 @@ function connect(): Services {
       enforcement is still off, and once it is on the request is refused by the
       server anyway, which is a far clearer failure than a blank screen. So this
       is allowed to throw and be swallowed rather than gating `connect()`.
+
+      Playwright's emulator path is the exception: the emulators do not enforce
+      App Check, and loading reCAPTCHA on 127.0.0.1 would fail. The flag is
+      boolean true only — same class of bug as the debug token, where the SDK
+      treated `'true'` as a token.
     */
-    if (appCheckSiteKey) {
+    if (!emulatorsWanted() && appCheckSiteKey) {
       // `true` rather than a token asks the SDK to mint one and print it to the
       // browser console, which is how you get a token to safelist in the first
       // place — the console's own dialog generates its value and will not take
@@ -154,6 +166,12 @@ function connect(): Services {
       // in the room needs the Realtime Database alongside it.
       rtdb: getDatabase(app),
     };
+
+    if (emulatorsWanted()) {
+      connectAuthEmulator(services.auth, authEmulatorUrl(), { disableWarnings: true });
+      connectFirestoreEmulator(services.db, EMULATOR_HOST, EMULATOR_PORTS.firestore);
+      connectDatabaseEmulator(services.rtdb, EMULATOR_HOST, EMULATOR_PORTS.database);
+    }
   }
 
   return services;

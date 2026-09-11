@@ -164,6 +164,12 @@ which means an E2E runner wanting an App Check debug token in its environment.
 **Order:** widen the glob, add component tests under Vitest, and give Playwright
 the emulator — not a debug token — if it ever arrives.
 
+**Correction, 10 September 2026.** The glob was already widened. Component tests
+now run in a Vitest `dom` project (`jsdom`; Chair and RoomLink). Playwright is
+in CI against the emulator — [`emulators.md`](emulators.md). The two blockers
+above are what was true on the 8th: CI exists, and e2e does not get a debug
+token. The paragraph is left standing so the original assessment stays readable.
+
 ## Conventions, because Cursor does not get `CLAUDE.md`
 
 - **Branch, never commit to `master`.** Never push without Greg saying so in
