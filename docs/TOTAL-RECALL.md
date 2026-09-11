@@ -39,6 +39,26 @@ body where it happened rather than here: three 4 September batches, then the
 whole 2026-09-08 day when the debug-token deploy needed the room. All verbatim to
 [`recall/2026-09.md`](recall/2026-09.md).
 
+## 2026-09-11 — #52 live: `index-n26s0ofl`
+
+Greg said push and go live. [#52](https://github.com/gregjrothwell/quiz/pull/52)
+merged as `96dee89`; CI published gh-pages `3eb7221` at 09:38, author **GitHub
+Actions**. Published bundle matches a local build of that commit exactly — the
+cross-check worth keeping. Firebase chunk moved to `firebase-W6iQUl4r` (#51
+touched `src/firebase.ts`).
+
+Verified live, not just in CI: slider travel 0/−10/−20/−30/−38 dB, default 50 on
+a cleared profile, room `9733` created (auth + App Check + a Firestore write).
+Only console error is reCAPTCHA's own frame against Google's report-only CSP.
+
+**`curl` and the browser disagreed for ten minutes** — new bundle in one, old in
+the other, because `index.html` carries `max-age=600` and the tab was serving its
+own cache. The slider reading 35 rather than 50 said so independently: two
+instruments agreeing on which code was actually running.
+
+**Not proved:** the reveal fix needs a real stall, and no round has written a
+`RevealTiming` yet.
+
 ## 2026-09-11 — The round was the best yet, and three things came out of it
 
 `CUC4`, 15 of 15, **80% hit, 3.1s median** — the best round the game has
@@ -170,9 +190,7 @@ banks once**: `orderBy('form')` excludes documents without the field, and all 26
 
 ## 2026-09-10 — Deploy guard added; CI outlined for later
 
-`scripts/predeploy.ts` — the interim guard, superseded the same day by the CI
-workflow above but still the guard on a hand deploy. Archived whole:
-[`recall/2026-09.md`](recall/2026-09.md).
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-10 — Token revoked and reissued; leak closed
 
@@ -184,34 +202,16 @@ Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-10 — Correction: the console was ahead of the repo, not behind
 
-The rules diagnosis reversed once the console was actually read: 39,218 bytes
-live against master's 34,889, the extra being the `elapsedMs` arrival floor.
-Landed as #40. Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-10 — Live: volume, clip cuts, 177 songs (`index-C3jZR3XU`)
 
-The tunes release, superseded the same day by the token-gate deploy and then by
-CI. Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
-## 2026-09-10 — Name that Tune worked; volume, giveaways, 177 songs (branch `music-volume-and-clips`)
+## 2026-09-10 — Name that Tune worked; volume, giveaways, 177 songs
 
-First music round that played. Three notes. **Volume**: the loud thing was the
-`<audio>` element at 1.0, never the synth cues — no CORS on Apple's CDN so the
-master gain never reached it. Default 0.35, slider under the corner switch,
-cues unchanged at the default and capped there. **Giveaways**: Apple picks the
-preview to be the most recognisable stretch, which for pop is the chorus, which
-is where the title is sung — `previewSeconds` cuts the clip before it.
-**Songs**: 79 → 177, weighted to `hard` (68/62/47). `resolveSong` now prefers a
-title match, not just an artist. `npm run tune-audit` measured all 177 —
-**103 clean, 33 trimmed, 31 shifted, 10 unavoidable**. Two checker failures
-found and fixed on the way: Parklife called clean because whisper split the
-title into "pork life", and seventeen clips that transcribed to nothing where
-eleven were only *suppressed* — Shake It Off sings its title six times in ten
-seconds and was counted clean. `small.en` heard "Sweet Caroline, good times" as
-"The sweet, terrible life", which is why the audit runs `medium.en`.
-`melody-round.md` split at 323/250 →
-[`tunes-round.md`](decisions/tunes-round.md), verbatim. **Not seeded** (98 new
-ids), not deployed.
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md). Depth:
+[`decisions/tunes-round.md`](decisions/tunes-round.md).
 
 ## 2026-09-09 — The whole day, archived
 

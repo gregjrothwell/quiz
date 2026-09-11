@@ -57,19 +57,19 @@ in [`recall/`](recall/)).
 ## State as of 11 September 2026
 
 > **READ FIRST — deploys come from CI, the season board's form figures are
-> estimates, and four fixes are sitting on a branch.** `.github/workflows/ci.yml`
+> estimates, and four fixes went live today unplayed.** `.github/workflows/ci.yml`
 > builds and publishes from `master`, so the token leak is closed at the source
 > ([`decisions/ci-deploy.md`](decisions/ci-deploy.md)). Every season row but one
 > carries a **seeded, estimated** `form`
 > ([`decisions/season.md`](decisions/season.md)). Branch
-> `reveal-hang-audio-volume` is **committed locally, unpushed** — see Outstanding.
+> #52 is **live as of 11 September 09:38** and entirely unplayed — see Outstanding.
 
-**Live is `index-Du6MwR-e`** (10 September **18:05**, gh-pages `8c0a107`, from
-`2125a79`/#51, CI) — *this box said `index-qJCbuGrA`/`d412adc` and was a deploy
-behind; corrected 11 September.* **16 packs**; **Name that Tune 177**; synth is
-**Classical**; **On the box** (54, hashed TMDB stills); **Flags** (76, hashed, no
-jigsaw); **Sleeves** (52, mzstatic hotlink); picture is **Fine Art**. Firebase
-chunk unmoved at `firebase-Cns3pSRr`.
+**Live is `index-n26s0ofl`** (11 Sep 09:38, gh-pages `3eb7221`, `96dee89`/#52,
+CI) — *this box was a deploy behind twice running; check gh-pages, not it.*
+Firebase chunk **moved to `firebase-W6iQUl4r`** (#51 touched `src/firebase.ts`).
+**16 packs**; **Name that Tune 177**; synth is **Classical**; **On the box** (54,
+hashed TMDB stills); **Flags** (76, hashed, no jigsaw); **Sleeves** (52, mzstatic
+hotlink); picture is **Fine Art**.
 
 **Played and kept:** Name that Tune `CUC4` **80%, 3.1s median, 15 of 15 — the
 best round recorded** ([`reveal-delays.md`](decisions/reveal-delays.md)), `CX5E`
@@ -113,11 +113,11 @@ thing, not the prose.**
    Check refusing at sign-in is the guess
    ([`app-check-auth.md`](decisions/app-check-auth.md)); that path *does* put the
    message on screen, so **ask her what it said**.
-10. **`reveal-hang-audio-volume` is committed locally and unpushed** — reveal
-    deadline, blocked-tune nudge, decibel volume slider, reveal timings in the
-    game record. Clean typecheck/lint/901 tests; slider checked in a browser
-    against the built bundle. **None of it has been played.**
-    [`reveal-delays.md`](decisions/reveal-delays.md) ·
+10. **#52 is live and unplayed** — reveal deadline, blocked-tune nudge, decibel
+    volume slider, reveal timings. Verified live: slider travels 0/−10/−20/−30/
+    −38 dB, and a room was created (auth + App Check + a Firestore write).
+    **The reveal fix cannot be proved until the next stall, and no round has yet
+    written a `RevealTiming`.** [`reveal-delays.md`](decisions/reveal-delays.md) ·
     [`audio-stack.md`](decisions/audio-stack.md).
 11. **Branches:** #35–#49 closed or merged, nothing open. Local-only and unpushed:
     `ask-recovery-code` (cheapest on the list), `clock-bed-and-key-repeat`,
