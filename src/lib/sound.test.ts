@@ -5,6 +5,7 @@ import {
   clampVolume,
   clockVoices,
   cueVoices,
+  isPreviewBlocked,
   masterGainFor,
   playPreview,
   playSequence,
@@ -324,5 +325,112 @@ describe('Happy Birthday', () => {
   test('is a smoke-test fixture, not a published pack tune', () => {
     expect(HAPPY_BIRTHDAY.every((voice) => voice.type === 'triangle')).toBe(true);
     expect(HAPPY_BIRTHDAY.length).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * The silent failure behind "Joe didn't hear the music on the first question",
+ * round CUC4, 11 September 2026. `unlock()` resumes the AudioContext, which the
+ * `<audio>` element does not use — so a page with no gesture on it gets a
+ * `NotAllowedError` that used to go straight into an empty catch.
+ */
+describe('a preview the browser refuses to start', () => {
+  class RefusingAudio {
+    preload = '';
+    loop = false;
+    volume = 1;
+    src = '';
+    currentTime = 0;
+    static reason: { name: string } = { name: 'NotAllowedError' };
+    addEventListener(): void {}
+    load(): void {}
+    pause(): void {}
+    removeAttribute(): void {}
+    play(): Promise<void> {
+      return Promise.reject(RefusingAudio.reason);
+    }
+  }
+
+  async function withRefusingAudio(reason: { name: string }, run: () => Promise<void>): Promise<void> {
+    const globals = globalThis as { Audio?: unknown };
+    const original = globals.Audio;
+    RefusingAudio.reason = reason;
+    globals.Audio = RefusingAudio;
+    try {
+      await run();
+    } finally {
+      stopPreview();
+      playAcceptedClip();
+      if (original === undefined) delete globals.Audio;
+      else globals.Audio = original;
+    }
+  }
+
+  /** A clip the browser is happy to start, through the same public path. */
+  function playAcceptedClip(): void {
+    const globals = globalThis as { Audio?: unknown };
+    globals.Audio = class {
+      preload = '';
+      loop = false;
+      volume = 1;
+      src = '';
+      currentTime = 0;
+      addEventListener(): void {}
+      load(): void {}
+      pause(): void {}
+      removeAttribute(): void {}
+      play(): Promise<void> {
+        return Promise.resolve();
+      }
+    };
+    playPreview('https://audio-ssl.itunes.apple.com/clip.m4a');
+  }
+
+  test('raises the flag, so the screen can say why the question is silent', async () => {
+    await withRefusingAudio({ name: 'NotAllowedError' }, async () => {
+      // #given a page the browser has seen no gesture on
+      expect(isPreviewBlocked()).toBe(false);
+
+      // #when a tunes question opens
+      playPreview('https://audio-ssl.itunes.apple.com/clip.m4a');
+      await Promise.resolve();
+      await Promise.resolve();
+
+      // #then the player is told there is something to press
+      expect(isPreviewBlocked()).toBe(true);
+    });
+  });
+
+  test('stays down for a clip that simply failed, which is ours to fix', async () => {
+    await withRefusingAudio({ name: 'NotSupportedError' }, async () => {
+      // #when the clip 404s or will not decode
+      playPreview('https://audio-ssl.itunes.apple.com/clip.m4a');
+      await Promise.resolve();
+      await Promise.resolve();
+
+      // #then nothing invites a press that would not help
+      expect(isPreviewBlocked()).toBe(false);
+    });
+  });
+
+  /**
+   * Deliberately narrow about what it proves. The notice goes because
+   * `playPreview` lowers the flag for every fresh attempt, not because a later
+   * success raised anything — which is exactly why there is no success branch in
+   * the source. Written this way so nobody reads it as covering one.
+   */
+  test('the next attempt lowers it again, so a notice never outlives its question', async () => {
+    await withRefusingAudio({ name: 'NotAllowedError' }, async () => {
+      playPreview('https://audio-ssl.itunes.apple.com/clip.m4a');
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(isPreviewBlocked()).toBe(true);
+
+      // #when the player presses the button, or the next question opens
+      playAcceptedClip();
+
+      // #then the notice is gone at once, before any play() has settled
+      expect(isPreviewBlocked()).toBe(false);
+    });
   });
 });

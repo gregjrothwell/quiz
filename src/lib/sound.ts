@@ -334,6 +334,32 @@ let muted = readMuted();
 let volume = readVolume();
 
 /**
+ * Whether the browser refused to start the last preview.
+ *
+ * `unlock()` resumes the AudioContext, which is what the synth cues and the
+ * Classical round need — and it does nothing at all for the `<audio>` element a
+ * tunes question streams through, because that is a **separate** autoplay gate.
+ * A browser that has seen no interaction on the page refuses `play()` with
+ * `NotAllowedError`, and until 11 September 2026 the rejection was swallowed:
+ * the question ran its fifteen seconds in silence with nothing on screen to say
+ * why.
+ *
+ * Round CUC4, 11 September 2026, answers per question: **7, 8, 9, 9, 9…** Two
+ * players silent on the first question, one on the second, everybody from the
+ * third — people finding the button one at a time. Joe said he did not hear the
+ * music on the first question, and that is the shape of it in the data.
+ *
+ * The likely trigger is the link auto-join: a regular following a link goes
+ * straight into the room without a single click, so the page has no gesture on
+ * it when the first question opens. The feature that removed a press removed the
+ * gesture that unlocks media.
+ *
+ * Read through {@link useSound}, so the question screen can point at the
+ * replay button it already has rather than leaving silence unexplained.
+ */
+let previewBlocked = false;
+
+/**
  * The master gain the synth cues run at, for a given slider position.
  *
  * The cues are balanced against each other relative to {@link MASTER_GAIN}, and
@@ -348,6 +374,39 @@ let volume = readVolume();
  */
 export function masterGainFor(level: number): number {
   return MASTER_GAIN * Math.min(1, clampVolume(level) / DEFAULT_VOLUME);
+}
+
+/**
+ * Whether a rejected `play()` was the autoplay policy rather than a broken clip.
+ *
+ * Duck-typed on `name` in the same shape as `isPermissionDenied` in
+ * `src/lib/vault.ts`, rather than `instanceof DOMException`: the constructor is
+ * not guaranteed across every engine this runs in, and the check that matters is
+ * what the browser called it.
+ */
+function isAutoplayBlocked(cause: unknown): boolean {
+  return (
+    typeof cause === 'object' &&
+    cause !== null &&
+    'name' in cause &&
+    String((cause as { name: unknown }).name) === 'NotAllowedError'
+  );
+}
+
+/**
+ * Whether the last preview was refused by the autoplay policy.
+ *
+ * The same module state {@link useSound} publishes, reachable without a React
+ * render so a test can drive `playPreview` directly.
+ */
+export function isPreviewBlocked(): boolean {
+  return previewBlocked;
+}
+
+function setPreviewBlocked(next: boolean): void {
+  if (previewBlocked === next) return;
+  previewBlocked = next;
+  notify();
 }
 
 const listeners = new Set<() => void>();
@@ -457,6 +516,10 @@ export function playPreview(url: string, startSeconds = 0, seconds?: number): vo
   stopPreview();
   stopSequence();
   stopClock();
+  // A fresh attempt has not been refused yet. Cleared here rather than left to
+  // the outcome so a clip that plays never inherits the last question's notice;
+  // the worst case is the hint appearing a frame after the refusal.
+  setPreviewBlocked(false);
   if (muted || !isItunesPreviewUrl(url)) return;
   if (typeof Audio === 'undefined') return;
 
@@ -500,8 +563,16 @@ export function playPreview(url: string, startSeconds = 0, seconds?: number): vo
         // Seeking before metadata is ready throws on some engines; play anyway.
       }
     }
-    void el.play().catch(() => {
-      // Autoplay blocked or the clip 404'd. Hear it again is the way back in.
+    // No `then` half: the flag is already down, because `playPreview` lowers it
+    // for every fresh attempt. A success branch here could only ever set false
+    // to false, and an untested branch that cannot fire is worse than no branch.
+    void el.play().catch((cause: unknown) => {
+      // A later question's clip has already taken over; this result is stale.
+      if (previewEl !== el) return;
+      // Only the autoplay refusal is worth a line on screen, and it is the one
+      // the player can actually do something about. A 404 or a decode failure is
+      // ours to fix and telling the room to press a button would be a lie.
+      setPreviewBlocked(isAutoplayBlocked(cause));
     });
   };
 
@@ -676,6 +747,11 @@ export interface SoundControls {
   /** 0–1. What the slider shows and what a preview plays at. */
   volume: number;
   setVolume: (next: number) => void;
+  /**
+   * The browser refused to start the tune, and pressing something is the way in.
+   * Always false when there is no tune to play.
+   */
+  previewBlocked: boolean;
 }
 
 export function useSound(): SoundControls {
@@ -701,5 +777,11 @@ export function useSound(): SoundControls {
     setMuted(!isMuted);
   }, [isMuted]);
 
-  return { muted: isMuted, toggle, play, volume: level, setVolume };
+  const blocked = useSyncExternalStore(
+    subscribe,
+    () => previewBlocked,
+    () => false,
+  );
+
+  return { muted: isMuted, toggle, play, volume: level, setVolume, previewBlocked: blocked };
 }
