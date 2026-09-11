@@ -101,6 +101,34 @@ export function msUntilRevealGate({
 }
 
 /**
+ * How long a reveal attempt may take before it counts as lost.
+ *
+ * **The backoff below only ever covered a refusal.** A refusal is a rejected
+ * promise, which lands in a `catch` and starts the ladder. A stalled connection
+ * is not: Firestore queues the write and leaves the promise *pending*, for as
+ * long as it takes. Nothing in the reveal path had a deadline, so a blip on the
+ * quizmaster's device stopped the round dead — no retry, because nothing threw;
+ * and no rescue, because `revealingRef` guards the Reveal button against a
+ * double fire and is only cleared on failure. The button read "Revealing…" and
+ * did nothing when pressed. Reported live on 11 September 2026, round `CUC4`:
+ * "a couple of very large delays on revealing the answer".
+ *
+ * Four seconds is set against what a healthy reveal actually costs. Measured on
+ * 20 August 2026, the reveal landed at +478ms and +561ms with the answer on
+ * screen at +1.2s, and the slowest single component in the round is the replay
+ * hold at 1820ms. So this is roughly seven times a good reveal and still short
+ * enough that a lost one is a pause rather than a stall — and crossing it hands
+ * the round back to the ladder and to the quizmaster's button, which is the
+ * point.
+ *
+ * Retrying after a timeout is safe rather than merely tolerable: the queued
+ * writes flush when the line returns, a reveal document is immutable once
+ * created, and `resolveAnswer` already reads the answer back when every
+ * candidate is refused. See `src/lib/withTimeout.ts`.
+ */
+export const REVEAL_TIMEOUT_MS = 4_000;
+
+/**
  * How long to wait before asking again after a refusal.
  *
  * A flat 1500ms was the old shape, and it was picked when a refusal was thought

@@ -7,7 +7,7 @@ import type { Verdict } from './engine/questionVote';
 import { honoursFor, sawWholeGame, NO_HONOURS } from './engine/awards';
 import { formFor } from './engine/form';
 import { foldGameRecord } from './engine/gameRecord';
-import { msUntilRevealGate, revealBackoffMs } from './engine/revealGate';
+import { msUntilRevealGate, REVEAL_TIMEOUT_MS, revealBackoffMs } from './engine/revealGate';
 import { roomStandings } from './engine/scoring';
 import { codeFromHash } from './engine/roomCode';
 import {
@@ -37,6 +37,7 @@ import { loadPackQuestions, usePackIndex } from './lib/usePacks';
 import { useQuestionClock } from './lib/useQuestionClock';
 import { useRoom } from './lib/useRoom';
 import { resolveAnswer } from './lib/vault';
+import { withTimeout } from './lib/withTimeout';
 import type { PackId } from './questions/types';
 import { Final } from './screens/Final';
 import { Landing } from './screens/Landing';
@@ -560,14 +561,27 @@ function Game() {
     revealingRef.current = key;
 
     try {
-      // The answer is not in the room, the pack or this bundle. It comes back
-      // from the vault, and only once the server agrees the clock has run out.
-      const correctIndex = await resolveAnswer(firestore(), room.code, question);
-      // Named rather than assumed: `dispatch` folds over the room as it is when
-      // this returns, so that an answer landing during the round trip still
-      // counts — and the reducer refuses to score this answer against anything
-      // but the question it was asked about.
-      await dispatch({ type: 'reveal', correctIndex, questionId: question.id });
+      // Both halves are Firestore writes, and neither rejects when the line
+      // stalls — they queue and stay pending, which is what let a blip hold the
+      // whole room on "Revealing…". The deadline is what turns that back into a
+      // failure the ladder below and the Reveal button can both act on.
+      // `REVEAL_TIMEOUT_MS` has the argument; `withTimeout` has why not
+      // cancelling the write is safe here.
+      await withTimeout(
+        (async () => {
+          // The answer is not in the room, the pack or this bundle. It comes
+          // back from the vault, and only once the server agrees the clock has
+          // run out.
+          const correctIndex = await resolveAnswer(firestore(), room.code, question);
+          // Named rather than assumed: `dispatch` folds over the room as it is
+          // when this returns, so that an answer landing during the round trip
+          // still counts — and the reducer refuses to score this answer against
+          // anything but the question it was asked about.
+          await dispatch({ type: 'reveal', correctIndex, questionId: question.id });
+        })(),
+        REVEAL_TIMEOUT_MS,
+        'The reveal',
+      );
     } catch (cause) {
       // Rethrown rather than reported here so the caller owns the error, which
       // keeps this callback free of state updates and the expiry effect below
