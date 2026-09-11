@@ -39,6 +39,37 @@ body where it happened rather than here: three 4 September batches, then the
 whole 2026-09-08 day when the debug-token deploy needed the room. All verbatim to
 [`recall/2026-09.md`](recall/2026-09.md).
 
+## 2026-09-11 — The round was the best yet, and three things came out of it
+
+`CUC4`, 15 of 15, **80% hit, 3.1s median** — the best round the game has
+recorded. Reported against it: two very large delays revealing, Cass unable to
+join, Joe silent on question one, and the volume still too loud.
+
+**The player count was not the delay.** 9 seats against 11 the day before, on an
+identical bundle. Firestore leaves a stalled write *pending* rather than
+rejecting it, so the backoff ladder never started and `revealingRef` held the
+quizmaster's own Reveal button shut — the documented rescue was not there.
+`REVEAL_TIMEOUT_MS` turns it back into a rejection both can act on.
+A developer suggested OpenTelemetry; the instinct is right and the instrument is
+wrong for a site with no backend, so the four numbers go in the game record that
+device already writes — **inside `questions`, where the rules cannot reach, so no
+rules change and no deploy ordering**. [`decisions/reveal-delays.md`](decisions/reveal-delays.md).
+
+**Joe's silence is in the data**: answers per question 7, 8, 9, 9, 9 — an
+autoplay-unlock ramp. `unlock()` resumes the AudioContext and does nothing for
+the `<audio>` element; the link auto-join means no gesture on the page at all.
+The volume slider was linear where hearing is not, so its whole useful range sat
+in the bottom tenth; it is 40 dB of travel now, 2 dB a step, default −20 dB dead
+centre. [`decisions/audio-stack.md`](decisions/audio-stack.md).
+
+**Cass is undiagnosed** — no join was ever written, and App Check refusing at
+sign-in is a guess until somebody asks her what the screen said.
+
+**Correction:** live was *not* `index-qJCbuGrA`/`d412adc`. gh-pages HEAD is
+`8c0a107`, 10 Sep 18:05, `index-Du6MwR-e`, from #51. Not the cause — it gates on
+a boolean flag absent in production — but a deploy landed the evening before and
+the handover did not know.
+
 ## 2026-09-10 — Node 20 deprecation: the four actions clear it at three different majors
 
 Bumped CI off the deprecated node20 runtime. Levelling all four to v5 would have
@@ -136,34 +167,11 @@ workflow above but still the guard on a hand deploy. Archived whole:
 
 ## 2026-09-10 — Token revoked and reissued; leak closed
 
-Follows the entry below, which was written while it was still open. Greg revoked
-the old debug token in the console and reissued; `.env.local` holds the new one.
-Verified: live site plays via the real reCAPTCHA path (room created, no errors),
-`sync-harness 3` accepts the new token, `appcheck-probe` still refused, and
-`sync-harness` with a non-safelisted token gets `exchangeDebugToken` 403 — the
-same path a revoked token now takes. **`master` still re-leaks on deploy** until
-`seal-token-again` lands; that is the only piece left.
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-10 — Live: the debug-token gate (`index-V9wVdhyu`), and #40 for the rules
 
-Greg said run it. `npm run deploy` from `seal-token-again` — `build`,
-`check-bundle` clean, `gh-pages`. gh-pages `9ba0638` → `899a4c3`, CDN swapped
-`index-C3jZR3XU` → `index-V9wVdhyu` on the second poll. **Served bundle grepped
-for the token: 0 hits across all four JS chunks, was 1.** Live app verified —
-created a room, so anonymous auth + App Check attestation + a Firestore write all
-worked, no console errors. Firebase chunk unmoved (`firebase-Cns3pSRr`).
-
-**The console half is still open** — the token was world-readable for weeks and
-the deploy does not un-publish it; revoke + reissue is Greg's. And **`master`
-still re-leaks on deploy**: the gate and `check-bundle` are on `seal-token-again`,
-not master. Full story now in
-[`decisions/debug-token-leak.md`](decisions/debug-token-leak.md).
-
-`sync-rules-with-console` pushed and opened as
-[#40](https://github.com/gregjrothwell/quiz/pull/40). `npm run check-rules`
-against live: **both directions green**, the `wager` and `firstMs` allow cases
-FAIL → PASS, the `elapsedMs` floor proved both ways. `npm run sync-harness 10`:
-**10/10 in the room, 0 missed the question.**
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-10 — Correction: the console was ahead of the repo, not behind
 
