@@ -65,10 +65,9 @@ centre. [`decisions/audio-stack.md`](decisions/audio-stack.md).
 **Cass is undiagnosed** — no join was ever written, and App Check refusing at
 sign-in is a guess until somebody asks her what the screen said.
 
-**Correction:** live was *not* `index-qJCbuGrA`/`d412adc`. gh-pages HEAD is
-`8c0a107`, 10 Sep 18:05, `index-Du6MwR-e`, from #51. Not the cause — it gates on
-a boolean flag absent in production — but a deploy landed the evening before and
-the handover did not know.
+**Correction:** live was *not* `index-qJCbuGrA`/`d412adc` but `8c0a107` /
+`index-Du6MwR-e`, 10 Sep 18:05, from #51 — not the cause (it gates on a boolean
+absent in production), but a deploy landed the evening before and nobody knew.
 ## 2026-09-10 — Playwright prerequisites: jsdom, emulators, e2e job
 
 Recorded order from [`audit-backlog.md`](decisions/audit-backlog.md): glob (already),
