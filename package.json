@@ -25,6 +25,7 @@
     "write-flags-pack": "tsx scripts/write-flags-pack.ts",
     "write-sleeves-pack": "tsx scripts/write-sleeves-pack.ts",
     "still-dimensions": "tsx scripts/still-dimensions.ts",
+    "sleeve-audit": "tsx scripts/sleeve-audit.ts",
     "write-screens-pack": "tsx --env-file=.env.local scripts/write-screens-pack.ts",
     "itunes-probe": "tsx scripts/itunes-probe.ts",
     "tune-audit": "tsx scripts/tune-title-audit.ts",
