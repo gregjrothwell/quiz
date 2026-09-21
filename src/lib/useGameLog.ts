@@ -26,7 +26,13 @@ function parseAnswer(value: unknown): Answer | null {
   if (!isObject(value)) return null;
   const { optionIndex, elapsedMs } = value;
   if (typeof optionIndex !== 'number' || typeof elapsedMs !== 'number') return null;
-  return { optionIndex, elapsedMs };
+  return {
+    optionIndex,
+    elapsedMs,
+    ...(typeof value.firstMs === 'number' ? { firstMs: value.firstMs } : {}),
+    ...(typeof value.wager === 'number' ? { wager: value.wager } : {}),
+    ...(typeof value.at === 'number' ? { at: value.at } : {}),
+  };
 }
 
 function parseAnswers(value: unknown): Record<string, Answer> {

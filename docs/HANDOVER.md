@@ -29,6 +29,7 @@ Built to replace Polly in Teams.
 | **an album cover that names its own album**, the sleeve audit | [`decisions/sleeves-gate.md`](decisions/sleeves-gate.md) |
 | voting on a question, retiring one | [`question-votes.md`](decisions/question-votes.md) |
 | rules and App Check — Firestore and RTDB, then **auth**, then the debug token and why a deploy must not come off `master` | [`security.md`](decisions/security.md) · [`app-check-auth.md`](decisions/app-check-auth.md) · [`debug-token-leak.md`](decisions/debug-token-leak.md) |
+| **the vault oracle, `joinedAt`, the `at` stamp, presence names** | [`security-round-sept-2026.md`](decisions/security-round-sept-2026.md) |
 | **the CI deploy, the secret check, Playwright, the emulator**; anything that adds reads or writes | [`ci-deploy.md`](decisions/ci-deploy.md) · [`emulators.md`](decisions/emulators.md) · [`cost.md`](decisions/cost.md) · [`audit-backlog.md`](decisions/audit-backlog.md) |
 | — before assuming a style choice, a bug, or a claim in here | [`gotchas.md`](decisions/gotchas.md) · [`known-limits.md`](decisions/known-limits.md) · [`state-of-play.md`](decisions/state-of-play.md) |
 | what a question is worth, and why it is not a speed curve | [`decisions/scoring.md`](decisions/scoring.md) |
@@ -99,7 +100,8 @@ scoring 500 + rank 500/400/300/200/100; counts in
    eleven rounds rather than three, so it is no longer gated on playing.
 9. **Do not paste `master`'s rules over the console.** The repo is byte-forward
    (39,218) but the console is the source of truth; a paste the wrong way deletes
-   a live anti-cheat. `check-rules` **69/69 both ways, 10 September**.
+   a live anti-cheat. `check-rules` **69/69 both ways, 10 September**. **This
+   branch adds cases; expect new allow cases to FAIL until the paste.**
 10. **Hand-built packs need a seed after any *new* ids.** All seeded as of
     10 September; an unseeded pack breaks at reveal.
 11. **`firstMs` and the pack picker are live and unplayed.** It is a deterrent,
@@ -111,12 +113,10 @@ scoring 500 + rank 500/400/300/200/100; counts in
     every round since carries gate/resolve/dispatch. No stall has recurred, so
     the reveal fix is still unproved rather than disproved
     ([`reveal-delays.md`](decisions/reveal-delays.md)).
-14. **Branches:** #35–#49 closed or merged, nothing open. **On
-    `picture-loading-and-sleeves-ocr`, unpushed:** the picture box, the preload,
-    the side-by-side layout, the sleeves gate. Also unpushed:
-    `ask-recovery-code` (cheapest on the list), `clock-bed-and-key-repeat`,
-    `bound-elapsed-ms`, `fold-votes-dry-run`, `context-standards-route`,
-    `vote-tally` (WIP). ~40 merged remote branches could be pruned.
+14. **Paste then deploy, this branch:** pin `questions` to the lobby (vault
+    oracle), bound `joinedAt`, optional `at` stamp, drop presence `name`. Two
+    RTDB publishes. [`security-round-sept-2026.md`](decisions/security-round-sept-2026.md).
+    Do not accuse Alistair; `npm run audit-players` after one round is the answer.
     
 
 ## Where things are
@@ -127,7 +127,7 @@ sound / volume preferences. `src/screens/` one per phase, plus `Preview`.
 
 Commands: the table in [`AGENTS.md`](../AGENTS.md), plus `fetch-questions`,
 `fetch-otqa`, `asked-probe`, `take-stock`, `prune-rooms`, `write-*-pack`,
-`check-bundle`, `read-games`, and two new ones — **`sleeve-audit`** (Mac + `uv`;
+`check-bundle`, `read-games`, `audit-players`, and two new ones — **`sleeve-audit`** (Mac + `uv`;
 reads what is printed on each album cover) and **`still-dimensions`** (sizes
 every still in the packs). `npm test` covers `src/` plus the pure parts of
 `scripts/`; anything touching the network stays out, so it runs offline — a test

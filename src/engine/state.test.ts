@@ -614,3 +614,19 @@ describe('the answer window agrees with the security rules', () => {
     expect(DURATION_CHOICES.filter((secs) => !isDurationAllowed(secs))).toEqual([]);
   });
 });
+
+describe('the room update pin agrees with the security rules', () => {
+  const RULES = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8');
+
+  test('questions may only change in the lobby', () => {
+    expect(RULES).toMatch(/function questionsPinned\(\)/);
+    expect(RULES).toMatch(/resource\.data\.phase == 'lobby'/);
+    expect(RULES).toMatch(/&& questionsPinned\(\)/);
+  });
+
+  test('an existing joinedAt cannot be rewritten', () => {
+    expect(RULES).toMatch(/function ownJoinedAtOk\(\)/);
+    expect(RULES).toMatch(/function joinedAtGraceMs\(\) \{ return 300000; \}/);
+    expect(RULES).toMatch(/&& ownJoinedAtOk\(\)/);
+  });
+});

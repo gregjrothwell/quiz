@@ -24,6 +24,18 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-09-21 — Vault oracle, joinedAt, and the `at` stamp
+
+Any signed-in player could extract the vault: rewrite `questions[0].id` without
+moving phase or index, then four reveal writes. `check-rules` passed for the
+wrong reason. Closed by pinning `questions` to the lobby. `joinedAt: 0` seized
+quizmaster; now a new entry is ±5 minutes and an existing one cannot move.
+Answers carry optional `at: serverTimestamp()`; rank still reads `elapsedMs`.
+Presence drops `name` (two RTDB pastes). Alistair is fastest in 11 of 12 with
+a 203 ms right→wrong gap; do not accuse — `npm run audit-players` after one
+round is the answer. Depth:
+[`decisions/security-round-sept-2026.md`](decisions/security-round-sept-2026.md).
+
 ## 2026-09-21 — Live: `index-BHcNzJzP` (#54, gh-pages `026d7cd`)
 
 Greg said go live. [#54](https://github.com/gregjrothwell/quiz/pull/54) merged as
@@ -214,35 +226,19 @@ Archived whole: [`recall/2026-09.md`](recall/2026-09.md). Depth:
 
 ## 2026-09-09 — The whole day, archived
 
-iTunes Name that Tune (79 GB previews), Flags (76, hashed), Sleeves (52,
-mzstatic hotlink), picture retitled Fine Art, the vault topped up 206, all live
-as `index-6odlsKCm`; and On the box via TMDB untitled backdrops, built but not
-live. Moved whole on 10 September at 299/300, to keep the CI entry inside
-budget: [`recall/2026-09.md`](recall/2026-09.md).
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-08 — The whole day, archived
 
-`firstMs` shipped — the snap guess *shown* at the reveal, not banned (Greg chose
-exposure over restriction on cost) — and the A–D spam lottery that exposed;
-`games/{gameId}` built so a finished round survives its answers subcollection,
-and the A/B gap that forced it (test per-question things, never per-round); the
-melody round given **Hear it again**; and all of it live as `index-BDZpMBAG`,
-`check-rules` 65/65. Plus the two moved earlier — the melody round abandoned
-after four, the five-column picker. Moved whole on 10 September at 299/300:
-[`recall/2026-09.md`](recall/2026-09.md).
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-04 — Three more entries archived
 
-"The rest of the file is stale" is not evidence about a line; melody and picture
-going live with the vault as the gate; and the `melody-round` branch itself.
-Moved whole on 10 September at 322/300: [`recall/2026-09.md`](recall/2026-09.md).
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-04 — Three entries archived
 
-The squad-write correction, the negatives paste (`check-rules` allow **PASS**
-after the paste, which is what made the two deny cases mean anything), and the
-lobby writing the squad plus a stake that can go below zero. Moved whole on
-10 September at 313/300: [`recall/2026-09.md`](recall/2026-09.md).
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## Earlier — the full chronology, archived
 

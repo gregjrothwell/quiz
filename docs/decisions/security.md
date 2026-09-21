@@ -1,6 +1,6 @@
 # Security
 
-> **Owner: Greg Rothwell. Last updated: 20 August 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 21 September 2026. Budget: 250 lines.**
 
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
@@ -141,7 +141,7 @@ and `check-rules` confirmed the semantics, which between them cover it.
 | **Room writes are shape-checked** (`wellFormed`) | `code` is pinned, `phase` must be one of the five real phases, `players`/`scores` cap at 60, `questions` at 50, and the writer's own player entry must be `{name, joinedAt}` with a 1–40 character name. Previously a member could write any shape at any size into a document every client re-reads on every transition. |
 | **`create` requires exactly one player** | `keys().hasOnly([uid])` is satisfied by the *empty* map, so a room could be minted with no members and therefore no derivable quizmaster. |
 | **Unknown phase renders an escape hatch** (`App.tsx`) | The phase match was exhaustive with no fallback, so `phase: 'anything-else'` rendered a blank stage with no way out for the whole room. Demonstrated live before the fix, against the rules as published: a fresh anonymous client, given only the code, joined and blanked the room in a single write. Now both ends are covered — the rules reject the phase, and a client that meets one anyway offers Reload and Leave. |
-| **Season rows are bounded** | `wins <= played`, `best <= points`, and absolute caps. Still self-reported — the rules cannot know your real score — but one edited row can no longer put a number on the board that makes the table meaningless. |
+| **Season rows are bounded** | `wins <= played` and absolute caps. **`best <= points` was removed on 4 September 2026** — a lost minimum stake can put the total below a personal best, and `best` stays a maximum against a zero floor. The rules comment at `firestore.rules` records the removal. The claim that the inequality is live was left standing here until 21 September; it is not. |
 | **Season rows are deletable by their owner** | Was `if false`. There was no way for anyone to take their own display name back off a shared board, and the name is free text on a leaderboard the whole office sees. Somebody *else's* row still needs the console; the app has no moderator, which is worth knowing before the board is projected in a meeting. |
 | **Presence entries cannot carry extra children** (`$other: false`) | `.validate` required `name` and `at` but did not forbid anything else, so a presence node could hold an arbitrary payload. |
 | **`check-rules` tests denials, not just permissions** | The rules are pasted by hand, and a paste can fail in two directions. The permissive direction was completely silent: the game works perfectly with `list` wide open. Thirteen checks now, each tightening above paired with one that fails loudly if the console is still serving the old ruleset. It also exercises the season write path end to end — the thing the last handover called the least-proven code in the repo. |
@@ -152,18 +152,21 @@ and `check-rules` confirmed the semantics, which between them cover it.
 - **The room code is the capability.** Anyone holding a code can read the room and
   join it. This is not fixable: joining reads the document first, so `get` cannot
   require membership. 707,281 codes is a sane guess-space now that they cannot be
-  harvested in one query — that was the entire value of dropping `list`.
-- **`elapsedMs` is measured on the answering device**, and still is. Correct
-  answers no longer ship anywhere — that half was fixed by the vault, without a
-  Cloud Function and without leaving the free tier, which the review had
-  assumed impossible. Bounding `elapsedMs` against the question's open time in
-  the rules was considered again and rejected for the same reason as before: it
-  costs a document read per answer and would silently reject honest answers
-  from anyone on a slow connection, which is worse than the cheat.
-- **Any member can still rewrite the phase, scores, questions and other players.**
-  It follows directly from the quizmaster being derived rather than stored, and
-  the reasoning for that is in the table near the top. `wellFormed` now keeps the
-  worst case to mischief rather than an unplayable or expensive room.
+  harvested in one Firestore query — that was the entire value of dropping
+  `list`. **Correction, 21 September 2026:** RTDB `presence/$code` was readable
+  with `$code` unconstrained, so the same space was a harvest of *names* in one
+  loop. The client no longer writes `name`; a liveness ping is not a roster.
+  Depth: [`security-round-sept-2026.md`](security-round-sept-2026.md).
+- **`elapsedMs` is measured on the answering device**, and still is the rank
+  key. **Correction, 21 September 2026:** the lower bound against `openedAt`
+  *did* ship, 8 September, with an 8,000 ms grace that leaves the default
+  10-second window unguarded. A server stamp (`at`) now rides beside it;
+  cutting grace waits on that distribution. [`answer-window.md`](answer-window.md).
+- **Any member can still rewrite the phase, scores and other players.**
+  It follows directly from the quizmaster being derived rather than stored.
+  **`questions` is the exception, as of 21 September 2026** — rewriting the
+  list mid-round was an unlimited vault oracle. `joinedAt` on your own entry
+  is pinned once written, so seizing quizmaster with `joinedAt: 0` is closed.
 - **Answers are readable before the reveal.** Restricting the subcollection to
   room members was considered and rejected: it costs a document read per rule
   evaluation — per snapshot on a listener, so roughly 1,500 extra reads a game —

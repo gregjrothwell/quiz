@@ -165,6 +165,47 @@ service cloud.firestore {
           && player.get('squad', '').size() <= 40;
       }
 
+      // `joinedAt` decides the quizmaster (`resolveQuizmaster` takes the
+      // lowest). A bare `is number` meant `players.<myuid>.joinedAt: 0`
+      // seized the role — every phase transition, every reveal, every
+      // `scores.*` write. New entries must be within five minutes of the
+      // server's clock; existing ones must not move. The window also
+      // refuses the accidental stale timestamp from another room (6JA5).
+      //
+      // A reaped player restored after more than five minutes is a *new*
+      // entry carrying the old value, and is refused. Reap is lobby-only.
+      // Widening the window reopens the steal; see
+      // docs/decisions/security-round-sept-2026.md.
+      function joinedAtGraceMs() { return 300000; }
+
+      function newJoinedAtOk() {
+        return request.resource.data.players.keys().hasAny([request.auth.uid])
+          && request.resource.data.players[request.auth.uid].joinedAt
+               >= request.time.toMillis() - joinedAtGraceMs()
+          && request.resource.data.players[request.auth.uid].joinedAt
+               <= request.time.toMillis() + joinedAtGraceMs();
+      }
+
+      function ownJoinedAtOk() {
+        return !request.resource.data.players.keys().hasAny([request.auth.uid])
+          || (resource.data.players.keys().hasAny([request.auth.uid])
+                ? request.resource.data.players[request.auth.uid].joinedAt
+                    == resource.data.players[request.auth.uid].joinedAt
+                : newJoinedAtOk());
+      }
+
+      // The reveal gate asks the room which question is in play, so a room
+      // that can rewrite its own question list can ask about anything in
+      // the vault. The client only ever sets `questions` in `selectPack`,
+      // which refuses outside the lobby, and clears it in `reset`, which
+      // returns to the lobby — so pinning it here costs nothing a real
+      // round does.
+      function questionsPinned() {
+        return request.resource.data.questions == resource.data.questions
+          || resource.data.phase == 'lobby'
+          || request.resource.data.phase == 'lobby';
+      }
+
       // The writer's own entry is the only one a rule can check without
       // iterating the map, which rules cannot do. A member can still write a
       // neighbour's entry — see the `update` rule.
@@ -260,7 +301,8 @@ service cloud.firestore {
       allow get: if signedIn();
 
       // Creating a room means putting yourself in it as the only player, in a
-      // lobby with no questions yet.
+      // lobby with no questions yet. `newJoinedAtOk` rather than
+      // `ownJoinedAtOk`: there is no `resource` on create.
       allow create: if signedIn()
         && request.resource.data.players.keys().hasOnly([request.auth.uid])
         // `hasOnly` is satisfied by the empty map, which would mint a room with
@@ -268,20 +310,25 @@ service cloud.firestore {
         && request.resource.data.players.keys().size() == 1
         && request.resource.data.phase == 'lobby'
         && request.resource.data.questions.size() == 0
-        && wellFormed();
+        && wellFormed()
+        && newJoinedAtOk();
 
       // Members drive the game. Joining is also an update, so allow a writer who
       // is a member either before or after the write.
       //
-      // A member can still overwrite the phase, the scores, the questions and
-      // other players: the quizmaster is derived rather than stored, so there is
-      // no uid here to compare against. That is accepted for a room of colleagues
-      // and written down in docs/HANDOVER.md. `wellFormed` is what keeps the
-      // worst case to mischief rather than an unplayable or expensive room.
+      // A member can still overwrite the phase, the scores and other
+      // players: the quizmaster is derived rather than stored, so there is
+      // no uid here to compare against. That is accepted for a room of
+      // colleagues. `wellFormed` keeps the worst case to mischief rather
+      // than an unplayable or expensive room. `questionsPinned` is the
+      // exception — rewriting the question list mid-round was an unlimited
+      // vault oracle; see docs/decisions/security-round-sept-2026.md.
       allow update: if signedIn()
         && (isMember() || request.resource.data.players.keys().hasAny([request.auth.uid]))
         && wellFormed()
-        && timingOk();
+        && timingOk()
+        && questionsPinned()
+        && ownJoinedAtOk();
 
       // Rooms are disposable; nobody needs to delete one mid-quiz.
       allow delete: if false;
@@ -362,9 +409,15 @@ service cloud.firestore {
         // only on the last question of a round the room agreed to play for
         // stakes, so a wager sent on any other is ignored by every client
         // alike.
+        // `at` is the server's stamp of when this write landed, optional so
+        // a bundle that has never heard of it still scores. When present it
+        // must be `request.time` — `serverTimestamp()` and nothing else —
+        // so a client cannot backdate it. Rank still reads `elapsedMs`.
+        // Paste this before deploying the client that writes it, or every
+        // answer is refused in silence.
         allow create, update: if signedIn()
           && request.auth.uid == uid
-          && request.resource.data.keys().hasOnly(['optionIndex', 'elapsedMs', 'questionIndex', 'wager', 'firstMs'])
+          && request.resource.data.keys().hasOnly(['optionIndex', 'elapsedMs', 'questionIndex', 'wager', 'firstMs', 'at'])
           && request.resource.data.optionIndex is int
           && request.resource.data.optionIndex >= 0
           && request.resource.data.optionIndex < 10
@@ -383,6 +436,8 @@ service cloud.firestore {
               && request.resource.data.firstMs >= 0
               && request.resource.data.firstMs <= 600000
               && request.resource.data.firstMs <= request.resource.data.elapsedMs))
+          && (!('at' in request.resource.data.keys())
+            || request.resource.data.at == request.time)
           && arrivalOk();
 
         allow delete: if signedIn() && request.auth.uid == uid;
@@ -402,11 +457,16 @@ service cloud.firestore {
       //   2. the server itself has seen the room's answer window pass since it
       //      opened.
       //
-      // The first stops a member holding question one open and quietly asking
-      // about the other fourteen. The second means nobody — in this room or in
-      // a decoy of their own — can ask before the answering window has already
-      // closed, because `openedAt` can only be written as `request.time` and
-      // `durationSecs` cannot move while a question is open.
+      // The first *used* to claim it stopped a member holding question one
+      // open and quietly asking about the other fourteen. It did not: the
+      // room could rewrite `questions` without moving phase or index, so
+      // `opensAQuestion()` stayed false and `timingOk()` was satisfied.
+      // `questionsPinned()` on the room update is what actually stops that.
+      // The second means nobody — in this room or in a decoy of their own —
+      // can ask before the answering window has already closed, because
+      // `openedAt` can only be written as `request.time` and `durationSecs`
+      // cannot move while a question is open. The accepted decoy (one gate
+      // per question, five-second floor) is unchanged.
       //
       // What this does not stop is written down in docs/HANDOVER.md. The short
       // version: the questions come from a public database, so a determined

@@ -112,7 +112,7 @@ async function main(): Promise<void> {
     {
       product: 'Realtime Database',
       what: 'write presence',
-      run: () => set(presence, { name: 'App Check probe', at: Date.now() }),
+      run: () => set(presence, { at: Date.now() }),
     },
     {
       product: 'Realtime Database',

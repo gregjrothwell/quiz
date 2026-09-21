@@ -32,6 +32,7 @@
     "tmdb-probe": "tsx --env-file=.env.local scripts/tmdb-probe.ts",
     "fold-votes": "tsx --env-file=.env.local scripts/fold-votes.ts",
     "read-games": "tsx --env-file=.env.local scripts/read-games.ts",
+    "audit-players": "tsx --env-file=.env.local scripts/player-audit.ts",
     "sync-harness": "tsx --env-file=.env.local scripts/sync-harness.ts",
     "host-room": "tsx --env-file=.env.local scripts/host-room.ts",
     "rank-harness": "tsx --env-file=.env.local scripts/rank-harness.ts",

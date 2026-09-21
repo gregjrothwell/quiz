@@ -92,14 +92,15 @@ export function liveAnswers(
     if (!players[uid]) continue;
     // Rebuilt field by field on purpose, so a stray field on the document
     // cannot reach the reducer — which means a new one has to be added here
-    // deliberately. `wager` and `firstMs` are spread conditionally rather than
-    // written as `wager: answer.wager`, so an answer without one keeps the
+    // deliberately. `wager`, `firstMs` and `at` are spread conditionally rather
+    // than written as `wager: answer.wager`, so an answer without one keeps the
     // exact shape the rounds before each of them produced.
     live[uid] = {
       optionIndex: answer.optionIndex,
       elapsedMs: answer.elapsedMs,
       ...(answer.firstMs === undefined ? {} : { firstMs: answer.firstMs }),
       ...(answer.wager === undefined ? {} : { wager: answer.wager }),
+      ...(answer.at === undefined ? {} : { at: answer.at }),
     };
   }
 

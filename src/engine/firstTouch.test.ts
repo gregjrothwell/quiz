@@ -161,6 +161,24 @@ describe('firstMs agrees with the security rules', () => {
   });
 });
 
+describe('the answer arrival stamp agrees with the security rules', () => {
+  const RULES = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8');
+
+  it('is in the answer document hasOnly list', () => {
+    const hasOnly = /answers[\s\S]*?hasOnly\(\[([^\]]*)\]\)/.exec(RULES)?.[1];
+    expect(hasOnly).toBeDefined();
+    expect(hasOnly).toContain("'at'");
+  });
+
+  it('is optional, so the live bundle still scores before the client ships', () => {
+    expect(RULES).toMatch(/!\('at' in request\.resource\.data\.keys\(\)\)/);
+  });
+
+  it('must be the server time when present, so a client cannot backdate it', () => {
+    expect(RULES).toMatch(/request\.resource\.data\.at == request\.time/);
+  });
+});
+
 describe('the first touch is not scored', () => {
   it('pays a revised guess exactly what an untouched answer of the same time pays', () => {
     // The load-bearing claim of the whole change. `firstMs` is shown and never

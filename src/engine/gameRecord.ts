@@ -14,6 +14,8 @@ export interface RecordedAnswer {
   elapsedMs: number;
   firstMs?: number;
   wager?: number;
+  /** Server arrival of the answer write, milliseconds since epoch. */
+  at?: number;
 }
 
 /**
@@ -160,7 +162,7 @@ function timingFor(
 /**
  * Rebuilt field by field, as `liveAnswers` does, so a stray field on an answer
  * cannot ride into a document the rules only bound at the top level — and so an
- * answer without a `firstMs` or `wager` carries no key for it rather than an
+ * answer without a `firstMs`, `wager` or `at` carries no key for it rather than an
  * `undefined`, which Firestore refuses to write.
  */
 function recordedAnswers(answers: Record<string, Answer>): Record<string, RecordedAnswer> {
@@ -171,6 +173,7 @@ function recordedAnswers(answers: Record<string, Answer>): Record<string, Record
       elapsedMs: answer.elapsedMs,
       ...(answer.firstMs === undefined ? {} : { firstMs: answer.firstMs }),
       ...(answer.wager === undefined ? {} : { wager: answer.wager }),
+      ...(answer.at === undefined ? {} : { at: answer.at }),
     };
   }
   return recorded;
