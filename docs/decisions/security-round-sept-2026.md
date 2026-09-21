@@ -140,8 +140,8 @@ stops working and the room fills with ghosts:
 1. Relax `.validate` to `hasChildren(['at'])`, **keep** the `name` child
    validator. Old and new clients both pass. Pasted 21 September.
 2. Deploy the client without `name`. Live `index-OfECpKrx`, 21 September 16:51.
-3. Remove the `name` child rule so `$other` refuses it. **This is what the
-   repo copy now is — paste it.**
+3. Remove the `name` child rule so `$other` refuses it. Pasted 21 September
+   16:56; `{ name, at }` denied.
 
 ### S5 — Docs that were wrong · LOW
 
@@ -173,9 +173,10 @@ A client ahead of the console has every answer refused **in silence**.
 3. `npm run check-rules` — allow FAIL → PASS is the paste proof. Done.
 4. Deploy the client via CI from `master`. Done: `index-OfECpKrx`,
    gh-pages `f78379e`, Pages `built` 16:51:33.
-5. Publish RTDB step 3 (refuse `name`). **This is the remaining paste.**
+5. Publish RTDB step 3 (refuse `name`). Done 21 September, 16:56; `{ name, at }`
+   denied, `{ at }` allowed, 80/80.
 6. Play one round. `npm run audit-players`. The implied-delay column is the
-   Alistair answer.
+   Alistair answer. **This is the remaining step.**
 
 Steps 1, 2, 4, 5 and 6 are Greg's. A branch ends at *ready for review*.
 

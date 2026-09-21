@@ -31,8 +31,9 @@ Greg said go live. [#56](https://github.com/gregjrothwell/quiz/pull/56) merged a
 Actions**. Pages `built` 16:51:33 (~48s). **Published bundle matches a local
 build of that tree exactly** — `index-OfECpKrx.js`, sha `3272b19a`, both sides.
 Firebase chunk unmoved at `firebase-W6iQUl4r`. Merge commit, not squash: this
-contained #55, which closed itself as merged. Presence still accepts `name`
-until the second RTDB paste. One round, then `audit-players`.
+contained #55, which closed itself as merged. Second RTDB paste landed 16:56:
+`{ at }` allowed, `{ name, at }` refused, `check-rules` 80/80. One round, then
+`audit-players`.
 
 ## 2026-09-21 — Vault oracle, joinedAt, and the `at` stamp
 

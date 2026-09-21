@@ -101,7 +101,7 @@ scoring 500 + rank 500/400/300/200/100; counts in
 9. **Do not paste `master`'s rules over the console.** Live Firestore is this
    branch (42,521 bytes). A paste the wrong way deletes the vault pin.
    `check-rules` **80/80 both ways, 21 September**; `sync-harness 10`
-   **10/10, 0 dropped**. RTDB still allows `name` — paste the refuse next.
+   **10/10, 0 dropped**. RTDB `{ at }` allowed; `{ name, at }` refused.
 10. **Hand-built packs need a seed after any *new* ids.** All seeded as of
     10 September; an unseeded pack breaks at reveal.
 11. **`firstMs` and the pack picker are live and unplayed.** It is a deterrent,
@@ -113,9 +113,8 @@ scoring 500 + rank 500/400/300/200/100; counts in
     every round since carries gate/resolve/dispatch. No stall has recurred, so
     the reveal fix is still unproved rather than disproved
     ([`reveal-delays.md`](decisions/reveal-delays.md)).
-14. **Client shipped; RTDB still allows `name`.** Paste `database.rules.json`
-    with the `name` child gone, then `check-rules`, then one round and
-    `audit-players`.
+14. **All three pastes landed.** Play one round, then `npm run audit-players`
+    — implied delay is the Alistair answer. `cleanup-dead-code` still local.
     [`security-round-sept-2026.md`](decisions/security-round-sept-2026.md).
     
 
