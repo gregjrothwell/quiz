@@ -186,7 +186,17 @@ describe('hand-built packs', () => {
     const pack = JSON.parse(readFileSync(join(PACKS, 'sleeves.json'), 'utf8')) as {
       questions: { artworkUrl?: string; image?: string; storeUrl?: string }[];
     };
-    expect(pack.questions.length).toBeGreaterThanOrEqual(45);
+    /*
+      36, not the 45 every other hand pack clears.
+
+      The bar came down on 21 September 2026 because the pack started being
+      audited. Of 143 covers read, 103 either name their own album or carry
+      other writing; 40 are clean. The old 52 met the old bar by publishing 33
+      that gave the answer away, so this is a smaller pack and a bigger one of
+      anything worth playing. `scripts/sleeve-gate.test.ts` holds the rule that
+      matters; this one only counts.
+    */
+    expect(pack.questions.length).toBeGreaterThanOrEqual(36);
     for (const question of pack.questions) {
       expect(question.artworkUrl).toMatch(/^https:\/\/is[0-9]-ssl\.mzstatic\.com\//);
       expect(question.image).toBeUndefined();
