@@ -57,8 +57,9 @@ CI) — *this box was a deploy behind twice running; check gh-pages, not it.*
 Firebase chunk **moved to `firebase-W6iQUl4r`** (#51 touched `src/firebase.ts`).
 **16 packs**; **Name that Tune 177**; synth **Classical**; **On the box** 54
 (hashed TMDB stills); **Flags** 76 (hashed, no jigsaw); **Sleeves** 52 live but
-**40 on the branch** after the cover audit; picture is **Fine Art**. Every still
-now carries `imageWidth`/`imageHeight`.
+**44 on the branch** after the cover audit; picture is **Fine Art**. Every still
+now carries `imageWidth`/`imageHeight`, and a picture question puts the picture
+beside the answers above 64rem.
 
 **Played and kept:** eleven rounds. Name that Tune `CUC4` **80%, 3.1s median —
 the best recorded** ([`reveal-delays.md`](decisions/reveal-delays.md)); four On
@@ -73,15 +74,16 @@ scoring 500 + rank 500/400/300/200/100; counts in
 
 ## Outstanding
 
-1. **The sleeves rebuild needs a vault seed before it is played.** 24 new ids;
-   `npm run seed-vault` with `GOOGLE_APPLICATION_CREDENTIALS` under `.secrets/`.
-   Not run — it writes to the live project. Its **difficulty ratings are now
-   systematically wrong** — set when the cover named the album; 4/21/15
+1. **The sleeve audit is not enough on its own — a person has to look.** Vision
+   missed the printed title on **a third** of the covers it cleared, twice
+   running: letterspaced, scripted or upside down. Nineteen are refused by hand
+   in `sleeve-refusals.ts`; `sleeve-audit -- --sheet` is how the pass is done.
+   The 44 ratings are **judgements, not measurements**
    ([`sleeves-gate.md`](decisions/sleeves-gate.md)).
 2. **Ask Bret whether it was one picture or the lot.** `M9YU` has eight questions
    at 6/6, so he was not blind throughout
    ([`picture-loading.md`](decisions/picture-loading.md)).
-3. **15 sleeve albums will not resolve at all** — GB album search returns
+3. **40 sleeve albums will not resolve at all** — GB album search returns
    tributes and soundtracks, so they need `collectionId`s found by hand in the
    store. The audit names them every run.
 4. **29 of 30 season rows carry an *estimated* `form`**, seeded by
@@ -112,9 +114,9 @@ scoring 500 + rank 500/400/300/200/100; counts in
     every round since carries gate/resolve/dispatch. No stall has recurred, so
     the reveal fix is still unproved rather than disproved
     ([`reveal-delays.md`](decisions/reveal-delays.md)).
-14. **Branches:** #35–#49 closed or merged, nothing open. **On `picture-loading-and-sleeves-ocr`,**
-    **unpushed:** five commits fixing the picture box, the preload and the
-    sleeves gate. Also local-only and unpushed:
+14. **Branches:** #35–#49 closed or merged, nothing open. **On
+    `picture-loading-and-sleeves-ocr`, unpushed:** the picture box, the preload,
+    the side-by-side layout, the sleeves gate. Also unpushed:
     `ask-recovery-code` (cheapest on the list), `clock-bed-and-key-repeat`,
     `bound-elapsed-ms`, `fold-votes-dry-run`, `context-standards-route`,
     `vote-tally` (WIP). ~40 merged remote branches could be pruned.
@@ -140,9 +142,9 @@ importing `read-games` breaks that, since that module calls `main()` at import.
 safe. If rules matter: `npm run check-rules` and `npm run sync-harness 10`, both
 green 10 September (69/69 both ways; 10/10, 0 dropped).
 
-**`seed-vault` is owed one run** — it was "everything is seeded" until the
-sleeves rebuild on 21 September, and 24 ids are unseeded. An unseeded pack breaks
-at the reveal, so sleeves must not be played before it.
+**Seeded 21 September** — 42 added, 1 changed, nothing deleted, and read back
+from Firestore: 44 of 44 published sleeves hold a valid answer. The 52-question
+pack still live keeps working, because the seed only ever adds.
 
 Bitten more than once: **the rules are published by hand**, so the repo copy is
 not what Firebase runs ([`security.md`](decisions/security.md)); **the answer

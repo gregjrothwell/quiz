@@ -111,24 +111,72 @@ Bowie and `wrafhouse` is Winehouse. Striking tightly leaves the misreading
 behind to be counted as something the cover says, and fails a good sleeve for
 the band being on it.
 
+## The machine is not enough, and that is measured
+
+**Vision cleared 37 covers. Eleven of them print their own title.**
+
+It reads printed prose well and stylised cover type not at all, and the gap is
+not a threshold to tune — the text is simply absent from its output.
+
+| Cover | What is on it | What Vision read |
+|---|---|---|
+| *The Joshua Tree* | `T H E  J O S H U A  T R E E` letterspaced | nothing at all |
+| *Viva la Vida* | painted across the Delacroix | nothing at all |
+| *War* | `WAR` in red down the side | nothing at all |
+| *Achtung Baby* | the title upside down in one tile | nothing at all |
+| *Parallel Lines* | `PARALLEL LINES` in plain caps | `bloncie` |
+| *The Fame* | in script on the sunglasses | `tma il` |
+| *Low* | `DAVID BOWIE LOW` across the top | `davlorowie` |
+
+A second batch of candidates the same afternoon held the rate almost exactly:
+**eight of 26** newly cleared covers print their title — *Rubber Soul* in its own
+stretched lettering, *The Prodigy Experience* as a logo filling the sleeve.
+
+So **the audit narrows the field and a person settles it.** Nineteen slugs are
+in [`sleeve-refusals.ts`](../../scripts/sleeve-refusals.ts) with what is on each
+cover and what Vision read instead, refused whatever the audit says so the
+judgement survives a regenerate.
+
+The way to do that pass is to look at them. `npm run sleeve-audit -- --sheet`
+writes a labelled contact sheet of everything it cleared, and every one of the
+nineteen is obvious in it at 190px. None was a close call.
+
 ## What it cost, and what that means
 
 | | Before | After |
 |---|---|---|
-| Candidate albums | 53 | 159 |
-| Resolved | 52 | 143 |
-| Refused | 0 | 103 |
-| **Published** | **52** | **40** |
-| *Actually playable* | *19* | *40* |
+| Candidate albums | 53 | 269 |
+| Resolved | 52 | 229 |
+| Refused by the machine | 0 | 166 |
+| Refused by eye | 0 | 19 |
+| **Published** | **52** | **44** |
+| *Actually playable* | *19* | *44* |
 
-**`SLEEVES_MIN_PACK` came down from 45 to 36.** That is an honest bar, not a
-loosened one: the old 52 met the old bar by publishing 33 that gave the answer
-away. 40 is two full rounds of fifteen with six spare, against 19 that worked.
+**`SLEEVES_MIN_PACK` came down from 45 to 36, and 44 clears it** — the bar did
+not have to move again. That is an honest bar rather than a loosened one: the
+old 52 met the old bar by publishing 33 that gave the answer away.
 
-The way this goes back up is a longer candidate list, not a looser matcher. The
-106 albums added were not chosen for having wordless covers — nobody here can
-see what iTunes will return — so the ones the gate refused stay in the file as a
-record of what was tried.
+The way this goes up is a longer candidate list, not a looser matcher. The 216
+albums added were not chosen for having wordless covers — nobody here can see
+what iTunes will return — so the ones refused stay in the file as a record of
+what was tried. The second batch was weighted towards what had actually survived
+the first: designer-led sleeves, portraits where the artist is the image, and
+photographic covers from before a title on the front was the default.
+
+## The ratings were redone, and they are judgements
+
+Every rating in the pack had been set when the cover named the album, which is
+why so many were `easy`. After the gate the split was **3 easy / 15 medium / 26
+hard** — a round that would have played as a wall.
+
+Re-rated against the covers themselves, having looked at all 44: **12 / 20 /
+12**. The test is not "is this album famous" but "can you pick it out of *these
+three same-artist distractors*, from the image alone". That is what makes four
+Björk portraits hard and the Giant's Causeway easy.
+
+**These are judgements, not measurements** — the same standing as the season's
+seeded `form` figures, and they should give way to played data the moment there
+is any.
 
 ## While in there: a wrong picture, not a giveaway
 
@@ -161,16 +209,16 @@ id path too.
   at all for the `1989` printed on that sleeve's corner. Every threshold leans
   towards rejecting for this reason: the machine sees less than the player does,
   never more.
-- **15 albums will not resolve at all** — Master of Puppets, Dookie, Blood Sugar
-  Sex Magik and twelve others. The GB store's album search returns tributes and
+- **40 albums will not resolve at all** — Master of Puppets, Dookie, Blood Sugar
+  Sex Magik and the rest. The GB store's album search returns tributes and
   soundtracks instead, and searching the artist does not list them either. They
   need `collectionId`s found by hand in the store. The audit names them every
   run.
-- **The difficulty ratings are now wrong, systematically.** They were set when
-  the cover named the album, which is why so many were `easy`; the pack is now
-  4 easy, 21 medium, 15 hard. Naming an album from a wordless cover is a harder
-  game than the one those ratings describe. Re-rating is a judgement for Greg or
-  for played data, not for this pass.
-- **Ed Sheeran's symbol albums cannot be gated by title** — `÷` has no letters
-  to match, so `titleOnCover` returns nothing for them. The busy rule is what
-  protects those, and the symbol *is* the artwork, so that is the right answer.
+- **A one-character title is refused outright.** Ed Sheeran's `+`, `x` and `÷`
+  are the case: the glyph *is* the artwork, so those covers show their title
+  larger than anything else on the list, and `titleOnCover` had no opinion
+  because `words('÷')` is empty. On letters alone `x` survived and `÷` did not,
+  which is one question answered two ways on an accident of Unicode.
+- **Nineteen refusals rest on one person's eye**, on one afternoon. A second
+  look would probably find more; the rate did not fall between the two batches,
+  which is the warning sign to read.

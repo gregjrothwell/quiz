@@ -39,9 +39,56 @@ body where it happened rather than here: three 4 September batches, then the
 whole 2026-09-08 day when the debug-token deploy needed the room. All verbatim to
 [`recall/2026-09.md`](recall/2026-09.md).
 
-**Split again, 21 September 2026**, at 300/300 with two entries about to land.
-The six remaining 10 September entries went to
-[`recall/2026-09.md`](recall/2026-09.md), whole. 300 → 224.
+**Split again, 21 September 2026**, twice in a day. The six remaining
+10 September entries went to [`recall/2026-09.md`](recall/2026-09.md) to make
+room for that morning's two, and both 11 September entries followed them that
+afternoon when a correction and a layout entry needed the space. All whole.
+
+## 2026-09-21 — Correction: the sleeve audit missed a third of them, and a person found the rest
+
+The entry below says 40 published against a 36 floor. **Both numbers were wrong
+by the time the day ended, and the reason is worth more than the numbers.**
+
+Apple's Vision reads printed prose well and stylised cover type not at all. Of
+the 37 covers it cleared, **eleven print their own title** — letterspaced (`T H E
+J O S H U A  T R E E`), scripted (*The Fame*, on the sunglasses), or upside down
+in one tile of a grid (*Achtung Baby*). A second batch of candidates the same
+afternoon held the rate almost exactly: eight of 26. **Roughly a third, twice.**
+
+So the audit narrows the field and a person settles it, by looking —
+`sleeve-audit -- --sheet` writes a labelled contact sheet and every one of the
+nineteen is obvious in it at 190px. The nineteen are in `sleeve-refusals.ts`
+with what is on each cover and what Vision read instead, so the judgement
+survives a regenerate.
+
+216 candidate albums added in all. **229 resolved, 185 refused, 44 published** —
+the 36 floor held without moving. Re-rated against the covers themselves:
+3/15/26 easy/medium/hard becomes **12/20/12**. Those ratings are judgements, not
+measurements, and stand exactly as the season's seeded `form` figures do.
+
+**Vault seeded and read back: 44 of 44 published sleeves hold a valid answer.**
+Nothing was deleted, so the 52-question pack still live keeps working. Also
+live-affecting and fixed: a one-character title is now refused outright, because
+`words('÷')` is empty and the glyph *is* the artwork.
+
+Depth: [`decisions/sleeves-gate.md`](decisions/sleeves-gate.md).
+
+## 2026-09-21 — The picture sits beside the answers now
+
+Greg: the pictures are a bit small. Measured on a 1512px laptop — a 448px still
+capped at 28rem in a 965px card, **517px of the row beside it empty**, and 12px
+between the picture and the top lectern. No vertical room to grow into and a
+whole column going unused.
+
+Above 64rem a picture question puts the still on the left and the four lecterns
+in a single column on the right. Flags 448×224 → **614×307**; On the box
+448×252 → **614×345** — 1.88× the area, both. Squares are left alone: a sleeve
+at full column width is taller than the lecterns beside it and pushes the row
+below the fold. The row height is still set by the lecterns, so nothing moved
+further down the page.
+
+**Hover-to-enlarge was asked for and then dropped** — Greg, once the numbers
+were on the table: the layout change will probably be enough.
 
 ## 2026-09-21 — Sleeves: the cover was the answer key on 11 of 15
 
@@ -103,53 +150,11 @@ questions or the lot.
 
 ## 2026-09-11 — #52 live: `index-n26s0ofl`
 
-Greg said push and go live. [#52](https://github.com/gregjrothwell/quiz/pull/52)
-merged as `96dee89`; CI published gh-pages `3eb7221` at 09:38, author **GitHub
-Actions**. Published bundle matches a local build of that commit exactly — the
-cross-check worth keeping. Firebase chunk moved to `firebase-W6iQUl4r` (#51
-touched `src/firebase.ts`).
-
-Verified live, not just in CI: slider travel 0/−10/−20/−30/−38 dB, default 50 on
-a cleared profile, room `9733` created (auth + App Check + a Firestore write).
-Only console error is reCAPTCHA's own frame against Google's report-only CSP.
-
-**`curl` and the browser disagreed for ten minutes** — new bundle in one, old in
-the other, because `index.html` carries `max-age=600` and the tab was serving its
-own cache. The slider reading 35 rather than 50 said so independently: two
-instruments agreeing on which code was actually running.
-
-**Not proved:** the reveal fix needs a real stall, and no round has written a
-`RevealTiming` yet.
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-11 — The round was the best yet, and three things came out of it
 
-`CUC4`, 15 of 15, **80% hit, 3.1s median** — the best round the game has
-recorded. Reported against it: two very large delays revealing, Cass unable to
-join, Joe silent on question one, and the volume still too loud.
-
-**The player count was not the delay.** 9 seats against 11 the day before, on an
-identical bundle. Firestore leaves a stalled write *pending* rather than
-rejecting it, so the backoff ladder never started and `revealingRef` held the
-quizmaster's own Reveal button shut — the documented rescue was not there.
-`REVEAL_TIMEOUT_MS` turns it back into a rejection both can act on. A developer
-suggested OpenTelemetry; right instinct, wrong instrument for a site with no
-backend, so the four numbers go in the game record that device already writes —
-**inside `questions`, where the rules cannot reach, so no rules change and no
-deploy ordering**. [`decisions/reveal-delays.md`](decisions/reveal-delays.md).
-
-**Joe's silence is in the data**: answers per question 7, 8, 9, 9, 9 — an
-autoplay-unlock ramp. `unlock()` resumes the AudioContext and does nothing for
-the `<audio>` element; the link auto-join means no gesture on the page at all.
-The volume slider was linear where hearing is not, so its whole useful range sat
-in the bottom tenth; it is 40 dB of travel now, 2 dB a step, default −20 dB dead
-centre. [`decisions/audio-stack.md`](decisions/audio-stack.md).
-
-**Cass is undiagnosed** — no join was ever written, and App Check refusing at
-sign-in is a guess until somebody asks her what the screen said.
-
-**Correction:** live was *not* `index-qJCbuGrA`/`d412adc` but `8c0a107` /
-`index-Du6MwR-e`, 10 Sep 18:05, from #51 — not the cause (it gates on a boolean
-absent in production), but a deploy landed the evening before and nobody knew.
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-10 — Playwright prerequisites: jsdom, emulators, e2e job
 
