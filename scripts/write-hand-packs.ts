@@ -10,6 +10,7 @@
  */
 
 import { execFile } from 'node:child_process';
+import { sizeQuestions } from './still-dimensions';
 import { createHash, randomBytes } from 'node:crypto';
 import { mkdir, readFile, writeFile, access, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -292,6 +293,10 @@ async function writePicture(): Promise<{ pack: Pack; answers: Record<string, str
 
   const meta = PACK_META.picture;
   const pack: Pack = { id: 'picture', title: meta.title, blurb: meta.blurb, questions };
+  const { missing } = sizeQuestions(pack.questions, IMAGE_DIR);
+  if (missing.length > 0) {
+    throw new Error(`Could not read the size of ${missing.length} still(s): ${missing.join(', ')}`);
+  }
   await writeFile(join(OUT_DIR, 'picture.json'), `${JSON.stringify(pack)}\n`);
   return { pack, answers };
 }
