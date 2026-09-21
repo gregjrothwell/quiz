@@ -98,10 +98,10 @@ scoring 500 + rank 500/400/300/200/100; counts in
    spent — it substitutes medium. The fix is a fold of `games/` into real
    difficulty, **a query now rather than a build**, and `games/` now holds
    eleven rounds rather than three, so it is no longer gated on playing.
-9. **Do not paste `master`'s rules over the console.** The repo is byte-forward
-   (39,218) but the console is the source of truth; a paste the wrong way deletes
-   a live anti-cheat. `check-rules` **69/69 both ways, 10 September**. **This
-   branch adds cases; expect new allow cases to FAIL until the paste.**
+9. **Do not paste `master`'s rules over the console.** Live is this branch
+   (42,521 bytes). A paste the wrong way deletes the vault pin. `check-rules`
+   **80/80 both ways, 21 September**; `sync-harness 10` **10/10, 0 dropped**.
+   RTDB still allows `name` — refuse it after the client ships.
 10. **Hand-built packs need a seed after any *new* ids.** All seeded as of
     10 September; an unseeded pack breaks at reveal.
 11. **`firstMs` and the pack picker are live and unplayed.** It is a deterrent,
@@ -113,10 +113,10 @@ scoring 500 + rank 500/400/300/200/100; counts in
     every round since carries gate/resolve/dispatch. No stall has recurred, so
     the reveal fix is still unproved rather than disproved
     ([`reveal-delays.md`](decisions/reveal-delays.md)).
-14. **Paste then deploy, this branch:** pin `questions` to the lobby (vault
-    oracle), bound `joinedAt`, optional `at` stamp, drop presence `name`. Two
-    RTDB publishes. [`security-round-sept-2026.md`](decisions/security-round-sept-2026.md).
-    Do not accuse Alistair; `npm run audit-players` after one round is the answer.
+14. **Rules pasted; client not shipped.** Vault pin, `joinedAt`, `at` stamp
+    are live. Presence still accepts `name`. Next: CI deploy, then RTDB refuse
+    `name`, then one round and `audit-players`.
+    [`security-round-sept-2026.md`](decisions/security-round-sept-2026.md).
     
 
 ## Where things are
@@ -137,7 +137,7 @@ importing `read-games` breaks that, since that module calls `main()` at import.
 
 **The token leak is closed and the gate is on `master`**, so a CI deploy is
 safe. If rules matter: `npm run check-rules` and `npm run sync-harness 10`, both
-green 10 September (69/69 both ways; 10/10, 0 dropped).
+green 21 September (80/80 both ways; 10/10, 0 dropped).
 
 **Seeded 21 September** — 42 added, 1 changed, nothing deleted; read back from
 Firestore, 44 of 44 published sleeves hold a valid answer. The seed only ever
