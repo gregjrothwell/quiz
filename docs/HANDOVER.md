@@ -74,11 +74,10 @@ scoring 500 + rank 500/400/300/200/100; counts in
 
 ## Outstanding
 
-1. **The sleeve audit is not enough on its own — a person has to look.** Vision
-   missed the printed title on **a third** of the covers it cleared, twice
-   running: letterspaced, scripted or upside down. Nineteen are refused by hand
-   in `sleeve-refusals.ts`; `sleeve-audit -- --sheet` is how the pass is done.
-   The 44 ratings are **judgements, not measurements**
+1. **The sleeve audit is not enough alone — a person has to look.** Vision missed
+   the printed title on **a third** of the covers it cleared, twice running.
+   Nineteen are refused by hand in `sleeve-refusals.ts`; `sleeve-audit --sheet`
+   is the pass. The 44 ratings are **judgements, not measurements**
    ([`sleeves-gate.md`](decisions/sleeves-gate.md)).
 2. **Ask Bret whether it was one picture or the lot.** `M9YU` has eight questions
    at 6/6, so he was not blind throughout
@@ -142,9 +141,9 @@ importing `read-games` breaks that, since that module calls `main()` at import.
 safe. If rules matter: `npm run check-rules` and `npm run sync-harness 10`, both
 green 10 September (69/69 both ways; 10/10, 0 dropped).
 
-**Seeded 21 September** — 42 added, 1 changed, nothing deleted, and read back
-from Firestore: 44 of 44 published sleeves hold a valid answer. The 52-question
-pack still live keeps working, because the seed only ever adds.
+**Seeded 21 September** — 42 added, 1 changed, nothing deleted; read back from
+Firestore, 44 of 44 published sleeves hold a valid answer. The seed only ever
+adds, so the 52-question pack still live keeps working.
 
 Bitten more than once: **the rules are published by hand**, so the repo copy is
 not what Firebase runs ([`security.md`](decisions/security.md)); **the answer
