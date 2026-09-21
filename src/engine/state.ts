@@ -168,6 +168,9 @@ export interface QuizQuestion {
   difficulty: Difficulty;
   voices?: Voice[];
   image?: string;
+  /** The still's pixel size, so its box is reserved before it downloads. */
+  imageWidth?: number;
+  imageHeight?: number;
   credit?: string;
   jigsaw?: boolean;
   previewUrl?: string;
@@ -610,6 +613,8 @@ export function buildQuizQuestions(
     };
     if (question.voices && question.voices.length > 0) built.voices = question.voices;
     if (question.image) built.image = question.image;
+    if (question.imageWidth !== undefined) built.imageWidth = question.imageWidth;
+    if (question.imageHeight !== undefined) built.imageHeight = question.imageHeight;
     if (question.credit) built.credit = question.credit;
     if (question.jigsaw) built.jigsaw = true;
     if (question.previewUrl) built.previewUrl = question.previewUrl;

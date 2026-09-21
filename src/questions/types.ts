@@ -97,6 +97,19 @@ export interface Question {
   /** Picture / flags: content-hashed filename under `public/packs/images/`. */
   image?: string;
   /**
+   * The still's pixel size, so the client can reserve its box before the bytes
+   * arrive.
+   *
+   * Published deliberately. Without it an unloaded `<img>` at `width:100%;
+   * height:auto` has no intrinsic ratio and resolves to **zero height** — which
+   * is what Bret saw on 18 September 2026 and reported as "the images aren't
+   * loading". There was nothing on screen to load *into*. Read off the file at
+   * build time by `scripts/still-dimensions.ts`; seal-safe, because a width is
+   * not an answer.
+   */
+  imageWidth?: number;
+  imageHeight?: number;
+  /**
    * On-screen credit when the licence requires it (CC BY). PD-Art / CC0 / NASA
    * stay in ATTRIBUTION.md only.
    */
@@ -152,6 +165,8 @@ export interface SealedQuestion {
   difficulty: Difficulty;
   voices?: Voice[];
   image?: string;
+  imageWidth?: number;
+  imageHeight?: number;
   credit?: string;
   jigsaw?: boolean;
   previewUrl?: string;
@@ -174,6 +189,12 @@ export function sealQuestion(question: Question): SealedQuestion {
   };
   if (question.voices && question.voices.length > 0) sealed.voices = question.voices;
   if (question.image) sealed.image = question.image;
+  if (question.imageWidth !== undefined && question.imageWidth > 0) {
+    sealed.imageWidth = question.imageWidth;
+  }
+  if (question.imageHeight !== undefined && question.imageHeight > 0) {
+    sealed.imageHeight = question.imageHeight;
+  }
   if (question.credit) sealed.credit = question.credit;
   if (question.jigsaw) sealed.jigsaw = true;
   if (question.previewUrl) sealed.previewUrl = question.previewUrl;

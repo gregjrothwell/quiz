@@ -12,6 +12,7 @@ import {
   summaryFor,
   upsertPackSummary,
 } from './write-hand-packs';
+import { sizeQuestions } from './still-dimensions';
 import type { Pack, PackSummary } from '../src/questions/types';
 
 const CACHE_DIR = join(import.meta.dirname, '..', '.cache');
@@ -23,6 +24,13 @@ export async function writeSealedPack(
 ): Promise<void> {
   await mkdir(OUT_DIR, { recursive: true });
   await mkdir(CACHE_DIR, { recursive: true });
+  // Every still is measured on the way out, so a question can never publish
+  // an image without the size the client needs to reserve its box. See
+  // `scripts/still-dimensions.ts`; `seal.test.ts` refuses a pack that skipped it.
+  const { missing } = sizeQuestions(pack.questions, join(OUT_DIR, 'images'));
+  if (missing.length > 0) {
+    throw new Error(`Could not read the size of ${missing.length} still(s): ${missing.join(', ')}`);
+  }
   await writeFile(join(OUT_DIR, filename), `${JSON.stringify(pack)}\n`);
 
   const merged = mergeHandVault(await readHandVault(), answers);

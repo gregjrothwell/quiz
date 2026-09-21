@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { retiredIds } from './retired';
+import { dimensionsOfFile } from '../../scripts/still-dimensions';
 import { sealQuestion, type Question } from './types';
 
 /**
@@ -72,6 +73,41 @@ describe('the published packs are sealed', () => {
   test.each(packFiles)('%s ships no answer', (name) => {
     const pack: unknown = JSON.parse(readFileSync(join(PACKS, name), 'utf8'));
     expect(sealBreaches(pack)).toEqual([]);
+  });
+
+  /**
+   * A published still must say how big it is.
+   *
+   * Not a secrecy rule — it is here because this is the file that already
+   * reads every pack, and because the failure it catches is exactly the shape
+   * `seal.test.ts` was written for: something that held by care until a
+   * builder took a different route. Without these two numbers an `<img>` at
+   * `width:100%; height:auto` has no ratio to resolve against and is zero
+   * pixels tall until its bytes land, so a picture round on a slow connection
+   * shows a gap where the picture goes. That shipped, and Bret reported it on
+   * 18 September 2026. See `docs/decisions/picture-loading.md`.
+   *
+   * Checked against the file rather than merely for presence, so a number that
+   * is *there* but wrong — a still re-cropped without a rebuild — fails too. A
+   * wrong box is a layout jump the moment the image lands, and the jump is
+   * under a thumb already moving towards a lectern.
+   */
+  test.each(packFiles)('%s sizes every still it publishes', (name) => {
+    const pack = JSON.parse(readFileSync(join(PACKS, name), 'utf8')) as {
+      questions: { id: string; image?: string; imageWidth?: number; imageHeight?: number }[];
+    };
+    const withImages = pack.questions.filter((question) => question.image !== undefined);
+    if (withImages.length === 0) return;
+
+    const wrong = withImages.filter((question) => {
+      const found = dimensionsOfFile(join(PACKS, 'images', question.image as string));
+      return (
+        found === null
+        || found.width !== question.imageWidth
+        || found.height !== question.imageHeight
+      );
+    });
+    expect(wrong.map((question) => question.id)).toEqual([]);
   });
 
   test.each(packFiles)('%s ships options for every question', (name) => {
@@ -150,7 +186,17 @@ describe('hand-built packs', () => {
     const pack = JSON.parse(readFileSync(join(PACKS, 'sleeves.json'), 'utf8')) as {
       questions: { artworkUrl?: string; image?: string; storeUrl?: string }[];
     };
-    expect(pack.questions.length).toBeGreaterThanOrEqual(45);
+    /*
+      36, not the 45 every other hand pack clears.
+
+      The bar came down on 21 September 2026 because the pack started being
+      audited. Of 143 covers read, 103 either name their own album or carry
+      other writing; 40 are clean. The old 52 met the old bar by publishing 33
+      that gave the answer away, so this is a smaller pack and a bigger one of
+      anything worth playing. `scripts/sleeve-gate.test.ts` holds the rule that
+      matters; this one only counts.
+    */
+    expect(pack.questions.length).toBeGreaterThanOrEqual(36);
     for (const question of pack.questions) {
       expect(question.artworkUrl).toMatch(/^https:\/\/is[0-9]-ssl\.mzstatic\.com\//);
       expect(question.image).toBeUndefined();

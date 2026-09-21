@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 10 September 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 21 September 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -39,140 +39,150 @@ body where it happened rather than here: three 4 September batches, then the
 whole 2026-09-08 day when the debug-token deploy needed the room. All verbatim to
 [`recall/2026-09.md`](recall/2026-09.md).
 
+**Split again, 21 September 2026**, twice in a day. The six remaining
+10 September entries went to [`recall/2026-09.md`](recall/2026-09.md) to make
+room for that morning's two, and both 11 September entries followed them that
+afternoon when a correction and a layout entry needed the space. All whole.
+
+## 2026-09-21 — Correction: the sleeve audit missed a third of them, and a person found the rest
+
+The entry below says 40 published against a 36 floor. **Both numbers were wrong
+by the time the day ended, and the reason is worth more than the numbers.**
+
+Apple's Vision reads printed prose well and stylised cover type not at all. Of
+the 37 covers it cleared, **eleven print their own title** — letterspaced (`T H E
+J O S H U A  T R E E`), scripted (*The Fame*, on the sunglasses), or upside down
+in one tile of a grid (*Achtung Baby*). A second batch of candidates the same
+afternoon held the rate almost exactly: eight of 26. **Roughly a third, twice.**
+
+So the audit narrows the field and a person settles it, by looking —
+`sleeve-audit -- --sheet` writes a labelled contact sheet and every one of the
+nineteen is obvious in it at 190px. The nineteen are in `sleeve-refusals.ts`
+with what is on each cover and what Vision read instead, so the judgement
+survives a regenerate.
+
+216 candidate albums added in all. **229 resolved, 185 refused, 44 published** —
+the 36 floor held without moving. Re-rated against the covers themselves:
+3/15/26 easy/medium/hard becomes **12/20/12**. Those ratings are judgements, not
+measurements, and stand exactly as the season's seeded `form` figures do.
+
+**Vault seeded and read back: 44 of 44 published sleeves hold a valid answer.**
+Nothing was deleted, so the 52-question pack still live keeps working. Also
+live-affecting and fixed: a one-character title is now refused outright, because
+`words('÷')` is empty and the glyph *is* the artwork.
+
+Depth: [`decisions/sleeves-gate.md`](decisions/sleeves-gate.md).
+
+## 2026-09-21 — The picture sits beside the answers now
+
+Greg: the pictures are a bit small. Measured on a 1512px laptop — a 448px still
+capped at 28rem in a 965px card, **517px of the row beside it empty**, and 12px
+between the picture and the top lectern. No vertical room to grow into and a
+whole column going unused.
+
+Above 64rem a picture question puts the still on the left and the four lecterns
+in a single column on the right. Flags 448×224 → **614×307**; On the box
+448×252 → **614×345** — 1.88× the area, both. Squares are left alone: a sleeve
+at full column width is taller than the lecterns beside it and pushes the row
+below the fold. The row height is still set by the lecterns, so nothing moved
+further down the page.
+
+**Hover-to-enlarge was asked for and then dropped** — Greg, once the numbers
+were on the table: the layout change will probably be enough.
+
+## 2026-09-21 — Sleeves: the cover was the answer key on 11 of 15
+
+`53FN` this morning, 4 seats, hit 85% at a 3.0s median against 37%/5.3s for a
+text round. **Eleven of the fifteen covers had the album title printed on them.**
+The tell is the hard questions: the four with a printed title all scored **100%**
+and the one with a wordless cover — Björk, *Vespertine* — scored **50%**. The
+difficulty rating was decorative.
+
+An edition problem more than a curation one: the specs name an album, iTunes GB
+returns whatever edition it holds, and reissues print titles on artwork the
+original never carried. *The Wall* is a bare brick wall; the mzstatic art reads
+`PINK FLOYD THE WALL`.
+
+`npm run sleeve-audit` reads the text off every cover with Apple's Vision and
+writes `sleeve-cover-text.ts`; the builder refuses any sleeve whose cover names
+its own album *or* is simply covered in writing. Of **143 covers read, 103 are
+refused**; 106 candidate albums added to refill it. Published **52 → 40**, but
+the pack that actually worked was 19. `SLEEVES_MIN_PACK` 45 → 36, which is an
+honest bar rather than a loosened one. Depth:
+[`decisions/sleeves-gate.md`](decisions/sleeves-gate.md).
+
+**And a wrong picture, not a giveaway.** `resolveAlbum` trusted a hand-typed
+`collectionId` with no title check. `californication` carried `947680622` — Red
+Hot Chili Peppers' *The Studio Album Collection 1991-2011*. The question showed a
+box set and offered *Stadium Arcadium*. It scored **25%** in `53FN`, the worst of
+the fifteen, and it was not hard, it was wrong. Green build throughout.
+
+**Not deployed.** 24 new vault ids need `seed-vault` before the pack works at a
+reveal, and the difficulty ratings are now systematically wrong — they were set
+when the cover named the album.
+
+## 2026-09-21 — The pictures did not turn up, and it was never the files
+
+Bret, Friday 18 September 15:11, with a screenshot; others reported the same on
+slow connections. **The files are fine** — 82KB median, 158KB max, 200 from
+Pages, 179 of 179 on gh-pages, ~0.2s from here. And in the round he played
+(`M9YU`) **file size predicts nothing**: ≥100KB scored 88%/3.9s, under 86%/3.1s.
+Shrinking them would have fixed nothing, which is the finding that saved a blind
+alley.
+
+Three faults. **Nothing was preloaded** — the `<img>` was created when the
+question rendered, the same frame the countdown starts in, though every device
+has held all fifteen filenames since the round was built and the lobby sits open
+while people join. **The box was zero pixels tall** — `width:100%; height:auto`
+with no intrinsic size resolves to 0, and `alt=""` left nothing in the gap, so it
+read as a question with no picture rather than a picture that was late; measured
+at 0 before, 448×224 after. **A failure was silent and permanent.**
+
+Packs now carry `imageWidth`/`imageHeight`, read off the file header at build
+time and written into all 179 stills in place — no id, hash or option touched, so
+nothing needs reseeding. The header parser was **cross-checked against `sips`
+over all 179: zero disagreements**. Depth:
+[`decisions/picture-loading.md`](decisions/picture-loading.md).
+
+**Bret was not blind for the whole round** — eight questions came back 6/6, which
+is a 1-in-65,000 run of luck for a guesser. Ask him whether it was a couple of
+questions or the lot.
+
+## 2026-09-11 — #52 live: `index-n26s0ofl`
+
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
+
 ## 2026-09-11 — The round was the best yet, and three things came out of it
 
-`CUC4`, 15 of 15, **80% hit, 3.1s median** — the best round the game has
-recorded. Reported against it: two very large delays revealing, Cass unable to
-join, Joe silent on question one, and the volume still too loud.
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
-**The player count was not the delay.** 9 seats against 11 the day before, on an
-identical bundle. Firestore leaves a stalled write *pending* rather than
-rejecting it, so the backoff ladder never started and `revealingRef` held the
-quizmaster's own Reveal button shut — the documented rescue was not there.
-`REVEAL_TIMEOUT_MS` turns it back into a rejection both can act on. A developer
-suggested OpenTelemetry; right instinct, wrong instrument for a site with no
-backend, so the four numbers go in the game record that device already writes —
-**inside `questions`, where the rules cannot reach, so no rules change and no
-deploy ordering**. [`decisions/reveal-delays.md`](decisions/reveal-delays.md).
-
-**Joe's silence is in the data**: answers per question 7, 8, 9, 9, 9 — an
-autoplay-unlock ramp. `unlock()` resumes the AudioContext and does nothing for
-the `<audio>` element; the link auto-join means no gesture on the page at all.
-The volume slider was linear where hearing is not, so its whole useful range sat
-in the bottom tenth; it is 40 dB of travel now, 2 dB a step, default −20 dB dead
-centre. [`decisions/audio-stack.md`](decisions/audio-stack.md).
-
-**Cass is undiagnosed** — no join was ever written, and App Check refusing at
-sign-in is a guess until somebody asks her what the screen said.
-
-**Correction:** live was *not* `index-qJCbuGrA`/`d412adc` but `8c0a107` /
-`index-Du6MwR-e`, 10 Sep 18:05, from #51 — not the cause (it gates on a boolean
-absent in production), but a deploy landed the evening before and nobody knew.
 ## 2026-09-10 — Playwright prerequisites: jsdom, emulators, e2e job
 
-Recorded order from [`audit-backlog.md`](decisions/audit-backlog.md): glob (already),
-jsdom component tests, emulator, Playwright. Built on `cursor/playwright-prereqs`.
-Runtime flag `window.__QUIZ_EMULATORS__ === true`, host hardcoded `127.0.0.1`, so
-e2e drives the exact `dist/` that ships. CI job `e2e` needs `verify`, Temurin 21,
-Chromium only; `deploy` now needs e2e too. No debug token named in the workflow.
-Depth: [`emulators.md`](decisions/emulators.md). Smoke proved against a production
-`dist/`: landing + create-room on the emulators. **Not covered:** vault seed, a
-fifteen-question round, App Check (emulators don't).
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-10 — Node 20 deprecation: the four actions clear it at three different majors
 
-Bumped CI off the deprecated node20 runtime. Levelling all four to v5 would have
-fixed half of it: `upload-artifact@v5` and `download-artifact@v5`/`@v6` declare
-node20 despite advertising Node 24 *support*, so they went to **v6** and **v7**
-while checkout and setup-node went to **v5**. Read off each `action.yml`, not the
-changelogs. Proved both ways — the annotations API returns the warning on the
-pre-bump master run and nothing on the bumped one. PR #45; `deploy` skipped on a
-PR, so `download-artifact@v7` is declared-node24 but not yet exercised.
-[`decisions/ci-deploy.md`](decisions/ci-deploy.md).
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-10 — Season form seeded on old rows, and they are estimates
 
-The board showed **one row of 30** after form ranking was restored, because
-`orderBy('form')` drops documents without the field. `npm run backfill-form`
-(dry run by default) seeded 28; 29 of 30 rows now rank.
-
-**Not a backfill — an invention, deliberately labelled.** The per-round scores
-`form` is defined over were never stored, so `best + mean × min(3, played - 1)`
-is the closest thing the surviving totals support. It decays as people bank real
-rounds. The one row with a *real* form (Ghost Quizzer, 6,578 from a single
-round) was not overwritten and now ranks below estimated rows — correct, and
-unfair-looking until they play again. No field marks a row as estimated:
-`hasOnly` in the rules would fail that player's next bank.
-[`season.md`](decisions/season.md).
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-10 — Deploys come from CI now (`index-qJCbuGrA`)
 
-`.github/workflows/ci.yml`. `verify` (master, **every PR**, dispatch) runs
-typecheck/lint/test/build and **uploads `dist/`**; `deploy` downloads that
-artefact rather than rebuilding, checks it, and publishes with the `gh-pages`
-package — no third-party action in the deploy path. Eight public `VITE_*` as
-repository **variables**; the debug token is not one and never will be. First
-deploy: gh-pages `d412adc`, **authored by GitHub Actions**, which is now how you
-tell a CI deploy from a laptop one at a glance.
-
-**`check-bundle` proves a different thing in CI.** No `.env.local` there, so
-nothing to grep — it asserts the token is not in the build environment at all,
-and refuses if any workflow so much as *names* it. Plus a **canary**: every run
-greps for `VITE_FIREBASE_API_KEY`, which must be found, because a search that
-cannot find a value known to be present proves nothing by finding no token.
-Seven directions proved, in a checkout with no `.env.local`.
-
-**gitleaks was dropped on a measurement**: `public/` + `src/` hold **231
-UUID-shaped question ids**, so any entropy detector fires 231 false positives a
-build. The UUID-subtraction backstop was measured too (residual 0; 1 with a
-planted UUID) and **not shipped** — its allowlist comes from `src/`, so a token
-hardcoded into a source file would be allowlisted alongside the bundle.
-
-**Playwright stays unbuilt and now has a shape.** Two blockers were recorded on
-8 September; this removes "there is no CI". The other is answered by the
-**emulator, never a debug token** — which is why the check is "the token is not
-here" rather than "here is the value to grep for". Vitest glob widened to
-`.tsx` so a component test cannot silently never run.
-[`ci-deploy.md`](decisions/ci-deploy.md), [`audit-backlog.md`](decisions/audit-backlog.md).
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-10 — Three corrections the live project made to the docs
 
-**The picture round has been played** — `RX4P`, 9 September, 11 seats, 55% over
-10. Three documents said it never had. **Third time** the prose has drifted from
-the live project, and `read-games` settled it in one call.
-
-**The `elapsedMs` floor is live and three documents called it unbuilt.**
-`arrivalOk` / `elapsedGraceMs` at `firestore.rules:333`, enforcing on every
-answer write. What is unbuilt is the *client* half — neither name appears in
-`src/` — so `bound-elapsed-ms` is about the client, not the rule.
-
-**`docs/decisions/audit-backlog.md` existed only inside PR #35**, 201 lines
-including the Playwright assessment. Rescued before the PR was closed. A
-document living only on a branch is a document one `gh pr close` from gone.
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-10 — The season form ranking was live, then silently reverted
 
-`rankByForm` shipped 8 September as `index-Df9CfP0K`. The 10 September deploys
-came off `seal-token-again`, which does not contain it, so **the season board
-has been ranking on raw points ever since and nobody was told**. Found by
-diffing the live tree against the branches rather than by reading: the two
-8 September entries below it had also never reached `master` in any form, spine
-or archive, and are now in [`recall/2026-09.md`](recall/2026-09.md) verbatim.
-
-Nothing was broken by the revert — live `formOk()` treats `form` as optional, so
-banks kept working — which is exactly why it went unnoticed for two days. **This
-is the failure deploy-from-CI exists to stop**, and it is the reason the restore
-rides in on the same session as the workflow.
-
-Restored on `restore-season-form`. **The board is short until each existing row
-banks once**: `orderBy('form')` excludes documents without the field, and all 26
-`season-2` rows predate it. Same as 8 September, and still no backfill.
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-10 — Deploy guard added; CI outlined for later
 
-`scripts/predeploy.ts` — the interim guard, superseded the same day by the CI
-workflow above but still the guard on a hand deploy. Archived whole:
-[`recall/2026-09.md`](recall/2026-09.md).
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-10 — Token revoked and reissued; leak closed
 
@@ -184,34 +194,16 @@ Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-10 — Correction: the console was ahead of the repo, not behind
 
-The rules diagnosis reversed once the console was actually read: 39,218 bytes
-live against master's 34,889, the extra being the `elapsedMs` arrival floor.
-Landed as #40. Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-10 — Live: volume, clip cuts, 177 songs (`index-C3jZR3XU`)
 
-The tunes release, superseded the same day by the token-gate deploy and then by
-CI. Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
-## 2026-09-10 — Name that Tune worked; volume, giveaways, 177 songs (branch `music-volume-and-clips`)
+## 2026-09-10 — Name that Tune worked; volume, giveaways, 177 songs
 
-First music round that played. Three notes. **Volume**: the loud thing was the
-`<audio>` element at 1.0, never the synth cues — no CORS on Apple's CDN so the
-master gain never reached it. Default 0.35, slider under the corner switch,
-cues unchanged at the default and capped there. **Giveaways**: Apple picks the
-preview to be the most recognisable stretch, which for pop is the chorus, which
-is where the title is sung — `previewSeconds` cuts the clip before it.
-**Songs**: 79 → 177, weighted to `hard` (68/62/47). `resolveSong` now prefers a
-title match, not just an artist. `npm run tune-audit` measured all 177 —
-**103 clean, 33 trimmed, 31 shifted, 10 unavoidable**. Two checker failures
-found and fixed on the way: Parklife called clean because whisper split the
-title into "pork life", and seventeen clips that transcribed to nothing where
-eleven were only *suppressed* — Shake It Off sings its title six times in ten
-seconds and was counted clean. `small.en` heard "Sweet Caroline, good times" as
-"The sweet, terrible life", which is why the audit runs `medium.en`.
-`melody-round.md` split at 323/250 →
-[`tunes-round.md`](decisions/tunes-round.md), verbatim. **Not seeded** (98 new
-ids), not deployed.
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md). Depth:
+[`decisions/tunes-round.md`](decisions/tunes-round.md).
 
 ## 2026-09-09 — The whole day, archived
 

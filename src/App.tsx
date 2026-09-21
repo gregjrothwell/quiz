@@ -33,6 +33,7 @@ import { useGameLog } from './lib/useGameLog';
 import { NO_HISTORY } from './engine/askedHistory';
 import { loadAsked, loadForm, recordAsked, recordGame, type Banked } from './lib/season';
 import { play } from './lib/sound';
+import { useStillPreload } from './lib/stills';
 import { loadPackQuestions, usePackIndex } from './lib/usePacks';
 import { useQuestionClock } from './lib/useQuestionClock';
 import { useRoom } from './lib/useRoom';
@@ -182,6 +183,21 @@ function Game() {
     writeOwnSquad,
   } = useRoom();
   const { packs, error: packsError } = usePackIndex();
+
+  /*
+    Pull the round's pictures down while the lobby is open.
+
+    Every device holds all fifteen questions from the moment the round is built,
+    so every filename is known long before the first one is shown — and then the
+    lobby sits there while people join. Before this the first request for a
+    still went out when the question rendered, which is the same frame the
+    countdown starts in: on a slow connection the picture and the answer window
+    were racing, and on 18 September 2026 the picture lost.
+
+    Cheap to the point of free on the packs that have images — fifteen stills is
+    about 1.2MB for On the box — and a no-op for the eleven text packs.
+  */
+  useStillPreload(room?.questions);
 
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<ActionError | null>(null);

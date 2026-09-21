@@ -867,6 +867,13 @@ select.input option {
   color: var(--ink-soft);
 }
 
+/* For a button offered inside something else — the retry over a still that
+   did not load. Full size would dominate the box it is sitting in. */
+.btn--small {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+}
+
 .btn--ghost:hover:not(:disabled) {
   border-color: var(--ink-dim);
   box-shadow: none;
@@ -1302,12 +1309,86 @@ select.input option {
   max-width: min(100%, 28rem);
 }
 
+/* The frame holds the picture's box open while the picture is still coming.
+
+   This is the fix for what Bret reported on 18 September 2026. `.still__img`
+   below is `width:100%; height:auto`, and an image that has not arrived has no
+   intrinsic ratio to resolve `auto` against — so it was **zero pixels tall**,
+   and `alt=""` meant there was not even alt text in the gap. A player saw the
+   prompt, four lecterns, and nothing between them, which reads as a question
+   with no picture rather than a picture that is late.
+
+   Two mechanisms reserve it, never both at once: `width`/`height` attributes on
+   the `<img>` where the pack knows the size, and `aspect-ratio` set inline on
+   this element where there is no `<img>` to carry them — a jigsaw drawn from
+   background tiles, or Apple's square artwork. See `frameRatio`. */
+.still__frame {
+  position: relative;
+  border-radius: 0.35rem;
+  overflow: hidden;
+}
+
+/* Only while waiting. A panel under a picture that has arrived would show as a
+   hairline along any edge the image does not cover exactly. */
+.still__frame--waiting {
+  background: rgb(0 0 0 / 0.35);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+}
+
 .still__img {
   display: block;
   width: 100%;
   height: auto;
   border-radius: 0.35rem;
   background: rgb(0 0 0 / 0.35);
+}
+
+/* Hidden rather than removed: the element is what holds the box open, and a
+   box that vanishes when a picture fails moves the lecterns under a thumb. */
+.still__img--gone {
+  visibility: hidden;
+}
+
+/* Sits over the reserved box rather than in the flow, so nothing moves when it
+   goes: the lecterns must not shift under a thumb that is already on its way to
+   one. */
+.still__state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.still__state-text {
+  margin: 0;
+  font-family: var(--tech);
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.72);
+  animation: still-wait 1.6s ease-in-out infinite;
+}
+
+/* A failure is a fact, not a process — it does not pulse, and it says so in the
+   colour the rest of the app uses for something having gone wrong. */
+.still__state--failed .still__state-text {
+  color: var(--amber-bright);
+  animation: none;
+}
+
+@keyframes still-wait {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.95;
+  }
 }
 
 /* Film/TV posters: square from the upper half, so typical title treatment
@@ -1364,6 +1445,60 @@ select.input option {
 }
 
 /* ── Lecterns ───────────────────────────────────────────────────────────── */
+
+/* ── The picture beside the answers ─────────────────────────────────────────
+   Stacked, a still is capped at 28rem and the lecterns fill the row under it.
+   On a 1512px laptop that is a 448px picture in a 965px card with **517px of
+   the row beside it empty**, and 12px between the picture and the top lectern
+   — measured 21 September 2026, after Greg said the pictures were a bit small.
+   They were, and the space was already there.
+
+   `.qsplit` is a plain column, identical to `.stack`, so a text or tune
+   question and every phone are untouched. `--split` is added only where there
+   is a picture to put in the left column.
+   ──────────────────────────────────────────────────────────────────────────── */
+.qsplit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.qsplit__answers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* 64rem, not the 44rem the podium already answers to. Between the two the card
+   is too narrow to hold a readable picture and four option labels side by side,
+   and an option that wraps to three lines is worse than a smaller picture. */
+@media (min-width: 64rem) {
+  .qsplit--split {
+    display: grid;
+    grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr);
+    gap: 1.2rem;
+    align-items: start;
+  }
+
+  /* One column, because the right-hand half is not wide enough for two. Four
+     stacked lecterns are also what gives the picture its height to grow into. */
+  .qsplit--split .podium {
+    grid-template-columns: 1fr;
+  }
+
+  /* The cap is the whole reason the picture looked small; in here the column
+     is the constraint instead. */
+  .qsplit--split .still {
+    max-width: 100%;
+  }
+
+  /* Except for a square one. A sleeve at full column width is taller than the
+     four lecterns beside it and pushes the row below the fold, which is the
+     opposite of the complaint — and squares were never the small ones. */
+  .qsplit--split .still--square {
+    max-width: min(100%, 28rem);
+  }
+}
 
 .podium {
   display: grid;
