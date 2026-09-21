@@ -16,12 +16,10 @@ visible.
 chronology still reads end to end. Shortening an old entry to make the number go
 down is the thing the paragraph above forbids.
 
-Two lessons kept, because the next split meets both.
-**A split's own numbers go stale if it sits unmerged** — the 4 September one was
-cut at 350, landed on the 8th at 360, and described the wrong file until it was
-re-checked. And **an entry moved a directory down takes its relative links with
-it and every one breaks**: fourteen were broken this way before anyone checked,
-repaired 21 September.
+Two lessons the next split will meet again. **A split's numbers go stale if it
+sits unmerged** — the 4 September one was cut at 350, landed on the 8th at 360,
+and described the wrong file until re-checked. And **an entry moved a directory
+down breaks every relative link in it**: fourteen were, repaired 21 September.
 
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
