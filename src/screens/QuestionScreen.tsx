@@ -576,6 +576,8 @@ export function QuestionScreen({
               durationMs={questionDurationMs(room)}
               revealed={revealed}
               {...(question.image ? { image: question.image } : {})}
+              {...(question.imageWidth !== undefined ? { imageWidth: question.imageWidth } : {})}
+              {...(question.imageHeight !== undefined ? { imageHeight: question.imageHeight } : {})}
               {...(question.artworkUrl ? { artworkUrl: question.artworkUrl } : {})}
               {...(question.posterCrop ? { posterCrop: true } : {})}
               {...(question.credit ? { credit: question.credit } : {})}

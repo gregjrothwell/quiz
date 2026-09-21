@@ -88,6 +88,8 @@ const FLAGS_QUESTION: QuizQuestion = {
   category: 'Flags',
   difficulty: 'easy',
   image: '40f489612f69fbc813eeed23ac802f7d0c2fea379b8fc04d311237ed41a1756a.png',
+  imageWidth: 640,
+  imageHeight: 320,
 };
 
 const SLEEVES_QUESTION: QuizQuestion = {
@@ -111,6 +113,8 @@ const SCREENS_QUESTION: QuizQuestion = {
   category: 'Film',
   difficulty: 'easy',
   image: '78f0a0c5bb1877d83147d18ab197d1c569775babc4f38814873f1dd1de95cbfc.jpg',
+  imageWidth: 780,
+  imageHeight: 439,
 };
 
 /*
