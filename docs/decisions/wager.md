@@ -1,6 +1,6 @@
 # The wager
 
-> **Owner: Greg Rothwell. Last updated: 4 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 21 September 2026. Budget: 250 lines.**
 
 `ideas-review.md` §3, built. One question — the last — where you stake a share of
 your points, so the bottom of the table is still mathematically alive at question
@@ -82,8 +82,10 @@ feature's risk, not because they were hard.
   whole room.
 - **A faked `elapsedMs` is worth more again.** Rank scoring took it from ~5
   points to 100; a wager multiplies it. Bounding `elapsedMs` server-side
-  (`ideas-review.md` §5) is the companion change and is still unbuilt. Flagged so
-  the decision to ship without it is deliberate rather than overlooked.
+  (`ideas-review.md` §5) shipped 8 September as a lower bound with 8,000 ms
+  of grace, which leaves the default window unguarded. A server stamp now
+  rides beside it. Flagged so the decision to rank on the claimed time is
+  deliberate rather than overlooked.
 
 ## Evidence
 

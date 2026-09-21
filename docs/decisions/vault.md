@@ -1,6 +1,6 @@
 # The answer vault
 
-> **Owner: Greg Rothwell. Last updated: 20 August 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 21 September 2026. Budget: 250 lines.**
 
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
@@ -116,13 +116,14 @@ cheat, except the same rule refuses every attempt until **both**:
 - the question named in the path is the one the room is actually on, and
 - the server has seen the room's answer window pass since it opened.
 
-The first stops a member holding question one open and quietly asking about the
-other fourteen. The second holds because `openedAt` can only ever be written as
-`request.time` — `serverTimestamp()` and nothing else — so a question cannot be
-claimed to have opened earlier than it did, in this room or in a decoy of
-somebody's own. The window itself is `durationSecs` on the room, pinned while a
-question is open and floored at five seconds; see [the configurable answer
-window](answer-window.md#the-configurable-answer-window) for why both of those are load-bearing.
+The first *used to claim it* stopped a member holding question one open.
+**It did not** — rewrite `questions` without moving phase or index and the
+gate asks about anything. Closed 21 September 2026: pin `questions` to the
+lobby ([`security-round-sept-2026.md`](security-round-sept-2026.md)); the
+accepted decoy is unchanged. The second holds because `openedAt` can only
+ever be written as `request.time`. The window itself is `durationSecs` on
+the room, pinned while a question is open and floored at five seconds; see
+[the configurable answer window](answer-window.md#the-configurable-answer-window).
 
 `src/lib/vault.ts` fires all four candidates at once, so the reveal costs one
 round trip rather than four.
@@ -150,8 +151,9 @@ Be precise about this, because it is easy to oversell:
   quicker about it. Closing this needs the future question ids withheld until
   each one opens, which costs the quizmaster role its ability to change hands
   mid-round — a worse trade than the hole. Written down rather than fixed.
-- **Self-reported `elapsedMs`.** Unchanged. Someone can still claim they
-  answered in three milliseconds.
+- **Self-reported `elapsedMs`.** Still the rank key. A server stamp (`at`) now
+  rides beside it; one round of implied delay is what settles whether anyone
+  floors the claimed time.
 
 What it *does* kill is the ten-second cheat: open DevTools, read `correctIndex`
 off the room snapshot, or fetch `packs/music.json` and search for the prompt.

@@ -244,6 +244,26 @@ describe('foldGameRecord', () => {
     expect(greg !== undefined && 'firstMs' in greg).toBe(false);
   });
 
+  test('an answer without an arrival stamp carries no at key at all', () => {
+    const greg = foldGameRecord(finishedRoom(), WHOLE_LOG, 'greg')?.questions[0]?.answers.greg;
+    expect(greg !== undefined && 'at' in greg).toBe(false);
+  });
+
+  test('an arrival stamp rides into the record as milliseconds', () => {
+    const log: QuestionRecord[] = [
+      {
+        ...WHOLE_LOG[0]!,
+        answers: {
+          greg: { optionIndex: 2, elapsedMs: 3_400, at: 1_700_000_000_123 },
+        },
+      },
+      WHOLE_LOG[1]!,
+    ];
+
+    const greg = foldGameRecord(finishedRoom(), log, 'greg')?.questions[0]?.answers.greg;
+    expect(greg).toEqual({ optionIndex: 2, elapsedMs: 3_400, at: 1_700_000_000_123 });
+  });
+
   test('a stray field on an answer does not reach the record', () => {
     // #given — whatever an older bundle or a curious player put in storage
     const log: QuestionRecord[] = [

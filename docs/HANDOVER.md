@@ -29,6 +29,7 @@ Built to replace Polly in Teams.
 | **an album cover that names its own album**, the sleeve audit | [`decisions/sleeves-gate.md`](decisions/sleeves-gate.md) |
 | voting on a question, retiring one | [`question-votes.md`](decisions/question-votes.md) |
 | rules and App Check — Firestore and RTDB, then **auth**, then the debug token and why a deploy must not come off `master` | [`security.md`](decisions/security.md) · [`app-check-auth.md`](decisions/app-check-auth.md) · [`debug-token-leak.md`](decisions/debug-token-leak.md) |
+| **the vault oracle, `joinedAt`, the `at` stamp, presence names** | [`security-round-sept-2026.md`](decisions/security-round-sept-2026.md) |
 | **the CI deploy, the secret check, Playwright, the emulator**; anything that adds reads or writes | [`ci-deploy.md`](decisions/ci-deploy.md) · [`emulators.md`](decisions/emulators.md) · [`cost.md`](decisions/cost.md) · [`audit-backlog.md`](decisions/audit-backlog.md) |
 | — before assuming a style choice, a bug, or a claim in here | [`gotchas.md`](decisions/gotchas.md) · [`known-limits.md`](decisions/known-limits.md) · [`state-of-play.md`](decisions/state-of-play.md) |
 | what a question is worth, and why it is not a speed curve | [`decisions/scoring.md`](decisions/scoring.md) |
@@ -42,22 +43,21 @@ Built to replace Polly in Teams.
 
 ## State as of 21 September 2026
 
-> **READ FIRST — nothing has been deployed since 11 September, the sleeves pack
-> is rebuilt and needs a vault seed, and the season board's form figures are
-> estimates.** `.github/workflows/ci.yml` builds and publishes from `master`, so
+> **READ FIRST — #54 went live on 21 September and is entirely unplayed, and the
+> season board's form figures are estimates.** `.github/workflows/ci.yml` builds and publishes from `master`, so
 > the token leak is closed at the source
 > ([`decisions/ci-deploy.md`](decisions/ci-deploy.md)). Every season row but one
 > carries a **seeded, estimated** `form`
-> ([`decisions/season.md`](decisions/season.md)). Branch
-> `picture-loading-and-sleeves-ocr` fixes two things the office hit — see
-> Outstanding 1 and 2.
+> ([`decisions/season.md`](decisions/season.md)). The sleeve ratings are
+> **judgements, not measurements** — see Outstanding 1.
 
-**Live is `index-n26s0ofl`** (11 Sep 09:38, gh-pages `3eb7221`, `96dee89`/#52,
-CI) — *this box was a deploy behind twice running; check gh-pages, not it.*
+**Live is `index-BHcNzJzP`** (21 Sep 15:15, gh-pages `026d7cd`, `f6c1298`/#54,
+CI) — *check gh-pages **and** `pages/builds`; the site served the old one for
+four minutes after the branch was right.*
 Firebase chunk **moved to `firebase-W6iQUl4r`** (#51 touched `src/firebase.ts`).
 **16 packs**; **Name that Tune 177**; synth **Classical**; **On the box** 54
-(hashed TMDB stills); **Flags** 76 (hashed, no jigsaw); **Sleeves** 52 live but
-**44 on the branch** after the cover audit; picture is **Fine Art**. Every still
+(hashed TMDB stills); **Flags** 76 (hashed, no jigsaw); **Sleeves 44** after the
+cover audit (12/20/12); picture is **Fine Art**. Every still
 now carries `imageWidth`/`imageHeight`, and a picture question puts the picture
 beside the answers above 64rem.
 
@@ -98,9 +98,10 @@ scoring 500 + rank 500/400/300/200/100; counts in
    spent — it substitutes medium. The fix is a fold of `games/` into real
    difficulty, **a query now rather than a build**, and `games/` now holds
    eleven rounds rather than three, so it is no longer gated on playing.
-9. **Do not paste `master`'s rules over the console.** The repo is byte-forward
-   (39,218) but the console is the source of truth; a paste the wrong way deletes
-   a live anti-cheat. `check-rules` **69/69 both ways, 10 September**.
+9. **Do not paste `master`'s rules over the console.** Live is this branch
+   (42,521 bytes). A paste the wrong way deletes the vault pin. `check-rules`
+   **80/80 both ways, 21 September**; `sync-harness 10` **10/10, 0 dropped**.
+   RTDB still allows `name` — refuse it after the client ships.
 10. **Hand-built packs need a seed after any *new* ids.** All seeded as of
     10 September; an unseeded pack breaks at reveal.
 11. **`firstMs` and the pack picker are live and unplayed.** It is a deterrent,
@@ -112,12 +113,10 @@ scoring 500 + rank 500/400/300/200/100; counts in
     every round since carries gate/resolve/dispatch. No stall has recurred, so
     the reveal fix is still unproved rather than disproved
     ([`reveal-delays.md`](decisions/reveal-delays.md)).
-14. **Branches:** #35–#49 closed or merged, nothing open. **On
-    `picture-loading-and-sleeves-ocr`, unpushed:** the picture box, the preload,
-    the side-by-side layout, the sleeves gate. Also unpushed:
-    `ask-recovery-code` (cheapest on the list), `clock-bed-and-key-repeat`,
-    `bound-elapsed-ms`, `fold-votes-dry-run`, `context-standards-route`,
-    `vote-tally` (WIP). ~40 merged remote branches could be pruned.
+14. **Rules pasted; client not shipped.** Vault pin, `joinedAt`, `at` stamp
+    are live. Presence still accepts `name`. Next: CI deploy, then RTDB refuse
+    `name`, then one round and `audit-players`.
+    [`security-round-sept-2026.md`](decisions/security-round-sept-2026.md).
     
 
 ## Where things are
@@ -128,7 +127,7 @@ sound / volume preferences. `src/screens/` one per phase, plus `Preview`.
 
 Commands: the table in [`AGENTS.md`](../AGENTS.md), plus `fetch-questions`,
 `fetch-otqa`, `asked-probe`, `take-stock`, `prune-rooms`, `write-*-pack`,
-`check-bundle`, `read-games`, and two new ones — **`sleeve-audit`** (Mac + `uv`;
+`check-bundle`, `read-games`, `audit-players`, and two new ones — **`sleeve-audit`** (Mac + `uv`;
 reads what is printed on each album cover) and **`still-dimensions`** (sizes
 every still in the packs). `npm test` covers `src/` plus the pure parts of
 `scripts/`; anything touching the network stays out, so it runs offline — a test
@@ -138,7 +137,7 @@ importing `read-games` breaks that, since that module calls `main()` at import.
 
 **The token leak is closed and the gate is on `master`**, so a CI deploy is
 safe. If rules matter: `npm run check-rules` and `npm run sync-harness 10`, both
-green 10 September (69/69 both ways; 10/10, 0 dropped).
+green 21 September (80/80 both ways; 10/10, 0 dropped).
 
 **Seeded 21 September** — 42 added, 1 changed, nothing deleted; read back from
 Firestore, 44 of 44 published sleeves hold a valid answer. The seed only ever

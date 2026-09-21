@@ -1,6 +1,6 @@
 # Known limits
 
-> **Owner: Greg Rothwell. Last updated: 4 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 21 September 2026. Budget: 250 lines.**
 
 Split out of [`state-of-play.md`](state-of-play.md) on 28 August 2026, when that
 file reached 252 lines against a 250 budget. The text is unchanged apart from one
@@ -15,7 +15,9 @@ behaviour is a bug.
 - **Any room member can write scores, and anyone holding the code can become a
   member.** Deliberate — see the quizmaster row above. Fine among colleagues, not
   fine for strangers. The room code is the only thing standing between a room and
-  the internet, which is why `list` is no longer granted.
+  the internet, which is why `list` is no longer granted. **Dropping `name`
+  from presence (21 September 2026) reduces an RTDB code-sweep to liveness
+  pings rather than a roster**; the four-character space itself is unchanged.
 - **Cheating now takes a script rather than a console.** The answers left the
   packs and the room document — see [the vault](vault.md#turning-the-vault-on) for what
   that does and does not buy. `elapsedMs` is still self-reported, so a

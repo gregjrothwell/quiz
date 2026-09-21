@@ -144,6 +144,16 @@ export interface Answer {
    * questions are not played for stakes — see {@link isWagerQuestion}.
    */
   wager?: number;
+  /**
+   * Server arrival of this write, milliseconds since epoch.
+   *
+   * Written as `serverTimestamp()` and converted at the Firestore boundary, so
+   * the engine never sees a FieldValue. Optional: every round before 21
+   * September 2026 has answers without it, and a client that ran ahead of the
+   * rules paste must still score. Rank still reads {@link elapsedMs}; this is
+   * the instrument that says whether that number was honest.
+   */
+  at?: number;
 }
 
 /**

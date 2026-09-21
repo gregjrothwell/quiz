@@ -214,13 +214,14 @@ function isPackId(value: unknown): value is PackId {
 
 function parseAnswer(value: unknown): RecordedAnswer | null {
   if (!isObject(value)) return null;
-  const { optionIndex, elapsedMs, firstMs, wager } = value;
+  const { optionIndex, elapsedMs, firstMs, wager, at } = value;
   if (typeof optionIndex !== 'number' || typeof elapsedMs !== 'number') return null;
   return {
     optionIndex,
     elapsedMs,
     ...(typeof firstMs === 'number' ? { firstMs } : {}),
     ...(typeof wager === 'number' ? { wager } : {}),
+    ...(typeof at === 'number' ? { at } : {}),
   };
 }
 

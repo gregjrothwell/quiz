@@ -85,6 +85,39 @@ function openedAtMillis(data: DocumentData | undefined): number | null {
   return value instanceof Timestamp ? value.toMillis() : null;
 }
 
+/**
+ * `at` off an answer document. A resolved Timestamp becomes milliseconds; a
+ * pending `serverTimestamp()` write, or a document that predates the field,
+ * is absent so `liveAnswers` keeps the shape every earlier round produced.
+ */
+function stampMillis(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (value instanceof Timestamp) return value.toMillis();
+  return undefined;
+}
+
+function asFiniteNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+function answerDocFrom(data: DocumentData): AnswerDoc | null {
+  const optionIndex = asFiniteNumber(data.optionIndex);
+  const elapsedMs = asFiniteNumber(data.elapsedMs);
+  const questionIndex = asFiniteNumber(data.questionIndex);
+  if (optionIndex === undefined || elapsedMs === undefined || questionIndex === undefined) {
+    return null;
+  }
+  const at = stampMillis(data.at);
+  return {
+    optionIndex,
+    elapsedMs,
+    questionIndex,
+    ...(typeof data.firstMs === 'number' ? { firstMs: data.firstMs } : {}),
+    ...(typeof data.wager === 'number' ? { wager: data.wager } : {}),
+    ...(at === undefined ? {} : { at }),
+  };
+}
+
 export type ConnectionState = 'connecting' | 'ready' | 'error';
 
 export interface UseRoom {
@@ -448,7 +481,8 @@ export function useRoom(): UseRoom {
     return onSnapshot(answersCollection(code), (snapshot) => {
       const next: Record<string, AnswerDoc> = {};
       for (const document of snapshot.docs) {
-        next[document.id] = document.data() as AnswerDoc;
+        const parsed = answerDocFrom(document.data());
+        if (parsed) next[document.id] = parsed;
       }
       setAnswers(next);
     });
@@ -469,7 +503,11 @@ export function useRoom(): UseRoom {
       // missing or unpublished this write fails for everyone, and as a bare
       // `void` it surfaced only as a console warning — presence silently stopped
       // working and the room filled with ghosts with nothing on screen to say so.
-      rtdbSet(own, { name: nameRef.current, at: Date.now() }).then(
+      // `name` used to ride along and was never read — the reaper takes
+      // Object.keys only. Dropping it is what stops a signed-in client
+      // sweeping room codes from harvesting a roster. See
+      // docs/decisions/security-round-sept-2026.md.
+      rtdbSet(own, { at: Date.now() }).then(
         () => setPresenceWorking(true),
         () => setPresenceWorking(false),
       );
@@ -877,7 +915,10 @@ export function useRoom(): UseRoom {
         ...first,
         ...staked,
       };
-      await setDoc(doc(answersCollection(code), uid), answer);
+      await setDoc(doc(answersCollection(code), uid), {
+        ...answer,
+        at: serverTimestamp(),
+      });
     },
     [code, uid, room],
   );
