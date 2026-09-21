@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 10 September 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 21 September 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -38,6 +38,68 @@ September entries (the CDN, the mute button, the steal) went to
 body where it happened rather than here: three 4 September batches, then the
 whole 2026-09-08 day when the debug-token deploy needed the room. All verbatim to
 [`recall/2026-09.md`](recall/2026-09.md).
+
+**Split again, 21 September 2026**, at 300/300 with two entries about to land.
+The six remaining 10 September entries went to
+[`recall/2026-09.md`](recall/2026-09.md), whole. 300 → 224.
+
+## 2026-09-21 — Sleeves: the cover was the answer key on 11 of 15
+
+`53FN` this morning, 4 seats, hit 85% at a 3.0s median against 37%/5.3s for a
+text round. **Eleven of the fifteen covers had the album title printed on them.**
+The tell is the hard questions: the four with a printed title all scored **100%**
+and the one with a wordless cover — Björk, *Vespertine* — scored **50%**. The
+difficulty rating was decorative.
+
+An edition problem more than a curation one: the specs name an album, iTunes GB
+returns whatever edition it holds, and reissues print titles on artwork the
+original never carried. *The Wall* is a bare brick wall; the mzstatic art reads
+`PINK FLOYD THE WALL`.
+
+`npm run sleeve-audit` reads the text off every cover with Apple's Vision and
+writes `sleeve-cover-text.ts`; the builder refuses any sleeve whose cover names
+its own album *or* is simply covered in writing. Of **143 covers read, 103 are
+refused**; 106 candidate albums added to refill it. Published **52 → 40**, but
+the pack that actually worked was 19. `SLEEVES_MIN_PACK` 45 → 36, which is an
+honest bar rather than a loosened one. Depth:
+[`decisions/sleeves-gate.md`](decisions/sleeves-gate.md).
+
+**And a wrong picture, not a giveaway.** `resolveAlbum` trusted a hand-typed
+`collectionId` with no title check. `californication` carried `947680622` — Red
+Hot Chili Peppers' *The Studio Album Collection 1991-2011*. The question showed a
+box set and offered *Stadium Arcadium*. It scored **25%** in `53FN`, the worst of
+the fifteen, and it was not hard, it was wrong. Green build throughout.
+
+**Not deployed.** 24 new vault ids need `seed-vault` before the pack works at a
+reveal, and the difficulty ratings are now systematically wrong — they were set
+when the cover named the album.
+
+## 2026-09-21 — The pictures did not turn up, and it was never the files
+
+Bret, Friday 18 September 15:11, with a screenshot; others reported the same on
+slow connections. **The files are fine** — 82KB median, 158KB max, 200 from
+Pages, 179 of 179 on gh-pages, ~0.2s from here. And in the round he played
+(`M9YU`) **file size predicts nothing**: ≥100KB scored 88%/3.9s, under 86%/3.1s.
+Shrinking them would have fixed nothing, which is the finding that saved a blind
+alley.
+
+Three faults. **Nothing was preloaded** — the `<img>` was created when the
+question rendered, the same frame the countdown starts in, though every device
+has held all fifteen filenames since the round was built and the lobby sits open
+while people join. **The box was zero pixels tall** — `width:100%; height:auto`
+with no intrinsic size resolves to 0, and `alt=""` left nothing in the gap, so it
+read as a question with no picture rather than a picture that was late; measured
+at 0 before, 448×224 after. **A failure was silent and permanent.**
+
+Packs now carry `imageWidth`/`imageHeight`, read off the file header at build
+time and written into all 179 stills in place — no id, hash or option touched, so
+nothing needs reseeding. The header parser was **cross-checked against `sips`
+over all 179: zero disagreements**. Depth:
+[`decisions/picture-loading.md`](decisions/picture-loading.md).
+
+**Bret was not blind for the whole round** — eight questions came back 6/6, which
+is a 1-in-65,000 run of luck for a guesser. Ask him whether it was a couple of
+questions or the lot.
 
 ## 2026-09-11 — #52 live: `index-n26s0ofl`
 
@@ -88,105 +150,30 @@ sign-in is a guess until somebody asks her what the screen said.
 **Correction:** live was *not* `index-qJCbuGrA`/`d412adc` but `8c0a107` /
 `index-Du6MwR-e`, 10 Sep 18:05, from #51 — not the cause (it gates on a boolean
 absent in production), but a deploy landed the evening before and nobody knew.
+
 ## 2026-09-10 — Playwright prerequisites: jsdom, emulators, e2e job
 
-Recorded order from [`audit-backlog.md`](decisions/audit-backlog.md): glob (already),
-jsdom component tests, emulator, Playwright. Built on `cursor/playwright-prereqs`.
-Runtime flag `window.__QUIZ_EMULATORS__ === true`, host hardcoded `127.0.0.1`, so
-e2e drives the exact `dist/` that ships. CI job `e2e` needs `verify`, Temurin 21,
-Chromium only; `deploy` now needs e2e too. No debug token named in the workflow.
-Depth: [`emulators.md`](decisions/emulators.md). Smoke proved against a production
-`dist/`: landing + create-room on the emulators. **Not covered:** vault seed, a
-fifteen-question round, App Check (emulators don't).
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-10 — Node 20 deprecation: the four actions clear it at three different majors
 
-Bumped CI off the deprecated node20 runtime. Levelling all four to v5 would have
-fixed half of it: `upload-artifact@v5` and `download-artifact@v5`/`@v6` declare
-node20 despite advertising Node 24 *support*, so they went to **v6** and **v7**
-while checkout and setup-node went to **v5**. Read off each `action.yml`, not the
-changelogs. Proved both ways — the annotations API returns the warning on the
-pre-bump master run and nothing on the bumped one. PR #45; `deploy` skipped on a
-PR, so `download-artifact@v7` is declared-node24 but not yet exercised.
-[`decisions/ci-deploy.md`](decisions/ci-deploy.md).
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-10 — Season form seeded on old rows, and they are estimates
 
-The board showed **one row of 30** after form ranking was restored, because
-`orderBy('form')` drops documents without the field. `npm run backfill-form`
-(dry run by default) seeded 28; 29 of 30 rows now rank.
-
-**Not a backfill — an invention, deliberately labelled.** The per-round scores
-`form` is defined over were never stored, so `best + mean × min(3, played - 1)`
-is the closest thing the surviving totals support. It decays as people bank real
-rounds. The one row with a *real* form (Ghost Quizzer, 6,578 from a single
-round) was not overwritten and now ranks below estimated rows — correct, and
-unfair-looking until they play again. No field marks a row as estimated:
-`hasOnly` in the rules would fail that player's next bank.
-[`season.md`](decisions/season.md).
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-10 — Deploys come from CI now (`index-qJCbuGrA`)
 
-`.github/workflows/ci.yml`. `verify` (master, **every PR**, dispatch) runs
-typecheck/lint/test/build and **uploads `dist/`**; `deploy` downloads that
-artefact rather than rebuilding, checks it, and publishes with the `gh-pages`
-package — no third-party action in the deploy path. Eight public `VITE_*` as
-repository **variables**; the debug token is not one and never will be. First
-deploy: gh-pages `d412adc`, **authored by GitHub Actions**, which is now how you
-tell a CI deploy from a laptop one at a glance.
-
-**`check-bundle` proves a different thing in CI.** No `.env.local` there, so
-nothing to grep — it asserts the token is not in the build environment at all,
-and refuses if any workflow so much as *names* it. Plus a **canary**: every run
-greps for `VITE_FIREBASE_API_KEY`, which must be found, because a search that
-cannot find a value known to be present proves nothing by finding no token.
-Seven directions proved, in a checkout with no `.env.local`.
-
-**gitleaks was dropped on a measurement**: `public/` + `src/` hold **231
-UUID-shaped question ids**, so any entropy detector fires 231 false positives a
-build. The UUID-subtraction backstop was measured too (residual 0; 1 with a
-planted UUID) and **not shipped** — its allowlist comes from `src/`, so a token
-hardcoded into a source file would be allowlisted alongside the bundle.
-
-**Playwright stays unbuilt and now has a shape.** Two blockers were recorded on
-8 September; this removes "there is no CI". The other is answered by the
-**emulator, never a debug token** — which is why the check is "the token is not
-here" rather than "here is the value to grep for". Vitest glob widened to
-`.tsx` so a component test cannot silently never run.
-[`ci-deploy.md`](decisions/ci-deploy.md), [`audit-backlog.md`](decisions/audit-backlog.md).
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-10 — Three corrections the live project made to the docs
 
-**The picture round has been played** — `RX4P`, 9 September, 11 seats, 55% over
-10. Three documents said it never had. **Third time** the prose has drifted from
-the live project, and `read-games` settled it in one call.
-
-**The `elapsedMs` floor is live and three documents called it unbuilt.**
-`arrivalOk` / `elapsedGraceMs` at `firestore.rules:333`, enforcing on every
-answer write. What is unbuilt is the *client* half — neither name appears in
-`src/` — so `bound-elapsed-ms` is about the client, not the rule.
-
-**`docs/decisions/audit-backlog.md` existed only inside PR #35**, 201 lines
-including the Playwright assessment. Rescued before the PR was closed. A
-document living only on a branch is a document one `gh pr close` from gone.
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-10 — The season form ranking was live, then silently reverted
 
-`rankByForm` shipped 8 September as `index-Df9CfP0K`. The 10 September deploys
-came off `seal-token-again`, which does not contain it, so **the season board
-has been ranking on raw points ever since and nobody was told**. Found by
-diffing the live tree against the branches rather than by reading: the two
-8 September entries below it had also never reached `master` in any form, spine
-or archive, and are now in [`recall/2026-09.md`](recall/2026-09.md) verbatim.
-
-Nothing was broken by the revert — live `formOk()` treats `form` as optional, so
-banks kept working — which is exactly why it went unnoticed for two days. **This
-is the failure deploy-from-CI exists to stop**, and it is the reason the restore
-rides in on the same session as the workflow.
-
-Restored on `restore-season-form`. **The board is short until each existing row
-banks once**: `orderBy('form')` excludes documents without the field, and all 26
-`season-2` rows predate it. Same as 8 September, and still no backfill.
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-10 — Deploy guard added; CI outlined for later
 
