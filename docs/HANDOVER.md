@@ -83,8 +83,7 @@ scoring 500 + rank 500/400/300/200/100; counts in
    at 6/6, so he was not blind throughout
    ([`picture-loading.md`](decisions/picture-loading.md)).
 3. **40 sleeve albums will not resolve at all** — GB album search returns
-   tributes and soundtracks, so they need `collectionId`s found by hand in the
-   store. The audit names them every run.
+   tributes, so they need `collectionId`s found by hand. The audit names them.
 4. **29 of 30 season rows carry an *estimated* `form`**, seeded by
    `npm run backfill-form` — the scores it is defined over were never stored, so
    these are invented and decay as people bank. Real ones were not overwritten
