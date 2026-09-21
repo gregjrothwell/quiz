@@ -16,7 +16,7 @@ visible.
 chronology still reads end to end. Shortening an old entry to make the number go
 down is the thing the paragraph above forbids.
 
-Two lessons paid for along the way, kept because the next split will meet both.
+Two lessons kept, because the next split meets both.
 **A split's own numbers go stale if it sits unmerged** — the 4 September one was
 cut at 350, landed on the 8th at 360, and described the wrong file until it was
 re-checked. And **an entry moved a directory down takes its relative links with
