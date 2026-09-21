@@ -141,9 +141,8 @@ safe. If rules matter: `npm run check-rules` and `npm run sync-harness 10`, both
 green 10 September (69/69 both ways; 10/10, 0 dropped).
 
 **`seed-vault` is owed one run** — it was "everything is seeded" until the
-sleeves pack was rebuilt on 21 September, and 24 ids are now unseeded. An
-unseeded pack breaks at the reveal, so the sleeves round must not be played
-before it.
+sleeves rebuild on 21 September, and 24 ids are unseeded. An unseeded pack breaks
+at the reveal, so sleeves must not be played before it.
 
 Bitten more than once: **the rules are published by hand**, so the repo copy is
 not what Firebase runs ([`security.md`](decisions/security.md)); **the answer
