@@ -114,7 +114,9 @@ export function PicturePrompt({
   const perm = jigsaw ? placementAfterSettles(scrambleTiles(questionId, gameId), settled) : [];
 
   return (
-    <figure className="still">
+    // Square and landscape want different room in the side-by-side layout:
+    // width binds on a 16:9 still, height binds on a sleeve. See `.qsplit`.
+    <figure className={square ? 'still still--square' : 'still'}>
       <div
         className={status === 'ready' ? 'still__frame' : 'still__frame still__frame--waiting'}
         {...(ratio ? { style: { aspectRatio: ratio } } : {})}

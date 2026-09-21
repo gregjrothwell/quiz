@@ -409,6 +409,8 @@ export function QuestionScreen({
   // hook order between renders.
   if (!question) return <p className="notice">This round has no question at that position.</p>;
 
+  const hasStill = Boolean(question.image ?? question.artworkUrl);
+
   const stateFor = (index: number): TileState => {
     if (revealed) {
       if (!settled) {
@@ -567,75 +569,94 @@ export function QuestionScreen({
             <StoreBadge href={question.storeUrl} kind={hasPreview ? 'listen' : 'view'} />
           ) : null}
 
-          {question.image || question.artworkUrl ? (
-            <PicturePrompt
-              jigsaw={Boolean(room.jigsawEnabled && question.jigsaw)}
-              questionId={question.id}
-              gameId={room.gameId ?? ''}
-              elapsedMs={elapsedMs}
-              durationMs={questionDurationMs(room)}
-              revealed={revealed}
-              {...(question.image ? { image: question.image } : {})}
-              {...(question.imageWidth !== undefined ? { imageWidth: question.imageWidth } : {})}
-              {...(question.imageHeight !== undefined ? { imageHeight: question.imageHeight } : {})}
-              {...(question.artworkUrl ? { artworkUrl: question.artworkUrl } : {})}
-              {...(question.posterCrop ? { posterCrop: true } : {})}
-              {...(question.credit ? { credit: question.credit } : {})}
-            />
-          ) : null}
+          {/*
+            The picture and the lecterns sit side by side on a wide screen.
 
-          {/*
-            There was a gloss-floor reflection here — a flipped second copy of
-            the podium. Removed rather than tuned: the only part of a tile worth
-            reflecting is the letter chip and its label, which sit mid-tile, so
-            any setting that showed them rendered legible upside-down text and
-            read as a rendering fault. Clipping tighter to avoid that reflected
-            nothing but flat panel edges, which read as a stray empty box. There
-            is no value between the two that looks like a floor.
+            Stacked, the still is capped at 28rem and the lecterns fill the row
+            beneath it. Measured on a 1512px laptop that is a 448px picture in a
+            965px card, with **517px of the row beside it empty** and 12px
+            between the picture and the top lectern. Greg, 21 September 2026:
+            the pictures are "a bit small". They were, and the room to fix it
+            was already there and going unused.
+
+            Only where there *is* a picture. A text or tune question has nothing
+            to put in the left column, and splitting the row for one would leave
+            its lecterns at half width for no reason at all.
           */}
-          {/*
-            The stake sits above the lecterns rather than beside them, because
-            it has to be settled *before* the answer — picking a lectern is what
-            commits it, and a control below the thing it modifies reads as
-            something you do afterwards. Hidden once the answer is out: at the
-            reveal it is a fact, not a choice, and the ticker already tells it.
-          */}
-          {wagering && !revealed ? (
-            <div className="stack wager">
-              <p className="eyebrow">
-                The last question &mdash; how much of your {held.toLocaleString('en-GB')} are you
-                staking?
-              </p>
-              <div className="btn-row">
-                {WAGER_SHARES.map((share) => (
-                  <button
-                    type="button"
-                    key={share}
-                    className={share === stake ? 'btn' : 'btn btn--ghost'}
-                    // Locked with the lecterns, so a stake cannot be moved after
-                    // the clock has run out on the answer it belongs to.
-                    disabled={clock.expired}
-                    aria-pressed={share === stake}
-                    onClick={() => {
-                      setWager(share);
-                      // Already answered? Then the stake is a change to an
-                      // answer that exists, and has to be written to count.
-                      if (myAnswer) onAnswer(myAnswer.optionIndex, share);
-                    }}
-                  >
-                    {share === 0 ? 'Nothing' : `${share}%`}
-                  </button>
-                ))}
+          <div className={hasStill ? 'qsplit qsplit--split' : 'qsplit'}>
+            {question.image || question.artworkUrl ? (
+              <PicturePrompt
+                jigsaw={Boolean(room.jigsawEnabled && question.jigsaw)}
+                questionId={question.id}
+                gameId={room.gameId ?? ''}
+                elapsedMs={elapsedMs}
+                durationMs={questionDurationMs(room)}
+                revealed={revealed}
+                {...(question.image ? { image: question.image } : {})}
+                {...(question.imageWidth !== undefined ? { imageWidth: question.imageWidth } : {})}
+                {...(question.imageHeight !== undefined ? { imageHeight: question.imageHeight } : {})}
+                {...(question.artworkUrl ? { artworkUrl: question.artworkUrl } : {})}
+                {...(question.posterCrop ? { posterCrop: true } : {})}
+                {...(question.credit ? { credit: question.credit } : {})}
+              />
+            ) : null}
+
+            <div className="qsplit__answers">
+
+            {/*
+              There was a gloss-floor reflection here — a flipped second copy of
+              the podium. Removed rather than tuned: the only part of a tile worth
+              reflecting is the letter chip and its label, which sit mid-tile, so
+              any setting that showed them rendered legible upside-down text and
+              read as a rendering fault. Clipping tighter to avoid that reflected
+              nothing but flat panel edges, which read as a stray empty box. There
+              is no value between the two that looks like a floor.
+            */}
+            {/*
+              The stake sits above the lecterns rather than beside them, because
+              it has to be settled *before* the answer — picking a lectern is what
+              commits it, and a control below the thing it modifies reads as
+              something you do afterwards. Hidden once the answer is out: at the
+              reveal it is a fact, not a choice, and the ticker already tells it.
+            */}
+            {wagering && !revealed ? (
+              <div className="stack wager">
+                <p className="eyebrow">
+                  The last question &mdash; how much of your {held.toLocaleString('en-GB')} are you
+                  staking?
+                </p>
+                <div className="btn-row">
+                  {WAGER_SHARES.map((share) => (
+                    <button
+                      type="button"
+                      key={share}
+                      className={share === stake ? 'btn' : 'btn btn--ghost'}
+                      // Locked with the lecterns, so a stake cannot be moved after
+                      // the clock has run out on the answer it belongs to.
+                      disabled={clock.expired}
+                      aria-pressed={share === stake}
+                      onClick={() => {
+                        setWager(share);
+                        // Already answered? Then the stake is a change to an
+                        // answer that exists, and has to be written to count.
+                        if (myAnswer) onAnswer(myAnswer.optionIndex, share);
+                      }}
+                    >
+                      {share === 0 ? 'Nothing' : `${share}%`}
+                    </button>
+                  ))}
+                </div>
+                <p className="muted hint">
+                  {stake === 0
+                    ? 'Playing it safe — this one is worth the usual 1,000.'
+                    : `${stakeFor(held, stake).toLocaleString('en-GB')} points on the line.`}
+                </p>
               </div>
-              <p className="muted hint">
-                {stake === 0
-                  ? 'Playing it safe — this one is worth the usual 1,000.'
-                  : `${stakeFor(held, stake).toLocaleString('en-GB')} points on the line.`}
-              </p>
-            </div>
-          ) : null}
+            ) : null}
 
-          <div className="podium">{tiles}</div>
+            <div className="podium">{tiles}</div>
+            </div>
+          </div>
         </div>
 
         <Ladder questions={room.questions} current={room.index} />
