@@ -1,13 +1,21 @@
 /**
  * Which album covers print their own title, read off the actual artwork.
  *
- * Run: `npm run sleeve-audit [-- --all]`
+ * Run: `npm run sleeve-audit [-- --all] [-- --sheet]`
  *
  * Resolves every album in `hand-sleeves-data.ts` against iTunes GB, downloads
  * the artwork, reads the text on it, and rewrites `sleeve-cover-text.ts` with
  * what it found. The pack builder then refuses any sleeve whose cover names the
  * album — see `write-sleeves-pack.ts`. Prints the verdicts either way; `--all`
- * prints the clean ones too.
+ * prints the clean ones too, and `--sheet` writes a labelled contact sheet of
+ * everything it cleared, for the pass a person has to do afterwards.
+ *
+ * **That pass is not optional.** Vision reads printed prose well and stylised
+ * cover type badly, and of the 37 sleeves it cleared on 21 September 2026,
+ * **eleven print their own title in a form it never saw** — letterspaced,
+ * scripted, or upside down in one tile of a grid. Every one of them is obvious
+ * in the contact sheet at 190px. They are listed, with what is on them, in
+ * `sleeve-refusals.ts`.
  *
  * Needs `uv` and the network, and reads the text with **Apple's Vision
  * framework**, so it is macOS-only — the same trade as `tune-audit` needing
@@ -34,6 +42,7 @@ import { join } from 'node:path';
 import { SLEEVE_SPECS } from './hand-sleeves-data';
 import { cachedItunesGet, resolveAlbum } from './itunes';
 import { artistOnCover, joinCoverText, sleeveVerdict } from './title-on-cover';
+import { SLEEVE_HAND_REFUSALS } from './sleeve-refusals';
 import { isItunesArtworkUrl } from '../src/lib/apple-media';
 
 const ROOT = join(import.meta.dirname, '..');
@@ -165,6 +174,43 @@ ${entries}
 `;
 }
 
+/**
+ * A labelled grid of every cover that got through, so a person can check them.
+ *
+ * Python and Pillow because there is no image library in this project's
+ * dependencies and adding one to draw a debugging aid would be the tail wagging
+ * the dog — the audit already needs `uv` and a Mac for Vision.
+ */
+async function writeSheet(rows: Row[]): Promise<void> {
+  const script = `
+import json, sys, pathlib
+from PIL import Image, ImageDraw
+rows = json.load(sys.stdin)
+CELL, LABEL, COLS = 190, 18, 5
+lines = (len(rows) + COLS - 1) // COLS
+sheet = Image.new("RGB", (COLS * CELL, lines * (CELL + LABEL)), (12, 14, 20))
+d = ImageDraw.Draw(sheet)
+for i, row in enumerate(rows):
+    im = Image.open(row["path"]).convert("RGB").resize((CELL - 6, CELL - 6))
+    x, y = (i % COLS) * CELL, (i // COLS) * (CELL + LABEL)
+    sheet.paste(im, (x + 3, y + 3))
+    d.text((x + 4, y + CELL - 1), f'{i + 1}. {row["slug"][:26]}', fill=(210, 220, 235))
+sheet.save(sys.argv[1])
+print(sys.argv[1])
+`;
+  const out = join(ROOT, '.cache', 'sleeve-sheet.png');
+  await new Promise<void>((resolve, reject) => {
+    const child = spawn('uv', ['run', '--quiet', '--with', 'pillow', 'python', '-c', script, out], {
+      stdio: ['pipe', 'inherit', 'inherit'],
+    });
+    child.on('error', reject);
+    child.on('close', (code) => (code === 0 ? resolve() : reject(new Error(`sheet exited ${code}`))));
+    child.stdin.write(JSON.stringify(rows.map((row) => ({ slug: row.slug, path: row.path }))));
+    child.stdin.end();
+  });
+  console.log(`\nContact sheet: ${out.replace(ROOT, '.')} — look at it before trusting this list.`);
+}
+
 async function main(): Promise<void> {
   const showAll = process.argv.includes('--all');
   console.log('Sleeve audit — resolving artwork');
@@ -185,6 +231,12 @@ async function main(): Promise<void> {
   console.log('');
   for (const row of readable) {
     const cover = found[row.slug] ?? '';
+    const byHand = SLEEVE_HAND_REFUSALS[row.slug];
+    if (byHand !== undefined) {
+      bad.push(row.slug);
+      console.log(`  REFUSED  ${row.slug.padEnd(28)} ${byHand} (by eye)`);
+      continue;
+    }
     const verdict = sleeveVerdict(row.title, row.artist, cover);
     if (!verdict.publishable) {
       bad.push(row.slug);
@@ -194,6 +246,8 @@ async function main(): Promise<void> {
     if (artistOnCover(row.artist, cover)) named.push(row.slug);
     if (showAll) console.log(`  ok       ${row.slug.padEnd(28)} ${cover || '(no text)'}`);
   }
+
+  if (process.argv.includes('--sheet')) await writeSheet(readable.filter((row) => !bad.includes(row.slug)));
 
   const skipped = rows.filter((row) => row.skipped !== undefined);
   if (skipped.length > 0) {

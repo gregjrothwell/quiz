@@ -6,6 +6,7 @@ import { buildTunesPack } from './write-tunes-pack';
 import { SLEEVE_SPECS } from './hand-sleeves-data';
 import { SLEEVE_COVER_TEXT } from './sleeve-cover-text';
 import { sleeveVerdict } from './title-on-cover';
+import { SLEEVE_HAND_REFUSALS } from './sleeve-refusals';
 import { TUNE_SPECS } from './hand-tunes-data';
 
 const PREVIEW = 'https://audio-ssl.itunes.apple.com/itunes-assets/x.m4a';
@@ -132,6 +133,7 @@ describe('buildSleevesPack', () => {
       the whole list would be asserting that the gate does nothing.
     */
     const publishable = SLEEVE_SPECS.filter((spec) => {
+      if (SLEEVE_HAND_REFUSALS[spec.slug] !== undefined) return false;
       const cover = SLEEVE_COVER_TEXT[spec.slug];
       return cover !== undefined && sleeveVerdict(spec.correct, spec.artist, cover).publishable;
     });

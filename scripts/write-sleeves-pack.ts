@@ -6,6 +6,7 @@
 
 import { SLEEVE_SPECS } from './hand-sleeves-data';
 import { SLEEVE_COVER_TEXT } from './sleeve-cover-text';
+import { SLEEVE_HAND_REFUSALS } from './sleeve-refusals';
 import { sleeveVerdict } from './title-on-cover';
 import { cachedItunesGet, resolveAlbum, type ItunesGet } from './itunes';
 import { writeSealedPack } from './write-sealed-pack';
@@ -57,6 +58,12 @@ export async function buildSleevesPack(
       const cover = SLEEVE_COVER_TEXT[spec.slug];
       if (cover === undefined) {
         throw new Error('no audited cover text — run `npm run sleeve-audit`');
+      }
+      const byHand = SLEEVE_HAND_REFUSALS[spec.slug];
+      if (byHand !== undefined) {
+        refused.push(`${spec.slug}: ${byHand} (by eye)`);
+        console.log(` refused`);
+        continue;
       }
       const verdict = sleeveVerdict(spec.correct, spec.artist, cover);
       if (!verdict.publishable) {

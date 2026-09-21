@@ -244,6 +244,24 @@ export function sleeveVerdict(
   artist: string,
   coverText: string,
 ): SleeveVerdict {
+  /*
+    A one-character title is refused, because nothing can check it.
+
+    Ed Sheeran's `+`, `x`, `÷` and `=` are the case, and they are not an edge
+    one — the glyph *is* the artwork, so those covers show their title at a size
+    nothing else on this list manages. `titleOnCover` had no opinion on them:
+    `words('÷')` is empty, which read as "clean" when it meant "no idea". Vision
+    read that sleeve as "divide" and the gate passed it anyway.
+
+    Two characters rather than one letter, deliberately. On letters alone `x`
+    survives and `÷` does not, which is the same question answered two ways on
+    the accident of Unicode — and all four are really one kind of question,
+    "match the glyph", that this round cannot police. Adele's `21` and `25`
+    clear it: they are two characters, and their covers are portraits.
+  */
+  if (words(title).join('').length < 2) {
+    return { publishable: false, why: 'title is a single glyph, so the cover cannot be checked' };
+  }
   const named = titleOnCover(title, coverText);
   if (named.givesItAway) {
     return { publishable: false, why: `cover names the album — “${named.matched}”` };

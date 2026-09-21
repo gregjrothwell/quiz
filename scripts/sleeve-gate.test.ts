@@ -4,6 +4,7 @@ import { describe, expect, test } from 'vitest';
 import { SLEEVE_SPECS } from './hand-sleeves-data';
 import { SLEEVE_COVER_TEXT } from './sleeve-cover-text';
 import { sleeveVerdict } from './title-on-cover';
+import { SLEEVE_HAND_REFUSALS } from './sleeve-refusals';
 import { stableId } from './write-hand-packs';
 
 /**
@@ -43,6 +44,7 @@ describe('the sleeves gate', () => {
     const talking = published.filter((question) => {
       const spec = bySlug.get(question.id);
       if (!spec) return true;
+      if (SLEEVE_HAND_REFUSALS[spec.slug] !== undefined) return true;
       const cover = SLEEVE_COVER_TEXT[spec.slug];
       if (cover === undefined) return true;
       return !sleeveVerdict(spec.correct, spec.artist, cover).publishable;
@@ -50,11 +52,35 @@ describe('the sleeves gate', () => {
     expect(talking.map((question) => question.id)).toEqual([]);
   });
 
+  /**
+   * The nineteen a person refused after the machine had passed them.
+   *
+   * Kept as its own test rather than folded into the one above, because it is a
+   * different claim. That one says the gate ran; this one says **the machine is
+   * not enough** — Vision cleared every one of these, and every one prints its
+   * own title in letterspaced, scripted or inverted type it never saw. If this
+   * ever passes vacuously because the list emptied, the assertion on its length
+   * fails first.
+   */
+  test('the covers a person refused are gone, whatever the machine said', () => {
+    const ids = new Set(published.map((question) => question.id));
+    const slugs = Object.keys(SLEEVE_HAND_REFUSALS);
+    expect(slugs.length).toBeGreaterThanOrEqual(19);
+    expect(slugs.filter((slug) => ids.has(stableId(slug)))).toEqual([]);
+
+    // And each one is a real spec, so a rename cannot quietly un-refuse a cover.
+    const known = new Set(SLEEVE_SPECS.map((spec) => spec.slug));
+    expect(slugs.filter((slug) => !known.has(slug))).toEqual([]);
+  });
+
   test('every sleeve the gate refused is absent from the pack', () => {
     const ids = new Set(published.map((question) => question.id));
     const leaked = SLEEVE_SPECS.filter((spec) => {
       const cover = SLEEVE_COVER_TEXT[spec.slug];
-      const refused = cover === undefined || !sleeveVerdict(spec.correct, spec.artist, cover).publishable;
+      const refused =
+        SLEEVE_HAND_REFUSALS[spec.slug] !== undefined
+        || cover === undefined
+        || !sleeveVerdict(spec.correct, spec.artist, cover).publishable;
       return refused && ids.has(stableId(spec.slug));
     });
     expect(leaked.map((spec) => spec.slug)).toEqual([]);
