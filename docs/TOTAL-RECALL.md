@@ -10,39 +10,51 @@ Append; do not rewrite an earlier entry to make it look as if we always knew. A
 correction is a new dated note that says what changed, and the wrong claim stays
 visible.
 
-**Split on 28 August 2026**, at 474 lines against a 300 budget. Everything up to
-and including 20 August moved *verbatim* to
-[`recall/2026-08.md`](recall/2026-08.md) — not reworded, because compressing an
-old entry to make it fit is the thing the paragraph above forbids. Every one of
-them is still listed below by date, so the chronology reads end to end from here.
+**Split six times, 28 August to 21 September 2026** — every time this file hit
+300. Entries move *verbatim* to [`recall/2026-08.md`](recall/2026-08.md) or
+[`recall/2026-09.md`](recall/2026-09.md) and leave a dated pointer here, so the
+chronology still reads end to end. Shortening an old entry to make the number go
+down is the thing the paragraph above forbids.
 
-**Split again, written 4 September 2026 and landed on the 8th.** The two
-2 September entries went to [`recall/2026-09.md`](recall/2026-09.md) and 29
-August joined [`recall/2026-08.md`](recall/2026-08.md), which is why that file is
-no longer titled "up to 28 August". Same rule, same reason: moved whole, not
-shortened.
+Two lessons paid for along the way, kept because the next split will meet both.
+**A split's own numbers go stale if it sits unmerged** — the 4 September one was
+cut at 350, landed on the 8th at 360, and described the wrong file until it was
+re-checked. And **an entry moved a directory down takes its relative links with
+it and every one breaks**: fourteen were broken this way before anyone checked,
+repaired 21 September.
 
-It was cut at 350 lines and sat unmerged for four days while the spine grew to
-360, so **the original note's own numbers were out of date by the time it
-landed** — recorded rather than quietly fixed, because a split that describes
-the wrong file is the thing this document exists to stop. The link check was
-re-run on the 8th against the files as they actually are, not inherited from the
-4th.
+*This preamble was itself six paragraphs of split history on 21 September and is
+now one. Process notes about the archiving, not chronology — the entries they
+describe are all still below by date.*
 
-**Split a third time, 8 September 2026**, at 288 with two entries about to land
-— this one and PR #31's — that would have taken it past 300. The three oldest 4
-September entries (the CDN, the mute button, the steal) went to
-[`recall/2026-09.md`](recall/2026-09.md), whole, links repointed.
+## 2026-09-21 — Live: `index-BHcNzJzP` (#54, gh-pages `026d7cd`)
 
-**Then repeatedly through 10 September**, each recorded as a dated pointer in the
-body where it happened rather than here: three 4 September batches, then the
-whole 2026-09-08 day when the debug-token deploy needed the room. All verbatim to
-[`recall/2026-09.md`](recall/2026-09.md).
+Greg said go live. [#54](https://github.com/gregjrothwell/quiz/pull/54) merged as
+`f6c1298` at 15:11; CI published gh-pages `026d7cd` at 15:15:29, author **GitHub
+Actions**. **Published bundle matches a local build of that commit exactly** —
+`index-BHcNzJzP.js` both sides, the cross-check worth keeping. Firebase chunk
+unmoved at `firebase-W6iQUl4r`. All three checks green on the PR and again on
+master; Playwright against the emulators passed both times.
 
-**Split again, 21 September 2026**, twice in a day. The six remaining
-10 September entries went to [`recall/2026-09.md`](recall/2026-09.md) to make
-room for that morning's two, and both 11 September entries followed them that
-afternoon when a correction and a layout entry needed the space. All whole.
+Merged with a **merge commit rather than a squash, on purpose**. This branch was
+cut from `live-after-52`, so it contained #53's commit — a squash would have left
+#53 open and conflicting against docs that had since been rewritten.
+[#53](https://github.com/gregjrothwell/quiz/pull/53) closed itself as merged two
+seconds after #54 landed.
+
+**Live and verified**: sleeves **44** (12/20/12), screens **54 of 54** sized,
+all five new CSS rules present, picture beside the answers at **614×345** against
+448×252 — read off the live site at 1512px, not a local build.
+
+**The site served the old build for four minutes after gh-pages was correct** —
+the whole site, assets 404ing, not the `index.html` cache of 11 September. The
+**Pages build is a second step after the branch push**; `gh api
+repos/…/pages/builds` says which, and the last three took ~50s. gh-pages alone
+said fine; the live URL alone said failed. Read both.
+
+**Unplayed.** Everything here — the reserved box, the preload, the side-by-side
+layout, 44 sleeves and their re-rated difficulties — has been verified but not
+played. The ratings especially are judgements and want a round against them.
 
 ## 2026-09-21 — Correction: the sleeve audit missed a third of them, and a person found the rest
 
@@ -117,9 +129,7 @@ Hot Chili Peppers' *The Studio Album Collection 1991-2011*. The question showed 
 box set and offered *Stadium Arcadium*. It scored **25%** in `53FN`, the worst of
 the fifteen, and it was not hard, it was wrong. Green build throughout.
 
-**Not deployed.** 24 new vault ids need `seed-vault` before the pack works at a
-reveal, and the difficulty ratings are now systematically wrong — they were set
-when the cover named the album.
+*Superseded the same afternoon — see the correction above.*
 
 ## 2026-09-21 — The pictures did not turn up, and it was never the files
 
@@ -144,9 +154,9 @@ nothing needs reseeding. The header parser was **cross-checked against `sips`
 over all 179: zero disagreements**. Depth:
 [`decisions/picture-loading.md`](decisions/picture-loading.md).
 
-**Bret was not blind for the whole round** — eight questions came back 6/6, which
-is a 1-in-65,000 run of luck for a guesser. Ask him whether it was a couple of
-questions or the lot.
+**Bret was not blind for the whole round** — eight questions came back 6/6. He
+confirmed later the same day that it stopped showing him pictures partway
+through, which is the diagnosis exactly.
 
 ## 2026-09-11 — #52 live: `index-n26s0ofl`
 

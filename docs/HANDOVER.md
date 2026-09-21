@@ -42,22 +42,21 @@ Built to replace Polly in Teams.
 
 ## State as of 21 September 2026
 
-> **READ FIRST — nothing has been deployed since 11 September, the sleeves pack
-> is rebuilt and needs a vault seed, and the season board's form figures are
-> estimates.** `.github/workflows/ci.yml` builds and publishes from `master`, so
+> **READ FIRST — #54 went live on 21 September and is entirely unplayed, and the
+> season board's form figures are estimates.** `.github/workflows/ci.yml` builds and publishes from `master`, so
 > the token leak is closed at the source
 > ([`decisions/ci-deploy.md`](decisions/ci-deploy.md)). Every season row but one
 > carries a **seeded, estimated** `form`
-> ([`decisions/season.md`](decisions/season.md)). Branch
-> `picture-loading-and-sleeves-ocr` fixes two things the office hit — see
-> Outstanding 1 and 2.
+> ([`decisions/season.md`](decisions/season.md)). The sleeve ratings are
+> **judgements, not measurements** — see Outstanding 1.
 
-**Live is `index-n26s0ofl`** (11 Sep 09:38, gh-pages `3eb7221`, `96dee89`/#52,
-CI) — *this box was a deploy behind twice running; check gh-pages, not it.*
+**Live is `index-BHcNzJzP`** (21 Sep 15:15, gh-pages `026d7cd`, `f6c1298`/#54,
+CI) — *check gh-pages **and** `pages/builds`; the site served the old one for
+four minutes after the branch was right.*
 Firebase chunk **moved to `firebase-W6iQUl4r`** (#51 touched `src/firebase.ts`).
 **16 packs**; **Name that Tune 177**; synth **Classical**; **On the box** 54
-(hashed TMDB stills); **Flags** 76 (hashed, no jigsaw); **Sleeves** 52 live but
-**44 on the branch** after the cover audit; picture is **Fine Art**. Every still
+(hashed TMDB stills); **Flags** 76 (hashed, no jigsaw); **Sleeves 44** after the
+cover audit (12/20/12); picture is **Fine Art**. Every still
 now carries `imageWidth`/`imageHeight`, and a picture question puts the picture
 beside the answers above 64rem.
 
