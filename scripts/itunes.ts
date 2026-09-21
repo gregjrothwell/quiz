@@ -226,6 +226,22 @@ export async function resolveAlbum(
       (item) => item.collectionId === collectionId || item.wrapperType === 'collection',
     );
     if (!row) throw new Error(`No GB lookup for collection ${collectionId}`);
+    /*
+      A hand-typed id is checked against the title like any other candidate.
+
+      It used not to be — an id was trusted absolutely, on the reasoning that
+      somebody had looked it up. `californication` carried 947680622, which is
+      Red Hot Chili Peppers' *The Studio Album Collection 1991-2011*, so the
+      question showed a box set's artwork and asked which album it was, with
+      Stadium Arcadium sitting in the options. It scored 25% in the round played
+      on 21 September 2026, the worst of the fifteen, and it was not hard — it
+      was wrong. The pack built green the whole time.
+    */
+    if (titleHint !== undefined && !titleMatches(row.collectionName, titleHint)) {
+      throw new Error(
+        `Collection ${collectionId} is “${row.collectionName ?? '?'}”, not “${titleHint}”`,
+      );
+    }
     return artFromCollection(row, term);
   }
   const data = asList(await get(searchUrl({ term, entity: 'album', media: 'music' })));

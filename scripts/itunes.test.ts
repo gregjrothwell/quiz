@@ -4,6 +4,8 @@ import { anonymiseStoreUrl } from '../src/lib/apple-media';
 import { buildSleevesPack } from './write-sleeves-pack';
 import { buildTunesPack } from './write-tunes-pack';
 import { SLEEVE_SPECS } from './hand-sleeves-data';
+import { SLEEVE_COVER_TEXT } from './sleeve-cover-text';
+import { sleeveVerdict } from './title-on-cover';
 import { TUNE_SPECS } from './hand-tunes-data';
 
 const PREVIEW = 'https://audio-ssl.itunes.apple.com/itunes-assets/x.m4a';
@@ -122,7 +124,19 @@ describe('buildTunesPack', () => {
 describe('buildSleevesPack', () => {
   test('hotlinks mzstatic artwork and never hashes a cover filename', async () => {
     const { pack } = await buildSleevesPack(get);
-    expect(pack.questions.length).toBe(SLEEVE_SPECS.length);
+    /*
+      Not every spec any more — only the ones whose cover says nothing.
+
+      `hand-sleeves-data.ts` is a list of candidates, and the gate in
+      `write-sleeves-pack.ts` decides which of them can be published. Asserting
+      the whole list would be asserting that the gate does nothing.
+    */
+    const publishable = SLEEVE_SPECS.filter((spec) => {
+      const cover = SLEEVE_COVER_TEXT[spec.slug];
+      return cover !== undefined && sleeveVerdict(spec.correct, spec.artist, cover).publishable;
+    });
+    expect(publishable.length).toBeGreaterThan(30);
+    expect(pack.questions.length).toBe(publishable.length);
     for (const question of pack.questions) {
       expect(question.artworkUrl).toContain('600x600bb');
       expect(question.image).toBeUndefined();
