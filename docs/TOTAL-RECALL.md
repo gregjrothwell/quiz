@@ -23,9 +23,8 @@ re-checked. And **an entry moved a directory down takes its relative links with
 it and every one breaks**: fourteen were broken this way before anyone checked,
 repaired 21 September.
 
-*This preamble was itself six paragraphs of split history on 21 September and is
-now one. Process notes about the archiving, not chronology — the entries they
-describe are all still below by date.*
+*Six paragraphs of split history condensed to this on 21 September — process
+notes, not chronology; every entry they described is still listed below by date.*
 
 ## 2026-09-21 — Live: `index-BHcNzJzP` (#54, gh-pages `026d7cd`)
 
