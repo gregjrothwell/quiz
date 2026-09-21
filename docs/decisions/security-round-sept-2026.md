@@ -138,10 +138,10 @@ The name is written and never read. The reaper takes `Object.keys` only.
 stops working and the room fills with ghosts:
 
 1. Relax `.validate` to `hasChildren(['at'])`, **keep** the `name` child
-   validator. Old and new clients both pass. **This is what the repo copy
-   now is.**
-2. Deploy the client without `name`.
-3. Remove the `name` child rule so `$other` refuses it.
+   validator. Old and new clients both pass. Pasted 21 September.
+2. Deploy the client without `name`. Live `index-OfECpKrx`, 21 September 16:51.
+3. Remove the `name` child rule so `$other` refuses it. **This is what the
+   repo copy now is — paste it.**
 
 ### S5 — Docs that were wrong · LOW
 
@@ -168,14 +168,12 @@ Do not re-open these.
 
 A client ahead of the console has every answer refused **in silence**.
 
-1. Paste `firestore.rules` (questions pinned, `joinedAt` bound, `at`
-   optional). Diff the live ruleset first — do not paste blind.
-2. Publish relaxed `database.rules.json` (step 1 of S4).
-3. `npm run check-rules` — the new **allow** cases flipping FAIL → PASS is
-   the paste proof. Deny cases pass vacuously until then.
-4. Deploy the client via CI from `master`. Check gh-pages **and**
-   `pages/builds`.
-5. Publish RTDB step 3 (refuse `name`). Re-run `check-rules`.
+1. Paste `firestore.rules`. Done 21 September, 80/80.
+2. Publish relaxed `database.rules.json`. Done 21 September.
+3. `npm run check-rules` — allow FAIL → PASS is the paste proof. Done.
+4. Deploy the client via CI from `master`. Done: `index-OfECpKrx`,
+   gh-pages `f78379e`, Pages `built` 16:51:33.
+5. Publish RTDB step 3 (refuse `name`). **This is the remaining paste.**
 6. Play one round. `npm run audit-players`. The implied-delay column is the
    Alistair answer.
 

@@ -24,6 +24,16 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-09-21 — Live: `index-OfECpKrx` (#56, gh-pages `f78379e`)
+
+Greg said go live. [#56](https://github.com/gregjrothwell/quiz/pull/56) merged as
+`81d55a4` at 16:47; CI published gh-pages `f78379e` at 16:50:43, author **GitHub
+Actions**. Pages `built` 16:51:33 (~48s). **Published bundle matches a local
+build of that tree exactly** — `index-OfECpKrx.js`, sha `3272b19a`, both sides.
+Firebase chunk unmoved at `firebase-W6iQUl4r`. Merge commit, not squash: this
+contained #55, which closed itself as merged. Presence still accepts `name`
+until the second RTDB paste. One round, then `audit-players`.
+
 ## 2026-09-21 — Vault oracle, joinedAt, and the `at` stamp
 
 Any signed-in player could extract the vault: rewrite `questions[0].id` without
@@ -38,32 +48,9 @@ round is the answer. Depth:
 
 ## 2026-09-21 — Live: `index-BHcNzJzP` (#54, gh-pages `026d7cd`)
 
-Greg said go live. [#54](https://github.com/gregjrothwell/quiz/pull/54) merged as
-`f6c1298` at 15:11; CI published gh-pages `026d7cd` at 15:15:29, author **GitHub
-Actions**. **Published bundle matches a local build of that commit exactly** —
-`index-BHcNzJzP.js` both sides, the cross-check worth keeping. Firebase chunk
-unmoved at `firebase-W6iQUl4r`. All three checks green on the PR and again on
-master; Playwright against the emulators passed both times.
-
-Merged with a **merge commit rather than a squash, on purpose**. This branch was
-cut from `live-after-52`, so it contained #53's commit — a squash would have left
-#53 open and conflicting against docs that had since been rewritten.
-[#53](https://github.com/gregjrothwell/quiz/pull/53) closed itself as merged two
-seconds after #54 landed.
-
-**Live and verified**: sleeves **44** (12/20/12), screens **54 of 54** sized,
-all five new CSS rules present, picture beside the answers at **614×345** against
-448×252 — read off the live site at 1512px, not a local build.
-
-**The site served the old build for four minutes after gh-pages was correct** —
-the whole site, assets 404ing, not the `index.html` cache of 11 September. The
-**Pages build is a second step after the branch push**; `gh api
-repos/…/pages/builds` says which, and the last three took ~50s. gh-pages alone
-said fine; the live URL alone said failed. Read both.
-
-**Unplayed.** Everything here — the reserved box, the preload, the side-by-side
-layout, 44 sleeves and their re-rated difficulties — has been verified but not
-played. The ratings especially are judgements and want a round against them.
+[#54](https://github.com/gregjrothwell/quiz/pull/54) at 15:11; gh-pages `026d7cd`
+at 15:15:29. Pages lagged four minutes. Unplayed. Archived whole:
+[`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-21 — Correction: the sleeve audit missed a third of them, and a person found the rest
 

@@ -51,9 +51,9 @@ Built to replace Polly in Teams.
 > ([`decisions/season.md`](decisions/season.md)). The sleeve ratings are
 > **judgements, not measurements** — see Outstanding 1.
 
-**Live is `index-BHcNzJzP`** (21 Sep 15:15, gh-pages `026d7cd`, `f6c1298`/#54,
-CI) — *check gh-pages **and** `pages/builds`; the site served the old one for
-four minutes after the branch was right.*
+**Live is `index-OfECpKrx`** (21 Sep 16:51, gh-pages `f78379e`, `81d55a4`/#56,
+CI) — *check gh-pages **and** `pages/builds`; last time the old site sat for
+four minutes after the branch was right. This one: Pages `built` in 48s.*
 Firebase chunk **moved to `firebase-W6iQUl4r`** (#51 touched `src/firebase.ts`).
 **16 packs**; **Name that Tune 177**; synth **Classical**; **On the box** 54
 (hashed TMDB stills); **Flags** 76 (hashed, no jigsaw); **Sleeves 44** after the
@@ -98,10 +98,10 @@ scoring 500 + rank 500/400/300/200/100; counts in
    spent — it substitutes medium. The fix is a fold of `games/` into real
    difficulty, **a query now rather than a build**, and `games/` now holds
    eleven rounds rather than three, so it is no longer gated on playing.
-9. **Do not paste `master`'s rules over the console.** Live is this branch
-   (42,521 bytes). A paste the wrong way deletes the vault pin. `check-rules`
-   **80/80 both ways, 21 September**; `sync-harness 10` **10/10, 0 dropped**.
-   RTDB still allows `name` — refuse it after the client ships.
+9. **Do not paste `master`'s rules over the console.** Live Firestore is this
+   branch (42,521 bytes). A paste the wrong way deletes the vault pin.
+   `check-rules` **80/80 both ways, 21 September**; `sync-harness 10`
+   **10/10, 0 dropped**. RTDB still allows `name` — paste the refuse next.
 10. **Hand-built packs need a seed after any *new* ids.** All seeded as of
     10 September; an unseeded pack breaks at reveal.
 11. **`firstMs` and the pack picker are live and unplayed.** It is a deterrent,
@@ -113,9 +113,9 @@ scoring 500 + rank 500/400/300/200/100; counts in
     every round since carries gate/resolve/dispatch. No stall has recurred, so
     the reveal fix is still unproved rather than disproved
     ([`reveal-delays.md`](decisions/reveal-delays.md)).
-14. **Rules pasted; client not shipped.** Vault pin, `joinedAt`, `at` stamp
-    are live. Presence still accepts `name`. Next: CI deploy, then RTDB refuse
-    `name`, then one round and `audit-players`.
+14. **Client shipped; RTDB still allows `name`.** Paste `database.rules.json`
+    with the `name` child gone, then `check-rules`, then one round and
+    `audit-players`.
     [`security-round-sept-2026.md`](decisions/security-round-sept-2026.md).
     
 

@@ -1191,9 +1191,9 @@ function buildChecks(probes: Probes): Check[] {
     },
     {
       label: 'Realtime DB · write presence still carrying a name',
-      expect: 'allow',
-      hint: 'the relaxed presence rule is unpublished — old clients still '
-        + 'send `name` and must keep working until the second RTDB paste',
+      expect: 'deny',
+      hint: 'the name child rule is still live — a signed-in client can still '
+        + 'harvest a roster off room-code space',
       run: () => set(presence, { name: 'Rules check', at: Date.now() }),
     },
     {
