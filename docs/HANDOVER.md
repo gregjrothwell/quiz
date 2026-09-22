@@ -30,6 +30,7 @@ Built to replace Polly in Teams.
 | voting on a question, retiring one | [`question-votes.md`](decisions/question-votes.md) |
 | rules and App Check — Firestore and RTDB, then **auth**, then the debug token and why a deploy must not come off `master` | [`security.md`](decisions/security.md) · [`app-check-auth.md`](decisions/app-check-auth.md) · [`debug-token-leak.md`](decisions/debug-token-leak.md) |
 | **the vault oracle, `joinedAt`, the `at` stamp, presence names** | [`security-round-sept-2026.md`](decisions/security-round-sept-2026.md) |
+| **tightening any rule, gate or permission** — read this one *first*, it is why #56 broke the game | [`postmortem-the-pin-that-refused-the-reveal.md`](decisions/postmortem-the-pin-that-refused-the-reveal.md) |
 | **the CI deploy, the secret check, Playwright, the emulator**; anything that adds reads or writes | [`ci-deploy.md`](decisions/ci-deploy.md) · [`emulators.md`](decisions/emulators.md) · [`cost.md`](decisions/cost.md) · [`audit-backlog.md`](decisions/audit-backlog.md) |
 | — before assuming a style choice, a bug, or a claim in here | [`gotchas.md`](decisions/gotchas.md) · [`known-limits.md`](decisions/known-limits.md) · [`state-of-play.md`](decisions/state-of-play.md) |
 | what a question is worth, and why it is not a speed curve | [`decisions/scoring.md`](decisions/scoring.md) |
@@ -43,12 +44,11 @@ Built to replace Polly in Teams.
 
 ## State as of 22 September 2026
 
-> **READ FIRST — #56's `questionsPinned` refused every reveal. Fixed, pasted 22
-> September; playable again.** Every round stopped on question one, every pack.
-> Rules only, no redeploy — `check-rules` **81/81**, the allow case FAIL→PASS on
-> the paste, then `rank-harness` played `CNSE` to `finished`. Branch
-> `fix-reveal-refused-by-questions-pin` is **unmerged**. **#54 is still unplayed
-> and the season board's form is estimated.** `.github/workflows/ci.yml` builds and publishes from `master`, so
+> **READ FIRST — #56's `questionsPinned` refused every reveal; fixed and pasted
+> 22 September, playable again.** Rules only, no redeploy — `check-rules`
+> **81/81** with the allow case FAIL→PASS on the paste, then `rank-harness`
+> played `CNSE` to `finished`. Branch `fix-reveal-refused-by-questions-pin` is
+> **unmerged**. **#54 unplayed; the season board's form is estimated.** `.github/workflows/ci.yml` builds and publishes from `master`, so
 > the token leak is closed at the source
 > ([`decisions/ci-deploy.md`](decisions/ci-deploy.md)). Every season row but one
 > carries a **seeded, estimated** `form`
