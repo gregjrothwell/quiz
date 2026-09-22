@@ -135,4 +135,51 @@ behaviour is a bug.
   becoming the obvious place to look, or a night where the result matters enough
   to be worth cheating for.
 
+## Apple's terms, against the actual text — 22 September 2026
+
+The store badge moved to the reveal on this date, on both packs. What follows is
+the terms read properly, because the repo had been leaning on a summary of them
+that turned out to be wrong in an important way.
+
+**The trigger.** Greg played a sleeve round: *Which album is this?* with a
+**View in Apple Music** link under it, on screen for the whole answering window.
+"It literally tells you the answer." The SEO slug was already stripped so the
+URL could not name the work — but the destination still does, one tap away. The
+same link is on all 177 tunes as **Listen on Apple Music**.
+
+**What the terms actually say.** Apple's iTunes Search API permits song previews
+and album art *to promote the store item*, on six conditions. Read against them:
+
+| | condition, in brief | the quiz |
+|---|---|---|
+| i | only on pages promoting the content it is based on | **fails** — a question hides the album, it does not promote it |
+| ii | proximate to an approved badge linking to the purchase page | **was met; now met only at the reveal** |
+| iii | attribution "provided courtesy of iTunes" on previews | **fails** — that string is nowhere in the app |
+| iv | streamed only, never downloaded or cached | met — `<audio src=previewUrl>` |
+| v | not used for independent entertainment value | **fails** — a quiz round is exactly that |
+| vi | not used to promote other goods | met |
+
+Source: <https://performance-partners.apple.com/search-api>, fetched 22
+September 2026. **Apple defines neither "proximate" nor anything about timing**
+— there is no wording requiring the badge to be on screen while the preview
+plays. So a reveal-only badge is unaddressed rather than plainly refused. That
+is silence, not permission, and it is not the reading Apple would argue for.
+
+**The correction that matters.** [`tunes-round.md`](tunes-round.md) called the
+badge "the only clean hook". It is not: it is one condition of six, and it was
+never the load-bearing one. The two the round cannot satisfy are (i) and (v),
+and they bite whatever the badge does — on sleeve artwork as much as on tune
+previews. (iii) has never been met at all.
+
+**Greg's decision, taken knowing that.** Hide the link until the reveal on both
+packs. He was shown that this trades away the one condition the round met for no
+change in the two it fails, and chose it anyway: a quiz that hands out its own
+answers is not worth running, and the exposure it buys back is nil.
+
+**What would change the answer.** Apple defining "proximate" in time; a takedown
+or a contact from Apple; or the round moving off iTunes previews entirely, which
+is the only move that resolves (i) and (v) rather than accepting them. Adding
+the (iii) attribution string is cheap and unrelated to the badge's position —
+**not done, and worth doing.**
+
 ---

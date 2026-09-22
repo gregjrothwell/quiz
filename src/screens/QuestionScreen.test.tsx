@@ -123,16 +123,20 @@ describe('the question row', () => {
 
 
 /**
- * The store link is one tap from the answer.
+ * The store link is one tap from the answer, so it waits for the reveal.
  *
  * "View in Apple Music" under *Which album is this?* opens the album's own
- * page. It sat there for the whole answering window on all 44 sleeves — Greg,
- * 22 September 2026: "it literally tells you the answer."
+ * page. It sat there for the whole answering window on all 44 sleeves and all
+ * 177 tunes — Greg, 22 September 2026: "it literally tells you the answer."
  *
- * A tune is the case that must **not** be fixed the same way. The badge is the
- * licence Apple's preview streams under, so it stays while the question is
- * live; see `docs/decisions/tunes-round.md`. Both directions are pinned here,
- * because a later tidy that collapses this to one rule breaks one of them.
+ * **The tune case is a decision against Apple's terms, not an oversight.** The
+ * badge is one of six conditions the iTunes Search API attaches to using a
+ * preview, and hiding it during playback is the reading Apple would argue
+ * with. Greg took that call on 22 September 2026 knowing it; the reasoning is
+ * in `docs/decisions/tunes-round.md` and the exposure in
+ * `docs/decisions/known-limits.md`. **Do not quietly put it back** — if it
+ * returns it should be because that decision was revisited, not because a
+ * later tidy found a test that looked odd.
  */
 describe('the Apple Music badge', () => {
   const SLEEVE = {
@@ -166,14 +170,21 @@ describe('the Apple Music badge', () => {
     expect(badge?.getAttribute('href')).toBe(SLEEVE.storeUrl);
   });
 
-  test('a tune keeps its badge while the question is live', () => {
+  test('a tune does not offer the link while the clock is running either', () => {
     // #given Name that Tune, mid-question, with a preview playing
     const { container } = show(TUNE);
 
-    // #then the badge is there — it is the licence the preview streams under,
-    // not decoration. Removing it here is the one change this file exists to
-    // refuse.
-    expect(container.querySelector('.store-badge')).not.toBeNull();
+    // #then no badge. Same reasoning as the sleeve: the link opens the song's
+    // own page, which is the answer, on all 177 of them.
+    expect(container.querySelector('.store-badge')).toBeNull();
+  });
+
+  test('a tune offers it at the reveal', () => {
+    // #given the same question once the answer is out
+    const { container } = show(TUNE, true);
+
+    // #then the link is back, pointing at the track it streamed.
+    expect(container.querySelector('.store-badge')?.getAttribute('href')).toBe(TUNE.storeUrl);
   });
 
   test('a question with no store link shows no badge either way', () => {
