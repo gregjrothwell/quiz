@@ -43,12 +43,12 @@ Built to replace Polly in Teams.
 
 ## State as of 22 September 2026
 
-> **READ FIRST — unplayable until `firestore.rules` is pasted.** #56's
-> `questionsPinned` refuses the reveal write: every round stops on question one,
-> every pack. Fixed on `fix-reveal-refused-by-questions-pin` — rules go by hand,
-> nothing else to redeploy; `check-rules` proves it both ways, depth in
-> [`security-round-sept-2026.md`](decisions/security-round-sept-2026.md). **#54
-> is still unplayed and the season board's form is estimated.** `.github/workflows/ci.yml` builds and publishes from `master`, so
+> **READ FIRST — #56's `questionsPinned` refused every reveal. Fixed, pasted 22
+> September; playable again.** Every round stopped on question one, every pack.
+> Rules only, no redeploy — `check-rules` **81/81**, the allow case FAIL→PASS on
+> the paste, then `rank-harness` played `CNSE` to `finished`. Branch
+> `fix-reveal-refused-by-questions-pin` is **unmerged**. **#54 is still unplayed
+> and the season board's form is estimated.** `.github/workflows/ci.yml` builds and publishes from `master`, so
 > the token leak is closed at the source
 > ([`decisions/ci-deploy.md`](decisions/ci-deploy.md)). Every season row but one
 > carries a **seeded, estimated** `form`
