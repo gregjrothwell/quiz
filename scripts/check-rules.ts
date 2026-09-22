@@ -904,6 +904,49 @@ function buildChecks(probes: Probes): Check[] {
       },
     },
     {
+      // **The allow direction the pin never had, and the reason it shipped
+      // broken.** Every deny case above passed the afternoon `questionsPinned`
+      // went live, because a rule that refuses everything refuses those too.
+      // What nothing asked was whether an ordinary reveal still got through —
+      // and it did not: `reveal` stamps the vault's answer into
+      // `questions[index].correctIndex` (src/engine/reducer.ts), so the list a
+      // reveal writes is never the list that is stored, and every round in the
+      // project stopped dead on its first question. See EVIDENCE.md: read the
+      // allow direction to know a change landed.
+      label: 'Firestore   · reveal, stamping the answer into the question in play',
+      expect: 'allow',
+      hint: 'firestore.rules refuses the write every reveal makes — '
+        + '`questionsPinned` does not allow `correctIndex` to be stamped into '
+        + 'the question in play, so no round can get past its first question',
+      run: async () => {
+        await openProbeQuestion(db, uid, LONG_WINDOW_SECS, hostJoinedAt);
+        return updateDoc(doc(db, 'rooms', LIVE_ROOM), {
+          phase: 'reveal',
+          questions: [{ ...sealedProbeQuestion(PROBE_QUESTION), correctIndex: 0 }],
+        });
+      },
+    },
+    {
+      // The other half of the pin. Letting the question in play move is only
+      // safe while every *other* entry is still frozen — otherwise the
+      // substitution goes into a slot nobody is looking at, and a second write
+      // moves `index` onto it once the list already says so.
+      label: 'Firestore   · add a question to the list while one is open',
+      expect: 'deny',
+      hint: 'firestore.rules pins only the question in play — a member can '
+        + 'plant a vault id in another slot and then move `index` onto it, '
+        + 'which is the substitution attack in two writes instead of one',
+      run: async () => {
+        await openProbeQuestion(db, uid, LONG_WINDOW_SECS, hostJoinedAt);
+        return updateDoc(doc(db, 'rooms', LIVE_ROOM), {
+          questions: [
+            sealedProbeQuestion(PROBE_QUESTION),
+            sealedProbeQuestion(SUBSTITUTE_QUESTION),
+          ],
+        });
+      },
+    },
+    {
       label: 'Firestore   · reset to the lobby and clear the questions',
       expect: 'allow',
       hint: 'firestore.rules refuses a reset that clears `questions` — a finished '
