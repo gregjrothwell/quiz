@@ -34,14 +34,14 @@ function roomWith(question: QuizQuestion): RoomState {
   };
 }
 
-function show(question: QuizQuestion) {
+function show(question: QuizQuestion, revealed = false) {
   return render(
     <QuestionScreen
       room={roomWith(question)}
       youUid="greg"
       isQuizmaster
       clock={CLOCK}
-      revealed={false}
+      revealed={revealed}
       onAnswer={noop}
       onReveal={noop}
       onNext={noop}
@@ -118,5 +118,68 @@ describe('the question row', () => {
     // second column would be the whole thing failing.
     expect(withPicture.container.querySelectorAll('.podium > *')).toHaveLength(4);
     expect(withoutPicture.container.querySelectorAll('.podium > *')).toHaveLength(4);
+  });
+});
+
+
+/**
+ * The store link is one tap from the answer.
+ *
+ * "View in Apple Music" under *Which album is this?* opens the album's own
+ * page. It sat there for the whole answering window on all 44 sleeves — Greg,
+ * 22 September 2026: "it literally tells you the answer."
+ *
+ * A tune is the case that must **not** be fixed the same way. The badge is the
+ * licence Apple's preview streams under, so it stays while the question is
+ * live; see `docs/decisions/tunes-round.md`. Both directions are pinned here,
+ * because a later tidy that collapses this to one rule breaks one of them.
+ */
+describe('the Apple Music badge', () => {
+  const SLEEVE = {
+    ...BASE,
+    prompt: 'Which album is this?',
+    artworkUrl: 'https://is1-ssl.mzstatic.com/image/thumb/x/600x600bb.jpg',
+    storeUrl: 'https://music.apple.com/gb/album/1474815798?uo=4',
+  };
+  const TUNE = {
+    ...BASE,
+    previewUrl: 'https://audio-ssl.itunes.apple.com/itunes-assets/x.m4a',
+    storeUrl: 'https://music.apple.com/gb/album/1440717563?i=1440717826&uo=4',
+  };
+
+  test('a sleeve does not offer the link while the clock is running', () => {
+    // #given a sleeve question, still being answered
+    const { container } = show(SLEEVE);
+
+    // #then no way through to the album's page, which is the answer
+    expect(container.querySelector('.store-badge')).toBeNull();
+  });
+
+  test('a sleeve offers it at the reveal', () => {
+    // #given the same question once the answer is out
+    const { container } = show(SLEEVE, true);
+
+    // #then the link is back. Hiding it for good would drop the attribution
+    // as well as the giveaway, and by now there is nothing left to give away.
+    const badge = container.querySelector('.store-badge');
+    expect(badge).not.toBeNull();
+    expect(badge?.getAttribute('href')).toBe(SLEEVE.storeUrl);
+  });
+
+  test('a tune keeps its badge while the question is live', () => {
+    // #given Name that Tune, mid-question, with a preview playing
+    const { container } = show(TUNE);
+
+    // #then the badge is there — it is the licence the preview streams under,
+    // not decoration. Removing it here is the one change this file exists to
+    // refuse.
+    expect(container.querySelector('.store-badge')).not.toBeNull();
+  });
+
+  test('a question with no store link shows no badge either way', () => {
+    // #given an ordinary question
+    // #then nothing to show, revealed or not
+    expect(show(BASE).container.querySelector('.store-badge')).toBeNull();
+    expect(show(BASE, true).container.querySelector('.store-badge')).toBeNull();
   });
 });

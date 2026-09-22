@@ -565,7 +565,24 @@ export function QuestionScreen({
             </div>
           ) : null}
 
-          {question.storeUrl ? (
+          {/*
+            The store link is one tap from the answer, so on a sleeve it waits
+            for the reveal.
+
+            "View in Apple Music" under a question reading *Which album is
+            this?* opens the album's own page — the answer, in a link that sits
+            on screen for the whole window. Greg, 22 September 2026: "it
+            literally tells you the answer." At the reveal it costs nothing and
+            still carries the attribution.
+
+            **A tune keeps its badge while the question is live, and that is
+            deliberate.** The badge is the licence: Apple's preview may only
+            play proximate to a store badge, and that hook is the whole basis
+            for streaming it at all — UK fair dealing does not cover a public
+            Pages quiz. See docs/decisions/tunes-round.md. A sleeve plays
+            nothing, so nothing is riding on it there.
+          */}
+          {question.storeUrl && (hasPreview || revealed) ? (
             <StoreBadge href={question.storeUrl} kind={hasPreview ? 'listen' : 'view'} />
           ) : null}
 
