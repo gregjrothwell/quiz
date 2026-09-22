@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 21 September 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 22 September 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -41,10 +41,14 @@ Built to replace Polly in Teams.
 | what a finished round left behind, and reading it back | [`decisions/game-record.md`](decisions/game-record.md) |
 | upgrading `package.json`; the studio set and lighting cues | [`dependencies.md`](decisions/dependencies.md) · [`lighting.md`](decisions/lighting.md) |
 
-## State as of 21 September 2026
+## State as of 22 September 2026
 
-> **READ FIRST — #54 went live on 21 September and is entirely unplayed, and the
-> season board's form figures are estimates.** `.github/workflows/ci.yml` builds and publishes from `master`, so
+> **READ FIRST — unplayable until `firestore.rules` is pasted.** #56's
+> `questionsPinned` refuses the reveal write: every round stops on question one,
+> every pack. Fixed on `fix-reveal-refused-by-questions-pin` — rules go by hand,
+> nothing else to redeploy; `check-rules` proves it both ways, depth in
+> [`security-round-sept-2026.md`](decisions/security-round-sept-2026.md). **#54
+> is still unplayed and the season board's form is estimated.** `.github/workflows/ci.yml` builds and publishes from `master`, so
 > the token leak is closed at the source
 > ([`decisions/ci-deploy.md`](decisions/ci-deploy.md)). Every season row but one
 > carries a **seeded, estimated** `form`
@@ -52,14 +56,12 @@ Built to replace Polly in Teams.
 > **judgements, not measurements** — see Outstanding 1.
 
 **Live is `index-OfECpKrx`** (21 Sep 16:51, gh-pages `f78379e`, `81d55a4`/#56,
-CI) — *check gh-pages **and** `pages/builds`; last time the old site sat for
-four minutes after the branch was right. This one: Pages `built` in 48s.*
+CI) — *check gh-pages **and** `pages/builds`; this one: `built` in 48s.*
 Firebase chunk **moved to `firebase-W6iQUl4r`** (#51 touched `src/firebase.ts`).
 **16 packs**; **Name that Tune 177**; synth **Classical**; **On the box** 54
 (hashed TMDB stills); **Flags** 76 (hashed, no jigsaw); **Sleeves 44** after the
-cover audit (12/20/12); picture is **Fine Art**. Every still
-now carries `imageWidth`/`imageHeight`, and a picture question puts the picture
-beside the answers above 64rem.
+cover audit (12/20/12); picture is **Fine Art**. Every still now carries
+`imageWidth`/`imageHeight`; a picture sits beside the answers above 64rem.
 
 **Played and kept:** eleven rounds. Name that Tune `CUC4` **80%, 3.1s median —
 the best recorded** ([`reveal-delays.md`](decisions/reveal-delays.md)); four On

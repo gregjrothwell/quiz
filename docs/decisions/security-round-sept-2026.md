@@ -94,6 +94,39 @@ way back). The accepted decoy — one gate per question, minimum 5 seconds,
 because reaching `phase:'question'` restamps `openedAt` — remains; see
 [`vault.md`](vault.md).
 
+**Correction, 22 September 2026 — the fix above broke the game.** The claim
+that "that is what the client already does" was wrong, and it is the sentence
+to read twice. There is a **third** writer of `questions`: `reveal`
+(`src/engine/reducer.ts` line 339) stamps the vault's answer into
+`questions[index].correctIndex`, so the other clients learn it from the room
+update they already listen to rather than each paying for a vault round trip.
+Pinned byte for byte, that write is refused — so **every round, on every pack,
+stopped dead on its first question.** Greg hit it on a picture round; it was
+never picture-specific.
+
+*Why nothing caught it.* Every S1 deny case passed the afternoon the pin went
+live, because a rule that refuses everything refuses those too. No case asked
+whether an ordinary reveal still got through. That is precisely what
+`EVIDENCE.md` says to do — "read the *allow* direction to know a change
+landed" — written up from this project, and skipped here. The offline suite
+cannot see it either: 1,021 tests pass, because rules only run live.
+
+*The pin now.* `onlyTheQuestionInPlayMoved()` — the question at `index` may
+change, while its `id`, `index` itself, and every other entry may not
+(`removeAll` on both sides, which refuses rather than allows when a write
+makes some other entry a duplicate). The oracle stays closed: a substitution
+into another slot is refused outright, so the two-write version — plant an id
+in slot 1, then move `index` onto it — dies on the first write; and a
+substitution into this slot cannot change the id, which is the only thing
+`isTheQuestionInPlay()` reads. Options may move and buy nothing, because the
+reveal document still has to carry the vault's own answer string.
+
+*Proof, both directions.* Two new `check-rules` cases: **allow** "reveal,
+stamping the answer into the question in play", which FAILed against the
+published ruleset before the paste and is the one that means anything; and
+**deny** "add a question to the list while one is open", which only starts
+meaning something once the allow case passes beside it.
+
 ### S2 — `elapsedMs` is unconstrained for the first 8 s · HIGH
 
 `arrivalOk()` is a **lower bound only**. On the default 10-second window the

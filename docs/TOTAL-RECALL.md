@@ -24,6 +24,23 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-09-22 — The pin refused the reveal: every round stuck on question one
+
+Greg played a picture round and it would not leave the first question. Not
+picture-specific — **every pack, every round**. Yesterday's `questionsPinned`
+was written believing `selectPack` and `reset` were the only writers of
+`questions`. `reveal` is a third: it stamps the vault's answer into
+`questions[index].correctIndex` so the other clients read it off the room update
+instead of each paying for a vault round trip (`src/engine/reducer.ts` line
+339). Pinned byte for byte, that write is refused and the round stops.
+
+**Every deny case passed the afternoon the pin shipped, because a rule that
+refuses everything refuses those too.** The allow direction was never asked —
+exactly the failure `EVIDENCE.md` describes, in the same file that describes it.
+Proved live before the fix: the new allow case FAILed against the published
+ruleset. The pin now lets the question in play move while its id, `index` and
+every other entry stay put. Depth: [`decisions/security-round-sept-2026.md`](decisions/security-round-sept-2026.md).
+
 ## 2026-09-21 — Live: `index-OfECpKrx` (#56, gh-pages `f78379e`)
 
 Greg said go live. [#56](https://github.com/gregjrothwell/quiz/pull/56) merged as
