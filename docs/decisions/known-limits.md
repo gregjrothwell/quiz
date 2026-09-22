@@ -154,7 +154,7 @@ and album art *to promote the store item*, on six conditions. Read against them:
 |---|---|---|
 | i | only on pages promoting the content it is based on | **fails** — a question hides the album, it does not promote it |
 | ii | proximate to an approved badge linking to the purchase page | **was met; now met only at the reveal** |
-| iii | attribution "provided courtesy of iTunes" on previews | **fails** — that string is nowhere in the app |
+| iii | attribution "provided courtesy of iTunes" on previews | **failed, fixed same day** — the string was nowhere in the app; it is now on every tune question |
 | iv | streamed only, never downloaded or cached | met — `<audio src=previewUrl>` |
 | v | not used for independent entertainment value | **fails** — a quiz round is exactly that |
 | vi | not used to promote other goods | met |
@@ -169,17 +169,26 @@ is silence, not permission, and it is not the reading Apple would argue for.
 badge "the only clean hook". It is not: it is one condition of six, and it was
 never the load-bearing one. The two the round cannot satisfy are (i) and (v),
 and they bite whatever the badge does — on sleeve artwork as much as on tune
-previews. (iii) has never been met at all.
+previews. (iii) had never been met at all — closed the same day, below.
 
 **Greg's decision, taken knowing that.** Hide the link until the reveal on both
 packs. He was shown that this trades away the one condition the round met for no
 change in the two it fails, and chose it anyway: a quiz that hands out its own
 answers is not worth running, and the exposure it buys back is nil.
 
+**(iii) closed the same day.** "Provided courtesy of iTunes" now sits under
+every question that carries a preview, in both phases. It was never a decision,
+just a condition nobody had read: the round shipped on 9 September 2026 meeting
+five of six. Scoped to previews, so a sleeve does not claim courtesy of a clip
+it never played.
+
+**So the standing exposure is (i) and (v), and only those.** Both are about the
+format rather than the markup — a quiz question hides the item instead of
+promoting it, and a quiz is independent entertainment. Neither is fixable by
+anything on screen.
+
 **What would change the answer.** Apple defining "proximate" in time; a takedown
 or a contact from Apple; or the round moving off iTunes previews entirely, which
-is the only move that resolves (i) and (v) rather than accepting them. Adding
-the (iii) attribution string is cheap and unrelated to the badge's position —
-**not done, and worth doing.**
+is the only move that resolves (i) and (v) rather than accepting them.
 
 ---

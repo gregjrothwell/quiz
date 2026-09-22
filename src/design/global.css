@@ -1428,6 +1428,18 @@ select.input option {
   color: rgb(255 255 255 / 0.72);
 }
 
+/*
+  Apple's condition (iii) on a song preview. Quiet on purpose — it is a licence
+  term, not something the room needs to read — but not hidden: `0.72` is the
+  same alpha the picture credit carries, and that one was chosen to stay legible
+  on the darkest panel.
+*/
+.tune-credit {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgb(255 255 255 / 0.72);
+}
+
 .jigsaw {
   display: grid;
   gap: 2px;

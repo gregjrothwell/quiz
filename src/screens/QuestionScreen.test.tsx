@@ -187,6 +187,22 @@ describe('the Apple Music badge', () => {
     expect(container.querySelector('.store-badge')?.getAttribute('href')).toBe(TUNE.storeUrl);
   });
 
+  test('a tune carries the iTunes attribution, playing or revealed', () => {
+    // #given Apple's condition (iii) — a song preview says where it came from
+    // #then present in both phases. It names nothing, so there is no reason to
+    // hold it back, and a preview that plays without it fails the terms.
+    expect(show(TUNE).container.textContent).toContain('Provided courtesy of iTunes');
+    expect(show(TUNE, true).container.textContent).toContain('Provided courtesy of iTunes');
+  });
+
+  test('a sleeve does not claim an iTunes preview it never played', () => {
+    // #given artwork, not a preview — (iii) is scoped to song and music video
+    // previews, and claiming courtesy of a clip that does not exist is just
+    // wrong on screen
+    expect(show(SLEEVE).container.textContent).not.toContain('courtesy of iTunes');
+    expect(show(SLEEVE, true).container.textContent).not.toContain('courtesy of iTunes');
+  });
+
   test('a question with no store link shows no badge either way', () => {
     // #given an ordinary question
     // #then nothing to show, revealed or not

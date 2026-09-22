@@ -566,6 +566,21 @@ export function QuestionScreen({
           ) : null}
 
           {/*
+            Apple's condition (iii): a song preview carries "provided courtesy
+            of iTunes".
+
+            Shown whenever the question has a preview, playing or not, because
+            the alternative is deciding per-frame whether the clip is currently
+            audible. It names nothing and gives nothing away — the string is
+            fixed. This was simply never implemented: the round shipped on 9
+            September 2026 meeting five of the six conditions, and nobody had
+            read the sixth. See docs/decisions/known-limits.md.
+          */}
+          {hasPreview ? (
+            <p className="tune-credit">Provided courtesy of iTunes</p>
+          ) : null}
+
+          {/*
             The store link is one tap from the answer, so it waits for the
             reveal — on a sleeve and on a tune alike.
 
