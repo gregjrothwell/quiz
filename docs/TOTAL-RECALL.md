@@ -24,6 +24,20 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-09-22 — Live: `index-BE_5Hyg5` (#59, gh-pages `7b72a40`)
+
+[#59](https://github.com/gregjrothwell/quiz/pull/59) merged as `cd4a1be` at
+09:16; CI published gh-pages `7b72a40` at 09:19:56, author **GitHub Actions**.
+Pages `built` 09:21:09 (72s). **The live bundle's sha matches a local build of
+that tree byte for byte** — `index-BE_5Hyg5.js`, `14b8f2e0`, both sides.
+Firebase chunk unmoved at `firebase-W6iQUl4r`. CI ran **Playwright against the
+emulators — pass**, which is the check that cannot run on this Mac at all: no
+Java runtime, so `npm run e2e` never starts the emulators. Before the merge:
+`check-rules` 81/81, `rank-harness` `MB7R` to `finished`, `sync-harness 10` at
+10/10, `check-bundle` clean, 1,028 tests. Live site checked after the build —
+no store badge on any question, the iTunes attribution on the tune card, none
+on the sleeve. Unplayed.
+
 ## 2026-09-22 — The store badge was handing out the answer, on both packs
 
 *Which album is this?* sat above a live **View in Apple Music** link for the
@@ -136,32 +150,8 @@ were on the table: the layout change will probably be enough.
 
 ## 2026-09-21 — Sleeves: the cover was the answer key on 11 of 15
 
-`53FN` this morning, 4 seats, hit 85% at a 3.0s median against 37%/5.3s for a
-text round. **Eleven of the fifteen covers had the album title printed on them.**
-The tell is the hard questions: the four with a printed title all scored **100%**
-and the one with a wordless cover — Björk, *Vespertine* — scored **50%**. The
-difficulty rating was decorative.
-
-An edition problem more than a curation one: the specs name an album, iTunes GB
-returns whatever edition it holds, and reissues print titles on artwork the
-original never carried. *The Wall* is a bare brick wall; the mzstatic art reads
-`PINK FLOYD THE WALL`.
-
-`npm run sleeve-audit` reads the text off every cover with Apple's Vision and
-writes `sleeve-cover-text.ts`; the builder refuses any sleeve whose cover names
-its own album *or* is simply covered in writing. Of **143 covers read, 103 are
-refused**; 106 candidate albums added to refill it. Published **52 → 40**, but
-the pack that actually worked was 19. `SLEEVES_MIN_PACK` 45 → 36, which is an
-honest bar rather than a loosened one. Depth:
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md). Depth:
 [`decisions/sleeves-gate.md`](decisions/sleeves-gate.md).
-
-**And a wrong picture, not a giveaway.** `resolveAlbum` trusted a hand-typed
-`collectionId` with no title check. `californication` carried `947680622` — Red
-Hot Chili Peppers' *The Studio Album Collection 1991-2011*. The question showed a
-box set and offered *Stadium Arcadium*. It scored **25%** in `53FN`, the worst of
-the fifteen, and it was not hard, it was wrong. Green build throughout.
-
-*Superseded the same afternoon — see the correction above.*
 
 ## 2026-09-21 — The pictures did not turn up, and it was never the files
 

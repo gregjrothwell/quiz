@@ -44,20 +44,20 @@ Built to replace Polly in Teams.
 
 ## State as of 22 September 2026
 
-> **READ FIRST — #56's `questionsPinned` refused every reveal; fixed and pasted
-> 22 September, playable again.** Rules only, no redeploy — `check-rules`
-> **81/81** with the allow case FAIL→PASS on the paste, then `rank-harness`
-> played `CNSE` to `finished`. Branch `fix-reveal-refused-by-questions-pin` is
-> **unmerged**. **#54 unplayed; the season board's form is estimated.** `.github/workflows/ci.yml` builds and publishes from `master`, so
-> the token leak is closed at the source
-> ([`decisions/ci-deploy.md`](decisions/ci-deploy.md)). Every season row but one
-> carries a **seeded, estimated** `form`
-> ([`decisions/season.md`](decisions/season.md)). The sleeve ratings are
-> **judgements, not measurements** — see Outstanding 1.
+> **READ FIRST — #59 is live and unplayed, and #54 before it.** #56 refused every
+> reveal; the paste fixed that, and #59 is the repo catching up plus the store
+> badge, one tap from the answer on 44 sleeves and 177 tunes. **Read the
+> [post-mortem](decisions/postmortem-the-pin-that-refused-the-reveal.md) before tightening a
+> rule.** `.github/workflows/ci.yml` builds and publishes from `master`, so the
+> token leak is closed at the source ([`ci-deploy.md`](decisions/ci-deploy.md)).
+> Every season row but one carries a **seeded, estimated** `form`
+> ([`season.md`](decisions/season.md)); the sleeve ratings are **judgements, not
+> measurements** — see Outstanding 1.
 
-**Live is `index-OfECpKrx`** (21 Sep 16:51, gh-pages `f78379e`, `81d55a4`/#56,
-CI) — *check gh-pages **and** `pages/builds`; this one: `built` in 48s.*
-Firebase chunk **moved to `firebase-W6iQUl4r`** (#51 touched `src/firebase.ts`).
+**Live is `index-BE_5Hyg5`** (22 Sep 09:21, gh-pages `7b72a40`, `cd4a1be`/#59,
+CI) — *check gh-pages **and** `pages/builds`; `built` in 72s, and the live
+bundle's sha matches a local build byte for byte.* Firebase chunk unmoved at
+**`firebase-W6iQUl4r`**.
 **16 packs**; **Name that Tune 177**; synth **Classical**; **On the box** 54
 (hashed TMDB stills); **Flags** 76 (hashed, no jigsaw); **Sleeves 44** after the
 cover audit (12/20/12); picture is **Fine Art**. Every still now carries
