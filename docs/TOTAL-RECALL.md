@@ -24,6 +24,52 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-09-22 — The store badge was handing out the answer, on both packs
+
+*Which album is this?* sat above a live **View in Apple Music** link for the
+whole answering window, on all 44 sleeves; **Listen on Apple Music** did the
+same on all 177 tunes. The slug was already stripped, so the URL could not name
+the work — the destination still did, one tap away. Both now wait for the
+reveal.
+
+The repo had been calling the badge "the only clean hook" for Apple's terms.
+Read against the actual text, it is one of six conditions and never the
+load-bearing one: **(i) promoting the item and (v) no independent entertainment
+value are the two a quiz cannot meet**, badge or no badge, and (iii)'s "courtesy
+of iTunes" attribution has never been there at all. Greg took the call knowing
+that. Source, date fetched and the decision:
+[`decisions/known-limits.md`](decisions/known-limits.md). `tunes-round.md` hit
+250/250, so the title audit split verbatim to
+[`decisions/tunes-title-gate.md`](decisions/tunes-title-gate.md).
+
+## 2026-09-22 — The pin refused the reveal: every round stuck on question one
+
+Greg played a picture round and it would not leave the first question. Not
+picture-specific — **every pack, every round**. Yesterday's `questionsPinned`
+believed `selectPack` and `reset` were the only writers of `questions`.
+`reveal` is a third: it stamps the answer into `questions[index].correctIndex`
+so the others read it off the room update rather than each paying a vault round
+trip (`reducer.ts` 339). Pinned byte for byte, that write is refused.
+
+**Every deny case passed the afternoon the pin shipped, because a rule that
+refuses everything refuses those too.** The allow direction was never asked —
+exactly the failure `EVIDENCE.md` describes, in the same file that describes it.
+The allow case FAILed against the published ruleset, then PASSed after the
+paste, deny cases holding — `check-rules` **81/81**. `rank-harness` then played
+room `CNSE` start→`finished` live: 1000/900/800/700/700/600 and a zero, read
+back from the server. Rules only, no redeploy. Depth: [`decisions/security-round-sept-2026.md`](decisions/security-round-sept-2026.md).
+
+## 2026-09-21 — Live: `index-OfECpKrx` (#56, gh-pages `f78379e`)
+
+Greg said go live. [#56](https://github.com/gregjrothwell/quiz/pull/56) merged as
+`81d55a4` at 16:47; CI published gh-pages `f78379e` at 16:50:43, author **GitHub
+Actions**. Pages `built` 16:51:33 (~48s). **Published bundle matches a local
+build of that tree exactly** — `index-OfECpKrx.js`, sha `3272b19a`, both sides.
+Firebase chunk unmoved at `firebase-W6iQUl4r`. Merge commit, not squash: this
+contained #55, which closed itself as merged. Second RTDB paste landed 16:56:
+`{ at }` allowed, `{ name, at }` refused, `check-rules` 80/80. One round, then
+`audit-players`.
+
 ## 2026-09-21 — Vault oracle, joinedAt, and the `at` stamp
 
 Any signed-in player could extract the vault: rewrite `questions[0].id` without
@@ -38,32 +84,9 @@ round is the answer. Depth:
 
 ## 2026-09-21 — Live: `index-BHcNzJzP` (#54, gh-pages `026d7cd`)
 
-Greg said go live. [#54](https://github.com/gregjrothwell/quiz/pull/54) merged as
-`f6c1298` at 15:11; CI published gh-pages `026d7cd` at 15:15:29, author **GitHub
-Actions**. **Published bundle matches a local build of that commit exactly** —
-`index-BHcNzJzP.js` both sides, the cross-check worth keeping. Firebase chunk
-unmoved at `firebase-W6iQUl4r`. All three checks green on the PR and again on
-master; Playwright against the emulators passed both times.
-
-Merged with a **merge commit rather than a squash, on purpose**. This branch was
-cut from `live-after-52`, so it contained #53's commit — a squash would have left
-#53 open and conflicting against docs that had since been rewritten.
-[#53](https://github.com/gregjrothwell/quiz/pull/53) closed itself as merged two
-seconds after #54 landed.
-
-**Live and verified**: sleeves **44** (12/20/12), screens **54 of 54** sized,
-all five new CSS rules present, picture beside the answers at **614×345** against
-448×252 — read off the live site at 1512px, not a local build.
-
-**The site served the old build for four minutes after gh-pages was correct** —
-the whole site, assets 404ing, not the `index.html` cache of 11 September. The
-**Pages build is a second step after the branch push**; `gh api
-repos/…/pages/builds` says which, and the last three took ~50s. gh-pages alone
-said fine; the live URL alone said failed. Read both.
-
-**Unplayed.** Everything here — the reserved box, the preload, the side-by-side
-layout, 44 sleeves and their re-rated difficulties — has been verified but not
-played. The ratings especially are judgements and want a round against them.
+[#54](https://github.com/gregjrothwell/quiz/pull/54) at 15:11; gh-pages `026d7cd`
+at 15:15:29. Pages lagged four minutes. Unplayed. Archived whole:
+[`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-21 — Correction: the sleeve audit missed a third of them, and a person found the rest
 
@@ -142,30 +165,8 @@ the fifteen, and it was not hard, it was wrong. Green build throughout.
 
 ## 2026-09-21 — The pictures did not turn up, and it was never the files
 
-Bret, Friday 18 September 15:11, with a screenshot; others reported the same on
-slow connections. **The files are fine** — 82KB median, 158KB max, 200 from
-Pages, 179 of 179 on gh-pages, ~0.2s from here. And in the round he played
-(`M9YU`) **file size predicts nothing**: ≥100KB scored 88%/3.9s, under 86%/3.1s.
-Shrinking them would have fixed nothing, which is the finding that saved a blind
-alley.
-
-Three faults. **Nothing was preloaded** — the `<img>` was created when the
-question rendered, the same frame the countdown starts in, though every device
-has held all fifteen filenames since the round was built and the lobby sits open
-while people join. **The box was zero pixels tall** — `width:100%; height:auto`
-with no intrinsic size resolves to 0, and `alt=""` left nothing in the gap, so it
-read as a question with no picture rather than a picture that was late; measured
-at 0 before, 448×224 after. **A failure was silent and permanent.**
-
-Packs now carry `imageWidth`/`imageHeight`, read off the file header at build
-time and written into all 179 stills in place — no id, hash or option touched, so
-nothing needs reseeding. The header parser was **cross-checked against `sips`
-over all 179: zero disagreements**. Depth:
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md). Depth:
 [`decisions/picture-loading.md`](decisions/picture-loading.md).
-
-**Bret was not blind for the whole round** — eight questions came back 6/6. He
-confirmed later the same day that it stopped showing him pictures partway
-through, which is the diagnosis exactly.
 
 ## 2026-09-11 — #52 live: `index-n26s0ofl`
 

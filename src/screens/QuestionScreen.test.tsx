@@ -34,14 +34,14 @@ function roomWith(question: QuizQuestion): RoomState {
   };
 }
 
-function show(question: QuizQuestion) {
+function show(question: QuizQuestion, revealed = false) {
   return render(
     <QuestionScreen
       room={roomWith(question)}
       youUid="greg"
       isQuizmaster
       clock={CLOCK}
-      revealed={false}
+      revealed={revealed}
       onAnswer={noop}
       onReveal={noop}
       onNext={noop}
@@ -118,5 +118,95 @@ describe('the question row', () => {
     // second column would be the whole thing failing.
     expect(withPicture.container.querySelectorAll('.podium > *')).toHaveLength(4);
     expect(withoutPicture.container.querySelectorAll('.podium > *')).toHaveLength(4);
+  });
+});
+
+
+/**
+ * The store link is one tap from the answer, so it waits for the reveal.
+ *
+ * "View in Apple Music" under *Which album is this?* opens the album's own
+ * page. It sat there for the whole answering window on all 44 sleeves and all
+ * 177 tunes — Greg, 22 September 2026: "it literally tells you the answer."
+ *
+ * **The tune case is a decision against Apple's terms, not an oversight.** The
+ * badge is one of six conditions the iTunes Search API attaches to using a
+ * preview, and hiding it during playback is the reading Apple would argue
+ * with. Greg took that call on 22 September 2026 knowing it; the reasoning is
+ * in `docs/decisions/tunes-round.md` and the exposure in
+ * `docs/decisions/known-limits.md`. **Do not quietly put it back** — if it
+ * returns it should be because that decision was revisited, not because a
+ * later tidy found a test that looked odd.
+ */
+describe('the Apple Music badge', () => {
+  const SLEEVE = {
+    ...BASE,
+    prompt: 'Which album is this?',
+    artworkUrl: 'https://is1-ssl.mzstatic.com/image/thumb/x/600x600bb.jpg',
+    storeUrl: 'https://music.apple.com/gb/album/1474815798?uo=4',
+  };
+  const TUNE = {
+    ...BASE,
+    previewUrl: 'https://audio-ssl.itunes.apple.com/itunes-assets/x.m4a',
+    storeUrl: 'https://music.apple.com/gb/album/1440717563?i=1440717826&uo=4',
+  };
+
+  test('a sleeve does not offer the link while the clock is running', () => {
+    // #given a sleeve question, still being answered
+    const { container } = show(SLEEVE);
+
+    // #then no way through to the album's page, which is the answer
+    expect(container.querySelector('.store-badge')).toBeNull();
+  });
+
+  test('a sleeve offers it at the reveal', () => {
+    // #given the same question once the answer is out
+    const { container } = show(SLEEVE, true);
+
+    // #then the link is back. Hiding it for good would drop the attribution
+    // as well as the giveaway, and by now there is nothing left to give away.
+    const badge = container.querySelector('.store-badge');
+    expect(badge).not.toBeNull();
+    expect(badge?.getAttribute('href')).toBe(SLEEVE.storeUrl);
+  });
+
+  test('a tune does not offer the link while the clock is running either', () => {
+    // #given Name that Tune, mid-question, with a preview playing
+    const { container } = show(TUNE);
+
+    // #then no badge. Same reasoning as the sleeve: the link opens the song's
+    // own page, which is the answer, on all 177 of them.
+    expect(container.querySelector('.store-badge')).toBeNull();
+  });
+
+  test('a tune offers it at the reveal', () => {
+    // #given the same question once the answer is out
+    const { container } = show(TUNE, true);
+
+    // #then the link is back, pointing at the track it streamed.
+    expect(container.querySelector('.store-badge')?.getAttribute('href')).toBe(TUNE.storeUrl);
+  });
+
+  test('a tune carries the iTunes attribution, playing or revealed', () => {
+    // #given Apple's condition (iii) — a song preview says where it came from
+    // #then present in both phases. It names nothing, so there is no reason to
+    // hold it back, and a preview that plays without it fails the terms.
+    expect(show(TUNE).container.textContent).toContain('Provided courtesy of iTunes');
+    expect(show(TUNE, true).container.textContent).toContain('Provided courtesy of iTunes');
+  });
+
+  test('a sleeve does not claim an iTunes preview it never played', () => {
+    // #given artwork, not a preview — (iii) is scoped to song and music video
+    // previews, and claiming courtesy of a clip that does not exist is just
+    // wrong on screen
+    expect(show(SLEEVE).container.textContent).not.toContain('courtesy of iTunes');
+    expect(show(SLEEVE, true).container.textContent).not.toContain('courtesy of iTunes');
+  });
+
+  test('a question with no store link shows no badge either way', () => {
+    // #given an ordinary question
+    // #then nothing to show, revealed or not
+    expect(show(BASE).container.querySelector('.store-badge')).toBeNull();
+    expect(show(BASE, true).container.querySelector('.store-badge')).toBeNull();
   });
 });

@@ -94,6 +94,39 @@ way back). The accepted decoy — one gate per question, minimum 5 seconds,
 because reaching `phase:'question'` restamps `openedAt` — remains; see
 [`vault.md`](vault.md).
 
+**Correction, 22 September 2026 — the fix above broke the game.** The claim
+that "that is what the client already does" was wrong, and it is the sentence
+to read twice. There is a **third** writer of `questions`: `reveal`
+(`src/engine/reducer.ts` line 339) stamps the vault's answer into
+`questions[index].correctIndex`, so the other clients learn it from the room
+update they already listen to rather than each paying for a vault round trip.
+Pinned byte for byte, that write is refused — so **every round, on every pack,
+stopped dead on its first question.** Greg hit it on a picture round; it was
+never picture-specific.
+
+*Why nothing caught it.* Every S1 deny case passed the afternoon the pin went
+live, because a rule that refuses everything refuses those too. No case asked
+whether an ordinary reveal still got through. That is precisely what
+`EVIDENCE.md` says to do — "read the *allow* direction to know a change
+landed" — written up from this project, and skipped here. The offline suite
+cannot see it either: 1,021 tests pass, because rules only run live.
+
+*The pin now.* `onlyTheQuestionInPlayMoved()` — the question at `index` may
+change, while its `id`, `index` itself, and every other entry may not
+(`removeAll` on both sides, which refuses rather than allows when a write
+makes some other entry a duplicate). The oracle stays closed: a substitution
+into another slot is refused outright, so the two-write version — plant an id
+in slot 1, then move `index` onto it — dies on the first write; and a
+substitution into this slot cannot change the id, which is the only thing
+`isTheQuestionInPlay()` reads. Options may move and buy nothing, because the
+reveal document still has to carry the vault's own answer string.
+
+*Proof, both directions.* Two new `check-rules` cases: **allow** "reveal,
+stamping the answer into the question in play", which FAILed against the
+published ruleset before the paste and is the one that means anything; and
+**deny** "add a question to the list while one is open", which only starts
+meaning something once the allow case passes beside it.
+
 ### S2 — `elapsedMs` is unconstrained for the first 8 s · HIGH
 
 `arrivalOk()` is a **lower bound only**. On the default 10-second window the
@@ -138,10 +171,10 @@ The name is written and never read. The reaper takes `Object.keys` only.
 stops working and the room fills with ghosts:
 
 1. Relax `.validate` to `hasChildren(['at'])`, **keep** the `name` child
-   validator. Old and new clients both pass. **This is what the repo copy
-   now is.**
-2. Deploy the client without `name`.
-3. Remove the `name` child rule so `$other` refuses it.
+   validator. Old and new clients both pass. Pasted 21 September.
+2. Deploy the client without `name`. Live `index-OfECpKrx`, 21 September 16:51.
+3. Remove the `name` child rule so `$other` refuses it. Pasted 21 September
+   16:56; `{ name, at }` denied.
 
 ### S5 — Docs that were wrong · LOW
 
@@ -168,16 +201,15 @@ Do not re-open these.
 
 A client ahead of the console has every answer refused **in silence**.
 
-1. Paste `firestore.rules` (questions pinned, `joinedAt` bound, `at`
-   optional). Diff the live ruleset first — do not paste blind.
-2. Publish relaxed `database.rules.json` (step 1 of S4).
-3. `npm run check-rules` — the new **allow** cases flipping FAIL → PASS is
-   the paste proof. Deny cases pass vacuously until then.
-4. Deploy the client via CI from `master`. Check gh-pages **and**
-   `pages/builds`.
-5. Publish RTDB step 3 (refuse `name`). Re-run `check-rules`.
+1. Paste `firestore.rules`. Done 21 September, 80/80.
+2. Publish relaxed `database.rules.json`. Done 21 September.
+3. `npm run check-rules` — allow FAIL → PASS is the paste proof. Done.
+4. Deploy the client via CI from `master`. Done: `index-OfECpKrx`,
+   gh-pages `f78379e`, Pages `built` 16:51:33.
+5. Publish RTDB step 3 (refuse `name`). Done 21 September, 16:56; `{ name, at }`
+   denied, `{ at }` allowed, 80/80.
 6. Play one round. `npm run audit-players`. The implied-delay column is the
-   Alistair answer.
+   Alistair answer. **This is the remaining step.**
 
 Steps 1, 2, 4, 5 and 6 are Greg's. A branch ends at *ready for review*.
 

@@ -565,7 +565,45 @@ export function QuestionScreen({
             </div>
           ) : null}
 
-          {question.storeUrl ? (
+          {/*
+            Apple's condition (iii): a song preview carries "provided courtesy
+            of iTunes".
+
+            Shown whenever the question has a preview, playing or not, because
+            the alternative is deciding per-frame whether the clip is currently
+            audible. It names nothing and gives nothing away — the string is
+            fixed. This was simply never implemented: the round shipped on 9
+            September 2026 meeting five of the six conditions, and nobody had
+            read the sixth. See docs/decisions/known-limits.md.
+          */}
+          {hasPreview ? (
+            <p className="tune-credit">Provided courtesy of iTunes</p>
+          ) : null}
+
+          {/*
+            The store link is one tap from the answer, so it waits for the
+            reveal — on a sleeve and on a tune alike.
+
+            "View in Apple Music" under *Which album is this?* opens the
+            album's own page. It sat on screen for the whole answering window,
+            on all 44 sleeves and all 177 tunes. Greg, 22 September 2026: "it
+            literally tells you the answer." At the reveal it costs nothing and
+            still carries the link.
+
+            **This is a decision against one clause of Apple's terms, taken
+            knowingly.** The iTunes Search API allows previews and album art on
+            six conditions; one is that they sit proximate to a store badge
+            linking to the purchase page. Apple defines neither "proximate" nor
+            anything about timing, so a badge at the reveal is unaddressed
+            rather than plainly refused — but it is not the reading Apple would
+            argue for. Greg's call, 22 September 2026, on being shown that the
+            two conditions the round *cannot* meet are the ones about promoting
+            the item and not using it for independent entertainment — which a
+            quiz fails whatever the badge does. Weighed and recorded in
+            docs/decisions/tunes-round.md; the whole exposure is in
+            docs/decisions/known-limits.md.
+          */}
+          {question.storeUrl && revealed ? (
             <StoreBadge href={question.storeUrl} kind={hasPreview ? 'listen' : 'view'} />
           ) : null}
 
