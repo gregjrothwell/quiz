@@ -34,7 +34,7 @@ describe('finalistsFor', () => {
   test('only counts people still in the room', () => {
     // `scores` outlives membership on purpose, so a player who went home keeps
     // a number on the document and must not be called to a final they left.
-    const { first: _gone, ...stayed } = NA9N_PLAYERS;
+    const stayed = Object.fromEntries(Object.entries(NA9N_PLAYERS).filter(([uid]) => uid !== 'first'));
     expect(finalistsFor(stayed, NA9N_SCORES, 'game-1')).toEqual(['second', 'third']);
   });
 

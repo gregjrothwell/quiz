@@ -36,6 +36,7 @@
     "sync-harness": "tsx --env-file=.env.local scripts/sync-harness.ts",
     "host-room": "tsx --env-file=.env.local scripts/host-room.ts",
     "rank-harness": "tsx --env-file=.env.local scripts/rank-harness.ts",
+    "final-harness": "tsx --env-file=.env.local scripts/final-harness.ts",
     "check-bundle": "tsx scripts/check-bundle.ts",
     "predeploy-ref": "tsx scripts/predeploy.ts",
     "deploy": "npm run predeploy-ref && npm run build && npm run check-bundle && gh-pages -d dist",

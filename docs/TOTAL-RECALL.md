@@ -30,7 +30,9 @@ Greg's calls: an option like the wager, not a mode; the top two play for both
 their scores; it banks to the season; the leader picks instead if it goes stale.
 Story and acceptance criteria, nothing built:
 [`decisions/share-or-shaft.md`](decisions/share-or-shaft.md). Later the same day:
-named **Share or Shaft**, picks sealed by commit-then-reveal, and building began.
+named **Share or Shaft**, picks sealed by commit-then-reveal, and built on
+`share-or-shaft` — **rules not pasted**. Two holes found while building (a
+`gameId` hop, and reveals that stranded a finalist) and closed; both in the doc.
 
 ## 2026-09-22 — The store badge was handing out the answer, on both packs
 
