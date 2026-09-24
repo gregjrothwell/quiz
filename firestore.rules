@@ -319,7 +319,7 @@ service cloud.firestore {
       function wellFormed() {
         return request.resource.data.code == code
           && request.resource.data.phase in
-               ['lobby', 'question', 'reveal', 'scoreboard', 'finished']
+               ['lobby', 'question', 'reveal', 'scoreboard', 'standoff', 'finished']
           && request.resource.data.players.keys().size() <= maxPlayers()
           && request.resource.data.scores.keys().size() <= maxPlayers()
           && request.resource.data.questions.size() <= maxQuestions()
@@ -559,6 +559,69 @@ service cloud.firestore {
         // preflight can exercise this path on every run instead of once ever.
         allow delete: if signedIn();
       }
+
+      // ── Share or Shaft ────────────────────────────────────────────────────
+      //
+      // A finalist's sealed pick, one document per player. The scheme is in
+      // src/engine/sealedPick.ts; the decisions are in
+      // docs/decisions/share-or-shaft.md.
+      //
+      // Readable by everyone, like answers, and safe for a different reason:
+      // tapping writes a SHA-256 of the pick and a 128-bit nonce, never the
+      // pick. The pick and nonce are added only once both commitments exist,
+      // and every client checks them against the hash. So these rules do not
+      // decide whether a pick counts — the engine does, identically on every
+      // device, and ignores a document from anybody who is not a finalist, as
+      // it ignores a `wager` sent on the wrong question.
+      //
+      // What the rules must give is the one property a hash cannot: a
+      // commitment that cannot move once the other finalist has revealed.
+      // Pinning it within a document is not enough on its own. "Another round"
+      // reuses the room, so a new `gameId` has to be able to replace last
+      // round's commitment — and if any `gameId` could, a finalist could hop
+      // to a made-up one and back, re-committing after reading the reveal. So
+      // the `gameId` must be the room's own: one `get()` per pick, a handful
+      // of writes a game.
+      match /standoff/{uid} {
+        function roomGameId() {
+          return get(/databases/$(database)/documents/rooms/$(code)).data.get('gameId', null);
+        }
+
+        function commitmentOk() {
+          return request.resource.data.keys().hasOnly(['gameId', 'commit'])
+            && request.resource.data.gameId is string
+            && request.resource.data.gameId == roomGameId()
+            && request.resource.data.commit is string
+            && request.resource.data.commit.size() == 64;
+        }
+
+        function revealOk() {
+          return request.resource.data.keys().hasOnly(['gameId', 'commit', 'pick', 'nonce'])
+            && request.resource.data.gameId == resource.data.gameId
+            && request.resource.data.commit == resource.data.commit
+            && request.resource.data.pick in ['share', 'shaft']
+            && request.resource.data.nonce is string
+            && request.resource.data.nonce.size() <= 64;
+        }
+
+        allow read: if signedIn();
+
+        allow create: if signedIn()
+          && request.auth.uid == uid
+          && exists(/databases/$(database)/documents/rooms/$(code))
+          && commitmentOk();
+
+        // The reveal, or a fresh commitment for the round the room is now on.
+        allow update: if signedIn()
+          && request.auth.uid == uid
+          && (revealOk()
+            || (request.resource.data.gameId != resource.data.gameId
+              && exists(/databases/$(database)/documents/rooms/$(code))
+              && commitmentOk()));
+
+        // `prune-rooms` removes these with the room, through the Admin SDK.
+        allow delete: if false;
+      }
     }
 
     // ── What the room thought of a question ───────────────────────────────────
@@ -698,9 +761,12 @@ service cloud.firestore {
     }
 
     match /seasons/{season}/players/{playerId} {
-      // A round is at most 25 questions at 1,000 points, so 100k leaves room for
-      // a long season's best game and still rejects a fantasy number.
-      function maxBest() { return 100000; }
+      // A round is at most 25 questions at 1,000 points, so 100k left room for a
+      // long season's best game and still rejected a fantasy number. Share or
+      // Shaft can then hand one finalist both finalists' scores, so a game's
+      // best is up to twice what one player can score — 200k, or the stealer's
+      // bank is refused and their night is lost. docs/decisions/share-or-shaft.md.
+      function maxBest() { return 200000; }
       function maxPoints() { return 100000000; }
       function maxPlayed() { return 10000; }
 

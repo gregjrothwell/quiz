@@ -2,6 +2,7 @@ import type { PackId } from '../questions/types';
 import type { FormFact } from './form';
 import { carryFirstMs, firstTouchOf } from './answers';
 import { stealFor, tallyQuestion } from './scoring';
+import { finalistsFor, settleStandoff, stakesFor, type StandoffPick } from './standoff';
 import {
   currentQuestion,
   isDurationAllowed,
@@ -37,6 +38,8 @@ export type Action =
       wagerEnabled: boolean;
       stealEnabled: boolean;
       jigsawEnabled?: boolean;
+      /** Optional for the reason `jigsawEnabled` is: every caller before it omits it. */
+      standoffEnabled?: boolean;
     }
   /**
    * `durationSecs` is settled here and nowhere else. The security rules pin it
@@ -60,6 +63,20 @@ export type Action =
   | { type: 'reveal'; correctIndex: number; questionId: string }
   | { type: 'skip' }
   | { type: 'next'; at: number }
+  /** The quizmaster ends the talking, by button or when the talk clock runs out. */
+  | { type: 'openPicks' }
+  /**
+   * The whistle on the picking: when both finalists have committed, or when the
+   * pick clock runs out. `sealed` is who had committed by then, as the
+   * quizmaster's device saw it — only their picks can count.
+   */
+  | { type: 'closePicks'; sealed: string[] }
+  /**
+   * The final is paid out. `picks` are the ones the quizmaster's device verified
+   * against each finalist's commitment — see `sealedPick.ts`. A finalist with no
+   * verified pick is simply absent, and counts as share.
+   */
+  | { type: 'settle'; picks: Record<string, StandoffPick | null> }
   | { type: 'reset' };
 
 /**
@@ -87,6 +104,7 @@ export function reduce(state: RoomState, action: Action): RoomState {
         action.wagerEnabled,
         action.stealEnabled,
         action.jigsawEnabled ?? false,
+        action.standoffEnabled ?? false,
       );
     case 'start':
       return start(state, action.at, action.gameId, action.durationSecs);
@@ -98,6 +116,12 @@ export function reduce(state: RoomState, action: Action): RoomState {
       return skip(state);
     case 'next':
       return next(state, action.at);
+    case 'openPicks':
+      return openPicks(state);
+    case 'closePicks':
+      return closePicks(state, action.sealed);
+    case 'settle':
+      return settle(state, action.picks);
     case 'reset':
       return reset(state);
   }
@@ -159,9 +183,19 @@ function selectPack(
   wagerEnabled: boolean,
   stealEnabled: boolean,
   jigsawEnabled: boolean,
+  standoffEnabled: boolean,
 ): RoomState {
   if (state.phase !== 'lobby') return state;
-  return { ...state, packId, packTitle, questions, wagerEnabled, stealEnabled, jigsawEnabled };
+  return {
+    ...state,
+    packId,
+    packTitle,
+    questions,
+    wagerEnabled,
+    stealEnabled,
+    jigsawEnabled,
+    standoffEnabled,
+  };
 }
 
 /**
@@ -208,6 +242,8 @@ function start(state: RoomState, at: number, gameId: string, durationSecs: numbe
     // leaving them on the document would put them back on screen at the end of
     // the round, when `reset` returns the room to the lobby.
     form: null,
+    // The last round's final, if it had one, is over.
+    standoff: null,
     // Everyone starts on zero, including anyone who joined after a previous game.
     scores: Object.fromEntries(Object.keys(state.players).map((uid) => [uid, 0])),
   };
@@ -390,6 +426,27 @@ function next(state: RoomState, at: number): RoomState {
   if (state.phase === 'scoreboard') {
     const nextIndex = state.index + 1;
     if (nextIndex >= state.questions.length) {
+      // After the wager has been paid on the last question, so a stake that
+      // came off is what decides who reaches the final.
+      const finalists = state.standoffEnabled
+        ? finalistsFor(state.players, state.scores, state.gameId ?? '')
+        : null;
+      if (finalists) {
+        return {
+          ...state,
+          phase: 'standoff',
+          answers: {},
+          lastDeltas: {},
+          lastSteal: null,
+          standoff: {
+            finalists,
+            stakes: stakesFor(state.scores, finalists),
+            stage: 'talk',
+            sealed: null,
+            picks: null,
+          },
+        };
+      }
       return { ...state, phase: 'finished', answers: {}, lastDeltas: {}, lastSteal: null };
     }
     return {
@@ -403,7 +460,57 @@ function next(state: RoomState, at: number): RoomState {
     };
   }
 
+  // Only once both picks are showing. Moving on from the talk or the pick would
+  // take the room to the results before anything had been decided.
+  if (state.phase === 'standoff') {
+    if (state.standoff?.stage !== 'revealed') return state;
+    return { ...state, phase: 'finished', answers: {}, lastDeltas: {}, lastSteal: null };
+  }
+
   return state;
+}
+
+function openPicks(state: RoomState): RoomState {
+  if (state.phase !== 'standoff' || state.standoff?.stage !== 'talk') return state;
+  return { ...state, standoff: { ...state.standoff, stage: 'pick' } };
+}
+
+function closePicks(state: RoomState, sealed: string[]): RoomState {
+  const { standoff } = state;
+  if (state.phase !== 'standoff' || !standoff || standoff.stage !== 'pick') return state;
+  return {
+    ...state,
+    standoff: {
+      ...standoff,
+      stage: 'closed',
+      sealed: standoff.finalists.filter((uid) => sealed.includes(uid)),
+    },
+  };
+}
+
+/**
+ * Pays the final out, once. Refused outside the closed stage, so a late echo of
+ * a settle that already landed cannot pay the pot a second time.
+ *
+ * A pick from a finalist who had not committed by the whistle is dropped here
+ * whatever the quizmaster's device passed in — the engine, not the caller, is
+ * what keeps a late commitment from counting.
+ */
+function settle(state: RoomState, picks: Record<string, StandoffPick | null>): RoomState {
+  const { standoff } = state;
+  if (state.phase !== 'standoff' || !standoff || standoff.stage !== 'closed') return state;
+
+  const sealed = standoff.sealed ?? [];
+  const counted = Object.fromEntries(
+    standoff.finalists.map((uid) => [uid, sealed.includes(uid) ? (picks[uid] ?? null) : null]),
+  );
+  const settled = settleStandoff(state.scores, standoff, counted);
+  return {
+    ...state,
+    scores: settled.scores,
+    lastDeltas: settled.deltas,
+    standoff: { ...standoff, stage: 'revealed', picks: settled.picks },
+  };
 }
 
 function reset(state: RoomState): RoomState {
@@ -423,5 +530,6 @@ function reset(state: RoomState): RoomState {
     skipped: [],
     // Cleared so the next round mints its own id and counts separately.
     gameId: null,
+    standoff: null,
   };
 }

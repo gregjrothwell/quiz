@@ -82,7 +82,10 @@ export function planJoin({
     ...side,
   };
 
-  const score = scores[uid] ?? (phase === 'finished' ? null : 0);
+  // The final is after the last question, so arriving during it is arriving
+  // after the round — the same as walking in on the results.
+  const roundOver = phase === 'finished' || phase === 'standoff';
+  const score = scores[uid] ?? (roundOver ? null : 0);
 
   return { entry, score };
 }

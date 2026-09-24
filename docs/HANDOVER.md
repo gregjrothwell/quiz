@@ -16,7 +16,7 @@ Built to replace Polly in Teams.
 
 | If you're changing | Read |
 |---|---|
-| repeats and the question history; staking points on the last question; **the Split or Steal final** (story, unbuilt) | [`repeats.md`](decisions/repeats.md) · [`wager.md`](decisions/wager.md) · [`split-or-steal.md`](decisions/split-or-steal.md) |
+| repeats and the question history; staking points on the last question; **the Share or Shaft final** (building) | [`repeats.md`](decisions/repeats.md) · [`wager.md`](decisions/wager.md) · [`share-or-shaft.md`](decisions/share-or-shaft.md) |
 | the vault, reveals, answer secrecy, **the answer window**, and **a reveal that stalls** | [`vault.md`](decisions/vault.md) · [`answer-window.md`](decisions/answer-window.md) · [`reveal-delays.md`](decisions/reveal-delays.md) |
 | the season table, squads, `recordGame`, anything called `team`; the August board; squads **during** a round | [`season.md`](decisions/season.md) · [`season-shipped.md`](decisions/season-shipped.md) · [`live-squads.md`](decisions/live-squads.md) |
 | the opening titles, honours, rosettes | [`form-and-awards.md`](decisions/form-and-awards.md) |
