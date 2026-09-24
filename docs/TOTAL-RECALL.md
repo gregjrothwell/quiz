@@ -24,6 +24,13 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-09-24 — Live: `index-fy6Fyqpa` (#60, gh-pages `5bf6290`)
+
+Share or Shaft and On the box 187. Seed 129 added / 0 changed, vault read-back 187/187,
+`check-rules` 91/91, CI verify + Playwright pass; Pages built in 40s, bundle byte-identical
+to a local build, all 187 stills served. `YHK3` on the live site against a local client:
+10 new On the box questions revealed, final settled shaft/share 7,000/0, not banked.
+
 ## 2026-09-24 — On the box: 54 to 187, stacked on Share or Shaft
 
 The 54 were played out in four rounds and ran 37 easy to 1 hard; 133 added,

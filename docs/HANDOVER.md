@@ -16,7 +16,7 @@ Built to replace Polly in Teams.
 
 | If you're changing | Read |
 |---|---|
-| repeats and the question history; staking points on the last question; **the Share or Shaft final** (on `share-or-shaft`: rules live, **not deployed**; `more-picture-questions` stacks on it, so one merge ships both) | [`repeats.md`](decisions/repeats.md) · [`wager.md`](decisions/wager.md) · [`share-or-shaft.md`](decisions/share-or-shaft.md) |
+| repeats and the question history; staking points on the last question; **the Share or Shaft final** (**live 24 Sep, #60**; played through on the live site) | [`repeats.md`](decisions/repeats.md) · [`wager.md`](decisions/wager.md) · [`share-or-shaft.md`](decisions/share-or-shaft.md) |
 | the vault, reveals, answer secrecy, **the answer window**, and **a reveal that stalls** | [`vault.md`](decisions/vault.md) · [`answer-window.md`](decisions/answer-window.md) · [`reveal-delays.md`](decisions/reveal-delays.md) |
 | the season table, squads, `recordGame`, anything called `team`; the August board; squads **during** a round | [`season.md`](decisions/season.md) · [`season-shipped.md`](decisions/season-shipped.md) · [`live-squads.md`](decisions/live-squads.md) |
 | the opening titles, honours, rosettes | [`form-and-awards.md`](decisions/form-and-awards.md) |
@@ -47,19 +47,19 @@ Built to replace Polly in Teams.
 > **READ FIRST — #56's `questionsPinned` refused every reveal; fixed and pasted
 > 22 September, playable again.** Rules only, no redeploy — `check-rules`
 > **81/81** with the allow case FAIL→PASS on the paste, then `rank-harness`
-> played `CNSE` to `finished`. Branch `fix-reveal-refused-by-questions-pin` is
-> **unmerged**. **#54 unplayed; the season board's form is estimated.** `.github/workflows/ci.yml` builds and publishes from `master`, so
+> played `CNSE` to `finished`. Branch `fix-reveal-refused-by-questions-pin`
+> merged as #59. **#54 unplayed; the season board's form is estimated.** `.github/workflows/ci.yml` builds and publishes from `master`, so
 > the token leak is closed at the source
 > ([`decisions/ci-deploy.md`](decisions/ci-deploy.md)). Every season row but one
 > carries a **seeded, estimated** `form`
 > ([`decisions/season.md`](decisions/season.md)). The sleeve ratings are
 > **judgements, not measurements** — see Outstanding 1.
 
-**Live is `index-OfECpKrx`** (21 Sep 16:51, gh-pages `f78379e`, `81d55a4`/#56,
-CI) — *check gh-pages **and** `pages/builds`; this one: `built` in 48s.*
-Firebase chunk **moved to `firebase-W6iQUl4r`** (#51 touched `src/firebase.ts`).
-**16 packs**; **Name that Tune 177**; synth **Classical**; **On the box** 54 live,
-187 unseeded on `more-picture-questions`; **Flags** 76; **Sleeves 44** after the
+**Live is `index-fy6Fyqpa`** (24 Sep 10:53, gh-pages `5bf6290`, `ca30658`/#60,
+CI) — *check gh-pages **and** `pages/builds`; `built` in 40s, byte-identical to a
+local build.* Firebase chunk unmoved, `firebase-W6iQUl4r`. #59's record: `live-after-59`.
+**16 packs**; **Name that Tune 177**; synth **Classical**; **On the box 187**
+(seeded, read back 187/187); **Flags** 76; **Sleeves 44** after the
 cover audit (12/20/12); picture is **Fine Art**. Every still now carries
 `imageWidth`/`imageHeight`; a picture sits beside the answers above 64rem.
 
@@ -100,12 +100,12 @@ scoring 500 + rank 500/400/300/200/100; counts in
    spent — it substitutes medium. The fix is a fold of `games/` into real
    difficulty, **a query now rather than a build**, and `games/` now holds
    eleven rounds rather than three, so it is no longer gated on playing.
-9. **Do not paste `master`'s rules over the console.** Live Firestore is
-   `share-or-shaft` (48,604 bytes, pasted 24 Sep): `master` lacks the `standoff`
-   phase. `check-rules` **91/91 both ways, 24 September**; `sync-harness 10`
+9. **`master`'s rules now match the console** — #60 brought the `standoff`
+   phase (48,604 bytes, pasted 24 Sep) onto `master`, so pasting `master` is safe
+   again. `check-rules` **91/91 both ways, 24 September**; `sync-harness 10`
    **10/10, 0 dropped**. RTDB `{ at }` allowed; `{ name, at }` refused.
-10. **Hand-built packs need a seed after any *new* ids.** On the box's **133 new
-    ids are unseeded** (24 Sep): `seed-vault` before the deploy, or they stall at reveal.
+10. **Hand-built packs need a seed after any *new* ids.** All seeded as of
+    24 Sep (On the box: 129 added, 0 changed, 187/187 read back); unseeded ones stall at reveal.
 11. **`firstMs` and the pack picker are live and unplayed.** It is a deterrent,
     so the only test is whether his behaviour changes next round:
     [`first-touch.md`](decisions/first-touch.md).
