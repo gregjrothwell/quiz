@@ -24,6 +24,14 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-09-24 — On the box: 54 to 187, stacked on Share or Shaft
+
+The 54 were played out in four rounds and ran 37 easy to 1 hard; 133 added,
+leaning medium and hard. Contact-sheeted: two printed their own answer (Bridget
+Jones's "DIARY", the Jumanji box) and were dropped — the pack has no refusal list.
+`more-picture-questions` stacks on `share-or-shaft`, so one merge ships both.
+**Unseeded.** [`decisions/questions.md`](decisions/questions.md#on-the-box-second-harvest).
+
 ## 2026-09-24 — Split or Steal: a final after the last question, not a mode
 
 Greg's calls: an option like the wager, not a mode; the top two play for both
