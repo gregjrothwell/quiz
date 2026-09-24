@@ -16,7 +16,7 @@ Built to replace Polly in Teams.
 
 | If you're changing | Read |
 |---|---|
-| repeats and the question history; staking points on the last question; **the Share or Shaft final** (built on `share-or-shaft`, **rules unpasted**) | [`repeats.md`](decisions/repeats.md) · [`wager.md`](decisions/wager.md) · [`share-or-shaft.md`](decisions/share-or-shaft.md) |
+| repeats and the question history; staking points on the last question; **the Share or Shaft final** (on `share-or-shaft`: rules live, **not deployed**) | [`repeats.md`](decisions/repeats.md) · [`wager.md`](decisions/wager.md) · [`share-or-shaft.md`](decisions/share-or-shaft.md) |
 | the vault, reveals, answer secrecy, **the answer window**, and **a reveal that stalls** | [`vault.md`](decisions/vault.md) · [`answer-window.md`](decisions/answer-window.md) · [`reveal-delays.md`](decisions/reveal-delays.md) |
 | the season table, squads, `recordGame`, anything called `team`; the August board; squads **during** a round | [`season.md`](decisions/season.md) · [`season-shipped.md`](decisions/season-shipped.md) · [`live-squads.md`](decisions/live-squads.md) |
 | the opening titles, honours, rosettes | [`form-and-awards.md`](decisions/form-and-awards.md) |
@@ -100,9 +100,9 @@ scoring 500 + rank 500/400/300/200/100; counts in
    spent — it substitutes medium. The fix is a fold of `games/` into real
    difficulty, **a query now rather than a build**, and `games/` now holds
    eleven rounds rather than three, so it is no longer gated on playing.
-9. **Do not paste `master`'s rules over the console.** Live Firestore is this
-   branch (42,521 bytes). A paste the wrong way deletes the vault pin.
-   `check-rules` **80/80 both ways, 21 September**; `sync-harness 10`
+9. **Do not paste `master`'s rules over the console.** Live Firestore is
+   `share-or-shaft` (48,604 bytes, pasted 24 Sep): `master` lacks the `standoff`
+   phase. `check-rules` **91/91 both ways, 24 September**; `sync-harness 10`
    **10/10, 0 dropped**. RTDB `{ at }` allowed; `{ name, at }` refused.
 10. **Hand-built packs need a seed after any *new* ids.** All seeded as of
     10 September; an unseeded pack breaks at reveal.

@@ -33,6 +33,9 @@ Story and acceptance criteria, nothing built:
 named **Share or Shaft**, picks sealed by commit-then-reveal, and built on
 `share-or-shaft` — **rules not pasted**. Two holes found while building (a
 `gameId` hop, and reveals that stranded a finalist) and closed; both in the doc.
+**Pasted the same afternoon:** `check-rules` 86/5 → **91/91**, `final-harness`
+`S3DW` paid 1,900/0/0 with three re-commits refused, `sync-harness` 10/10, and a
+two-browser round, `QUF7`, played through the final to the reveal. Not deployed.
 
 ## 2026-09-22 — The store badge was handing out the answer, on both packs
 

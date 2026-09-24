@@ -2,10 +2,10 @@
 
 > **Owner: Greg Rothwell. Last updated: 24 September 2026. Budget: 250 lines.**
 
-**Status: built on branch `share-or-shaft`, not merged, not deployed, and the
-rules are not pasted.** Paste first — see *Before it deploys*. After the last
-question, in a room that opted in, the top two play for both their scores while
-everybody else watches.
+**Status: built on branch `share-or-shaft`, not merged, not deployed. The rules
+are live — pasted 24 September and proved both ways.** After the last question,
+in a room that opted in, the top two play for both their scores while everybody
+else watches.
 
 Taken from *Shafted* (ITV, 2001, Robert Kilroy-Silk) and *Golden Balls* (ITV,
 2007–09, Jasper Carrott, "Split or Steal"). Both end on the same dilemma, and
@@ -77,8 +77,8 @@ into tomorrow's final.
 5. **Pick**, 15 seconds, tap or key, first pick locks, others see only *locked
    in*. *Met — gallery fixtures at desktop and phone width.*
 6. **Sealed**: no readable document holds a pick before the whistle. *Met — the
-   commitment payload is tested to hold no pick; `final-harness` prints both
-   live commitments once the paste lands.*
+   commitment payload is tested to hold no pick, and in `S3DW` both live
+   commitments held a hash and nothing else.*
 7. **Outcome** as the table; no pick or a failed reveal counts as share; a pure
    engine function. *Met — the four cells, the edges, withholding never pays.*
 8. **Reveal**: both turn over at once, said in words to whoever it happened to.
@@ -87,7 +87,7 @@ into tomorrow's final.
 9. **Season**: banks the post-final score; joint winners both win; a big pot is
    never refused. *Met in code — banking reads the snapshot at `finished`
    (`useFinalSnapshot.ts:135`), `standings` shares a position on equal scores,
-   and `maxBest()` rises to 200,000. The last needs the paste.*
+   and `maxBest()` rises to 200,000 — `check-rules` banks 150,000 live.*
 10. **Kept**: finalists, picks and stakes in `games/`; `read-games` prints each
     final and a count of who keeps reaching one. *Met — tests.*
 11. **Leaving**: a finalist keeps what they locked; *Another round* starts
@@ -157,19 +157,34 @@ and re-create mid-final is a re-commit.
   revealed from the vault, and was refused on the write into the final — the
   phase — which is the right refusal.
 
-**Not yet covered.** The allow direction on the published rules (needs the
-paste). The React hook's own path end to end: the Playwright e2e needs JDK 21,
-which this machine does not have, and the live browser path waits on the paste.
-And whether the office likes it — that is the live round.
+**After the paste, 24 September.**
+
+- `check-rules` **91/91** — the five allow cases FAIL → PASS, so the denies now
+  pass for the right reason.
+- `final-harness` in `S3DW`: Ada 1,900, Bo 0, host 0, read back from the server.
+  Both commitments held no pick; after Ada revealed, Bo's rewrite, game hop and
+  delete were all refused.
+- `sync-harness 10`: 10/10 joined, 0 dropped, all within 68ms.
+- **The client's own path**, two browsers on a fresh dev server (separate
+  origins, so separate anonymous players), room `QUF7`: a real question, nine
+  more to the last scoreboard, *To Share or Shaft*, talk, *Time to choose*,
+  Test A shafted by key, Test B shared by tap. B's screen showed A only as
+  *locked in*. Both screens then read the reveal in their own words, 1,000 / 0.
+
+**Not covered.** *Final results* was not pressed in `QUF7`, so two test names
+did not land on the season board; the step from the reveal to `finished` is the
+harness's, and banking is unchanged code reading the snapshot at `finished`. The
+Playwright e2e needs JDK 21, which this machine lacks. And whether the office
+likes it — that is the live round.
 
 ## Before it deploys
 
-1. Paste `firestore.rules` (phase, `standoff/{uid}`, `maxBest()`).
-2. `npm run check-rules` — **91/91**, the five allow cases FAIL → PASS.
-3. `npm run final-harness` — the final paid 1,900 / 0 / 0 and the three
-   re-commit attempts refused, read back from the server.
-4. `npm run sync-harness 10` — it touches the room document.
-5. A real two-browser round through the final, then deploy.
+Steps 1–5 done on 24 September: the paste, `check-rules` 91/91,
+`final-harness`, `sync-harness 10`, and the two-browser round. What is left is
+Greg's: review, merge, deploy — and then one office round with it switched on.
+
+The paste is safe for the client live today: every check that predates this
+still passes, and the old client can never enter the new phase.
 
 ## Known limits
 
