@@ -228,6 +228,10 @@ function toRoomState(code: string, data: DocumentData, answers: Record<string, A
     // `null` rather than undefined: Firestore rejects undefined outright, and
     // every room from before the steal has no field at all.
     lastSteal: persisted.lastSteal ?? null,
+    // Absent in every room from before Share or Shaft, defaulted for the reason
+    // the wager's flag is.
+    standoffEnabled: persisted.standoffEnabled ?? false,
+    standoff: persisted.standoff ?? null,
   };
 }
 
@@ -256,6 +260,8 @@ function toPersisted(state: RoomState): PersistedRoom {
     stealEnabled: state.stealEnabled,
     jigsawEnabled: state.jigsawEnabled,
     lastSteal: state.lastSteal,
+    standoffEnabled: state.standoffEnabled,
+    standoff: state.standoff,
   };
 }
 

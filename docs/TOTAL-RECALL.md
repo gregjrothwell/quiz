@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 21 September 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 24 September 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -10,7 +10,7 @@ Append; do not rewrite an earlier entry to make it look as if we always knew. A
 correction is a new dated note that says what changed, and the wrong claim stays
 visible.
 
-**Split six times, 28 August to 21 September 2026** — every time this file hit
+**Split seven times, 28 August to 24 September 2026** — every time this file hit
 300. Entries move *verbatim* to [`recall/2026-08.md`](recall/2026-08.md) or
 [`recall/2026-09.md`](recall/2026-09.md) and leave a dated pointer here, so the
 chronology still reads end to end. Shortening an old entry to make the number go
@@ -23,6 +23,27 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
+
+## 2026-09-24 — On the box: 54 to 187, stacked on Share or Shaft
+
+The 54 were played out in four rounds and ran 37 easy to 1 hard; 133 added,
+leaning medium and hard. Contact-sheeted: two printed their own answer (Bridget
+Jones's "DIARY", the Jumanji box) and were dropped — the pack has no refusal list.
+`more-picture-questions` stacks on `share-or-shaft`, so one merge ships both.
+**Unseeded.** [`decisions/questions.md`](decisions/questions.md#on-the-box-second-harvest).
+
+## 2026-09-24 — Split or Steal: a final after the last question, not a mode
+
+Greg's calls: an option like the wager, not a mode; the top two play for both
+their scores; it banks to the season; the leader picks instead if it goes stale.
+Story and acceptance criteria, nothing built:
+[`decisions/share-or-shaft.md`](decisions/share-or-shaft.md). Later the same day:
+named **Share or Shaft**, picks sealed by commit-then-reveal, and built on
+`share-or-shaft` — **rules not pasted**. Two holes found while building (a
+`gameId` hop, and reveals that stranded a finalist) and closed; both in the doc.
+**Pasted the same afternoon:** `check-rules` 86/5 → **91/91**, `final-harness`
+`S3DW` paid 1,900/0/0 with three re-commits refused, `sync-harness` 10/10, and a
+two-browser round, `QUF7`, played through the final to the reveal. Not deployed.
 
 ## 2026-09-22 — The store badge was handing out the answer, on both packs
 
@@ -136,32 +157,8 @@ were on the table: the layout change will probably be enough.
 
 ## 2026-09-21 — Sleeves: the cover was the answer key on 11 of 15
 
-`53FN` this morning, 4 seats, hit 85% at a 3.0s median against 37%/5.3s for a
-text round. **Eleven of the fifteen covers had the album title printed on them.**
-The tell is the hard questions: the four with a printed title all scored **100%**
-and the one with a wordless cover — Björk, *Vespertine* — scored **50%**. The
-difficulty rating was decorative.
-
-An edition problem more than a curation one: the specs name an album, iTunes GB
-returns whatever edition it holds, and reissues print titles on artwork the
-original never carried. *The Wall* is a bare brick wall; the mzstatic art reads
-`PINK FLOYD THE WALL`.
-
-`npm run sleeve-audit` reads the text off every cover with Apple's Vision and
-writes `sleeve-cover-text.ts`; the builder refuses any sleeve whose cover names
-its own album *or* is simply covered in writing. Of **143 covers read, 103 are
-refused**; 106 candidate albums added to refill it. Published **52 → 40**, but
-the pack that actually worked was 19. `SLEEVES_MIN_PACK` 45 → 36, which is an
-honest bar rather than a loosened one. Depth:
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md). Depth:
 [`decisions/sleeves-gate.md`](decisions/sleeves-gate.md).
-
-**And a wrong picture, not a giveaway.** `resolveAlbum` trusted a hand-typed
-`collectionId` with no title check. `californication` carried `947680622` — Red
-Hot Chili Peppers' *The Studio Album Collection 1991-2011*. The question showed a
-box set and offered *Stadium Arcadium*. It scored **25%** in `53FN`, the worst of
-the fifteen, and it was not hard, it was wrong. Green build throughout.
-
-*Superseded the same afternoon — see the correction above.*
 
 ## 2026-09-21 — The pictures did not turn up, and it was never the files
 

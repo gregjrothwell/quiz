@@ -1,6 +1,7 @@
 import type { QuestionRecord } from './awards';
 import type { Difficulty, PackId } from '../questions/types';
 import type { Answer, Player, QuizQuestion, RoomState } from './state';
+import type { Standoff, StandoffPick } from './standoff';
 
 /**
  * How a question was put to the room. Derived from what the question already
@@ -73,6 +74,24 @@ export interface RecordedQuestion {
 export interface RecordedPlayer {
   name: string;
   squad?: string;
+  /**
+   * What a finalist did in Share or Shaft. Absent for everybody else, and in
+   * every round that did not end on one.
+   *
+   * **Inside the player rather than a key of the document's own**, for the
+   * reason {@link RevealTiming} rides inside `questions`: the rules bound this
+   * document only at the top level, where every key is required, so a new one
+   * would refuse every record from a bundle that predates it the moment the
+   * rules learned about it.
+   */
+  standoff?: RecordedStandoff;
+}
+
+export interface RecordedStandoff {
+  /** What they put in: their score above zero when the final opened. */
+  stake: number;
+  /** Null for a pick that never arrived, which counted as share. */
+  pick: StandoffPick | null;
 }
 
 /**
@@ -180,16 +199,29 @@ function recordedAnswers(answers: Record<string, Answer>): Record<string, Record
 }
 
 /**
- * Name and side only. `joinedAt` describes the room, not the round, and
- * `playerId` is an identity claim the season rules verify and this document
- * never could — so neither belongs in a record kept for analysis.
+ * Name and side, plus the final for the two who played it. `joinedAt` describes
+ * the room, not the round, and `playerId` is an identity claim the season rules
+ * verify and this document never could — so neither belongs in a record kept
+ * for analysis.
+ *
+ * A final is recorded only once it was settled. One abandoned mid-pick changed
+ * nobody's score, so recording its stakes would describe a payout that never
+ * happened.
  */
-function recordedPlayers(players: Record<string, Player>): Record<string, RecordedPlayer> {
+function recordedPlayers(
+  players: Record<string, Player>,
+  standoff: Standoff | null,
+): Record<string, RecordedPlayer> {
+  const picks = standoff?.picks ?? null;
   const recorded: Record<string, RecordedPlayer> = {};
   for (const [uid, player] of Object.entries(players)) {
+    const played = standoff !== null && picks !== null && standoff.finalists.includes(uid);
     recorded[uid] = {
       name: player.name,
       ...(player.squad === undefined ? {} : { squad: player.squad }),
+      ...(played
+        ? { standoff: { stake: standoff.stakes[uid] ?? 0, pick: picks[uid] ?? null } }
+        : {}),
     };
   }
   return recorded;
@@ -260,7 +292,7 @@ export function foldGameRecord(
     wagerEnabled: room.wagerEnabled,
     stealEnabled: room.stealEnabled,
     jigsawEnabled: room.jigsawEnabled,
-    players: recordedPlayers(room.players),
+    players: recordedPlayers(room.players, room.standoff),
     scores: { ...room.scores },
     questions,
     writtenBy,

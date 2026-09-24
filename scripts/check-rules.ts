@@ -101,6 +101,15 @@ const PROBE_QUESTION = 'rules-check-q';
 const SUBSTITUTE_QUESTION = 'rules-check-other-q';
 
 /**
+ * Two commitments of the right shape. The rules bound the shape and pin the
+ * value; whether one opens is the engine's business, so these need not be real
+ * hashes of anything.
+ */
+const FINAL_COMMIT_A = 'a'.repeat(64);
+const FINAL_COMMIT_B = 'b'.repeat(64);
+const FINAL_NONCE = '0123456789abcdef0123456789abcdef';
+
+/**
  * The gate is no longer a fixed twenty seconds — it is `durationSecs` on the
  * room — so the probe picks its own, and the two windows exist for opposite
  * reasons.
@@ -316,6 +325,26 @@ function buildChecks(probes: Probes): Check[] {
   } = probes;
 
   const ownAnswer = doc(db, 'rooms', LIVE_ROOM, 'answers', uid);
+  const ownPick = doc(db, 'rooms', LIVE_ROOM, 'standoff', uid);
+  // Fresh every run: a pick's commitment is pinned within its game, so reusing
+  // one id would refuse this run's commitment against the last run's.
+  const finalGame = `${probeGameId}-final`;
+
+  /** LIVE_ROOM in the shape the room checks write it, in the phase and game given. */
+  const liveRoom = (phase: string, gameId: string): Record<string, unknown> => ({
+    code: LIVE_ROOM,
+    phase,
+    players: { [uid]: { name: 'Rules check', joinedAt: hostJoinedAt } },
+    packId: null,
+    packTitle: null,
+    questions: [],
+    index: 0,
+    questionOpenedAt: null,
+    scores: { [uid]: 0 },
+    lastDeltas: {},
+    skipped: [],
+    gameId,
+  });
 
   return [
     {
@@ -420,6 +449,103 @@ function buildChecks(probes: Probes): Check[] {
           stealEnabled: true,
           lastSteal: { from: uid, to: uid, points: 50 },
         }),
+    },
+    /*
+      Share or Shaft. The whole sequence runs against LIVE_ROOM as a finalist
+      would: the room opens the final, a pick is committed, and then everything
+      that must not move — the commitment, another player's pick, a pick for a
+      game the room is not playing, a deletion mid-final, a third word — is
+      tried and refused, before the reveal and the sweep are allowed.
+
+      Before the paste every deny below passes for the wrong reason: nothing
+      under `standoff/` is allowed at all. The four allow cases are what say
+      the paste landed. docs/decisions/share-or-shaft.md.
+    */
+    {
+      label: 'Firestore   · open the Share or Shaft final',
+      expect: 'allow',
+      hint: 'the published firestore.rules does not list `standoff` among the '
+        + 'phases — the round stops dead on its last scoreboard. Paste the repo copy.',
+      run: () =>
+        updateDoc(doc(db, 'rooms', LIVE_ROOM), {
+          ...liveRoom('standoff', finalGame),
+          standoffEnabled: true,
+          standoff: {
+            finalists: [uid, uidB],
+            stakes: { [uid]: 1000, [uidB]: 900 },
+            stage: 'pick',
+            sealed: null,
+            picks: null,
+          },
+        }),
+    },
+    {
+      label: 'Firestore   · commit to a pick in the final',
+      expect: 'allow',
+      hint: 'firestore.rules has no `standoff/{uid}` block, or refuses a commitment '
+        + 'to the game the room is playing — every pick is lost and both finalists '
+        + 'count as sharing',
+      run: () => setDoc(ownPick, { gameId: finalGame, commit: FINAL_COMMIT_A }),
+    },
+    {
+      label: 'Firestore   · change a pick once committed',
+      expect: 'deny',
+      hint: 'firestore.rules lets a finalist rewrite their commitment — they can '
+        + 'read the other reveal and then commit to the pick that beats it',
+      run: () => setDoc(ownPick, { gameId: finalGame, commit: FINAL_COMMIT_B }),
+    },
+    {
+      label: 'Firestore   · commit for a game the room is not playing',
+      expect: 'deny',
+      hint: 'firestore.rules takes any gameId on a pick — a finalist can hop to a '
+        + 'made-up game and back to re-commit after reading a reveal',
+      run: () =>
+        setDoc(doc(dbB, 'rooms', LIVE_ROOM, 'standoff', uidB), {
+          gameId: `${finalGame}-elsewhere`,
+          commit: FINAL_COMMIT_B,
+        }),
+    },
+    {
+      label: "Firestore   · write someone else's pick",
+      expect: 'deny',
+      hint: 'firestore.rules lets one player commit for another',
+      run: () =>
+        setDoc(doc(db, 'rooms', LIVE_ROOM, 'standoff', uidB), {
+          gameId: finalGame,
+          commit: FINAL_COMMIT_B,
+        }),
+    },
+    {
+      label: 'Firestore   · delete your pick during the final',
+      expect: 'deny',
+      hint: 'firestore.rules lets a finalist delete a commitment mid-final — '
+        + 'delete and re-create is a re-commit after reading the reveal',
+      run: () => deleteDoc(ownPick),
+    },
+    {
+      label: 'Firestore   · reveal a third word',
+      expect: 'deny',
+      hint: 'firestore.rules is missing the share/shaft bound on `pick`',
+      run: () => updateDoc(ownPick, { pick: 'split', nonce: FINAL_NONCE }),
+    },
+    {
+      label: 'Firestore   · reveal a committed pick',
+      expect: 'allow',
+      hint: 'firestore.rules refuses the reveal — the picking closes and every '
+        + 'pick counts as share, so no final can ever be won by shafting',
+      run: () => updateDoc(ownPick, { pick: 'share', nonce: FINAL_NONCE }),
+    },
+    {
+      label: 'Firestore   · sweep your pick once the final is over',
+      expect: 'allow',
+      hint: 'firestore.rules refuses an owner deleting their pick outside a final '
+        + '— check-rules leaves a document behind on every run',
+      run: async () => {
+        // Back to the lobby first, which is the shape every other room check
+        // expects to find it in.
+        await updateDoc(doc(db, 'rooms', LIVE_ROOM), liveRoom('lobby', 'rules-check'));
+        return deleteDoc(ownPick);
+      },
     },
     {
       label: 'Firestore   · stake points on your own answer',
@@ -625,6 +751,15 @@ function buildChecks(probes: Probes): Check[] {
         + 'minimum stake refuses the season row and the night is lost. Paste '
         + 'the repo copy before deploying the client that produces a negative.',
       run: () => setDoc(ownSeasonRow, { ...validSeasonRow, points: -500, best: 1000 }),
+    },
+    {
+      // Share or Shaft can hand one finalist both finalists' scores, so a
+      // game's best can pass what one player could ever score alone.
+      label: 'Firestore   · bank a game above 100,000',
+      expect: 'allow',
+      hint: 'firestore.rules still caps a game at 100,000 — a stolen pot in a long '
+        + 'round is refused at the bank and the stealer\'s night is lost. Paste.',
+      run: () => setDoc(ownSeasonRow, { ...validSeasonRow, points: 150_000, best: 150_000 }),
     },
     {
       label: 'Firestore   · write a season row below -maxPoints()',

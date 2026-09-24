@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 22 September 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 24 September 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -16,7 +16,7 @@ Built to replace Polly in Teams.
 
 | If you're changing | Read |
 |---|---|
-| repeats and the question history; staking points on the last question | [`repeats.md`](decisions/repeats.md) · [`wager.md`](decisions/wager.md) |
+| repeats and the question history; staking points on the last question; **the Share or Shaft final** (on `share-or-shaft`: rules live, **not deployed**; `more-picture-questions` stacks on it, so one merge ships both) | [`repeats.md`](decisions/repeats.md) · [`wager.md`](decisions/wager.md) · [`share-or-shaft.md`](decisions/share-or-shaft.md) |
 | the vault, reveals, answer secrecy, **the answer window**, and **a reveal that stalls** | [`vault.md`](decisions/vault.md) · [`answer-window.md`](decisions/answer-window.md) · [`reveal-delays.md`](decisions/reveal-delays.md) |
 | the season table, squads, `recordGame`, anything called `team`; the August board; squads **during** a round | [`season.md`](decisions/season.md) · [`season-shipped.md`](decisions/season-shipped.md) · [`live-squads.md`](decisions/live-squads.md) |
 | the opening titles, honours, rosettes | [`form-and-awards.md`](decisions/form-and-awards.md) |
@@ -58,8 +58,8 @@ Built to replace Polly in Teams.
 **Live is `index-OfECpKrx`** (21 Sep 16:51, gh-pages `f78379e`, `81d55a4`/#56,
 CI) — *check gh-pages **and** `pages/builds`; this one: `built` in 48s.*
 Firebase chunk **moved to `firebase-W6iQUl4r`** (#51 touched `src/firebase.ts`).
-**16 packs**; **Name that Tune 177**; synth **Classical**; **On the box** 54
-(hashed TMDB stills); **Flags** 76 (hashed, no jigsaw); **Sleeves 44** after the
+**16 packs**; **Name that Tune 177**; synth **Classical**; **On the box** 54 live,
+187 unseeded on `more-picture-questions`; **Flags** 76; **Sleeves 44** after the
 cover audit (12/20/12); picture is **Fine Art**. Every still now carries
 `imageWidth`/`imageHeight`; a picture sits beside the answers above 64rem.
 
@@ -100,12 +100,12 @@ scoring 500 + rank 500/400/300/200/100; counts in
    spent — it substitutes medium. The fix is a fold of `games/` into real
    difficulty, **a query now rather than a build**, and `games/` now holds
    eleven rounds rather than three, so it is no longer gated on playing.
-9. **Do not paste `master`'s rules over the console.** Live Firestore is this
-   branch (42,521 bytes). A paste the wrong way deletes the vault pin.
-   `check-rules` **80/80 both ways, 21 September**; `sync-harness 10`
+9. **Do not paste `master`'s rules over the console.** Live Firestore is
+   `share-or-shaft` (48,604 bytes, pasted 24 Sep): `master` lacks the `standoff`
+   phase. `check-rules` **91/91 both ways, 24 September**; `sync-harness 10`
    **10/10, 0 dropped**. RTDB `{ at }` allowed; `{ name, at }` refused.
-10. **Hand-built packs need a seed after any *new* ids.** All seeded as of
-    10 September; an unseeded pack breaks at reveal.
+10. **Hand-built packs need a seed after any *new* ids.** On the box's **133 new
+    ids are unseeded** (24 Sep): `seed-vault` before the deploy, or they stall at reveal.
 11. **`firstMs` and the pack picker are live and unplayed.** It is a deterrent,
     so the only test is whether his behaviour changes next round:
     [`first-touch.md`](decisions/first-touch.md).

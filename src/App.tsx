@@ -37,6 +37,7 @@ import { useStillPreload } from './lib/stills';
 import { loadPackQuestions, usePackIndex } from './lib/usePacks';
 import { useQuestionClock } from './lib/useQuestionClock';
 import { useRoom } from './lib/useRoom';
+import { useStandoff } from './lib/useStandoff';
 import { resolveAnswer } from './lib/vault';
 import { withTimeout } from './lib/withTimeout';
 import type { PackId } from './questions/types';
@@ -45,6 +46,7 @@ import { Landing } from './screens/Landing';
 import { Lobby } from './screens/Lobby';
 import { QuestionScreen } from './screens/QuestionScreen';
 import { Scoreboard } from './screens/Scoreboard';
+import { ShareOrShaft } from './screens/ShareOrShaft';
 
 /*
   Split out of the main bundle, because neither is on the path into a game.
@@ -310,6 +312,11 @@ function Game() {
     [roomStep],
   );
 
+  // The final, when the room chose one: the sealed picks, and the quizmaster's
+  // moves from talk to pick to the settle. Idle — no listener, no clock — in
+  // every other phase. See `lib/useStandoff.ts`.
+  const standoffView = useStandoff({ code, uid, room, isQuizmaster, dispatch, onError: report });
+
   const handleCreate = useCallback(
     (name: string, squad: string, playingWith: string) => {
       setBusy(true);
@@ -427,6 +434,7 @@ function Game() {
       wagerEnabled: boolean,
       stealEnabled: boolean,
       jigsawEnabled: boolean,
+      standoffEnabled: boolean,
     ) => {
       setBusy(true);
       setActionError(null);
@@ -487,6 +495,7 @@ function Game() {
               wagerEnabled,
               stealEnabled,
               jigsawEnabled,
+              standoffEnabled,
             },
             ...(facts.length > 0
               ? [{ type: 'titles' as const, at: Date.now(), facts, durationSecs }]
@@ -989,6 +998,16 @@ function Game() {
             room={room}
             youUid={uid}
             isQuizmaster={isQuizmaster}
+            onNext={() => void dispatch({ type: 'next', at: Date.now() }).catch(report)}
+          />
+        )) ||
+        (room.phase === 'standoff' && (
+          <ShareOrShaft
+            room={room}
+            youUid={uid}
+            isQuizmaster={isQuizmaster}
+            view={standoffView}
+            onOpenPicks={() => void dispatch({ type: 'openPicks' }).catch(report)}
             onNext={() => void dispatch({ type: 'next', at: Date.now() }).catch(report)}
           />
         )) ||

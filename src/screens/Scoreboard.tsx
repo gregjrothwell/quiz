@@ -25,6 +25,8 @@ const ORDINALS = [
 
 export function Scoreboard({ room, youUid, isQuizmaster, onNext }: ScoreboardProps) {
   const isLast = room.index + 1 >= room.questions.length;
+  // The reducer sends a room of one straight to the results, so this does too.
+  const toFinal = isLast && room.standoffEnabled && Object.keys(room.players).length >= 2;
   const skippedLast = room.skipped.includes(room.questions[room.index]?.id ?? '');
   const nextNumber = room.index + 2;
   const nextOrdinal = ORDINALS[nextNumber - 1] ?? String(nextNumber);
@@ -80,7 +82,7 @@ export function Scoreboard({ room, youUid, isQuizmaster, onNext }: ScoreboardPro
       {isQuizmaster ? (
         <div className="btn-row">
           <button type="button" className="btn btn--primary" onClick={onNext}>
-            {isLast ? 'Final results' : 'Next question'}
+            {toFinal ? 'To Share or Shaft' : isLast ? 'Final results' : 'Next question'}
           </button>
         </div>
       ) : (

@@ -5,14 +5,17 @@ import { RecoveryPanel } from '../components/RecoveryPanel';
 import { SquadPanel } from '../components/SquadPanel';
 import { WeekTable } from '../components/WeekBoard';
 import type { QuestionRecord } from '../engine/awards';
+import type { Standoff } from '../engine/standoff';
 import { createRoom, type QuizQuestion, type RoomState } from '../engine/state';
 import type { SeasonRow } from '../lib/season';
 import type { PackSummary } from '../lib/usePacks';
+import type { StandoffView } from '../lib/useStandoff';
 import { Final } from './Final';
 import { Landing } from './Landing';
 import { Lobby } from './Lobby';
 import { QuestionScreen } from './QuestionScreen';
 import { Scoreboard } from './Scoreboard';
+import { ShareOrShaft } from './ShareOrShaft';
 
 /**
  * A design gallery of every screen with fixed data.
@@ -256,6 +259,36 @@ function mockRoom(overrides: Partial<RoomState> = {}): RoomState {
 }
 
 const CLOCK = { elapsedMs: 6_000, remainingMs: 14_000, secondsLeft: 14, expired: false };
+
+/**
+ * Share or Shaft between Sam (3,100) and Greg (2,450), for the five moments the
+ * final has. A gallery fixture for the reason the stake band got one: a screen
+ * that appears once a round, at the end, is never reviewed otherwise.
+ */
+const FINAL_SCORES = { sam: 3_100, greg: 2_450, priya: 1_800, alex: 1_200 };
+
+function finalRoom(standoff: Partial<Standoff>, overrides: Partial<RoomState> = {}): RoomState {
+  return mockRoom({
+    phase: 'standoff',
+    index: 1,
+    gameId: 'preview-game',
+    standoffEnabled: true,
+    scores: FINAL_SCORES,
+    standoff: {
+      finalists: ['sam', 'greg'],
+      stakes: { sam: 3_100, greg: 2_450 },
+      stage: 'talk',
+      sealed: null,
+      picks: null,
+      ...standoff,
+    },
+    ...overrides,
+  });
+}
+
+function finalView(overrides: Partial<StandoffView> = {}): StandoffView {
+  return { lockedIn: { sam: false, greg: false }, myPick: null, secondsLeft: 42, pick: () => undefined, ...overrides };
+}
 
 /**
  * A two-question game built to earn all four rosettes: Greg in on the buzzer and
@@ -833,6 +866,77 @@ export function Preview() {
           room={mockRoom({ phase: 'scoreboard', lastDeltas: { sam: 1_000, greg: 0, priya: 900 } })}
           youUid="greg"
           isQuizmaster
+          onNext={noop}
+        />
+      ),
+    },
+    {
+      title: 'Share or Shaft · talking it over, watching',
+      node: (
+        <ShareOrShaft
+          room={finalRoom({})}
+          youUid="priya"
+          isQuizmaster
+          view={finalView()}
+          onOpenPicks={noop}
+          onNext={noop}
+        />
+      ),
+    },
+    {
+      title: 'Share or Shaft · picking, as a finalist',
+      node: (
+        <ShareOrShaft
+          room={finalRoom({ stage: 'pick' })}
+          youUid="greg"
+          isQuizmaster={false}
+          view={finalView({ lockedIn: { sam: true, greg: false }, secondsLeft: 11 })}
+          onOpenPicks={noop}
+          onNext={noop}
+        />
+      ),
+    },
+    {
+      title: 'Share or Shaft · locked in',
+      node: (
+        <ShareOrShaft
+          room={finalRoom({ stage: 'pick' })}
+          youUid="greg"
+          isQuizmaster={false}
+          view={finalView({ lockedIn: { sam: true, greg: true }, myPick: 'shaft', secondsLeft: 6 })}
+          onOpenPicks={noop}
+          onNext={noop}
+        />
+      ),
+    },
+    {
+      title: 'Share or Shaft · shafted, told to the one who lost it',
+      node: (
+        <ShareOrShaft
+          room={finalRoom(
+            { stage: 'revealed', sealed: ['sam', 'greg'], picks: { sam: 'shaft', greg: 'share' } },
+            { scores: { ...FINAL_SCORES, sam: 5_550, greg: 0 }, lastDeltas: { sam: 2_450, greg: -2_450 } },
+          )}
+          youUid="greg"
+          isQuizmaster
+          view={finalView()}
+          onOpenPicks={noop}
+          onNext={noop}
+        />
+      ),
+    },
+    {
+      title: 'Share or Shaft · both shafted, and third place wins',
+      node: (
+        <ShareOrShaft
+          room={finalRoom(
+            { stage: 'revealed', sealed: ['sam', 'greg'], picks: { sam: 'shaft', greg: 'shaft' } },
+            { scores: { ...FINAL_SCORES, sam: 0, greg: 0 }, lastDeltas: { sam: -3_100, greg: -2_450 } },
+          )}
+          youUid="priya"
+          isQuizmaster={false}
+          view={finalView()}
+          onOpenPicks={noop}
           onNext={noop}
         />
       ),

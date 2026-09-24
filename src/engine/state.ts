@@ -1,5 +1,6 @@
 import type { FormFact } from './form';
 import type { Steal } from './scoring';
+import type { Standoff } from './standoff';
 import {
   DIFFICULTIES,
   type Difficulty,
@@ -8,7 +9,17 @@ import {
   type Voice,
 } from '../questions/types';
 
-export type Phase = 'lobby' | 'question' | 'reveal' | 'scoreboard' | 'finished';
+/**
+ * Every phase a room can be in, in the order a round passes through them.
+ *
+ * **The security rules hold the same list** (`wellFormed()` in firestore.rules),
+ * as an exact allow-list — a phase the engine writes and the rules have not
+ * heard of refuses the write that enters it, and the room stops on whatever it
+ * was showing. `standoff.test.ts` reads the rules and fails if the two differ.
+ */
+export const PHASES = ['lobby', 'question', 'reveal', 'scoreboard', 'standoff', 'finished'] as const;
+
+export type Phase = (typeof PHASES)[number];
 
 /** What the lobby starts on, and what a freshly created room carries. */
 export const DEFAULT_DURATION_SECS = 10;
@@ -281,6 +292,17 @@ export interface RoomState {
    * ruleset paste: `wellFormed()` does not `hasOnly` the room's keys.
    */
   jigsawEnabled: boolean;
+  /**
+   * Whether the round ends on Share or Shaft: the top two playing for both
+   * their scores. See `standoff.ts` and docs/decisions/share-or-shaft.md.
+   *
+   * Chosen in the lobby and fixed for the round, like the wager — the room
+   * agreed to it before the first question. The flag needs no ruleset paste,
+   * for the reason `wagerEnabled` gives; the `standoff` phase it leads to does.
+   */
+  standoffEnabled: boolean;
+  /** The final in play, or the one just played. Null in every other round. */
+  standoff: Standoff | null;
 }
 
 /**
@@ -334,6 +356,8 @@ export function createRoom(code: string): RoomState {
     wagerEnabled: false,
     stealEnabled: false,
     jigsawEnabled: false,
+    standoffEnabled: false,
+    standoff: null,
   };
 }
 
