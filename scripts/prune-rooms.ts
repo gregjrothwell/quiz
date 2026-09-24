@@ -37,8 +37,13 @@ import { getFirestore, Timestamp, type Firestore } from 'firebase-admin/firestor
 // and the preflight can never disagree about which bucket is a probe.
 import { weekId } from '../src/engine/week';
 
-/** Subcollections a room can carry. Both are created lazily, so both may be absent. */
-const SUBCOLLECTIONS = ['answers', 'reveal'] as const;
+/**
+ * Subcollections a room can carry. All are created lazily, so any may be absent.
+ *
+ * Named by hand, so a new one is orphaned forever until it is added here —
+ * `standoff` holds the Share or Shaft picks, one per finalist per room.
+ */
+const SUBCOLLECTIONS = ['answers', 'reveal', 'standoff'] as const;
 
 /**
  * Rooms `check-rules` owns, which `--legacy` would otherwise sweep up every run.

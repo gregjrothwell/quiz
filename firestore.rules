@@ -619,8 +619,14 @@ service cloud.firestore {
               && exists(/databases/$(database)/documents/rooms/$(code))
               && commitmentOk()));
 
-        // `prune-rooms` removes these with the room, through the Admin SDK.
-        allow delete: if false;
+        // Your own, and never while a final is on: deleting and re-creating
+        // mid-final would re-commit exactly as the `gameId` hop would. Outside
+        // one there is nothing left to protect, and `check-rules` sweeps its
+        // probe pick rather than leave one behind on every run. `prune-rooms`
+        // removes the rest with their room, through the Admin SDK.
+        allow delete: if signedIn()
+          && request.auth.uid == uid
+          && get(/databases/$(database)/documents/rooms/$(code)).data.phase != 'standoff';
       }
     }
 

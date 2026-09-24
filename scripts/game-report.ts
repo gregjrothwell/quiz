@@ -5,8 +5,10 @@ import type {
   RecordedAnswer,
   RecordedPlayer,
   RecordedQuestion,
+  RecordedStandoff,
   RevealTiming,
 } from '../src/engine/gameRecord';
+import { isStandoffPick } from '../src/engine/standoff';
 import { DIFFICULTIES, PACK_IDS, type Difficulty, type PackId } from '../src/questions/types';
 
 /**
@@ -65,6 +67,11 @@ export interface GameSummary {
   hitRate: number | null;
   medianElapsedMs: number | null;
   snaps: number;
+  /**
+   * The Share or Shaft final in one line — who, what they picked, what they put
+   * in — or null for a round that did not end on one.
+   */
+  final: string | null;
 }
 
 export interface KindTally {
@@ -133,6 +140,9 @@ export function summariseGame(
   if (record.stealEnabled) flags.push('steal');
   if (record.jigsawEnabled) flags.push('jigsaw');
 
+  const final = finalLine(record);
+  if (final !== null) flags.push('final');
+
   return {
     gameId,
     roomCode: record.roomCode,
@@ -151,7 +161,40 @@ export function summariseGame(
     ),
     medianElapsedMs: median(played.flatMap(elapsedOf)),
     snaps: questions.reduce((sum, question) => sum + question.snaps, 0),
+    final,
   };
+}
+
+/** `Alex shaft (26,700) v Bea share (22,600)`, highest stake first. */
+function finalLine(record: GameRecord): string | null {
+  const finalists = Object.values(record.players)
+    .flatMap((player) => (player.standoff ? [{ name: player.name, ...player.standoff }] : []))
+    .sort((a, b) => b.stake - a.stake);
+  if (finalists.length === 0) return null;
+  return finalists
+    .map(({ name, pick, stake }) => `${name} ${pick ?? 'no pick'} (${stake.toLocaleString('en-GB')})`)
+    .join(' v ');
+}
+
+/**
+ * How many finals each player reached across the rounds read, most first.
+ *
+ * The one number "switch if it goes stale" needs. Greg's call on 24 September
+ * 2026 was the top two for now and the leader picking their opponent if the
+ * same faces keep turning up — and the round before it, one player would have
+ * been in twelve of seventeen. This is where that shows, rather than being
+ * remembered.
+ */
+export function tallyFinalists(records: GameRecord[]): Array<{ name: string; finals: number }> {
+  const counts = new Map<string, number>();
+  for (const record of records) {
+    for (const player of Object.values(record.players)) {
+      if (player.standoff) counts.set(player.name, (counts.get(player.name) ?? 0) + 1);
+    }
+  }
+  return [...counts]
+    .map(([name, finals]) => ({ name, finals }))
+    .sort((a, b) => b.finals - a.finals || a.name.localeCompare(b.name));
 }
 
 /**
@@ -296,12 +339,22 @@ function parsePlayers(value: unknown): Record<string, RecordedPlayer> | null {
   const players: Record<string, RecordedPlayer> = {};
   for (const [uid, entry] of Object.entries(value)) {
     if (!isObject(entry) || typeof entry.name !== 'string') return null;
+    const standoff = parseStandoff(entry.standoff);
     players[uid] = {
       name: entry.name,
       ...(typeof entry.squad === 'string' ? { squad: entry.squad } : {}),
+      ...(standoff === null ? {} : { standoff }),
     };
   }
   return players;
+}
+
+/** A finalist's entry, or null — a half-written one is dropped rather than printed. */
+function parseStandoff(value: unknown): RecordedStandoff | null {
+  if (!isObject(value) || typeof value.stake !== 'number') return null;
+  const { pick } = value;
+  if (pick !== null && !isStandoffPick(pick)) return null;
+  return { stake: value.stake, pick };
 }
 
 /** A stored document as a `GameRecord`, or null with no guessing. */

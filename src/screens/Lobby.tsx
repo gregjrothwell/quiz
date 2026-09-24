@@ -94,6 +94,7 @@ interface LobbyProps {
     wagerEnabled: boolean,
     stealEnabled: boolean,
     jigsawEnabled: boolean,
+    standoffEnabled: boolean,
   ) => void;
   onLeave: () => void;
 }
@@ -129,6 +130,13 @@ export function Lobby({
     rather than adding a moment to the end of it.
   */
   const [steal, setSteal] = useState(false);
+  /*
+    Off by default and opt-in, for the wager's reason and more so: the top two
+    stake everything they scored, so a round can be won on the questions and
+    lost on a conversation. The room agrees to that before it starts or not at
+    all. See docs/decisions/share-or-shaft.md.
+  */
+  const [standoff, setStandoff] = useState(false);
   const [jigsaw, setJigsaw] = useState(false);
   const [durationSecs, setDurationSecs] = useState<number>(DEFAULT_DURATION_SECS);
   /*
@@ -443,6 +451,37 @@ export function Lobby({
             ) : null}
           </div>
 
+          <div className="stack">
+            <p className="eyebrow">How it ends</p>
+            <div className="picker">
+              <button
+                type="button"
+                className="pick"
+                aria-pressed={!standoff}
+                onClick={() => setStandoff(false)}
+              >
+                <b>On the last answer</b>
+                <span>Top of the board wins</span>
+              </button>
+              <button
+                type="button"
+                className="pick"
+                aria-pressed={standoff}
+                onClick={() => setStandoff(true)}
+              >
+                <b>Share or Shaft</b>
+                <span>The top two play for everything</span>
+              </button>
+            </div>
+            {standoff ? (
+              <p className="muted hint">
+                After the last question the top two put both their scores in one pot, talk it
+                over, then pick in secret. Both share: half each. One shafts: they take the lot.
+                Both shaft: both lose it all, and whoever is third wins. It counts for the season.
+              </p>
+            ) : null}
+          </div>
+
           {packId === 'picture' ? (
             <div className="stack">
               <p className="eyebrow">How the pictures show</p>
@@ -487,7 +526,7 @@ export function Lobby({
             }
             onClick={() =>
               packId &&
-              onStart(packId, effectiveCount, level, durationSecs, wager, steal, jigsaw)
+              onStart(packId, effectiveCount, level, durationSecs, wager, steal, jigsaw, standoff)
             }
           >
             {busy

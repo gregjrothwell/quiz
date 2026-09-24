@@ -244,7 +244,13 @@ textarea {
   at the exact moment somebody is reading a question and choosing an answer.
   It comes back at the reveal, which is when there is something to look at.
 */
-.stage[data-mood='question'] .beams {
+/*
+  The final takes the question's cue for the question's reason: two people are
+  deciding something, and the room's light belongs on them rather than on the
+  rig. It blazes again on the results, like every round.
+*/
+.stage[data-mood='question'] .beams,
+.stage[data-mood='standoff'] .beams {
   opacity: 0.3;
 }
 
@@ -3502,4 +3508,133 @@ select.input option {
   .lede {
     max-width: 46rem;
   }
+}
+
+/* ── Share or Shaft ─────────────────────────────────────────────────────────
+   The final: two seats, the pot, a clock, and then the two words. The seats
+   carry the drama — each shows only what the whole room is allowed to know,
+   which is "locked in" and nothing more until both picks turn over.
+
+   The picks are the one place green and red mean something other than right
+   and wrong, and they borrow those two on purpose: share is the kind outcome
+   and shaft the cruel one, and at the reveal nobody should have to read a
+   word to know which happened.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.standoff {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(0.75rem, 3vw, 1.5rem);
+}
+
+.standoff__seat {
+  text-align: center;
+  padding: clamp(1rem, 3vw, 1.6rem) 0.75rem;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, var(--panel-hi), var(--panel));
+  min-width: 0;
+}
+
+.standoff__seat--you {
+  border-color: var(--cyan-dim);
+}
+
+.standoff__seat p {
+  margin: 0;
+}
+
+.standoff__name {
+  font-family: var(--shout);
+  font-size: clamp(1.3rem, 4vw, 2rem);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
+}
+
+.standoff__you {
+  font-family: var(--body);
+  font-size: 0.8rem;
+  text-transform: none;
+  color: var(--ink-dim);
+}
+
+.standoff__stake {
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  letter-spacing: 0.08em;
+}
+
+/* Two classes, so it outranks the seat's own `p` reset without `!important`. */
+.standoff__seat .standoff__state {
+  margin-top: 0.75rem;
+}
+
+.standoff__state {
+  font-family: var(--tech);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.standoff__state[data-state='locked'] {
+  color: var(--amber);
+}
+
+.standoff__state[data-state='share'],
+.standoff__state[data-state='shaft'] {
+  font-family: var(--shout);
+  font-weight: 400;
+  font-size: clamp(2rem, 8vw, 3.5rem);
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.standoff__state[data-state='share'] {
+  color: var(--correct);
+}
+
+.standoff__state[data-state='shaft'] {
+  color: var(--wrong);
+}
+
+.standoff__stage {
+  align-items: center;
+  text-align: center;
+}
+
+/* Centred copy, full-width controls: the picker and the table keep the
+   column's width rather than shrinking to their content. */
+.standoff__stage .picker,
+.standoff__stage .standings {
+  width: 100%;
+  align-self: stretch;
+  text-align: left;
+}
+
+/* Both buttons lock once a pick is made, but the one chosen stays lit rather
+   than fading with the other — the finalist should see what they locked in. */
+.standoff__stage .pick[aria-pressed='true']:disabled {
+  opacity: 1;
+}
+
+.standoff__clock {
+  margin: 0;
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: clamp(2rem, 7vw, 3rem);
+  line-height: 1;
+  color: var(--cyan);
+  font-variant-numeric: tabular-nums;
+}
+
+.standoff__headline {
+  margin: 0;
+  font-family: var(--shout);
+  font-size: clamp(1.5rem, 5vw, 2.4rem);
+  text-transform: uppercase;
+  line-height: 1.1;
 }

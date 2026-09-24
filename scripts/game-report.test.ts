@@ -7,6 +7,7 @@ import {
   summariseGame,
   summariseQuestion,
   tallyByKind,
+  tallyFinalists,
 } from './game-report';
 
 function textQuestion(index: number, extra: Partial<RecordedQuestion> = {}): RecordedQuestion {
@@ -273,5 +274,44 @@ describe('revealCost', () => {
     ].map((cell) => (cell.indexOf('(') === -1 ? cell.length : cell.indexOf('(') - 1));
 
     expect(new Set(widths).size).toBe(1);
+  });
+});
+
+describe('the final, read back', () => {
+  const withFinal: GameRecord = {
+    ...FOUR_SEATS,
+    players: {
+      ...FOUR_SEATS.players,
+      a: { name: 'A', standoff: { stake: 1_000, pick: 'shaft' } },
+      b: { name: 'B', standoff: { stake: 900, pick: null } },
+    },
+  };
+
+  test('survives the round trip', () => {
+    expect(parseGameRecord(withFinal)).toEqual(withFinal);
+  });
+
+  test('is one line, highest stake first, with a missing pick said as such', () => {
+    const summary = summariseGame('game-1', withFinal, null);
+    expect(summary.final).toBe('A shaft (1,000) v B no pick (900)');
+    expect(summary.flags).toContain('final');
+  });
+
+  test('a round without one says nothing about it', () => {
+    const summary = summariseGame('game-1', FOUR_SEATS, null);
+    expect(summary.final).toBeNull();
+    expect(summary.flags).not.toContain('final');
+  });
+
+  test('a half-written entry is dropped rather than printed', () => {
+    const broken = { ...withFinal, players: { a: { name: 'A', standoff: { pick: 'shaft' } } } };
+    expect(parseGameRecord(broken)?.players['a']).toEqual({ name: 'A' });
+  });
+
+  test('counts who keeps reaching the final, which is what "stale" is judged on', () => {
+    expect(tallyFinalists([withFinal, withFinal, FOUR_SEATS])).toEqual([
+      { name: 'A', finals: 2 },
+      { name: 'B', finals: 2 },
+    ]);
   });
 });
