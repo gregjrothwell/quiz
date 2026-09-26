@@ -1,6 +1,6 @@
 # The question pipeline
 
-> **Owner: Greg Rothwell. Last updated: 24 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 26 September 2026. Budget: 250 lines.**
 
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
@@ -88,6 +88,11 @@ diary in *Bridget Jones's Diary* reads "DIARY", the *Jumanji* box reads
 `sleeve-refusals.ts`. If one is ever wanted, it is a `refuse?: string[]` of TMDB
 file paths on `ScreenSpec`. **The sheet was read by a model**, and the sleeves
 lesson is that a person should look too ([`sleeves-gate.md`](sleeves-gate.md)).
+
+**26 September 2026: 187 → 296** (+42/47/20 e/m/h) on `more-on-the-box`. Fresh easy
+was down to 9. The pre-1990 cap of eight held: 39 draft titles were swapped, not the test.
+Three dropped for printing their answer — WALL·E (on the robot), the Grand Budapest
+(on the facade), Aftersun ("Sun" on the shelves). Model-read sheet again; a person has not.
 
 ## The second question source
 
