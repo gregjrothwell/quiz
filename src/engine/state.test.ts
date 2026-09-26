@@ -19,6 +19,7 @@ import {
   type Question,
   type SealedQuestion,
 } from '../questions/types';
+import { mergeAsked } from './askedHistory';
 
 /** Deterministic pseudo-random source so shuffles are reproducible in tests. */
 function seededRng(seed: number): () => number {
@@ -560,6 +561,79 @@ describe('selectQuestions with a season history', () => {
     */
     expect(picked).toHaveLength(10);
     expect(picked.filter((question) => asked.has(question.id))).toEqual([]);
+  });
+
+  /*
+    The history as the app actually holds it: `recordAsked` writes
+    `mergeAsked(thisRound, previous)`, and `loadAsked` reads the array back into
+    a Set in the same order. Built that way here rather than by hand, so the
+    tests below fail if the storage order ever stops being newest first.
+  */
+  function historyOf(...rounds: SealedQuestion[][]): ReadonlySet<string> {
+    let ids: string[] = [];
+    for (const round of rounds) {
+      ids = mergeAsked(round.map((question) => question.id), new Set(ids));
+    }
+    return new Set(ids);
+  }
+
+  test('a spent pack repeats what it served longest ago, not last round', () => {
+    /*
+      #given a pack of twenty the season has served in full over two rounds.
+      Measured 26 September 2026: Sleeves had 7 of 44 left and Fine Art 24 of
+      49, so this is the next round on both. Repeats were drawn at random from
+      everything served, so yesterday's question was as likely as last month's.
+    */
+    const pool = spread({ easy: 20, medium: 0, hard: 0 });
+    const older = pool.slice(0, 10);
+    const lastRound = pool.slice(10);
+    const asked = historyOf(older, lastRound);
+
+    for (let seed = 1; seed <= 20; seed += 1) {
+      // #when a round of ten is selected
+      const picked = selectQuestions(pool, 10, 'mixed', seededRng(seed), asked);
+
+      // #then every repeat comes from the older round
+      expect(picked.map((question) => question.id).sort()).toEqual(
+        older.map((question) => question.id).sort(),
+      );
+    }
+  });
+
+  test('a part-spent pack takes its fresh questions, then the oldest repeats', () => {
+    // #given twelve questions: four served two rounds ago, four last round, four fresh
+    const pool = spread({ easy: 12, medium: 0, hard: 0 });
+    const oldest = pool.slice(0, 4);
+    const asked = historyOf(oldest, pool.slice(4, 8));
+    const expected = [...oldest, ...pool.slice(8)].map((question) => question.id).sort();
+
+    for (let seed = 1; seed <= 20; seed += 1) {
+      // #when a round of eight is selected
+      const picked = selectQuestions(pool, 8, 'mixed', seededRng(seed), asked);
+
+      // #then it is the four fresh ones and the four served longest ago
+      expect(picked.map((question) => question.id).sort()).toEqual(expected);
+    }
+  });
+
+  test('a ramped round on a spent pack repeats the oldest at every level', () => {
+    // #given a pack of twelve, half served two rounds ago and half last round
+    const pool = spread({ easy: 4, medium: 4, hard: 4 });
+    const older = pool.filter((question) => question.id.endsWith('-0') || question.id.endsWith('-1'));
+    const lastRound = pool.filter((question) => !older.includes(question));
+    const asked = historyOf(older, lastRound);
+
+    for (let seed = 1; seed <= 20; seed += 1) {
+      // #when a ramped round of six is built
+      const picked = selectQuestions(pool, 6, 'ramp', seededRng(seed), asked);
+      const ranks = picked.map((question) => ['easy', 'medium', 'hard'].indexOf(question.difficulty));
+
+      // #then it still climbs, and every question in it is from the older round
+      expect([...ranks].sort((a, b) => a - b)).toEqual(ranks);
+      expect(picked.map((question) => question.id).sort()).toEqual(
+        older.map((question) => question.id).sort(),
+      );
+    }
   });
 
   test('an empty history behaves exactly as before', () => {
