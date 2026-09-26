@@ -169,11 +169,11 @@
     "id": "screens",
     "title": "On the box",
     "blurb": "Film and TV from a still. Untitled backdrops, no jigsaw.",
-    "count": 187,
+    "count": 296,
     "counts": {
-      "easy": 54,
-      "medium": 98,
-      "hard": 35
+      "easy": 96,
+      "medium": 145,
+      "hard": 55
     }
   }
 ]
