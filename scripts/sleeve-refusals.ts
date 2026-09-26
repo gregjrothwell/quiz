@@ -82,4 +82,16 @@ export const SLEEVE_HAND_REFUSALS: Record<string, string> = {
   // name merely contains the album's, the californication shape again.
   'dua-lipa-2017': 'resolved to “Dua Lipa - Live from the Royal Albert Hall”, not the album',
   'lust-for-life-ldr': 'resolved to a BloodPop remix single, not the album',
+
+  // Fourth batch, same afternoon, same model pass. Eight of 26 new clears.
+  'sasha-fierce': '“I AM…” bottom right, “BEYONCÉ” bottom left',
+  'rated-r': '“R A T E D R” letterspaced along the bottom',
+  'kiwanuka-album': '“KIWANUKA” above the portrait',
+  'planet-her': '“PLANET HER · DOJA CAT” down the left-hand edge',
+  'scorpion-drake': '“SCORPION 2018” handwritten under the signature',
+  abraxas: '“SANTANA ABRAXAS” in the red lettering, top right',
+  'sound-of-silver': '“LCD SOUNDSYSTEM SOUND OF SILVER” across the middle',
+  // Not the title, but the answer all the same: her name is on the sash, and
+  // with one album to her name every distractor is somebody else's.
+  'midwest-princess': '“CHAPPELL” on the sash, and all three distractors are other artists',
 };
