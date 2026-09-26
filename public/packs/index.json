@@ -124,24 +124,13 @@
     "id": "picture",
     "title": "Fine Art",
     "blurb": "Paintings, a landmark and a photograph. Optional 3×3 jigsaw.",
-    "count": 102,
+    "count": 49,
     "counts": {
-      "easy": 35,
-      "medium": 47,
-      "hard": 20
+      "easy": 27,
+      "medium": 22,
+      "hard": 0
     },
-    "jigsawCount": 101
-  },
-  {
-    "id": "tunes",
-    "title": "Name that Tune",
-    "blurb": "A clip from Apple Music. Hear it again if you miss the hook.",
-    "count": 177,
-    "counts": {
-      "easy": 68,
-      "medium": 62,
-      "hard": 47
-    }
+    "jigsawCount": 48
   },
   {
     "id": "flags",
@@ -152,6 +141,17 @@
       "easy": 24,
       "medium": 26,
       "hard": 26
+    }
+  },
+  {
+    "id": "tunes",
+    "title": "Name that Tune",
+    "blurb": "A clip from Apple Music. Hear it again if you miss the hook.",
+    "count": 177,
+    "counts": {
+      "easy": 68,
+      "medium": 62,
+      "hard": 47
     }
   },
   {
