@@ -190,6 +190,10 @@ async function main(): Promise<void> {
     make loud rather than silent. One document read.
   */
   const soonest = await db.collection('rooms').orderBy('expiresAt').limit(1).get();
+  // How many are due for `prune-rooms`. One aggregation read.
+  const expired = (
+    await db.collection('rooms').where('expiresAt', '<', new Date()).count().get()
+  ).data().count;
   const soonestAt = soonest.docs[0]?.get('expiresAt') as { toDate(): Date } | undefined;
 
   console.log(`\nFirestore, ${new Date().toISOString().slice(0, 10)}\n`);
@@ -253,34 +257,46 @@ async function main(): Promise<void> {
   }
 
   /*
-    A game is roughly 800–1,500 reads, measured before any of the season work.
-    What that work added is small and worth stating exactly, because the shape of
-    this project is that everything is paid for out of one free tier:
+    What a round costs, sized to the biggest room actually played recently
+    rather than to a fixed six. This block used to print six players and "this
+    is a weekly quiz" long after the office was playing daily with nine.
 
-      - the opening titles: one read per player, once, by whoever starts
-      - banking a game: one transaction read per player, as before
-      - a claimed identity: one extra rule read per season write, once per game
+    The round is `cost.md`'s formula: every client holds an unfiltered listener
+    on the answers, so each answer is delivered to all N — `Q·N²` — plus about
+    three room-document transitions per question per client. On top of it:
+
+      - the opening titles: one read per player, once, by whoever starts, and
+        one each for the fan-out
       - the season table: up to 50 reads per person who opens it
   */
-  const perGame = 1_500 + 12;
-  const boardVisits = 6 * 50;
-  const perNight = perGame + boardVisits;
+  const seats = Math.max(6, ...rounds.map((round) => round.players));
+  const length = Math.max(15, ...rounds.map((round) => round.questions));
+  const roundReads = (players: number): number => length * players * players + 3 * length * players;
+  const titles = 2 * seats;
+  const boardVisits = seats * 50;
+  const perRound = roundReads(seats) + titles + boardVisits;
+  const en = (value: number): string => value.toLocaleString('en-GB');
 
-  console.log(`\n  reads, six players, worst case`);
-  console.log(`    the round itself         ~${(1_500).toLocaleString('en-GB')}`);
-  console.log(`    the opening titles       ~12   (six for the digest, six for the fan-out)`);
-  console.log(`    everyone opening the board ${boardVisits}   (the table is capped at 50 rows)`);
+  console.log(`\n  reads, ${seats} players and ${length} questions (the biggest recent room), worst case`);
+  console.log(`    the round itself         ~${en(roundReads(seats))}   (Q·N² + 3·Q·N, see cost.md)`);
+  console.log(`    the opening titles       ~${en(titles)}`);
+  console.log(`    everyone opening the board ${en(boardVisits)}   (the table is capped at 50 rows)`);
   console.log(`    ────────────────────────────`);
-  console.log(`    a full quiz night        ~${perNight.toLocaleString('en-GB')}`);
-  console.log(`\n  So about ${Math.floor(DAILY_READS / perNight)} full nights a day against the ${DAILY_READS.toLocaleString('en-GB')}-read free tier —`);
-  console.log(`  and this is a weekly quiz. Writes are nowhere near: a game is well`);
-  console.log(`  under 200 against ${DAILY_WRITES.toLocaleString('en-GB')} a day.`);
+  console.log(`    a full round             ~${en(perRound)}`);
+  console.log(`\n  So about ${Math.floor(DAILY_READS / perRound)} of those a day against the ${en(DAILY_READS)}-read free tier,`);
+  console.log(`  which resets around midnight Pacific — 08:00 in the UK. Writes are nowhere`);
+  console.log(`  near: a game is well under 200 against ${en(DAILY_WRITES)} a day.`);
   console.log(`\n  The board line above is the worst case, not the usual one — the table`);
   console.log(`  is cached for a minute, so bouncing in and out of it costs one read set.`);
-  console.log(`\n  All of this is for SIX players. The answers subcollection fans out to`);
-  console.log(`  every client, so the round itself grows with the SQUARE of the room:`);
-  console.log(`  twelve players is roughly 2,700 reads and twenty-five is roughly`);
-  console.log(`  10,500. See docs/decisions/cost.md before assuming a bigger room is fine.\n`);
+  console.log(`\n  The round grows with the SQUARE of the room: ${seats * 2} players is roughly`);
+  console.log(`  ${en(roundReads(seats * 2))} reads for the round alone. See docs/decisions/cost.md first.`);
+  console.log(`\n  A bare \`seed-vault\` reads every vault answer: ${en(vault)} today, ${Math.round((vault / DAILY_READS) * 100)}% of`);
+  console.log(`  the day, from the same pool. For a top-up, \`--pack <id>\` reads one pack.\n`);
+
+  if (expired > 0) {
+    console.log(`  ${en(expired)} rooms are past their expiry. \`npm run prune-rooms\` lists them;`);
+    console.log('  `-- --go` deletes them. Nothing does this automatically on Spark.\n');
+  }
 
   if (expirable < rooms) {
     console.log(`  ${(rooms - expirable).toLocaleString('en-GB')} rooms predate \`expiresAt\` and no TTL policy can reach them.`);
