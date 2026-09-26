@@ -91,6 +91,59 @@ also appears on-screen.
 - John Singer Sargent, Madame X (1883–84). The Met, 16.53, CC0. Sargent d. 1925.
 - Pieter Bruegel the Elder, The Harvesters (1565). The Met, 19.164, CC0.
 - Winslow Homer, The Gulf Stream (1899). The Met, 06.1234, CC0. Homer d. 1910.
+- Leonardo da Vinci, Mona Lisa (c. 1503–1519). Wikimedia Commons, PD-Art (Leonardo d. 1519).
+- Leonardo da Vinci, The Last Supper (1495–1498). Wikimedia Commons, PD-Art (Leonardo d. 1519).
+- Leonardo da Vinci, Lady with an Ermine (c. 1489–1491). Wikimedia Commons, PD-Art (Leonardo d. 1519).
+- Michelangelo, The Creation of Adam (c. 1512). Wikimedia Commons, PD-Art (Michelangelo d. 1564).
+- Raphael, The School of Athens (1509–1511). Wikimedia Commons, PD-Art (Raphael d. 1520).
+- Johannes Vermeer, Girl with a Pearl Earring (c. 1665). Wikimedia Commons, PD-Art (Vermeer d. 1675).
+- Johannes Vermeer, The Milkmaid (c. 1658). Wikimedia Commons, PD-Art (Vermeer d. 1675).
+- Sandro Botticelli, Primavera (c. 1480). Wikimedia Commons, PD-Art (Botticelli d. 1510).
+- Pieter Bruegel the Elder, The Tower of Babel (1563). Wikimedia Commons, PD-Art (Elder d. 1569).
+- Pieter Bruegel the Elder, Netherlandish Proverbs (1559). Wikimedia Commons, PD-Art (Elder d. 1569).
+- Rembrandt, The Anatomy Lesson of Dr Nicolaes Tulp (1632). Wikimedia Commons, PD-Art (Rembrandt d. 1669).
+- Frans Hals, The Laughing Cavalier (1624). Wikimedia Commons, PD-Art (Hals d. 1666).
+- Caravaggio, The Supper at Emmaus (1601). Wikimedia Commons, PD-Art (Caravaggio d. 1610).
+- Caravaggio, The Calling of Saint Matthew (1599–1600). Wikimedia Commons, PD-Art (Caravaggio d. 1610).
+- J. M. W. Turner, Snow Storm: Hannibal and his Army Crossing the Alps (1812). Wikimedia Commons, PD-Art (Turner d. 1851).
+- J. M. W. Turner, The Burning of the Houses of Lords and Commons (1834). Wikimedia Commons, PD-Art (Turner d. 1851).
+- John Everett Millais, Ophelia (1851–1852). Wikimedia Commons, PD-Art (Millais d. 1896).
+- John William Waterhouse, The Lady of Shalott (1888). Wikimedia Commons, PD-Art (Waterhouse d. 1917).
+- After Hans Holbein the Younger, Portrait of Henry VIII (c. 1537–1547). Wikimedia Commons, PD-Art (Holbein d. 1543).
+- Unknown English artist, The Armada Portrait (c. 1588). Wikimedia Commons, PD-Art.
+- Joseph Wright of Derby, An Experiment on a Bird in the Air Pump (1768). Wikimedia Commons, PD-Art (Derby d. 1797).
+- James McNeill Whistler, Nocturne in Black and Gold – The Falling Rocket (1875). Wikimedia Commons, PD-Art (Whistler d. 1903).
+- John Singer Sargent, Carnation, Lily, Lily, Rose (1885–1886). Wikimedia Commons, PD-Art (Sargent d. 1925).
+- Henri Rousseau, The Sleeping Gypsy (1897). Wikimedia Commons, PD-Art (Rousseau d. 1910).
+- Paul Gauguin, Tahitian Women on the Beach (1891). Wikimedia Commons, PD-Art (Gauguin d. 1903).
+- Henri de Toulouse-Lautrec, At the Moulin Rouge (1892–1895). Wikimedia Commons, PD-Art (Toulouse-Lautrec d. 1901).
+- Pierre-Auguste Renoir, Bal du moulin de la Galette (1876). Wikimedia Commons, PD-Art (Renoir d. 1919).
+- Edgar Degas, L’Absinthe (1875–1876). Wikimedia Commons, PD-Art (Degas d. 1917).
+- Claude Monet, Woman with a Parasol (1875). Wikimedia Commons, PD-Art (Monet d. 1926).
+- Claude Monet, Poppy Field (1873). Wikimedia Commons, PD-Art (Monet d. 1926).
+- Claude Monet, Haystacks (1890–1891). Wikimedia Commons, PD-Art (Monet d. 1926).
+- Vincent van Gogh, Café Terrace at Night (1888). Wikimedia Commons, PD-Art (Gogh d. 1890).
+- Vincent van Gogh, The Bedroom (1888). Wikimedia Commons, PD-Art (Gogh d. 1890).
+- Vincent van Gogh, Irises (1889). Wikimedia Commons, PD-Art (Gogh d. 1890).
+- Vincent van Gogh, Almond Blossoms (1890). Wikimedia Commons, PD-Art (Gogh d. 1890).
+- Vincent van Gogh, Self-Portrait with Bandaged Ear (1889). Wikimedia Commons, PD-Art (Gogh d. 1890).
+- Vincent van Gogh, Wheatfield with Crows (1890). Wikimedia Commons, PD-Art (Gogh d. 1890).
+- Vincent van Gogh, The Potato Eaters (1885). Wikimedia Commons, PD-Art (Gogh d. 1890).
+- Gustav Klimt, Portrait of Adele Bloch-Bauer I (1907). Wikimedia Commons, PD-Art (Klimt d. 1918).
+- Gustav Klimt, The Tree of Life (1909). Wikimedia Commons, PD-Art (Klimt d. 1918).
+- Wassily Kandinsky, Composition VII (1913). Wikimedia Commons, PD-Art (Kandinsky d. 1944).
+- Piet Mondrian, Composition with Red, Blue and Yellow (1930). Wikimedia Commons, PD-Art (Mondrian d. 1944).
+- Giuseppe Arcimboldo, Vertumnus (1591). Wikimedia Commons, PD-Art (Arcimboldo d. 1593).
+- Titian, Bacchus and Ariadne (1520–1523). Wikimedia Commons, PD-Art (Titian d. 1576).
+- Georges Seurat, Bathers at Asnières (1884). Wikimedia Commons, PD-Art (Seurat d. 1891).
+- Jean-Honoré Fragonard, The Swing (1767). Wikimedia Commons, PD-Art (Fragonard d. 1806).
+- Jean-François Millet, The Gleaners (1857). Wikimedia Commons, PD-Art (Millet d. 1875).
+- Jean-François Millet, The Angelus (1857–1859). Wikimedia Commons, PD-Art (Millet d. 1875).
+- Henry Fuseli, The Nightmare (1781). Wikimedia Commons, PD-Art (Fuseli d. 1825).
+- Paul Delaroche, The Execution of Lady Jane Grey (1833). Wikimedia Commons, PD-Art (Delaroche d. 1856).
+- William Holman Hunt, The Light of the World (1851–1853). Wikimedia Commons, PD-Art (Hunt d. 1910).
+- John Everett Millais, Bubbles (1886). Wikimedia Commons, PD-Art (Millais d. 1896).
+- Edwin Landseer, The Monarch of the Glen (1851). Wikimedia Commons, PD-Art (Landseer d. 1873).
 
 ## Flags
 

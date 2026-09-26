@@ -124,24 +124,13 @@
     "id": "picture",
     "title": "Fine Art",
     "blurb": "Paintings, a landmark and a photograph. Optional 3×3 jigsaw.",
-    "count": 49,
+    "count": 102,
     "counts": {
-      "easy": 27,
-      "medium": 22,
-      "hard": 0
+      "easy": 35,
+      "medium": 47,
+      "hard": 20
     },
-    "jigsawCount": 48
-  },
-  {
-    "id": "flags",
-    "title": "Flags",
-    "blurb": "Countries and the home nations. No jigsaw — a scrambled Union Jack is still a Union Jack.",
-    "count": 76,
-    "counts": {
-      "easy": 24,
-      "medium": 26,
-      "hard": 26
-    }
+    "jigsawCount": 101
   },
   {
     "id": "tunes",
@@ -152,6 +141,17 @@
       "easy": 68,
       "medium": 62,
       "hard": 47
+    }
+  },
+  {
+    "id": "flags",
+    "title": "Flags",
+    "blurb": "Countries and the home nations. No jigsaw — a scrambled Union Jack is still a Union Jack.",
+    "count": 76,
+    "counts": {
+      "easy": 24,
+      "medium": 26,
+      "hard": 26
     }
   },
   {
