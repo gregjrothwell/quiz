@@ -19,7 +19,8 @@ Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reach
 
 **The limit that was actually close was the vault seed.** A bare seed reads
 every answer: 14,266 reads, 29% of the day. `npm run seed-vault -- --pack <id>`
-now reads only that pack. `take-stock` now sizes its estimate to the biggest
+now reads only that pack — run live the same day as `--pack screens`: 187 read,
+187 present, nothing written. `take-stock` now sizes its estimate to the biggest
 recent room instead of a fixed six, and counts rooms past expiry: 56.
 
 **What runs out first is questions, not reads.** See
