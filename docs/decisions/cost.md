@@ -1,9 +1,29 @@
 # What it costs
 
-> **Owner: Greg Rothwell. Last updated: 20 August 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 26 September 2026. Budget: 250 lines.**
 
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
+
+## Revisited 26 September 2026 — the office plays daily now
+
+**Limits verified against the providers' own pages that day:**
+
+| Limit | Source says | Here |
+|---|---|---|
+| Firestore reads (Spark) | 50,000 a day, *"reset around midnight Pacific time"*, which is 08:00 UK | about 2,100 for a 9-player, 15-question round (estimated with the formula below) |
+| RTDB connections (Spark) | 100; *"one mobile device, browser tab, or server app"* | about 9. **The page does not say what happens at 100.** "Refused rather than degraded", below, is not from the docs |
+| Auth | 100 new accounts an hour per IP; 100 million anonymous | 799 anonymous accounts, 423 idle over 30 days; the test scripts create most of them |
+| reCAPTCHA (App Check) | 10,000 free assessments a month, **per organisation**; what happens past it is not stated | not visible without the console. Auto-refresh is on, so every open tab re-attests through the day |
+| GitHub Pages | 1 GB site (hard), 100 GB a month (soft) | 35.7 MB |
+
+**The limit that was actually close was the vault seed.** A bare seed reads
+every answer: 14,266 reads, 29% of the day. `npm run seed-vault -- --pack <id>`
+now reads only that pack. `take-stock` now sizes its estimate to the biggest
+recent room instead of a fixed six, and counts rooms past expiry: 56.
+
+**What runs out first is questions, not reads.** See
+[`repeats.md`](repeats.md#26-september-2026--a-spent-pack-repeats-its-oldest-questions-first).
 
 ## Measured live, 28 August 2026
 
