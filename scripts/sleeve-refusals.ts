@@ -62,4 +62,24 @@ export const SLEEVE_HAND_REFUSALS: Record<string, string> = {
   'harvest-neil': '“Harvest — Neil Young” in the centre',
   'after-the-gold-rush': '“AFTER THE GOLD RUSH • NEIL YOUNG” across the top',
   doolittle: '“Doolittle” top left, “PIXIES” top right',
+
+  // The third batch, 26 September 2026. Read by a model at 400px, full size
+  // where there was doubt — a person has not done this pass yet. Eleven of the
+  // 55 new covers Vision cleared print their title, some only as initials.
+  'the-doors-album': '“the doors” logo, which is the album’s title as well as the band’s',
+  'whitney-1987': '“Whitney” in script, top left',
+  'sour-or': '“SOUR” on the sticker on her tongue',
+  'guts-or': '“GUTS” spelt out in the rings on her fingers',
+  'heavy-is-the-head': '“h.i.t.h” on the crown — the title’s initials',
+  'mylo-xyloto': '“MX” as the whole design — the title’s initials',
+  'queen-ii': '“Queen II” logo, top left',
+  'songs-in-the-key-of-life': '“Songs in the Key of Life” in script round the rings',
+  'settle-disclosure': '“DISCLOSURE SETTLE” across the top',
+  'alright-still': '“ALRIGHT, STILL” in the artwork behind her',
+  'spice-album': '“SPICE” as the whole cover',
+
+  // Not a giveaway: the wrong picture. `titleMatches` accepted a release whose
+  // name merely contains the album's, the californication shape again.
+  'dua-lipa-2017': 'resolved to “Dua Lipa - Live from the Royal Albert Hall”, not the album',
+  'lust-for-life-ldr': 'resolved to a BloodPop remix single, not the album',
 };

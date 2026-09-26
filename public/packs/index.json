@@ -158,11 +158,11 @@
     "id": "sleeves",
     "title": "Sleeves",
     "blurb": "Name the album from the cover. Artwork streamed from Apple, never stored here.",
-    "count": 44,
+    "count": 86,
     "counts": {
-      "easy": 12,
-      "medium": 20,
-      "hard": 12
+      "easy": 14,
+      "medium": 47,
+      "hard": 25
     }
   },
   {
