@@ -94,6 +94,9 @@ was down to 9. The pre-1990 cap of eight held: 39 draft titles were swapped, not
 Three dropped for printing their answer — WALL·E (on the robot), the Grand Budapest
 (on the facade), Aftersun ("Sun" on the shelves). Model-read sheet again; a person has not.
 
+**Fine Art, 26 September 2026: 49 → 102**, the first hard rung (8/25/20). PD-Art via
+the Commons search API; one dropped and four re-sourced for text or wrong files.
+
 ## The second question source
 
 **Shipped.** Sport was 125 questions — a fifteen-question round is 12% of the
