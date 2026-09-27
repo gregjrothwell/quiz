@@ -275,6 +275,3 @@ if (runningDirect) {
     process.exitCode = 1;
   });
 }
-
-export { readCovers, asModule };
-export type { Row };

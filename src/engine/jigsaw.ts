@@ -1,21 +1,8 @@
+import { shuffle, type Rng } from './state';
+
 /** Locked 4 September 2026. Spec was silent; 3×3 matches the 9s clock lead. */
 export const JIGSAW_GRID = 3;
 export const JIGSAW_TILES = JIGSAW_GRID * JIGSAW_GRID;
-
-type Rng = () => number;
-
-function shuffle<T>(items: readonly T[], rng: Rng): T[] {
-  const result = [...items];
-  for (let i = result.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(rng() * (i + 1));
-    const a = result[i];
-    const b = result[j];
-    if (a === undefined || b === undefined) continue;
-    result[i] = b;
-    result[j] = a;
-  }
-  return result;
-}
 
 /**
  * A mulberry32-style generator from a pair of strings every client already
