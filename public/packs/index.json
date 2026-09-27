@@ -147,11 +147,11 @@
     "id": "tunes",
     "title": "Name that Tune",
     "blurb": "A clip from Apple Music. Hear it again if you miss the hook.",
-    "count": 177,
+    "count": 268,
     "counts": {
-      "easy": 68,
-      "medium": 62,
-      "hard": 47
+      "easy": 115,
+      "medium": 104,
+      "hard": 49
     }
   },
   {
