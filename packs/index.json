@@ -147,33 +147,33 @@
     "id": "tunes",
     "title": "Name that Tune",
     "blurb": "A clip from Apple Music. Hear it again if you miss the hook.",
-    "count": 177,
+    "count": 268,
     "counts": {
-      "easy": 68,
-      "medium": 62,
-      "hard": 47
+      "easy": 115,
+      "medium": 104,
+      "hard": 49
     }
   },
   {
     "id": "sleeves",
     "title": "Sleeves",
     "blurb": "Name the album from the cover. Artwork streamed from Apple, never stored here.",
-    "count": 44,
+    "count": 104,
     "counts": {
-      "easy": 12,
-      "medium": 20,
-      "hard": 12
+      "easy": 14,
+      "medium": 59,
+      "hard": 31
     }
   },
   {
     "id": "screens",
     "title": "On the box",
     "blurb": "Film and TV from a still. Untitled backdrops, no jigsaw.",
-    "count": 187,
+    "count": 296,
     "counts": {
-      "easy": 54,
-      "medium": 98,
-      "hard": 35
+      "easy": 96,
+      "medium": 145,
+      "hard": 55
     }
   }
 ]
