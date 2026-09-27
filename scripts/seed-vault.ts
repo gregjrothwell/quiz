@@ -23,6 +23,15 @@
  * key; `npm run check-rules` catches the seeding ruleset being left live.
  *
  * Safe to re-run either way: same ids, same values.
+ *
+ * **For a top-up, name the pack**:
+ *
+ *   npm run seed-vault -- --pack screens
+ *   npm run seed-vault -- --pack screens,sleeves
+ *
+ * Without `--pack` the service-account path reads every answer in the vault to
+ * work out what is new — one read each, from the same 50,000 a day the office
+ * plays on. With it, it reads only that pack's ids. See `vault-scope.ts`.
  */
 
 import { readFile } from 'node:fs/promises';
@@ -33,8 +42,10 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { doc, getFirestore, writeBatch } from 'firebase/firestore';
 import { HAND_VAULT_CACHE } from './write-hand-packs';
+import { packArgs, scopeToPacks, type PackIds } from './vault-scope';
 
 const VAULT_CACHE = join(import.meta.dirname, '..', '.cache', 'vault.json');
+const PACKS_DIR = join(import.meta.dirname, '..', 'public', 'packs');
 
 /** Firestore's own cap on a batched write. */
 const BATCH_SIZE = 500;
@@ -76,6 +87,34 @@ async function loadAnswers(): Promise<Record<string, string>> {
   return { ...harvested, ...hand, ...HARNESS_ANSWERS };
 }
 
+async function loadPack(id: string): Promise<PackIds> {
+  const raw = await readFile(join(PACKS_DIR, `${id}.json`), 'utf8').catch(() => null);
+  if (raw === null) throw new Error(`No pack called "${id}" in public/packs/.`);
+  return JSON.parse(raw) as PackIds;
+}
+
+/**
+ * The answers this run is responsible for: all of them, or only the named
+ * packs'. A named pack with a question the cache cannot answer stops the run —
+ * seeding round it would leave a pack that stalls at the reveal and a report
+ * that says "done".
+ */
+async function answersInScope(packIds: readonly string[]): Promise<Record<string, string>> {
+  const answers = await loadAnswers();
+  if (packIds.length === 0) return answers;
+
+  const packs = await Promise.all(packIds.map(loadPack));
+  const { answers: scoped, missing } = scopeToPacks(answers, packs);
+  if (missing.length > 0) {
+    throw new Error(
+      `${missing.length} question(s) in ${packIds.join(', ')} have no answer in the cache: `
+        + `${missing.slice(0, 5).join(', ')}${missing.length > 5 ? ', …' : ''}. `
+        + 'Rebuild the pack and its answers together before seeding.',
+    );
+  }
+  return scoped;
+}
+
 interface Outcome {
   added: number;
   changed: number;
@@ -91,19 +130,37 @@ interface Outcome {
  * question text, so an id that already exists with a different answer means the
  * upstream source revised the answer to a question we are already asking.
  */
-async function seedAsAdmin(keyPath: string): Promise<Outcome> {
+async function seedAsAdmin(
+  keyPath: string,
+  answers: Record<string, string>,
+  scoped: boolean,
+): Promise<Outcome> {
   const key = JSON.parse(await readFile(keyPath, 'utf8')) as ServiceAccount;
   const app = initAdmin({ credential: cert(key) }, 'seed-vault-admin');
   const db = getAdminFirestore(app);
 
-  const answers = await loadAnswers();
   const existing = new Map<string, string>();
 
-  const snapshot = await db.collection('vault').get();
-  for (const document of snapshot.docs) {
-    existing.set(document.id, (document.data() as { a?: string }).a ?? '');
+  if (scoped) {
+    // One read per id in scope, and no more: `getAll` fetches exactly these.
+    const ids = Object.keys(answers);
+    for (let start = 0; start < ids.length; start += BATCH_SIZE) {
+      const refs = ids.slice(start, start + BATCH_SIZE).map((id) => db.collection('vault').doc(id));
+      for (const document of await db.getAll(...refs)) {
+        if (document.exists) existing.set(document.id, (document.data() as { a?: string }).a ?? '');
+      }
+    }
+    console.log(`Read ${ids.length} vault ids; ${existing.size} already there.`);
+  } else {
+    const snapshot = await db.collection('vault').get();
+    for (const document of snapshot.docs) {
+      existing.set(document.id, (document.data() as { a?: string }).a ?? '');
+    }
+    console.log(
+      `Vault currently holds ${existing.size} answers — that was ${existing.size} reads `
+        + `of the 50,000 free today. For a top-up, \`--pack <id>\` reads only that pack.`,
+    );
   }
-  console.log(`Vault currently holds ${existing.size} answers.`);
 
   const pending = Object.entries(answers).filter(([id, a]) => existing.get(id) !== a);
   const changed = pending.filter(([id]) => existing.has(id));
@@ -134,7 +191,7 @@ async function seedAsAdmin(keyPath: string): Promise<Outcome> {
  * The unprivileged path. Cannot read the vault, so it cannot tell what is
  * already there and writes everything.
  */
-async function seedAnonymously(): Promise<Outcome> {
+async function seedAnonymously(answers: Record<string, string>): Promise<Outcome> {
   const config = {
     apiKey: required('VITE_FIREBASE_API_KEY'),
     authDomain: required('VITE_FIREBASE_AUTH_DOMAIN'),
@@ -142,7 +199,6 @@ async function seedAnonymously(): Promise<Outcome> {
     appId: required('VITE_FIREBASE_APP_ID'),
   };
 
-  const answers = await loadAnswers();
   const app = initializeApp(config, 'seed-vault');
   await signInAnonymously(getAuth(app));
   const db = getFirestore(app);
@@ -167,20 +223,26 @@ async function main(): Promise<void> {
   const keyPath = process.env['GOOGLE_APPLICATION_CREDENTIALS'];
   const projectId = required('VITE_FIREBASE_PROJECT_ID');
 
-  console.log(`Seeding the vault in ${projectId}.`);
+  const packIds = packArgs(process.argv);
+  const answers = await answersInScope(packIds);
+
+  console.log(
+    `Seeding the vault in ${projectId}`
+      + (packIds.length > 0 ? `, ${packIds.join(', ')} only.` : '.'),
+  );
 
   let outcome: Outcome;
 
   if (keyPath) {
     console.log(`Using the service account at ${keyPath} — no rules to publish.\n`);
-    outcome = await seedAsAdmin(keyPath);
+    outcome = await seedAsAdmin(keyPath, answers, packIds.length > 0);
   } else {
     console.log(
       'No GOOGLE_APPLICATION_CREDENTIALS — falling back to anonymous auth.\n'
         + 'This needs firestore.seed.rules published, and rewrites every answer.\n'
         + 'See README step 4 for the service-account route, which needs neither.\n',
     );
-    outcome = await seedAnonymously();
+    outcome = await seedAnonymously(answers);
   }
 
   if (outcome.added === 0 && outcome.changed === 0) {

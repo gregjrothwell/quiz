@@ -1,6 +1,6 @@
 # Clips that say their own name
 
-> **Owner: Greg Rothwell. Last updated: 22 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 27 September 2026. Budget: 250 lines.**
 
 Split out of [`tunes-round.md`](tunes-round.md) on 22 September 2026, at 253
 lines against a 250 budget. **Moved verbatim; only where it lives has changed**
@@ -149,3 +149,23 @@ Seven are still empty with the detector off — `summer-of-69`, `le-freak`,
 `wake-me-up`. They are counted clean and **the audit names them**, because
 "nothing was heard" and "nothing is there" look identical in a tally. Seven
 clips is a job for an ear; 177 is not.
+
+## Third batch, 26–27 September 2026: 177 → 268
+
+104 drafted on the same brief. **Ten resolved to the wrong recording** — a
+demo, an acoustic single, a live album, an extended instrumental, four remixes,
+two edits — because `resolveSong` takes the first search hit whose name merely
+contains the title. Nine were steered to the studio track by naming the album
+in `term`; Poker Face never surfaces in GB search and was dropped. Checked by
+looking every new `trackId` up, not by trusting the search.
+
+**The audit re-derived all 177 existing cuts exactly** before its new numbers
+were used — the instrument agreeing with itself on known answers. Of the new
+103: 54 clean, 17 trimmed, 20 shifted, **12 unavoidable and left out** (Stand by
+Me, Walking on Sunshine, Levitating…) — for a new song, avoiding the giveaway is
+always possible. Whisper ran at ~2.5 minutes a clip, not the 20 seconds above.
+
+Five new clips transcribed to nothing even forced — `live-forever`,
+`golden-touch`, `build-me-up-buttercup`, `call-the-shots`, `gangnam-style` —
+counted clean, **a job for an ear**, like the seven before them.
+

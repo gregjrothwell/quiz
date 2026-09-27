@@ -40,6 +40,8 @@ const TITLE_ALIASES: Record<string, string[]> = {
   'Harry Potter and the Philosopher\'s Stone': ["Harry Potter and the Sorcerer's Stone"],
   'Mamma Mia!': ['Mamma Mia'],
   'Avengers: Endgame': ['Avengers Endgame'],
+  // The UK release title; TMDB lists it under the US one.
+  Zootropolis: ['Zootopia'],
 };
 
 const TMDB_CACHE = join(import.meta.dirname, '..', '.cache', 'tmdb-lookup.json');

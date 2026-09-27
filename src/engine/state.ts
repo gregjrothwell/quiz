@@ -490,14 +490,20 @@ export function rampPlan(count: number): Record<Difficulty, number> {
   return { easy, hard, medium: Math.max(0, wanted - easy - hard) };
 }
 
+/**
+ * Splits a pool by level. `order` decides what the front of each bucket is:
+ * a shuffle for fresh questions, and for repeats the order they arrived in —
+ * oldest first, from {@link partitionByAsked} — so taking from the front takes
+ * what the season served longest ago.
+ */
 function bucketByDifficulty(
   pool: readonly SealedQuestion[],
-  rng: Rng,
+  order: (bucket: SealedQuestion[]) => SealedQuestion[],
 ): Record<Difficulty, SealedQuestion[]> {
   return {
-    easy: shuffle(pool.filter((question) => question.difficulty === 'easy'), rng),
-    medium: shuffle(pool.filter((question) => question.difficulty === 'medium'), rng),
-    hard: shuffle(pool.filter((question) => question.difficulty === 'hard'), rng),
+    easy: order(pool.filter((question) => question.difficulty === 'easy')),
+    medium: order(pool.filter((question) => question.difficulty === 'medium')),
+    hard: order(pool.filter((question) => question.difficulty === 'hard')),
   };
 }
 
@@ -528,8 +534,13 @@ function buildRamp(
   const plan = rampPlan(count);
   const picked: SealedQuestion[] = [];
 
-  for (const pool of [fresh, repeats]) {
-    const buckets = bucketByDifficulty(pool, rng);
+  const passes = [
+    { pool: fresh, order: (bucket: SealedQuestion[]) => shuffle(bucket, rng) },
+    { pool: repeats, order: (bucket: SealedQuestion[]) => bucket },
+  ];
+
+  for (const { pool, order } of passes) {
+    const buckets = bucketByDifficulty(pool, order);
 
     for (const level of DIFFICULTIES) {
       const held = picked.filter((question) => question.difficulty === level).length;
@@ -577,6 +588,19 @@ function partitionByAsked(
     (asked.has(question.id) ? repeats : fresh).push(question);
   }
 
+  /*
+    Repeats come back oldest first. `asked` iterates newest first — `mergeAsked`
+    puts each round's ids at the front and `loadAsked` keeps the array's order —
+    so the further along a question sits, the longer ago it was served.
+
+    Random repeats were fine while every pack was deep. By 26 September 2026
+    Sleeves had 7 fresh of 44 and Fine Art 24 of 49, so the next round on either
+    is mostly repeats, and a random one is as likely to be yesterday's question
+    as last month's.
+  */
+  const position = new Map([...asked].map((id, index) => [id, index]));
+  repeats.sort((a, b) => (position.get(b.id) ?? 0) - (position.get(a.id) ?? 0));
+
   return { fresh, repeats };
 }
 
@@ -585,7 +609,7 @@ function partitionByAsked(
  * Returns fewer than `count` only when the pool genuinely cannot supply them.
  *
  * `asked` is what the season has already served. Those questions go to the back
- * of the queue rather than being removed: a thin pack that cannot fill a round
+ * of the queue, oldest first, rather than being removed: a thin pack that cannot fill a round
  * from fresh questions alone still gets a full-length round, with repeats only
  * where there was no alternative. Removing them outright would mean Sport
  * quietly serving eight-question rounds by mid-season.
@@ -617,7 +641,9 @@ export function selectQuestions(
   const picked = shuffle(fresh, rng).slice(0, wanted);
   if (picked.length >= wanted) return picked;
 
-  return [...picked, ...shuffle(repeats, rng).slice(0, wanted - picked.length)];
+  // The oldest repeats, shuffled among themselves so the order they are asked
+  // in does not give away which were served longest ago.
+  return [...picked, ...shuffle(repeats.slice(0, wanted - picked.length), rng)];
 }
 
 /**
