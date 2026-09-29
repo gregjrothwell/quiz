@@ -14,6 +14,14 @@
  *
  *   npm run host-room -- 10
  *
+ * `--pack sleeves` plays two real sleeves instead of the harness questions:
+ * the first with its song, which should start at half the clock, and the
+ * second with the song taken off, which should play silent as a sleeve always
+ * did. Both are published ids, so the vault already holds their answers. See
+ * docs/decisions/sleeves-song.md.
+ *
+ *   npm run host-room -- 10 --pack sleeves
+ *
  * Not part of the build or the test suite: it talks to the live project.
  */
 
@@ -35,6 +43,7 @@ import { reduce, type Action } from '../src/engine/reducer';
 import { liveAnswers, type AnswerDoc } from '../src/engine/answers';
 import {
   DEFAULT_DURATION_SECS,
+  buildQuizQuestions,
   createRoom,
   currentQuestion,
   isDurationAllowed,
@@ -42,6 +51,9 @@ import {
   type RoomState,
 } from '../src/engine/state';
 import { randomRoomCode } from '../src/engine/roomCode';
+import type { SealedQuestion } from '../src/questions/types';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { resolveAnswer } from '../src/lib/vault';
 
 /** Reads a required value from .env.local, so a missing one fails with a name. */
@@ -96,6 +108,30 @@ const QUESTIONS: QuizQuestion[] = Array.from({ length: 3 }, (_, i) => ({
   category: 'General Knowledge',
   difficulty: 'easy',
 }));
+
+/** Two published sleeves: one keeps its song, one has it taken off. */
+function sleeveQuestions(): QuizQuestion[] {
+  const pack = JSON.parse(
+    readFileSync(join(import.meta.dirname, '..', 'public', 'packs', 'sleeves.json'), 'utf8'),
+  ) as { questions: SealedQuestion[] };
+  const withSong = pack.questions.filter((question) => question.previewUrl !== undefined);
+  if (withSong.length < 2) throw new Error('sleeves.json has fewer than two sleeves with a song');
+  const [sung, silenced] = buildQuizQuestions(withSong.slice(0, 2), 2);
+  if (!sung || !silenced) throw new Error('could not build two sleeve questions');
+  const silent: QuizQuestion = { ...silenced };
+  delete silent.previewUrl;
+  delete silent.previewStart;
+  delete silent.previewSeconds;
+  return [sung, silent];
+}
+
+const packArg = process.argv.indexOf('--pack');
+const PACK = packArg > 0 ? process.argv[packArg + 1] : undefined;
+if (PACK !== undefined && PACK !== 'sleeves') throw new Error(`--pack sleeves is the only pack, not ${PACK}`);
+const ROUND =
+  PACK === 'sleeves'
+    ? { packId: 'sleeves' as const, packTitle: 'Sleeves', questions: sleeveQuestions() }
+    : { packId: 'general-knowledge' as const, packTitle: 'GK', questions: QUESTIONS };
 
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 const stamp = (): string => new Date().toISOString().slice(11, 23);
@@ -197,7 +233,7 @@ async function main(): Promise<void> {
 
   console.log(`${stamp()}  >>> WRITING start`);
   await dispatch([
-    { type: 'selectPack', packId: 'general-knowledge', packTitle: 'GK', questions: QUESTIONS, wagerEnabled: false, stealEnabled: false },
+    { type: 'selectPack', ...ROUND, wagerEnabled: false, stealEnabled: false },
     { type: 'start', at: Date.now(), gameId: `host-${Date.now()}`, durationSecs: DURATION_SECS },
   ]);
 

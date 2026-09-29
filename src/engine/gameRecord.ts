@@ -148,9 +148,11 @@ export function kindOf(
   question: Pick<QuizQuestion, 'voices' | 'image' | 'previewUrl' | 'artworkUrl'>,
 ): QuestionKind {
   if (question.voices && question.voices.length > 0) return 'melody';
-  if (question.previewUrl) return 'melody';
+  // A picture before a preview: a sleeve's song is a clue, and the cover is
+  // still the question. See docs/decisions/sleeves-song.md.
   if (question.image) return 'picture';
   if (question.artworkUrl) return 'picture';
+  if (question.previewUrl) return 'melody';
   return 'text';
 }
 
