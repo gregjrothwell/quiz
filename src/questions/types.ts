@@ -57,9 +57,16 @@ export const HAND_BUILT_PACK_IDS = [
   'screens',
 ] as const;
 
-/** Packs that are silent unless the player can hear the clip. */
+/**
+ * Packs that play a sound a player must hear.
+ *
+ * Sleeves since 29 September 2026: a song from the album arrives halfway
+ * through the question. A muted player can still answer from the cover, but
+ * would miss a clue the rest of the room hears. See
+ * docs/decisions/sleeves-song.md.
+ */
 export function packNeedsSound(packId: PackId): boolean {
-  return packId === 'melody' || packId === 'tunes';
+  return packId === 'melody' || packId === 'tunes' || packId === 'sleeves';
 }
 
 export type PackId = (typeof PACK_IDS)[number];

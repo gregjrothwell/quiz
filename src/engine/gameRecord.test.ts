@@ -400,6 +400,19 @@ describe('kindOf', () => {
   test('a question with iTunes artwork is a picture', () => {
     expect(kindOf({ artworkUrl: 'https://is1-ssl.mzstatic.com/image/thumb/x.jpg' })).toBe('picture');
   });
+
+  test('a sleeve with a song is still a picture', () => {
+    // #given a cover with a song that arrives halfway as a clue
+    // #then the picture is the question, so the round is recorded as it was
+    // before songs existed — and Sleeves stays comparable with its own
+    // baseline in `read-games`. See docs/decisions/sleeves-song.md.
+    expect(
+      kindOf({
+        artworkUrl: 'https://is1-ssl.mzstatic.com/image/thumb/x.jpg',
+        previewUrl: 'https://audio-ssl.itunes.apple.com/x.m4a',
+      }),
+    ).toBe('picture');
+  });
 });
 
 /**

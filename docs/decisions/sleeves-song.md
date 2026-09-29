@@ -2,8 +2,10 @@
 
 **Owner: Greg Rothwell. Last updated: 29 September 2026. Budget: 250 lines.**
 
-**Status: story. Nothing built.** Awaiting Greg's approval of the criteria and
-the three open decisions below.
+**Status: approved by Greg on 29 September 2026, with all three decisions as
+recommended. Built on `sleeves-song-clue`; not merged, not deployed.** Where
+the build differed from the criteria, the change is recorded beside the
+criterion.
 
 ## Why
 
@@ -44,7 +46,7 @@ second answer key.
   the reveal, and it does not play from the start.
 - No lobby toggle. This is how Sleeves plays.
 
-## Open decisions — owner: Greg
+## Decisions — Greg, 29 September 2026, all three as recommended
 
 1. **When the song starts: half the clock.** That is 5s on a 10s clock and
    7.5s on a 15s one. Tunes players answer 3.1–4.6s after their clip starts
@@ -73,10 +75,24 @@ second answer key.
 2. **The build refuses a title track.** It refuses any song whose title matches
    the album title (Purple Rain, Back to Black, The Bends, London Calling). Tested
    offline.
+
+   > **Tightened while picking the songs.** "People Are Strange" off *Strange
+   > Days* and "Supermassive Black Hole" off *Black Holes and Revelations* both
+   > passed a whole-title check, and both are half the answer. One distinctive
+   > shared word (four letters or more, not a common one) now refuses too
+   > (`songNamesAlbum`, `scripts/sleeve-song.ts`).
 3. **The build refuses a clip that sings the album title.** The whisper audit
    runs against the album title as well as the song title. A hit is trimmed with
-   `previewSeconds`, or the song is swapped for another. The verdict is checked
-   in and enforced offline, as `tune-title-gate` does.
+   `previewSeconds`, or the song is swapped for another. ~~The verdict is checked
+   in and enforced offline, as `tune-title-gate` does.~~
+
+   > **Correction, same day, once the code was read.** The Tunes audit does not
+   > check in a verdict. It prints numbers, and those are pasted into the spec
+   > by hand (`tune-title-audit.ts:8`). This works the same way:
+   > `npm run tune-audit -- --pack sleeves`. The audit uses a 10s window,
+   > because the song starts at half the clock and the longest clock is 20s. The
+   > shortest clip it keeps is 5s. The offline test checks that the pasted cut
+   > reached the pack. It cannot re-hear the clip.
 4. **A sleeve with no usable song ships without `previewUrl` and plays exactly
    as today.** The build prints the count. The pack floor (`SLEEVES_MIN_PACK`)
    does not count songs.
@@ -103,6 +119,24 @@ second answer key.
 
     `QuestionScreen.test.tsx:202` currently asserts that no sleeve shows the
     courtesy line. It splits into those two cases. It is not deleted.
+
+    > **As built:** the badge links to the **album's** store page, labelled
+    > "Listen on Apple Music". The song's own `trackId` and link are not stored,
+    > so the pack gains no new identifier. The existing test stays unchanged as
+    > the no-song case, and the song case is in
+    > `QuestionScreen.songClue.test.tsx`.
+
+**Found while building** — not in the original criteria
+
+- **A kept round records a sleeve with a song as `picture`, not `melody`.**
+  `kindOf` checked the preview first. That would have moved Sleeves out of its
+  own baseline in `read-games` on the round meant to be compared against it.
+  The rules do not read `kind` (`grep kind firestore.rules` finds nothing).
+  `read-games` and `game-report` are the only readers.
+- **The replay button and the `R` key are held until the song is out.**
+  Either could otherwise start the clue early for whoever pressed it. The
+  button shows "Song from the album at halfway", disabled, so nothing moves
+  under the pointer when the song lands.
 
 **Nothing else moves**
 

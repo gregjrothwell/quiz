@@ -9,6 +9,7 @@ import {
   masterGainFor,
   playPreview,
   positionForVolume,
+  primePreview,
   VOLUME_RANGE_DB,
   volumeForPosition,
   playSequence,
@@ -404,6 +405,96 @@ describe('playPreview’s cut', () => {
       playPreview('https://audio-ssl.itunes.apple.com/clip.m4a');
       made[0]?.tick(29.5);
       expect(made[0]?.paused).toBe(false);
+    });
+  });
+
+  /*
+    A sleeve's song is fetched when the question opens and played at half the
+    clock. Fetching at half the clock instead would put Apple's CDN latency
+    between the clue and every player, and a player on a slow connection would
+    get less of the song than the rest of the room — on a question whose rank
+    bonus is decided in the same seconds. See docs/decisions/sleeves-song.md.
+  */
+  const CLIP = 'https://audio-ssl.itunes.apple.com/clip.m4a';
+
+  test('a primed clip is fetched but silent until it is played', () => {
+    withFakeAudio((made) => {
+      // #when a sleeve opens and primes its song
+      primePreview(CLIP);
+
+      // #then the element exists, is loading, and is not playing
+      expect(made).toHaveLength(1);
+      expect(made[0]?.src).toBe(CLIP);
+      expect(made[0]?.preload).toBe('auto');
+      expect(made[0]?.paused).toBe(true);
+    });
+  });
+
+  test('the primed clip is the one that plays, not a second download', () => {
+    withFakeAudio((made) => {
+      // #given the song primed when the question opened
+      primePreview(CLIP);
+
+      // #when the clue lands
+      playPreview(CLIP);
+
+      // #then the same element starts — nothing new was fetched
+      expect(made).toHaveLength(1);
+      expect(made[0]?.paused).toBe(false);
+    });
+  });
+
+  test('a primed clip with a start offset seeks without reloading', () => {
+    withFakeAudio((made) => {
+      // #given a primed song whose metadata has already arrived
+      primePreview(CLIP);
+      const el = made[0];
+      if (!el) throw new Error('nothing primed');
+      Object.assign(el, { readyState: 1 });
+      let reloads = 0;
+      el.load = () => {
+        reloads += 1;
+      };
+
+      // #when it plays from 6s in, as an audited clip may
+      playPreview(CLIP, 6, 5);
+
+      // #then it seeks and plays at once. A `load()` here would throw away the
+      // buffer priming was for.
+      expect(el.currentTime).toBe(6);
+      expect(el.paused).toBe(false);
+      expect(reloads).toBe(0);
+    });
+  });
+
+  test('a primed clip for a different song is dropped, not played', () => {
+    withFakeAudio((made) => {
+      primePreview(CLIP);
+      playPreview('https://audio-ssl.itunes.apple.com/other.m4a');
+      expect(made).toHaveLength(2);
+      expect(made[0]?.paused).toBe(true);
+      expect(made[1]?.paused).toBe(false);
+    });
+  });
+
+  test('stopping drops a primed clip too', () => {
+    withFakeAudio((made) => {
+      // #given a question that reveals before its clue ever landed
+      primePreview(CLIP);
+      stopPreview();
+
+      // #when the next question plays the same URL
+      playPreview(CLIP);
+
+      // #then it is a fresh element: the old one was released at the stop
+      expect(made).toHaveLength(2);
+    });
+  });
+
+  test('refuses to prime anything that is not Apple’s audio CDN', () => {
+    withFakeAudio((made) => {
+      primePreview('https://example.com/clip.m4a');
+      expect(made).toHaveLength(0);
     });
   });
 });

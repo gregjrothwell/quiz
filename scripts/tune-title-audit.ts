@@ -2,6 +2,7 @@
  * Which tune clips say their own name, and where.
  *
  * Run: `npm run tune-audit [-- --window 15]`
+ *      `npm run tune-audit -- --pack sleeves`
  *
  * Downloads every preview in `public/packs/tunes.json`, transcribes it, and
  * reports the moments the title is sung — then prints the `previewStart` /
@@ -12,6 +13,13 @@
  * Needs `whisper` on the PATH (`brew install openai-whisper`) and the network.
  * Local-only, like `itunes-probe` — out of `npm test`, which must keep running
  * offline. The part worth testing is pure and lives in `title-in-clip.ts`.
+ *
+ * **`--pack sleeves` listens for the album's name, not the song's.** A
+ * sleeve's song is a clue to which album is on screen, so the one thing it
+ * must not sing is the album title — "oh well, whatever, never mind" under
+ * *Nevermind*. The window is 10s, because the song starts at half the clock
+ * and the longest clock is 20s; and a clip may be as short as 5s, which is all
+ * a 10s question ever plays of it. See docs/decisions/sleeves-song.md.
  *
  * **`medium.en`, not `small.en`, and that is a measured choice.** On the Sweet
  * Caroline preview small.en returned "The sweet, terrible life" for "Sweet
@@ -24,16 +32,37 @@ import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { SLEEVE_SPECS } from './hand-sleeves-data';
 import { TUNE_SPECS } from './hand-tunes-data';
 import { stableId } from './write-hand-packs';
 import { chooseClip, titleHits, type TranscriptWord } from './title-in-clip';
 import type { Pack } from '../src/questions/types';
 
 const ROOT = join(import.meta.dirname, '..');
-const PREVIEWS = join(ROOT, '.cache', 'tune-previews');
-const TRANSCRIPTS = join(ROOT, '.cache', 'tune-transcripts');
-const FORCED = join(ROOT, '.cache', 'tune-transcripts-forced');
 const MODEL = 'medium.en';
+
+/** Which pack is being listened to, and for what. */
+interface Target {
+  pack: 'tunes' | 'sleeves';
+  /** Each spec's slug, the title that must not be sung, and its artist. */
+  specs: { slug: string; correct: string; artist: string }[];
+  /** How much of a clip a player can hear, at the longest clock. */
+  window: number;
+  /** The shortest clip worth keeping — see `ClipOptions.minimum`. */
+  minimum: number;
+  paste: string;
+}
+
+const TARGETS: Record<Target['pack'], Target> = {
+  tunes: { pack: 'tunes', specs: TUNE_SPECS, window: 20, minimum: 8, paste: 'hand-tunes-data.ts' },
+  sleeves: { pack: 'sleeves', specs: SLEEVE_SPECS, window: 10, minimum: 5, paste: 'hand-sleeves-data.ts' },
+};
+
+// Kept apart per pack: slugs are only unique within one, and a transcript
+// filed under the wrong pack's slug would be believed.
+let PREVIEWS = join(ROOT, '.cache', 'tune-previews');
+let TRANSCRIPTS = join(ROOT, '.cache', 'tune-transcripts');
+let FORCED = join(ROOT, '.cache', 'tune-transcripts-forced');
 
 /** Below this, treat a transcript as "nothing heard" rather than "nothing there". */
 const THIN = 4;
@@ -47,13 +76,13 @@ interface Row {
   stamp: string;
 }
 
-async function rows(): Promise<Row[]> {
+async function rows(target: Target): Promise<Row[]> {
   const pack = JSON.parse(
-    await readFile(join(ROOT, 'public', 'packs', 'tunes.json'), 'utf8'),
+    await readFile(join(ROOT, 'public', 'packs', `${target.pack}.json`), 'utf8'),
   ) as Pack;
   const byId = new Map(pack.questions.map((question) => [question.id, question]));
   const out: Row[] = [];
-  for (const spec of TUNE_SPECS) {
+  for (const spec of target.specs) {
     const question = byId.get(stableId(spec.slug));
     if (!question?.previewUrl) continue;
     out.push({
@@ -152,10 +181,21 @@ async function main(): Promise<void> {
     the first 63 transcripts it moved exactly one clip from clean to trimmed
     and produced no extra `unavoidable`, so the safety is had for nothing.
   */
+  const packArg = process.argv.indexOf('--pack');
+  const packName = packArg > 0 ? process.argv[packArg + 1] : 'tunes';
+  if (packName !== 'tunes' && packName !== 'sleeves') {
+    throw new Error(`--pack is tunes or sleeves, not ${packName ?? 'nothing'}`);
+  }
+  const target = TARGETS[packName];
+  if (target.pack === 'sleeves') {
+    PREVIEWS = join(ROOT, '.cache', 'sleeve-song-previews');
+    TRANSCRIPTS = join(ROOT, '.cache', 'sleeve-song-transcripts');
+    FORCED = join(ROOT, '.cache', 'sleeve-song-transcripts-forced');
+  }
   const windowArg = process.argv.indexOf('--window');
-  const window = windowArg > 0 ? Number(process.argv[windowArg + 1]) : 20;
+  const window = windowArg > 0 ? Number(process.argv[windowArg + 1]) : target.window;
 
-  const list = await rows();
+  const list = await rows(target);
   await fetchPreviews(list);
 
   const already = async (dir: string): Promise<Set<string>> =>
@@ -223,7 +263,7 @@ async function main(): Promise<void> {
     const transcript = forced !== null && forced.length > first.length ? forced : first;
     if (transcript.length < THIN) silent.push(row.slug);
     const hits = titleHits(row.title, transcript);
-    const choice = chooseClip(hits, { window });
+    const choice = chooseClip(hits, { window, minimum: target.minimum });
     verdicts[choice.verdict] = (verdicts[choice.verdict] ?? 0) + 1;
     if (choice.verdict === 'clean') continue;
     console.log(
@@ -238,7 +278,7 @@ async function main(): Promise<void> {
     changes.push(`  ${row.slug}: ${parts.join(', ')}`);
   }
 
-  console.log(`\nOn a ${window}s window, of ${list.length} tunes:`);
+  console.log(`\nOn a ${window}s window, of ${list.length} ${target.pack}:`);
   for (const [verdict, count] of Object.entries(verdicts)) console.log(`  ${verdict}: ${count}`);
   if (silent.length > 0) {
     console.log(
@@ -247,7 +287,7 @@ async function main(): Promise<void> {
       + ` them:\n  ${silent.join(', ')}`,
     );
   }
-  console.log(`\nPaste into hand-tunes-data.ts:\n${changes.join('\n')}`);
+  console.log(`\nPaste into ${target.paste}:\n${changes.join('\n')}`);
 }
 
 const runningDirect = process.argv[1]?.includes('tune-title-audit') === true;
