@@ -10,6 +10,7 @@ import { ScoreTicker } from '../components/ScoreTicker';
 import { replayDurationMs, replayTimeline, type Arrival } from '../engine/replay';
 import type { Verdict } from '../engine/questionVote';
 import { stakeFor, verdictFor, WAGER_SHARES } from '../engine/scoring';
+import { songClueAtMs, songClueDue } from '../engine/songClue';
 import {
   currentQuestion,
   isWagerQuestion,
@@ -20,6 +21,7 @@ import {
   CLOCK_LEAD_SECONDS,
   playPreview,
   playSequence,
+  primePreview,
   startClock,
   stopClock,
   stopPreview,
@@ -264,19 +266,46 @@ export function QuestionScreen({
   const { remainingMs, elapsedMs } = clock;
   const clockKey = `${room.gameId ?? ''}:${room.index}`;
   const startedClockRef = useRef<string | null>(null);
+  const startedSongRef = useRef<string | null>(null);
   const voices = question?.voices;
   const previewUrl = question?.previewUrl;
   const hasMelody = Boolean(voices && voices.length > 0);
   const hasPreview = Boolean(previewUrl);
   const hasTune = hasMelody || hasPreview;
 
+  /*
+    A sleeve's song waits for half the clock; a tune's is due at once.
+
+    On the room's shared clock, so it lands together on every screen — the rank
+    bonus is decided in these seconds. See `src/engine/songClue.ts` and
+    docs/decisions/sleeves-song.md.
+  */
+  const songDue = songClueDue(
+    elapsedMs,
+    question ? songClueAtMs(question, questionDurationMs(room)) : null,
+  );
+  // Whether there is anything to hear yet. A melody is always out at once.
+  const tuneOut = hasMelody || songDue;
+
+  // Fetched while the cover plays alone, so the clue starts on time.
   useEffect(() => {
-    if (revealed || startedClockRef.current === clockKey) return;
-    if (hasPreview && previewUrl) {
+    if (!revealed && hasPreview && previewUrl && !songDue) primePreview(previewUrl);
+  }, [revealed, hasPreview, previewUrl, songDue]);
+
+  useEffect(() => {
+    if (revealed) return;
+    // Its own guard rather than the bed's: on a sleeve the bed may already be
+    // running when the song lands, and the song has to be able to cut in.
+    // `playPreview` stops the bed, and marking the bed started here stops it
+    // coming back for the rest of the question.
+    if (hasPreview && previewUrl && songDue) {
+      if (startedSongRef.current === clockKey) return;
+      startedSongRef.current = clockKey;
       startedClockRef.current = clockKey;
       playPreview(previewUrl, question?.previewStart ?? 0, question?.previewSeconds);
       return;
     }
+    if (startedClockRef.current === clockKey) return;
     if (hasMelody) {
       startedClockRef.current = clockKey;
       playSequence(voices ?? []);
@@ -292,6 +321,7 @@ export function QuestionScreen({
     hasMelody,
     hasPreview,
     previewUrl,
+    songDue,
     voices,
     question?.previewStart,
     question?.previewSeconds,
@@ -315,9 +345,11 @@ export function QuestionScreen({
    * context has been waiting for.
    */
   const { muted, toggle: toggleMuted, previewBlocked } = useSound();
-  const canReplay = hasTune && !revealed && !clock.expired;
+  // Not before the song is out: a replay that could start a sleeve's song early
+  // would hand the clue to whoever pressed it.
+  const canReplay = hasTune && tuneOut && !revealed && !clock.expired;
   const replayTune = (): void => {
-    if (!hasTune) return;
+    if (!canReplay) return;
     if (muted) toggleMuted();
     if (hasPreview && previewUrl) playPreview(previewUrl, question?.previewStart ?? 0, question?.previewSeconds);
     else playSequence(voices ?? []);
@@ -335,6 +367,7 @@ export function QuestionScreen({
     }
     return () => {
       startedClockRef.current = null;
+      startedSongRef.current = null;
       stopClock();
       stopSequence();
       stopPreview();
@@ -553,13 +586,18 @@ export function QuestionScreen({
                 </p>
               ) : null}
               <div className="btn-row">
+                {/*
+                  There before a sleeve's song is, disabled and saying what is
+                  coming, so nothing moves under a player's pointer when it
+                  arrives.
+                */}
                 <button
                   type="button"
                   className={previewBlocked && !muted ? 'btn' : 'btn btn--ghost'}
-                  disabled={clock.expired}
+                  disabled={clock.expired || !tuneOut}
                   onClick={replayTune}
                 >
-                  {playLabel(muted, previewBlocked)}
+                  {tuneOut ? playLabel(muted, previewBlocked) : 'Song from the album at halfway'}
                 </button>
               </div>
             </div>

@@ -26,7 +26,7 @@ Built to replace Polly in Teams.
 | scoring an answer that lands late; the review panel and the replay | [`late-answers.md`](decisions/late-answers.md) · [`review-replay.md`](decisions/review-replay.md) |
 | packs, harvesting, classification, **On the box / TMDB stills** | [`questions.md`](decisions/questions.md) |
 | **a picture that does not turn up**, preloading, the box a still gets | [`decisions/picture-loading.md`](decisions/picture-loading.md) |
-| **an album cover that names its own album**, the sleeve audit | [`decisions/sleeves-gate.md`](decisions/sleeves-gate.md) |
+| **an album cover that names its own album**, the sleeve audit; **a song from the album as a mid-question clue** (built on `sleeves-song-clue`, not merged) | [`decisions/sleeves-gate.md`](decisions/sleeves-gate.md) · [`sleeves-song.md`](decisions/sleeves-song.md) |
 | voting on a question, retiring one | [`question-votes.md`](decisions/question-votes.md) |
 | rules and App Check — Firestore and RTDB, then **auth**, then the debug token and why a deploy must not come off `master` | [`security.md`](decisions/security.md) · [`app-check-auth.md`](decisions/app-check-auth.md) · [`debug-token-leak.md`](decisions/debug-token-leak.md) |
 | **the vault oracle, `joinedAt`, the `at` stamp, presence names** | [`security-round-sept-2026.md`](decisions/security-round-sept-2026.md) |

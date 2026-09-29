@@ -268,7 +268,8 @@ export function Lobby({
         {muted ? (
           <div className="stack">
             <p className="muted hint">
-              Sound is off. Name that Tune and Classical are silent unless you turn it on.
+              Sound is off. Name that Tune and Classical are silent unless you turn it on,
+              and Sleeves plays a song halfway through.
             </p>
             <div className="btn-row">
               <button type="button" className="btn" onClick={toggle}>
