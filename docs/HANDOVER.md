@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 24 September 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 29 September 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -26,7 +26,7 @@ Built to replace Polly in Teams.
 | scoring an answer that lands late; the review panel and the replay | [`late-answers.md`](decisions/late-answers.md) · [`review-replay.md`](decisions/review-replay.md) |
 | packs, harvesting, classification, **On the box / TMDB stills** | [`questions.md`](decisions/questions.md) |
 | **a picture that does not turn up**, preloading, the box a still gets | [`decisions/picture-loading.md`](decisions/picture-loading.md) |
-| **an album cover that names its own album**, the sleeve audit; **a song from the album as a mid-question clue** (built on `sleeves-song-clue`, not merged) | [`decisions/sleeves-gate.md`](decisions/sleeves-gate.md) · [`sleeves-song.md`](decisions/sleeves-song.md) |
+| **an album cover that names its own album**, the sleeve audit; **a song from the album at half the clock** (live 29 Sep, #62) | [`decisions/sleeves-gate.md`](decisions/sleeves-gate.md) · [`sleeves-song.md`](decisions/sleeves-song.md) |
 | voting on a question, retiring one | [`question-votes.md`](decisions/question-votes.md) |
 | rules and App Check — Firestore and RTDB, then **auth**, then the debug token and why a deploy must not come off `master` | [`security.md`](decisions/security.md) · [`app-check-auth.md`](decisions/app-check-auth.md) · [`debug-token-leak.md`](decisions/debug-token-leak.md) |
 | **the vault oracle, `joinedAt`, the `at` stamp, presence names** | [`security-round-sept-2026.md`](decisions/security-round-sept-2026.md) |
@@ -42,24 +42,26 @@ Built to replace Polly in Teams.
 | what a finished round left behind, and reading it back | [`decisions/game-record.md`](decisions/game-record.md) |
 | upgrading `package.json`; the studio set and lighting cues | [`dependencies.md`](decisions/dependencies.md) · [`lighting.md`](decisions/lighting.md) |
 
-## State as of 27 September 2026
+## State as of 29 September 2026
 
-> **READ FIRST — #61 is live: On the box 296, Sleeves 104, Name that Tune 268,
-> and a spent pack repeats its oldest questions first.** Vault seeded before the
-> deploy and read back (680/680, every answer one of its options); `check-rules`
-> **91/91**. **Only a model has looked at the new stills and covers** — see
-> Outstanding 1. Fine Art was grown and reverted the same night: **grow what the
-> office plays, not what is cheap** ([`repeats.md`](decisions/repeats.md)).
+> **READ FIRST — #62 is live: a Sleeves cover plays alone for half the clock,
+> then a song from the same album starts** (102 of 104 sleeves). There was no
+> vault reseed (ids unchanged) and no rules change. **Unplayed.** If the next
+> three Sleeves rounds stay under 50%, bring the song in earlier with
+> `SONG_CLUE_SHARE` ([`sleeves-song.md`](decisions/sleeves-song.md)). #61, 27
+> Sep: On the box 296, Tunes 268; its stills and covers still want a person
+> (Outstanding 1).
 
-**Live is `index-BJIHPrGR`** (27 Sep, gh-pages `6b06c51`, `16c4539`/#61, CI) —
-*check gh-pages **and** `pages/builds`.* Firebase chunk `firebase-W6iQUl4r`.
+**Live is `index-BJxsEAQd`** (29 Sep, gh-pages `f5a273b`, `68cfd24`/#62, CI) —
+*check gh-pages **and** `pages/builds`.* Firebase chunk `firebase-W6iQUl4r`,
+unchanged since #61.
 **16 packs**; **Name that Tune 268**; synth **Classical**; **On the box 296**
 (hashed TMDB stills, at most 8 titles before 1990); **Flags** 76; **Sleeves 104**
 after four candidate batches and 42 refusals by eye; picture is **Fine Art** 49.
 
 **What the office plays** (21–25 Sep, 10 rounds): On the box 3, Sleeves 3, Tunes
-2, text 2. Sleeves fell 85% → 49% → 31% once the covers stopped naming
-themselves ([`sleeves-gate.md`](decisions/sleeves-gate.md)). **The binding
+2, text 2. Once the covers stopped naming themselves, Sleeves fell from 85% to
+49%, 31% and 43% (`BRST`, 29 Sep) ([`sleeves-gate.md`](decisions/sleeves-gate.md)). **The binding
 constraint is content in those packs, not Firebase** — limits re-read 26
 September in [`cost.md`](decisions/cost.md). **Check the live records
 (`read-games`, `asked-probe`), not the prose.**
@@ -111,6 +113,11 @@ scoring 500 + rank 500/400/300/200/100.
     `call-the-shots`, `gangnam-style`); **56 rooms past expiry** —
     `npm run prune-rooms -- --go`; reCAPTCHA's monthly count is unmeasured
     (10k free per organisation); #58 `cleanup-dead-code` is open, unreviewed.
+15. **#62, 29 Sep ([`sleeves-song.md`](decisions/sleeves-song.md)).** Not played
+    in production: Claude's browser is App Check-throttled (403 at 15:36), so it
+    was checked on dev against live Firebase. Five songs want an ear.
+    *Reasonable Doubt* and *Future Nostalgia* show a **single's** artwork
+    (`titleMatches` takes a prefix). A stale Vite (PID 29183) holds port 5273.
 
 ## Where things are
 

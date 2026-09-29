@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 24 September 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 29 September 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -10,7 +10,7 @@ Append; do not rewrite an earlier entry to make it look as if we always knew. A
 correction is a new dated note that says what changed, and the wrong claim stays
 visible.
 
-**Split seven times, 28 August to 24 September 2026** — every time this file hit
+**Split eight times, 28 August to 29 September 2026** — every time this file hit
 300. Entries move *verbatim* to [`recall/2026-08.md`](recall/2026-08.md) or
 [`recall/2026-09.md`](recall/2026-09.md) and leave a dated pointer here, so the
 chronology still reads end to end. Shortening an old entry to make the number go
@@ -23,6 +23,18 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
+
+## 2026-09-29 — Live: `index-BJxsEAQd` (#62, gh-pages `f5a273b`)
+
+A Sleeves cover now plays alone for half the clock, then a song from the same
+album starts: "which album is this song on?", with four same-artist options.
+There are songs on 102 of 104 sleeves, hand-picked, and any song whose title
+names the album or shares a distinctive word with it is refused. Ids are
+unchanged, so there was no reseed. No rules change. `host-room -- 10 --pack sleeves`,
+two tabs: `play()` at 5,002/5,003ms, on the element primed at the open. The first
+run caught the clock bed dropping that element. CI and Pages are green, and the
+Firebase chunk is unchanged. **Unplayed in production**: Claude's browser is App
+Check-throttled. Depth: [`decisions/sleeves-song.md`](decisions/sleeves-song.md).
 
 ## 2026-09-27 — Live: `index-BJIHPrGR` (#61, gh-pages `6b06c51`)
 
@@ -130,14 +142,7 @@ contained #55, which closed itself as merged. Second RTDB paste landed 16:56:
 
 ## 2026-09-21 — Vault oracle, joinedAt, and the `at` stamp
 
-Any signed-in player could extract the vault: rewrite `questions[0].id` without
-moving phase or index, then four reveal writes. `check-rules` passed for the
-wrong reason. Closed by pinning `questions` to the lobby. `joinedAt: 0` seized
-quizmaster; now a new entry is ±5 minutes and an existing one cannot move.
-Answers carry optional `at: serverTimestamp()`; rank still reads `elapsedMs`.
-Presence drops `name` (two RTDB pastes). Alistair is fastest in 11 of 12 with
-a 203 ms right→wrong gap; do not accuse — `npm run audit-players` after one
-round is the answer. Depth:
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md). Depth:
 [`decisions/security-round-sept-2026.md`](decisions/security-round-sept-2026.md).
 
 ## 2026-09-21 — Live: `index-BHcNzJzP` (#54, gh-pages `026d7cd`)
