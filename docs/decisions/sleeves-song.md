@@ -147,6 +147,52 @@ second answer key.
     browser with `host-room`. The song is heard at half-clock on two devices, and
     a sleeve with no song plays silently.
 
+## Evidence, 29 September 2026
+
+- **Offline.** `npm test`: 1,152 passed, 74 files, before the priming fix,
+  and 1,153 after it. `typecheck` and `lint` are clean.
+- **The pack.** 102 of 104 sleeves carry a song. The diff against the
+  previous `sleeves.json` adds `previewUrl` and nothing else, and all 104 ids
+  are identical, so there is no vault reseed.
+- **Live, end to end.** `npm run host-room -- 10 --pack sleeves` played two
+  real sleeves on a 10s clock. Two browser tabs on separate origins
+  (`localhost` and `127.0.0.1`) joined as two anonymous players. An
+  instrument in each tab timestamped every `new Audio()` and `play()`, and
+  was first checked against a known call.
+
+  | | Tab A | Tab B |
+  |---|---|---|
+  | Question 1 (*Abbey Road*, with its song) appears | +0 | +40ms |
+  | `play()` after the question appeared | **5,002ms** | **5,003ms** |
+  | Element played | primed at the open, `readyState` 4 | the same |
+  | Question 2 (*Dark Side*, song removed) | no element, no `play()`, no button, no iTunes line | the same |
+
+  The two tabs played 41ms apart, which is inside the clock's 100ms tick.
+  Screenshots showed the disabled "Song from the album at halfway" at 1s, and
+  "Hear it again" in the same place at 5s left.
+- **The first live run failed, and the tests had not caught it.**
+  `startClock` stopped every preview, including the primed one. The bed
+  starts at 1s on a 10s clock, so the song was fetched cold at half-clock
+  anyway (`readyState` 0 at `play()`). The screen test mocked `startClock`,
+  so it could not see this. Fixed in `87dfc45`, with a regression test that
+  fails without the fix.
+- **Not covered.** An iPhone. iOS Safari ignores `preload`, so the reload
+  path exists for it. It is reasoned, not run.
+
+## Found while building — pre-existing, not fixed
+
+1. **Two published sleeves show a single's artwork, not the album's.**
+   *Reasonable Doubt* resolves to "Reasonable Doubt (Fireworks Supermix) -
+   Single", and *Future Nostalgia* to "Future Nostalgia - Single".
+   `titleMatches` accepts a prefix, so "future nostalgia single" matches
+   "future nostalgia". Both play silent: their chosen songs are not on a
+   one-track single. Seen in the track lists this build fetched. The third
+   collection flagged, *Music from Big Pink (Deluxe Edition)*, is the real
+   album.
+2. **A Vite dev server started on 9 September is still holding port 5273**
+   (PID 29183, `--host 127.0.0.1`). Its watcher is the kind that has served
+   stale code before. This test used a fresh one on 5275.
+
 ## How it is measured afterwards
 
 The next Sleeves rounds, compared against 31–49%:
