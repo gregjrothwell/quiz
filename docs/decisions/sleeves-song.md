@@ -176,6 +176,21 @@ second answer key.
   anyway (`readyState` 0 at `play()`). The screen test mocked `startClock`,
   so it could not see this. Fixed in `87dfc45`, with a regression test that
   fails without the fix.
+- **The lyric audit** (`npm run tune-audit -- --pack sleeves`, medium.en,
+  10s window). Of 102 clips, 101 came back clean and one "trimmed".
+  - **`by-the-way` is a false hit, and the trim was not pasted.** At 5.6s the
+    transcript reads "come back strong with 50 belly dancers". That is the
+    real *Can't Stop* lyric, and the sound-alike fold took "fifty belly" for
+    "by the way". A 5s cut would halve the clue on 15s and 20s clocks to guard
+    a word that is not sung. Greg can overrule by pasting
+    `previewSeconds: 5`.
+  - **Five transcribed to nothing and want an ear:** `heathen-chemistry`,
+    `richard-d-james`, `strange-days`, `the-car-am`, `mans-best-friend`. The
+    forced pass returned only filler ("Thanks for watching!", "Music"). All
+    five files are normal 30s previews (`afinfo`), and at least three have
+    vocals throughout, so the transcriber failed, not the clip. **Counted
+    clean, but nothing was looked at**, which is the lesson from the sleeve
+    OCR ([`sleeves-gate.md`](sleeves-gate.md)).
 - **Not covered.** An iPhone. iOS Safari ignores `preload`, so the reload
   path exists for it. It is reasoned, not run.
 
