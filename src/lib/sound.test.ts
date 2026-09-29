@@ -14,6 +14,7 @@ import {
   volumeForPosition,
   playSequence,
   setVolume,
+  startClock,
   stopPreview,
 } from './sound';
 import { HAPPY_BIRTHDAY } from '../questions/melody-voices';
@@ -474,6 +475,24 @@ describe('playPreview’s cut', () => {
       expect(made).toHaveLength(2);
       expect(made[0]?.paused).toBe(true);
       expect(made[1]?.paused).toBe(false);
+    });
+  });
+
+  test('the clock bed starting does not drop a primed clip', () => {
+    withFakeAudio((made) => {
+      // #given a sleeve's song primed at the open, and the ticking bed starting
+      // a second later, as it does on a 10s clock
+      primePreview(CLIP);
+      startClock(9_000);
+
+      // #when the clue lands
+      playPreview(CLIP);
+
+      // #then the primed element plays. Caught in a live room on 29 September
+      // 2026: the bed's own stop released the song four seconds before it was
+      // wanted, and the clue was fetched cold at half-clock after all.
+      expect(made).toHaveLength(1);
+      expect(made[0]?.paused).toBe(false);
     });
   });
 

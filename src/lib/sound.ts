@@ -726,6 +726,17 @@ function release(el: HTMLAudioElement): void {
  */
 export function stopPreview(): void {
   dropPrimed();
+  stopPlaying();
+}
+
+/**
+ * Stops the clip that is playing and leaves a primed one alone.
+ *
+ * For the clock bed, which starts a second into a 10s sleeve and stops any
+ * clip on its way in. Stopping the primed song there too released it four
+ * seconds before the clue — caught in a live room on 29 September 2026.
+ */
+function stopPlaying(): void {
   const el = previewEl;
   previewEl = null;
   if (!el) return;
@@ -769,7 +780,7 @@ export function stopSequence(): void {
 }
 
 export function startClock(remainingMs: number): void {
-  stopPreview();
+  stopPlaying();
   stopSequence();
   stopClock();
   if (muted || remainingMs <= 0) return;
