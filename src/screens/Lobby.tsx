@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { QrCode } from '../components/QrCode';
 import { RoomLink } from '../components/RoomLink';
+import { SoundCheck } from '../components/SoundCheck';
 import { joinLink } from '../engine/roomCode';
 import { STEAL_SHARE } from '../engine/scoring';
 import { SQUADS } from '../engine/squad';
@@ -282,6 +283,13 @@ export function Lobby({
             </div>
           </div>
         ) : null}
+
+        {/*
+          For every player, whatever gets picked: nobody but the quizmaster
+          can see the pack until the round starts. See
+          docs/decisions/sound-check.md.
+        */}
+        <SoundCheck />
       </section>
 
       {isQuizmaster ? (
