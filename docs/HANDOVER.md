@@ -37,7 +37,7 @@ Built to replace Polly in Teams.
 | the shareable result card, and how it gets to the player | [`decisions/final-card.md`](decisions/final-card.md) |
 | what to build next, what each idea costs, what was turned down | [`what-to-build-next.md`](decisions/what-to-build-next.md) · [`picking-up.md`](decisions/picking-up.md) · [`ideas-review.md`](decisions/ideas-review.md) · [`scope.md`](decisions/scope.md) |
 | picture, music, jigsaw or steal rounds, **negative points**, and why melody played badly | [`round-types.md`](decisions/round-types.md) · [`melody-round.md`](decisions/melody-round.md) |
-| **Name that Tune** clips that give it away; **the volume slider and the two autoplay gates**; **the Apple Music badge and Apple's terms** | [`tunes-round.md`](decisions/tunes-round.md) · [`tunes-title-gate.md`](decisions/tunes-title-gate.md) · [`audio-stack.md`](decisions/audio-stack.md) · [`known-limits.md`](decisions/known-limits.md) |
+| **Name that Tune** clips that give it away; **the volume slider and the two autoplay gates**; **the lobby sound check**; **the Apple Music badge and Apple's terms** | [`tunes-round.md`](decisions/tunes-round.md) · [`tunes-title-gate.md`](decisions/tunes-title-gate.md) · [`audio-stack.md`](decisions/audio-stack.md) · [`sound-check.md`](decisions/sound-check.md) · [`known-limits.md`](decisions/known-limits.md) |
 | whether an answer can change and the spam exploit; `firstMs` and the snap guess | [`answer-spam.md`](decisions/answer-spam.md) · [`first-touch.md`](decisions/first-touch.md) |
 | what a finished round left behind, and reading it back | [`decisions/game-record.md`](decisions/game-record.md) |
 | upgrading `package.json`; the studio set and lighting cues | [`dependencies.md`](decisions/dependencies.md) · [`lighting.md`](decisions/lighting.md) |
@@ -45,11 +45,12 @@ Built to replace Polly in Teams.
 ## State as of 30 September 2026
 
 > **READ FIRST — `music-rounds-start-at-once` is built, not merged:** a sleeve's
-> song plays from the first frame (`SONG_CLUE_SHARE` 0) and Name that Tune is
-> always 10s. It stacks on `live-after-62`, so one merge ships both. Joe's
-> "missing points" (`XDUF`, `SQ8V`) recomputed exactly — changed picks, not a
-> bug. **Greg to decide:** an audio check before question one, and answering
-> after the music stops ([`TOTAL-RECALL`](TOTAL-RECALL.md), 30 Sep).
+> song plays from the first frame (`SONG_CLUE_SHARE` 0), Name that Tune is
+> always 10s, and the lobby has a **sound check** for every player
+> ([`sound-check.md`](decisions/sound-check.md)). It stacks on `live-after-62`, so
+> one merge ships all of it. Joe's "missing points" (`XDUF`, `SQ8V`) recomputed
+> exactly — changed picks, not a bug. **Greg to decide:** answering after the
+> music stops (recommended against; [`TOTAL-RECALL`](TOTAL-RECALL.md), 30 Sep).
 
 **Live is `index-BJxsEAQd`** (29 Sep, gh-pages `f5a273b`, `68cfd24`/#62, CI) —
 *check gh-pages **and** `pages/builds`.* Firebase chunk `firebase-W6iQUl4r`,

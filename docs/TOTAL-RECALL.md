@@ -43,6 +43,13 @@ clips sang their titles). **Open, Greg's call:** an audio check before the first
 question, and whether answering should wait until the music stops.
 [`sleeves-song.md`](decisions/sleeves-song.md) · [`tunes-round.md`](decisions/tunes-round.md).
 
+**Later the same day:** Greg chose the lobby sound check (option A, no rules
+paste) over a synced check in place of question one. Built on the same branch:
+ten seconds of a preview through `playPreview`, with the volume slider beside
+it. Checked in the built bundle, live volume change mid-clip included.
+Answering after the music stops is still open, recommended against.
+[`sound-check.md`](decisions/sound-check.md).
+
 ## 2026-09-29 — Live: `index-BJxsEAQd` (#62, gh-pages `f5a273b`)
 
 A Sleeves cover now plays alone for half the clock, then a song from the same
