@@ -1,6 +1,6 @@
 # Name that Tune, as played
 
-> **Owner: Greg Rothwell. Last updated: 10 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 30 September 2026. Budget: 250 lines.**
 
 Split out of [`melody-round.md`](melody-round.md) on 10 September 2026, at 323
 lines against a 250 budget. **Moved verbatim; only where it lives has changed.**
@@ -122,3 +122,13 @@ code that was not running. Building and serving `dist/` fixed it; the tell was
 verbatim, when this file went over budget. The transcriber, what it found over
 all 177, how the checker was checked, and the two things it got wrong are all
 there.
+
+## 30 September 2026 — ten seconds, always
+
+`SQ8V` was played on 15s and, in Greg's words, many of the song titles were
+exposed. The audit trims on a 20s window, yet whisper mishears a sung title
+often enough that it cannot be the only guard. Greg's call: stop optimising
+for longer clocks. `fixedDurationFor('tunes')` is 10, and the lobby greys out
+15 and 20 while Name that Tune is picked and says why. The room's median answer
+on `SQ8V` was 4.0s, so ten is still twice what a player uses. Not merged:
+`music-rounds-start-at-once`.

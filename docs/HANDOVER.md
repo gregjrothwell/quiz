@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 29 September 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 30 September 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -42,15 +42,14 @@ Built to replace Polly in Teams.
 | what a finished round left behind, and reading it back | [`decisions/game-record.md`](decisions/game-record.md) |
 | upgrading `package.json`; the studio set and lighting cues | [`dependencies.md`](decisions/dependencies.md) · [`lighting.md`](decisions/lighting.md) |
 
-## State as of 29 September 2026
+## State as of 30 September 2026
 
-> **READ FIRST — #62 is live: a Sleeves cover plays alone for half the clock,
-> then a song from the same album starts** (102 of 104 sleeves). There was no
-> vault reseed (ids unchanged) and no rules change. **Unplayed.** If the next
-> three Sleeves rounds stay under 50%, bring the song in earlier with
-> `SONG_CLUE_SHARE` ([`sleeves-song.md`](decisions/sleeves-song.md)). #61, 27
-> Sep: On the box 296, Tunes 268; its stills and covers still want a person
-> (Outstanding 1).
+> **READ FIRST — `music-rounds-start-at-once` is built, not merged:** a sleeve's
+> song plays from the first frame (`SONG_CLUE_SHARE` 0) and Name that Tune is
+> always 10s. It stacks on `live-after-62`, so one merge ships both. Joe's
+> "missing points" (`XDUF`, `SQ8V`) recomputed exactly — changed picks, not a
+> bug. **Greg to decide:** an audio check before question one, and answering
+> after the music stops ([`TOTAL-RECALL`](TOTAL-RECALL.md), 30 Sep).
 
 **Live is `index-BJxsEAQd`** (29 Sep, gh-pages `f5a273b`, `68cfd24`/#62, CI) —
 *check gh-pages **and** `pages/builds`.* Firebase chunk `firebase-W6iQUl4r`,

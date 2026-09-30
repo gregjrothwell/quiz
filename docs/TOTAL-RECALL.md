@@ -24,6 +24,25 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-09-30 — Joe's missing points were not missing; the music rounds start at once
+
+Joe said he was short after `XDUF` (Sleeves) and `SQ8V` (Tunes). **Every delta
+in both rounds recomputes exactly** from the answers with `tallyQuestion`, every
+stored score equals its summed deltas, each `correctIndex` names the same text as
+the local vault, and his season row banked 6,000 and 19,200. He answered all 35
+questions, so none was lost to a late reveal. What did cost him: **nine changes
+of pick**, three first touched at 0.5–0.6s. Rank is timed on the *last* change
+(`first-touch.md` AC 6) — at most 1,100 points across both rounds. Also: **two
+season rows** under "Joe" (27,500 on a uid last used 17 Sep). Method:
+[`game-record.md`](decisions/game-record.md#a-player-says-they-were-short).
+
+Built on `music-rounds-start-at-once`, **not merged**: a sleeve's song plays from
+the first frame (`SONG_CLUE_SHARE` 0 — in `XDUF` 133 of 175 answers beat a
+half-clock song), and Name that Tune is always ten seconds (Greg: on fifteen the
+clips sang their titles). **Open, Greg's call:** an audio check before the first
+question, and whether answering should wait until the music stops.
+[`sleeves-song.md`](decisions/sleeves-song.md) · [`tunes-round.md`](decisions/tunes-round.md).
+
 ## 2026-09-29 — Live: `index-BJxsEAQd` (#62, gh-pages `f5a273b`)
 
 A Sleeves cover now plays alone for half the clock, then a song from the same
@@ -169,78 +188,29 @@ Archived whole: [`recall/2026-09.md`](recall/2026-09.md). Depth:
 Archived whole: [`recall/2026-09.md`](recall/2026-09.md). Depth:
 [`decisions/picture-loading.md`](decisions/picture-loading.md).
 
-## 2026-09-11 — #52 live: `index-n26s0ofl`
+## 2026-09-04 to 2026-09-11 — archived, one line each
 
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
+*Collapsed from four-line stubs on 30 September 2026 to make room; every
+entry is verbatim in the archive, and nothing was shortened.*
 
-## 2026-09-11 — The round was the best yet, and three things came out of it
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-10 — Playwright prerequisites: jsdom, emulators, e2e job
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-10 — Node 20 deprecation: the four actions clear it at three different majors
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-10 — Season form seeded on old rows, and they are estimates
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-10 — Deploys come from CI now (`index-qJCbuGrA`)
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-10 — Three corrections the live project made to the docs
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-10 — The season form ranking was live, then silently reverted
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-10 — Deploy guard added; CI outlined for later
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-10 — Token revoked and reissued; leak closed
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-10 — Live: the debug-token gate (`index-V9wVdhyu`), and #40 for the rules
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-10 — Correction: the console was ahead of the repo, not behind
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-10 — Live: volume, clip cuts, 177 songs (`index-C3jZR3XU`)
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-10 — Name that Tune worked; volume, giveaways, 177 songs
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md). Depth:
-[`decisions/tunes-round.md`](decisions/tunes-round.md).
-
-## 2026-09-09 — The whole day, archived
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-08 — The whole day, archived
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-04 — Three more entries archived
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-04 — Three entries archived
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
+- **2026-09-11** — [#52 live: `index-n26s0ofl`](recall/2026-09.md#2026-09-11--52-live-index-n26s0ofl)
+- **2026-09-11** — [The round was the best yet, and three things came out of it](recall/2026-09.md#2026-09-11--the-round-was-the-best-yet-and-three-things-came-out-of-it)
+- **2026-09-10** — [Playwright prerequisites: jsdom, emulators, e2e job](recall/2026-09.md#2026-09-10--playwright-prerequisites-jsdom-emulators-e2e-job)
+- **2026-09-10** — [Node 20 deprecation: the four actions clear it at three different majors](recall/2026-09.md#2026-09-10--node-20-deprecation-the-four-actions-clear-it-at-three-different-majors)
+- **2026-09-10** — [Season form seeded on old rows, and they are estimates](recall/2026-09.md#2026-09-10--season-form-seeded-on-old-rows-and-they-are-estimates)
+- **2026-09-10** — [Deploys come from CI now (`index-qJCbuGrA`)](recall/2026-09.md#2026-09-10--deploys-come-from-ci-now-index-qjcbugra)
+- **2026-09-10** — [Three corrections the live project made to the docs](recall/2026-09.md#2026-09-10--three-corrections-the-live-project-made-to-the-docs)
+- **2026-09-10** — [The season form ranking was live, then silently reverted](recall/2026-09.md#2026-09-10--the-season-form-ranking-was-live-then-silently-reverted)
+- **2026-09-10** — [Deploy guard added; CI outlined for later](recall/2026-09.md#2026-09-10--deploy-guard-added-ci-outlined-for-later)
+- **2026-09-10** — [Token revoked and reissued; leak closed](recall/2026-09.md#2026-09-10--token-revoked-and-reissued-leak-closed)
+- **2026-09-10** — [Live: the debug-token gate (`index-V9wVdhyu`), and #40 for the rules](recall/2026-09.md#2026-09-10--live-the-debug-token-gate-index-v9wvdhyu-and-40-for-the-rules)
+- **2026-09-10** — [Correction: the console was ahead of the repo, not behind](recall/2026-09.md#2026-09-10--correction-the-console-was-ahead-of-the-repo-not-behind)
+- **2026-09-10** — [Live: volume, clip cuts, 177 songs (`index-C3jZR3XU`)](recall/2026-09.md#2026-09-10--live-volume-clip-cuts-177-songs-index-c3jzr3xu)
+- **2026-09-10** — Name that Tune worked; volume, giveaways, 177 songs — [`recall/2026-09.md`](recall/2026-09.md) · depth: [`decisions/tunes-round.md`](decisions/tunes-round.md)
+- **2026-09-09** — The whole day, archived — [`recall/2026-09.md`](recall/2026-09.md)
+- **2026-09-08** — The whole day, archived — [`recall/2026-09.md`](recall/2026-09.md)
+- **2026-09-04** — Three more entries archived — [`recall/2026-09.md`](recall/2026-09.md)
+- **2026-09-04** — Three entries archived — [`recall/2026-09.md`](recall/2026-09.md)
 
 ## Earlier — the full chronology, archived
 

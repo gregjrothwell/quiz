@@ -1,6 +1,6 @@
 # Sleeves, with a song from the album
 
-**Owner: Greg Rothwell. Last updated: 29 September 2026. Budget: 250 lines.**
+**Owner: Greg Rothwell. Last updated: 30 September 2026. Budget: 250 lines.**
 
 **Status: approved by Greg on 29 September 2026, with all three decisions as
 recommended. Live on 29 September 2026** as `index-BJxsEAQd` (#62, merge
@@ -221,9 +221,20 @@ The next Sleeves rounds, compared against 31–49%:
 **If the hit rate is still below 50% over three rounds, the song starts
 earlier.** That is a constant, not a rebuild.
 
+**Measured once, 30 September 2026, and the song moved to the start.** `XDUF`,
+9 seats, 15s: 45% hit. **133 of 175 answers were in before the song started at
+7.5s**, and the 42 after it were right 36% of the time against 50% before. Greg
+did not wait for three rounds: "the music should start straight away."
+`SONG_CLUE_SHARE` is 0 on `music-rounds-start-at-once`; the held behaviour stays
+tested under an explicit 0.5. The lyric audit re-run on a **20s** window from the
+cached transcripts: 100 clean, `by-the-way` the same false hit, and one new —
+`harrys-house` hears "Harry" at 18.6s, which matters only on a 20s clock. Not
+pasted (`previewSeconds: 18`); Greg's call.
+
 ## Not in scope
 
-- The song as the only clue, or playing from the start.
+- The song as the only clue, or playing from the start. *(Playing from the
+  start was brought in on 30 September — see above.)*
 - A lobby toggle.
 - Hosting any audio. Previews stream from Apple, as Tunes' do.
 
