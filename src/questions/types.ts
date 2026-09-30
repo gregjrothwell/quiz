@@ -60,13 +60,28 @@ export const HAND_BUILT_PACK_IDS = [
 /**
  * Packs that play a sound a player must hear.
  *
- * Sleeves since 29 September 2026: a song from the album arrives halfway
- * through the question. A muted player can still answer from the cover, but
+ * Sleeves since 29 September 2026: a song from the album plays with the
+ * cover (from the start of the question since 30 September). A muted player can still answer from the cover, but
  * would miss a clue the rest of the room hears. See
  * docs/decisions/sleeves-song.md.
  */
 export function packNeedsSound(packId: PackId): boolean {
   return packId === 'melody' || packId === 'tunes' || packId === 'sleeves';
+}
+
+/**
+ * The answer window a pack is always played on, or null when the lobby's
+ * choice stands.
+ *
+ * **Name that Tune is ten seconds**, Greg's call on 30 September 2026. On
+ * fifteen, round `SQ8V` heard many of its clips sing their own titles: Apple's
+ * preview is usually the chorus, and the chorus is where the title is. The
+ * audit that trims clips (`npm run tune-audit`) misses a sung title often
+ * enough that a shorter clip is the cheaper fix, and ten seconds is enough
+ * music to place a song — that room's median answer was 4.0s.
+ */
+export function fixedDurationFor(packId: PackId): number | null {
+  return packId === 'tunes' ? 10 : null;
 }
 
 export type PackId = (typeof PACK_IDS)[number];

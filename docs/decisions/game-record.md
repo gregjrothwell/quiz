@@ -1,6 +1,6 @@
 # The round, kept — `games/{gameId}`
 
-> **Owner: Greg Rothwell. Last updated: 8 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 30 September 2026. Budget: 250 lines.**
 
 Built 8 September 2026 on branch `keep-the-round`, from the research in
 [`what-to-build-next.md`](what-to-build-next.md) (PR #31, merged into this branch
@@ -160,6 +160,24 @@ attempted reads as that rather than as everybody getting it wrong. Medians are
 over every answer given, right or wrong; snaps are first touches under
 `TOO_FAST_TO_READ_MS`. With more than one round shown, a by-kind table follows:
 text, melody and picture side by side.
+
+### A player says they were short
+
+First used on Joe, 30 September 2026 (`XDUF`, `SQ8V`). Four checks, each
+against the record rather than anybody's memory of the screen:
+
+1. **Recompute.** Feed each question's `answers` to `tallyQuestion` — with
+   `scores` on the last question of a wager round, and `stealFor` first on a
+   steal round — and compare with the stored `deltas`; then sum the deltas
+   against `scores`. `audit-players` does the second half. Share or Shaft moves
+   points after the last question, so its finalists never sum.
+2. **The key.** Options are shuffled per room, so read `rooms/{code}` for the
+   order a `correctIndex` points into — **not the pack**, which printed four
+   false "wrong answer" alarms the first time.
+3. **Lost answers.** A question they played with no answer of theirs was not
+   in the room when it was scored ([`late-answers.md`](late-answers.md)).
+4. **Changed picks.** `firstMs` means they changed their mind, and rank is timed
+   on the last change. Then check `seasons/season-2/players` for a second row.
 
 ## Evidence, 8 September 2026
 

@@ -592,6 +592,22 @@ textarea {
 }
 
 /*
+  The lobby's sound check. The same slider as the corner's, given room: here it
+  is the point of the panel rather than furniture, so it gets a thumb's travel
+  worth dragging. Wraps under the button on a phone.
+*/
+.sound-check__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+.sound-check .sound-volume {
+  width: min(14rem, 100%);
+}
+
+/*
  * The gloss floor lived here — `.floor` clipping a `.reflection` that flipped a
  * second copy of the podium. Removed rather than retuned, and it is worth
  * saying why so nobody rebuilds it: the only part of a tile worth reflecting is

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { HAND_BUILT_PACK_IDS, PACK_IDS, packNeedsSound } from './types';
+import { fixedDurationFor, HAND_BUILT_PACK_IDS, PACK_IDS, packNeedsSound } from './types';
 
 describe('packNeedsSound', () => {
   test('only the packs that play a sound need the mute gate', () => {
@@ -13,6 +13,21 @@ describe('packNeedsSound', () => {
     expect(packNeedsSound('picture')).toBe(false);
     expect(packNeedsSound('screens')).toBe(false);
     expect(packNeedsSound('music')).toBe(false);
+  });
+});
+
+describe('fixedDurationFor', () => {
+  test('Name that Tune is always played on ten seconds', () => {
+    // Greg, 30 September 2026: on fifteen, round `SQ8V`'s clips sang their own
+    // titles. Ten is enough music to place a song.
+    expect(fixedDurationFor('tunes')).toBe(10);
+  });
+
+  test('every other pack keeps the lobby\'s choice', () => {
+    for (const id of PACK_IDS) {
+      if (id === 'tunes') continue;
+      expect(fixedDurationFor(id)).toBeNull();
+    }
   });
 });
 

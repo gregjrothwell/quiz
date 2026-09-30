@@ -14,22 +14,37 @@ describe('songClueAtMs', () => {
     }
   });
 
-  test('a sleeve with a song holds it back until half the clock', () => {
+  test('a sleeve with a song plays it from the start too', () => {
     // #given the cover is the question and the song is the clue
     const sleeve = { previewUrl: PREVIEW, artworkUrl: ART };
 
-    // #then the cover plays alone for the first half of each window a
-    // quizmaster can pick
-    expect(songClueAtMs(sleeve, 10_000)).toBe(5_000);
-    expect(songClueAtMs(sleeve, 15_000)).toBe(7_500);
-    expect(songClueAtMs(sleeve, 20_000)).toBe(10_000);
-    expect(SONG_CLUE_SHARE).toBe(0.5);
+    // #then no hold at any window a quizmaster can pick. Greg, 30 September
+    // 2026: in `XDUF` three answers in four were in before a half-clock song
+    // had started, so the clue helped almost nobody.
+    for (const window of [10_000, 15_000, 20_000]) {
+      expect(songClueAtMs(sleeve, window)).toBe(0);
+    }
+    expect(SONG_CLUE_SHARE).toBe(0);
+  });
+
+  test('the dial still holds a sleeve back if it is turned up again', () => {
+    // #given the share this shipped with on 29 September
+    const sleeve = { previewUrl: PREVIEW, artworkUrl: ART };
+
+    // #then the cover plays alone for that share of each window
+    expect(songClueAtMs(sleeve, 10_000, 0.5)).toBe(5_000);
+    expect(songClueAtMs(sleeve, 15_000, 0.5)).toBe(7_500);
+    expect(songClueAtMs(sleeve, 20_000, 0.5)).toBe(10_000);
   });
 
   test('a hashed still with a song is held back the same way', () => {
     // #given the rule is "a picture and a song", not "the Sleeves pack", so a
     // later picture pack with audio behaves the same without a second rule
-    expect(songClueAtMs({ previewUrl: PREVIEW, image: 'abc.jpg' }, 10_000)).toBe(5_000);
+    expect(songClueAtMs({ previewUrl: PREVIEW, image: 'abc.jpg' }, 10_000, 0.5)).toBe(5_000);
+  });
+
+  test('a tune is never held, whatever the dial says', () => {
+    expect(songClueAtMs({ previewUrl: PREVIEW }, 10_000, 0.5)).toBe(0);
   });
 
   test('a question with no song has nothing to hold', () => {

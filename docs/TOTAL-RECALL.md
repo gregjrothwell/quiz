@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 24 September 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 29 September 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -10,7 +10,7 @@ Append; do not rewrite an earlier entry to make it look as if we always knew. A
 correction is a new dated note that says what changed, and the wrong claim stays
 visible.
 
-**Split seven times, 28 August to 24 September 2026** — every time this file hit
+**Split eight times, 28 August to 29 September 2026** — every time this file hit
 300. Entries move *verbatim* to [`recall/2026-08.md`](recall/2026-08.md) or
 [`recall/2026-09.md`](recall/2026-09.md) and leave a dated pointer here, so the
 chronology still reads end to end. Shortening an old entry to make the number go
@@ -23,6 +23,67 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
+
+## 2026-09-30 — Joe's missing points were not missing; the music rounds start at once
+
+Joe said he was short after `XDUF` (Sleeves) and `SQ8V` (Tunes). **Every delta
+in both rounds recomputes exactly** from the answers with `tallyQuestion`, every
+stored score equals its summed deltas, each `correctIndex` names the same text as
+the local vault, and his season row banked 6,000 and 19,200. He answered all 35
+questions, so none was lost to a late reveal. What did cost him: **nine changes
+of pick**, three first touched at 0.5–0.6s. Rank is timed on the *last* change
+(`first-touch.md` AC 6) — at most 1,100 points across both rounds. Also: **two
+season rows** under "Joe" (27,500 on a uid last used 17 Sep). Method:
+[`game-record.md`](decisions/game-record.md#a-player-says-they-were-short).
+
+Built on `music-rounds-start-at-once`, **not merged**: a sleeve's song plays from
+the first frame (`SONG_CLUE_SHARE` 0 — in `XDUF` 133 of 175 answers beat a
+half-clock song), and Name that Tune is always ten seconds (Greg: on fifteen the
+clips sang their titles). **Open, Greg's call:** an audio check before the first
+question, and whether answering should wait until the music stops.
+[`sleeves-song.md`](decisions/sleeves-song.md) · [`tunes-round.md`](decisions/tunes-round.md).
+
+**Later the same day:** Greg chose the lobby sound check (option A, no rules
+paste) over a synced check in place of question one. Built on the same branch:
+ten seconds of a preview through `playPreview`, with the volume slider beside
+it. Checked in the built bundle, live volume change mid-clip included.
+Answering after the music stops is still open, recommended against.
+[`sound-check.md`](decisions/sound-check.md).
+
+## 2026-09-29 — Live: `index-BJxsEAQd` (#62, gh-pages `f5a273b`)
+
+A Sleeves cover now plays alone for half the clock, then a song from the same
+album starts: "which album is this song on?", with four same-artist options.
+There are songs on 102 of 104 sleeves, hand-picked, and any song whose title
+names the album or shares a distinctive word with it is refused. Ids are
+unchanged, so there was no reseed. No rules change. `host-room -- 10 --pack sleeves`,
+two tabs: `play()` at 5,002/5,003ms, on the element primed at the open. The first
+run caught the clock bed dropping that element. CI and Pages are green, and the
+Firebase chunk is unchanged. **Unplayed in production**: Claude's browser is App
+Check-throttled. Depth: [`decisions/sleeves-song.md`](decisions/sleeves-song.md).
+
+## 2026-09-27 — Live: `index-BJIHPrGR` (#61, gh-pages `6b06c51`)
+
+On the box 296, Sleeves 104, Name that Tune 268, and a spent pack repeats its
+oldest questions first. Grown because the office plays those three (8 of the
+last 10 rounds); **Fine Art was grown and reverted** — unplayed, so not worth
+anybody's review. Vault seeded before the merge: 270 added, read back 680/680,
+every answer one of its options. `check-rules` 91/91. CI verify + Playwright
+pass; Pages built 43s after publish; bundle, five pack files and 296 stills
+**byte-identical** to a local build of `16c4539`; 104 sleeve covers load.
+Live round `9PQX` in the built-in browser: new and old tunes revealed from the
+vault, an answer written in 1.4s and marked wrong correctly; left unfinished,
+not banked. **First load got an App Check 403, and the SDK then throttled that
+browser for 24 hours** — a likely shape for Cass's undiagnosed failed join.
+Depth: [`decisions/cost.md`](decisions/cost.md), [`decisions/repeats.md`](decisions/repeats.md),
+[`decisions/sleeves-gate.md`](decisions/sleeves-gate.md), [`decisions/tunes-title-gate.md`](decisions/tunes-title-gate.md).
+
+## 2026-09-24 — Live: `index-fy6Fyqpa` (#60, gh-pages `5bf6290`)
+
+Share or Shaft and On the box 187. Seed 129 added / 0 changed, vault read-back 187/187,
+`check-rules` 91/91, CI verify + Playwright pass; Pages built in 40s, bundle byte-identical
+to a local build, all 187 stills served. `YHK3` on the live site against a local client:
+10 new On the box questions revealed, final settled shaft/share 7,000/0, not banked.
 
 ## 2026-09-24 — On the box: 54 to 187, stacked on Share or Shaft
 
@@ -44,6 +105,20 @@ named **Share or Shaft**, picks sealed by commit-then-reveal, and built on
 **Pasted the same afternoon:** `check-rules` 86/5 → **91/91**, `final-harness`
 `S3DW` paid 1,900/0/0 with three re-commits refused, `sync-harness` 10/10, and a
 two-browser round, `QUF7`, played through the final to the reveal. Not deployed.
+
+## 2026-09-22 — Live: `index-BE_5Hyg5` (#59, gh-pages `7b72a40`)
+
+[#59](https://github.com/gregjrothwell/quiz/pull/59) merged as `cd4a1be` at
+09:16; CI published gh-pages `7b72a40` at 09:19:56, author **GitHub Actions**.
+Pages `built` 09:21:09 (72s). **The live bundle's sha matches a local build of
+that tree byte for byte** — `index-BE_5Hyg5.js`, `14b8f2e0`, both sides.
+Firebase chunk unmoved at `firebase-W6iQUl4r`. CI ran **Playwright against the
+emulators — pass**, which is the check that cannot run on this Mac at all: no
+Java runtime, so `npm run e2e` never starts the emulators. Before the merge:
+`check-rules` 81/81, `rank-harness` `MB7R` to `finished`, `sync-harness 10` at
+10/10, `check-bundle` clean, 1,028 tests. Live site checked after the build —
+no store badge on any question, the iTunes attribution on the tune card, none
+on the sleeve. Unplayed.
 
 ## 2026-09-22 — The store badge was handing out the answer, on both packs
 
@@ -93,14 +168,7 @@ contained #55, which closed itself as merged. Second RTDB paste landed 16:56:
 
 ## 2026-09-21 — Vault oracle, joinedAt, and the `at` stamp
 
-Any signed-in player could extract the vault: rewrite `questions[0].id` without
-moving phase or index, then four reveal writes. `check-rules` passed for the
-wrong reason. Closed by pinning `questions` to the lobby. `joinedAt: 0` seized
-quizmaster; now a new entry is ±5 minutes and an existing one cannot move.
-Answers carry optional `at: serverTimestamp()`; rank still reads `elapsedMs`.
-Presence drops `name` (two RTDB pastes). Alistair is fastest in 11 of 12 with
-a 203 ms right→wrong gap; do not accuse — `npm run audit-players` after one
-round is the answer. Depth:
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md). Depth:
 [`decisions/security-round-sept-2026.md`](decisions/security-round-sept-2026.md).
 
 ## 2026-09-21 — Live: `index-BHcNzJzP` (#54, gh-pages `026d7cd`)
@@ -111,49 +179,11 @@ at 15:15:29. Pages lagged four minutes. Unplayed. Archived whole:
 
 ## 2026-09-21 — Correction: the sleeve audit missed a third of them, and a person found the rest
 
-The entry below says 40 published against a 36 floor. **Both numbers were wrong
-by the time the day ended, and the reason is worth more than the numbers.**
-
-Apple's Vision reads printed prose well and stylised cover type not at all. Of
-the 37 covers it cleared, **eleven print their own title** — letterspaced (`T H E
-J O S H U A  T R E E`), scripted (*The Fame*, on the sunglasses), or upside down
-in one tile of a grid (*Achtung Baby*). A second batch of candidates the same
-afternoon held the rate almost exactly: eight of 26. **Roughly a third, twice.**
-
-So the audit narrows the field and a person settles it, by looking —
-`sleeve-audit -- --sheet` writes a labelled contact sheet and every one of the
-nineteen is obvious in it at 190px. The nineteen are in `sleeve-refusals.ts`
-with what is on each cover and what Vision read instead, so the judgement
-survives a regenerate.
-
-216 candidate albums added in all. **229 resolved, 185 refused, 44 published** —
-the 36 floor held without moving. Re-rated against the covers themselves:
-3/15/26 easy/medium/hard becomes **12/20/12**. Those ratings are judgements, not
-measurements, and stand exactly as the season's seeded `form` figures do.
-
-**Vault seeded and read back: 44 of 44 published sleeves hold a valid answer.**
-Nothing was deleted, so the 52-question pack still live keeps working. Also
-live-affecting and fixed: a one-character title is now refused outright, because
-`words('÷')` is empty and the glyph *is* the artwork.
-
-Depth: [`decisions/sleeves-gate.md`](decisions/sleeves-gate.md).
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-21 — The picture sits beside the answers now
 
-Greg: the pictures are a bit small. Measured on a 1512px laptop — a 448px still
-capped at 28rem in a 965px card, **517px of the row beside it empty**, and 12px
-between the picture and the top lectern. No vertical room to grow into and a
-whole column going unused.
-
-Above 64rem a picture question puts the still on the left and the four lecterns
-in a single column on the right. Flags 448×224 → **614×307**; On the box
-448×252 → **614×345** — 1.88× the area, both. Squares are left alone: a sleeve
-at full column width is taller than the lecterns beside it and pushes the row
-below the fold. The row height is still set by the lecterns, so nothing moved
-further down the page.
-
-**Hover-to-enlarge was asked for and then dropped** — Greg, once the numbers
-were on the table: the layout change will probably be enough.
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-21 — Sleeves: the cover was the answer key on 11 of 15
 
@@ -165,78 +195,29 @@ Archived whole: [`recall/2026-09.md`](recall/2026-09.md). Depth:
 Archived whole: [`recall/2026-09.md`](recall/2026-09.md). Depth:
 [`decisions/picture-loading.md`](decisions/picture-loading.md).
 
-## 2026-09-11 — #52 live: `index-n26s0ofl`
+## 2026-09-04 to 2026-09-11 — archived, one line each
 
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
+*Collapsed from four-line stubs on 30 September 2026 to make room; every
+entry is verbatim in the archive, and nothing was shortened.*
 
-## 2026-09-11 — The round was the best yet, and three things came out of it
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-10 — Playwright prerequisites: jsdom, emulators, e2e job
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-10 — Node 20 deprecation: the four actions clear it at three different majors
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-10 — Season form seeded on old rows, and they are estimates
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-10 — Deploys come from CI now (`index-qJCbuGrA`)
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-10 — Three corrections the live project made to the docs
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-10 — The season form ranking was live, then silently reverted
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-10 — Deploy guard added; CI outlined for later
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-10 — Token revoked and reissued; leak closed
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-10 — Live: the debug-token gate (`index-V9wVdhyu`), and #40 for the rules
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-10 — Correction: the console was ahead of the repo, not behind
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-10 — Live: volume, clip cuts, 177 songs (`index-C3jZR3XU`)
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-10 — Name that Tune worked; volume, giveaways, 177 songs
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md). Depth:
-[`decisions/tunes-round.md`](decisions/tunes-round.md).
-
-## 2026-09-09 — The whole day, archived
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-08 — The whole day, archived
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-04 — Three more entries archived
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-04 — Three entries archived
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
+- **2026-09-11** — [#52 live: `index-n26s0ofl`](recall/2026-09.md#2026-09-11--52-live-index-n26s0ofl)
+- **2026-09-11** — [The round was the best yet, and three things came out of it](recall/2026-09.md#2026-09-11--the-round-was-the-best-yet-and-three-things-came-out-of-it)
+- **2026-09-10** — [Playwright prerequisites: jsdom, emulators, e2e job](recall/2026-09.md#2026-09-10--playwright-prerequisites-jsdom-emulators-e2e-job)
+- **2026-09-10** — [Node 20 deprecation: the four actions clear it at three different majors](recall/2026-09.md#2026-09-10--node-20-deprecation-the-four-actions-clear-it-at-three-different-majors)
+- **2026-09-10** — [Season form seeded on old rows, and they are estimates](recall/2026-09.md#2026-09-10--season-form-seeded-on-old-rows-and-they-are-estimates)
+- **2026-09-10** — [Deploys come from CI now (`index-qJCbuGrA`)](recall/2026-09.md#2026-09-10--deploys-come-from-ci-now-index-qjcbugra)
+- **2026-09-10** — [Three corrections the live project made to the docs](recall/2026-09.md#2026-09-10--three-corrections-the-live-project-made-to-the-docs)
+- **2026-09-10** — [The season form ranking was live, then silently reverted](recall/2026-09.md#2026-09-10--the-season-form-ranking-was-live-then-silently-reverted)
+- **2026-09-10** — [Deploy guard added; CI outlined for later](recall/2026-09.md#2026-09-10--deploy-guard-added-ci-outlined-for-later)
+- **2026-09-10** — [Token revoked and reissued; leak closed](recall/2026-09.md#2026-09-10--token-revoked-and-reissued-leak-closed)
+- **2026-09-10** — [Live: the debug-token gate (`index-V9wVdhyu`), and #40 for the rules](recall/2026-09.md#2026-09-10--live-the-debug-token-gate-index-v9wvdhyu-and-40-for-the-rules)
+- **2026-09-10** — [Correction: the console was ahead of the repo, not behind](recall/2026-09.md#2026-09-10--correction-the-console-was-ahead-of-the-repo-not-behind)
+- **2026-09-10** — [Live: volume, clip cuts, 177 songs (`index-C3jZR3XU`)](recall/2026-09.md#2026-09-10--live-volume-clip-cuts-177-songs-index-c3jzr3xu)
+- **2026-09-10** — Name that Tune worked; volume, giveaways, 177 songs — [`recall/2026-09.md`](recall/2026-09.md) · depth: [`decisions/tunes-round.md`](decisions/tunes-round.md)
+- **2026-09-09** — The whole day, archived — [`recall/2026-09.md`](recall/2026-09.md)
+- **2026-09-08** — The whole day, archived — [`recall/2026-09.md`](recall/2026-09.md)
+- **2026-09-04** — Three more entries archived — [`recall/2026-09.md`](recall/2026-09.md)
+- **2026-09-04** — Three entries archived — [`recall/2026-09.md`](recall/2026-09.md)
 
 ## Earlier — the full chronology, archived
 
