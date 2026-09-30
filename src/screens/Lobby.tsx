@@ -14,7 +14,7 @@ import {
   type Level,
   type RoomState,
 } from '../engine/state';
-import { packNeedsSound, type PackId, type PackSummary } from '../questions/types';
+import { fixedDurationFor, packNeedsSound, type PackId, type PackSummary } from '../questions/types';
 
 const ROUND_LENGTHS = [10, 15, 20, 25] as const;
 
@@ -165,6 +165,10 @@ export function Lobby({
   const selected = packs.find((pack) => pack.id === packId);
   const available = selected ? availableFor(selected, level, jigsaw) : 0;
   const effectiveCount = Math.min(count, available);
+  // A pack that fixes its own window overrides the picker without forgetting
+  // what was picked, so switching back to another pack restores it.
+  const lockedDuration = packId === null ? null : fixedDurationFor(packId);
+  const effectiveDuration = lockedDuration ?? durationSecs;
   const link = joinLink(window.location.origin, import.meta.env.BASE_URL, room.code);
 
   return (
@@ -269,7 +273,7 @@ export function Lobby({
           <div className="stack">
             <p className="muted hint">
               Sound is off. Name that Tune and Classical are silent unless you turn it on,
-              and Sleeves plays a song halfway through.
+              and Sleeves plays a song from the album.
             </p>
             <div className="btn-row">
               <button type="button" className="btn" onClick={toggle}>
@@ -346,7 +350,8 @@ export function Lobby({
                     type="button"
                     key={option}
                     className="pick"
-                    aria-pressed={option === durationSecs}
+                    aria-pressed={option === effectiveDuration}
+                    disabled={lockedDuration !== null && option !== lockedDuration}
                     onClick={() => setDurationSecs(option)}
                   >
                     <b>{meta?.title ?? `${option}s`}</b>
@@ -363,7 +368,10 @@ export function Lobby({
               until the window has closed. See docs/decisions/answer-window.md.
             */}
             <p className="muted hint">
-              Every question runs the full {durationSecs} seconds — the answer is locked away
+              {lockedDuration !== null
+                ? `${selected?.title ?? 'This pack'} always runs at ${lockedDuration} seconds — any longer and the clips start singing their own titles. `
+                : null}
+              Every question runs the full {effectiveDuration} seconds — the answer is locked away
               until then, so it can&rsquo;t be revealed early.
             </p>
           </div>
@@ -527,7 +535,7 @@ export function Lobby({
             }
             onClick={() =>
               packId &&
-              onStart(packId, effectiveCount, level, durationSecs, wager, steal, jigsaw, standoff)
+              onStart(packId, effectiveCount, level, effectiveDuration, wager, steal, jigsaw, standoff)
             }
           >
             {busy
