@@ -1,19 +1,34 @@
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { createRoom, type QuizQuestion, type RoomState } from '../engine/state';
+import type * as SongClueModule from '../engine/songClue';
 import type * as SoundModule from '../lib/sound';
 import type { QuestionClock } from '../lib/useQuestionClock';
 import { QuestionScreen } from './QuestionScreen';
 
 /**
- * A sleeve's song arrives at half the clock, and not a moment before.
+ * A sleeve's song plays from the start, as a tune's does — and if the dial is
+ * turned back up, not a moment before it says.
  *
- * The cover is the question; the song is the clue. Whoever places the cover on
- * sight answers first and takes the rank bonus, and the song rescues everybody
- * else. **Any route to the song before half-clock gives the fast players' edge
- * away**, and the replay button and the `R` key are both routes — so both are
- * pinned here as well as the autoplay. See docs/decisions/sleeves-song.md.
+ * It shipped held for half the clock and was brought forward to the start on
+ * 30 September 2026, because in `XDUF` three answers in four were in before
+ * the song had begun. The hold is kept as a dial (`SONG_CLUE_SHARE`), so what a
+ * non-zero one does stays pinned below: **any route to the song before its
+ * moment gives the fast players' edge away**, and the replay button and the `R`
+ * key are both routes. See docs/decisions/sleeves-song.md.
  */
+
+/** The dial, turned by hand. Null is what ships. */
+const dial = vi.hoisted(() => ({ share: null as number | null }));
+
+vi.mock('../engine/songClue', async (importOriginal) => {
+  const actual = await importOriginal<typeof SongClueModule>();
+  return {
+    ...actual,
+    songClueAtMs: (question: Parameters<typeof actual.songClueAtMs>[0], durationMs: number) =>
+      actual.songClueAtMs(question, durationMs, dial.share ?? actual.SONG_CLUE_SHARE),
+  };
+});
 
 const sound = vi.hoisted(() => ({
   playPreview: vi.fn(),
@@ -35,6 +50,7 @@ vi.mock('../lib/sound', async (importOriginal) => {
 
 beforeEach(() => {
   for (const fn of Object.values(sound)) fn.mockClear();
+  dial.share = null;
 });
 afterEach(cleanup);
 
@@ -66,7 +82,7 @@ const TUNE: QuizQuestion = {
   storeUrl: 'https://music.apple.com/gb/album/1440717563?i=1440717826',
 };
 
-/** A 10s room, so the clue lands at 5s. */
+/** A 10s room, so a half-clock clue lands at 5s. */
 function roomWith(question: QuizQuestion): RoomState {
   return {
     ...createRoom('HKQ7'),
@@ -111,7 +127,51 @@ const replayButton = (container: HTMLElement): HTMLButtonElement | null =>
     /hear it|play the tune|halfway/i.test(button.textContent ?? ''),
   ) ?? null;
 
-describe('a sleeve with a song', () => {
+describe('a sleeve with a song, as it ships', () => {
+  test('plays the song from the first render, once, with the audited cut', () => {
+    // #given a sleeve at the moment the question opens
+    const { rerender } = render(screen(SLEEVE, at(0)));
+
+    // #then the song starts straight away, from the audited start and cut —
+    // no hold, and nothing to prime ahead of a moment already here
+    expect(sound.playPreview).toHaveBeenCalledTimes(1);
+    expect(sound.playPreview).toHaveBeenCalledWith(PREVIEW, 2, 9);
+    expect(sound.primePreview).not.toHaveBeenCalled();
+
+    // #and the ticks after it do not start it again
+    rerender(screen(SLEEVE, at(100)));
+    rerender(screen(SLEEVE, at(5_000)));
+    expect(sound.playPreview).toHaveBeenCalledTimes(1);
+  });
+
+  test('the replay works from the start, as it does for a tune', () => {
+    const { container } = render(screen(SLEEVE, at(1_000)));
+    sound.playPreview.mockClear();
+    const button = replayButton(container);
+    expect(button?.disabled).toBe(false);
+    if (button) fireEvent.click(button);
+    expect(sound.playPreview).toHaveBeenCalledWith(PREVIEW, 2, 9);
+  });
+
+  test('carries the iTunes attribution from the first frame', () => {
+    // #given Apple's condition (iii) is about a question that has a preview,
+    // not about the instant it is audible
+    const { container } = render(screen(SLEEVE, at(1_000)));
+    expect(container.textContent).toContain('Provided courtesy of iTunes');
+  });
+
+  test('offers the album’s store page at the reveal as a place to listen', () => {
+    const { container } = render(screen(SLEEVE, at(10_000), true));
+    const badge = container.querySelector('.store-badge');
+    expect(badge?.getAttribute('href')).toBe(SLEEVE.storeUrl);
+  });
+});
+
+describe('a sleeve with a song, if the dial is turned back up to half', () => {
+  beforeEach(() => {
+    dial.share = 0.5;
+  });
+
   test('opens on the cover alone, with the song already loading', () => {
     // #given a sleeve, 4s into a 10s question
     render(screen(SLEEVE, at(4_000)));
@@ -179,19 +239,6 @@ describe('a sleeve with a song', () => {
     expect(button?.disabled).toBe(false);
     if (button) fireEvent.click(button);
     expect(sound.playPreview).toHaveBeenCalledWith(PREVIEW, 2, 9);
-  });
-
-  test('carries the iTunes attribution while the song is still to come', () => {
-    // #given Apple's condition (iii) is about a question that has a preview,
-    // not about the instant it is audible
-    const { container } = render(screen(SLEEVE, at(1_000)));
-    expect(container.textContent).toContain('Provided courtesy of iTunes');
-  });
-
-  test('offers the album’s store page at the reveal as a place to listen', () => {
-    const { container } = render(screen(SLEEVE, at(10_000), true));
-    const badge = container.querySelector('.store-badge');
-    expect(badge?.getAttribute('href')).toBe(SLEEVE.storeUrl);
   });
 });
 

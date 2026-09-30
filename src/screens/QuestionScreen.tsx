@@ -274,7 +274,8 @@ export function QuestionScreen({
   const hasTune = hasMelody || hasPreview;
 
   /*
-    A sleeve's song waits for half the clock; a tune's is due at once.
+    A tune's song is due at once, and so is a sleeve's since 30 September 2026 —
+    `SONG_CLUE_SHARE` is the dial that would hold it back.
 
     On the room's shared clock, so it lands together on every screen — the rank
     bonus is decided in these seconds. See `src/engine/songClue.ts` and
