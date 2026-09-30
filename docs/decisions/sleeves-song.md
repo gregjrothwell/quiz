@@ -3,7 +3,8 @@
 **Owner: Greg Rothwell. Last updated: 29 September 2026. Budget: 250 lines.**
 
 **Status: approved by Greg on 29 September 2026, with all three decisions as
-recommended. Built on `sleeves-song-clue`; not merged, not deployed.** Where
+recommended. Live on 29 September 2026** as `index-BJxsEAQd` (#62, merge
+`68cfd24`, gh-pages `f5a273b`). **Unplayed.** Where
 the build differed from the criteria, the change is recorded beside the
 criterion.
 

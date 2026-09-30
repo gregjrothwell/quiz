@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 24 September 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 29 September 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -26,7 +26,7 @@ Built to replace Polly in Teams.
 | scoring an answer that lands late; the review panel and the replay | [`late-answers.md`](decisions/late-answers.md) · [`review-replay.md`](decisions/review-replay.md) |
 | packs, harvesting, classification, **On the box / TMDB stills** | [`questions.md`](decisions/questions.md) |
 | **a picture that does not turn up**, preloading, the box a still gets | [`decisions/picture-loading.md`](decisions/picture-loading.md) |
-| **an album cover that names its own album**, the sleeve audit; **a song from the album as a mid-question clue** (built on `sleeves-song-clue`, not merged) | [`decisions/sleeves-gate.md`](decisions/sleeves-gate.md) · [`sleeves-song.md`](decisions/sleeves-song.md) |
+| **an album cover that names its own album**, the sleeve audit; **a song from the album at half the clock** (live 29 Sep, #62) | [`decisions/sleeves-gate.md`](decisions/sleeves-gate.md) · [`sleeves-song.md`](decisions/sleeves-song.md) |
 | voting on a question, retiring one | [`question-votes.md`](decisions/question-votes.md) |
 | rules and App Check — Firestore and RTDB, then **auth**, then the debug token and why a deploy must not come off `master` | [`security.md`](decisions/security.md) · [`app-check-auth.md`](decisions/app-check-auth.md) · [`debug-token-leak.md`](decisions/debug-token-leak.md) |
 | **the vault oracle, `joinedAt`, the `at` stamp, presence names** | [`security-round-sept-2026.md`](decisions/security-round-sept-2026.md) |
@@ -42,50 +42,44 @@ Built to replace Polly in Teams.
 | what a finished round left behind, and reading it back | [`decisions/game-record.md`](decisions/game-record.md) |
 | upgrading `package.json`; the studio set and lighting cues | [`dependencies.md`](decisions/dependencies.md) · [`lighting.md`](decisions/lighting.md) |
 
-## State as of 22 September 2026
+## State as of 29 September 2026
 
-> **READ FIRST — #56's `questionsPinned` refused every reveal; fixed and pasted
-> 22 September, playable again.** Rules only, no redeploy — `check-rules`
-> **81/81** with the allow case FAIL→PASS on the paste, then `rank-harness`
-> played `CNSE` to `finished`. Branch `fix-reveal-refused-by-questions-pin` is
-> **unmerged**. **#54 unplayed; the season board's form is estimated.** `.github/workflows/ci.yml` builds and publishes from `master`, so
-> the token leak is closed at the source
-> ([`decisions/ci-deploy.md`](decisions/ci-deploy.md)). Every season row but one
-> carries a **seeded, estimated** `form`
-> ([`decisions/season.md`](decisions/season.md)). The sleeve ratings are
-> **judgements, not measurements** — see Outstanding 1.
+> **READ FIRST — #62 is live: a Sleeves cover plays alone for half the clock,
+> then a song from the same album starts** (102 of 104 sleeves). There was no
+> vault reseed (ids unchanged) and no rules change. **Unplayed.** If the next
+> three Sleeves rounds stay under 50%, bring the song in earlier with
+> `SONG_CLUE_SHARE` ([`sleeves-song.md`](decisions/sleeves-song.md)). #61, 27
+> Sep: On the box 296, Tunes 268; its stills and covers still want a person
+> (Outstanding 1).
 
-**Live is `index-OfECpKrx`** (21 Sep 16:51, gh-pages `f78379e`, `81d55a4`/#56,
-CI) — *check gh-pages **and** `pages/builds`; this one: `built` in 48s.*
-Firebase chunk **moved to `firebase-W6iQUl4r`** (#51 touched `src/firebase.ts`).
-**16 packs**; **Name that Tune 177**; synth **Classical**; **On the box** 54 live,
-187 unseeded on `more-picture-questions`; **Flags** 76; **Sleeves 44** after the
-cover audit (12/20/12); picture is **Fine Art**. Every still now carries
-`imageWidth`/`imageHeight`; a picture sits beside the answers above 64rem.
+**Live is `index-BJxsEAQd`** (29 Sep, gh-pages `f5a273b`, `68cfd24`/#62, CI) —
+*check gh-pages **and** `pages/builds`.* Firebase chunk `firebase-W6iQUl4r`,
+unchanged since #61.
+**16 packs**; **Name that Tune 268**; synth **Classical**; **On the box 296**
+(hashed TMDB stills, at most 8 titles before 1990); **Flags** 76; **Sleeves 104**
+after four candidate batches and 42 refusals by eye; picture is **Fine Art** 49.
 
-**Played and kept:** eleven rounds. Name that Tune `CUC4` **80%, 3.1s median —
-the best recorded** ([`reveal-delays.md`](decisions/reveal-delays.md)); four On
-the box at 83–89%; **Sleeves `53FN` at 85%, which was the pack answering itself**
-([`sleeves-gate.md`](decisions/sleeves-gate.md)); text rounds 21–47%. Melody is
-live, played, and did not work ([`melody-round.md`](decisions/melody-round.md)).
-**Check the live records, not the prose — three docs have drifted on this.**
+**What the office plays** (21–25 Sep, 10 rounds): On the box 3, Sleeves 3, Tunes
+2, text 2. Once the covers stopped naming themselves, Sleeves fell from 85% to
+49%, 31% and 43% (`BRST`, 29 Sep) ([`sleeves-gate.md`](decisions/sleeves-gate.md)). **The binding
+constraint is content in those packs, not Firebase** — limits re-read 26
+September in [`cost.md`](decisions/cost.md). **Check the live records
+(`read-games`, `asked-probe`), not the prose.**
 
 **Otherwise:** `appcheck-probe` refuses at sign-in; reveal ~0.5s after the clock;
-scoring 500 + rank 500/400/300/200/100; counts in
-[`cost.md`](decisions/cost.md#measured-live-28-august-2026).
+scoring 500 + rank 500/400/300/200/100.
 
 ## Outstanding
 
-1. **The sleeve audit is not enough alone — a person has to look.** Vision missed
-   the printed title on **a third** of the covers it cleared, twice running.
-   Nineteen are refused by hand in `sleeve-refusals.ts`; `sleeve-audit --sheet`
-   is the pass. The 44 ratings are **judgements, not measurements**
-   ([`sleeves-gate.md`](decisions/sleeves-gate.md)).
+1. **Two contact sheets want a person**: On the box (109 new) and Sleeves (60
+   new), sent 26–27 September. Only a model has looked, and on sleeves a model
+   has missed a third of printed titles before. Refuse in `sleeve-refusals.ts`;
+   drop a still from `hand-screens-data.ts`. Ratings are judgements.
 2. **Ask Bret whether it was one picture or the lot.** `M9YU` has eight questions
    at 6/6, so he was not blind throughout
    ([`picture-loading.md`](decisions/picture-loading.md)).
-3. **40 sleeve albums will not resolve at all** — GB album search returns
-   tributes, so they need `collectionId`s found by hand. The audit names them.
+3. **3 sleeve albums will not resolve** — Melody A.M., Nostalgia, Ultra, Weezer
+   (Blue Album). The rest now carry `collectionId`s from the artist's catalogue.
 4. **29 of 30 season rows carry an *estimated* `form`**, seeded by
    `npm run backfill-form` — the scores it is defined over were never stored, so
    these are invented and decay as people bank. Real ones were not overwritten
@@ -100,25 +94,30 @@ scoring 500 + rank 500/400/300/200/100; counts in
    spent — it substitutes medium. The fix is a fold of `games/` into real
    difficulty, **a query now rather than a build**, and `games/` now holds
    eleven rounds rather than three, so it is no longer gated on playing.
-9. **Do not paste `master`'s rules over the console.** Live Firestore is
-   `share-or-shaft` (48,604 bytes, pasted 24 Sep): `master` lacks the `standoff`
-   phase. `check-rules` **91/91 both ways, 24 September**; `sync-harness 10`
-   **10/10, 0 dropped**. RTDB `{ at }` allowed; `{ name, at }` refused.
-10. **Hand-built packs need a seed after any *new* ids.** On the box's **133 new
-    ids are unseeded** (24 Sep): `seed-vault` before the deploy, or they stall at reveal.
+9. **Rules are published by hand.** `check-rules` **91/91 both ways, 27
+   September**. Read [`security.md`](decisions/security.md) before any paste.
+10. **Seed before any new ids ship** — `npm run seed-vault -- --pack <id>` reads
+    one pack. All seeded as of 27 September; an unseeded pack breaks at reveal.
 11. **`firstMs` and the pack picker are live and unplayed.** It is a deterrent,
     so the only test is whether his behaviour changes next round:
     [`first-touch.md`](decisions/first-touch.md).
-12. **Cass could not join `CUC4`**, undiagnosed, no join ever written — **ask her
-    what the screen said** ([`app-check-auth.md`](decisions/app-check-auth.md)).
+12. **Cass could not join `CUC4`**, no join ever written. Candidate, 27 Sep: one
+    App Check 403 makes the SDK lock that browser out for **24 hours** ("Cannot
+    reach the server"); seen live in the built-in browser. Ask what she saw.
 13. **#52 has now been played eight times and `RevealTiming` is being written** —
     every round since carries gate/resolve/dispatch. No stall has recurred, so
     the reveal fix is still unproved rather than disproved
     ([`reveal-delays.md`](decisions/reveal-delays.md)).
-14. **All three pastes landed.** Play one round, then `npm run audit-players`
-    — implied delay is the Alistair answer. `cleanup-dead-code` still local.
-    [`security-round-sept-2026.md`](decisions/security-round-sept-2026.md).
-    
+14. **Loose ends from 26–27 September**: five new tunes transcribed to nothing
+    and want an ear (`live-forever`, `golden-touch`, `build-me-up-buttercup`,
+    `call-the-shots`, `gangnam-style`); **56 rooms past expiry** —
+    `npm run prune-rooms -- --go`; reCAPTCHA's monthly count is unmeasured
+    (10k free per organisation); #58 `cleanup-dead-code` is open, unreviewed.
+15. **#62, 29 Sep ([`sleeves-song.md`](decisions/sleeves-song.md)).** Not played
+    in production: Claude's browser is App Check-throttled (403 at 15:36), so it
+    was checked on dev against live Firebase. Five songs want an ear.
+    *Reasonable Doubt* and *Future Nostalgia* show a **single's** artwork
+    (`titleMatches` takes a prefix). A stale Vite (PID 29183) holds port 5273.
 
 ## Where things are
 
@@ -137,12 +136,12 @@ importing `read-games` breaks that, since that module calls `main()` at import.
 ## If you're picking this up cold
 
 **The token leak is closed and the gate is on `master`**, so a CI deploy is
-safe. If rules matter: `npm run check-rules` and `npm run sync-harness 10`, both
-green 21 September (80/80 both ways; 10/10, 0 dropped).
+safe. If rules matter: `npm run check-rules` (91/91, 27 September) and
+`npm run sync-harness 10` (10/10, 21 September).
 
-**Seeded 21 September** — 42 added, 1 changed, nothing deleted; read back from
-Firestore, 44 of 44 published sleeves hold a valid answer. The seed only ever
-adds, so the 52-question pack still live keeps working.
+**Seeded 27 September** — screens, sleeves and tunes: 270 added, 1 changed (an
+id seeded earlier from an unpublished spec), read back 680/680. The seed only
+ever adds, so anything still live keeps working.
 
 Bitten more than once: **the rules are published by hand**, so the repo copy is
 not what Firebase runs ([`security.md`](decisions/security.md)); **the answer
