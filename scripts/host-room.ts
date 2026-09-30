@@ -15,10 +15,10 @@
  *   npm run host-room -- 10
  *
  * `--pack sleeves` plays two real sleeves instead of the harness questions:
- * the first with its song, which should start at half the clock, and the
- * second with the song taken off, which should play silent as a sleeve always
- * did. Both are published ids, so the vault already holds their answers. See
- * docs/decisions/sleeves-song.md.
+ * the first with its song, which should start at once (half the clock until
+ * 30 September 2026), and the second with the song taken off, which should
+ * play silent as a sleeve always did. Both are published ids, so the vault
+ * already holds their answers. See docs/decisions/sleeves-song.md.
  *
  *   npm run host-room -- 10 --pack sleeves
  *
