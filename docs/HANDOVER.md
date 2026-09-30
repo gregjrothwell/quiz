@@ -44,17 +44,16 @@ Built to replace Polly in Teams.
 
 ## State as of 30 September 2026
 
-> **READ FIRST — `music-rounds-start-at-once` is built, not merged:** a sleeve's
-> song plays from the first frame (`SONG_CLUE_SHARE` 0), Name that Tune is
-> always 10s, and the lobby has a **sound check** for every player
-> ([`sound-check.md`](decisions/sound-check.md)). It stacks on `live-after-62`, so
-> one merge ships all of it. Joe's "missing points" (`XDUF`, `SQ8V`) recomputed
-> exactly — changed picks, not a bug. **Greg to decide:** answering after the
-> music stops (recommended against; [`TOTAL-RECALL`](TOTAL-RECALL.md), 30 Sep).
+> **READ FIRST — #63 is live (30 Sep):** a sleeve's song plays from the first
+> frame (`SONG_CLUE_SHARE` 0), Name that Tune is always 10s, and the lobby has a
+> **sound check** for every player ([`sound-check.md`](decisions/sound-check.md)).
+> No reseed, no rules change. **Unplayed in production.** Joe's "missing points"
+> (`XDUF`, `SQ8V`) recomputed exactly — changed picks, not a bug. **Greg to
+> decide:** answering after the music stops (recommended against).
 
-**Live is `index-BJxsEAQd`** (29 Sep, gh-pages `f5a273b`, `68cfd24`/#62, CI) —
-*check gh-pages **and** `pages/builds`.* Firebase chunk `firebase-W6iQUl4r`,
-unchanged since #61.
+**Live is `index-frzpKPeW`** (30 Sep, gh-pages `9cf24c8`, `0322787`/#63, CI) —
+*check gh-pages **and** `pages/builds`; this one: `built` in 61s.* Firebase
+chunk `firebase-W6iQUl4r`, unchanged since #61.
 **16 packs**; **Name that Tune 268**; synth **Classical**; **On the box 296**
 (hashed TMDB stills, at most 8 titles before 1990); **Flags** 76; **Sleeves 104**
 after four candidate batches and 42 refusals by eye; picture is **Fine Art** 49.

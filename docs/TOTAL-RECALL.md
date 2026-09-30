@@ -24,6 +24,16 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-09-30 — Live: `index-frzpKPeW` (#63, gh-pages `9cf24c8`)
+
+Sleeve song from the first frame, Name that Tune locked to 10s, and the lobby
+sound check. Before merge: 1,170 unit tests, `check-rules` 91/0,
+`sync-harness 10` 10/10, `rank-harness` and `final-harness` green, and live room
+`Y4XR` played a sleeve's song on the question's first frame. `e2e` could not run
+locally (no Java); CI's Playwright job passed. Auto-merge was refused by Claude
+Code's permission classifier, so Greg merged. Pages `built` in 61s; the live
+bundle carries the new copy. **Unplayed in production.**
+
 ## 2026-09-30 — Joe's missing points were not missing; the music rounds start at once
 
 Joe said he was short after `XDUF` (Sleeves) and `SQ8V` (Tunes). **Every delta
