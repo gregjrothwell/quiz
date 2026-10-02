@@ -199,6 +199,72 @@ const CROWD = Object.fromEntries(
   ]),
 );
 
+/**
+ * Thirty, the most this room has been asked to hold: a one-off office game,
+ * nearly three times the eleven of the biggest round ever played (`RX4P`,
+ * 9 September 2026). Long names, three squads and the unaligned, so the lamps,
+ * the standings and the podium are seen at the width they will actually be.
+ */
+const THIRTY_NAMES = [
+  'Greg', 'Sam', 'Priya', 'Alex', 'Jo', 'Nadia', 'Tom', 'Rhian', 'Marcus', 'Bea',
+  'Christopher', 'Anne-Marie', 'Siobhán', 'Maximilian', 'Oluwaseun', 'Kat', 'Dev',
+  'Rach', 'Inès', 'Bartholomew', 'Lou', 'Yusuf', 'Gwenllian', 'Ed', 'Mei',
+  'Fitzgerald', 'Zara', 'Callum', 'Hannah-Rose', 'Pip',
+];
+const THIRTY_SQUADS = ['Hermes', 'Bundae', 'Engineering', ''];
+const thirtyUid = (index: number): string => (index === 0 ? 'greg' : `p${index}`);
+
+const THIRTY = Object.fromEntries(
+  THIRTY_NAMES.map((name, index) => {
+    const squad = THIRTY_SQUADS[index % THIRTY_SQUADS.length];
+    return [thirtyUid(index), { name, joinedAt: 100 + index, ...(squad ? { squad } : {}) }];
+  }),
+);
+
+/** Half the room in, spread across the lecterns and the clock. */
+const THIRTY_HALF_IN = Object.fromEntries(
+  THIRTY_NAMES.slice(0, 15).map((_, index) => [
+    thirtyUid(index * 2),
+    { optionIndex: index % 4, elapsedMs: 1_200 + index * 420 },
+  ]),
+);
+
+/** Twenty-eight in at the reveal, two who never answered. */
+const THIRTY_ALL_IN = Object.fromEntries(
+  THIRTY_NAMES.slice(0, 28).map((_, index) => [
+    thirtyUid(index),
+    { optionIndex: index % 3 === 0 ? 0 : (index % 4), elapsedMs: 900 + index * 310 },
+  ]),
+);
+
+/**
+ * What a picture round actually does at the reveal: On the box lands 83–90%,
+ * so twenty-six on the right lectern, three scattered, one who never answered.
+ */
+const THIRTY_PILE_ON = Object.fromEntries(
+  THIRTY_NAMES.slice(0, 29).map((_, index) => [
+    thirtyUid(index),
+    { optionIndex: index < 26 ? 0 : index - 25, elapsedMs: 1_100 + index * 230 },
+  ]),
+);
+
+const THIRTY_DELTAS = Object.fromEntries(
+  Object.entries(THIRTY_ALL_IN).map(([uid, answer], index) => [
+    uid,
+    answer.optionIndex === 0 ? 1_000 - Math.min(index, 5) * 100 : 0,
+  ]),
+);
+
+/** Descending: Greg and Sam level at the top, fourteenth and fifteenth level mid-table. */
+function thirtyScore(index: number): number {
+  const rung = index === 15 ? 14 : index;
+  return 6_100 - Math.max(0, rung - 1) * 180;
+}
+
+const THIRTY_SCORES = Object.fromEntries(
+  THIRTY_NAMES.map((_, index) => [thirtyUid(index), thirtyScore(index)]),
+);
+
 const PACKS: PackSummary[] = [
   {
     id: 'uk-leaning',
@@ -1212,6 +1278,150 @@ export function Preview() {
           youUid="greg"
           isQuizmaster
           log={REVIEWED_GAME}
+          onPlayAgain={noop}
+          onLeave={noop}
+          onSeason={noop}
+        />
+      ),
+    },
+    // ── Thirty in the room ─────────────────────────────────────────────────
+    // Appended rather than placed beside their four-player twins, so every
+    // `#/preview/N` index above keeps pointing where it did.
+    {
+      title: 'Lobby · thirty',
+      node: (
+        <Lobby
+          room={mockRoom({ phase: 'lobby', players: THIRTY })}
+          youUid="greg"
+          isQuizmaster
+          packs={PACKS}
+          busy={false}
+          onStart={noop}
+          onLeave={noop}
+        />
+      ),
+    },
+    {
+      title: 'Question · thirty, half in',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'question',
+            questionOpenedAt: 1_000,
+            questions: LONG_ROUND,
+            index: 6,
+            players: THIRTY,
+            scores: THIRTY_SCORES,
+            answers: THIRTY_HALF_IN,
+          })}
+          youUid="greg"
+          isQuizmaster
+          clock={CLOCK}
+          revealed={false}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      title: 'Question · thirty, what a player sees',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'question',
+            questionOpenedAt: 1_000,
+            questions: LONG_ROUND,
+            index: 6,
+            players: THIRTY,
+            scores: THIRTY_SCORES,
+            answers: THIRTY_HALF_IN,
+          })}
+          youUid="p13"
+          isQuizmaster={false}
+          clock={CLOCK}
+          revealed={false}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      title: 'Reveal · thirty',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'reveal',
+            players: THIRTY,
+            scores: THIRTY_SCORES,
+            answers: THIRTY_ALL_IN,
+            lastDeltas: THIRTY_DELTAS,
+          })}
+          youUid="greg"
+          isQuizmaster
+          clock={CLOCK}
+          revealed
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      title: 'Reveal · thirty, a pile-on',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'reveal',
+            players: THIRTY,
+            scores: THIRTY_SCORES,
+            answers: THIRTY_PILE_ON,
+            lastDeltas: Object.fromEntries(
+              Object.entries(THIRTY_PILE_ON).map(([uid, answer]) => [uid, answer.optionIndex === 0 ? 600 : 0]),
+            ),
+          })}
+          youUid="p13"
+          isQuizmaster={false}
+          clock={CLOCK}
+          revealed
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      title: 'Standings · thirty',
+      node: (
+        <Scoreboard
+          room={mockRoom({
+            phase: 'scoreboard',
+            players: THIRTY,
+            scores: THIRTY_SCORES,
+            lastDeltas: THIRTY_DELTAS,
+          })}
+          youUid="p13"
+          isQuizmaster
+          onNext={noop}
+        />
+      ),
+    },
+    {
+      title: 'Final · thirty',
+      node: (
+        <Final
+          banked={null}
+          youPlayerId="p13"
+          snapshot={null}
+          room={mockRoom({ phase: 'finished', index: 1, players: THIRTY, scores: THIRTY_SCORES })}
+          youUid="p13"
+          isQuizmaster={false}
+          log={[]}
           onPlayAgain={noop}
           onLeave={noop}
           onSeason={noop}
