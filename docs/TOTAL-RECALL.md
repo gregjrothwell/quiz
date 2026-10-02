@@ -183,14 +183,8 @@ back from the server. Rules only, no redeploy. Depth: [`decisions/security-round
 
 ## 2026-09-21 — Live: `index-OfECpKrx` (#56, gh-pages `f78379e`)
 
-Greg said go live. [#56](https://github.com/gregjrothwell/quiz/pull/56) merged as
-`81d55a4` at 16:47; CI published gh-pages `f78379e` at 16:50:43, author **GitHub
-Actions**. Pages `built` 16:51:33 (~48s). **Published bundle matches a local
-build of that tree exactly** — `index-OfECpKrx.js`, sha `3272b19a`, both sides.
-Firebase chunk unmoved at `firebase-W6iQUl4r`. Merge commit, not squash: this
-contained #55, which closed itself as merged. Second RTDB paste landed 16:56:
-`{ at }` allowed, `{ name, at }` refused, `check-rules` 80/80. One round, then
-`audit-players`.
+[#56](https://github.com/gregjrothwell/quiz/pull/56) at 16:47; gh-pages `f78379e`
+at 16:50:43. Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-21 — Vault oracle, joinedAt, and the `at` stamp
 
