@@ -2049,6 +2049,13 @@ select.input option {
   color: var(--amber);
 }
 
+/* Everybody past the twelfth chip, counted rather than named (src/engine/crowd.ts). */
+.tile__pick--more {
+  border-style: dashed;
+  color: var(--ink-dim);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Lands rather than fades — the drop is what makes it read as an arrival. */
 @keyframes pick-in {
   from {

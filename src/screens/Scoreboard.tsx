@@ -79,11 +79,19 @@ export function Scoreboard({ room, youUid, isQuizmaster, onNext }: ScoreboardPro
       */}
       <SquadScore players={room.players} scores={room.scores} />
 
+      {/*
+        In the transport, as the question screen's controls are, so it stays on
+        screen however long the table is. At thirty players it sat three
+        screens down on a 1440×900 laptop, and this screen comes round after
+        every question.
+      */}
       {isQuizmaster ? (
-        <div className="btn-row">
-          <button type="button" className="btn btn--primary" onClick={onNext}>
-            {toFinal ? 'To Share or Shaft' : isLast ? 'Final results' : 'Next question'}
-          </button>
+        <div className="transport">
+          <div className="btn-row">
+            <button type="button" className="btn btn--primary" onClick={onNext}>
+              {toFinal ? 'To Share or Shaft' : isLast ? 'Final results' : 'Next question'}
+            </button>
+          </div>
         </div>
       ) : (
         <p className="muted">Waiting for the quizmaster…</p>
