@@ -24,6 +24,13 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-02 — Catchphrase's first round: 10 of 10, too easy
+
+Greg alone, `H4DS`, 10 s clock: every answer 0.8–3.1 s after the options
+landed, "hard" no slower than "easy". Solved from the picture; the hold works,
+the puzzles are easy. One player, and 17 of the 30 were in a list he skimmed.
+Levers: [`decisions/catchphrase-difficulty.md`](decisions/catchphrase-difficulty.md).
+
 ## 2026-10-02 — Live: `index-DPum3N0P` (#64, gh-pages `7a8dc6f`)
 
 Greg said merge and deploy. [#64](https://github.com/gregjrothwell/quiz/pull/64)

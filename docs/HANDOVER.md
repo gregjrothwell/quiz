@@ -47,7 +47,7 @@ Built to replace Polly in Teams.
 > **READ FIRST — #64 is live (2 Oct): Catchphrase**, 30 cartoon puzzles of
 > sayings and titles in a 1980s look; the picture plays alone for half the clock,
 > then the options land ([`catchphrase.md`](decisions/catchphrase.md)). Seeded
-> 30/30, one live reveal proved, **unplayed**. **Greg plays it blind: keep its
+> 30/30. **Played once by Greg alone: 10/10, "a tad easy".** **Greg plays it blind: keep its
 > answers out of docs and chat.** #63 has been played since (`8MWE`, `77PC`).
 > **Greg to decide:** answering after the music stops (recommended against).
 
@@ -117,8 +117,8 @@ scoring 500 + rank 500/400/300/200/100.
     still want an ear; *Reasonable Doubt* and *Future Nostalgia* show a **single's**
     artwork (`titleMatches` takes a prefix). **Stale processes, not this session's:**
     Vite (PID 29183) on 5273; `host-room --pack sleeves` (PID 51747, since 30 Sep).
-16. **Catchphrase, live 2 Oct (#64), unplayed.** After its first round, `read-games`: do answers bunch
-    as the options land (people who knew) or spread (matching)? [`catchphrase.md`](decisions/catchphrase.md).
+16. **Catchphrase is too easy** — Greg solo (`H4DS`): 10/10, tapped 1.5 s after the options landed. Play an
+    office round, then pick levers: [`catchphrase-difficulty.md`](decisions/catchphrase-difficulty.md).
 
 ## Where things are
 

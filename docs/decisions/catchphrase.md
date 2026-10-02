@@ -223,6 +223,9 @@ unplayed and reverted.
   reveal was exercised. No round has been played by people, and the lobby was
   checked through `index.json` rather than seen live.
 
+**First round, 2 October: 10 of 10, too easy** — the analysis and the levers are
+[`catchphrase-difficulty.md`](catchphrase-difficulty.md).
+
 ## The puzzles
 
 In `scripts/hand-catchphrase-data.ts` and nowhere else. **Twelve of the first
