@@ -7,20 +7,12 @@ Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reach
 
 ## Costed from play, 2 October 2026 — a game of thirty
 
-All 31 kept rounds (`games/`, 9 Sep–2 Oct, 16 days of play) costed from
-their real seats, answers and changes of mind. This is the mechanism below
-applied to real inputs, **not Google's counter**: Cloud Monitoring's
-`timeSeries.list` refuses a Spark project (*"requires billing to be enabled"*),
-even with Monitoring Viewer granted.
-
-- Office days: median **2.6k** reads, busiest **9.5k** (30 Sep, three
-  9-player rounds). 94% of seats answer each question; 28% of answers are
-  changed (`77PC`, the worst round: 40%).
-- One 30-player round: **14.6k / 20.6k / 26.6k / 32.7k** for 10/15/20/25
-  questions.
-- The busiest day plus one 30 × 20 is 36k. **Two 30-player rounds do not fit.**
-- `sync-harness 30`: 30/30 in the room, every client saw the question within
-  70ms. No answers were sent, so the answer fan-out at 30 is untested.
+The 31 kept rounds (`games/`, 9 Sep–2 Oct) costed from real answers and changes
+of mind — the mechanism below, **not Google's counter**: Cloud Monitoring refuses
+a Spark project (*"requires billing to be enabled"*). Office days: median
+**2.6k**, busiest **9.5k**. A 30-player round: **14.6k / 20.6k / 26.6k / 32.7k**
+for 10/15/20/25 questions — one fits beside the office, **two do not**.
+`sync-harness 30`: 30/30 kept, all within 70ms; answer fan-out at 30 untested.
 
 ## Revisited 26 September 2026 — the office plays daily now
 
