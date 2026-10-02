@@ -112,11 +112,11 @@ scoring 500 + rank 500/400/300/200/100.
     `call-the-shots`, `gangnam-style`); **56 rooms past expiry** —
     `npm run prune-rooms -- --go`; reCAPTCHA's monthly count is unmeasured
     (10k free per organisation); #58 `cleanup-dead-code` is open, unreviewed.
-15. **#62, 29 Sep ([`sleeves-song.md`](decisions/sleeves-song.md)).** Not played
-    in production: Claude's browser is App Check-throttled (403 at 15:36), so it
-    was checked on dev against live Firebase. Five songs want an ear.
-    *Reasonable Doubt* and *Future Nostalgia* show a **single's** artwork
-    (`titleMatches` takes a prefix). A stale Vite (PID 29183) holds port 5273.
+15. **Sleeve songs (#62, #63) have been played** — `XDUF` at half the clock, then
+    from the first frame ([`sleeves-song.md`](decisions/sleeves-song.md)). Five songs
+    still want an ear; *Reasonable Doubt* and *Future Nostalgia* show a **single's**
+    artwork (`titleMatches` takes a prefix). **Stale processes, not this session's:**
+    Vite (PID 29183) on 5273; `host-room --pack sleeves` (PID 51747, since 30 Sep).
 16. **Catchphrase, live 2 Oct (#64), unplayed.** After its first round, `read-games`: do answers bunch
     as the options land (people who knew) or spread (matching)? [`catchphrase.md`](decisions/catchphrase.md).
 
