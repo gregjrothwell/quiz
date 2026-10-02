@@ -108,3 +108,11 @@ and content-hashed into `images/`, same as the flags. Untitled backdrops only
 — a language tag on TMDB is usually titled keyart, which would print the
 answer. This product uses the TMDB API but is not endorsed or certified by
 TMDB. The stills remain studio copyright; hashing them is a seal, not a licence.
+
+## Catchphrase
+
+Pictures drawn for this quiz by [Z-Image-Turbo](https://huggingface.co/Tongyi-MAI/Z-Image-Turbo)
+(Tongyi-MAI, Apache 2.0) through [mflux](https://github.com/mflux-community/mflux),
+on a Mac, from prompts that describe each scene and never its phrase. Generated,
+not drawn by a person, and none of them is the television programme's. The
+phrases are common sayings and programme titles.

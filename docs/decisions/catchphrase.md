@@ -100,9 +100,10 @@ revival.**
    it missed a third of the sleeve titles, so **Greg looks at every picture.**
 5. **`--no-metadata` keeps the prompt out of the file.** Checked against a
    control: the same search finds "elephant" in the JSON sidecar and not in the
-   PNG. Without the flag, mflux's help says it embeds generation metadata
-   ("EXIF UserComment and friends"). Whether `compressStill`'s `sips` pass
-   would strip that is **untested**, so the flag is the rule.
+   PNG. **Without the flag the prompt ships.** A probe drawn without it, 2
+   October 2026, carried its prompt in the PNG *and*, through
+   `compressStill`'s `sips` pass, in the JPEG. `seal.test.ts` scans every
+   published still for it, and that scan found the probe's in both files.
 
 ### The old programme's look — chosen 2 October 2026
 

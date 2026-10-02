@@ -84,6 +84,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Take the bull by the horns', 'Like a red rag to a bull', 'Not my cup of tea'],
     difficulty: 'easy',
     scene: 'A big brown bull charging through a little shop full of shelves of china plates, teapots and teacups, with plates smashing and flying everywhere and a shocked shopkeeper behind the counter.',
+    seed: 2,
   },
   {
     slug: 'cp-egg-face',
@@ -91,6 +92,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['A good egg', 'Save face', "Don't put all your eggs in one basket"],
     difficulty: 'easy',
     scene: "A man's surprised face with a whole fried egg splattered right across it, the yolk dripping off his nose.",
+    seed: 3,
   },
   {
     slug: 'cp-pigs-fly',
@@ -98,6 +100,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Bring home the bacon', "Make a pig's ear of it", 'Time flies'],
     difficulty: 'easy',
     scene: 'Three pink pigs with little white wings flying past the window of an aeroplane, the passengers inside staring at them.',
+    seed: 2,
   },
   {
     slug: 'cp-couch-potato',
@@ -105,6 +108,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Hot potato', 'Small potatoes', 'Meat and two veg'],
     difficulty: 'easy',
     scene: 'A big brown potato with a happy face lounging on a sofa, holding a television remote, a bowl of crisps beside it, watching television.',
+    seed: 3,
   },
   {
     slug: 'cp-cat-bag',
@@ -112,20 +116,23 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Curiosity killed the cat', 'Cat got your tongue', 'A mixed bag'],
     difficulty: 'easy',
     scene: 'A ginger cat leaping out of an open brown paper shopping bag, while the woman holding the bag gasps in surprise.',
+    seed: 3,
   },
   {
     slug: 'cp-heart-sleeve',
     correct: 'Wear your heart on your sleeve',
     incorrect: ['Heart of gold', 'Something up your sleeve', 'A change of heart'],
     difficulty: 'easy',
-    scene: 'A smiling man in a jumper with a big red heart stitched onto the outside of his sleeve, proudly pointing at it.',
+    scene: 'A smiling man holding one arm straight out towards the viewer to show off the sleeve of his jumper, which has a big red heart sewn onto it near the cuff. The front of his jumper is plain.',
+    seed: 2,
   },
   {
     slug: 'cp-cold-feet',
     correct: 'Cold feet',
     incorrect: ['Get the cold shoulder', 'Itchy feet', 'Skating on thin ice'],
     difficulty: 'easy',
-    scene: 'A nervous groom in a suit standing at a church altar, both of his feet frozen solid inside big blocks of ice, shivering.',
+    scene: 'A nervous groom in a suit, shown from head to toe, standing at a church altar beside his bride and shivering, with both of his shoes frozen solid inside big blocks of ice with icicles hanging off them.',
+    seed: 2,
   },
   {
     slug: 'cp-top-dog',
@@ -133,6 +140,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Hot dog', "A dog's dinner", 'Top of the class'],
     difficulty: 'easy',
     scene: 'A small proud dog wearing a gold crown, standing at the very top of a tall wobbly pile of other dogs.',
+    seed: 2,
   },
   {
     slug: 'cp-storm-teacup',
@@ -140,6 +148,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Not my cup of tea', 'The calm before the storm', 'Take the world by storm'],
     difficulty: 'medium',
     scene: 'A tiny dark thundercloud pouring rain and flashing a lightning bolt, sitting inside a china teacup on a saucer.',
+    seed: 1,
   },
   {
     slug: 'cp-spill-beans',
@@ -147,6 +156,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Full of beans', 'Cry over spilt milk', 'Not worth a bean'],
     difficulty: 'medium',
     scene: 'A plain unlabelled tin knocked over on its side on a kitchen table, orange baked beans pouring out of it and sliding across the table.',
+    seed: 2,
   },
   {
     slug: 'cp-under-weather',
@@ -154,6 +164,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Right as rain', 'Weather the storm', "Steal someone's thunder"],
     difficulty: 'medium',
     scene: 'A poorly man in bed with a thermometer in his mouth, and a little grey rain cloud hovering over the bed, raining only on him.',
+    seed: 2,
   },
   {
     slug: 'cp-cloud-nine',
@@ -162,6 +173,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     difficulty: 'medium',
     scene: 'A grinning woman sitting happily on top of a fluffy white cloud, with a big number 9 painted on the side of the cloud.',
     lettering: '9',
+    seed: 1,
   },
   {
     slug: 'cp-bite-bullet',
@@ -169,6 +181,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Dodge a bullet', 'A silver bullet', 'Sweating bullets'],
     difficulty: 'medium',
     scene: 'A man with his eyes squeezed shut, clenching a huge shiny brass bullet sideways between his teeth.',
+    seed: 3,
   },
   {
     slug: 'cp-wrong-tree',
@@ -176,13 +189,15 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Let sleeping dogs lie', 'His bark is worse than his bite', "Can't see the wood for the trees"],
     difficulty: 'medium',
     scene: 'A dog barking up at an empty tree, while a cat sits smugly in the branches of a different tree right behind the dog.',
+    seed: 2,
   },
   {
     slug: 'cp-pulling-leg',
     correct: 'Pulling your leg',
     incorrect: ['Break a leg', 'Cost an arm and a leg', 'Shake a leg'],
     difficulty: 'medium',
-    scene: "One grinning man pulling hard on another man's leg with both hands, while the other man hops and wobbles on his one free foot.",
+    scene: "One grinning man gripping another man's leg with both hands and pulling it hard like a rope, stretching the leg out long, while the other man hops on his other foot, arms flailing, about to topple over.",
+    seed: 1,
   },
   {
     slug: 'cp-same-boat',
@@ -190,6 +205,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Rock the boat', 'Miss the boat', 'Push the boat out'],
     difficulty: 'medium',
     scene: 'Two grumpy men who clearly dislike each other, squeezed together shoulder to shoulder into one tiny rowing boat on a lake.',
+    seed: 2,
   },
   {
     slug: 'cp-eggshells',
@@ -197,6 +213,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Walking on air', "Don't put all your eggs in one basket", 'Walk all over someone'],
     difficulty: 'medium',
     scene: 'A man in his socks tiptoeing very carefully across a floor completely covered in broken eggshells, arms out for balance.',
+    seed: 2,
   },
   {
     slug: 'cp-frog-throat',
@@ -204,6 +221,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['A lump in your throat', "Jump down someone's throat", 'Toad in the hole'],
     difficulty: 'medium',
     scene: 'A singer at a microphone trying to sing, with a green frog clearly visible sitting inside his see-through throat.',
+    seed: 2,
   },
   {
     slug: 'cp-big-cheese',
@@ -211,6 +229,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Say cheese', 'Cheesed off', 'A big fish in a small pond'],
     difficulty: 'medium',
     scene: 'A huge wedge of yellow cheese wearing a tie, sitting at the head of a long boardroom table, with business people in suits around the table listening to it.',
+    seed: 1,
   },
   {
     slug: 'cp-two-peas',
@@ -218,6 +237,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Peace and quiet', 'Two left feet', "Two's company"],
     difficulty: 'medium',
     scene: 'A pair of little green peas with happy faces, wearing matching outfits, sitting snugly side by side inside an open pea pod.',
+    seed: 3,
   },
   {
     slug: 'cp-break-ice',
@@ -225,13 +245,15 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Skating on thin ice', 'The tip of the iceberg', 'Cool as a cucumber'],
     difficulty: 'medium',
     scene: 'A party with balloons, and in the middle of the room a man in a party hat swinging a hammer at a giant block of ice, cracks spreading across it.',
+    seed: 1,
   },
   {
     slug: 'cp-frying-pan',
     correct: 'Out of the frying pan, into the fire',
     incorrect: ['A flash in the pan', 'Playing with fire', 'Too many cooks spoil the broth'],
     difficulty: 'medium',
-    scene: 'A fried egg with a scared face leaping out of a frying pan and heading straight down into a blazing campfire.',
+    scene: 'A frightened fried egg in mid-air, having just jumped out of a tilted frying pan, falling straight down towards a blazing campfire below it.',
+    seed: 2,
   },
   {
     slug: 'cp-square-one',
@@ -240,6 +262,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     difficulty: 'hard',
     scene: 'A board-game counter with little legs and a worried face, walking backwards along a board-game path onto the first square, which is marked with a big number 1.',
     lettering: '1',
+    seed: 1,
   },
   {
     slug: 'cp-face-music',
@@ -247,13 +270,15 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Music to my ears', 'Save face', 'Change your tune'],
     difficulty: 'hard',
     scene: 'A man standing nose to nose with a giant black musical note as tall as he is, the two of them glaring at each other.',
+    seed: 1,
   },
   {
-    slug: 'cp-tongue-cheek',
-    correct: 'Tongue in cheek',
-    incorrect: ['Cat got your tongue', 'Turn the other cheek', 'Bite your tongue'],
+    slug: 'cp-crystal-maze',
+    correct: 'The Crystal Maze',
+    incorrect: ['Gladiators', 'The Krypton Factor', 'Fort Boyard'],
     difficulty: 'hard',
-    scene: 'A close-up of a cheeky face with a big round bulge in one cheek where the tongue is pushing it out from the inside, one eyebrow raised.',
+    scene: 'A maze of tall walls made entirely of sparkling clear glass crystals, seen from above at an angle, with one little person lost in the middle of it.',
+    seed: 3,
   },
   {
     slug: 'cp-fools-horses',
@@ -262,6 +287,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     difficulty: 'hard',
     scene: 'Two horses standing in a field beside two court jesters in jester hats with bells, and the single word ONLY in big white capital letters above them.',
     lettering: 'ONLY',
+    seed: 2,
   },
   {
     slug: 'cp-neighbours',
@@ -269,6 +295,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Home and Away', 'Black Beauty', 'The Good Life'],
     difficulty: 'hard',
     scene: 'Two horses leaning over a garden fence towards each other, both neighing loudly and gossiping.',
+    seed: 2,
   },
   {
     slug: 'cp-dads-army',
@@ -276,6 +303,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Father Ted', "It Ain't Half Hot Mum", 'Soldier Soldier'],
     difficulty: 'hard',
     scene: "A line of soldiers in old wartime uniforms marching in step, every one of them a father pushing a baby's pram.",
+    seed: 2,
   },
   {
     slug: 'cp-daylight-robbery',
@@ -283,12 +311,14 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Make hay while the sun shines', 'Rob Peter to pay Paul', 'A place in the sun'],
     difficulty: 'hard',
     scene: 'A burglar in a black eye mask and a striped jumper climbing down a ladder from the sky, carrying the shining sun away in a sack over his shoulder.',
+    seed: 1,
   },
   {
     slug: 'cp-penny-thoughts',
     correct: 'A penny for your thoughts',
     incorrect: ['The penny dropped', 'Spend a penny', 'Lost in thought'],
     difficulty: 'hard',
-    scene: 'A man deep in thought with his chin on his hand, and a big shiny copper coin floating inside the thought bubble above his head.',
+    scene: 'A man deep in thought with his chin on his hand, and a big shiny plain copper coin floating inside the thought bubble above his head. The coin is blank, with no symbols or markings on it.',
+    seed: 2,
   },
 ];

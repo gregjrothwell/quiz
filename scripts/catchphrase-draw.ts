@@ -20,7 +20,7 @@
  */
 
 import { spawn } from 'node:child_process';
-import { access, mkdir, readdir, writeFile } from 'node:fs/promises';
+import { access, mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { CATCHPHRASE_SPECS, promptFor, type CatchphraseSpec } from './hand-catchphrase-data';
@@ -41,7 +41,8 @@ export function drawingPath(slug: string, seed: number, dir = DRAW_DIR): string 
  *
  * **`--no-metadata` is the seal.** Without it mflux embeds generation metadata
  * in the image ("EXIF UserComment and friends", per its help), and the prompt
- * describes the answer. The trial checked the flag against a control.
+ * describes the answer. A probe without it carried its prompt through
+ * `compressStill` into the published JPEG; `seal.test.ts` scans for exactly that.
  */
 export function drawArgs(spec: CatchphraseSpec, model: string, dir = DRAW_DIR): string[] {
   return [
@@ -103,6 +104,10 @@ async function main(): Promise<void> {
       continue;
     }
     console.log(`=== ${spec.slug} ${new Date().toISOString()}`);
+    // mflux never overwrites: given a name that exists it writes `<name>_1.png`
+    // beside it, so a redraw would leave the old drawing where the pack writer
+    // reads. Found on 2 October 2026, when five redraws reviewed as unchanged.
+    await Promise.all(DRAW_SEEDS.map((seed) => rm(drawingPath(spec.slug, seed), { force: true })));
     const code = await run('mflux-generate-z-image-turbo', drawArgs(spec, model));
     if (code === 0) drawn += 1;
     else failed.push(`${spec.slug} (exit ${code})`);
