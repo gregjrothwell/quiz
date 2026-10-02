@@ -237,6 +237,17 @@ const THIRTY_ALL_IN = Object.fromEntries(
   ]),
 );
 
+/**
+ * What a picture round actually does at the reveal: On the box lands 83–90%,
+ * so twenty-six on the right lectern, three scattered, one who never answered.
+ */
+const THIRTY_PILE_ON = Object.fromEntries(
+  THIRTY_NAMES.slice(0, 29).map((_, index) => [
+    thirtyUid(index),
+    { optionIndex: index < 26 ? 0 : index - 25, elapsedMs: 1_100 + index * 230 },
+  ]),
+);
+
 const THIRTY_DELTAS = Object.fromEntries(
   Object.entries(THIRTY_ALL_IN).map(([uid, answer], index) => [
     uid,
@@ -1351,6 +1362,30 @@ export function Preview() {
           })}
           youUid="greg"
           isQuizmaster
+          clock={CLOCK}
+          revealed
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      title: 'Reveal · thirty, a pile-on',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'reveal',
+            players: THIRTY,
+            scores: THIRTY_SCORES,
+            answers: THIRTY_PILE_ON,
+            lastDeltas: Object.fromEntries(
+              Object.entries(THIRTY_PILE_ON).map(([uid, answer]) => [uid, answer.optionIndex === 0 ? 600 : 0]),
+            ),
+          })}
+          youUid="p13"
+          isQuizmaster={false}
           clock={CLOCK}
           revealed
           onAnswer={noop}
