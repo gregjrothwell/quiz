@@ -24,6 +24,20 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-02 — Live: `index-RzBR8yIZ` (#65, gh-pages `a49f801`): ready for thirty
+
+[#65](https://github.com/gregjrothwell/quiz/pull/65) merged as `66c4413` at
+23:33:07. Live at 23:37:16, byte-identical to a local build (`8ab702612ad7`).
+Contents:
+- A crowded lectern counts past 12 chips instead of growing.
+- The standings' Next is sticky.
+- 30-player preview screens.
+- `sync-harness 30`: 30/30.
+- A 30-player round costs 14.6k–32.7k reads ([`decisions/cost.md`](decisions/cost.md)).
+
+Word go → live took 43 minutes, "push" → live 12; where it went and how to
+cut it: [`decisions/ci-deploy.md`](decisions/ci-deploy.md#lead-time-measured-2-october-2026--word-go-to-live-in-43-minutes).
+
 ## 2026-10-02 — Public scale: target B chosen; PLAN written, not confirmed
 
 The lost 15 Aug appendix recovered; seams now (host authority, tenancy, content rule), the rest on a trigger. [`decisions/public-scale.md`](decisions/public-scale.md).
@@ -166,21 +180,7 @@ on the sleeve. Unplayed.
 
 ## 2026-09-22 — The store badge was handing out the answer, on both packs
 
-*Which album is this?* sat above a live **View in Apple Music** link for the
-whole answering window, on all 44 sleeves; **Listen on Apple Music** did the
-same on all 177 tunes. The slug was already stripped, so the URL could not name
-the work — the destination still did, one tap away. Both now wait for the
-reveal.
-
-The repo had been calling the badge "the only clean hook" for Apple's terms.
-Read against the actual text, it is one of six conditions and never the
-load-bearing one: **(i) promoting the item and (v) no independent entertainment
-value are the two a quiz cannot meet**, badge or no badge, and (iii)'s "courtesy
-of iTunes" attribution has never been there at all. Greg took the call knowing
-that. Source, date fetched and the decision:
-[`decisions/known-limits.md`](decisions/known-limits.md). `tunes-round.md` hit
-250/250, so the title audit split verbatim to
-[`decisions/tunes-title-gate.md`](decisions/tunes-title-gate.md).
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 
 ## 2026-09-22 — The pin refused the reveal: every round stuck on question one
 
