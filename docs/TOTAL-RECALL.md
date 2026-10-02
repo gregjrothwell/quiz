@@ -24,6 +24,15 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-02 — Catchphrase: the pictures come from a free model on Greg's Mac
+
+Greg turned down emoji-and-words and a paid image API. Z-Image-Turbo through
+`mflux` (Apache 2.0, not gated, 32.9 GB) drew 5 phrases three times each: 14 of
+15 readable after one prompt rewrite, lettering only where asked, no prompt in
+the files. **Quantising at load swapped a 24 GB Mac to 70 s a step; a saved
+8-bit copy runs at 11–13 s.** Nothing built; story and 30 phrases await Greg.
+[`decisions/catchphrase.md`](decisions/catchphrase.md).
+
 ## 2026-09-30 — Live: `index-frzpKPeW` (#63, gh-pages `9cf24c8`)
 
 Sleeve song from the first frame, Name that Tune locked to 10s, and the lobby
