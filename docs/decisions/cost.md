@@ -1,9 +1,26 @@
 # What it costs
 
-> **Owner: Greg Rothwell. Last updated: 26 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 2 October 2026. Budget: 250 lines.**
 
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
+
+## Costed from play, 2 October 2026 — a game of thirty
+
+All 31 kept rounds (`games/`, 9 Sep–2 Oct, 16 days of play) costed from
+their real seats, answers and changes of mind. This is the mechanism below
+applied to real inputs, **not Google's counter**: Cloud Monitoring's
+`timeSeries.list` refuses a Spark project (*"requires billing to be enabled"*),
+even with Monitoring Viewer granted.
+
+- Office days: median **2.6k** reads, busiest **9.5k** (30 Sep, three
+  9-player rounds). 94% of seats answer each question; 28% of answers are
+  changed (`77PC`, the worst round: 40%).
+- One 30-player round: **14.6k / 20.6k / 26.6k / 32.7k** for 10/15/20/25
+  questions.
+- The busiest day plus one 30 × 20 is 36k. **Two 30-player rounds do not fit.**
+- `sync-harness 30`: 30/30 in the room, every client saw the question within
+  70ms. No answers were sent, so the answer fan-out at 30 is untested.
 
 ## Revisited 26 September 2026 — the office plays daily now
 
