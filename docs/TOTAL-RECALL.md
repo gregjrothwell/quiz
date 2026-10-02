@@ -173,20 +173,8 @@ that. Source, date fetched and the decision:
 
 ## 2026-09-22 — The pin refused the reveal: every round stuck on question one
 
-Greg played a picture round and it would not leave the first question. Not
-picture-specific — **every pack, every round**. Yesterday's `questionsPinned`
-believed `selectPack` and `reset` were the only writers of `questions`.
-`reveal` is a third: it stamps the answer into `questions[index].correctIndex`
-so the others read it off the room update rather than each paying a vault round
-trip (`reducer.ts` 339). Pinned byte for byte, that write is refused.
-
-**Every deny case passed the afternoon the pin shipped, because a rule that
-refuses everything refuses those too.** The allow direction was never asked —
-exactly the failure `EVIDENCE.md` describes, in the same file that describes it.
-The allow case FAILed against the published ruleset, then PASSed after the
-paste, deny cases holding — `check-rules` **81/81**. `rank-harness` then played
-room `CNSE` start→`finished` live: 1000/900/800/700/700/600 and a zero, read
-back from the server. Rules only, no redeploy. Depth: [`decisions/security-round-sept-2026.md`](decisions/security-round-sept-2026.md).
+Archived whole: [`recall/2026-09.md`](recall/2026-09.md). Depth:
+[`decisions/postmortem-the-pin-that-refused-the-reveal.md`](decisions/postmortem-the-pin-that-refused-the-reveal.md).
 
 ## 2026-09-21 — Live: `index-OfECpKrx` (#56, gh-pages `f78379e`)
 
