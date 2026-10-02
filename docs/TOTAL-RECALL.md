@@ -24,6 +24,13 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-02 — Live: `index-DPum3N0P` (#64, gh-pages `7a8dc6f`)
+
+Greg said merge and deploy. [#64](https://github.com/gregjrothwell/quiz/pull/64)
+merged `6d1e3a7` 15:57:05Z, PR e2e still running; master verify, e2e, publish
+green; gh-pages `7a8dc6f` (Actions) 16:00:08, Pages `built` 46s. **Live bundle
+byte-identical to a local build** (`94ef589f8400`). 17 packs. **Unplayed.**
+
 ## 2026-10-02 — Catchphrase: options at halfway, and Greg plays it blind
 
 Greg chose the 1980s look and, worried four options make the answer obvious,

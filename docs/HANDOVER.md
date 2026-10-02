@@ -42,19 +42,19 @@ Built to replace Polly in Teams.
 | what a finished round left behind, and reading it back | [`decisions/game-record.md`](decisions/game-record.md) |
 | upgrading `package.json`; the studio set and lighting cues | [`dependencies.md`](decisions/dependencies.md) · [`lighting.md`](decisions/lighting.md) |
 
-## State as of 30 September 2026
+## State as of 2 October 2026
 
-> **READ FIRST — #63 is live (30 Sep):** a sleeve's song plays from the first
-> frame (`SONG_CLUE_SHARE` 0), Name that Tune is always 10s, and the lobby has a
-> **sound check** for every player ([`sound-check.md`](decisions/sound-check.md)).
-> No reseed, no rules change. **Unplayed in production.** Joe's "missing points"
-> (`XDUF`, `SQ8V`) recomputed exactly — changed picks, not a bug. **Greg to
-> decide:** answering after the music stops (recommended against).
+> **READ FIRST — #64 is live (2 Oct): Catchphrase**, 30 cartoon puzzles of
+> sayings and titles in a 1980s look; the picture plays alone for half the clock,
+> then the options land ([`catchphrase.md`](decisions/catchphrase.md)). Seeded
+> 30/30, one live reveal proved, **unplayed**. **Greg plays it blind: keep its
+> answers out of docs and chat.** #63 has been played since (`8MWE`, `77PC`).
+> **Greg to decide:** answering after the music stops (recommended against).
 
-**Live is `index-frzpKPeW`** (30 Sep, gh-pages `9cf24c8`, `0322787`/#63, CI) —
-*check gh-pages **and** `pages/builds`; this one: `built` in 61s.* Firebase
+**Live is `index-DPum3N0P`** (2 Oct, gh-pages `7a8dc6f`, `6d1e3a7`/#64, CI) —
+*check gh-pages **and** `pages/builds`; this one: `built` in 46s.* Firebase
 chunk `firebase-W6iQUl4r`, unchanged since #61.
-**16 packs**; **Name that Tune 268**; synth **Classical**; **On the box 296**
+**17 packs**; **Catchphrase 30**; **Name that Tune 268**; synth **Classical**; **On the box 296**
 (hashed TMDB stills, at most 8 titles before 1990); **Flags** 76; **Sleeves 104**
 after four candidate batches and 42 refusals by eye; picture is **Fine Art** 49.
 
@@ -117,8 +117,8 @@ scoring 500 + rank 500/400/300/200/100.
     was checked on dev against live Firebase. Five songs want an ear.
     *Reasonable Doubt* and *Future Nostalgia* show a **single's** artwork
     (`titleMatches` takes a prefix). A stale Vite (PID 29183) holds port 5273.
-16. **Catchphrase, 2 Oct — built and seeded (30/30) on `catchphrase-round`; a live reveal proved.** Next:
-    merge and deploy, then play it. No answers in docs: [`catchphrase.md`](decisions/catchphrase.md).
+16. **Catchphrase, live 2 Oct (#64), unplayed.** After its first round, `read-games`: do answers bunch
+    as the options land (people who knew) or spread (matching)? [`catchphrase.md`](decisions/catchphrase.md).
 
 ## Where things are
 
