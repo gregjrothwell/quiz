@@ -3,7 +3,7 @@
 > **Owner: Greg Rothwell. Last updated: 2 October 2026. Budget: 250 lines.**
 
 A picture round where each question is a cartoon of a well-known saying or
-title, Roy Walker style. **Being built on `catchphrase-round`; not live.** This
+title, Roy Walker style. **Built and seeded on `catchphrase-round`; not deployed.** This
 file holds the plan, the trial that settled where the pictures come from, the
 format, and the story.
 
@@ -201,6 +201,23 @@ and a typing race on phones. Greg picked the hold.
 off the picture, which the jigsaw's seeded order and `settledTileCount` would
 make small. **Not growing past 30** until it is played: Fine Art was grown
 unplayed and reverted.
+
+## Proved on live Firebase — 2 October 2026
+
+- **Seeded.** `seed-vault -- --pack catchphrase`: 30 added, 0 changed. Read
+  back with a second run: 30 of 30 already correct.
+- **A reveal opens for a new id.** `host-room -- 10 --pack catchphrase`, room
+  `GSXS`: question 1 asked the vault 11 s after the start and wrote its reveal
+  275 ms later. Read off the room with the Admin SDK, the reveal's `answer`
+  equals the data file's answer for that puzzle — checked as a comparison, so
+  the answer was never printed.
+- **The hold, in a live room, from a dev build of this branch.** Question 2,
+  sampled in the page: at 0 s and 2.5 s, four dark disabled lecterns, no option
+  text, the hint showing; the options landed **5,017 ms** after the question
+  appeared, on a 10 s clock. One answer reached the room.
+- **Not covered.** `host-room` stops after opening question 2, so only one
+  reveal was exercised. No round has been played by people, and the lobby was
+  checked through `index.json` rather than seen live.
 
 ## The puzzles
 

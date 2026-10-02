@@ -117,8 +117,8 @@ scoring 500 + rank 500/400/300/200/100.
     was checked on dev against live Firebase. Five songs want an ear.
     *Reasonable Doubt* and *Future Nostalgia* show a **single's** artwork
     (`titleMatches` takes a prefix). A stale Vite (PID 29183) holds port 5273.
-16. **Catchphrase, 2 Oct — pack built on `catchphrase-round`, unseeded, not live.** Next: `seed-vault`,
-    `host-room -- 10 --pack catchphrase`, merge, deploy. No answers in docs: [`catchphrase.md`](decisions/catchphrase.md).
+16. **Catchphrase, 2 Oct — built and seeded (30/30) on `catchphrase-round`; a live reveal proved.** Next:
+    merge and deploy, then play it. No answers in docs: [`catchphrase.md`](decisions/catchphrase.md).
 
 ## Where things are
 
