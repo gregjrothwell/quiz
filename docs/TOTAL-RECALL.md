@@ -24,6 +24,13 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-02 — Catchphrase: options at halfway, and Greg plays it blind
+
+Greg chose the 1980s look and, worried four options make the answer obvious,
+the picture alone for half the clock (`src/engine/optionsHold.ts`, client only,
+no paste). He plays the round, so Claude checks the drawings, twelve named
+phrases were swapped out, and no doc names an answer.
+
 ## 2026-10-02 — Catchphrase: the pictures come from a free model on Greg's Mac
 
 Greg turned down emoji-and-words and a paid image API. Z-Image-Turbo through

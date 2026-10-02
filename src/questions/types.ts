@@ -42,6 +42,7 @@ export const PACK_IDS = [
   'flags',
   'sleeves',
   'screens',
+  'catchphrase',
 ] as const;
 
 /**
@@ -55,6 +56,7 @@ export const HAND_BUILT_PACK_IDS = [
   'flags',
   'sleeves',
   'screens',
+  'catchphrase',
 ] as const;
 
 /**
@@ -280,5 +282,9 @@ export const PACK_META: Record<PackId, { title: string; blurb: string }> = {
   screens: {
     title: 'On the box',
     blurb: 'Film and TV from a still. Untitled backdrops, no jigsaw.',
+  },
+  catchphrase: {
+    title: 'Catchphrase',
+    blurb: 'Say what you see. The options wait until halfway.',
   },
 };

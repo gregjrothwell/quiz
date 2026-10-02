@@ -1,0 +1,155 @@
+/**
+ * Writes `public/packs/catchphrase.json` from the drawings somebody has picked.
+ *
+ * Run: `npm run write-catchphrase-pack`, after `npm run catchphrase-draw` and
+ * after a `seed` has been set on every spec in `hand-catchphrase-data.ts` by
+ * somebody who has looked at the drawings. Then `npm run seed-vault` before any
+ * deploy: new ids stall at the reveal until the vault holds their answers.
+ *
+ * Refuses, rather than skips, a spec nobody has picked, a drawing Vision never
+ * read, and a drawing whose writing names its own answer. A skipped puzzle is a
+ * smaller pack nobody notices; the sleeves taught that a picture which prints
+ * its answer is a question that answers itself (docs/decisions/sleeves-gate.md).
+ * What each shipped drawing says is written to `catchphrase-picture-text.ts`
+ * so `npm test` holds the rule offline.
+ */
+
+import { readFile, writeFile } from 'node:fs/promises';
+import { basename, join } from 'node:path';
+import { DRAW_TEXT, drawingPath } from './catchphrase-draw';
+import {
+  CATCHPHRASE_MIN_PACK,
+  CATCHPHRASE_PROMPT,
+  CATCHPHRASE_SPECS,
+  namesTheAnswer,
+  type CatchphraseSpec,
+} from './hand-catchphrase-data';
+import { writeSealedPack } from './write-sealed-pack';
+import { compressStill, hashAndStore, OUT_DIR, replaceMarkdownSection, stableId } from './write-hand-packs';
+import { PACK_META, sealQuestion, type Pack, type Question, type SealedQuestion } from '../src/questions/types';
+
+export const CATCHPHRASE_ATTR_MARKER = '## Catchphrase';
+const PICTURE_TEXT = join(import.meta.dirname, 'catchphrase-picture-text.ts');
+
+export interface CatchphraseBuildDeps {
+  specs?: CatchphraseSpec[];
+  /** What Vision read off each drawing, keyed by file name. */
+  text?: Record<string, string[]>;
+  readDrawing?: (path: string) => Promise<Buffer>;
+  store?: (png: Buffer) => Promise<string>;
+}
+
+async function storeDrawing(png: Buffer): Promise<string> {
+  const shrunk = await compressStill(png, 'png');
+  return hashAndStore(shrunk.bytes, shrunk.ext);
+}
+
+export async function buildCatchphrasePack(deps: CatchphraseBuildDeps = {}): Promise<{
+  pack: Pack;
+  answers: Record<string, string>;
+  /** What each shipped drawing says, by slug — empty for most. */
+  shipped: Record<string, string>;
+}> {
+  const specs = deps.specs ?? CATCHPHRASE_SPECS;
+  const text = deps.text ?? (JSON.parse(await readFile(DRAW_TEXT, 'utf8')) as Record<string, string[]>);
+  const readDrawing = deps.readDrawing ?? ((path: string) => readFile(path));
+  const store = deps.store ?? storeDrawing;
+
+  const refused: string[] = [];
+  const answers: Record<string, string> = {};
+  const questions: SealedQuestion[] = [];
+  const shipped: Record<string, string> = {};
+
+  for (const spec of specs) {
+    if (spec.seed === undefined) {
+      refused.push(`${spec.slug}: no drawing picked — set \`seed\` once somebody has looked`);
+      continue;
+    }
+    const path = drawingPath(spec.slug, spec.seed);
+    const read = text[basename(path)];
+    if (read === undefined) {
+      refused.push(`${spec.slug}: Vision never read ${basename(path)} — rerun catchphrase-draw`);
+      continue;
+    }
+    const says = read.join(' ');
+    if (namesTheAnswer(says, spec.correct)) {
+      refused.push(`${spec.slug}: the drawing prints its own answer ("${says}")`);
+      continue;
+    }
+    const image = await store(await readDrawing(path));
+    const question: Question = {
+      id: stableId(spec.slug),
+      source: 'hand',
+      question: CATCHPHRASE_PROMPT,
+      correct: spec.correct,
+      incorrect: spec.incorrect,
+      category: 'Catchphrase',
+      difficulty: spec.difficulty,
+      image,
+    };
+    answers[question.id] = spec.correct;
+    questions.push(sealQuestion(question));
+    shipped[spec.slug] = says;
+  }
+
+  if (refused.length > 0) {
+    throw new Error(`Refused ${refused.length} catchphrase(s):\n${refused.join('\n')}`);
+  }
+  if (questions.length < CATCHPHRASE_MIN_PACK) {
+    throw new Error(`Only ${questions.length} catchphrases (need ${CATCHPHRASE_MIN_PACK})`);
+  }
+
+  const meta = PACK_META.catchphrase;
+  return { pack: { id: 'catchphrase', title: meta.title, blurb: meta.blurb, questions }, answers, shipped };
+}
+
+function attributionMarkdown(): string {
+  return `${CATCHPHRASE_ATTR_MARKER}
+
+Pictures drawn for this quiz by [Z-Image-Turbo](https://huggingface.co/Tongyi-MAI/Z-Image-Turbo)
+(Tongyi-MAI, Apache 2.0) through [mflux](https://github.com/mflux-community/mflux),
+on a Mac, from prompts that describe each scene and never its phrase. Generated,
+not drawn by a person, and none of them is the television programme's. The
+phrases are common sayings and programme titles.
+`;
+}
+
+function pictureTextModule(shipped: Record<string, string>): string {
+  const rows = Object.entries(shipped)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([slug, says]) => `  ${JSON.stringify(slug)}: ${JSON.stringify(says)},`)
+    .join('\n');
+  return `/**
+ * What Apple's Vision read off each shipped Catchphrase drawing.
+ *
+ * **Generated by \`npm run write-catchphrase-pack\`. Do not edit by hand.**
+ * Empty means it read nothing. \`catchphrase-gate.test.ts\` refuses any entry
+ * that names its own answer, so the rule holds in \`npm test\` without a Mac.
+ */
+
+export const CATCHPHRASE_PICTURE_TEXT: Record<string, string> = {
+${rows}
+};
+`;
+}
+
+async function main(): Promise<void> {
+  console.log('Catchphrase pack');
+  const { pack, answers, shipped } = await buildCatchphrasePack();
+  await writeSealedPack(pack, answers, 'catchphrase.json');
+  const attribution = join(OUT_DIR, 'ATTRIBUTION.md');
+  await writeFile(
+    attribution,
+    replaceMarkdownSection(await readFile(attribution, 'utf8'), CATCHPHRASE_ATTR_MARKER, attributionMarkdown()),
+  );
+  await writeFile(PICTURE_TEXT, pictureTextModule(shipped));
+  console.log(`Picture text: ${Object.keys(shipped).length} drawings → ${PICTURE_TEXT}`);
+}
+
+const runningDirect = process.argv[1]?.includes('write-catchphrase-pack') === true;
+if (runningDirect) {
+  main().catch((error: unknown) => {
+    console.error('write-catchphrase-pack failed:', error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  });
+}
