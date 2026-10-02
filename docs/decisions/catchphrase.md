@@ -60,9 +60,13 @@ versions at 1024×768, so a 30-phrase pack takes about **2.8 hours** of Mac time
 words: "guidance is forced to 0.0" and "the negative prompt is never encoded".
 So everything, including "no writing", goes in the prompt itself.
 
-**Disk afterwards:** 31 GB in `~/.cache/huggingface` plus the 10 GB saved copy.
-**Untested:** whether the saved copy runs with the Hugging Face cache deleted.
-Check that before freeing the 31 GB.
+**Disk now: the 10 GB saved copy only.** It was proved to draw with the
+download hidden and offline, with a control by model name failing as it should.
+Greg then deleted the 32.8 GB download on 2 October, and a drawing afterwards
+fetched nothing. Hugging Face's own `cache delete` would have orphaned the 31 GB:
+this cache stores files in a shared `hub/blobs/<xx>/<sha256>`. The script that
+does it properly, dry run by default, is `.cache/free-model-download.sh` (local,
+not in git). **A 4-bit copy would now mean downloading the 32.9 GB again.**
 
 ## The trial — 2 October 2026
 
