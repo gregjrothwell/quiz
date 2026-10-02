@@ -56,6 +56,7 @@ describe('mergeIndex', () => {
       'flags',
       'sleeves',
       'screens',
+      'catchphrase',
     ]);
   });
 });

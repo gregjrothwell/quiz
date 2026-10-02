@@ -22,6 +22,13 @@
  *
  *   npm run host-room -- 10 --pack sleeves
  *
+ * `--pack catchphrase` plays two published Catchphrase puzzles. A browser in
+ * the room should show each picture alone until halfway, then the options. New
+ * ids stall at the reveal until `seed-vault` has run, which is what this
+ * proves before a deploy. See docs/decisions/catchphrase.md.
+ *
+ *   npm run host-room -- 10 --pack catchphrase
+ *
  * Not part of the build or the test suite: it talks to the live project.
  */
 
@@ -125,13 +132,27 @@ function sleeveQuestions(): QuizQuestion[] {
   return [sung, silent];
 }
 
+/** Two published Catchphrase puzzles, as the app would deal them. */
+function catchphraseQuestions(): QuizQuestion[] {
+  const pack = JSON.parse(
+    readFileSync(join(import.meta.dirname, '..', 'public', 'packs', 'catchphrase.json'), 'utf8'),
+  ) as { questions: SealedQuestion[] };
+  const built = buildQuizQuestions(pack.questions.slice(0, 2), 2);
+  if (built.length < 2) throw new Error('catchphrase.json has fewer than two puzzles');
+  return built;
+}
+
 const packArg = process.argv.indexOf('--pack');
 const PACK = packArg > 0 ? process.argv[packArg + 1] : undefined;
-if (PACK !== undefined && PACK !== 'sleeves') throw new Error(`--pack sleeves is the only pack, not ${PACK}`);
+if (PACK !== undefined && PACK !== 'sleeves' && PACK !== 'catchphrase') {
+  throw new Error(`--pack takes sleeves or catchphrase, not ${PACK}`);
+}
 const ROUND =
   PACK === 'sleeves'
     ? { packId: 'sleeves' as const, packTitle: 'Sleeves', questions: sleeveQuestions() }
-    : { packId: 'general-knowledge' as const, packTitle: 'GK', questions: QUESTIONS };
+    : PACK === 'catchphrase'
+      ? { packId: 'catchphrase' as const, packTitle: 'Catchphrase', questions: catchphraseQuestions() }
+      : { packId: 'general-knowledge' as const, packTitle: 'GK', questions: QUESTIONS };
 
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 const stamp = (): string => new Date().toISOString().slice(11, 23);

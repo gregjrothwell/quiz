@@ -108,6 +108,28 @@ const SLEEVES_QUESTION: QuizQuestion = {
   trackId: 1474815798,
 };
 
+/*
+  A Catchphrase puzzle's layout, not a real one. The still is borrowed from the
+  screens fixture and the options are sayings the pack does not use: Greg plays
+  the round and reviews this gallery. See docs/decisions/catchphrase.md.
+*/
+const CATCHPHRASE_QUESTION: QuizQuestion = {
+  id: 'catchphrase-1',
+  prompt: 'Say what you see',
+  options: [
+    'A watched pot never boils',
+    'Every dog has its day',
+    'Many hands make light work',
+    'The early bird catches the worm',
+  ],
+  correctIndex: null,
+  category: 'Catchphrase',
+  difficulty: 'medium',
+  image: '78f0a0c5bb1877d83147d18ab197d1c569775babc4f38814873f1dd1de95cbfc.jpg',
+  imageWidth: 780,
+  imageHeight: 439,
+};
+
 const SCREENS_QUESTION: QuizQuestion = {
   id: 'screen-1',
   prompt: 'Which film is this?',
@@ -583,6 +605,56 @@ export function Preview() {
           youUid="priya"
           isQuizmaster={false}
           clock={CLOCK}
+          revealed={false}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    // The two halves of a Catchphrase question: the picture alone, then the
+    // options landing at halfway. A 20s window, so `CLOCK`'s 6s is the first half.
+    {
+      title: 'Question · catchphrase, before halfway',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'question',
+            questionOpenedAt: 1_000,
+            durationSecs: 20,
+            packId: 'catchphrase',
+            packTitle: 'Catchphrase',
+            questions: [CATCHPHRASE_QUESTION],
+            index: 0,
+          })}
+          youUid="priya"
+          isQuizmaster={false}
+          clock={CLOCK}
+          revealed={false}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      title: 'Question · catchphrase, from halfway',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'question',
+            questionOpenedAt: 1_000,
+            durationSecs: 20,
+            packId: 'catchphrase',
+            packTitle: 'Catchphrase',
+            questions: [CATCHPHRASE_QUESTION],
+            index: 0,
+          })}
+          youUid="priya"
+          isQuizmaster={false}
+          clock={{ elapsedMs: 12_000, remainingMs: 8_000, secondsLeft: 8, expired: false }}
           revealed={false}
           onAnswer={noop}
           onReveal={noop}

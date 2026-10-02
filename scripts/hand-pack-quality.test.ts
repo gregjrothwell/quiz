@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { CATCHPHRASE_MIN_PACK, CATCHPHRASE_SPECS } from './hand-catchphrase-data';
 import { FLAG_SPECS } from './hand-flags-data';
 import { SCREEN_SPECS } from './hand-screens-data';
 import { SLEEVE_SPECS } from './hand-sleeves-data';
@@ -39,6 +40,7 @@ describe('hand-built media specs', () => {
       ...FLAG_SPECS.map((spec) => spec.slug),
       ...SLEEVE_SPECS.map((spec) => spec.slug),
       ...SCREEN_SPECS.map((spec) => spec.slug),
+      ...CATCHPHRASE_SPECS.map((spec) => spec.slug),
     ];
 
     // #then every one of them is its own question
@@ -67,6 +69,10 @@ describe('hand-built media specs', () => {
 
   test('screens cover three default rounds, unique slugs, four distinct options', () => {
     assertPlayable(SCREEN_SPECS, 45);
+  });
+
+  test('catchphrase covers two default rounds, unique slugs, four distinct options', () => {
+    assertPlayable(CATCHPHRASE_SPECS, CATCHPHRASE_MIN_PACK);
   });
 
   test('every tune clip window fits inside Apple’s thirty seconds', () => {

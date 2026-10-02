@@ -8,6 +8,7 @@ import { PodiumTile, type TileArrival, type TileState } from '../components/Podi
 import { QuestionVote } from '../components/QuestionVote';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { replayDurationMs, replayTimeline, type Arrival } from '../engine/replay';
+import { optionsAtMs, optionsDue } from '../engine/optionsHold';
 import type { Verdict } from '../engine/questionVote';
 import { stakeFor, verdictFor, WAGER_SHARES } from '../engine/scoring';
 import { songClueAtMs, songClueDue } from '../engine/songClue';
@@ -288,6 +289,19 @@ export function QuestionScreen({
   // Whether there is anything to hear yet. A melody is always out at once.
   const tuneOut = hasMelody || songDue;
 
+  /*
+    A Catchphrase picture plays alone for half the clock, on the room's shared
+    clock so the options land together on every screen —
+    `src/engine/optionsHold.ts`. Somebody who walked in mid-question counts
+    from their own arrival, so a hold on their clock could outlast the room's;
+    they are ranked as though they answered on the buzzer, so early options
+    buy them nothing.
+  */
+  const optionsOut =
+    revealed
+    || joinedMidQuestion
+    || optionsDue(elapsedMs, optionsAtMs(room.packId, questionDurationMs(room)));
+
   // Fetched while the cover plays alone, so the clue starts on time.
   useEffect(() => {
     if (!revealed && hasPreview && previewUrl && !songDue) primePreview(previewUrl);
@@ -387,7 +401,8 @@ export function QuestionScreen({
       const pick = letter >= 0 ? letter : digit;
       // Gated on the clock rather than on having answered, so a key can change a
       // pick as well as make one — and so a late press cannot write past expiry.
-      if (pick >= 0 && !revealed && !clock.expired && pick < optionCount) {
+      // Not before the options are out: a key would pick a lectern nobody can see.
+      if (pick >= 0 && optionsOut && !revealed && !clock.expired && pick < optionCount) {
         event.preventDefault();
         // The stake goes with a keyed answer as well as a tapped one. Answering
         // with `a` is the fastest way to play, so dropping it here would lose
@@ -422,6 +437,7 @@ export function QuestionScreen({
   }, [
     revealed,
     optionCount,
+    optionsOut,
     isQuizmaster,
     clock.expired,
     onAnswer,
@@ -482,17 +498,20 @@ export function QuestionScreen({
         snap: arrival.snap,
       }));
 
+  // Held options are dark, empty lecterns rather than no lecterns, so nothing
+  // moves under a player's pointer when they light up — and empty rather than
+  // merely hidden, so the words are not in the page to be read early.
   const tiles = question.options.map((option, index) => (
     <PodiumTile
       key={`${question.id}-${index}`}
       index={index}
-      text={option}
-      state={stateFor(index)}
+      text={optionsOut ? option : ''}
+      state={optionsOut ? stateFor(index) : 'hushed'}
       arrivals={crowdFor(index)}
       // The clock closes the lecterns, not the first press. Expiry matters on
       // its own now: it used to be covered incidentally, because having answered
       // disabled the tiles and everyone had answered or run out of time.
-      disabled={revealed || clock.expired}
+      disabled={!optionsOut || revealed || clock.expired}
       onPick={(picked: number) => onAnswer(picked, wagering ? stake : undefined)}
       order={index}
     />
@@ -730,6 +749,12 @@ export function QuestionScreen({
                 </p>
               </div>
             ) : null}
+
+            {optionsOut ? null : (
+              <p className="nudge hint" role="status">
+                The options arrive at halfway.
+              </p>
+            )}
 
             <div className="podium">{tiles}</div>
             </div>
