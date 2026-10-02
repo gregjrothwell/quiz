@@ -752,7 +752,7 @@ export function QuestionScreen({
 
             {optionsOut ? null : (
               <p className="nudge hint" role="status">
-                Say what you see. The options arrive at halfway.
+                The options arrive at halfway.
               </p>
             )}
 
