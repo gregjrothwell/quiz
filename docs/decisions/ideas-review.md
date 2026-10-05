@@ -191,6 +191,11 @@ Greg's idea: a round on the show's fill-in-the-blank. **Pick up only once the cu
 work is live** (Bonus Catchphrase, Mr Fries, the harder batch, Sleeves 168). Nothing
 researched yet; the first question is whether it fits four options or wants typed answers.
 
+### 14. The Price Is Right, then and now — **parked, 5 October 2026, after §13**
+
+Greg's twist: compare an item's price today with what it cost ten years ago. Prices need a
+dated source per item, never a guess, because a wrong price is a wrong answer.
+
 ## Crazy, and mostly cheap
 
 - **The corridor screen.** A telly showing the board and the countdown to Thursday — for an
