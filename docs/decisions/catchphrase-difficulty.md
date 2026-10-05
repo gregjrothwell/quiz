@@ -1,10 +1,9 @@
 # Catchphrase — is it too easy?
 
-> **Owner: Greg Rothwell. Last updated: 2 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 5 October 2026. Budget: 250 lines.**
 
 The first round of Catchphrase, what it measured, and the levers for making it
-harder. **Nothing here is decided** — it is the starting point for the next
-session. The round itself is [`catchphrase.md`](catchphrase.md). **No answers in
+harder, and what was decided once the office had played it (5 October). The round itself is [`catchphrase.md`](catchphrase.md). **No answers in
 this file:** Greg plays the round.
 
 ## The first round — `H4DS`, 2 October 2026, 16:25
@@ -46,6 +45,82 @@ was changed cannot be read; only the final answer time.
   first in his next rounds (`seasons/{season}/asked/catchphrase`), but the pack
   is a third spent for him.
 
+## The office round — `K3EN`, 5 October 2026, 08:47
+
+**Greg:** "pretty good but as suspected difficulty needs recalibrating."
+
+Read off live Firestore (`read-games -- --game bb4708e2-…`, plus the raw
+`games/` document for per-answer times):
+
+| | |
+|---|---|
+| Seats | **7**, Greg among them |
+| Questions | 15, The Ladder order: 5 easy, 7 medium, 3 hard. **None were in `H4DS`** |
+| Clock | 15 s, so the options landed at 7.5 s |
+| Right | **93%**; 4 of 7 players went 15 of 15. On the box: 83–90% |
+| **After the options landed** | median **1.7 s**; 58% of answers inside 2 s, 88% inside 3 s |
+| Hit rate by label | easy 94%, medium 92%, **hard 95%** |
+| Greg | 15 of 15, median 1.4 s after the options landed |
+
+- **The office agrees with Greg.** Seven people, not one, solved the pictures
+  during the hold and tapped as the options arrived.
+- **The labels do not separate, again.** Eleven of fifteen questions were 100%,
+  so this round cannot re-label them either — there is nothing to rank by.
+- **A longer hold would not move the hit rate.** The answers were known before
+  the options landed; holding longer only shortens the race.
+
+## Decided — 5 October 2026
+
+**Greg: both — the Bonus Catchphrase reveal first, then harder puzzles.** Asked
+how often, he said to mimic the show's frequency per round.
+
+What the show did, from [UKGameshows](https://www.ukgameshows.com/ukgs/Catchphrase),
+read 5 October 2026: **one Bonus Catchphrase per round**, under nine squares.
+After each regular puzzle the person who solved it removed one square at random
+and had a guess; wrong, and the round played another regular puzzle. A search
+summary says two such rounds a show — **placeholder**, not confirmed from a
+primary source; Wikipedia describes only the revival.
+
+Offered two shapes, **Greg chose bonus question slots** over a bonus that runs
+alongside the round. The faithful one needs a new answer field, a vault entry, a
+rules paste and a screen; the slot needs none of those.
+
+### The story — awaiting Greg's approval
+
+> As the quizmaster, I want some Catchphrase questions to be a Bonus
+> Catchphrase, the picture hidden under nine squares that lift one at a time,
+> so that the round has puzzles nobody can solve at a glance.
+
+1. **Every fifth question of a Catchphrase round is a Bonus Catchphrase** — the
+   5th, 10th, 15th and 20th: 2 in a round of 10, 3 in 15, 4 in 20. Chosen by
+   position, so every screen agrees with nothing new stored in the room.
+2. A bonus question opens with **the whole picture under a 3×3 grid of
+   squares**, at the picture's own shape — not cropped square like the jigsaw.
+3. **The squares lift one at a time, evenly, on the room's shared clock**: one
+   every tenth of the clock, so the picture is whole for the last tenth (on a
+   15 s clock, one every 1.5 s, whole from 13.5 s). The order is seeded from
+   the question and game ids, so the same square lifts at the same moment on
+   every screen.
+4. **The options still land at half the clock**, as on every Catchphrase
+   question. By then 5 of the 9 squares have lifted.
+5. The prompt reads **Bonus Catchphrase** in place of *Say what you see*, so
+   nobody thinks the picture failed to load.
+6. **At the reveal every square is gone.** Reduced motion drops the animation,
+   not the count.
+7. **Scoring is unchanged** — 500 plus the rank bonus. *Open, Greg to decide:*
+   the show's bonus was worth more; extra points would need checking against
+   the season-best cap in `firestore.rules`.
+8. **A late joiner** sees the options at once, as now, and the squares count
+   from their own arrival, as the jigsaw's tiles do.
+9. **Client only**: no rule change, no paste, no new field in the room or the
+   game record. Which questions were bonus can be read off their index.
+10. `typecheck`, `lint` and `test` are clean, and a dev build of the branch is
+    checked in a live room on a bonus question — squares counted at three
+    moments, options landing at half.
+
+**Not in this story:** harder puzzles and distractors that fit the whole picture
+(levers 2 and 3) — the next one, once this has been played.
+
 ## The levers, cheapest first
 
 1. **Hold the options longer.** `OPTIONS_HOLD_SHARE` is one number
@@ -72,10 +147,10 @@ was changed cannot be read; only the final answer time.
 6. **Typed answers.** Hardest by far, and the most build. Turned down for now
    in [`catchphrase.md`](catchphrase.md).
 
-## Suggested order
+## Suggested order — 2 October, before the office round
 
-**Play one office round first** — it costs nothing and turns a sample of one
-into a sample of six to nine. Then, if the office agrees with Greg: **1** as a
-same-day dial, **2 and 3** as the real fix (they change the puzzles, not the
-rules), **4** if the hold alone still leaves the picture too readable. 5 and 6
-only if the cheaper ones do not move the hit rate.
+Superseded by *Decided — 5 October 2026* above. It was: play one office round
+first, then **1** as a same-day dial, **2 and 3** as the real fix, **4** if the
+hold alone still left the picture too readable, and 5 and 6 only if the cheaper
+ones did not move the hit rate. The office round said the hold is not the
+problem, so **1** was skipped and **4** went first.
