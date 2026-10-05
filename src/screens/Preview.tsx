@@ -729,6 +729,32 @@ export function Preview() {
         />
       ),
     },
+    // A Bonus Catchphrase, the fifth question, at `CLOCK`'s 6 s of 20: three
+    // squares up, the options still to come.
+    {
+      title: 'Question · Bonus Catchphrase, three squares up',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'question',
+            questionOpenedAt: 1_000,
+            durationSecs: 20,
+            packId: 'catchphrase',
+            packTitle: 'Catchphrase',
+            questions: [1, 2, 3, 4, 5].map((n) => ({ ...CATCHPHRASE_QUESTION, id: `catchphrase-${n}` })),
+            index: 4,
+          })}
+          youUid="priya"
+          isQuizmaster={false}
+          clock={CLOCK}
+          revealed={false}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
     {
       title: 'Question · walked in on it',
       node: (

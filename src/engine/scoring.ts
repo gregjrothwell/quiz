@@ -198,8 +198,15 @@ export function tallyQuestion(params: {
    * would make it impossible to play one without the other.
    */
   steal?: Steal | null;
+  /**
+   * What the question itself is worth against an ordinary one — 2 on a Bonus
+   * Catchphrase, `BONUS_MULTIPLIER`. Base and rank only: a stake is a share of
+   * what the player holds and a steal a share of what the leader holds, and
+   * neither is about this question.
+   */
+  multiplier?: number;
 }): Record<string, number> {
-  const { correctIndex, answers, scores, steal } = params;
+  const { correctIndex, answers, scores, steal, multiplier = 1 } = params;
   const deltas: Record<string, number> = {};
 
   const stake = (uid: string, answer: Answer): number =>
@@ -217,7 +224,7 @@ export function tallyQuestion(params: {
       position = i + 1;
       previousElapsed = answer.elapsedMs;
     }
-    deltas[uid] = BASE_POINTS + rankBonus(position) + stake(uid, answer);
+    deltas[uid] = (BASE_POINTS + rankBonus(position)) * multiplier + stake(uid, answer);
   });
 
   for (const [uid, answer] of Object.entries(answers)) {

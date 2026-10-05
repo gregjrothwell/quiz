@@ -8,6 +8,7 @@ import { PodiumTile, type TileArrival, type TileState } from '../components/Podi
 import { QuestionVote } from '../components/QuestionVote';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { replayDurationMs, replayTimeline, type Arrival } from '../engine/replay';
+import { BONUS_PROMPT, isBonusCatchphrase } from '../engine/catchphraseBonus';
 import { optionsAtMs, optionsDue } from '../engine/optionsHold';
 import type { Verdict } from '../engine/questionVote';
 import { stakeFor, verdictFor, WAGER_SHARES } from '../engine/scoring';
@@ -302,6 +303,9 @@ export function QuestionScreen({
     || joinedMidQuestion
     || optionsDue(elapsedMs, optionsAtMs(room.packId, questionDurationMs(room)));
 
+  // Every fifth Catchphrase question, by position — `src/engine/catchphraseBonus.ts`.
+  const bonus = isBonusCatchphrase(room.packId, room.index);
+
   // Fetched while the cover plays alone, so the clue starts on time.
   useEffect(() => {
     if (!revealed && hasPreview && previewUrl && !songDue) primePreview(previewUrl);
@@ -581,7 +585,7 @@ export function QuestionScreen({
         <div className="stack">
           {/* Keyed on the question so the CSS entrance replays for each new one. */}
           <h1 key={question.id} className="prompt">
-            {question.prompt}
+            {bonus ? BONUS_PROMPT : question.prompt}
           </h1>
 
           {/*
@@ -683,6 +687,7 @@ export function QuestionScreen({
             {question.image || question.artworkUrl ? (
               <PicturePrompt
                 jigsaw={Boolean(room.jigsawEnabled && question.jigsaw)}
+                bonus={bonus}
                 questionId={question.id}
                 gameId={room.gameId ?? ''}
                 elapsedMs={elapsedMs}
@@ -744,7 +749,9 @@ export function QuestionScreen({
                 </div>
                 <p className="muted hint">
                   {stake === 0
-                    ? 'Playing it safe — this one is worth the usual 1,000.'
+                    ? bonus
+                      ? 'Playing it safe — a bonus is still worth double.'
+                      : 'Playing it safe — this one is worth the usual 1,000.'
                     : `${stakeFor(held, stake).toLocaleString('en-GB')} points on the line.`}
                 </p>
               </div>
@@ -752,7 +759,7 @@ export function QuestionScreen({
 
             {optionsOut ? null : (
               <p className="nudge hint" role="status">
-                The options arrive at halfway.
+                {bonus ? 'Double points. ' : ''}The options arrive at halfway.
               </p>
             )}
 
