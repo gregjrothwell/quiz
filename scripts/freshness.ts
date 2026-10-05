@@ -5,6 +5,7 @@
  *   npm run freshness -- --notify     and a macOS notification if a played pack is low
  *   npm run freshness -- --if-due     only on a weekday from 08:00, once a day
  *   npm run freshness -- --low-below 100 --notify   force the alarm, to prove it
+ *   npm run freshness -- --local      against this checkout's packs, not the live site's
  *
  * A Claude scheduled task, `quiz-pack-freshness`, runs `--if-due --notify` on
  * weekdays at 08:00, and on next launch if the app was closed. Not launchd:
@@ -36,6 +37,7 @@ import {
 
 const ROOT = join(import.meta.dirname, '..');
 const PACKS = join(ROOT, 'public', 'packs');
+const LIVE_PACKS = 'https://gregjrothwell.github.io/quiz/packs';
 const CACHE = join(ROOT, '.cache');
 const LATEST = join(CACHE, 'freshness-latest.txt');
 const STAMP = join(CACHE, 'freshness-stamp');
@@ -58,12 +60,25 @@ async function readText(path: string): Promise<string | null> {
   return readFile(path, 'utf8').then((text) => text.trim(), () => null);
 }
 
-/** Every published pack, from the same index the lobby reads. */
+/**
+ * Every published pack, from the same index the lobby reads.
+ *
+ * **The live site's by default, not this checkout's.** Found on 5 October 2026:
+ * with Sleeves grown to 168 on a branch, the local files called it fresh while
+ * the office was still being served the 104 it had run through. What matters is
+ * what is being played. `--local` reads the checkout, for planning.
+ */
 async function publishedPacks(): Promise<PackIds[]> {
-  const index = JSON.parse(await readFile(join(PACKS, 'index.json'), 'utf8')) as { id: string; title: string }[];
+  const read = async (name: string): Promise<unknown> => {
+    if (flag('--local')) return JSON.parse(await readFile(join(PACKS, name), 'utf8'));
+    const response = await fetch(`${LIVE_PACKS}/${name}`);
+    if (!response.ok) throw new Error(`${LIVE_PACKS}/${name}: HTTP ${response.status}`);
+    return response.json();
+  };
+  const index = (await read('index.json')) as { id: string; title: string }[];
   return Promise.all(
     index.map(async ({ id, title }) => {
-      const pack = JSON.parse(await readFile(join(PACKS, `${id}.json`), 'utf8')) as { questions: { id: string }[] };
+      const pack = (await read(`${id}.json`)) as { questions: { id: string }[] };
       return { id, title, ids: pack.questions.map((question) => question.id) };
     }),
   );

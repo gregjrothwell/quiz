@@ -71,3 +71,8 @@ at 08:00, which the app runs at **08:12** because of its fixed offset
 guard moved from 08:30 to 08:00 so the warning lands before the morning round,
 which has started as early as 08:47. Each run is a short Claude session, which
 costs a little usage every weekday.
+
+**Corrected the same evening: it read this checkout's packs.** With Sleeves grown to 168 on
+the branch, the check called Sleeves fresh while the live site still served the 104 the
+office had run through. It now fetches the live site's packs; `--local` reads the
+checkout. Shown both ways: live Sleeves 104 / 0.8 LOW, local 168 / 5.0.
