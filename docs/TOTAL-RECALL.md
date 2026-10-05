@@ -24,6 +24,13 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-05 — #66 live: Catchphrase 60, Bonus Catchphrase, Sleeves 168
+
+Live at 22:13 (`index-DdEoFaVD`, gh-pages `f8a3552`). The batch was **kept** for the office.
+Seeded 94, read back 228/228. Word go → live took about 1h46m, roughly 70 minutes of it GitHub
+Actions runner queues, during an incident. The first office Catchphrase round is the live check,
+before Fri 9 Oct. [`go-live-oct-2026.md`](decisions/go-live-oct-2026.md#done--5-october-2026).
+
 ## 2026-10-05 — Catchphrase 60, everything prepped, and the batch named in chat
 
 The harder batch was drawn (one redraw) and picked; it is 30 → 60, with Mr Fries in 21 (`08d09e9`).

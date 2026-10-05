@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 2 October 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 5 October 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -42,7 +42,7 @@ Built to replace Polly in Teams.
 | what a finished round left behind, and reading it back | [`decisions/game-record.md`](decisions/game-record.md) |
 | upgrading `package.json`; the studio set and lighting cues | [`dependencies.md`](decisions/dependencies.md) · [`lighting.md`](decisions/lighting.md) |
 
-## State as of 2 October 2026
+## State as of 5 October 2026
 
 > **READ FIRST — a game of up to 30 on Friday 9 October.**
 > - The biggest room ever played is 11.
@@ -51,18 +51,18 @@ Built to replace Polly in Teams.
 > - **Play one 30-player round of ≤20 questions, and run nothing against live
 >   that day.** Two big rounds go past 50k reads ([`cost.md`](decisions/cost.md)).
 > - Untested: 30 people answering at once.
-> - **Catchphrase (#64): Greg plays it blind, so keep its answers out of docs
->   and chat.**
+> - **Catchphrase: Greg plays it blind, so keep its answers out of docs and chat.**
+>   **Play an office Catchphrase round before Friday:** it is #66's live check.
 > - **Greg to decide:** answering after the music stops; target B's four
 >   questions ([`public-scale.md`](decisions/public-scale.md)); the two
 >   lead-time cuts ([`ci-deploy.md`](decisions/ci-deploy.md)).
 
-**Live is `index-RzBR8yIZ`** (2 Oct 23:37, gh-pages `a49f801`, `66c4413`/#65,
-CI) — *check gh-pages **and** `pages/builds`; this one: `built` in 41s.* Firebase
-chunk `firebase-W6iQUl4r`, unchanged since #61.
-**17 packs**; **Catchphrase 30**; **Name that Tune 268**; synth **Classical**; **On the box 296**
-(hashed TMDB stills, at most 8 titles before 1990); **Flags** 76; **Sleeves 104**
-after four candidate batches and 42 refusals by eye; picture is **Fine Art** 49.
+**Live is `index-DdEoFaVD`** (5 Oct 22:13, gh-pages `f8a3552`, `6ce2c59`/#66,
+CI) — *check gh-pages **and** `pages/builds`; this one: `built` in 11m23s, in an Actions
+incident.* Firebase chunk `firebase-W6iQUl4r`, unchanged since #61.
+**17 packs**; **Catchphrase 60** (every 5th a double-scoring bonus); **Name that Tune 268**; synth **Classical**; **On the box 296**
+(hashed TMDB stills, at most 8 titles before 1990); **Flags** 76; **Sleeves 168**
+after six candidate batches and 88 refusals by eye; picture is **Fine Art** 49.
 
 **What the office plays** — On the box, Sleeves and Tunes, at 4–11 seats: content binds, not
 Firebase, except at thirty ([`cost.md`](decisions/cost.md)). **Check `read-games`, not the prose.**
@@ -117,8 +117,8 @@ scoring 500 + rank 500/400/300/200/100.
     still want an ear; *Reasonable Doubt* and *Future Nostalgia* show a **single's**
     artwork (`titleMatches` takes a prefix). **Stale process:** `host-room --pack sleeves`
     (PID 51747, since 30 Sep). The 9 Sep Vite on 5273 was killed 5 Oct: it served stale modules.
-16. **In flight on `catchphrase-bonus` (local, off unmerged `live-after-65`):** Bonus Catchphrase, Mr Fries, Catchphrase 30→60, Sleeves 104→168: **all built, none seeded** ([`catchphrase-harder.md`](decisions/catchphrase-harder.md)).
-    **Go-live steps: [`go-live-oct-2026.md`](decisions/go-live-oct-2026.md)**, not Fri 9 Oct. Weekday freshness check runs at 08:12: [`pack-freshness.md`](decisions/pack-freshness.md).
+16. **#66 live 5 Oct:** Bonus Catchphrase, Mr Fries, Catchphrase 30→60, Sleeves 104→168, seeded and read back 228/228. **The first office Catchphrase round is the live check**: read it with `read-games` ([`go-live-oct-2026.md`](decisions/go-live-oct-2026.md), step 9).
+    Weekday freshness check runs at 08:12: [`pack-freshness.md`](decisions/pack-freshness.md).
 
 ## Where things are
 
