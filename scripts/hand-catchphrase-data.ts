@@ -16,6 +16,10 @@ import type { Difficulty } from '../src/questions/types';
  *   street and rain first and drew grounded pets under ordinary rain.
  * - **Wrong answers come from the picture's own subjects**, so the options
  *   cannot hand the answer over.
+ * - **Mr Fries is in most new pictures, and none of the first 30.** A spec
+ *   opts in with `fries`; its scene calls him "the character". When the
+ *   drawings are picked, the one that ships has him on model, and nobody
+ *   else's: a gold square drew SpongeBob twice. docs/decisions/mr-fries.md.
  */
 
 export interface CatchphraseSpec {
@@ -27,6 +31,8 @@ export interface CatchphraseSpec {
   scene: string;
   /** The one piece of writing the puzzle needs — a word or a number, never the answer. */
   lettering?: string;
+  /** Mr Fries is in the picture, and the scene calls him "the character". */
+  fries?: boolean;
   /**
    * Which drawn version ships. Absent until somebody has looked at the
    * drawings, and the pack writer refuses a spec without one.
@@ -56,7 +62,35 @@ export function promptFor(spec: CatchphraseSpec): string {
     spec.lettering === undefined
       ? 'No writing anywhere in the image.'
       : `${spec.lettering} is the only writing in the image.`;
-  return `${CATCHPHRASE_STYLE} ${spec.scene} ${writing}`;
+  const cast = spec.fries ? `${MR_FRIES} ` : '';
+  return `${CATCHPHRASE_STYLE} ${cast}${spec.scene} ${writing}`;
+}
+
+/**
+ * Mr Fries, the house character — the show had Mr Chips. Greg chose this one,
+ * the bean, from four on 5 October 2026; the chip-shop chip and the microchip
+ * are kept as backups in docs/decisions/mr-fries.md.
+ *
+ * Described rather than named: a name in a prompt is a word the model may
+ * letter into the picture. After the style and before the scene, which is
+ * where it held across six scenes in the trial.
+ */
+export const MR_FRIES =
+  'A cartoon character whose whole body is a single smooth rounded golden-yellow potato chip shaped like a bean, flat colour with no crumbs or speckles. It has two big round white eyes with black pupils, a wide happy smile, thin black stick arms with white cartoon gloves, and thin black stick legs with red trainers.';
+
+/** A scene with him in it has to say who he is, or the model draws him idle. */
+export function friesSceneOk(spec: CatchphraseSpec): boolean {
+  return !spec.fries || /\bthe character\b/i.test(spec.scene);
+}
+
+/**
+ * Most of what is added after the shipped pictures has him in it — more than
+ * half, so an even split fails. The shipped ones are never counted: they are
+ * not redrawn.
+ */
+export function friesShareOk(specs: CatchphraseSpec[], shipped: number): boolean {
+  const added = specs.slice(shipped);
+  return added.length === 0 || added.filter((spec) => spec.fries).length * 2 > added.length;
 }
 
 function fold(text: string): string {
