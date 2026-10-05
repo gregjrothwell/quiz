@@ -185,6 +185,12 @@ already documents — plus a `list` grant on `questionVotes`, which is one paste
 public one, and the reason Skip is not exposed is that one player should not be able to turn the
 room against a question. A count that appears before everyone has voted does some of that.
 
+### 13. A Blankety Blank round — **parked, 5 October 2026**
+
+Greg's idea: a round on the show's fill-in-the-blank. **Pick up only once the current
+work is live** (Bonus Catchphrase, Mr Fries, the harder batch, Sleeves 168). Nothing
+researched yet; the first question is whether it fits four options or wants typed answers.
+
 ## Crazy, and mostly cheap
 
 - **The corridor screen.** A telly showing the board and the countdown to Thursday — for an
