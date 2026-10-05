@@ -21,7 +21,7 @@ agrees, read the same day:
   (the gate doc measures this).
 - **Songs are standard now**: 102 of the 104 carry a preview from the album.
 
-## The story — for Greg to approve
+## The story — approved by Greg, 5 October 2026
 
 > As the quizmaster, I want enough fresh Sleeves for the office to play it
 > again without repeats, so the round stays in rotation.
@@ -51,3 +51,33 @@ agrees, read the same day:
 **Not in it, but worth Greg's eye:** at 31–45% Sleeves is the hardest round the
 office plays (On the box is 85–90%). More of the same keeps it hard. If that
 is a problem, the lever is the ratings and the mix, not the gate.
+
+## Built — 5 October 2026, `9095987`, local
+
+**104 → 168, so 64 new.** It took two candidate batches, because the first fell short:
+
+| | Fifth | Sixth |
+|---|---|---|
+| Candidates | 281 | 169, weighted harder to photographic and art covers, no self-titled albums |
+| Pinned by hand (search failed, artist catalogue found them) | 57 | 41 |
+| Cleared by the machine | 68 | 42 |
+| Refused by eye | **32** | **14** |
+| Shipped | 36 | 28 |
+
+- **The look:** Claude marked a contact sheet of each batch, and Greg confirmed both
+  ("fine"). The 60 from 26–27 September were on the first sheet too: none refused.
+  Reasons for all 46 are in `sleeve-refusals.ts`.
+- **About 1 in 7 candidates ships**, not the 1 in 5 assumed. Vision missed nearly half
+  of the title-printing covers again, so the person's look is still the gate.
+- **Four distractors swapped** where the cover shows the artist and a wrong answer was
+  their self-titled album. **Pre-existing and live, reported not fixed:** *Strange
+  Days* offers "The Doors" under a cover that says THE DOORS.
+- **A wrong release caught:** *Humanz* had resolved to the "Gorillaz 20 Mix"
+  single, with the single's artwork. It is now pinned to the album. A scan of all 168
+  for singles and EPs finds only the two already known (*Reasonable Doubt*, *Future
+  Nostalgia*), which is also how the scan was shown to work.
+- **Songs:** 166 of 168. `tune-audit --window 20`: the 64 new are all clean. **The
+  script's default window for Sleeves is still 10 s**, stale since the song moved to
+  the first frame on 30 September. The audit was run with `--window 20` by hand, as
+  it was then. Reported, not changed.
+- **Not yet:** `seed-vault` (before the deploy, not Friday), and the deploy itself.

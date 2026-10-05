@@ -24,6 +24,13 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-05 — Sleeves 168, a freshness check, and the harder batch half drawn
+
+Catchphrase (30 of 30) and Sleeves (105 of 104) were both spent. Sleeves 104 → 168
+(`9095987`, about 1 in 7 candidates ships). `npm run freshness` plus a weekday scheduled
+task, because launchd cannot read ~/Documents. Harder batch: 8 of 30 drawn, paused at 7%
+battery. [`sleeves-growth.md`](decisions/sleeves-growth.md) · [`pack-freshness.md`](decisions/pack-freshness.md).
+
 ## 2026-10-05 — Mr Fries: the bean chosen, and the hook for him built
 
 Greg chose A, the bean, from four bodies. D drew SpongeBob, so look-alikes
@@ -164,34 +171,6 @@ browser for 24 hours** — a likely shape for Cass's undiagnosed failed join.
 Depth: [`decisions/cost.md`](decisions/cost.md), [`decisions/repeats.md`](decisions/repeats.md),
 [`decisions/sleeves-gate.md`](decisions/sleeves-gate.md), [`decisions/tunes-title-gate.md`](decisions/tunes-title-gate.md).
 
-## 2026-09-24 — Live: `index-fy6Fyqpa` (#60, gh-pages `5bf6290`)
-
-Share or Shaft and On the box 187. Seed 129 added / 0 changed, vault read-back 187/187,
-`check-rules` 91/91, CI verify + Playwright pass; Pages built in 40s, bundle byte-identical
-to a local build, all 187 stills served. `YHK3` on the live site against a local client:
-10 new On the box questions revealed, final settled shaft/share 7,000/0, not banked.
-
-## 2026-09-24 — On the box: 54 to 187, stacked on Share or Shaft
-
-The 54 were played out in four rounds and ran 37 easy to 1 hard; 133 added,
-leaning medium and hard. Contact-sheeted: two printed their own answer (Bridget
-Jones's "DIARY", the Jumanji box) and were dropped — the pack has no refusal list.
-`more-picture-questions` stacks on `share-or-shaft`, so one merge ships both.
-**Unseeded.** [`decisions/questions.md`](decisions/questions.md#on-the-box-second-harvest).
-
-## 2026-09-24 — Split or Steal: a final after the last question, not a mode
-
-Greg's calls: an option like the wager, not a mode; the top two play for both
-their scores; it banks to the season; the leader picks instead if it goes stale.
-Story and acceptance criteria, nothing built:
-[`decisions/share-or-shaft.md`](decisions/share-or-shaft.md). Later the same day:
-named **Share or Shaft**, picks sealed by commit-then-reveal, and built on
-`share-or-shaft` — **rules not pasted**. Two holes found while building (a
-`gameId` hop, and reveals that stranded a finalist) and closed; both in the doc.
-**Pasted the same afternoon:** `check-rules` 86/5 → **91/91**, `final-harness`
-`S3DW` paid 1,900/0/0 with three re-commits refused, `sync-harness` 10/10, and a
-two-browser round, `QUF7`, played through the final to the reveal. Not deployed.
-
 ## 2026-09-22 — Live: `index-BE_5Hyg5` (#59, gh-pages `7b72a40`)
 
 [#59](https://github.com/gregjrothwell/quiz/pull/59) merged as `cd4a1be` at
@@ -206,13 +185,17 @@ Java runtime, so `npm run e2e` never starts the emulators. Before the merge:
 no store badge on any question, the iTunes attribution on the tune card, none
 on the sleeve. Unplayed.
 
-## 2026-09-04 to 2026-09-22 — archived, one line each
+## 2026-09-04 to 2026-09-24 — archived, one line each
 
 *Collapsed from four-line stubs on 30 September 2026 to make room, and the
 21 September stubs the same way on 5 October; every entry is verbatim in the
 archive, and nothing was shortened. Four more (21–22 September) collapsed the
-same way on the afternoon of 5 October.*
+same way on the afternoon of 5 October, and the three of 24 September archived whole
+that evening.*
 
+- **2026-09-24** — [Live: `index-fy6Fyqpa` (#60, gh-pages `5bf6290`)](recall/2026-09.md#2026-09-24--live-index-fy6fyqpa-60-gh-pages-5bf6290)
+- **2026-09-24** — [On the box: 54 to 187, stacked on Share or Shaft](recall/2026-09.md#2026-09-24--on-the-box-54-to-187-stacked-on-share-or-shaft)
+- **2026-09-24** — [Split or Steal: a final after the last question, not a mode](recall/2026-09.md#2026-09-24--split-or-steal-a-final-after-the-last-question-not-a-mode)
 - **2026-09-22** — [The store badge was handing out the answer, on both packs](recall/2026-09.md#2026-09-22--the-store-badge-was-handing-out-the-answer-on-both-packs)
 - **2026-09-22** — [The pin refused the reveal: every round stuck on question one](recall/2026-09.md#2026-09-22--the-pin-refused-the-reveal-every-round-stuck-on-question-one) · depth: [`decisions/postmortem-the-pin-that-refused-the-reveal.md`](decisions/postmortem-the-pin-that-refused-the-reveal.md)
 - **2026-09-21** — [Live: `index-OfECpKrx` (#56, gh-pages `f78379e`)](recall/2026-09.md#2026-09-21--live-index-ofecpkrx-56-gh-pages-f78379e)
