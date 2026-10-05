@@ -85,7 +85,7 @@ Offered two shapes, **Greg chose bonus question slots** over a bonus that runs
 alongside the round. The faithful one needs a new answer field, a vault entry, a
 rules paste and a screen; the slot needs none of those.
 
-### The story — awaiting Greg's approval
+### The story — approved by Greg, 5 October 2026
 
 > As the quizmaster, I want some Catchphrase questions to be a Bonus
 > Catchphrase, the picture hidden under nine squares that lift one at a time,
@@ -97,7 +97,7 @@ rules paste and a screen; the slot needs none of those.
 2. A bonus question opens with **the whole picture under a 3×3 grid of
    squares**, at the picture's own shape — not cropped square like the jigsaw.
 3. **The squares lift one at a time, evenly, on the room's shared clock**: one
-   every tenth of the clock, so the picture is whole for the last tenth (on a
+   every tenth of the clock (Greg: "ok for now"), so the picture is whole for the last tenth (on a
    15 s clock, one every 1.5 s, whole from 13.5 s). The order is seeded from
    the question and game ids, so the same square lifts at the same moment on
    every screen.
@@ -107,9 +107,10 @@ rules paste and a screen; the slot needs none of those.
    nobody thinks the picture failed to load.
 6. **At the reveal every square is gone.** Reduced motion drops the animation,
    not the count.
-7. **Scoring is unchanged** — 500 plus the rank bonus. *Open, Greg to decide:*
-   the show's bonus was worth more; extra points would need checking against
-   the season-best cap in `firestore.rules`.
+7. **A bonus scores more** — Greg, 5 October. *How much is open*, and the
+   season-best cap in `firestore.rules` (`maxBest()`) has to be read first:
+   if it bounds what a round can score, more points may need a paste, which
+   would break criterion 9.
 8. **A late joiner** sees the options at once, as now, and the squares count
    from their own arrival, as the jigsaw's tiles do.
 9. **Client only**: no rule change, no paste, no new field in the room or the
@@ -117,6 +118,25 @@ rules paste and a screen; the slot needs none of those.
 10. `typecheck`, `lint` and `test` are clean, and a dev build of the branch is
     checked in a live room on a bonus question — squares counted at three
     moments, options landing at half.
+
+### Open for the next session — Greg's idea, 5 October
+
+**A house character, "Mr Fries"** — the show's Mr Chips was a gold robot in
+most puzzles; ours would be a chip, in most *new* pictures. **Not redrawing the
+30 already shipped.** Greg also remembers the show's pictures **moving a
+little**, and asks how much that adds to the drawing pipeline. Not yet
+researched. Questions to answer there, each checked against docs rather than
+memory:
+
+- **One character across many drawings.** Prompt-only Z-Image-Turbo has no
+  reference image to hold a face; does `mflux` offer any for this model, or
+  does Mr Fries get drawn once and composited into scenes?
+- **Movement, cheapest first:** CSS on layers we already have (the character
+  as a cut-out bobbing over a still) → a few frames from seeded variations →
+  a local image-to-video model. The last is the unknown: size, speed on a
+  24 GB M4 Pro, and licence.
+- **What ships:** an animated file has to pass the same seal as a still —
+  no prompt in its metadata, no lettering that is the answer.
 
 **Not in this story:** harder puzzles and distractors that fit the whole picture
 (levers 2 and 3) — the next one, once this has been played.

@@ -117,8 +117,8 @@ scoring 500 + rank 500/400/300/200/100.
     still want an ear; *Reasonable Doubt* and *Future Nostalgia* show a **single's**
     artwork (`titleMatches` takes a prefix). **Stale processes, not this session's:**
     Vite (PID 29183) on 5273; `host-room --pack sleeves` (PID 51747, since 30 Sep).
-16. **Catchphrase is too easy** — Greg solo (`H4DS`): 10/10, tapped 1.5 s after the options landed. Play an
-    office round, then pick levers: [`catchphrase-difficulty.md`](decisions/catchphrase-difficulty.md).
+16. **Catchphrase Bonus — story approved 5 Oct, not built** (branch `catchphrase-bonus`, local). Office `K3EN`: 93%,
+    1.7 s after options. Then "Mr Fries" + movement: [`catchphrase-difficulty.md`](decisions/catchphrase-difficulty.md).
 
 ## Where things are
 

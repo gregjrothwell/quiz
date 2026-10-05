@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 2 October 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 5 October 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -23,6 +23,14 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
+
+## 2026-10-05 — Catchphrase: the office agrees, and a Bonus Catchphrase is next
+
+Office round `K3EN`, 7 seats, 15 s clock: 93% right, median 1.7 s after the
+options landed, "hard" the best-answered label. A longer hold would not help.
+Greg chose the show's Bonus Catchphrase as every fifth question, scoring more;
+story approved, not built. Then harder puzzles, and maybe a house character,
+"Mr Fries". [`decisions/catchphrase-difficulty.md`](decisions/catchphrase-difficulty.md).
 
 ## 2026-10-02 — Live: `index-RzBR8yIZ` (#65, gh-pages `a49f801`): ready for thirty
 
@@ -197,34 +205,17 @@ at 16:50:43. Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
 Archived whole: [`recall/2026-09.md`](recall/2026-09.md). Depth:
 [`decisions/security-round-sept-2026.md`](decisions/security-round-sept-2026.md).
 
-## 2026-09-21 — Live: `index-BHcNzJzP` (#54, gh-pages `026d7cd`)
+## 2026-09-04 to 2026-09-21 — archived, one line each
 
-[#54](https://github.com/gregjrothwell/quiz/pull/54) at 15:11; gh-pages `026d7cd`
-at 15:15:29. Pages lagged four minutes. Unplayed. Archived whole:
-[`recall/2026-09.md`](recall/2026-09.md).
+*Collapsed from four-line stubs on 30 September 2026 to make room, and the
+21 September stubs the same way on 5 October; every entry is verbatim in the
+archive, and nothing was shortened.*
 
-## 2026-09-21 — Correction: the sleeve audit missed a third of them, and a person found the rest
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-21 — The picture sits beside the answers now
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-21 — Sleeves: the cover was the answer key on 11 of 15
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md). Depth:
-[`decisions/sleeves-gate.md`](decisions/sleeves-gate.md).
-
-## 2026-09-21 — The pictures did not turn up, and it was never the files
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md). Depth:
-[`decisions/picture-loading.md`](decisions/picture-loading.md).
-
-## 2026-09-04 to 2026-09-11 — archived, one line each
-
-*Collapsed from four-line stubs on 30 September 2026 to make room; every
-entry is verbatim in the archive, and nothing was shortened.*
+- **2026-09-21** — [Live: `index-BHcNzJzP` (#54, gh-pages `026d7cd`)](recall/2026-09.md#2026-09-21--live-index-bhcnzjzp-54-gh-pages-026d7cd)
+- **2026-09-21** — [Correction: the sleeve audit missed a third of them, and a person found the rest](recall/2026-09.md#2026-09-21--correction-the-sleeve-audit-missed-a-third-of-them-and-a-person-found-the-rest)
+- **2026-09-21** — [The picture sits beside the answers now](recall/2026-09.md#2026-09-21--the-picture-sits-beside-the-answers-now)
+- **2026-09-21** — [Sleeves: the cover was the answer key on 11 of 15](recall/2026-09.md#2026-09-21--sleeves-the-cover-was-the-answer-key-on-11-of-15)
+- **2026-09-21** — [The pictures did not turn up, and it was never the files](recall/2026-09.md#2026-09-21--the-pictures-did-not-turn-up-and-it-was-never-the-files)
 
 - **2026-09-11** — [#52 live: `index-n26s0ofl`](recall/2026-09.md#2026-09-11--52-live-index-n26s0ofl)
 - **2026-09-11** — [The round was the best yet, and three things came out of it](recall/2026-09.md#2026-09-11--the-round-was-the-best-yet-and-three-things-came-out-of-it)
