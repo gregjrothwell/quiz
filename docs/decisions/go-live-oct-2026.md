@@ -27,10 +27,14 @@ but it costs nothing to run (91/91 on 27 September).
 
 ## When
 
-**Not Friday 9 October**: that is the 30-player round, and the handover says to run nothing
-against live that day. **Claude's suggestion: after Friday.** A deploy on the 7th or 8th means
-Friday plays on new scoring code (Bonus Catchphrase), though only a Catchphrase round reaches it.
-Greg's call.
+**As soon as Greg has reviewed, Monday to Thursday. Never Friday 9 October**, the 30-player
+round, when the handover says to run nothing against live.
+
+*Corrected the same evening.* This said "after Friday", to keep new scoring code away from 30
+players. Greg: "It's Monday and we're out of questions." He is right. Catchphrase and Sleeves are
+both spent, and they are two of the four rounds the office plays. The better way to protect Friday
+is to deploy early and **have the office play a Catchphrase round before Friday**. That round is
+the live check for Bonus Catchphrase and the harder batch, so Friday runs on proven code.
 
 ## Decide first: the new Catchphrase batch was named in chat
 
@@ -39,6 +43,8 @@ by answer**. The docs and commits hold no answers (checked). So the batch is spo
 for Greg if he read those messages, but not for the office. The options:
 
 - **Keep it.** The office plays it blind; Greg plays knowing, or sits those rounds out.
+  *Claude's recommendation, given both packs are spent: keep it, and draw Greg a separate
+  batch later, by number only.* Greg watched the answers go past, so it is spoiled for him.
 - **Replace it.** Write 30 more, draw them (about 3 hours of Mac time, battery
   permitting), and pick them by number only. The 30 just made could still serve as
   office-only rounds.
