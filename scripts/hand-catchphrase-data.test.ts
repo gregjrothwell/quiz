@@ -21,10 +21,34 @@ import {
 */
 
 describe('catchphrase puzzles', () => {
-  test('thirty of them, eight easy, fourteen medium and eight hard', () => {
-    expect(CATCHPHRASE_SPECS.length).toBeGreaterThanOrEqual(CATCHPHRASE_MIN_PACK);
-    const count = (level: string) => CATCHPHRASE_SPECS.filter((spec) => spec.difficulty === level).length;
+  test('the first thirty: eight easy, fourteen medium and eight hard', () => {
+    const first = CATCHPHRASE_SPECS.slice(0, CATCHPHRASE_MIN_PACK);
+    expect(first).toHaveLength(CATCHPHRASE_MIN_PACK);
+    const count = (level: string) => first.filter((spec) => spec.difficulty === level).length;
     expect([count('easy'), count('medium'), count('hard')]).toEqual([8, 14, 8]);
+  });
+
+  test('no two puzzles share an answer', () => {
+    const clashes: string[] = [];
+    CATCHPHRASE_SPECS.forEach((a, i) => {
+      CATCHPHRASE_SPECS.slice(i + 1).forEach((b) => {
+        if (namesTheAnswer(a.correct, b.correct) || namesTheAnswer(b.correct, a.correct)) {
+          clashes.push(`${a.slug} / ${b.slug}`);
+        }
+      });
+    });
+    expect(clashes).toEqual([]);
+  });
+
+  test('no wrong answer is the right answer to another puzzle', () => {
+    const clashes = CATCHPHRASE_SPECS.flatMap((spec) =>
+      spec.incorrect.flatMap((wrong) =>
+        CATCHPHRASE_SPECS.filter((other) => other !== spec && namesTheAnswer(wrong, other.correct)).map(
+          (other) => `${spec.slug} offers ${other.slug}`,
+        ),
+      ),
+    );
+    expect(clashes).toEqual([]);
   });
 
   test('no prompt says the phrase it is drawing', () => {
@@ -161,5 +185,36 @@ describe('Mr Fries', () => {
     expect(friesShareOk([...shipped, him, plain], CATCHPHRASE_MIN_PACK)).toBe(false);
     expect(friesShareOk([...shipped, him, him, plain], CATCHPHRASE_MIN_PACK)).toBe(true);
     expect(friesShareOk([...shipped, plain], CATCHPHRASE_MIN_PACK)).toBe(false);
+  });
+});
+
+/*
+  The harder batch — approved by Greg on 5 October 2026:
+  docs/decisions/catchphrase-harder.md. Thirty more after the first thirty.
+*/
+describe('the harder batch', () => {
+  const added = CATCHPHRASE_SPECS.slice(CATCHPHRASE_MIN_PACK);
+
+  test('is thirty puzzles', () => {
+    expect(added).toHaveLength(30);
+  });
+
+  test('is medium or hard, never easy — "hard" went 95% on 5 October', () => {
+    expect(added.filter((spec) => spec.difficulty === 'easy').map((spec) => spec.slug)).toEqual([]);
+  });
+
+  test('says what kind each puzzle is, and no more than a third are one literal scene', () => {
+    expect(added.filter((spec) => spec.kind === undefined).map((spec) => spec.slug)).toEqual([]);
+    expect(added.filter((spec) => spec.kind === 'scene').length * 3).toBeLessThanOrEqual(added.length);
+  });
+
+  test('uses each of the harder kinds the show used', () => {
+    for (const kind of ['rebus', 'lettered', 'soundalike'] as const) {
+      expect(added.filter((spec) => spec.kind === kind).length).toBeGreaterThan(0);
+    }
+  });
+
+  test('has not been drawn yet, or has a picked drawing — never half of one', () => {
+    for (const spec of added) expect(spec.seed === undefined || [1, 2, 3].includes(spec.seed)).toBe(true);
   });
 });

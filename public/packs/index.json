@@ -180,11 +180,11 @@
     "id": "catchphrase",
     "title": "Catchphrase",
     "blurb": "Say what you see. The options wait until halfway.",
-    "count": 30,
+    "count": 60,
     "counts": {
       "easy": 8,
-      "medium": 14,
-      "hard": 8
+      "medium": 31,
+      "hard": 21
     }
   }
 ]
