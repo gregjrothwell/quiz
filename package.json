@@ -46,6 +46,7 @@
     "prune-rooms": "tsx --env-file=.env.local scripts/prune-rooms.ts",
     "reveal-probe": "tsx --env-file=.env.local scripts/reveal-gate-probe.ts",
     "asked-probe": "tsx --env-file=.env.local scripts/asked-probe.ts",
+    "freshness": "tsx --env-file=.env.local scripts/freshness.ts",
     "backfill-form": "tsx --env-file=.env.local scripts/backfill-form.ts"
   },
   "dependencies": {

@@ -1478,6 +1478,36 @@ select.input option {
   background-repeat: no-repeat;
 }
 
+/* Bonus Catchphrase: nine squares over the whole picture, at the picture's own
+   shape — the grid stretches to whatever box the `<img>` reserved, so a 4:3
+   still gets 4:3 squares. Lifting is `opacity`/`transform` only, and the
+   blanket reduced-motion rule at the foot of this file collapses the fade
+   without touching which squares are up. src/engine/catchphraseBonus.ts. */
+.bonus-squares {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  /* No gap: a gap is nine slivers of the picture showing from the first frame.
+     The seams are the squares' own inset edges. */
+  gap: 0;
+  pointer-events: none;
+}
+
+.bonus-squares__square {
+  background: linear-gradient(160deg, var(--panel-hi), var(--panel));
+  box-shadow: inset 0 0 0 1px var(--edge), inset 0 0 18px rgb(41 214 255 / 0.18);
+  transition:
+    opacity 450ms ease-out,
+    transform 450ms ease-out;
+}
+
+.bonus-squares__square--lifted {
+  opacity: 0;
+  transform: scale(0.85);
+}
+
 /* ── Lecterns ───────────────────────────────────────────────────────────── */
 
 /* ── The picture beside the answers ─────────────────────────────────────────

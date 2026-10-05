@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 29 September 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 5 October 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -23,6 +23,79 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
+
+## 2026-10-05 — Catchphrase 60, everything prepped, and the batch named in chat
+
+The harder batch was drawn (one redraw) and picked; it is 30 → 60, with Mr Fries in 21 (`08d09e9`).
+Nothing is seeded, pushed or deployed: [`go-live-oct-2026.md`](decisions/go-live-oct-2026.md).
+**Claude named all 30 new answers in chat while picking**, so Greg decides keep or replace.
+
+## 2026-10-05 — Sleeves 168, a freshness check, and the harder batch half drawn
+
+Catchphrase (30 of 30) and Sleeves (105 of 104) were both spent. Sleeves 104 → 168
+(`9095987`, about 1 in 7 candidates ships). `npm run freshness` plus a weekday scheduled
+task, because launchd cannot read ~/Documents. Harder batch: 8 of 30 drawn, paused at 7%
+battery. [`sleeves-growth.md`](decisions/sleeves-growth.md) · [`pack-freshness.md`](decisions/pack-freshness.md).
+
+## 2026-10-05 — Mr Fries: the bean chosen, and the hook for him built
+
+Greg chose A, the bean, from four bodies. D drew SpongeBob, so look-alikes
+are now part of the by-eye check. A spec opts in with `fries`; the 30 shipped
+prompts are pinned by hash. No new pictures yet. [`decisions/mr-fries.md`](decisions/mr-fries.md#chosen--5-october-2026).
+
+## 2026-10-05 — Mr Fries researched: prompt-only holds, movement is charm
+
+Six drawings, one fixed description: the same chap in all six, but the bow tie
+held in only 3. A Vision cut-out plus a stretch makes an 81–94 KB breathing WebP,
+but only where he stands clear of things. Nothing built; Greg decides.
+[`decisions/mr-fries.md`](decisions/mr-fries.md).
+
+## 2026-10-05 — Bonus Catchphrase built, local only (`106863d`)
+
+Every 5th question: nine squares lift one per tenth of the clock, five up at
+the options, and it pays double base and rank (Greg's pick; not the stake or
+steal). No rule, field or paste. Gallery + 1,245 tests; **no live room** —
+Greg: the next office round is the check. [`decisions/catchphrase-difficulty.md`](decisions/catchphrase-difficulty.md#built--5-october-2026).
+
+## 2026-10-05 — Catchphrase: the office agrees, and a Bonus Catchphrase is next
+
+Office round `K3EN`, 7 seats, 15 s clock: 93% right, median 1.7 s after the
+options landed, "hard" the best-answered label. A longer hold would not help.
+Greg chose the show's Bonus Catchphrase as every fifth question, scoring more;
+story approved, not built. Then harder puzzles, and maybe a house character,
+"Mr Fries". [`decisions/catchphrase-difficulty.md`](decisions/catchphrase-difficulty.md).
+
+## 2026-10-02 — Live: `index-RzBR8yIZ` (#65, gh-pages `a49f801`): ready for thirty
+
+[#65](https://github.com/gregjrothwell/quiz/pull/65) merged as `66c4413` at
+23:33:07. Live at 23:37:16, byte-identical to a local build (`8ab702612ad7`).
+Contents:
+- A crowded lectern counts past 12 chips instead of growing.
+- The standings' Next is sticky.
+- 30-player preview screens.
+- `sync-harness 30`: 30/30.
+- A 30-player round costs 14.6k–32.7k reads ([`decisions/cost.md`](decisions/cost.md)).
+
+Word go → live took 43 minutes, "push" → live 12; where it went and how to
+cut it: [`decisions/ci-deploy.md`](decisions/ci-deploy.md#lead-time-measured-2-october-2026--word-go-to-live-in-43-minutes).
+
+## 2026-10-02 — Public scale: target B chosen; PLAN written, not confirmed
+
+The lost 15 Aug appendix recovered; seams now (host authority, tenancy, content rule), the rest on a trigger. [`decisions/public-scale.md`](decisions/public-scale.md).
+
+## 2026-10-02 — Catchphrase's first round: 10 of 10, too easy
+
+Greg alone, `H4DS`, 10 s clock: every answer 0.8–3.1 s after the options
+landed, "hard" no slower than "easy". Solved from the picture; the hold works,
+the puzzles are easy. One player, and 17 of the 30 were in a list he skimmed.
+Levers: [`decisions/catchphrase-difficulty.md`](decisions/catchphrase-difficulty.md).
+
+## 2026-10-02 — Live: `index-DPum3N0P` (#64, gh-pages `7a8dc6f`)
+
+Greg said merge and deploy. [#64](https://github.com/gregjrothwell/quiz/pull/64)
+merged `6d1e3a7` 15:57:05Z, PR e2e still running; master verify, e2e, publish
+green; gh-pages `7a8dc6f` (Actions) 16:00:08, Pages `built` 46s. **Live bundle
+byte-identical to a local build** (`94ef589f8400`). 17 packs. **Unplayed.**
 
 ## 2026-10-02 — Catchphrase: options at halfway, and Greg plays it blind
 
@@ -104,34 +177,6 @@ browser for 24 hours** — a likely shape for Cass's undiagnosed failed join.
 Depth: [`decisions/cost.md`](decisions/cost.md), [`decisions/repeats.md`](decisions/repeats.md),
 [`decisions/sleeves-gate.md`](decisions/sleeves-gate.md), [`decisions/tunes-title-gate.md`](decisions/tunes-title-gate.md).
 
-## 2026-09-24 — Live: `index-fy6Fyqpa` (#60, gh-pages `5bf6290`)
-
-Share or Shaft and On the box 187. Seed 129 added / 0 changed, vault read-back 187/187,
-`check-rules` 91/91, CI verify + Playwright pass; Pages built in 40s, bundle byte-identical
-to a local build, all 187 stills served. `YHK3` on the live site against a local client:
-10 new On the box questions revealed, final settled shaft/share 7,000/0, not banked.
-
-## 2026-09-24 — On the box: 54 to 187, stacked on Share or Shaft
-
-The 54 were played out in four rounds and ran 37 easy to 1 hard; 133 added,
-leaning medium and hard. Contact-sheeted: two printed their own answer (Bridget
-Jones's "DIARY", the Jumanji box) and were dropped — the pack has no refusal list.
-`more-picture-questions` stacks on `share-or-shaft`, so one merge ships both.
-**Unseeded.** [`decisions/questions.md`](decisions/questions.md#on-the-box-second-harvest).
-
-## 2026-09-24 — Split or Steal: a final after the last question, not a mode
-
-Greg's calls: an option like the wager, not a mode; the top two play for both
-their scores; it banks to the season; the leader picks instead if it goes stale.
-Story and acceptance criteria, nothing built:
-[`decisions/share-or-shaft.md`](decisions/share-or-shaft.md). Later the same day:
-named **Share or Shaft**, picks sealed by commit-then-reveal, and built on
-`share-or-shaft` — **rules not pasted**. Two holes found while building (a
-`gameId` hop, and reveals that stranded a finalist) and closed; both in the doc.
-**Pasted the same afternoon:** `check-rules` 86/5 → **91/91**, `final-harness`
-`S3DW` paid 1,900/0/0 with three re-commits refused, `sync-harness` 10/10, and a
-two-browser round, `QUF7`, played through the final to the reveal. Not deployed.
-
 ## 2026-09-22 — Live: `index-BE_5Hyg5` (#59, gh-pages `7b72a40`)
 
 [#59](https://github.com/gregjrothwell/quiz/pull/59) merged as `cd4a1be` at
@@ -146,85 +191,26 @@ Java runtime, so `npm run e2e` never starts the emulators. Before the merge:
 no store badge on any question, the iTunes attribution on the tune card, none
 on the sleeve. Unplayed.
 
-## 2026-09-22 — The store badge was handing out the answer, on both packs
+## 2026-09-04 to 2026-09-24 — archived, one line each
 
-*Which album is this?* sat above a live **View in Apple Music** link for the
-whole answering window, on all 44 sleeves; **Listen on Apple Music** did the
-same on all 177 tunes. The slug was already stripped, so the URL could not name
-the work — the destination still did, one tap away. Both now wait for the
-reveal.
+*Collapsed from four-line stubs on 30 September 2026 to make room, and the
+21 September stubs the same way on 5 October; every entry is verbatim in the
+archive, and nothing was shortened. Four more (21–22 September) collapsed the
+same way on the afternoon of 5 October, and the three of 24 September archived whole
+that evening.*
 
-The repo had been calling the badge "the only clean hook" for Apple's terms.
-Read against the actual text, it is one of six conditions and never the
-load-bearing one: **(i) promoting the item and (v) no independent entertainment
-value are the two a quiz cannot meet**, badge or no badge, and (iii)'s "courtesy
-of iTunes" attribution has never been there at all. Greg took the call knowing
-that. Source, date fetched and the decision:
-[`decisions/known-limits.md`](decisions/known-limits.md). `tunes-round.md` hit
-250/250, so the title audit split verbatim to
-[`decisions/tunes-title-gate.md`](decisions/tunes-title-gate.md).
-
-## 2026-09-22 — The pin refused the reveal: every round stuck on question one
-
-Greg played a picture round and it would not leave the first question. Not
-picture-specific — **every pack, every round**. Yesterday's `questionsPinned`
-believed `selectPack` and `reset` were the only writers of `questions`.
-`reveal` is a third: it stamps the answer into `questions[index].correctIndex`
-so the others read it off the room update rather than each paying a vault round
-trip (`reducer.ts` 339). Pinned byte for byte, that write is refused.
-
-**Every deny case passed the afternoon the pin shipped, because a rule that
-refuses everything refuses those too.** The allow direction was never asked —
-exactly the failure `EVIDENCE.md` describes, in the same file that describes it.
-The allow case FAILed against the published ruleset, then PASSed after the
-paste, deny cases holding — `check-rules` **81/81**. `rank-harness` then played
-room `CNSE` start→`finished` live: 1000/900/800/700/700/600 and a zero, read
-back from the server. Rules only, no redeploy. Depth: [`decisions/security-round-sept-2026.md`](decisions/security-round-sept-2026.md).
-
-## 2026-09-21 — Live: `index-OfECpKrx` (#56, gh-pages `f78379e`)
-
-Greg said go live. [#56](https://github.com/gregjrothwell/quiz/pull/56) merged as
-`81d55a4` at 16:47; CI published gh-pages `f78379e` at 16:50:43, author **GitHub
-Actions**. Pages `built` 16:51:33 (~48s). **Published bundle matches a local
-build of that tree exactly** — `index-OfECpKrx.js`, sha `3272b19a`, both sides.
-Firebase chunk unmoved at `firebase-W6iQUl4r`. Merge commit, not squash: this
-contained #55, which closed itself as merged. Second RTDB paste landed 16:56:
-`{ at }` allowed, `{ name, at }` refused, `check-rules` 80/80. One round, then
-`audit-players`.
-
-## 2026-09-21 — Vault oracle, joinedAt, and the `at` stamp
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md). Depth:
-[`decisions/security-round-sept-2026.md`](decisions/security-round-sept-2026.md).
-
-## 2026-09-21 — Live: `index-BHcNzJzP` (#54, gh-pages `026d7cd`)
-
-[#54](https://github.com/gregjrothwell/quiz/pull/54) at 15:11; gh-pages `026d7cd`
-at 15:15:29. Pages lagged four minutes. Unplayed. Archived whole:
-[`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-21 — Correction: the sleeve audit missed a third of them, and a person found the rest
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-21 — The picture sits beside the answers now
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-21 — Sleeves: the cover was the answer key on 11 of 15
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md). Depth:
-[`decisions/sleeves-gate.md`](decisions/sleeves-gate.md).
-
-## 2026-09-21 — The pictures did not turn up, and it was never the files
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md). Depth:
-[`decisions/picture-loading.md`](decisions/picture-loading.md).
-
-## 2026-09-04 to 2026-09-11 — archived, one line each
-
-*Collapsed from four-line stubs on 30 September 2026 to make room; every
-entry is verbatim in the archive, and nothing was shortened.*
+- **2026-09-24** — [Live: `index-fy6Fyqpa` (#60, gh-pages `5bf6290`)](recall/2026-09.md#2026-09-24--live-index-fy6fyqpa-60-gh-pages-5bf6290)
+- **2026-09-24** — [On the box: 54 to 187, stacked on Share or Shaft](recall/2026-09.md#2026-09-24--on-the-box-54-to-187-stacked-on-share-or-shaft)
+- **2026-09-24** — [Split or Steal: a final after the last question, not a mode](recall/2026-09.md#2026-09-24--split-or-steal-a-final-after-the-last-question-not-a-mode)
+- **2026-09-22** — [The store badge was handing out the answer, on both packs](recall/2026-09.md#2026-09-22--the-store-badge-was-handing-out-the-answer-on-both-packs)
+- **2026-09-22** — [The pin refused the reveal: every round stuck on question one](recall/2026-09.md#2026-09-22--the-pin-refused-the-reveal-every-round-stuck-on-question-one) · depth: [`decisions/postmortem-the-pin-that-refused-the-reveal.md`](decisions/postmortem-the-pin-that-refused-the-reveal.md)
+- **2026-09-21** — [Live: `index-OfECpKrx` (#56, gh-pages `f78379e`)](recall/2026-09.md#2026-09-21--live-index-ofecpkrx-56-gh-pages-f78379e)
+- **2026-09-21** — [Vault oracle, joinedAt, and the `at` stamp](recall/2026-09.md#2026-09-21--vault-oracle-joinedat-and-the-at-stamp) · depth: [`decisions/security-round-sept-2026.md`](decisions/security-round-sept-2026.md)
+- **2026-09-21** — [Live: `index-BHcNzJzP` (#54, gh-pages `026d7cd`)](recall/2026-09.md#2026-09-21--live-index-bhcnzjzp-54-gh-pages-026d7cd)
+- **2026-09-21** — [Correction: the sleeve audit missed a third of them, and a person found the rest](recall/2026-09.md#2026-09-21--correction-the-sleeve-audit-missed-a-third-of-them-and-a-person-found-the-rest)
+- **2026-09-21** — [The picture sits beside the answers now](recall/2026-09.md#2026-09-21--the-picture-sits-beside-the-answers-now)
+- **2026-09-21** — [Sleeves: the cover was the answer key on 11 of 15](recall/2026-09.md#2026-09-21--sleeves-the-cover-was-the-answer-key-on-11-of-15)
+- **2026-09-21** — [The pictures did not turn up, and it was never the files](recall/2026-09.md#2026-09-21--the-pictures-did-not-turn-up-and-it-was-never-the-files)
 
 - **2026-09-11** — [#52 live: `index-n26s0ofl`](recall/2026-09.md#2026-09-11--52-live-index-n26s0ofl)
 - **2026-09-11** — [The round was the best yet, and three things came out of it](recall/2026-09.md#2026-09-11--the-round-was-the-best-yet-and-three-things-came-out-of-it)

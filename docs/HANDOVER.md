@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 30 September 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 2 October 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -42,28 +42,30 @@ Built to replace Polly in Teams.
 | what a finished round left behind, and reading it back | [`decisions/game-record.md`](decisions/game-record.md) |
 | upgrading `package.json`; the studio set and lighting cues | [`dependencies.md`](decisions/dependencies.md) · [`lighting.md`](decisions/lighting.md) |
 
-## State as of 30 September 2026
+## State as of 2 October 2026
 
-> **READ FIRST — #63 is live (30 Sep):** a sleeve's song plays from the first
-> frame (`SONG_CLUE_SHARE` 0), Name that Tune is always 10s, and the lobby has a
-> **sound check** for every player ([`sound-check.md`](decisions/sound-check.md)).
-> No reseed, no rules change. **Unplayed in production.** Joe's "missing points"
-> (`XDUF`, `SQ8V`) recomputed exactly — changed picks, not a bug. **Greg to
-> decide:** answering after the music stops (recommended against).
+> **READ FIRST — a game of up to 30 on Friday 9 October.**
+> - The biggest room ever played is 11.
+> - #65 (live 2 Oct) folds a crowded lectern into "+N" past 12 chips and keeps
+>   the standings' Next on screen. `sync-harness 30`: 30/30.
+> - **Play one 30-player round of ≤20 questions, and run nothing against live
+>   that day.** Two big rounds go past 50k reads ([`cost.md`](decisions/cost.md)).
+> - Untested: 30 people answering at once.
+> - **Catchphrase (#64): Greg plays it blind, so keep its answers out of docs
+>   and chat.**
+> - **Greg to decide:** answering after the music stops; target B's four
+>   questions ([`public-scale.md`](decisions/public-scale.md)); the two
+>   lead-time cuts ([`ci-deploy.md`](decisions/ci-deploy.md)).
 
-**Live is `index-frzpKPeW`** (30 Sep, gh-pages `9cf24c8`, `0322787`/#63, CI) —
-*check gh-pages **and** `pages/builds`; this one: `built` in 61s.* Firebase
+**Live is `index-RzBR8yIZ`** (2 Oct 23:37, gh-pages `a49f801`, `66c4413`/#65,
+CI) — *check gh-pages **and** `pages/builds`; this one: `built` in 41s.* Firebase
 chunk `firebase-W6iQUl4r`, unchanged since #61.
-**16 packs**; **Name that Tune 268**; synth **Classical**; **On the box 296**
+**17 packs**; **Catchphrase 30**; **Name that Tune 268**; synth **Classical**; **On the box 296**
 (hashed TMDB stills, at most 8 titles before 1990); **Flags** 76; **Sleeves 104**
 after four candidate batches and 42 refusals by eye; picture is **Fine Art** 49.
 
-**What the office plays** (21–25 Sep, 10 rounds): On the box 3, Sleeves 3, Tunes
-2, text 2. Once the covers stopped naming themselves, Sleeves fell from 85% to
-49%, 31% and 43% (`BRST`, 29 Sep) ([`sleeves-gate.md`](decisions/sleeves-gate.md)). **The binding
-constraint is content in those packs, not Firebase** — limits re-read 26
-September in [`cost.md`](decisions/cost.md). **Check the live records
-(`read-games`, `asked-probe`), not the prose.**
+**What the office plays** — On the box, Sleeves and Tunes, at 4–11 seats: content binds, not
+Firebase, except at thirty ([`cost.md`](decisions/cost.md)). **Check `read-games`, not the prose.**
 
 **Otherwise:** `appcheck-probe` refuses at sign-in; reveal ~0.5s after the clock;
 scoring 500 + rank 500/400/300/200/100.
@@ -103,22 +105,20 @@ scoring 500 + rank 500/400/300/200/100.
 12. **Cass could not join `CUC4`**, no join ever written. Candidate, 27 Sep: one
     App Check 403 makes the SDK lock that browser out for **24 hours** ("Cannot
     reach the server"); seen live in the built-in browser. Ask what she saw.
-13. **#52 has now been played eight times and `RevealTiming` is being written** —
-    every round since carries gate/resolve/dispatch. No stall has recurred, so
-    the reveal fix is still unproved rather than disproved
-    ([`reveal-delays.md`](decisions/reveal-delays.md)).
+13. **Every round since #52 writes `RevealTiming`; no stall has recurred** — the
+    fix is unproved rather than disproved ([`reveal-delays.md`](decisions/reveal-delays.md)).
 14. **Loose ends from 26–27 September**: five new tunes transcribed to nothing
     and want an ear (`live-forever`, `golden-touch`, `build-me-up-buttercup`,
     `call-the-shots`, `gangnam-style`); **56 rooms past expiry** —
     `npm run prune-rooms -- --go`; reCAPTCHA's monthly count is unmeasured
     (10k free per organisation); #58 `cleanup-dead-code` is open, unreviewed.
-15. **#62, 29 Sep ([`sleeves-song.md`](decisions/sleeves-song.md)).** Not played
-    in production: Claude's browser is App Check-throttled (403 at 15:36), so it
-    was checked on dev against live Firebase. Five songs want an ear.
-    *Reasonable Doubt* and *Future Nostalgia* show a **single's** artwork
-    (`titleMatches` takes a prefix). A stale Vite (PID 29183) holds port 5273.
-16. **Catchphrase, 2 Oct — built and seeded (30/30) on `catchphrase-round`; a live reveal proved.** Next:
-    merge and deploy, then play it. No answers in docs: [`catchphrase.md`](decisions/catchphrase.md).
+15. **Sleeve songs (#62, #63) have been played** — `XDUF` at half the clock, then
+    from the first frame ([`sleeves-song.md`](decisions/sleeves-song.md)). Five songs
+    still want an ear; *Reasonable Doubt* and *Future Nostalgia* show a **single's**
+    artwork (`titleMatches` takes a prefix). **Stale process:** `host-room --pack sleeves`
+    (PID 51747, since 30 Sep). The 9 Sep Vite on 5273 was killed 5 Oct: it served stale modules.
+16. **In flight on `catchphrase-bonus` (local, off unmerged `live-after-65`):** Bonus Catchphrase, Mr Fries, Catchphrase 30→60, Sleeves 104→168: **all built, none seeded** ([`catchphrase-harder.md`](decisions/catchphrase-harder.md)).
+    **Go-live steps: [`go-live-oct-2026.md`](decisions/go-live-oct-2026.md)**, not Fri 9 Oct. Weekday freshness check runs at 08:12: [`pack-freshness.md`](decisions/pack-freshness.md).
 
 ## Where things are
 
@@ -138,7 +138,7 @@ importing `read-games` breaks that, since that module calls `main()` at import.
 
 **The token leak is closed and the gate is on `master`**, so a CI deploy is
 safe. If rules matter: `npm run check-rules` (91/91, 27 September) and
-`npm run sync-harness 10` (10/10, 21 September).
+`npm run sync-harness 30` (30/30, 2 October).
 
 **Seeded 27 September** — screens, sleeves and tunes: 270 added, 1 changed (an
 id seeded earlier from an unpublished spec), read back 680/680. The seed only

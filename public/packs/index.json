@@ -158,11 +158,11 @@
     "id": "sleeves",
     "title": "Sleeves",
     "blurb": "Name the album from the cover. Artwork streamed from Apple, never stored here.",
-    "count": 104,
+    "count": 168,
     "counts": {
       "easy": 14,
-      "medium": 59,
-      "hard": 31
+      "medium": 66,
+      "hard": 88
     }
   },
   {
@@ -180,11 +180,11 @@
     "id": "catchphrase",
     "title": "Catchphrase",
     "blurb": "Say what you see. The options wait until halfway.",
-    "count": 30,
+    "count": 60,
     "counts": {
       "easy": 8,
-      "medium": 14,
-      "hard": 8
+      "medium": 31,
+      "hard": 21
     }
   }
 ]

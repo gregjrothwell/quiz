@@ -185,6 +185,8 @@ already documents — plus a `list` grant on `questionVotes`, which is one paste
 public one, and the reason Skip is not exposed is that one player should not be able to turn the
 room against a question. A count that appears before everyone has voted does some of that.
 
+### 13–14. New rounds Greg has parked — [`parked-ideas.md`](parked-ideas.md)
+
 ## Crazy, and mostly cheap
 
 - **The corridor screen.** A telly showing the board and the countdown to Thursday — for an

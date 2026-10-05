@@ -16,6 +16,10 @@ import type { Difficulty } from '../src/questions/types';
  *   street and rain first and drew grounded pets under ordinary rain.
  * - **Wrong answers come from the picture's own subjects**, so the options
  *   cannot hand the answer over.
+ * - **Mr Fries is in most new pictures, and none of the first 30.** A spec
+ *   opts in with `fries`; its scene calls him "the character". When the
+ *   drawings are picked, the one that ships has him on model, and nobody
+ *   else's: a gold square drew SpongeBob twice. docs/decisions/mr-fries.md.
  */
 
 export interface CatchphraseSpec {
@@ -27,6 +31,15 @@ export interface CatchphraseSpec {
   scene: string;
   /** The one piece of writing the puzzle needs — a word or a number, never the answer. */
   lettering?: string;
+  /** Mr Fries is in the picture, and the scene calls him "the character". */
+  fries?: boolean;
+  /**
+   * How the puzzle works, from the harder batch on (5 October 2026): one literal
+   * scene, two things that make the phrase, a picture plus the one word or
+   * number it needs, or a sound-alike that lands when said aloud. Set so the
+   * next round's hit rate can be read by kind. The first thirty predate it.
+   */
+  kind?: 'scene' | 'rebus' | 'lettered' | 'soundalike';
   /**
    * Which drawn version ships. Absent until somebody has looked at the
    * drawings, and the pack writer refuses a spec without one.
@@ -56,7 +69,35 @@ export function promptFor(spec: CatchphraseSpec): string {
     spec.lettering === undefined
       ? 'No writing anywhere in the image.'
       : `${spec.lettering} is the only writing in the image.`;
-  return `${CATCHPHRASE_STYLE} ${spec.scene} ${writing}`;
+  const cast = spec.fries ? `${MR_FRIES} ` : '';
+  return `${CATCHPHRASE_STYLE} ${cast}${spec.scene} ${writing}`;
+}
+
+/**
+ * Mr Fries, the house character — the show had Mr Chips. Greg chose this one,
+ * the bean, from four on 5 October 2026; the chip-shop chip and the microchip
+ * are kept as backups in docs/decisions/mr-fries.md.
+ *
+ * Described rather than named: a name in a prompt is a word the model may
+ * letter into the picture. After the style and before the scene, which is
+ * where it held across six scenes in the trial.
+ */
+export const MR_FRIES =
+  'A cartoon character whose whole body is a single smooth rounded golden-yellow potato chip shaped like a bean, flat colour with no crumbs or speckles. It has two big round white eyes with black pupils, a wide happy smile, thin black stick arms with white cartoon gloves, and thin black stick legs with red trainers.';
+
+/** A scene with him in it has to say who he is, or the model draws him idle. */
+export function friesSceneOk(spec: CatchphraseSpec): boolean {
+  return !spec.fries || /\bthe character\b/i.test(spec.scene);
+}
+
+/**
+ * Most of what is added after the shipped pictures has him in it — more than
+ * half, so an even split fails. The shipped ones are never counted: they are
+ * not redrawn.
+ */
+export function friesShareOk(specs: CatchphraseSpec[], shipped: number): boolean {
+  const added = specs.slice(shipped);
+  return added.length === 0 || added.filter((spec) => spec.fries).length * 2 > added.length;
 }
 
 function fold(text: string): string {
@@ -97,7 +138,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
   {
     slug: 'cp-pigs-fly',
     correct: 'Pigs might fly',
-    incorrect: ['Bring home the bacon', "Make a pig's ear of it", 'Time flies'],
+    incorrect: ['Bring home the bacon', "Make a pig's ear of it", 'Fly off the handle'],
     difficulty: 'easy',
     scene: 'Three pink pigs with little white wings flying past the window of an aeroplane, the passengers inside staring at them.',
     seed: 2,
@@ -113,7 +154,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
   {
     slug: 'cp-cat-bag',
     correct: 'Let the cat out of the bag',
-    incorrect: ['Curiosity killed the cat', 'Cat got your tongue', 'A mixed bag'],
+    incorrect: ['Curiosity killed the cat', 'A bag of tricks', 'A mixed bag'],
     difficulty: 'easy',
     scene: 'A ginger cat leaping out of an open brown paper shopping bag, while the woman holding the bag gasps in surprise.',
     seed: 3,
@@ -169,7 +210,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
   {
     slug: 'cp-cloud-nine',
     correct: 'On cloud nine',
-    incorrect: ['Head in the clouds', 'Dressed to the nines', 'Every cloud has a silver lining'],
+    incorrect: ['Head in the clouds', 'Dressed to the nines', 'Cloud cuckoo land'],
     difficulty: 'medium',
     scene: 'A grinning woman sitting happily on top of a fluffy white cloud, with a big number 9 painted on the side of the cloud.',
     lettering: '9',
@@ -234,7 +275,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
   {
     slug: 'cp-two-peas',
     correct: 'Two peas in a pod',
-    incorrect: ['Peace and quiet', 'Two left feet', "Two's company"],
+    incorrect: ['Peace and quiet', 'Two heads are better than one', "Two's company"],
     difficulty: 'medium',
     scene: 'A pair of little green peas with happy faces, wearing matching outfits, sitting snugly side by side inside an open pea pod.',
     seed: 3,
@@ -242,7 +283,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
   {
     slug: 'cp-break-ice',
     correct: 'Break the ice',
-    incorrect: ['Skating on thin ice', 'The tip of the iceberg', 'Cool as a cucumber'],
+    incorrect: ['Skating on thin ice', 'The tip of the iceberg', 'The cold shoulder'],
     difficulty: 'medium',
     scene: 'A party with balloons, and in the middle of the room a man in a party hat swinging a hammer at a giant block of ice, cracks spreading across it.',
     seed: 1,
@@ -319,6 +360,306 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['The penny dropped', 'Spend a penny', 'Lost in thought'],
     difficulty: 'hard',
     scene: 'A man deep in thought with his chin on his hand, and a big shiny plain copper coin floating inside the thought bubble above his head. The coin is blank, with no symbols or markings on it.',
+    seed: 2,
+  },
+  // The harder batch, 5 October 2026 — docs/decisions/catchphrase-harder.md.
+  // Appended, never inserted: the first thirty are pinned by hash.
+  {
+    slug: 'cp-head-over-heels',
+    kind: 'rebus',
+    correct: 'Head over heels',
+    incorrect: ['Head in the clouds', 'Dig your heels in', 'Keep your head down'],
+    difficulty: 'medium',
+    scene: 'A big round cartoon head with a surprised face floats in the air directly above a pair of shiny red high-heeled shoes standing empty on the floor. Nothing else is in the picture.',
+    seed: 2,
+  },
+  {
+    slug: 'cp-third-wheel',
+    kind: 'lettered',
+    fries: true,
+    correct: 'Third wheel',
+    incorrect: ['Reinvent the wheel', 'Third time lucky', 'Wheel of Fortune'],
+    difficulty: 'hard',
+    scene: 'A young couple sit close together on a park bench holding hands, and the character sits squeezed between them looking awkward, holding up a large bicycle wheel with 3RD painted on it in big white letters.',
+    lettering: '3RD',
+    seed: 2,
+  },
+  {
+    slug: 'cp-two-left-feet',
+    kind: 'lettered',
+    fries: true,
+    correct: 'Two left feet',
+    incorrect: ['Put your best foot forward', 'Get off on the wrong foot', 'Footloose and fancy-free'],
+    difficulty: 'medium',
+    scene: 'The character is dancing clumsily on a dance floor and tripping over. Both of its red trainers are left shoes pointing the same way, and each trainer has a big white letter L on it.',
+    lettering: 'L',
+    seed: 2,
+  },
+  {
+    slug: 'cp-catch-22',
+    kind: 'lettered',
+    fries: true,
+    correct: 'Catch-22',
+    incorrect: ['Catch of the day', 'Catch your breath', 'Catch me if you can'],
+    difficulty: 'medium',
+    scene: 'The character is diving through the air with both gloved hands outstretched to catch a giant red number 22 flying towards it like a ball.',
+    lettering: '22',
+    seed: 1,
+  },
+  {
+    slug: 'cp-back-future',
+    kind: 'lettered',
+    fries: true,
+    correct: 'Back to the Future',
+    incorrect: ['Back to School', 'Turn Back Time', 'The Shape of Things to Come'],
+    difficulty: 'hard',
+    scene: 'The character is seen from behind, its back turned to the viewer, walking down a long corridor towards a glowing doorway with a sign above it that says FUTURE.',
+    lettering: 'FUTURE',
+    seed: 3,
+  },
+  {
+    slug: 'cp-top-gun',
+    kind: 'rebus',
+    fries: true,
+    correct: 'Top Gun',
+    incorrect: ['Top of the Pops', 'Top Cat', 'Young Guns'],
+    difficulty: 'medium',
+    scene: 'The character is balancing on a huge spinning wooden toy top, waving a toy cowboy pistol in the air.',
+    seed: 1,
+  },
+  {
+    slug: 'cp-countdown',
+    kind: 'soundalike',
+    correct: 'Countdown',
+    incorrect: ['Count Duckula', 'Downtown', 'Going Underground'],
+    difficulty: 'hard',
+    scene: 'A cartoon vampire count in a black cape with a high collar and slicked-back hair whizzes head first along a long playground slide towards the ground, looking delighted.',
+    seed: 1,
+  },
+  {
+    slug: 'cp-blind-date',
+    kind: 'soundalike',
+    fries: true,
+    correct: 'Blind Date',
+    incorrect: ['Turn a blind eye', "Blind man's buff", 'Out of date'],
+    difficulty: 'hard',
+    scene: 'A big brown date fruit with a little face, wearing round dark sunglasses and tapping a white walking cane, is being helped across a zebra crossing by the character, who holds its arm.',
+    seed: 3,
+  },
+  {
+    slug: 'cp-red-dwarf',
+    kind: 'scene',
+    fries: true,
+    correct: 'Red Dwarf',
+    incorrect: ['Seeing red', 'Red alert', 'Lost in Space'],
+    difficulty: 'medium',
+    scene: 'A small bearded dwarf with a pointy hat, coloured bright red from head to toe, shakes hands with the character on the deck of a spaceship with stars outside the window.',
+    seed: 1,
+  },
+  {
+    slug: 'cp-spring-leak',
+    kind: 'rebus',
+    fries: true,
+    correct: 'Spring a leak',
+    incorrect: ['No spring chicken', 'Spring into action', 'Spring cleaning'],
+    difficulty: 'hard',
+    scene: 'The character proudly holds up a big shiny coiled metal spring in one gloved hand and a long green and white leek vegetable in the other.',
+    seed: 1,
+  },
+  {
+    slug: 'cp-sole-mates',
+    kind: 'soundalike',
+    correct: 'Soul mates',
+    incorrect: ['Best of mates', 'Birds of a feather', 'A match made in heaven'],
+    difficulty: 'hard',
+    scene: 'Two shoe soles, the flat rubber undersides of shoes, each with a smiling face, walk along hand in hand under a big pink heart.',
+    seed: 1,
+  },
+  {
+    slug: 'cp-pull-muscle',
+    kind: 'soundalike',
+    fries: true,
+    correct: 'Pull a muscle',
+    incorrect: ['Pull your weight', 'Flex your muscles', 'Pull your socks up'],
+    difficulty: 'hard',
+    scene: 'The character is straining to drag a giant blue-black mussel shellfish along the ground on a thick rope over its shoulder.',
+    seed: 1,
+  },
+  {
+    slug: 'cp-time-flies',
+    kind: 'soundalike',
+    fries: true,
+    correct: 'Time flies',
+    incorrect: ['Time is money', 'A flying visit', 'Time out'],
+    difficulty: 'hard',
+    scene: 'A little flowerpot of the herb thyme, labelled THYME, has sprouted white feathered wings and is flying away across the sky while the character waves goodbye.',
+    lettering: 'THYME',
+    seed: 3,
+  },
+  {
+    slug: 'cp-bear-with-me',
+    kind: 'rebus',
+    fries: true,
+    correct: 'Bear with me',
+    incorrect: ['Bear a grudge', 'Like a bear with a sore head', 'Pleased to meet you'],
+    difficulty: 'medium',
+    scene: 'The character stands arm in arm with a big friendly brown bear, pointing at itself with its free gloved thumb and grinning.',
+    seed: 2,
+  },
+  {
+    slug: 'cp-flower-power',
+    kind: 'soundalike',
+    fries: true,
+    correct: 'Flower power',
+    incorrect: ['Power nap', 'In full bloom', 'Power to the people'],
+    difficulty: 'hard',
+    scene: 'A plump paper sack of flour labelled FLOUR, with big muscly arms, lifts a heavy barbell above its head in a gym while the character cheers it on.',
+    lettering: 'FLOUR',
+    seed: 1,
+  },
+  {
+    slug: 'cp-night-town',
+    kind: 'soundalike',
+    correct: 'A night on the town',
+    incorrect: ['A knight in shining armour', 'Paint the town red', 'Up all night'],
+    difficulty: 'hard',
+    scene: 'A giant knight in silver armour strides carefully through a tiny model town, stepping between the little houses and church spires.',
+    seed: 1,
+  },
+  {
+    slug: 'cp-hair-raising',
+    kind: 'soundalike',
+    fries: true,
+    correct: 'Hair-raising',
+    incorrect: ['Mad as a March hare', 'Raise the roof', 'Splitting hairs'],
+    difficulty: 'hard',
+    scene: 'The character is lifting a surprised brown hare high above its head with both gloved hands, like a weightlifter holding up a trophy.',
+    seed: 1,
+  },
+  {
+    slug: 'cp-brainwave',
+    kind: 'rebus',
+    fries: true,
+    correct: 'Brainwave',
+    incorrect: ['Brainstorm', 'Mexican wave', 'Brain freeze'],
+    difficulty: 'medium',
+    scene: 'A pink cartoon brain with a smiling face and little arms is waving hello, and the character waves back at it.',
+    seed: 1,
+  },
+  {
+    slug: 'cp-butterfingers',
+    kind: 'rebus',
+    correct: 'Butterfingers',
+    incorrect: ['Fingers crossed', 'Bread and butter', "Butter wouldn't melt in your mouth"],
+    difficulty: 'medium',
+    scene: 'A cartoon hand whose five fingers are yellow sticks of butter lets go of a plate, which smashes on the floor below.',
+    seed: 1,
+  },
+  {
+    slug: 'cp-bigwig',
+    kind: 'rebus',
+    fries: true,
+    correct: 'Bigwig',
+    incorrect: ['Big shot', 'Flip your wig', 'Too big for your boots'],
+    difficulty: 'medium',
+    scene: "The character is wearing an enormous curly white judge's wig, many times larger than itself, and peers out from underneath it.",
+    seed: 2,
+  },
+  {
+    slug: 'cp-cheapskate',
+    kind: 'soundalike',
+    correct: 'Cheapskate',
+    incorrect: ['Cheap and cheerful', 'Skating on thin ice', 'Chicken feed'],
+    difficulty: 'hard',
+    scene: 'A fluffy yellow baby chick rolls along on a single roller skate, with a speech bubble coming from its beak that says CHEEP.',
+    lettering: 'CHEEP',
+    seed: 1,
+  },
+  {
+    slug: 'cp-pie-sky',
+    kind: 'scene',
+    correct: 'Pie in the sky',
+    incorrect: ['Easy as pie', 'The sky is the limit', 'Reach for the sky'],
+    difficulty: 'medium',
+    scene: 'A golden pie with a crinkled crust floats high up among the clouds of a bright blue sky, with a bird flying past it.',
+    seed: 2,
+  },
+  {
+    slug: 'cp-cool-cucumber',
+    kind: 'scene',
+    fries: true,
+    correct: 'Cool as a cucumber',
+    incorrect: ['Hot under the collar', 'Cool, calm and collected', 'As cold as ice'],
+    difficulty: 'medium',
+    scene: 'A cucumber wearing sunglasses lounges calmly in a deckchair with a cold drink, while the character stands beside it sweating in the heat.',
+    seed: 2,
+  },
+  {
+    slug: 'cp-cat-tongue',
+    kind: 'scene',
+    fries: true,
+    correct: 'Cat got your tongue',
+    incorrect: ['Hold your tongue', 'Curiosity killed the cat', 'Bite your tongue'],
+    difficulty: 'medium',
+    scene: 'A grinning ginger cat runs off holding a long pink tongue in its mouth, while the character stares after it with its mouth wide open and empty.',
+    seed: 1,
+  },
+  {
+    slug: 'cp-candle-ends',
+    kind: 'scene',
+    fries: true,
+    correct: 'Burn the candle at both ends',
+    incorrect: ['Burn the midnight oil', "Can't hold a candle to", 'Burn your bridges'],
+    difficulty: 'medium',
+    scene: 'The character holds one single long white candle level across its body with both gloved hands. The candle is lit at both ends: one bright flame burns at the left end and another bright flame burns at the right end. The character looks exhausted, with heavy drooping eyelids and dark rings under its eyes. There is only one candle.',
+    seed: 2,
+  },
+  {
+    slug: 'cp-silver-lining',
+    kind: 'scene',
+    fries: true,
+    correct: 'Every cloud has a silver lining',
+    incorrect: ['Under a cloud', 'Head in the clouds', 'Born with a silver spoon'],
+    difficulty: 'medium',
+    scene: 'The character smiles up at a dark grey rain cloud above it whose edges shine bright metallic silver.',
+    seed: 3,
+  },
+  {
+    slug: 'cp-hold-horses',
+    kind: 'scene',
+    fries: true,
+    correct: 'Hold your horses',
+    incorrect: ["Straight from the horse's mouth", 'Hold the fort', "Wild horses couldn't drag me away"],
+    difficulty: 'medium',
+    scene: 'The character leans back with all its might, pulling on the reins of two galloping horses to stop them.',
+    seed: 3,
+  },
+  {
+    slug: 'cp-bury-hatchet',
+    kind: 'scene',
+    fries: true,
+    correct: 'Bury the hatchet',
+    incorrect: ['Bury your head in the sand', 'Have an axe to grind', 'Dig your own grave'],
+    difficulty: 'medium',
+    scene: 'The character is digging a hole in a garden with a spade and lowering a small axe into it.',
+    seed: 3,
+  },
+  {
+    slug: 'cp-sweet-shop',
+    kind: 'scene',
+    correct: 'Like a kid in a sweet shop',
+    incorrect: ['Have a sweet tooth', 'Like taking candy from a baby', 'Shop till you drop'],
+    difficulty: 'medium',
+    scene: 'A small boy with wide amazed eyes stands in an old-fashioned shop surrounded by shelves of tall glass jars full of colourful sweets.',
+    seed: 3,
+  },
+  {
+    slug: 'cp-second-hand',
+    kind: 'rebus',
+    correct: 'Second-hand',
+    incorrect: ['Against the clock', 'Second nature', 'Hands down'],
+    difficulty: 'hard',
+    scene: 'A big round wall clock with plain dots instead of numbers, whose thinnest, fastest hand is a tiny white cartoon glove pointing with one finger as it ticks around the face.',
     seed: 2,
   },
 ];

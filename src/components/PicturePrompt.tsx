@@ -7,6 +7,7 @@ import {
   tileColumn,
   tileRow,
 } from '../engine/jigsaw';
+import { BONUS_SQUARES, liftOrder, liftedSquareCount } from '../engine/catchphraseBonus';
 import { isItunesArtworkUrl } from '../lib/apple-media';
 import { stillSrc, useStillStatus } from '../lib/stills';
 
@@ -17,6 +18,8 @@ interface PicturePromptProps {
   artworkUrl?: string;
   credit?: string;
   jigsaw: boolean;
+  /** Bonus Catchphrase: the picture under nine squares that lift on the clock. */
+  bonus?: boolean;
   posterCrop?: boolean;
   questionId: string;
   gameId: string;
@@ -79,6 +82,7 @@ export function PicturePrompt({
   artworkUrl,
   credit,
   jigsaw,
+  bonus = false,
   posterCrop = false,
   questionId,
   gameId,
@@ -112,6 +116,11 @@ export function PicturePrompt({
 
   const settled = revealed ? JIGSAW_TILES : settledTileCount(elapsedMs, durationMs);
   const perm = jigsaw ? placementAfterSettles(scrambleTiles(questionId, gameId), settled) : [];
+
+  // Which cells are up, by the cell's place in the seeded order. Counted on the
+  // shared clock like the jigsaw's tiles; reduced motion only drops the fade.
+  const lifted = revealed ? BONUS_SQUARES : liftedSquareCount(elapsedMs, durationMs);
+  const order = bonus ? liftOrder(questionId, gameId) : [];
 
   return (
     // Square and landscape want different room in the side-by-side layout:
@@ -159,6 +168,20 @@ export function PicturePrompt({
             alt=""
           />
         )}
+        {bonus ? (
+          <div className="bonus-squares" aria-hidden="true">
+            {Array.from({ length: BONUS_SQUARES }, (_, cell) => (
+              <div
+                key={cell}
+                className={
+                  order.indexOf(cell) < lifted
+                    ? 'bonus-squares__square bonus-squares__square--lifted'
+                    : 'bonus-squares__square'
+                }
+              />
+            ))}
+          </div>
+        ) : null}
         {overlay}
       </div>
       {credit ? <figcaption className="still__credit">{credit}</figcaption> : null}

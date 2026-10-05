@@ -177,6 +177,53 @@ describe('tallyQuestion', () => {
     // #then the result is empty, distinguishing silence from a wrong answer
     expect(deltas).toEqual({});
   });
+
+  test('doubles base and rank on a Bonus Catchphrase', () => {
+    // #given six right and one wrong, on a question worth double
+    const answers = {
+      ...Object.fromEntries(
+        ['a', 'b', 'c', 'd', 'e', 'f'].map((uid, i) => [
+          uid,
+          { optionIndex: 1, elapsedMs: (i + 1) * 1_000 },
+        ]),
+      ),
+      wrong: { optionIndex: 0, elapsedMs: 500 },
+    };
+
+    // #when the question is tallied
+    const deltas = tallyQuestion({ correctIndex, answers, multiplier: 2 });
+
+    // #then first takes 2,000, the floor 1,200, and a wrong answer still nothing
+    expect(deltas).toEqual({ a: 2000, b: 1800, c: 1600, d: 1400, e: 1200, f: 1200, wrong: 0 });
+  });
+
+  test('doubles the question, not the stake, when the bonus is also the wager', () => {
+    // #given the last question of a round — always a bonus — played for 50%
+    const answers = {
+      right: { optionIndex: 1, elapsedMs: 1_000, wager: 50 },
+      wrong: { optionIndex: 0, elapsedMs: 2_000, wager: 50 },
+    };
+    const scores = { right: 4_000, wrong: 4_000 };
+
+    // #when it is tallied as both
+    const deltas = tallyQuestion({ correctIndex, answers, scores, multiplier: 2 });
+
+    // #then the right answer wins 2,000 plus its 2,000 stake; the wrong one
+    // loses its stake and nothing more
+    expect(deltas).toEqual({ right: 4_000, wrong: -2_000 });
+  });
+
+  test('pays a steal at its own share, bonus or not', () => {
+    // #given a quickest correct answer that steals from the leader
+    const answers = { quick: { optionIndex: 1, elapsedMs: 1_000 } };
+    const steal = { from: 'leader', to: 'quick', points: 300 };
+
+    // #when it is tallied as a bonus
+    const deltas = tallyQuestion({ correctIndex, answers, multiplier: 2, steal });
+
+    // #then the question is doubled and the transfer is not
+    expect(deltas).toEqual({ quick: 2_300, leader: -300 });
+  });
 });
 
 describe('standings', () => {

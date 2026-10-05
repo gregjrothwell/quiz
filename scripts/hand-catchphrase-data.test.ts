@@ -1,8 +1,12 @@
+import { createHash } from 'node:crypto';
 import { describe, expect, test } from 'vitest';
 import {
   CATCHPHRASE_MIN_PACK,
   CATCHPHRASE_SPECS,
   CATCHPHRASE_STYLE,
+  MR_FRIES,
+  friesSceneOk,
+  friesShareOk,
   namesTheAnswer,
   promptFor,
   type CatchphraseSpec,
@@ -17,10 +21,34 @@ import {
 */
 
 describe('catchphrase puzzles', () => {
-  test('thirty of them, eight easy, fourteen medium and eight hard', () => {
-    expect(CATCHPHRASE_SPECS.length).toBeGreaterThanOrEqual(CATCHPHRASE_MIN_PACK);
-    const count = (level: string) => CATCHPHRASE_SPECS.filter((spec) => spec.difficulty === level).length;
+  test('the first thirty: eight easy, fourteen medium and eight hard', () => {
+    const first = CATCHPHRASE_SPECS.slice(0, CATCHPHRASE_MIN_PACK);
+    expect(first).toHaveLength(CATCHPHRASE_MIN_PACK);
+    const count = (level: string) => first.filter((spec) => spec.difficulty === level).length;
     expect([count('easy'), count('medium'), count('hard')]).toEqual([8, 14, 8]);
+  });
+
+  test('no two puzzles share an answer', () => {
+    const clashes: string[] = [];
+    CATCHPHRASE_SPECS.forEach((a, i) => {
+      CATCHPHRASE_SPECS.slice(i + 1).forEach((b) => {
+        if (namesTheAnswer(a.correct, b.correct) || namesTheAnswer(b.correct, a.correct)) {
+          clashes.push(`${a.slug} / ${b.slug}`);
+        }
+      });
+    });
+    expect(clashes).toEqual([]);
+  });
+
+  test('no wrong answer is the right answer to another puzzle', () => {
+    const clashes = CATCHPHRASE_SPECS.flatMap((spec) =>
+      spec.incorrect.flatMap((wrong) =>
+        CATCHPHRASE_SPECS.filter((other) => other !== spec && namesTheAnswer(wrong, other.correct)).map(
+          (other) => `${spec.slug} offers ${other.slug}`,
+        ),
+      ),
+    );
+    expect(clashes).toEqual([]);
   });
 
   test('no prompt says the phrase it is drawing', () => {
@@ -86,5 +114,107 @@ describe('the check itself refuses a prompt that names its answer', () => {
 
   test('a word inside a longer word is not the answer', () => {
     expect(namesTheAnswer('topdogs', 'Top dog')).toBe(false);
+  });
+});
+
+/*
+  Mr Fries, the house character — Greg chose him on 5 October 2026 and approved
+  the story the same day: docs/decisions/mr-fries.md. He goes into new pictures
+  only; the 30 that shipped are not to be redrawn.
+*/
+describe('Mr Fries', () => {
+  const shipped = CATCHPHRASE_SPECS.slice(0, CATCHPHRASE_MIN_PACK);
+
+  const spec = (overrides: Partial<CatchphraseSpec>): CatchphraseSpec => ({
+    slug: 'fixture',
+    correct: 'A saying nobody uses',
+    incorrect: ['One', 'Two', 'Three'],
+    difficulty: 'medium',
+    scene: 'The character is standing on a hill.',
+    ...overrides,
+  });
+
+  test('the 30 shipped prompts are exactly as drawn', () => {
+    // A hash, so this file can pin them without anybody reading them. New
+    // puzzles go on the end of the list; changing the style, him, or
+    // `promptFor` in a way that reaches these breaks it.
+    const hash = createHash('sha256').update(shipped.map(promptFor).join('\n')).digest('hex');
+    expect(hash).toBe('0cedeae870ca02014db97c40923ba8b94bf4fcd15875653142bc1406761f4749');
+  });
+
+  test('is the bean Greg chose', () => {
+    expect(MR_FRIES).toBe(
+      'A cartoon character whose whole body is a single smooth rounded golden-yellow potato chip shaped like a bean, flat colour with no crumbs or speckles. It has two big round white eyes with black pupils, a wide happy smile, thin black stick arms with white cartoon gloves, and thin black stick legs with red trainers.',
+    );
+  });
+
+  test('comes after the house style and before the scene, only when asked for', () => {
+    expect(promptFor(spec({ fries: true }))).toBe(
+      `${CATCHPHRASE_STYLE} ${MR_FRIES} The character is standing on a hill. No writing anywhere in the image.`,
+    );
+    expect(promptFor(spec({ scene: 'A hill.' }))).toBe(
+      `${CATCHPHRASE_STYLE} A hill. No writing anywhere in the image.`,
+    );
+  });
+
+  test('his name is never in a prompt — a name invites lettering', () => {
+    expect(MR_FRIES).not.toMatch(/fries/i);
+    for (const each of [...CATCHPHRASE_SPECS, spec({ fries: true })]) {
+      expect(promptFor(each)).not.toMatch(/mr\.?\s*fries/i);
+    }
+  });
+
+  test('every scene with him calls him the character', () => {
+    expect(CATCHPHRASE_SPECS.filter((each) => !friesSceneOk(each)).map((each) => each.slug)).toEqual([]);
+  });
+
+  test('the check refuses a scene that never says who he is', () => {
+    expect(friesSceneOk(spec({ fries: true, scene: 'A potato is standing on a hill.' }))).toBe(false);
+    expect(friesSceneOk(spec({ fries: true }))).toBe(true);
+    expect(friesSceneOk(spec({ scene: 'A hill.' }))).toBe(true);
+  });
+
+  test('he is in more than half of everything added after the 30', () => {
+    expect(friesShareOk(CATCHPHRASE_SPECS, CATCHPHRASE_MIN_PACK)).toBe(true);
+  });
+
+  test('the share check counts only what was added, and half is not most', () => {
+    const plain = spec({ scene: 'A hill.' });
+    const him = spec({ fries: true });
+    expect(friesShareOk([...shipped], CATCHPHRASE_MIN_PACK)).toBe(true);
+    expect(friesShareOk([...shipped, him, plain], CATCHPHRASE_MIN_PACK)).toBe(false);
+    expect(friesShareOk([...shipped, him, him, plain], CATCHPHRASE_MIN_PACK)).toBe(true);
+    expect(friesShareOk([...shipped, plain], CATCHPHRASE_MIN_PACK)).toBe(false);
+  });
+});
+
+/*
+  The harder batch — approved by Greg on 5 October 2026:
+  docs/decisions/catchphrase-harder.md. Thirty more after the first thirty.
+*/
+describe('the harder batch', () => {
+  const added = CATCHPHRASE_SPECS.slice(CATCHPHRASE_MIN_PACK);
+
+  test('is thirty puzzles', () => {
+    expect(added).toHaveLength(30);
+  });
+
+  test('is medium or hard, never easy — "hard" went 95% on 5 October', () => {
+    expect(added.filter((spec) => spec.difficulty === 'easy').map((spec) => spec.slug)).toEqual([]);
+  });
+
+  test('says what kind each puzzle is, and no more than a third are one literal scene', () => {
+    expect(added.filter((spec) => spec.kind === undefined).map((spec) => spec.slug)).toEqual([]);
+    expect(added.filter((spec) => spec.kind === 'scene').length * 3).toBeLessThanOrEqual(added.length);
+  });
+
+  test('uses each of the harder kinds the show used', () => {
+    for (const kind of ['rebus', 'lettered', 'soundalike'] as const) {
+      expect(added.filter((spec) => spec.kind === kind).length).toBeGreaterThan(0);
+    }
+  });
+
+  test('has not been drawn yet, or has a picked drawing — never half of one', () => {
+    for (const spec of added) expect(spec.seed === undefined || [1, 2, 3].includes(spec.seed)).toBe(true);
   });
 });
