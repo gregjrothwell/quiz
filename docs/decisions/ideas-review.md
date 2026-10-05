@@ -185,16 +185,7 @@ already documents — plus a `list` grant on `questionVotes`, which is one paste
 public one, and the reason Skip is not exposed is that one player should not be able to turn the
 room against a question. A count that appears before everyone has voted does some of that.
 
-### 13. A Blankety Blank round — **parked, 5 October 2026**
-
-Greg's idea: a round on the show's fill-in-the-blank. **Pick up only once the current
-work is live** (Bonus Catchphrase, Mr Fries, the harder batch, Sleeves 168). Nothing
-researched yet; the first question is whether it fits four options or wants typed answers.
-
-### 14. The Price Is Right, then and now — **parked, 5 October 2026, after §13**
-
-Greg's twist: compare an item's price today with what it cost ten years ago. Prices need a
-dated source per item, never a guess, because a wrong price is a wrong answer.
+### 13–14. New rounds Greg has parked — [`parked-ideas.md`](parked-ideas.md)
 
 ## Crazy, and mostly cheap
 
