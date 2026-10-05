@@ -155,3 +155,46 @@ on-model Mr Fries" becomes part of that pick at no extra cost.
    kind of movement, where he walks in and does the thing, is video, which on
    this Mac is unmeasured and probably out of reach (above).
 3. **Nothing here touches the 30 shipped pictures, the rules or the vault.**
+
+## Greg's answer, and four bodies — 5 October 2026
+
+**Greg:** torn. He likes the character, and it "does look similar to Mr Chips".
+He also wonders whether it should have been **a microchip, because that was
+the original play on words**. He needs to see options, and the name and the
+joke have to be weighed too. **Movement: not yet.** Stills first, to see
+whether the office likes him.
+
+**The pun is documented, second-hand.** UKGameshows, read 5 October 2026: he
+"was christened Mr Chips for the UK release because, according to Challenge's
+2019 documentary 'TV's Greatest Game Shows', he resembled a computer chip." The
+US original called him Herbie.
+
+**Four bodies, two scenes each, seed 7.** No name in the prompt, because a name
+invites lettering and biases the look. The same face, gloves and trainers on
+every one. `draw-options.sh`, `options/`, `options-sheet.png`. Vision read no
+text on any of the eight; about 110 s each.
+
+| | Body | By eye (Claude) |
+|---|---|---|
+| A | Bean | Now a plain potato. Friendly, and holds across both scenes, but nothing says chip |
+| B | Chip-shop chip | Reads as a chip at once; holds. A thin stick leaves a small face, and he bends on the bicycle |
+| C | Black microchip | Reads as a microchip at once, with **the strongest silhouette of the four**; holds. A robot is what Mr Chips was, and this is not one. Black on the house style's dark background survives on its grey edge and pins |
+| D | Gold processor chip | **Came out as SpongeBob SquarePants, twice.** Turned down: another studio's character |
+
+**D is a lesson for every future drawing:** yellow, square, big eyes and gloves
+pull the model towards a famous character it has seen. The by-eye read of each
+drawing has to look for **look-alikes of real characters**, not only for
+lettering.
+
+### Names, and what each one's joke is
+
+| Name | Body | The joke |
+|---|---|---|
+| Mr Fries | A or B | Mr Chips → chips → fries: a pun on a pun. "Fries" is the American word in a British office |
+| **Chippy** | B or C | British for the chip shop, *and* a little chip. On C, a microchip who sounds like the chippy: both meanings at once |
+| Mr Bytes | C | Byte/bite, tech that sounds like food |
+| Mr Chips | any | The show's own name. Not ours to take |
+
+**Claude's pick, for Greg to overrule:** C, called Chippy. It is the original
+pun played straight, the silhouette holds best, and it is not a copy of the
+show's robot.
