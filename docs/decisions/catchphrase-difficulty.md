@@ -119,6 +119,36 @@ rules paste and a screen; the slot needs none of those.
     checked in a live room on a bonus question — squares counted at three
     moments, options landing at half.
 
+## Built — 5 October 2026
+
+On `catchphrase-bonus` as `106863d`, **local, not pushed**. The logic is in
+`src/engine/catchphraseBonus.ts`; the squares are drawn over the `<img>` in
+`PicturePrompt`.
+
+- **Criterion 7, settled:** Greg chose **double**: base and rank × 2, so first
+  takes 2,000 and the floor 1,200. A stake and a steal are shares of what a
+  player holds and are not doubled. `maxBest()` is 200,000. The worst case is
+  25 questions with five bonuses (30k), a full wager (60k) and Share or Shaft
+  (120k), so **no paste is needed**, and nothing in the rules bounds a single
+  question's points.
+- **Every round length ends on a bonus**, so with the wager on, the last
+  question is both wagered and a bonus. Tested: right wins 2,000 plus the stake,
+  and wrong loses the stake only.
+- **Not in the story, added:** the hold's nudge reads *Double points. The
+  options arrive at halfway.*, and the wager's zero-stake line says a bonus is
+  still worth double.
+- **No gap between the squares.** A gap would show nine slivers of the picture
+  from the first frame.
+- **Known limit:** the picture's URL is in the page from the first frame, so
+  dev tools show it whole. This is the same trust model as the rest of the game.
+- **Evidence:** typecheck, lint and 1,245 tests pass, with 11 new tests that
+  failed before the code. The gallery fixture (`#/preview`, *Bonus Catchphrase,
+  three squares up*) showed 3 of 9 up at 6 s of 20, with the grid exactly the
+  still's 498×280 box. **Criterion 10's live room was not run:** Greg said to
+  skip it, so the next office round is the check. Things to read off it: the
+  hit rate on questions 5, 10 and 15 against the rest, and the answer times
+  after the options landed.
+
 ### Open for the next session — Greg's idea, 5 October
 
 **A house character, "Mr Fries"** — the show's Mr Chips was a gold robot in

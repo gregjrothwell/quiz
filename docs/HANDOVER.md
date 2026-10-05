@@ -115,10 +115,10 @@ scoring 500 + rank 500/400/300/200/100.
 15. **Sleeve songs (#62, #63) have been played** — `XDUF` at half the clock, then
     from the first frame ([`sleeves-song.md`](decisions/sleeves-song.md)). Five songs
     still want an ear; *Reasonable Doubt* and *Future Nostalgia* show a **single's**
-    artwork (`titleMatches` takes a prefix). **Stale processes, not this session's:**
-    Vite (PID 29183) on 5273; `host-room --pack sleeves` (PID 51747, since 30 Sep).
-16. **Catchphrase Bonus — story approved 5 Oct, not built** (branch `catchphrase-bonus`, local). Office `K3EN`: 93%,
-    1.7 s after options. Then "Mr Fries" + movement: [`catchphrase-difficulty.md`](decisions/catchphrase-difficulty.md).
+    artwork (`titleMatches` takes a prefix). **Stale process:** `host-room --pack sleeves`
+    (PID 51747, since 30 Sep). The 9 Sep Vite on 5273 was killed 5 Oct: it served stale modules.
+16. **Bonus Catchphrase built 5 Oct, not pushed** (`catchphrase-bonus` `106863d`, off unmerged `live-after-65`):
+    every 5th question, squares, double. Next office round is its live check. Then "Mr Fries": [`catchphrase-difficulty.md`](decisions/catchphrase-difficulty.md).
 
 ## Where things are
 

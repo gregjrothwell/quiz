@@ -24,6 +24,13 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-05 — Bonus Catchphrase built, local only (`106863d`)
+
+Every 5th question: nine squares lift one per tenth of the clock, five up at
+the options, and it pays double base and rank (Greg's pick; not the stake or
+steal). No rule, field or paste. Gallery + 1,245 tests; **no live room** —
+Greg: the next office round is the check. [`decisions/catchphrase-difficulty.md`](decisions/catchphrase-difficulty.md#built--5-october-2026).
+
 ## 2026-10-05 — Catchphrase: the office agrees, and a Bonus Catchphrase is next
 
 Office round `K3EN`, 7 seats, 15 s clock: 93% right, median 1.7 s after the
