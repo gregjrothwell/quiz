@@ -151,6 +151,9 @@ On `catchphrase-bonus` as `106863d`, **local, not pushed**. The logic is in
 
 ### Open for the next session — Greg's idea, 5 October
 
+**Researched 5 October, same day: [`mr-fries.md`](mr-fries.md)** — six drawings, a moving
+prototype, and the decisions it leaves Greg.
+
 **A house character, "Mr Fries"** — the show's Mr Chips was a gold robot in
 most puzzles; ours would be a chip, in most *new* pictures. **Not redrawing the
 30 already shipped.** Greg also remembers the show's pictures **moving a

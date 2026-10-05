@@ -24,6 +24,13 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-05 — Mr Fries researched: prompt-only holds, movement is charm
+
+Six drawings, one fixed description: the same chap in all six, but the bow tie
+held in only 3. A Vision cut-out plus a stretch makes an 81–94 KB breathing WebP,
+but only where he stands clear of things. Nothing built; Greg decides.
+[`decisions/mr-fries.md`](decisions/mr-fries.md).
+
 ## 2026-10-05 — Bonus Catchphrase built, local only (`106863d`)
 
 Every 5th question: nine squares lift one per tenth of the clock, five up at
@@ -193,31 +200,17 @@ Java runtime, so `npm run e2e` never starts the emulators. Before the merge:
 no store badge on any question, the iTunes attribution on the tune card, none
 on the sleeve. Unplayed.
 
-## 2026-09-22 — The store badge was handing out the answer, on both packs
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-22 — The pin refused the reveal: every round stuck on question one
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md). Depth:
-[`decisions/postmortem-the-pin-that-refused-the-reveal.md`](decisions/postmortem-the-pin-that-refused-the-reveal.md).
-
-## 2026-09-21 — Live: `index-OfECpKrx` (#56, gh-pages `f78379e`)
-
-[#56](https://github.com/gregjrothwell/quiz/pull/56) at 16:47; gh-pages `f78379e`
-at 16:50:43. Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-21 — Vault oracle, joinedAt, and the `at` stamp
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md). Depth:
-[`decisions/security-round-sept-2026.md`](decisions/security-round-sept-2026.md).
-
-## 2026-09-04 to 2026-09-21 — archived, one line each
+## 2026-09-04 to 2026-09-22 — archived, one line each
 
 *Collapsed from four-line stubs on 30 September 2026 to make room, and the
 21 September stubs the same way on 5 October; every entry is verbatim in the
-archive, and nothing was shortened.*
+archive, and nothing was shortened. Four more (21–22 September) collapsed the
+same way on the afternoon of 5 October.*
 
+- **2026-09-22** — [The store badge was handing out the answer, on both packs](recall/2026-09.md#2026-09-22--the-store-badge-was-handing-out-the-answer-on-both-packs)
+- **2026-09-22** — [The pin refused the reveal: every round stuck on question one](recall/2026-09.md#2026-09-22--the-pin-refused-the-reveal-every-round-stuck-on-question-one) · depth: [`decisions/postmortem-the-pin-that-refused-the-reveal.md`](decisions/postmortem-the-pin-that-refused-the-reveal.md)
+- **2026-09-21** — [Live: `index-OfECpKrx` (#56, gh-pages `f78379e`)](recall/2026-09.md#2026-09-21--live-index-ofecpkrx-56-gh-pages-f78379e)
+- **2026-09-21** — [Vault oracle, joinedAt, and the `at` stamp](recall/2026-09.md#2026-09-21--vault-oracle-joinedat-and-the-at-stamp) · depth: [`decisions/security-round-sept-2026.md`](decisions/security-round-sept-2026.md)
 - **2026-09-21** — [Live: `index-BHcNzJzP` (#54, gh-pages `026d7cd`)](recall/2026-09.md#2026-09-21--live-index-bhcnzjzp-54-gh-pages-026d7cd)
 - **2026-09-21** — [Correction: the sleeve audit missed a third of them, and a person found the rest](recall/2026-09.md#2026-09-21--correction-the-sleeve-audit-missed-a-third-of-them-and-a-person-found-the-rest)
 - **2026-09-21** — [The picture sits beside the answers now](recall/2026-09.md#2026-09-21--the-picture-sits-beside-the-answers-now)

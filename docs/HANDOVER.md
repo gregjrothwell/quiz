@@ -44,7 +44,7 @@ Built to replace Polly in Teams.
 
 ## State as of 2 October 2026
 
-> **READ FIRST — a game of up to 30 next week.**
+> **READ FIRST — a game of up to 30 on Friday 9 October.**
 > - The biggest room ever played is 11.
 > - #65 (live 2 Oct) folds a crowded lectern into "+N" past 12 chips and keeps
 >   the standings' Next on screen. `sync-harness 30`: 30/30.
