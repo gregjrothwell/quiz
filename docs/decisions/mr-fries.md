@@ -198,3 +198,48 @@ lettering.
 **Claude's pick, for Greg to overrule:** C, called Chippy. It is the original
 pun played straight, the silhouette holds best, and it is not a copy of the
 show's robot.
+
+## Chosen — 5 October 2026
+
+**Greg: A, the bean. Keep the others for backup.** He named no name, so he
+stays **Mr Fries**: his first name, and it is never drawn or prompted, so it
+can change for free.
+
+The wording that drew him, verbatim (seed 7, with `CATCHPHRASE_STYLE` first):
+
+> A cartoon character whose whole body is a single smooth rounded golden-yellow
+> potato chip shaped like a bean, flat colour with no crumbs or speckles. It has
+> two big round white eyes with black pupils, a wide happy smile, thin black
+> stick arms with white cartoon gloves, and thin black stick legs with red
+> trainers.
+
+**Backups**, the same face, gloves and trainers sentence after each:
+B *"…a single long straight thick-cut British chip-shop chip with square flat
+ends, pale golden-yellow, smooth flat colour with no crumbs or speckles,
+standing upright like a tall stick."* · C *"…a small black rectangular computer
+microchip, with a row of short shiny silver metal pins sticking out along each
+long side, flat colour."* (C pairs with the name Chippy.) Drawings in
+`.cache/mr-fries/options/`, local only; the words above are the durable copy.
+
+### The story — for Greg to approve
+
+> As the quizmaster, I want Mr Fries in most new Catchphrase pictures, doing
+> the thing the phrase describes, so the round has a house character the way
+> the show had Mr Chips.
+
+1. **One description, one place.** The wording above is a constant beside
+   `CATCHPHRASE_STYLE`; a spec opts in with `fries: true`, and `promptFor` puts
+   him after the style and before the scene. Scenes call him "the character".
+   His name is never in a prompt, because a name invites lettering.
+2. **The 30 shipped pictures are untouched.** A test pins a hash of their 30
+   prompts, so no change to the style, to him or to `promptFor` can quietly
+   alter what a redraw of them would give.
+3. **Most, not all:** more than half of any new batch has him. He is left out
+   where he would crowd the clue.
+4. **The pick of three now checks him as well**: golden bean, round eyes,
+   smile, white gloves, red trainers, and **no look-alike of a famous
+   character** (D's lesson). Vision's text read and the seal stay as they are.
+5. **Builds nothing visible on its own.** The first pictures with him arrive
+   with the next batch of puzzles, the harder-puzzles story, which waits on
+   Bonus Catchphrase being played.
+6. `typecheck`, `lint` and `test` are clean. No rule, vault or client change.
