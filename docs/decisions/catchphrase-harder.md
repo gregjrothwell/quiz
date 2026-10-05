@@ -21,7 +21,7 @@ time of writing:
   runway and never by how cheap a pack is to grow.
 - Noted, not acted on: **Sleeves is spent too**, 105 asked from 104.
 
-## The story — for Greg to approve
+## The story — approved by Greg, 5 October 2026
 
 > As the quizmaster, I want a new batch of Catchphrase puzzles that have to be
 > worked out rather than read at a glance, so the round stops being 93% right
@@ -64,3 +64,35 @@ time of writing:
 the old (93%), and the time from options to answer (1.7 s median). Target: a
 hit rate under On the box's 83–90%, and answers spread out rather than bunched
 on the moment the options land. That is a measurement, not a gate.
+
+## Built — 5 October 2026, `08d09e9`, local
+
+**30 → 60.** Kinds: 9 scene, 8 rebus, 4 lettered, 9 sound-alike. 17 medium, 13 hard.
+Mr Fries in 21. The first 30 prompts are unchanged (the hash pin).
+
+- **Two new tests found real clashes on the first run.** One scene named its own answer
+  and was reworded. Five of the *first 30* offered a new answer as a wrong option; those
+  five wrong options were swapped for other real phrases. The vault holds answers as
+  text, so nothing else moved.
+- **Drawn in two sittings:** paused at puzzle 9 when the MacBook sat at 7% on the
+  charger, then resumed. About 110 s a version.
+- **Claude picked every seed** (Greg plays blind), on four checks: it reads as the
+  phrase, the only lettering is what was asked for, Mr Fries is on model, and nobody
+  else's character is in it. Vision reads only the asked-for lettering on all 30
+  shipped. Lessons, with no puzzle named, because Greg plays blind:
+  - **Mr Fries leaks into the cast.** Asked for other people beside him, the model drew
+    more of him. A scene that needs other people should describe them hard.
+  - **Off model, accepted once:** his arms changed on one puzzle where it serves the joke.
+  - **Two puzzles came out weaker than written** but still land.
+  - **One redraw:** no version of one puzzle showed the key detail. The scene was rewritten
+    and drawn again; the new version is right.
+  - **One wrong option swapped after drawing:** it fitted the whole picture as well as the
+    answer did.
+  - **The look-alike rule ruled out two versions of one puzzle**, which resembled a famous
+    cartoon character. *Correction: `08d09e9`'s message says "one version per puzzle";
+    it was two versions, of one puzzle.*
+- **Named in chat, 5 October.** While picking, Claude's chat messages named all 30 of
+  this batch by answer, despite the rule. Greg decides whether to replace them
+  (go-live doc).
+- **Checks:** typecheck, lint, 1,273 tests, build, `check-bundle` clean. 30 new images,
+  the largest 183 KB, none of the first 30 changed. **Not seeded.**

@@ -8,7 +8,8 @@ session first.
 
 ## What is on the branch
 
-`catchphrase-bonus`, **27 commits ahead of `origin/master` and none behind** (fetched 5 October).
+`catchphrase-bonus`, **about 31 commits ahead of `origin/master` and none behind** (fetched 5 October;
+recount with `git log --oneline origin/master..catchphrase-bonus`).
 It sits on `live-after-65`, which is on GitHub but unmerged and docs-only, so those commits come
 along in the same PR. It touches 35 files.
 
@@ -30,6 +31,17 @@ but it costs nothing to run (91/91 on 27 September).
 against live that day. **Claude's suggestion: after Friday.** A deploy on the 7th or 8th means
 Friday plays on new scoring code (Bonus Catchphrase), though only a Catchphrase round reaches it.
 Greg's call.
+
+## Decide first: the new Catchphrase batch was named in chat
+
+While picking drawings on 5 October, Claude's chat messages named **all 30 new puzzles
+by answer**. The docs and commits hold no answers (checked). So the batch is spoiled
+for Greg if he read those messages, but not for the office. The options:
+
+- **Keep it.** The office plays it blind; Greg plays knowing, or sits those rounds out.
+- **Replace it.** Write 30 more, draw them (about 3 hours of Mac time, battery
+  permitting), and pick them by number only. The 30 just made could still serve as
+  office-only rounds.
 
 ## The steps, in order
 

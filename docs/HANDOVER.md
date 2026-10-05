@@ -117,7 +117,7 @@ scoring 500 + rank 500/400/300/200/100.
     still want an ear; *Reasonable Doubt* and *Future Nostalgia* show a **single's**
     artwork (`titleMatches` takes a prefix). **Stale process:** `host-room --pack sleeves`
     (PID 51747, since 30 Sep). The 9 Sep Vite on 5273 was killed 5 Oct: it served stale modules.
-16. **In flight on `catchphrase-bonus` (local, off unmerged `live-after-65`):** Bonus Catchphrase, Mr Fries, Sleeves 104→168 built; harder Catchphrase batch **8 of 30 drawn, paused for battery** ([`catchphrase-harder.md`](decisions/catchphrase-harder.md)).
+16. **In flight on `catchphrase-bonus` (local, off unmerged `live-after-65`):** Bonus Catchphrase, Mr Fries, Catchphrase 30→60, Sleeves 104→168: **all built, none seeded** ([`catchphrase-harder.md`](decisions/catchphrase-harder.md)).
     **Go-live steps: [`go-live-oct-2026.md`](decisions/go-live-oct-2026.md)**, not Fri 9 Oct. Weekday freshness check runs at 08:12: [`pack-freshness.md`](decisions/pack-freshness.md).
 
 ## Where things are

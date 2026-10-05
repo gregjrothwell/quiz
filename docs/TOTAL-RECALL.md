@@ -24,6 +24,12 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-05 — Catchphrase 60, everything prepped, and the batch named in chat
+
+The harder batch was drawn (one redraw) and picked; it is 30 → 60, with Mr Fries in 21 (`08d09e9`).
+Nothing is seeded, pushed or deployed: [`go-live-oct-2026.md`](decisions/go-live-oct-2026.md).
+**Claude named all 30 new answers in chat while picking**, so Greg decides keep or replace.
+
 ## 2026-10-05 — Sleeves 168, a freshness check, and the harder batch half drawn
 
 Catchphrase (30 of 30) and Sleeves (105 of 104) were both spent. Sleeves 104 → 168
