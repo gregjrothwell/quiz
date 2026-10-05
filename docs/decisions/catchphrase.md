@@ -240,7 +240,8 @@ style, and no wrong answer is another wording of the right one.
 
 ```bash
 npm run catchphrase-draw          # ~2.8 h, three versions each, into .cache/catchphrase/
-# look at every drawing; set `seed` on each spec to the version that ships
+# look at every drawing; set `seed` on each spec to the version that ships —
+# no lettering, Mr Fries on model where `fries` is set, nobody else's character
 npm run write-catchphrase-pack    # refuses an unpicked spec or a drawing that prints its answer
 npm run seed-vault                # before any deploy
 npm run host-room -- 10 --pack catchphrase

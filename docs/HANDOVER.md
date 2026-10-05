@@ -117,8 +117,8 @@ scoring 500 + rank 500/400/300/200/100.
     still want an ear; *Reasonable Doubt* and *Future Nostalgia* show a **single's**
     artwork (`titleMatches` takes a prefix). **Stale process:** `host-room --pack sleeves`
     (PID 51747, since 30 Sep). The 9 Sep Vite on 5273 was killed 5 Oct: it served stale modules.
-16. **Bonus Catchphrase built 5 Oct, not pushed** (`catchphrase-bonus` `106863d`, off unmerged `live-after-65`):
-    every 5th question, squares, double. Next office round is its live check. Then "Mr Fries": [`catchphrase-difficulty.md`](decisions/catchphrase-difficulty.md).
+16. **Bonus Catchphrase built 5 Oct, not pushed** (`catchphrase-bonus`, off unmerged `live-after-65`): [`catchphrase-difficulty.md`](decisions/catchphrase-difficulty.md);
+    live check is the next office round. **Mr Fries**: the bean chosen, `fries` built, none drawn: [`mr-fries.md`](decisions/mr-fries.md).
 
 ## Where things are
 

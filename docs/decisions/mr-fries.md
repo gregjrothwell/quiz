@@ -221,7 +221,7 @@ microchip, with a row of short shiny silver metal pins sticking out along each
 long side, flat colour."* (C pairs with the name Chippy.) Drawings in
 `.cache/mr-fries/options/`, local only; the words above are the durable copy.
 
-### The story — for Greg to approve
+### The story — approved by Greg, 5 October 2026
 
 > As the quizmaster, I want Mr Fries in most new Catchphrase pictures, doing
 > the thing the phrase describes, so the round has a house character the way
@@ -243,3 +243,8 @@ long side, flat colour."* (C pairs with the name Chippy.) Drawings in
    with the next batch of puzzles, the harder-puzzles story, which waits on
    Bonus Catchphrase being played.
 6. `typecheck`, `lint` and `test` are clean. No rule, vault or client change.
+
+**Built the same day:** `MR_FRIES`, `fries` on a spec, `friesSceneOk` and
+`friesShareOk` in `scripts/hand-catchphrase-data.ts`. There are 8 new tests;
+the 30-prompt hash was shown to fail when one shipped spec gains him. 1,253
+tests, typecheck and lint pass. Nothing drawn yet; that comes with the next batch.

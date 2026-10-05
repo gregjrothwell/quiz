@@ -24,6 +24,12 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-05 — Mr Fries: the bean chosen, and the hook for him built
+
+Greg chose A, the bean, from four bodies. D drew SpongeBob, so look-alikes
+are now part of the by-eye check. A spec opts in with `fries`; the 30 shipped
+prompts are pinned by hash. No new pictures yet. [`decisions/mr-fries.md`](decisions/mr-fries.md#chosen--5-october-2026).
+
 ## 2026-10-05 — Mr Fries researched: prompt-only holds, movement is charm
 
 Six drawings, one fixed description: the same chap in all six, but the bow tie
