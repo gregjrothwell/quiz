@@ -118,7 +118,7 @@ scoring 500 + rank 500/400/300/200/100.
     artwork (`titleMatches` takes a prefix). **Stale process:** `host-room --pack sleeves`
     (PID 51747, since 30 Sep). The 9 Sep Vite on 5273 was killed 5 Oct: it served stale modules.
 16. **#67 live 6 Oct 08:15:** Catchphrase 60→90 (blind), Sleeves 168→212, On the box 296→445, Tunes 268→424; seeded 378, read back 1,171/1,171. **The first rounds played are the live check** (the harder Catchphrase batches, step 9 of [`go-live-oct-2026.md`](decisions/go-live-oct-2026.md)).
-    Plan for Greg's feedback: [`pack-growth-plan.md`](decisions/pack-growth-plan.md). Remove `.claude/worktrees/agent-a1742b5bc758eaa2c` (breaks plain `npm run lint`). Freshness weekdays 08:12.
+    Plan for Greg's feedback: [`pack-growth-plan.md`](decisions/pack-growth-plan.md). Freshness weekdays 08:12.
 
 ## Where things are
 
