@@ -144,4 +144,7 @@ export const SLEEVE_HAND_REFUSALS: Record<string, string> = {
   'last-splash': '“Last Splash” in script over the logo',
   secrets: '“S e c r e t s” along the bottom',
   millennium: '“millennium 2.0” across the middle',
+  // Seventh batch, 6 October 2026. Not a new album: the re-audit read less of
+  // this cover than the last one did, and it flipped from refused to clear.
+  yeezus: '“YEEZUS” in the small print round the disc',
 };

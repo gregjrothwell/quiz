@@ -1,6 +1,6 @@
 # Sleeves — growing the pack again
 
-> **Owner: Greg Rothwell. Last updated: 5 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 6 October 2026. Budget: 250 lines.**
 
 The gate, the refusals and why a person has to look are in
 [`sleeves-gate.md`](sleeves-gate.md); the song clue is in
@@ -81,3 +81,47 @@ is a problem, the lever is the ratings and the mix, not the gate.
   the first frame on 30 September. The audit was run with `--window 20` by hand, as
   it was then. Reported, not changed.
 - **Not yet:** `seed-vault` (before the deploy, not Friday), and the deploy itself.
+
+## Built — 6 October 2026, seventh batch, `sleeves-batch-7`, local
+
+**168 → 212, so 44 new** (+0 easy / +8 medium / +36 hard; the pack is 14 / 74 / 124).
+Candidates went through a pre-screen first (plan lever B1), so specs were written only for
+keepers and the refused never entered `hand-sleeves-data.ts`.
+
+| | Five chunks |
+|---|---|
+| Candidates | 759 (48 tried before, so 711 new) |
+| Unresolved on iTunes GB | 120 |
+| Refused by Vision | 458 |
+| Cleared by Vision | 133 |
+| Refused by eye | **79**: 69 print the title (often small, by the logo), 5 not for an office screen, 5 a wrong release (a single or EP) |
+| Not used | 10: 8 artists without three other albums, 2 Royal Blood covers whose only third wrong answer is the self-titled album the cover prints |
+| Kept and shipped | **44**, all publishable in `sleeve-cover-text.ts`, all with a song |
+
+- **About 1 in 16 new candidates ships**, down from 1 in 7. **Vision missed 69 of the 133
+  covers it cleared, 52%.** A look by eye is still the gate, and it took zooming: *Caribou*
+  prints its title in letters a few pixels high, *All ’n All* on the temple door.
+- **The look was Claude's.** Greg looks at `.cache/sleeves-check-seventh.png`, the 44,
+  numbered. Worth his eye: *Stranded* (torn dress), *Impossible Princess* (leotard),
+  *Here* (bare shoulders), *Licensed to Ill* (the tail's "3MTA3" is EAT ME mirrored).
+  Fourteen show the artist's name (nine by Vision's count), harmless with same-artist
+  wrong answers.
+- **A regression the re-audit caused, caught.** *Yeezus* had been refused on its text; this
+  run Vision read less of the same cover and it flipped to clear. It prints YEEZUS round
+  the disc. Now in `sleeve-refusals.ts`. Re-reading every cover can open the gate as well as
+  close it, so the publishable count has to be checked against old + new, as it was here
+  (213 against 212).
+- **Songs:** two needed the GB track name (*The Endless River*'s "Side 4, pt. 4: Louder
+  Than Words", *Because the Internet*'s "V. 3005"). 210 of 212 carry one; the two silent
+  are *Reasonable Doubt* and *Future Nostalgia*, as before.
+- **Ratings are guesses and lean hard.** The keepers are mostly albums a room knows less
+  well, which is what survives the gate. Sleeves was already the hardest round.
+- Two slugs collided with other packs and took `-album` (`us-album`, `up-album`).
+
+**Not done:**
+
+1. **Clip windows.** `npm run tune-audit -- --pack sleeves --window 20` (Whisper, about
+   2.5 minutes a clip). Not run: the Tunes audit held Whisper all night.
+2. **`npm run seed-vault -- --pack sleeves`** before any deploy, never on a Friday.
+3. Greg's look at the sheet; a refusal goes in `sleeve-refusals.ts`, then
+   `npm run write-sleeves-pack`.
