@@ -57,10 +57,10 @@ Built to replace Polly in Teams.
 >   questions ([`public-scale.md`](decisions/public-scale.md)); the two
 >   lead-time cuts ([`ci-deploy.md`](decisions/ci-deploy.md)).
 
-**Live is `index-DdEoFaVD`** (packs from #68: 6 Oct 09:04, gh-pages `3fbc003`, `28263ec`, CI;
-the bundle is unchanged since #66 — the lobby reads `index.json` — so **check the packs, not the hash**). Pages `built` in
-68s. Firebase chunk `firebase-W6iQUl4r`, unchanged since #61.
-**18 packs**; **Blankety Blank 140** (blind); **Catchphrase 90** (every 5th a double-scoring bonus); **Name that Tune 424**; synth **Classical**; **On the box 445**
+**Live is `index-BCpFNLxK`** (#69: 6 Oct 13:05 BST, merge `d958cc0`, gh-pages `51a30de`, CI). **The
+bundle changed this time** (`ordered` options, the chair, Bonus Catchphrase options from frame one).
+Firebase chunk `firebase-W6iQUl4r`.
+**19 packs**; **The Price Was Right 95** and **Blankety Blank 148** (both blind); **Catchphrase 90** (every 5th a double-scoring bonus); **Name that Tune 424**; synth **Classical**; **On the box 445**
 (hashed TMDB stills, at most 8 titles before 1990); **Flags** 76; **Sleeves 212**
 after seven candidate batches, the last pre-screened; picture is **Fine Art** 49.
 
@@ -105,8 +105,8 @@ scoring 500 + rank 500/400/300/200/100.
 12. **Cass could not join `CUC4`**, no join ever written. Candidate, 27 Sep: one
     App Check 403 makes the SDK lock that browser out for **24 hours** ("Cannot
     reach the server"); seen live in the built-in browser. Ask what she saw.
-13. **Every round since #52 writes `RevealTiming`; no stall has recurred** — the
-    fix is unproved rather than disproved ([`reveal-delays.md`](decisions/reveal-delays.md)).
+13. **Reveal: no stall since #52.** Branch `reveal-stop-at-first-hit` (local, unpushed) cuts it
+    516→388ms median in a browser; wants an office round before Friday ([`reveal-stop-at-hit.md`](decisions/reveal-stop-at-hit.md)).
 14. **Loose ends from 26–27 September**: five new tunes transcribed to nothing
     and want an ear (`live-forever`, `golden-touch`, `build-me-up-buttercup`,
     `call-the-shots`, `gangnam-style`); **56 rooms past expiry** —
@@ -115,10 +115,10 @@ scoring 500 + rank 500/400/300/200/100.
 15. **Sleeve songs (#62, #63) have been played** — `XDUF` at half the clock, then
     from the first frame ([`sleeves-song.md`](decisions/sleeves-song.md)). Five songs
     still want an ear; *Reasonable Doubt* and *Future Nostalgia* show a **single's**
-    artwork (`titleMatches` takes a prefix). **Stale process:** `host-room --pack sleeves`
-    (PID 51747, since 30 Sep). The 9 Sep Vite on 5273 was killed 5 Oct: it served stale modules.
+    artwork (`titleMatches` takes a prefix). **Stopped 6 Oct:** that `host-room` (since 30 Sep),
+    two more from 6 Oct, and six Vite servers from 4–9 Sep (5173–5175, 5277, 5288).
 16. **#67 live 6 Oct 08:15:** Catchphrase 60→90 (blind), Sleeves 168→212, On the box 296→445, Tunes 268→424; seeded 378, read back 1,171/1,171. **The first rounds played are the live check** (the harder Catchphrase batches, step 9 of [`go-live-oct-2026.md`](decisions/go-live-oct-2026.md)). Plan for Greg's feedback: [`pack-growth-plan.md`](decisions/pack-growth-plan.md). Freshness weekdays 08:12.
-17. **Local `office-feedback-6-oct`, not pushed, nothing seeded** (after `RRGM`, 6 Oct): Blankety Blank 21 American out, 29 British in → 148; **The Price Was Right**, 95 ONS prices 5/10/20/30 years back, blind ([`price-was-right.md`](decisions/price-was-right.md)), with `ordered` options (a client change); chair seats a tie touching the podium; Bonus Catchphrase options from frame one; **`AGENTS.md`: nothing American**. Before deploy: `seed-vault -- --pack blanks,prices`, then `host-room --pack prices`. Ask Cass about Catchphrase Q1.
+17. **#69 live 6 Oct 13:05 BST** (after `RRGM`): Blankety Blank 148 (21 American out, 29 British in); **The Price Was Right**, 95 ONS prices, blind ([`price-was-right.md`](decisions/price-was-right.md)), `ordered` options; the chair seats a tie touching the podium; Bonus Catchphrase options from frame one. Seeded 124, read back 243/243; `host-room --pack prices` (`P3E9`) revealed from the vault in 0.28s. **First office rounds are the live check.** Ask Cass about Catchphrase Q1. `AGENTS.md`: world-famous American is fine, needing American knowledge is not.
 
 ## Where things are
 

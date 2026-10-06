@@ -53,10 +53,17 @@ function isPermissionDenied(cause: unknown): boolean {
  * Finds which option the vault says is correct, and leaves the proof behind at
  * `rooms/{code}/reveal/{questionId}` for anyone who wants to check.
  *
- * All four candidates go at once. Three will be refused and one accepted, so
- * the reveal costs one round trip rather than up to four — the difference
- * between an imperceptible pause and most of a second with the whole room
- * watching.
+ * **One candidate at a time, stopping at the hit.** This used to fire all four
+ * at once on the belief that it cost one round trip. It never did: a refused
+ * write closes Firestore's write stream (`__PRIVATE_onWriteStreamClose` in the
+ * SDK), and the next write waits for a new one. So the four were always served
+ * one stream after another, every reveal paid for all three refusals, and the
+ * room update queued behind them paid for a reopen as well unless the hit came
+ * last. Asking in order and stopping costs the refusals *before* the hit only —
+ * one and a half on average rather than three — and leaves the stream open for
+ * the room update. The worst case, the hit last, costs about what every reveal
+ * did before — measured a little over it, 570ms against 516ms median on small
+ * samples. Measured 6 October 2026: docs/decisions/reveal-stop-at-hit.md.
  *
  * A reveal that has already been recorded — because the quizmaster's tab
  * reloaded, or the role changed hands mid-question — is read back rather than
@@ -67,23 +74,18 @@ export async function resolveAnswer(
   code: string,
   question: QuizQuestion,
 ): Promise<number> {
-  const attempts = question.options.map(async (option, index) => {
+  for (const [index, option] of question.options.entries()) {
     try {
       await setDoc(revealDoc(db, code, question.id), { answer: option });
       return index;
     } catch (cause) {
-      // A refusal is the expected outcome for three of the four, and carries no
-      // information beyond "not this one". Anything else — offline, a missing
+      // A refusal is the expected outcome for every option but one, and carries
+      // no information beyond "not this one". Anything else — offline, a missing
       // ruleset — has to surface, or a reveal that cannot happen looks
       // identical to a question nobody got right.
-      if (isPermissionDenied(cause)) return -1;
-      throw cause;
+      if (!isPermissionDenied(cause)) throw cause;
     }
-  });
-
-  const results = await Promise.all(attempts);
-  const found = results.find((index) => index >= 0);
-  if (found !== undefined) return found;
+  }
 
   // Every candidate refused. Either the gate has not opened yet, or this
   // question was already revealed once — a reloaded tab, or the role changing

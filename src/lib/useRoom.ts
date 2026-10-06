@@ -375,7 +375,7 @@ export function useRoom(): UseRoom {
    * A callback holds the room from the render that made it, which is fine for
    * an action dispatched straight away and wrong for one dispatched after an
    * await. The reveal is the case that matters: `handleReveal` asks the vault
-   * first, which is four writes and a network round trip, and every answer that
+   * first, which is up to four writes one after another, and every answer that
    * lands during it belongs to a room object that closure will never see. See
    * `dispatch`.
    */
@@ -571,7 +571,7 @@ export function useRoom(): UseRoom {
    * **Folded over the newest room this client has seen, not the one this
    * callback was created with.** The difference is the length of an await, and
    * the reveal spends one: `handleReveal` asks the vault before it dispatches,
-   * which is four writes and a round trip. An answer arriving in that gap is in
+   * which is up to four writes one after another. An answer arriving in that gap is in
    * a newer room object, and folding over the closure's copy dropped it — the
    * player answered inside the window, watched their lectern light up, and
    * scored nothing, while the round moved on without them. It costs whoever
