@@ -242,7 +242,7 @@ async function main(): Promise<void> {
     > asks one option at a time and stops at the hit. This harness question's
     > answer is its first option, so the leg below is one accepted write with
     > nothing denied — it times the gate, not the toll. See
-    > docs/decisions/reveal-delays.md.
+    > docs/decisions/reveal-stop-at-hit.md.
   */
   const beforeResolve = Date.now();
   const correctIndex = await resolveAnswer(db, code, QUESTION);

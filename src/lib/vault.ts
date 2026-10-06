@@ -61,8 +61,9 @@ function isPermissionDenied(cause: unknown): boolean {
  * room update queued behind them paid for a reopen as well unless the hit came
  * last. Asking in order and stopping costs the refusals *before* the hit only —
  * one and a half on average rather than three — and leaves the stream open for
- * the room update. The worst case, the hit last, is what every reveal cost
- * before. Measured 6 October 2026: docs/decisions/reveal-delays.md.
+ * the room update. The worst case, the hit last, costs about what every reveal
+ * did before — measured a little over it, 570ms against 516ms median on small
+ * samples. Measured 6 October 2026: docs/decisions/reveal-stop-at-hit.md.
  *
  * A reveal that has already been recorded — because the quizmaster's tab
  * reloaded, or the role changed hands mid-question — is read back rather than

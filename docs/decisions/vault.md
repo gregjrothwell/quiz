@@ -126,7 +126,7 @@ the room, pinned while a question is open and floored at five seconds; see
 [the configurable answer window](answer-window.md#the-configurable-answer-window).
 
 `src/lib/vault.ts` fired all four candidates at once, "so the reveal costs one round trip".
-**Corrected 6 Oct 2026:** it never did; it now stops at the hit ([`reveal-delays.md`](reveal-delays.md)).
+**Corrected 6 Oct 2026:** it never did; it now stops at the hit ([`reveal-stop-at-hit.md`](reveal-stop-at-hit.md)).
 
 ### What it costs
 
