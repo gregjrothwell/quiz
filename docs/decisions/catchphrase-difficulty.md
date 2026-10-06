@@ -174,6 +174,26 @@ memory:
 **Not in this story:** harder puzzles and distractors that fit the whole picture
 (levers 2 and 3) — the next one, once this has been played.
 
+## The second office round — `RRGM`, 6 October 2026, 09:55 BST
+
+The first round with Bonus Catchphrase and batch 3 (#67) live. 6 seats, a **10 s** clock, so
+the options landed at 5 s.
+
+| | `K3EN`, 5 Oct | `RRGM`, 6 Oct |
+|---|---|---|
+| Right | 93% | **78%** |
+| Median after the options landed | 1.7 s | **2.8 s** |
+| Answers inside 2 s of the options | 58% | **22%** |
+| Batch 3 against the older 60 | — | 77% (10 questions) against 80% (5) |
+
+**Greg:** "a step in the right direction for difficulty — can probably push a bit higher".
+So the next batch aims harder than batch 3, by lever 2 and lever 3 above. Not started.
+
+**Greg, same day, on the bonus:** "the answers should be there right away so people can guess
+as the squares are removed". Built on `office-feedback-6-oct`: `optionsAtMs` takes the index
+and returns 0 on a bonus, so the squares are the only thing hiding the answer. Ordinary
+questions keep the half-clock hold. No rules change: the hold was only ever client-side.
+
 ## The levers, cheapest first
 
 1. **Hold the options longer.** `OPTIONS_HOLD_SHARE` is one number

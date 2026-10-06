@@ -84,10 +84,33 @@ and moved to one that says them. **Nine had no article that says them and were d
 not bent to pass. One more was dropped earlier for containing a Catchphrase answer. Dropped
 numbers stay as gaps, since a slug is a vault id.
 
+**Live 6 October 2026, 09:04** — #68, merge `28263ec`, gh-pages `3fbc003`. Live `index.json`
+lists it at 140 (64/50/26); `blanks.json` carries no answer field.
+
 **Not covered:** whether the office finds it fun, and whether the difficulty labels hold.
 Both are judgements until a round is played (`read-games` after it).
 **Spoiled for the test session only:** the first two questions in pack order were on screen
 in `N9AS`. Greg did not see them.
+
+## The American slant — 6 October 2026, branch `office-feedback-6-oct`
+
+**Greg, after the first office round** (`RRGM`, 6 seats, 15 questions): "good but it felt like
+there was an American slant". Read off `games/`: 6 of the 15 were slogans or catchphrases and
+**4 of those 6 were American**, question 1 among them. Across the pack, **21 of 140**.
+
+- **Dropped**, gaps kept: slogans 110–114, 116, 125, 126, 131, 132, 137; catchphrases
+  224–228, 234, 235, 237, 238, 247. The test was where the brand, the campaign or the show is
+  American. Kept as British in practice: 103, 124 and 133 (US-origin campaigns that ran for
+  decades here) and every British version of a format (210, 216, 217, 229).
+- **Added**, British: slogans 139–157 and catchphrases 249–265. Nine more drafted and
+  **dropped before shipping** for want of an article that says them: 138, 143, 146, 148, 150,
+  153, 155, 262, 266.
+- `blanks-check`: the first run over the new specs was **141/157**; seven re-pointed to an
+  article that quotes them, one distractor the source also quotes was swapped, nine dropped
+  rather than bent. Then **148/148**, canary first. Levels **56/58/34**.
+- **Not seeded and not deployed.** 29 new ids: `seed-vault -- --pack blanks` must run first.
+- **Labels are judgements.** `RRGM`'s hard sayings went 1/6 on three of five; nothing new has
+  been played.
 
 ### Not in v1
 

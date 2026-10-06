@@ -24,6 +24,34 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-06 — The Price Was Right built; "nothing American" written down (`office-feedback-6-oct`)
+
+Greg believed "no American questions" was already a principle; it was only `classify.ts`'s
+harvest filter, which hand packs never pass through. Now in `AGENTS.md`. Parked idea #2 built
+blind: 95 ONS prices, given now, guess 5/10/20/30 years back — shop-quote medians for 5 and
+10, RPI average prices for 20 and 30 (the quotes have nothing 1996–2009). AC "no engine
+change" broke: the client shuffles options, so `ordered` (`1de868b`). Unseeded
+([`price-was-right.md`](decisions/price-was-right.md)).
+
+## 2026-10-06 — First office rounds of #67 and #68: chair, bonus, Blankety Blank (`office-feedback-6-oct`)
+
+Room `RRGM`, 6 seats: Blankety Blank then Catchphrase. **No chair on the first:** the wager
+left four on 0 and third place was one of them; `seatedLast` refused a tie touching the podium
+by design. Reversed ([`final-card.md`](decisions/final-card.md)). **Cass, Catchphrase Q1:** no
+answer of hers reached the room, nor Roberto's; the other four came in at 7.6–9.7 s of 10.
+Unresolved until she says whether her screen read *You didn't answer* or *didn't reach the
+room in time*. **Bonus options now from the first frame**; Catchphrase 93% → 78%, Greg wants
+harder still ([`catchphrase-difficulty.md`](decisions/catchphrase-difficulty.md)). **Blankety
+Blank:** 21 American out, 29 British in, 148, not seeded ([`blankety-blank.md`](decisions/blankety-blank.md)).
+
+## 2026-10-06 — Live: #68 (gh-pages `3fbc003`): Blankety Blank, 18 packs
+
+Greg's "let's go live" 08:56 → merged `28263ec` 08:59:25 (Greg; the harness's classifier
+refused `gh pr merge`) → master CI green 09:03:26 → Pages `built` 09:04:32: **about 8 minutes**.
+Live `index.json` lists 18 packs; `blanks.json` serves 140, no answer field. The bundle hash is
+unchanged and that is correct: no client code imports `PACK_IDS`, and the local build that
+played `N9AS` produced the same `index-DdEoFaVD`.
+
 ## 2026-10-06 — Blankety Blank built and seeded, 140 questions, played blind
 
 Greg's parked idea #1, as a four-option pack: no engine change, no paste. Every phrase and

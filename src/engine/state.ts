@@ -666,7 +666,7 @@ export function buildQuizQuestions(
     const built: QuizQuestion = {
       id: question.id,
       prompt: question.question,
-      options: shuffle(question.options, rng),
+      options: question.ordered ? [...question.options] : shuffle(question.options, rng),
       correctIndex: null,
       category: question.category,
       difficulty: question.difficulty,

@@ -58,6 +58,7 @@ describe('mergeIndex', () => {
       'screens',
       'catchphrase',
       'blanks',
+      'prices',
     ]);
   });
 });

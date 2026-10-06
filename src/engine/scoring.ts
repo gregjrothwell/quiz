@@ -354,25 +354,28 @@ export const PODIUM_PLACES = 3;
 /**
  * Who finished on the lowest score, for the chair at the end of the podium.
  *
- * One condition does all the work: the tie for last has to *start* below the
- * podium. That is what keeps the three edge cases honest, and each of them is a
- * real office round rather than a hypothetical.
+ * Everyone on the lowest score who is not already stood on a riser. Each edge
+ * case is a real office round rather than a hypothetical.
  *
- * A round where nobody scored is not a round somebody lost, so a table tied on
- * zero seats no one — the tie starts at the top. A room of three has a third
- * place already standing on a riser, and nobody should be on a riser and in the
- * chair at once. And a tie that reaches up into the podium is the same clash a
- * place lower down: last is only last when everybody above it is genuinely above
- * it.
+ * A round where nobody scored is not a round somebody lost, so a table tied all
+ * the way to the top seats no one. A room of three has nobody off the podium to
+ * seat, and nobody should be on a riser and in the chair at once.
+ *
+ * **A tie for last that reaches up into the podium used to seat nobody**, on the
+ * argument that last is only last when everybody above it is genuinely above
+ * it. Reversed by Greg, 6 October 2026: room RRGM finished with four of six on
+ * nothing after the wager, third place was one of the four, and the round ended
+ * with no chair at all — which read as broken, not as principled. Whoever the
+ * podium stands up stays there; the rest of the tie sits down.
  *
  * Returns everyone on that score, because a shared last place is still last.
  */
 export function seatedLast(rows: readonly Standing[]): string[] {
   const lowest = rows[rows.length - 1]?.score;
-  if (lowest === undefined) return [];
+  if (lowest === undefined || rows[0]?.score === lowest) return [];
 
-  const first = rows.findIndex((row) => row.score === lowest);
-  if (first < PODIUM_PLACES) return [];
-
-  return rows.slice(first).map((row) => row.uid);
+  return rows
+    .slice(PODIUM_PLACES)
+    .filter((row) => row.score === lowest)
+    .map((row) => row.uid);
 }

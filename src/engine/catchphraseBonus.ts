@@ -40,8 +40,8 @@ export function isBonusCatchphrase(packId: PackId | null, index: number): boolea
 
 /**
  * How many squares are up: one every tenth of the clock, so the picture is
- * whole for the last tenth. On a 15 s clock that is one every 1.5 s, whole from
- * 13.5 s, and five up when the options land at half.
+ * whole for the last tenth. On a 15 s clock that is one every 1.5 s and whole
+ * from 13.5 s. The options are on screen throughout — `optionsAtMs`.
  *
  * Tenths rather than ninths so the last square is not lifting at the buzzer —
  * Greg, "ok for now".

@@ -24,7 +24,7 @@ Built to replace Polly in Teams.
 | the clock and the countdown, and whose clock it runs on | [`clock.md`](decisions/clock.md) · [`shared-clock.md`](decisions/shared-clock.md) |
 | joining, room codes, links, presence | [`decisions/joining.md`](decisions/joining.md) |
 | scoring an answer that lands late; the review panel and the replay | [`late-answers.md`](decisions/late-answers.md) · [`review-replay.md`](decisions/review-replay.md) |
-| packs, harvesting, classification, **On the box / TMDB stills**; **Blankety Blank** (blind) | [`questions.md`](decisions/questions.md) · [`blankety-blank.md`](decisions/blankety-blank.md) |
+| packs, harvesting, classification, **On the box / TMDB stills**; **Blankety Blank** and **The Price Was Right** (both blind) | [`questions.md`](decisions/questions.md) · [`blankety-blank.md`](decisions/blankety-blank.md) · [`price-was-right.md`](decisions/price-was-right.md) |
 | **a picture that does not turn up**, preloading, the box a still gets | [`decisions/picture-loading.md`](decisions/picture-loading.md) |
 | **an album cover that names its own album**, the sleeve audit; **a song from the album at half the clock** (live 29 Sep, #62) | [`decisions/sleeves-gate.md`](decisions/sleeves-gate.md) · [`sleeves-song.md`](decisions/sleeves-song.md) |
 | voting on a question, retiring one | [`question-votes.md`](decisions/question-votes.md) |
@@ -57,10 +57,10 @@ Built to replace Polly in Teams.
 >   questions ([`public-scale.md`](decisions/public-scale.md)); the two
 >   lead-time cuts ([`ci-deploy.md`](decisions/ci-deploy.md)).
 
-**Live is `index-DdEoFaVD`** (packs from #67: 6 Oct 08:15, gh-pages `9124fc0`, `ad25c4b`, CI;
-the bundle is unchanged since #66, so **check the pack sizes, not the hash**). Pages `built` in
-41s. Firebase chunk `firebase-W6iQUl4r`, unchanged since #61.
-**17 packs**; **Catchphrase 90** (every 5th a double-scoring bonus); **Name that Tune 424**; synth **Classical**; **On the box 445**
+**Live is `index-DdEoFaVD`** (packs from #68: 6 Oct 09:04, gh-pages `3fbc003`, `28263ec`, CI;
+the bundle is unchanged since #66 — the lobby reads `index.json` — so **check the packs, not the hash**). Pages `built` in
+68s. Firebase chunk `firebase-W6iQUl4r`, unchanged since #61.
+**18 packs**; **Blankety Blank 140** (blind); **Catchphrase 90** (every 5th a double-scoring bonus); **Name that Tune 424**; synth **Classical**; **On the box 445**
 (hashed TMDB stills, at most 8 titles before 1990); **Flags** 76; **Sleeves 212**
 after seven candidate batches, the last pre-screened; picture is **Fine Art** 49.
 
@@ -118,7 +118,7 @@ scoring 500 + rank 500/400/300/200/100.
     artwork (`titleMatches` takes a prefix). **Stale process:** `host-room --pack sleeves`
     (PID 51747, since 30 Sep). The 9 Sep Vite on 5273 was killed 5 Oct: it served stale modules.
 16. **#67 live 6 Oct 08:15:** Catchphrase 60→90 (blind), Sleeves 168→212, On the box 296→445, Tunes 268→424; seeded 378, read back 1,171/1,171. **The first rounds played are the live check** (the harder Catchphrase batches, step 9 of [`go-live-oct-2026.md`](decisions/go-live-oct-2026.md)). Plan for Greg's feedback: [`pack-growth-plan.md`](decisions/pack-growth-plan.md). Freshness weekdays 08:12.
-17. **Blankety Blank built 6 Oct, not deployed** (branch `blankety-blank`): 140 questions, **played blind** — numbers only in chat. Seeded 140, read back 140/140; a `host-room --pack blanks` reveal proved it. Ships when Greg merges, **not on Fri 9 Oct** ([`blankety-blank.md`](decisions/blankety-blank.md)).
+17. **Local `office-feedback-6-oct`, not pushed, nothing seeded** (after `RRGM`, 6 Oct): Blankety Blank 21 American out, 29 British in → 148; **The Price Was Right**, 95 ONS prices 5/10/20/30 years back, blind ([`price-was-right.md`](decisions/price-was-right.md)), with `ordered` options (a client change); chair seats a tie touching the podium; Bonus Catchphrase options from frame one; **`AGENTS.md`: nothing American**. Before deploy: `seed-vault -- --pack blanks,prices`, then `host-room --pack prices`. Ask Cass about Catchphrase Q1.
 
 ## Where things are
 

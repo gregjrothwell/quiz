@@ -67,7 +67,7 @@ describe('the published packs are sealed', () => {
   // Guards the guard. A glob that quietly matched nothing would make every
   // assertion below pass while checking not one thing.
   test('there are packs to check', () => {
-    expect(packFiles.length).toBe(18);
+    expect(packFiles.length).toBe(19);
   });
 
   test.each(packFiles)('%s ships no answer', (name) => {

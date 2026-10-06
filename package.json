@@ -49,7 +49,9 @@
     "freshness": "tsx --env-file=.env.local scripts/freshness.ts",
     "backfill-form": "tsx --env-file=.env.local scripts/backfill-form.ts",
     "blanks-check": "tsx scripts/blanks-check.ts",
-    "write-blanks-pack": "tsx scripts/write-blanks-pack.ts"
+    "write-blanks-pack": "tsx scripts/write-blanks-pack.ts",
+    "prices-fetch": "tsx scripts/prices-fetch.ts",
+    "write-prices-pack": "tsx scripts/write-prices-pack.ts"
   },
   "dependencies": {
     "firebase": "^11.1.0",

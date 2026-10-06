@@ -44,6 +44,7 @@ export const PACK_IDS = [
   'screens',
   'catchphrase',
   'blanks',
+  'prices',
 ] as const;
 
 /**
@@ -59,6 +60,7 @@ export const HAND_BUILT_PACK_IDS = [
   'screens',
   'catchphrase',
   'blanks',
+  'prices',
 ] as const;
 
 /**
@@ -202,6 +204,13 @@ export interface SealedQuestion {
   previewSeconds?: number;
   artworkUrl?: string;
   posterCrop?: boolean;
+  /**
+   * Show the options in the order the pack gives them, rather than shuffled.
+   * The Price Was Right: four prices read low to high, and the pack has already
+   * spread the answer evenly over the four places (`balancedPositions`), so the
+   * order says nothing about which is right. docs/decisions/price-was-right.md.
+   */
+  ordered?: boolean;
 }
 
 /** Puts the options in an order that says nothing about which one is right. */
@@ -292,5 +301,9 @@ export const PACK_META: Record<PackId, { title: string; blurb: string }> = {
   blanks: {
     title: 'Blankety Blank',
     blurb: 'Fill the blank: sayings, ad slogans and TV catchphrases.',
+  },
+  prices: {
+    title: 'The Price Was Right',
+    blurb: 'Given a recent price, guess what it cost 5, 10, 20 or 30 years before.',
   },
 };
