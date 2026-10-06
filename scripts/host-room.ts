@@ -29,6 +29,12 @@
  *
  *   npm run host-room -- 10 --pack catchphrase
  *
+ * `--pack blanks` does the same with the first two Blankety Blank questions, so
+ * a reveal proves the vault holds their answers before the pack deploys. See
+ * docs/decisions/blankety-blank.md.
+ *
+ *   npm run host-room -- 10 --pack blanks
+ *
  * Not part of the build or the test suite: it talks to the live project.
  */
 
@@ -132,27 +138,29 @@ function sleeveQuestions(): QuizQuestion[] {
   return [sung, silent];
 }
 
-/** Two published Catchphrase puzzles, as the app would deal them. */
-function catchphraseQuestions(): QuizQuestion[] {
+/** The first two questions of a published pack, as the app would deal them. */
+function firstTwo(file: 'catchphrase.json' | 'blanks.json'): QuizQuestion[] {
   const pack = JSON.parse(
-    readFileSync(join(import.meta.dirname, '..', 'public', 'packs', 'catchphrase.json'), 'utf8'),
+    readFileSync(join(import.meta.dirname, '..', 'public', 'packs', file), 'utf8'),
   ) as { questions: SealedQuestion[] };
   const built = buildQuizQuestions(pack.questions.slice(0, 2), 2);
-  if (built.length < 2) throw new Error('catchphrase.json has fewer than two puzzles');
+  if (built.length < 2) throw new Error(`${file} has fewer than two questions`);
   return built;
 }
 
 const packArg = process.argv.indexOf('--pack');
 const PACK = packArg > 0 ? process.argv[packArg + 1] : undefined;
-if (PACK !== undefined && PACK !== 'sleeves' && PACK !== 'catchphrase') {
-  throw new Error(`--pack takes sleeves or catchphrase, not ${PACK}`);
+if (PACK !== undefined && PACK !== 'sleeves' && PACK !== 'catchphrase' && PACK !== 'blanks') {
+  throw new Error(`--pack takes sleeves, catchphrase or blanks, not ${PACK}`);
 }
 const ROUND =
   PACK === 'sleeves'
     ? { packId: 'sleeves' as const, packTitle: 'Sleeves', questions: sleeveQuestions() }
     : PACK === 'catchphrase'
-      ? { packId: 'catchphrase' as const, packTitle: 'Catchphrase', questions: catchphraseQuestions() }
-      : { packId: 'general-knowledge' as const, packTitle: 'GK', questions: QUESTIONS };
+      ? { packId: 'catchphrase' as const, packTitle: 'Catchphrase', questions: firstTwo('catchphrase.json') }
+      : PACK === 'blanks'
+        ? { packId: 'blanks' as const, packTitle: 'Blankety Blank', questions: firstTwo('blanks.json') }
+        : { packId: 'general-knowledge' as const, packTitle: 'GK', questions: QUESTIONS };
 
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 const stamp = (): string => new Date().toISOString().slice(11, 23);

@@ -186,5 +186,16 @@
       "medium": 51,
       "hard": 31
     }
+  },
+  {
+    "id": "blanks",
+    "title": "Blankety Blank",
+    "blurb": "Fill the blank: sayings, ad slogans and TV catchphrases.",
+    "count": 140,
+    "counts": {
+      "easy": 64,
+      "medium": 50,
+      "hard": 26
+    }
   }
 ]

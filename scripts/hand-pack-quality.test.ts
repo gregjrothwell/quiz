@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { BLANK_SPECS } from './hand-blanks-data';
 import { CATCHPHRASE_MIN_PACK, CATCHPHRASE_SPECS } from './hand-catchphrase-data';
 import { FLAG_SPECS } from './hand-flags-data';
 import { SCREEN_SPECS } from './hand-screens-data';
@@ -41,6 +42,7 @@ describe('hand-built media specs', () => {
       ...SLEEVE_SPECS.map((spec) => spec.slug),
       ...SCREEN_SPECS.map((spec) => spec.slug),
       ...CATCHPHRASE_SPECS.map((spec) => spec.slug),
+      ...BLANK_SPECS.map((spec) => spec.slug),
     ];
 
     // #then every one of them is its own question

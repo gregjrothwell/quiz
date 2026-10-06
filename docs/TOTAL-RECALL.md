@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 5 October 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 6 October 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -23,6 +23,21 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
+
+## 2026-10-06 — Blankety Blank built and seeded, 140 questions, played blind
+
+Greg's parked idea #1, as a four-option pack: no engine change, no paste. Every phrase and
+every distractor checked against its source both ways (`blanks-check`, 140/140); the first
+run caught three distractors that were real variants. Seeded 140, read back 140/140; a
+`host-room` reveal proved it end to end. Branch `blankety-blank`, **not deployed**.
+[`blankety-blank.md`](decisions/blankety-blank.md).
+
+## 2026-10-06 — Live: #67 (gh-pages `9124fc0`): every played pack grown
+
+Word go 08:04 → live 08:15:54, about 12 minutes. The packs read 90 / 212 / 445 / 424 on the live site. The bundle
+is unchanged (`index-DdEoFaVD`), so the pack sizes were the check. Seeded 378, read back 1,171/1,171 by Greg.
+Freshness after: Catchphrase 4.6 fresh rounds (was 2.3), Sleeves 8.0 (5.0), On the box 19.7, Tunes 19.9.
+Claude's `gh pr merge` went through this time.
 
 ## 2026-10-06 — Overnight: every played pack grown, nothing live
 
@@ -127,83 +142,15 @@ the files. **Quantising at load swapped a 24 GB Mac to 70 s a step; a saved
 8-bit copy runs at 11–13 s.** Nothing built; story and 30 phrases await Greg.
 [`decisions/catchphrase.md`](decisions/catchphrase.md).
 
-## 2026-09-30 — Live: `index-frzpKPeW` (#63, gh-pages `9cf24c8`)
+## 2026-09-22 to 2026-09-30 — archived, one line each
 
-Sleeve song from the first frame, Name that Tune locked to 10s, and the lobby
-sound check. Before merge: 1,170 unit tests, `check-rules` 91/0,
-`sync-harness 10` 10/10, `rank-harness` and `final-harness` green, and live room
-`Y4XR` played a sleeve's song on the question's first frame. `e2e` could not run
-locally (no Java); CI's Playwright job passed. Auto-merge was refused by Claude
-Code's permission classifier, so Greg merged. Pages `built` in 61s; the live
-bundle carries the new copy. **Unplayed in production.**
+Moved verbatim to [`recall/2026-09.md`](recall/2026-09.md) on 6 October, at 300 lines.
 
-## 2026-09-30 — Joe's missing points were not missing; the music rounds start at once
-
-Joe said he was short after `XDUF` (Sleeves) and `SQ8V` (Tunes). **Every delta
-in both rounds recomputes exactly** from the answers with `tallyQuestion`, every
-stored score equals its summed deltas, each `correctIndex` names the same text as
-the local vault, and his season row banked 6,000 and 19,200. He answered all 35
-questions, so none was lost to a late reveal. What did cost him: **nine changes
-of pick**, three first touched at 0.5–0.6s. Rank is timed on the *last* change
-(`first-touch.md` AC 6) — at most 1,100 points across both rounds. Also: **two
-season rows** under "Joe" (27,500 on a uid last used 17 Sep). Method:
-[`game-record.md`](decisions/game-record.md#a-player-says-they-were-short).
-
-Built on `music-rounds-start-at-once`, **not merged**: a sleeve's song plays from
-the first frame (`SONG_CLUE_SHARE` 0 — in `XDUF` 133 of 175 answers beat a
-half-clock song), and Name that Tune is always ten seconds (Greg: on fifteen the
-clips sang their titles). **Open, Greg's call:** an audio check before the first
-question, and whether answering should wait until the music stops.
-[`sleeves-song.md`](decisions/sleeves-song.md) · [`tunes-round.md`](decisions/tunes-round.md).
-
-**Later the same day:** Greg chose the lobby sound check (option A, no rules
-paste) over a synced check in place of question one. Built on the same branch:
-ten seconds of a preview through `playPreview`, with the volume slider beside
-it. Checked in the built bundle, live volume change mid-clip included.
-Answering after the music stops is still open, recommended against.
-[`sound-check.md`](decisions/sound-check.md).
-
-## 2026-09-29 — Live: `index-BJxsEAQd` (#62, gh-pages `f5a273b`)
-
-A Sleeves cover now plays alone for half the clock, then a song from the same
-album starts: "which album is this song on?", with four same-artist options.
-There are songs on 102 of 104 sleeves, hand-picked, and any song whose title
-names the album or shares a distinctive word with it is refused. Ids are
-unchanged, so there was no reseed. No rules change. `host-room -- 10 --pack sleeves`,
-two tabs: `play()` at 5,002/5,003ms, on the element primed at the open. The first
-run caught the clock bed dropping that element. CI and Pages are green, and the
-Firebase chunk is unchanged. **Unplayed in production**: Claude's browser is App
-Check-throttled. Depth: [`decisions/sleeves-song.md`](decisions/sleeves-song.md).
-
-## 2026-09-27 — Live: `index-BJIHPrGR` (#61, gh-pages `6b06c51`)
-
-On the box 296, Sleeves 104, Name that Tune 268, and a spent pack repeats its
-oldest questions first. Grown because the office plays those three (8 of the
-last 10 rounds); **Fine Art was grown and reverted** — unplayed, so not worth
-anybody's review. Vault seeded before the merge: 270 added, read back 680/680,
-every answer one of its options. `check-rules` 91/91. CI verify + Playwright
-pass; Pages built 43s after publish; bundle, five pack files and 296 stills
-**byte-identical** to a local build of `16c4539`; 104 sleeve covers load.
-Live round `9PQX` in the built-in browser: new and old tunes revealed from the
-vault, an answer written in 1.4s and marked wrong correctly; left unfinished,
-not banked. **First load got an App Check 403, and the SDK then throttled that
-browser for 24 hours** — a likely shape for Cass's undiagnosed failed join.
-Depth: [`decisions/cost.md`](decisions/cost.md), [`decisions/repeats.md`](decisions/repeats.md),
-[`decisions/sleeves-gate.md`](decisions/sleeves-gate.md), [`decisions/tunes-title-gate.md`](decisions/tunes-title-gate.md).
-
-## 2026-09-22 — Live: `index-BE_5Hyg5` (#59, gh-pages `7b72a40`)
-
-[#59](https://github.com/gregjrothwell/quiz/pull/59) merged as `cd4a1be` at
-09:16; CI published gh-pages `7b72a40` at 09:19:56, author **GitHub Actions**.
-Pages `built` 09:21:09 (72s). **The live bundle's sha matches a local build of
-that tree byte for byte** — `index-BE_5Hyg5.js`, `14b8f2e0`, both sides.
-Firebase chunk unmoved at `firebase-W6iQUl4r`. CI ran **Playwright against the
-emulators — pass**, which is the check that cannot run on this Mac at all: no
-Java runtime, so `npm run e2e` never starts the emulators. Before the merge:
-`check-rules` 81/81, `rank-harness` `MB7R` to `finished`, `sync-harness 10` at
-10/10, `check-bundle` clean, 1,028 tests. Live site checked after the build —
-no store badge on any question, the iTunes attribution on the tune card, none
-on the sleeve. Unplayed.
+- **2026-09-30** — [Live: `index-frzpKPeW` (#63, gh-pages `9cf24c8`)](recall/2026-09.md#2026-09-30--live-index-frzpkpew-63-gh-pages-9cf24c8)
+- **2026-09-30** — [Joe's missing points were not missing; the music rounds start at once](recall/2026-09.md#2026-09-30--joes-missing-points-were-not-missing-the-music-rounds-start-at-once)
+- **2026-09-29** — [Live: `index-BJxsEAQd` (#62, gh-pages `f5a273b`)](recall/2026-09.md#2026-09-29--live-index-bjxseaqd-62-gh-pages-f5a273b)
+- **2026-09-27** — [Live: `index-BJIHPrGR` (#61, gh-pages `6b06c51`)](recall/2026-09.md#2026-09-27--live-index-bjihprgr-61-gh-pages-6b06c51)
+- **2026-09-22** — [Live: `index-BE_5Hyg5` (#59, gh-pages `7b72a40`)](recall/2026-09.md#2026-09-22--live-index-be_5hyg5-59-gh-pages-7b72a40)
 
 ## 2026-09-04 to 2026-09-24 — archived, one line each
 
