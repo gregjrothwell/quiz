@@ -197,5 +197,16 @@
       "medium": 58,
       "hard": 34
     }
+  },
+  {
+    "id": "prices",
+    "title": "The Price Was Right",
+    "blurb": "Given a recent price, guess what it cost 5, 10, 20 or 30 years before.",
+    "count": 95,
+    "counts": {
+      "easy": 33,
+      "medium": 32,
+      "hard": 30
+    }
   }
 ]

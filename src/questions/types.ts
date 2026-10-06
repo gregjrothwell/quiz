@@ -44,6 +44,7 @@ export const PACK_IDS = [
   'screens',
   'catchphrase',
   'blanks',
+  'prices',
 ] as const;
 
 /**
@@ -59,6 +60,7 @@ export const HAND_BUILT_PACK_IDS = [
   'screens',
   'catchphrase',
   'blanks',
+  'prices',
 ] as const;
 
 /**
@@ -299,5 +301,9 @@ export const PACK_META: Record<PackId, { title: string; blurb: string }> = {
   blanks: {
     title: 'Blankety Blank',
     blurb: 'Fill the blank: sayings, ad slogans and TV catchphrases.',
+  },
+  prices: {
+    title: 'The Price Was Right',
+    blurb: 'Given a recent price, guess what it cost 5, 10, 20 or 30 years before.',
   },
 };

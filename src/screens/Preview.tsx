@@ -113,6 +113,20 @@ const SLEEVES_QUESTION: QuizQuestion = {
   screens fixture and the options are sayings the pack does not use: Greg plays
   the round and reviews this gallery. See docs/decisions/catchphrase.md.
 */
+/**
+ * The Price Was Right, on an invented item at invented prices — Greg plays the
+ * real pack blind. The longest name in the pack's shape, so the prompt's wrap
+ * is the one that matters, and the options low to high as the pack sends them.
+ */
+const PRICE_QUESTION: QuizQuestion = {
+  id: 'price-fixture',
+  prompt: 'In August 2026, an evening seat at a puppet show in the front row cost about £24.50. What did it cost in August 2016?',
+  options: ['£9.50', '£12.50', '£16.00', '£21.00'],
+  correctIndex: null,
+  category: '10 years ago',
+  difficulty: 'medium',
+};
+
 const CATCHPHRASE_QUESTION: QuizQuestion = {
   id: 'catchphrase-1',
   prompt: 'Say what you see',
@@ -720,6 +734,30 @@ export function Preview() {
           youUid="priya"
           isQuizmaster={false}
           clock={{ elapsedMs: 12_000, remainingMs: 8_000, secondsLeft: 8, expired: false }}
+          revealed={false}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      title: 'Question · The Price Was Right',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'question',
+            questionOpenedAt: 1_000,
+            durationSecs: 20,
+            packId: 'prices',
+            packTitle: 'The Price Was Right',
+            questions: [PRICE_QUESTION],
+            index: 0,
+          })}
+          youUid="priya"
+          isQuizmaster={false}
+          clock={{ elapsedMs: 6_000, remainingMs: 14_000, secondsLeft: 14, expired: false }}
           revealed={false}
           onAnswer={noop}
           onReveal={noop}
