@@ -84,6 +84,9 @@ and moved to one that says them. **Nine had no article that says them and were d
 not bent to pass. One more was dropped earlier for containing a Catchphrase answer. Dropped
 numbers stay as gaps, since a slug is a vault id.
 
+**Live 6 October 2026, 09:04** — #68, merge `28263ec`, gh-pages `3fbc003`. Live `index.json`
+lists it at 140 (64/50/26); `blanks.json` carries no answer field.
+
 **Not covered:** whether the office finds it fun, and whether the difficulty labels hold.
 Both are judgements until a round is played (`read-games` after it).
 **Spoiled for the test session only:** the first two questions in pack order were on screen
