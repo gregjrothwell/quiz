@@ -115,8 +115,8 @@ scoring 500 + rank 500/400/300/200/100.
 15. **Sleeve songs (#62, #63) have been played** — `XDUF` at half the clock, then
     from the first frame ([`sleeves-song.md`](decisions/sleeves-song.md)). Five songs
     still want an ear; *Reasonable Doubt* and *Future Nostalgia* show a **single's**
-    artwork (`titleMatches` takes a prefix). **Stale process:** `host-room --pack sleeves`
-    (PID 51747, since 30 Sep). The 9 Sep Vite on 5273 was killed 5 Oct: it served stale modules.
+    artwork (`titleMatches` takes a prefix). **Stopped 6 Oct:** that `host-room` (since 30 Sep),
+    two more from 6 Oct, and six Vite servers from 4–9 Sep (5173–5175, 5277, 5288).
 16. **#67 live 6 Oct 08:15:** Catchphrase 60→90 (blind), Sleeves 168→212, On the box 296→445, Tunes 268→424; seeded 378, read back 1,171/1,171. **The first rounds played are the live check** (the harder Catchphrase batches, step 9 of [`go-live-oct-2026.md`](decisions/go-live-oct-2026.md)). Plan for Greg's feedback: [`pack-growth-plan.md`](decisions/pack-growth-plan.md). Freshness weekdays 08:12.
 17. **#69 live 6 Oct 13:05 BST** (after `RRGM`): Blankety Blank 148 (21 American out, 29 British in); **The Price Was Right**, 95 ONS prices, blind ([`price-was-right.md`](decisions/price-was-right.md)), `ordered` options; the chair seats a tie touching the podium; Bonus Catchphrase options from frame one. Seeded 124, read back 243/243; `host-room --pack prices` (`P3E9`) revealed from the vault in 0.28s. **First office rounds are the live check.** Ask Cass about Catchphrase Q1. `AGENTS.md`: world-famous American is fine, needing American knowledge is not.
 
