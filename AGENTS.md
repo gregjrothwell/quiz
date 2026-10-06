@@ -54,15 +54,12 @@ docs/recall/          Archived spine entries, by month. Verbatim, no budget
 
 ## Conventions
 
+- **Questions are for a British office — nothing American.** No US sport, politics, brands, slogans or TV catchphrases, in a question, an answer or a clue. A US film, song or artist that was big here is fine; that is most of On the box, Sleeves and Tunes. Applies to hand-built packs as much as harvested ones (`classify.ts` filters only the harvest): Blankety Blank shipped 21 American on 6 Oct 2026 because it was never written down.
 - No `any`, no `@ts-ignore`, no `@ts-expect-error`.
 - Quizmaster is derived (`resolveQuizmaster`), never stored.
 - Answers live in a subcollection. `elapsedMs` is measured on the answering device, not a wall-clock timestamp.
 - A phase transition never writes the `players` map. Membership changes are `players.{uid}` only.
-- **Published packs are sealed: no file in `public/packs/` may contain an answer.**
-  They are static files on GitHub Pages, so anything in one is readable by
-  anybody with the URL. `src/questions/seal.test.ts` enforces it in both
-  directions. (`correctIndex` under `src/` is fine and expected — it is the
-  runtime field that exists only once the vault has resolved an answer.)
+- **Published packs are sealed: no file in `public/packs/` may contain an answer** — anyone with the URL can read them. `src/questions/seal.test.ts` enforces it both ways. (`correctIndex` under `src/` is fine: the runtime field, set once the vault resolves.)
 
 ## What bites
 
