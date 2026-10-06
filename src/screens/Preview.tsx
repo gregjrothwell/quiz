@@ -158,9 +158,8 @@ const PLAYERS = {
  * Seven, which is what it takes to see the chair hold more than one person:
  * three on risers, one clear of the tie, and three level at the bottom.
  *
- * The four above cannot show it at all — `seatedLast` refuses to seat a tie that
- * reaches into the podium, so in a room of four a shared last place is not a
- * shared last place, it is a dead heat for third.
+ * The four above can only show a tie for last as one on the riser and one in
+ * the chair: whoever the podium stands up stays there (`seatedLast`).
  */
 const SEATED_ROOM = {
   ...PLAYERS,
@@ -1186,6 +1185,34 @@ export function Preview() {
               rach: 0,
               dev: 0,
             },
+          })}
+          youUid="greg"
+          isQuizmaster
+          log={[]}
+          onPlayAgain={noop}
+          onLeave={noop}
+          onSeason={noop}
+        />
+      ),
+    },
+    {
+      /*
+        Room RRGM, 6 October 2026: four of six staked everything on the last
+        question and lost it, so third place is one of four on nothing. That
+        round ended with no chair at all; now the riser keeps its one and the
+        other three sit down.
+      */
+      title: 'Final · a tie for last that reaches the podium',
+      node: (
+        <Final
+          banked={null}
+          youPlayerId="greg"
+          snapshot={null}
+          room={mockRoom({
+            phase: 'finished',
+            index: 1,
+            players: { ...PLAYERS, jo: SEATED_ROOM.jo, rach: SEATED_ROOM.rach },
+            scores: { greg: 22_000, sam: 9_200, priya: 0, alex: 0, jo: 0, rach: 0 },
           })}
           youUid="greg"
           isQuizmaster

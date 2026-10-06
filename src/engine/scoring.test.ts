@@ -340,15 +340,27 @@ describe('seatedLast', () => {
     expect(seated).toEqual([]);
   });
 
-  test('seats nobody when the tie for last reaches into the podium', () => {
+  test('seats the rest of a tie for last that reaches into the podium', () => {
     // #given third, fourth and fifth all level, so the tie starts on the podium
     const scores = { alice: 1000, bob: 900, carol: 100, dave: 100, erin: 100 };
 
     // #when the chair is filled
     const seated = seatedLast(standings(scores));
 
-    // #then the chair stays empty rather than seating somebody already stood up
-    expect(seated).toEqual([]);
+    // #then whoever is stood on the riser stays there and the rest sit down
+    expect(seated).toEqual(['dave', 'erin']);
+  });
+
+  test('seats the wager wipe-out from room RRGM, 6 October 2026', () => {
+    // #given the room as it finished: two banked, four staked everything and
+    // lost it, so third place on the podium is one of four on nothing
+    const scores = { cass: 22_000, steve: 9_200, greg: 0, nbret: 0, rach: 0, roberto: 0 };
+
+    // #when the chair is filled
+    const seated = seatedLast(standings(scores));
+
+    // #then the three not on a riser are in it — this round showed no chair
+    expect(seated).toEqual(['nbret', 'rach', 'roberto']);
   });
 
   test('seats nobody in an empty room', () => {
