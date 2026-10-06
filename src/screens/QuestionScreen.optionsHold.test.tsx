@@ -32,16 +32,20 @@ const PUZZLE: QuizQuestion = {
   imageHeight: 768,
 };
 
-/** A 10s room, so the options land at 5s. */
-function roomWith(packId: PackId): RoomState {
+/**
+ * A 10s room, so the options land at 5s. `index` 4 is the fifth question, a
+ * Bonus Catchphrase; the puzzle is repeated so the room has one there.
+ */
+function roomWith(packId: PackId, index = 0): RoomState {
   return {
     ...createRoom('HKQ7'),
     phase: 'question',
     packId,
     packTitle: 'Catchphrase',
     durationSecs: 10,
+    index,
     players: { greg: { name: 'Greg', joinedAt: 100 } },
-    questions: [PUZZLE],
+    questions: Array.from({ length: index + 1 }, (_, i) => ({ ...PUZZLE, id: `q${i + 1}` })),
   };
 }
 
@@ -57,11 +61,17 @@ function at(elapsedMs: number): QuestionClock {
 
 function screen(
   clock: QuestionClock,
-  options: { packId?: PackId; revealed?: boolean; joinedMidQuestion?: boolean; onAnswer?: (i: number) => void } = {},
+  options: {
+    packId?: PackId;
+    index?: number;
+    revealed?: boolean;
+    joinedMidQuestion?: boolean;
+    onAnswer?: (i: number) => void;
+  } = {},
 ) {
   return (
     <QuestionScreen
-      room={roomWith(options.packId ?? 'catchphrase')}
+      room={roomWith(options.packId ?? 'catchphrase', options.index)}
       youUid="greg"
       isQuizmaster={false}
       clock={clock}
@@ -106,6 +116,29 @@ describe('a Catchphrase picture before halfway', () => {
 
     // #then nothing is written: there is nothing on screen to have picked
     expect(onAnswer).not.toHaveBeenCalled();
+  });
+});
+
+describe('a Bonus Catchphrase', () => {
+  test('shows its options from the first frame and takes an answer', () => {
+    // #given the fifth question, 0.5s in, with every square still down
+    const onAnswer = vi.fn();
+    const { container } = render(screen(at(500), { index: 4, onAnswer }));
+
+    // #then the lecterns are lit with their options — Greg, 6 October 2026:
+    // guess as the squares come off, not after half of them already have
+    for (const option of PUZZLE.options) expect(container.textContent).toContain(option);
+    expect(tiles(container).every((tile) => !tile.disabled)).toBe(true);
+
+    // #and the nudge says why, without promising options that are already here
+    expect(container.textContent).toMatch(/guess as the squares come off/i);
+    expect(container.textContent).not.toMatch(/options arrive at halfway/i);
+
+    // #when somebody guesses from the first square
+    fireEvent.keyDown(window, { key: 'c' });
+
+    // #then it is written
+    expect(onAnswer).toHaveBeenLastCalledWith(2, undefined);
   });
 });
 

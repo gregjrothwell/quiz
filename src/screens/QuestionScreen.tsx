@@ -293,15 +293,16 @@ export function QuestionScreen({
   /*
     A Catchphrase picture plays alone for half the clock, on the room's shared
     clock so the options land together on every screen —
-    `src/engine/optionsHold.ts`. Somebody who walked in mid-question counts
-    from their own arrival, so a hold on their clock could outlast the room's;
-    they are ranked as though they answered on the buzzer, so early options
-    buy them nothing.
+    `src/engine/optionsHold.ts`. A Bonus Catchphrase does not: its squares do
+    that job, and its options are there from the first frame. Somebody who
+    walked in mid-question counts from their own arrival, so a hold on their
+    clock could outlast the room's; they are ranked as though they answered on
+    the buzzer, so early options buy them nothing.
   */
   const optionsOut =
     revealed
     || joinedMidQuestion
-    || optionsDue(elapsedMs, optionsAtMs(room.packId, questionDurationMs(room)));
+    || optionsDue(elapsedMs, optionsAtMs(room.packId, room.index, questionDurationMs(room)));
 
   // Every fifth Catchphrase question, by position — `src/engine/catchphraseBonus.ts`.
   const bonus = isBonusCatchphrase(room.packId, room.index);
@@ -757,9 +758,13 @@ export function QuestionScreen({
               </div>
             ) : null}
 
-            {optionsOut ? null : (
+            {bonus && !revealed ? (
               <p className="nudge hint" role="status">
-                {bonus ? 'Double points. ' : ''}The options arrive at halfway.
+                Double points. Guess as the squares come off.
+              </p>
+            ) : optionsOut ? null : (
+              <p className="nudge hint" role="status">
+                The options arrive at halfway.
               </p>
             )}
 

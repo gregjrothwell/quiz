@@ -8,8 +8,15 @@
  * worked the phrase out taps the moment the options land and takes the rank
  * bonus; whoever needs them is reading and matching, and is slower.
  *
- * Keyed on the pack, like `packNeedsSound`, because the hold belongs to what
- * kind of puzzle the round is rather than to any one question in it.
+ * **A Bonus Catchphrase is the exception**: its options are there from the
+ * first frame, so people guess as the squares come off rather than after half
+ * of them already have. Greg, 6 October 2026. The squares do the job the hold
+ * does on an ordinary question — an early answer is a guess from part of the
+ * picture — so holding the options as well was hiding the game behind itself.
+ *
+ * Keyed on the pack and the position, like `isBonusCatchphrase`, because the
+ * hold belongs to what kind of puzzle the round is rather than to any one
+ * question in it.
  *
  * Measured against the room's shared clock (`elapsedMs`), not against when a
  * screen happened to render — options that land later on one laptop than
@@ -20,6 +27,7 @@
  */
 
 import type { PackId } from '../questions/types';
+import { isBonusCatchphrase } from './catchphraseBonus';
 
 /**
  * The share of the answer window a Catchphrase picture plays alone.
@@ -31,8 +39,9 @@ import type { PackId } from '../questions/types';
 export const OPTIONS_HOLD_SHARE = 0.5;
 
 /** Milliseconds into the question the options appear; zero for every other pack. */
-export function optionsAtMs(packId: PackId | null, durationMs: number): number {
-  return packId === 'catchphrase' ? durationMs * OPTIONS_HOLD_SHARE : 0;
+export function optionsAtMs(packId: PackId | null, index: number, durationMs: number): number {
+  if (packId !== 'catchphrase' || isBonusCatchphrase(packId, index)) return 0;
+  return durationMs * OPTIONS_HOLD_SHARE;
 }
 
 export function optionsDue(elapsedMs: number, atMs: number): boolean {

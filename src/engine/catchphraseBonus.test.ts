@@ -61,9 +61,11 @@ describe('how many squares have lifted', () => {
     expect(liftedSquareCount(0, 0)).toBe(9);
   });
 
-  test('five of the nine are up when the options land, on every clock', () => {
+  test('none are up when the options land, on every clock', () => {
+    // The options are on screen from the first frame — Greg, 6 October 2026 —
+    // so the whole guess is made against the squares coming off.
     for (const durationMs of [10_000, 15_000, 20_000]) {
-      expect(liftedSquareCount(optionsAtMs('catchphrase', durationMs), durationMs)).toBe(5);
+      expect(liftedSquareCount(optionsAtMs('catchphrase', 4, durationMs), durationMs)).toBe(0);
     }
   });
 });
