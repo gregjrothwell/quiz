@@ -1,6 +1,6 @@
 # Why a reveal stalls, and what is kept about it
 
-> **Owner: Greg Rothwell. Last updated: 11 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 6 October 2026. Budget: 250 lines.**
 
 [`vault.md`](vault.md) is about *whether* and *when* the gate opens, and it was
 at 248 of its 250 lines when this happened. This file is the third question:
@@ -158,6 +158,46 @@ it passed only because `.env.local` exists on this laptop. The formatter lives i
    recording. `attempts` is the field that will say.
 3. **A stall shorter than four seconds still shows as a pause** and always did.
    That is the reveal waiting for a write, and it is honest.
+
+## 6 October 2026 — where the time goes, ahead of a game of thirty
+
+> "I've noticed the question reveal taking a little longer than it should." — Greg
+
+**Read back, not guessed:** `read-games --game` on `RRGM` ×2 and `K3EN`, 45
+reveals. Typical **0.7–1.0s** (gate ~100 + resolve 350–700 + dispatch ~240);
+tail **1.7–3.1s**, always a slow resolve (1.4–2.7s) or dispatch (1.3–1.6s).
+**No `x2` anywhere** — the 11 September stall has not come back.
+
+**The resolve is three refusals, and each one reopens the write stream.**
+Read in the SDK (`@firebase/firestore` 11.10, `index.esm2017.js`,
+`__PRIVATE_onWriteStreamClose`): a permanent write error closes the stream, the
+batch is dropped, and the stream restarts and resends the pipeline. So the four
+candidates are served one stream at a time, and the room update queued behind
+them pays a reopen too unless the hit was last. Seen live 6 Oct from Node: the
+gRPC stream id goes up by one per refusal.
+
+**A/B from Node, 18 reveals each way** (`.cache/reveal-ab.ts`, rooms `FSC9`,
+`HK9N`, not committed): today's parallel resolve is ~180–270ms wherever the
+hit is; stopping at the first hit is **~40ms + ~80ms per refusal before it**
+(hit@0 41ms, hit@3 238–325ms), with dispatch ~15ms quicker. Medians came out
+level only because that arm drew the last option 4 times in 10. **Node's
+reopen is cheap; the browser's is not** — the live resolve (~450ms for three
+refusals against ~50ms for a clean write) puts it at well over 100ms. So the
+browser saving is an *estimate*, not a measurement: roughly halve the refusals
+on average, and the dispatch stops paying a reopen. Worst case unchanged.
+
+**What does not grow with thirty:** the vault rule does two `get()`s and the
+room update rule only `keys().size()`, whatever the seat count; a reveal is
+four candidate writes and one room update at any size. The replay hold caps at
+1820ms once the answers span 2.5s, which a room of thirty will almost always do.
+
+**Blind spot in `RevealTiming`:** it starts at `expiredAt`, the moment the
+quizmaster's tab *noticed* the clock ran out. The clock is a 100ms
+`setInterval`, and Chrome fires a hidden tab's timers once a second, or once
+a minute after five minutes hidden and thirty seconds silent
+([Chrome, checked 6 Oct 2026](https://developer.chrome.com/blog/timer-throttling-in-chrome-88)).
+A host whose quiz tab is behind another tab would reveal late, and nothing
+kept would show it. Unmeasured here.
 
 ## A correction to `HANDOVER.md`, 11 September 2026
 
