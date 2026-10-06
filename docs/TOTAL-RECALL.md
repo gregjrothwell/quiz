@@ -24,6 +24,15 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-06 — The Price Was Right built; "nothing American" written down (`office-feedback-6-oct`)
+
+Greg believed "no American questions" was already a principle; it was only `classify.ts`'s
+harvest filter, which hand packs never pass through. Now in `AGENTS.md`. Parked idea #2 built
+blind: 95 ONS prices, given now, guess 5/10/20/30 years back — shop-quote medians for 5 and
+10, RPI average prices for 20 and 30 (the quotes have nothing 1996–2009). AC "no engine
+change" broke: the client shuffles options, so `ordered` (`1de868b`). Unseeded
+([`price-was-right.md`](decisions/price-was-right.md)).
+
 ## 2026-10-06 — First office rounds of #67 and #68: chair, bonus, Blankety Blank (`office-feedback-6-oct`)
 
 Room `RRGM`, 6 seats: Blankety Blank then Catchphrase. **No chair on the first:** the wager
