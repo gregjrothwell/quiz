@@ -199,6 +199,30 @@ a minute after five minutes hidden and thirty seconds silent
 A host whose quiz tab is behind another tab would reveal late, and nothing
 kept would show it. Unmeasured here.
 
+### Built the same day: stop at the hit (`reveal-stop-at-first-hit`, not live)
+
+`resolveAnswer` asks one option at a time and stops at the first accepted.
+No rules change. **Measured in a browser** (dev server, debug token, live
+project, Science, 10s), as a non-member sees it — window end to the reveal
+snapshot arriving — with `vault.ts` hot-swapped between old and new, each swap
+checked against the module the page actually fetched:
+
+| | n | range | median |
+|---|---|---|---|
+| old, all four at once | 7 | 491–567ms | **516ms** |
+| new, stop at the hit | 13 | 211–592ms, one 1191ms | **346ms** |
+| interleaved in one room (`NP6B`), old v new | 5 v 5 | 491–567 v 216–489 | **512 v 309** |
+
+The old arm is tight because it always pays three refusals; the new one spreads
+by where the hit falls, and a hit on the last option costs what the old code
+did. One 1191ms on the new code is unexplained; n is too small to say
+anything about tails, so the office's `RevealTiming` is the next reading.
+**Both directions, live, new code** (Node, room `J9HV`): asked 1.3–1.4s into a
+5s window, refused with the vault error in 311–419ms; asked after it, found in
+86–303ms. Rooms `4V6E` and `NP6B` stopped short of the whistle, so no game
+record and no season row — `read-games --last 2` still shows `RRGM`. Twenty
+Science questions joined that pack's asked history, which nobody plays.
+
 ## A correction to `HANDOVER.md`, 11 September 2026
 
 The state box said live was `index-qJCbuGrA`, gh-pages `d412adc`. It was not:

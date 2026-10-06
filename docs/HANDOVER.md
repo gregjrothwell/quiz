@@ -105,8 +105,8 @@ scoring 500 + rank 500/400/300/200/100.
 12. **Cass could not join `CUC4`**, no join ever written. Candidate, 27 Sep: one
     App Check 403 makes the SDK lock that browser out for **24 hours** ("Cannot
     reach the server"); seen live in the built-in browser. Ask what she saw.
-13. **Every round since #52 writes `RevealTiming`; no stall has recurred** — the
-    fix is unproved rather than disproved ([`reveal-delays.md`](decisions/reveal-delays.md)).
+13. **Reveal: no stall since #52.** Branch `reveal-stop-at-first-hit` (local, unpushed) cuts it
+    516→346ms median in a browser; wants an office round before Friday ([`reveal-delays.md`](decisions/reveal-delays.md)).
 14. **Loose ends from 26–27 September**: five new tunes transcribed to nothing
     and want an ear (`live-forever`, `golden-touch`, `build-me-up-buttercup`,
     `call-the-shots`, `gangnam-style`); **56 rooms past expiry** —
