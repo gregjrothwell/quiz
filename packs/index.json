@@ -147,44 +147,44 @@
     "id": "tunes",
     "title": "Name that Tune",
     "blurb": "A clip from Apple Music. Hear it again if you miss the hook.",
-    "count": 268,
+    "count": 424,
     "counts": {
-      "easy": 115,
-      "medium": 104,
-      "hard": 49
+      "easy": 177,
+      "medium": 196,
+      "hard": 51
     }
   },
   {
     "id": "sleeves",
     "title": "Sleeves",
     "blurb": "Name the album from the cover. Artwork streamed from Apple, never stored here.",
-    "count": 168,
+    "count": 212,
     "counts": {
       "easy": 14,
-      "medium": 66,
-      "hard": 88
+      "medium": 74,
+      "hard": 124
     }
   },
   {
     "id": "screens",
     "title": "On the box",
     "blurb": "Film and TV from a still. Untitled backdrops, no jigsaw.",
-    "count": 296,
+    "count": 445,
     "counts": {
-      "easy": 96,
-      "medium": 145,
-      "hard": 55
+      "easy": 105,
+      "medium": 261,
+      "hard": 79
     }
   },
   {
     "id": "catchphrase",
     "title": "Catchphrase",
     "blurb": "Say what you see. The options wait until halfway.",
-    "count": 60,
+    "count": 90,
     "counts": {
       "easy": 8,
-      "medium": 31,
-      "hard": 21
+      "medium": 51,
+      "hard": 31
     }
   }
 ]
