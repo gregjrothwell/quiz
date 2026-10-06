@@ -24,6 +24,16 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-06 — Live: #69 (gh-pages `51a30de`): The Price Was Right, British Blankety Blank, 19 packs
+
+Greg seeded (`seed-vault -- --pack blanks,prices`: 124 added, 119 already correct); read back
+243/243. `host-room -- 15 --pack prices`, room `P3E9`, a background browser tab joined: options
+rendered low to high through the real client path, the vault resolved in 0.28s, a wrong pick
+scored +0. Merged `d958cc0` 13:00:49 BST (`gh pr merge` worked) → CI green 13:04:38 → Pages
+`built` 13:05:30. Live bundle `index-BCpFNLxK` carries `ordered`. **Correction to the entry
+below:** "nothing American" was not Greg's rule — American things famous worldwide are fine;
+`AGENTS.md` reworded (`3e798ae`). Random round parked as #3.
+
 ## 2026-10-06 — The Price Was Right built; "nothing American" written down (`office-feedback-6-oct`)
 
 Greg believed "no American questions" was already a principle; it was only `classify.ts`'s
