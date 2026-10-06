@@ -24,6 +24,13 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-06 — Live: #67 (gh-pages `9124fc0`): every played pack grown
+
+Word go 08:04 → live 08:15:54, about 12 minutes. The packs read 90 / 212 / 445 / 424 on the live site. The bundle
+is unchanged (`index-DdEoFaVD`), so the pack sizes were the check. Seeded 378, read back 1,171/1,171 by Greg.
+Freshness after: Catchphrase 4.6 fresh rounds (was 2.3), Sleeves 8.0 (5.0), On the box 19.7, Tunes 19.9.
+Claude's `gh pr merge` went through this time.
+
 ## 2026-10-06 — Overnight: every played pack grown, nothing live
 
 Greg: "beef up the packs", then "we need more catchphrases". Two background agents and two Whisper audits ran,

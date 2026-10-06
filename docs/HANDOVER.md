@@ -42,7 +42,7 @@ Built to replace Polly in Teams.
 | what a finished round left behind, and reading it back | [`decisions/game-record.md`](decisions/game-record.md) |
 | upgrading `package.json`; the studio set and lighting cues | [`dependencies.md`](decisions/dependencies.md) · [`lighting.md`](decisions/lighting.md) |
 
-## State as of 5 October 2026
+## State as of 6 October 2026
 
 > **READ FIRST — a game of up to 30 on Friday 9 October.**
 > - The biggest room ever played is 11.
@@ -57,12 +57,12 @@ Built to replace Polly in Teams.
 >   questions ([`public-scale.md`](decisions/public-scale.md)); the two
 >   lead-time cuts ([`ci-deploy.md`](decisions/ci-deploy.md)).
 
-**Live is `index-DdEoFaVD`** (5 Oct 22:13, gh-pages `f8a3552`, `6ce2c59`/#66,
-CI) — *check gh-pages **and** `pages/builds`; this one: `built` in 11m23s, in an Actions
-incident.* Firebase chunk `firebase-W6iQUl4r`, unchanged since #61.
-**17 packs**; **Catchphrase 60** (every 5th a double-scoring bonus); **Name that Tune 268**; synth **Classical**; **On the box 296**
-(hashed TMDB stills, at most 8 titles before 1990); **Flags** 76; **Sleeves 168**
-after six candidate batches and 88 refusals by eye; picture is **Fine Art** 49.
+**Live is `index-DdEoFaVD`** (packs from #67: 6 Oct 08:15, gh-pages `9124fc0`, `ad25c4b`, CI;
+the bundle is unchanged since #66, so **check the pack sizes, not the hash**). Pages `built` in
+41s. Firebase chunk `firebase-W6iQUl4r`, unchanged since #61.
+**17 packs**; **Catchphrase 90** (every 5th a double-scoring bonus); **Name that Tune 424**; synth **Classical**; **On the box 445**
+(hashed TMDB stills, at most 8 titles before 1990); **Flags** 76; **Sleeves 212**
+after seven candidate batches, the last pre-screened; picture is **Fine Art** 49.
 
 **What the office plays** — On the box, Sleeves and Tunes, at 4–11 seats: content binds, not
 Firebase, except at thirty ([`cost.md`](decisions/cost.md)). **Check `read-games`, not the prose.**
@@ -117,8 +117,8 @@ scoring 500 + rank 500/400/300/200/100.
     still want an ear; *Reasonable Doubt* and *Future Nostalgia* show a **single's**
     artwork (`titleMatches` takes a prefix). **Stale process:** `host-room --pack sleeves`
     (PID 51747, since 30 Sep). The 9 Sep Vite on 5273 was killed 5 Oct: it served stale modules.
-16. **#66 live 5 Oct** (Catchphrase 60, Sleeves 168, seeded 228/228); the first office Catchphrase round is its live check. **Built 6 Oct, local, unseeded, unpushed:** `sleeves-batch-7` (Sleeves 212, On the box 445, Tunes 424) and `claude/catchphrase-batch-3` (Catchphrase 90, blind).
-    Next: Greg looks at two contact sheets, then go-live, Mon–Thu ([`pack-growth-plan.md`](decisions/pack-growth-plan.md)). Freshness runs weekdays at 08:12: [`pack-freshness.md`](decisions/pack-freshness.md).
+16. **#67 live 6 Oct 08:15:** Catchphrase 60→90 (blind), Sleeves 168→212, On the box 296→445, Tunes 268→424; seeded 378, read back 1,171/1,171. **The first rounds played are the live check** (the harder Catchphrase batches, step 9 of [`go-live-oct-2026.md`](decisions/go-live-oct-2026.md)).
+    Plan for Greg's feedback: [`pack-growth-plan.md`](decisions/pack-growth-plan.md). Remove `.claude/worktrees/agent-a1742b5bc758eaa2c` (breaks plain `npm run lint`). Freshness weekdays 08:12.
 
 ## Where things are
 
