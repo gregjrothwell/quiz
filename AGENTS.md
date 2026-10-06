@@ -54,7 +54,7 @@ docs/recall/          Archived spine entries, by month. Verbatim, no budget
 
 ## Conventions
 
-- **Questions are for a British office — nothing American.** No US sport, politics, brands, slogans or TV catchphrases, in a question, an answer or a clue. A US film, song or artist that was big here is fine; that is most of On the box, Sleeves and Tunes. Applies to hand-built packs as much as harvested ones (`classify.ts` filters only the harvest): Blankety Blank shipped 21 American on 6 Oct 2026 because it was never written down.
+- **Questions are for a British office.** American things famous worldwide are fine; anything that needs American knowledge is not — US sport, politics, and brands, slogans or shows nobody here would know. No pack leans American overall. Hand-built packs as much as harvested (`classify.ts` filters only the harvest): Blankety Blank leaned American on 6 Oct 2026 because this was never written down. Greg's rule, 6 Oct 2026.
 - No `any`, no `@ts-ignore`, no `@ts-expect-error`.
 - Quizmaster is derived (`resolveQuizmaster`), never stored.
 - Answers live in a subcollection. `elapsedMs` is measured on the answering device, not a wall-clock timestamp.

@@ -25,3 +25,11 @@ researched yet; the first question is whether it fits four options or wants type
 Greg's twist: compare an item's price today with what it cost ten years ago. Prices need a
 dated source per item, never a guess, because a wrong price is a wrong answer.
 
+### 3. A random round — **parked, 6 October 2026**
+
+Greg's idea: one round that deals questions from **different round types** — a picture, a
+tune, a Catchphrase, a price — instead of one pack. Nothing researched. The first question is
+structural: a room has **one `packId`**, and per-pack behaviour is keyed on it (the
+Catchphrase hold and bonus, `packNeedsSound`, the sleeve song, `ordered` options are the
+exception — that one is per question). A mixed round needs the pack per question.
+
