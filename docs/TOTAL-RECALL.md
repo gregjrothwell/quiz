@@ -24,6 +24,17 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-06 — First office rounds of #67 and #68: chair, bonus, Blankety Blank (`office-feedback-6-oct`)
+
+Room `RRGM`, 6 seats: Blankety Blank then Catchphrase. **No chair on the first:** the wager
+left four on 0 and third place was one of them; `seatedLast` refused a tie touching the podium
+by design. Reversed ([`final-card.md`](decisions/final-card.md)). **Cass, Catchphrase Q1:** no
+answer of hers reached the room, nor Roberto's; the other four came in at 7.6–9.7 s of 10.
+Unresolved until she says whether her screen read *You didn't answer* or *didn't reach the
+room in time*. **Bonus options now from the first frame**; Catchphrase 93% → 78%, Greg wants
+harder still ([`catchphrase-difficulty.md`](decisions/catchphrase-difficulty.md)). **Blankety
+Blank:** 21 American out, 29 British in, 148, not seeded ([`blankety-blank.md`](decisions/blankety-blank.md)).
+
 ## 2026-10-06 — Live: #68 (gh-pages `3fbc003`): Blankety Blank, 18 packs
 
 Greg's "let's go live" 08:56 → merged `28263ec` 08:59:25 (Greg; the harness's classifier

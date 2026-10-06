@@ -153,6 +153,13 @@ It sits in the podium row rather than under it, sharing the floor — which is w
 anything. The name and score go **above** it for the reason the component gives: the column is
 floor-aligned, so anything stacked underneath props the chair up.
 
+**Reversed 6 October 2026: a tie for last that reaches the podium now sits down.**
+`seatedLast` used to seat nobody when the bottom score was shared with third place. Room `RRGM`
+finished 22,000 / 9,200 / four on 0 after the wager, and showed no chair at all. Greg: "it still
+should be there". Whoever the podium stands up stays on the riser; the rest of the tie sits.
+A room tied all the way to the top, and a room of three, still seat nobody. The card follows,
+since it calls the same function.
+
 ## Evidence
 
 `typecheck`, `lint` and `build` clean, **430 tests** (up from 416), no `any`, no

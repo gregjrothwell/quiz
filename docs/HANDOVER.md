@@ -118,7 +118,7 @@ scoring 500 + rank 500/400/300/200/100.
     artwork (`titleMatches` takes a prefix). **Stale process:** `host-room --pack sleeves`
     (PID 51747, since 30 Sep). The 9 Sep Vite on 5273 was killed 5 Oct: it served stale modules.
 16. **#67 live 6 Oct 08:15:** Catchphrase 60→90 (blind), Sleeves 168→212, On the box 296→445, Tunes 268→424; seeded 378, read back 1,171/1,171. **The first rounds played are the live check** (the harder Catchphrase batches, step 9 of [`go-live-oct-2026.md`](decisions/go-live-oct-2026.md)). Plan for Greg's feedback: [`pack-growth-plan.md`](decisions/pack-growth-plan.md). Freshness weekdays 08:12.
-17. **Blankety Blank live 6 Oct 09:04 (#68)**: 140 questions, **played blind** — numbers only in chat. Seeded 140, read back 140/140; live `blanks.json` 140, no answer field. **Unplayed by the office: the first round is the live check** ([`blankety-blank.md`](decisions/blankety-blank.md)).
+17. **Blankety Blank live 6 Oct 09:04 (#68)**, played blind — numbers only in chat. First office round `RRGM` 6 Oct. **Local `office-feedback-6-oct`, not pushed:** 21 American out, 29 British in → 148, **unseeded** (`seed-vault -- --pack blanks` first); the chair seats a tie that touches the podium; Bonus Catchphrase options from the first frame. Ask Cass what her screen said on Catchphrase Q1 ([`TOTAL-RECALL.md`](TOTAL-RECALL.md)). Next Catchphrase batch: harder than batch 3.
 
 ## Where things are
 
