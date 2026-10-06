@@ -43,6 +43,7 @@ export const PACK_IDS = [
   'sleeves',
   'screens',
   'catchphrase',
+  'blanks',
 ] as const;
 
 /**
@@ -57,6 +58,7 @@ export const HAND_BUILT_PACK_IDS = [
   'sleeves',
   'screens',
   'catchphrase',
+  'blanks',
 ] as const;
 
 /**
@@ -286,5 +288,9 @@ export const PACK_META: Record<PackId, { title: string; blurb: string }> = {
   catchphrase: {
     title: 'Catchphrase',
     blurb: 'Say what you see. The options wait until halfway.',
+  },
+  blanks: {
+    title: 'Blankety Blank',
+    blurb: 'Fill the blank: sayings, ad slogans and TV catchphrases.',
   },
 };

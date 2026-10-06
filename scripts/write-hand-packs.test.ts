@@ -57,6 +57,7 @@ describe('mergeIndex', () => {
       'sleeves',
       'screens',
       'catchphrase',
+      'blanks',
     ]);
   });
 });
