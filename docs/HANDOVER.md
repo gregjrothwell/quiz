@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 5 October 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 6 October 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -117,8 +117,8 @@ scoring 500 + rank 500/400/300/200/100.
     still want an ear; *Reasonable Doubt* and *Future Nostalgia* show a **single's**
     artwork (`titleMatches` takes a prefix). **Stale process:** `host-room --pack sleeves`
     (PID 51747, since 30 Sep). The 9 Sep Vite on 5273 was killed 5 Oct: it served stale modules.
-16. **#66 live 5 Oct:** Bonus Catchphrase, Mr Fries, Catchphrase 30→60, Sleeves 104→168, seeded and read back 228/228. **The first office Catchphrase round is the live check**: read it with `read-games` ([`go-live-oct-2026.md`](decisions/go-live-oct-2026.md), step 9).
-    Weekday freshness check runs at 08:12: [`pack-freshness.md`](decisions/pack-freshness.md).
+16. **#66 live 5 Oct** (Catchphrase 60, Sleeves 168, seeded 228/228); the first office Catchphrase round is its live check. **Built 6 Oct, local, unseeded, unpushed:** `sleeves-batch-7` (Sleeves 212, On the box 445, Tunes 424) and `claude/catchphrase-batch-3` (Catchphrase 90, blind).
+    Next: Greg looks at two contact sheets, then go-live, Mon–Thu ([`pack-growth-plan.md`](decisions/pack-growth-plan.md)). Freshness runs weekdays at 08:12: [`pack-freshness.md`](decisions/pack-freshness.md).
 
 ## Where things are
 

@@ -24,6 +24,13 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-06 — Overnight: every played pack grown, nothing live
+
+Greg: "beef up the packs", then "we need more catchphrases". Two background agents and two Whisper audits ran,
+with a pause at the 5-hour limit, 23:15–03:10. Catchphrase 60 → 90, built blind. Sleeves 168 → 212 (pre-screened,
+44 of 759). On the box 296 → 445. Tunes 268 → 424. All local, unseeded:
+[`pack-growth-plan.md`](decisions/pack-growth-plan.md#done-overnight--6-october-2026).
+
 ## 2026-10-05 — #66 live: Catchphrase 60, Bonus Catchphrase, Sleeves 168
 
 Live at 22:13 (`index-DdEoFaVD`, gh-pages `f8a3552`). The batch was **kept** for the office.

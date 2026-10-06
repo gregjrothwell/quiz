@@ -186,3 +186,26 @@ and nothing is seeded, pushed or deployed. It goes on a local branch.
 - the battery below 30%.
 
 Whatever is unfinished is written up as a handover.
+
+## Done overnight — 6 October 2026
+
+*Verified*: commits on `sleeves-batch-7` (`2d25d30`, `9e37b03`, `abaf34e`, `d461a2b`, `3ed0ca6`) and
+`claude/catchphrase-batch-3` (`ad5d784`, `a6587b6`); 1,274 and 1,282 tests green. Nothing is seeded or pushed.
+
+| Pack | Before → after | Yield | Greg's look |
+|---|---|---|---|
+| Catchphrase | 60 → 90 | 30 of 30, 4 redrawn | none, he plays blind |
+| Sleeves | 168 → 212 | 44 of 759 candidates | `.cache/sleeves-check-seventh.png` |
+| On the box | 296 → 445 | 149 of 159 | `.cache/screens-check-fourth.png` |
+| Name that Tune | 268 → 424 | 156 of 181; 24 unavoidable, 5 want an ear | none |
+
+**Evidence for Part B:**
+- **B1, cheapest check first:** the pre-screen worked. Distractors and songs were written only for
+  the 44 survivors, not the 759. Vision still missed 69 of the 133 covers it cleared, so the look
+  stays.
+- **Fewer drawings:** the picked version was 1 in 16 puzzles, 2 in 4, and 3 in 10. In at least 2,
+  version 3 was the only usable one. Two versions would have lost a few.
+- **B3, Whisper:** about 1.6 min a clip on the CPU (164 clips in about 4h20m). The faster build is
+  still unmeasured.
+- **Usage:** one 5-hour window ran out about 25 minutes after the agents started. A big Claude context
+  costs more per step than the machine work does.
