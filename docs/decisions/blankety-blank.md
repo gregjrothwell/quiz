@@ -64,6 +64,31 @@ names it, and the clue never contains the answer.
    pack here; it knew only sleeves and catchphrase) reaches a reveal that marks the right
    option.
 
+## Evidence, 6 October 2026
+
+| AC | Result |
+|---|---|
+| 1 | **140** questions: 64 sayings, 33 slogans, 43 catchphrases; **64 easy, 50 medium, 26 hard** |
+| 2, 6, 7 | `blanks-core.test.ts`, 20 tests; the cross-pack slug test includes `blank-*`. `npm test` 1,311/1,311 |
+| 3, 4 | `npm run blanks-check`: **140/140**, canary first (a known entry found, a known non-entry not) |
+| 5 | `seal.test.ts` over 18 packs; `blanks.json` holds `id/question/options/category/difficulty` only |
+| 8 | `seed-vault -- --pack blanks`: 140 added; re-run: **140/140 already correct** |
+| 9 | `host-room -- 15 --pack blanks`, room `N9AS`, the local build joined in the browser pane: the vault refused three options and took one, the reveal marked it, the player scored +1,000. Question 2 rendered; no console errors |
+
+**The first source run was 121/149, and what it caught is the reason it exists.** Three
+distractors were real variants, each a second right answer: two words that make another
+Wiktionary entry when put in one saying's blank, and two companion phrases that their own
+show's or brand's article quotes beside the real one. Five sayings were near-misses of their
+Wiktionary title and were corrected to it. Ten quoted phrases pointed at the wrong article
+and moved to one that says them. **Nine had no article that says them and were dropped**,
+not bent to pass. One more was dropped earlier for containing a Catchphrase answer. Dropped
+numbers stay as gaps, since a slug is a vault id.
+
+**Not covered:** whether the office finds it fun, and whether the difficulty labels hold.
+Both are judgements until a round is played (`read-games` after it).
+**Spoiled for the test session only:** the first two questions in pack order were on screen
+in `N9AS`. Greg did not see them.
+
 ### Not in v1
 
 - **Match the room** — the show's actual rule. The modal pick is derivable on every client

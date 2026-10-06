@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 5 October 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 6 October 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -23,6 +23,14 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
+
+## 2026-10-06 — Blankety Blank built and seeded, 140 questions, played blind
+
+Greg's parked idea #1, as a four-option pack: no engine change, no paste. Every phrase and
+every distractor checked against its source both ways (`blanks-check`, 140/140); the first
+run caught three distractors that were real variants. Seeded 140, read back 140/140; a
+`host-room` reveal proved it end to end. Branch `blankety-blank`, **not deployed**.
+[`blankety-blank.md`](decisions/blankety-blank.md).
 
 ## 2026-10-06 — Live: #67 (gh-pages `9124fc0`): every played pack grown
 
