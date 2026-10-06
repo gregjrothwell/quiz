@@ -255,6 +255,26 @@ describe('buildQuizQuestions', () => {
     expect([...(thames?.options ?? [])].sort()).toEqual(['Mersey', 'Severn', 'Thames', 'Tyne']);
   });
 
+  test('keeps the order of a question whose options are ordered', () => {
+    // #given a price question, its options low to high
+    const prices: SealedQuestion = {
+      id: 'price',
+      question: 'In August 2026, a toy boat cost about £2. What did it cost in August 2016?',
+      options: ['90p', '£1.20', '£1.60', '£2.10'],
+      category: '10 years ago',
+      difficulty: 'easy',
+      ordered: true,
+    };
+
+    // #when it is built, many times over
+    const orders = [1, 2, 3, 4, 5, 6].map(
+      (seed) => buildQuizQuestions([prices], 1, 'mixed', seededRng(seed))[0]?.options,
+    );
+
+    // #then every room sees them low to high — a price ladder shuffled is just noise
+    for (const order of orders) expect(order).toEqual(['90p', '£1.20', '£1.60', '£2.10']);
+  });
+
   test('takes only the requested number of questions', () => {
     // #given a pool of three questions
     const built = buildQuizQuestions(POOL, 2, 'mixed', seededRng(42));

@@ -202,6 +202,13 @@ export interface SealedQuestion {
   previewSeconds?: number;
   artworkUrl?: string;
   posterCrop?: boolean;
+  /**
+   * Show the options in the order the pack gives them, rather than shuffled.
+   * The Price Was Right: four prices read low to high, and the pack has already
+   * spread the answer evenly over the four places (`balancedPositions`), so the
+   * order says nothing about which is right. docs/decisions/price-was-right.md.
+   */
+  ordered?: boolean;
 }
 
 /** Puts the options in an order that says nothing about which one is right. */
