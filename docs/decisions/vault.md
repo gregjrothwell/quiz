@@ -1,6 +1,6 @@
 # The answer vault
 
-> **Owner: Greg Rothwell. Last updated: 21 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 6 October 2026. Budget: 250 lines.**
 
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
@@ -125,8 +125,8 @@ ever be written as `request.time`. The window itself is `durationSecs` on
 the room, pinned while a question is open and floored at five seconds; see
 [the configurable answer window](answer-window.md#the-configurable-answer-window).
 
-`src/lib/vault.ts` fires all four candidates at once, so the reveal costs one
-round trip rather than four.
+`src/lib/vault.ts` fired all four candidates at once, "so the reveal costs one round trip".
+**Corrected 6 Oct 2026:** it never did; it now stops at the hit ([`reveal-delays.md`](reveal-delays.md)).
 
 ### What it costs
 

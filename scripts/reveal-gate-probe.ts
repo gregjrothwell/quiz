@@ -237,6 +237,12 @@ async function main(): Promise<void> {
     that follows has to wait for a new one, the vault would be adding a fixed toll
     to every question in every round. The control is the same write again with no
     denials in front of it.
+
+    > **Superseded, 6 October 2026.** They did cost it, and `resolveAnswer` now
+    > asks one option at a time and stops at the hit. This harness question's
+    > answer is its first option, so the leg below is one accepted write with
+    > nothing denied — it times the gate, not the toll. See
+    > docs/decisions/reveal-delays.md.
   */
   const beforeResolve = Date.now();
   const correctIndex = await resolveAnswer(db, code, QUESTION);
@@ -292,7 +298,7 @@ async function main(): Promise<void> {
   }
 
   console.log('  The app\'s own reveal, from the moment its clock expired:\n');
-  console.log(`    resolveAnswer (4 writes, 3 denied)   ${String(afterResolve - beforeResolve).padStart(5, ' ')}ms`);
+  console.log(`    resolveAnswer (stops at the hit)     ${String(afterResolve - beforeResolve).padStart(5, ' ')}ms`);
   console.log(`    room update straight after it        ${String(afterDispatch - afterResolve).padStart(5, ' ')}ms`);
   console.log(`    the same room update, nothing denied ${String(afterControl - beforeControl).padStart(5, ' ')}ms   <- control`);
   console.log(`    total before the replay even starts  ${String(afterDispatch - beforeResolve).padStart(5, ' ')}ms`);

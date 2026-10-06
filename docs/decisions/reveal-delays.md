@@ -109,7 +109,7 @@ they are the same device.
 | field | what it catches |
 |---|---|
 | `gateMs` | local clock expiring → the gate provably open. Slow means the server's acknowledgement was late. |
-| `resolveMs` | the vault round trip — four candidates, three refused. Healthy is under 300ms. |
+| `resolveMs` | the vault: one write per option up to the hit (all four, three refused, before 6 Oct 2026). Healthy is under 300ms. |
 | `dispatchMs` | the room update that puts the answer on everybody else's screen. |
 | `attempts` | 1, unless the vault refused or the connection stalled. |
 
