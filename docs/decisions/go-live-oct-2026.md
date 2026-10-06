@@ -1,10 +1,41 @@
 # Go-live — the 5 October work
 
-> **Owner: Greg Rothwell. Last updated: 5 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 5 October 2026 (evening). Budget: 250 lines.**
 
 Everything built on 5 October, on one local branch, and the steps to put it live. **Prepared,
 not started:** nothing here has been pushed, seeded or deployed. Greg checks it in a fresh
 session first.
+
+*Superseded the same evening: **live at 22:13 as #66**. See [Done](#done--5-october-2026).*
+
+## Done — 5 October 2026
+
+Greg: "deploy and let's go live", about 20:28 BST. **Kept the batch** (the first option below):
+the office plays it blind.
+
+| Step | Outcome |
+|---|---|
+| 2 verify | typecheck, lint, 1,273/1,273, build `index-DdEoFaVD`, check-bundle clean |
+| 3 seed | 228 ids read, **94 added, 0 changed**. Read-back: **228/228 already correct**, run by Greg because the harness refused Claude's re-run |
+| 4 new-id reveal | not run, as planned. host-room plays only old puzzles |
+| 5–6 PR, CI, merge | [#66](https://github.com/gregjrothwell/quiz/pull/66), green 21:02. The harness refused `gh pr merge`; Greg merged `6ce2c59` at 21:21 |
+| 7 deploy | gh-pages `f8a3552`, `pages/builds` `built`, live `index-DdEoFaVD` at 22:13:56. Merge tree equals the built branch (0-line diff) |
+| 8 freshness | Catchphrase **2.3** fresh rounds, Sleeves **5.0**, as predicted |
+| 9 office round | **outstanding**: before Fri 9 Oct |
+
+**Word go → live: about 1h46m**, against 43m for #65. **About 70 minutes of that was GitHub's
+queue**, during an open Actions incident ("delays affecting GitHub-hosted runner assignment"):
+
+- each e2e job (PR, then master) sat without a runner, was **cancelled at 15m01s with no
+  runner and no steps**, then got a runner about 10 minutes after a re-run (observed twice;
+  our `timeout-minutes` is 20, so this was not ours);
+- publish waited 10½ minutes for a runner; the Pages build took **11m23s** against 41s.
+
+Green → merged took 19m39s. The app's PR status still showed e2e as pending after it had been
+cancelled, and no event came when it went green. Claude only saw the result when Greg asked.
+Data for the two lead-time cuts in [`ci-deploy.md`](ci-deploy.md#lead-time-measured-2-october-2026--word-go-to-live-in-43-minutes):
+reusing the PR's tested `dist` would have skipped master's whole e2e wait (about 27 minutes
+tonight), and auto-merge the 19m39s.
 
 ## What is on the branch
 

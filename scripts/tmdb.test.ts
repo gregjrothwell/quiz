@@ -149,6 +149,33 @@ describe('buildScreensPack', () => {
     }
   });
 
+  test('a film and a show sharing a TMDB number are two titles, two of a kind are one', async () => {
+    // #given TMDB numbers films and TV apart: movie 95 is Armageddon, tv 95 is Buffy
+    const numberedWithinKind = (sameForAll: boolean): TmdbGet => async (url) => {
+      const reply = (await get(url)) as { results?: Array<Record<string, unknown>> };
+      if (!reply.results) return reply;
+      const query = new URL(url).searchParams.get('query') ?? '';
+      const spec = SCREEN_SPECS.find((row) => row.query === query);
+      if (!spec) throw new Error(`unexpected query ${query}`);
+      const ofKind = SCREEN_SPECS.filter((row) => row.kind === spec.kind);
+      const id = sameForAll ? 95 : 1000 + ofKind.indexOf(spec);
+      return { results: reply.results.map((row) => ({ ...row, id })) };
+    };
+    const deps = {
+      fetchImage: async () => ({ bytes: Buffer.from('fake-still'), contentType: 'image/jpeg' }),
+      store: async () => 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.jpg',
+    };
+
+    // #then the first film and the first show both ship
+    const { pack } = await buildScreensPack({ ...deps, get: numberedWithinKind(false) });
+    expect(pack.questions.length).toBe(SCREEN_SPECS.length);
+
+    // #and two films on one number are still refused
+    await expect(buildScreensPack({ ...deps, get: numberedWithinKind(true) })).rejects.toThrow(
+      /same title: movie\/95/,
+    );
+  });
+
   test('refuses a pack thinner than three default rounds', async () => {
     await expect(
       buildScreensPack({

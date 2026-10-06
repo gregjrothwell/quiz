@@ -1,6 +1,6 @@
 # The question pipeline
 
-> **Owner: Greg Rothwell. Last updated: 26 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 6 October 2026. Budget: 250 lines.**
 
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
@@ -93,6 +93,7 @@ lesson is that a person should look too ([`sleeves-gate.md`](sleeves-gate.md)).
 was down to 9. The pre-1990 cap of eight held: 39 draft titles were swapped, not the test.
 Three dropped for printing their answer — WALL·E (on the robot), the Grand Budapest
 (on the facade), Aftersun ("Sun" on the shelves). Model-read sheet again; a person has not.
+**6 October 2026: 296 → 445**, the fourth harvest — [`screens-growth.md`](screens-growth.md).
 
 **Fine Art: 53 paintings added and reverted, 26 September 2026** — unplayed, so not
 worth Greg's review. Restorable: `git revert` the revert of `d9efbea`.
