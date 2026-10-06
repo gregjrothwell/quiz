@@ -12,6 +12,9 @@ import {
   type CatchphraseSpec,
 } from './hand-catchphrase-data';
 
+/** Where the harder batch (5 October 2026) ends and the third begins. */
+const HARDER_END = CATCHPHRASE_MIN_PACK + 30;
+
 /*
   The rules here came out of the trial on 2 October 2026 —
   docs/decisions/catchphrase.md. The one that matters most is the seal: the
@@ -193,10 +196,17 @@ describe('Mr Fries', () => {
   docs/decisions/catchphrase-harder.md. Thirty more after the first thirty.
 */
 describe('the harder batch', () => {
-  const added = CATCHPHRASE_SPECS.slice(CATCHPHRASE_MIN_PACK);
+  const added = CATCHPHRASE_SPECS.slice(CATCHPHRASE_MIN_PACK, HARDER_END);
 
   test('is thirty puzzles', () => {
     expect(added).toHaveLength(30);
+  });
+
+  test('its 30 prompts are exactly as drawn', () => {
+    // Pinned the way the first thirty are, once it had shipped: a later batch
+    // goes on the end and never changes what a redraw of these would give.
+    const hash = createHash('sha256').update(added.map(promptFor).join('\n')).digest('hex');
+    expect(hash).toBe('21635e4eee9aac8199d18308c8ab9a899c800142e908cd3f4fc4cde19f493e8d');
   });
 
   test('is medium or hard, never easy — "hard" went 95% on 5 October', () => {
@@ -212,6 +222,86 @@ describe('the harder batch', () => {
     for (const kind of ['rebus', 'lettered', 'soundalike'] as const) {
       expect(added.filter((spec) => spec.kind === kind).length).toBeGreaterThan(0);
     }
+  });
+
+  test('has not been drawn yet, or has a picked drawing — never half of one', () => {
+    for (const spec of added) expect(spec.seed === undefined || [1, 2, 3].includes(spec.seed)).toBe(true);
+  });
+});
+
+/*
+  The third batch — Greg, 5 October 2026: "I feel like we need more
+  catchphrases." The same rules as the harder batch, which is still unplayed:
+  docs/decisions/catchphrase-batch-3.md. Thirty more after the first sixty.
+*/
+describe('the third batch', () => {
+  const before = CATCHPHRASE_SPECS.slice(0, HARDER_END);
+  const added = CATCHPHRASE_SPECS.slice(HARDER_END);
+
+  test('is thirty puzzles', () => {
+    expect(added).toHaveLength(30);
+  });
+
+  test('is medium or hard, never easy', () => {
+    expect(added.filter((spec) => spec.difficulty === 'easy').map((spec) => spec.slug)).toEqual([]);
+  });
+
+  test('says what kind each puzzle is, and no more than a third are one literal scene', () => {
+    expect(added.filter((spec) => spec.kind === undefined).map((spec) => spec.slug)).toEqual([]);
+    expect(added.filter((spec) => spec.kind === 'scene').length * 3).toBeLessThanOrEqual(added.length);
+  });
+
+  test('uses each of the harder kinds the show used', () => {
+    for (const kind of ['rebus', 'lettered', 'soundalike'] as const) {
+      expect(added.filter((spec) => spec.kind === kind).length).toBeGreaterThan(0);
+    }
+  });
+
+  test('has Mr Fries in more than half of this batch on its own', () => {
+    expect(friesShareOk(CATCHPHRASE_SPECS, HARDER_END)).toBe(true);
+  });
+
+  /**
+   * Every option in `added` that the pack already uses, as an answer or a wrong
+   * one, or that `added` uses twice. Case and punctuation do not hide a repeat.
+   */
+  function repeats(added: CatchphraseSpec[], before: CatchphraseSpec[]): string[] {
+    const fold = (text: string) => text.toLowerCase().replace(/['’]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+    const seen = new Set(before.flatMap((spec) => [spec.correct, ...spec.incorrect]).map(fold));
+    const found: string[] = [];
+    for (const spec of added) {
+      for (const option of [spec.correct, ...spec.incorrect]) {
+        if (seen.has(fold(option))) found.push(`${spec.slug}: ${option}`);
+        seen.add(fold(option));
+      }
+    }
+    return found;
+  }
+
+  test('offers no option the pack already uses, as an answer or a wrong one', () => {
+    // A wrong option seen before is a phrase the office has already ruled out,
+    // so it stops doing its job. The first sixty repeat a few among themselves;
+    // this batch does not add to that.
+    expect(repeats(added, before)).toEqual([]);
+  });
+
+  test('the repeat check catches an option already in the pack, however it is written', () => {
+    // The half that makes the pass above mean something: a check that never
+    // matches would pass it too.
+    const earlier = before[0];
+    if (earlier === undefined) throw new Error('no earlier puzzles');
+    const wrong = earlier.incorrect[0] ?? '';
+    const fixture = (incorrect: string[]): CatchphraseSpec => ({
+      slug: 'fixture',
+      correct: 'A saying nobody uses',
+      incorrect,
+      difficulty: 'medium',
+      scene: 'A hill.',
+    });
+    expect(repeats([fixture([`${wrong.toUpperCase()}!`, 'Two', 'Three'])], before)).toHaveLength(1);
+    expect(repeats([fixture(['One', 'Two', earlier.correct])], before)).toHaveLength(1);
+    expect(repeats([fixture(['One', 'Two', 'Three']), fixture(['Four', 'Five', 'One'])], before)).toHaveLength(2);
+    expect(repeats([fixture(['One', 'Two', 'Three'])], before)).toEqual([]);
   });
 
   test('has not been drawn yet, or has a picked drawing — never half of one', () => {
