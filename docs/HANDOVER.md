@@ -57,8 +57,8 @@ Built to replace Polly in Teams.
 >   questions ([`public-scale.md`](decisions/public-scale.md)); the two
 >   lead-time cuts ([`ci-deploy.md`](decisions/ci-deploy.md)).
 
-**Live is `index-BCpFNLxK`** (#69: 6 Oct 13:05 BST, merge `d958cc0`, gh-pages `51a30de`, CI). **The
-bundle changed this time** (`ordered` options, the chair, Bonus Catchphrase options from frame one).
+**Live is `index-CSluHU7x`** (#70: 6 Oct 14:48 BST, merge `6e34bb9`, gh-pages `d3266ae`, CI): the
+vault is asked one option at a time and stops at the hit. Before it, #69 `index-BCpFNLxK` (13:05).
 Firebase chunk `firebase-W6iQUl4r`.
 **19 packs**; **The Price Was Right 95** and **Blankety Blank 148** (both blind); **Catchphrase 90** (every 5th a double-scoring bonus); **Name that Tune 424**; synth **Classical**; **On the box 445**
 (hashed TMDB stills, at most 8 titles before 1990); **Flags** 76; **Sleeves 212**
@@ -105,8 +105,8 @@ scoring 500 + rank 500/400/300/200/100.
 12. **Cass could not join `CUC4`**, no join ever written. Candidate, 27 Sep: one
     App Check 403 makes the SDK lock that browser out for **24 hours** ("Cannot
     reach the server"); seen live in the built-in browser. Ask what she saw.
-13. **Reveal: no stall since #52.** Branch `reveal-stop-at-first-hit` (local, unpushed) cuts it
-    516→388ms median in a browser; wants an office round before Friday ([`reveal-stop-at-hit.md`](decisions/reveal-stop-at-hit.md)).
+13. **Reveal: no stall since #52. #70 live 6 Oct** cuts it 516→388ms median in a browser; the
+    first office round's `RevealTiming` is the live check, before Friday ([`reveal-stop-at-hit.md`](decisions/reveal-stop-at-hit.md)).
 14. **Loose ends from 26–27 September**: five new tunes transcribed to nothing
     and want an ear (`live-forever`, `golden-touch`, `build-me-up-buttercup`,
     `call-the-shots`, `gangnam-style`); **56 rooms past expiry** —

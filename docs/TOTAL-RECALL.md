@@ -24,6 +24,16 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-06 — Live: #70 (gh-pages `d3266ae`): the vault stops at the hit
+
+Greg: the reveal "taking a little longer than it should", ahead of Friday's 30. Each refused vault
+candidate closes Firestore's write stream, so firing all four paid three reopens every reveal; now
+one option at a time, stopping at the hit. Browser against live: 516→388ms median; worst case a
+little over the old. One untraced 1191ms, then 20 traced reveals with none slow. Merged `6e34bb9`
+14:44 BST → CI green → live `index-CSluHU7x` 14:49, marker checked in the served bundle. The
+production-site reveal was **not** run: App Check refuses the built-in browser at sign-in (item 12).
+Depth: [`decisions/reveal-stop-at-hit.md`](decisions/reveal-stop-at-hit.md).
+
 ## 2026-10-06 — Live: #69 (gh-pages `51a30de`): The Price Was Right, British Blankety Blank, 19 packs
 
 Greg seeded (`seed-vault -- --pack blanks,prices`: 124 added, 119 already correct); read back
