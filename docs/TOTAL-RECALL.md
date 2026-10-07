@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 6 October 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 7 October 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -23,6 +23,16 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
+
+## 2026-10-07 — Office feedback from `XRUE`: Price Was Right options rebuilt, four planned
+
+Greg, after `XRUE`: some Price Was Right questions had one option under today's price, and it was
+the answer. Measured: 6 of 95 like that, 46 of 95 with an option at or above today's. Rebuilt
+(`17946ce`, local): every option under today's when the price rose; 87 of 95 now all-under, the 8
+that fell or held straddle it; 0 answers changed, no reseed. Levels now 24/28/43. Planned, with
+Greg's calls: podium ties (riser per person, height by place), overnight drawing, reveal over
+Firestore Lite **after Friday** (worst `XRUE` reveal 3.2s, two refusals). Greg has a Claude Design
+system this session cannot see. Depth: [`decisions/office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md).
 
 ## 2026-10-06 — Live: #70 (gh-pages `d3266ae`): the vault stops at the hit
 
@@ -174,21 +184,12 @@ merged `6d1e3a7` 15:57:05Z, PR e2e still running; master verify, e2e, publish
 green; gh-pages `7a8dc6f` (Actions) 16:00:08, Pages `built` 46s. **Live bundle
 byte-identical to a local build** (`94ef589f8400`). 17 packs. **Unplayed.**
 
-## 2026-10-02 — Catchphrase: options at halfway, and Greg plays it blind
+## 2026-10-02 — archived, one line each
 
-Greg chose the 1980s look and, worried four options make the answer obvious,
-the picture alone for half the clock (`src/engine/optionsHold.ts`, client only,
-no paste). He plays the round, so Claude checks the drawings, twelve named
-phrases were swapped out, and no doc names an answer.
+Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines.
 
-## 2026-10-02 — Catchphrase: the pictures come from a free model on Greg's Mac
-
-Greg turned down emoji-and-words and a paid image API. Z-Image-Turbo through
-`mflux` (Apache 2.0, not gated, 32.9 GB) drew 5 phrases three times each: 14 of
-15 readable after one prompt rewrite, lettering only where asked, no prompt in
-the files. **Quantising at load swapped a 24 GB Mac to 70 s a step; a saved
-8-bit copy runs at 11–13 s.** Nothing built; story and 30 phrases await Greg.
-[`decisions/catchphrase.md`](decisions/catchphrase.md).
+- **2026-10-02** — [Catchphrase: options at halfway, and Greg plays it blind](recall/2026-10.md#2026-10-02--catchphrase-options-at-halfway-and-greg-plays-it-blind)
+- **2026-10-02** — [Catchphrase: the pictures come from a free model on Greg's Mac](recall/2026-10.md#2026-10-02--catchphrase-the-pictures-come-from-a-free-model-on-gregs-mac)
 
 ## 2026-09-22 to 2026-09-30 — archived, one line each
 

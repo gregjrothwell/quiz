@@ -6,7 +6,15 @@ Greg, after `XRUE` (08:51 The Price Was Right, 09:00 Catchphrase, 8 seats): five
 **Blind:** The Price Was Right and Catchphrase are played blind, so everything below is counts,
 positions and question numbers — no item, price or phrase.
 
-**Status: PLAN.** Findings are measured; the stories wait for Greg's approval.
+**Status, 7 Oct.** Greg's calls, same morning:
+
+| Item | Decision |
+|---|---|
+| 1. Price options | **Built this session** (`17946ce`, local) — [`price-was-right.md`](price-was-right.md#7-october-2026--every-option-under-todays-price) |
+| 2. Podium | **Riser per person**, height by place (story below). Next session |
+| 3. Overnight drawing | Story below, not yet started |
+| 4. Reveal over Lite | **After Friday's game of thirty.** Build and measure, then ship |
+| 5. Design system | **Greg has one in Claude Design** — not visible from here (see 5) |
 
 ## 1. The Price Was Right — options that give the answer away
 
@@ -129,3 +137,9 @@ lite bundle (`@firebase/firestore` 4.8.0), checked 7 Oct. No rules change, no re
   and the gallery (`src/screens/Preview.tsx`), which is how screens get checked.
 - **Drift:** 75 hex literals (57 distinct) and 116 `rgb()` literals outside `:root`;
   `drawCard.ts` hardcodes 8 colours. Nothing checks it.
+
+**Greg, 7 Oct:** "I already created one with Claude Design that needs linking properly." Not
+visible from this session: no Design System artifact on his account, and no other artifact
+that is one. Claude Design projects are reached with `DesignSync`, which needs `/design-login`
+run once from an interactive `claude` terminal — the same gate as 29 August. **Next step is
+Greg's:** run the login, or paste the project's link. Then compare it with `global.css`.
