@@ -6,14 +6,14 @@ Greg, after `XRUE` (08:51 The Price Was Right, 09:00 Catchphrase, 8 seats): five
 **Blind:** The Price Was Right and Catchphrase are played blind, so everything below is counts,
 positions and question numbers — no item, price or phrase.
 
-**Status, 7 Oct.** Greg's calls, same morning:
+**Status, 7 Oct.** Greg's calls, and what came of them:
 
 | Item | Decision |
 |---|---|
-| 1. Price options | **Built this session** (`17946ce`, local) — [`price-was-right.md`](price-was-right.md#7-october-2026--every-option-under-todays-price) |
-| 2. Podium | **Riser per person**, height by place (story below). Next session |
-| 3. Overnight drawing | Story below, not yet started |
-| 4. Reveal over Lite | **After Friday's game of thirty.** Build and measure, then ship |
+| 1. Price options | **Built** (`17946ce`), then **corrected** with decoys (`c3ec3c6`) — [`price-was-right.md`](price-was-right.md) |
+| 2. Podium | **Built** (`71fcfac`) — see 2 |
+| 3. Overnight drawing | **Built** (`dd04bbd`) — see 3 |
+| 4. Reveal over Lite | Greg first said after Friday; then, same day: **"build everything and we can go live to have a demo tomorrow."** Built and measured — see 4 |
 | 5. Design system | **Greg has one in Claude Design** — not visible from here (see 5) |
 
 ## 1. The Price Was Right — options that give the answer away
@@ -75,6 +75,17 @@ podium says what the header says.
 4. The **share card** draws the same podium.
 5. Gallery fixtures: tie for 1st, tie for 2nd, three-way tie for 3rd, everyone level.
 
+### Built — `71fcfac`
+
+`podiumFor` decides who stands, how high and in what order; `Final`, the share card and
+`seatedLast` all read it. **One conflict, resolved toward Greg's earlier rule:** "everybody
+placed third or better" would have stood all four of `RRGM`'s zeros and emptied the chair again,
+so a tie *for last* still fills the podium only to three and the rest sit. A table level all the
+way up is everybody a joint winner, as before. Past five risers the last shows "+N level".
+Gallery: tie for first, a three-way tie for third, six joint winners — riser heights measured
+224 / 168 / 138px by place; at 375px wide, five risers and the chair clipped by 24px until the
+tracks were allowed to shrink. Share card drawn in the browser for a tie and a fold.
+
 ## 3. Image generation overnight, with no session running
 
 **Today:** `catchphrase-draw` already runs without Claude — resumable, Vision OCR at the end.
@@ -98,6 +109,18 @@ images rather than ninety.
 5. Pick-up next morning reads `run.json`, `text.json` and the sheets — ~8 images, not ~90.
 
 **Not covered:** writing the specs (Claude, text, cheap) and choosing the seed (Claude, blind).
+
+### Built — `dd04bbd`
+
+`npm run draw-overnight`, as the story says, with two changes from it. **Four puzzles a sheet,
+not twelve**: twelve made a 1200×3864 sheet that an image reader shrinks until a drawing is
+~160px wide; four keeps each at 400×300 — 8 sheets for 30 puzzles. **"Leave the lid open"**:
+`caffeinate`'s man page says nothing about a closed lid. Checked: refuses on battery (live,
+44%), leaves no `caffeinate` behind, and a sheet from invented images is labelled `40 · v1`…
+Not run end to end: there is nothing waiting to be drawn, and a draw needs the charger.
+
+**Greg's side:** plug in, `npm run draw-overnight`, go to bed. **Don't open the sheets** —
+they are the answers. Next morning: "pick up the drawing" is the whole prompt.
 
 ## 4. The slow reveal
 
@@ -127,6 +150,25 @@ lite bundle (`@firebase/firestore` 4.8.0), checked 7 Oct. No rules change, no re
 
 **Also seen, not chased:** the room update took ~290ms on every Price Was Right reveal and
 ~85ms on every Catchphrase one, same device, nine minutes apart.
+
+### Built — `0d6e964`
+
+`resolveAnswer` fires all four over Lite and answers with the first acceptance; the room update
+stays on the main SDK. **Measured in a browser against live**, interleaved in room `QFME`
+(dev server, debug token, Science, 10s), read back from each round's own `RevealTiming`:
+
+| | n | vault step | median | by refusals before the hit |
+|---|---|---|---|---|
+| #70, one at a time | 10 | 67–298ms | **167ms** | ~100ms each, as on 6 Oct |
+| Lite, all at once | 18 | 52–101ms, one 161 | **71ms** | none — hit last: 55–101ms |
+
+Room update ~70ms in both. The 161 was the first reveal after a page load. **Both directions
+over Lite** (Node, room `JW56`): asked 1.1s into a 5s window, refused with the vault's error
+6/6; after it, found in 78–105ms 6/6. **Costs:** the Firebase chunk 147.8 → 164.2 kB gzip, on
+every device; three browser "403" console lines per reveal on the quizmaster's machine (the
+SDK's own warnings are switched off). **Not covered:** the office network, where the gain should
+be larger (a refusal there cost ~200ms, not ~100), and the emulator path — the e2e smoke stops
+before a reveal. The next office round's `read-games` is the check.
 
 ## 5. The design system
 

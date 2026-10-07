@@ -127,3 +127,25 @@ with it**: the level is the spacing actually used — **24 easy / 28 medium / 43
 lowest hit rate of any round on the giveaways included. And a player who notices that only
 the 8 that got cheaper have options above today's price can narrow those to two or three.
 The next office round is the check; `read-games --pack prices`.
+
+### Correction, same day — a decoy over today's price (`c3ec3c6`)
+
+**The rule above made a new giveaway, and the doc's own "not covered" line named it.** Greg,
+on `17946ce`: one answer in `XRUE` was higher than today's price. That item was handled, but
+once only the 8 that got cheaper had an option over today's price, **seeing one said "this got
+cheaper"** — measured: options at or over today's price on 38 rising questions before, 0 after.
+
+AC 5 now reads: *fell or held → the answer is the top option and the only one at or over
+today's price; on as many rising questions in the same gap, the top option is a decoy over
+today's price; every other option under it.* `pickDecoys` chooses them by hash.
+
+| After `c3ec3c6` | |
+|---|---|
+| All four under today's price | 79 |
+| One option over today's — the answer (fell or held) | 8 |
+| One option over today's — a decoy (rose) | 8, matched per gap |
+| Levels | 21 easy / 26 medium / 48 hard |
+| Answers changed against the vault cache | **0** — no reseed |
+
+The two new pack rules fail on `17946ce`'s writer and pass on this one. **Not covered**, still:
+whether the round is too hard now, and whether "did it get cheaper?" lands as a fair question.

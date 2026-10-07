@@ -1,6 +1,6 @@
 # Stopping at the hit: where the reveal's time goes
 
-> **Owner: Greg Rothwell. Last updated: 6 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 7 October 2026. Budget: 250 lines.**
 
 Moved verbatim out of [`reveal-delays.md`](reveal-delays.md) the day it was
 written, when that file reached 265 of its 250 lines. That file is why a
@@ -97,3 +97,11 @@ back above were over 1.2s, up to 3.1s, split between the vault step and the
 room update — and the new code makes fewer of the round trips they live in.
 **Instrument note:** the page's long-task observer recorded nothing even for
 a forced 120ms busy loop, so it proved nothing and nothing here leans on it.
+
+## 7 October 2026 — superseded by Firestore Lite
+
+`XRUE` showed the office paying ~200ms a refusal and once 2.8s for two. The candidates now go
+over Firestore Lite, all four at once — a refusal there is a request's 403, not a stream reopen:
+median vault step 71ms against this code's 167ms, measured side by side. Depth:
+[`office-feedback-7-oct.md`](office-feedback-7-oct.md#built--0d6e964).
+
