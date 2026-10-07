@@ -3,6 +3,8 @@ import {
   BASE_POINTS,
   RANK_BONUSES,
   RANK_FLOOR,
+  PODIUM_MAX_RISERS,
+  podiumFor,
   rankBonus,
   roomStandings,
   seatedLast,
@@ -295,6 +297,81 @@ describe('roomStandings', () => {
   });
 });
 
+describe('podiumFor', () => {
+  /** Left to right, as uids, with an empty slot as null. */
+  const layout = (scores: Record<string, number>) =>
+    podiumFor(standings(scores)).slots.map((riser) => riser?.uid ?? null);
+  const heights = (scores: Record<string, number>) =>
+    podiumFor(standings(scores)).slots.map((riser) => riser?.height ?? null);
+
+  test('stands the top three with the winner in the middle', () => {
+    const scores = { alice: 1000, bob: 900, carol: 800, dave: 100 };
+    expect(layout(scores)).toEqual(['bob', 'alice', 'carol']);
+    expect(heights(scores)).toEqual(['second', 'first', 'third']);
+  });
+
+  test('stands joint winners equally high — XRUE, 7 October 2026', () => {
+    // #given two level at the top, so nobody came second
+    const scores = { alice: 1800, bob: 1800, carol: 600, dave: 100 };
+
+    // #then both are on a winner's riser, and third is still third
+    expect(layout(scores)).toEqual(['bob', 'alice', 'carol']);
+    expect(heights(scores)).toEqual(['first', 'first', 'third']);
+  });
+
+  test('stands a tie for second at second\'s height either side of the winner', () => {
+    const scores = { alice: 1000, bob: 700, carol: 700, dave: 100 };
+    expect(heights(scores)).toEqual(['second', 'first', 'second']);
+  });
+
+  test('stands everybody placed third, not the first of them', () => {
+    // #given a three-way tie for third that is not last
+    const scores = { alice: 1000, bob: 900, carol: 500, dave: 500, erin: 500, fred: 0 };
+
+    // #then five risers, the winner in the middle and the ranks spreading out
+    expect(layout(scores)).toEqual(['dave', 'bob', 'alice', 'carol', 'erin']);
+    expect(heights(scores)).toEqual(['third', 'second', 'first', 'third', 'third']);
+  });
+
+  test('stands four joint winners, the most-placed in the middle', () => {
+    const scores = { alice: 900, bob: 900, carol: 900, dave: 900, erin: 100 };
+    expect(layout(scores)).toEqual(['dave', 'bob', 'alice', 'carol']);
+    expect(heights(scores)).toEqual(['first', 'first', 'first', 'first']);
+  });
+
+  test(`folds the rest of a tie past ${PODIUM_MAX_RISERS} risers into "+N" on the last of them`, () => {
+    // #given seven level at the top and one below
+    const scores = Object.fromEntries(['a', 'b', 'c', 'd', 'e', 'f', 'g'].map((uid) => [uid, 500]));
+    const { standing, slots } = podiumFor(standings({ ...scores, z: 0 }));
+
+    // #then five stand, and the fifth carries the two it could not fit
+    expect(slots).toHaveLength(PODIUM_MAX_RISERS);
+    expect(standing.map((riser) => riser.more)).toEqual([0, 0, 0, 0, 2]);
+  });
+
+  test('keeps the tie for last that reaches the podium to one riser — RRGM, 6 October 2026', () => {
+    // #given third place is one of four on nothing
+    const scores = { cass: 22_000, steve: 9_200, greg: 0, nbret: 0, rach: 0, roberto: 0 };
+
+    // #then three risers, as before; the other three are for the chair
+    expect(layout(scores)).toEqual(['steve', 'cass', 'greg']);
+  });
+
+  test('keeps the winner in the middle of a room of one or two', () => {
+    expect(layout({ alice: 500 })).toEqual([null, 'alice', null]);
+    expect(layout({ alice: 500, bob: 100 })).toEqual(['bob', 'alice', null]);
+  });
+
+  test('stands a table level all the way up as joint winners', () => {
+    const scores = { alice: 0, bob: 0, carol: 0, dave: 0 };
+    expect(heights(scores)).toEqual(['first', 'first', 'first', 'first']);
+  });
+
+  test('stands nobody in an empty room', () => {
+    expect(podiumFor([]).standing).toEqual([]);
+  });
+});
+
 describe('seatedLast', () => {
   test('seats the one player below the podium', () => {
     // #given a four-player round with a clear bottom
@@ -361,6 +438,19 @@ describe('seatedLast', () => {
 
     // #then the three not on a riser are in it — this round showed no chair
     expect(seated).toEqual(['nbret', 'rach', 'roberto']);
+  });
+
+  test('never seats somebody who is stood on a riser', () => {
+    // #given a tie for third above the bottom, which now stands in full
+    const rows = standings({ alice: 1000, bob: 900, carol: 500, dave: 500, erin: 100 });
+
+    // #when the chair is filled
+    const seated = seatedLast(rows);
+    const standing = podiumFor(rows).standing.map((riser) => riser.uid);
+
+    // #then the bottom alone sits, and nobody is in both
+    expect(seated).toEqual(['erin']);
+    expect(seated.filter((uid) => standing.includes(uid))).toEqual([]);
   });
 
   test('seats nobody in an empty room', () => {

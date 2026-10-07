@@ -1262,6 +1262,56 @@ export function Preview() {
       ),
     },
     {
+      /*
+        XRUE, 7 October 2026, Greg: the podium should say what the header says.
+        Joint places stand equally high, and everybody placed third stands —
+        here three level on third, above the bottom, so five risers and a chair.
+      */
+      title: 'Final · a three-way tie for third',
+      node: (
+        <Final
+          banked={null}
+          youPlayerId="greg"
+          snapshot={null}
+          room={mockRoom({
+            phase: 'finished',
+            index: 1,
+            players: SEATED_ROOM,
+            scores: { greg: 14_000, sam: 11_200, priya: 7_400, alex: 7_400, jo: 7_400, rach: 2_100, dev: 900 },
+          })}
+          youUid="greg"
+          isQuizmaster
+          log={[]}
+          onPlayAgain={noop}
+          onLeave={noop}
+          onSeason={noop}
+        />
+      ),
+    },
+    {
+      /* Six level at the top of seven: five stand, the fifth carries "+1". */
+      title: 'Final · six joint winners',
+      node: (
+        <Final
+          banked={null}
+          youPlayerId="greg"
+          snapshot={null}
+          room={mockRoom({
+            phase: 'finished',
+            index: 1,
+            players: SEATED_ROOM,
+            scores: { greg: 6_000, sam: 6_000, priya: 6_000, alex: 6_000, jo: 6_000, rach: 6_000, dev: 1_500 },
+          })}
+          youUid="greg"
+          isQuizmaster
+          log={[]}
+          onPlayAgain={noop}
+          onLeave={noop}
+          onSeason={noop}
+        />
+      ),
+    },
+    {
       title: 'Final · with the awards',
       node: (
         <Final
