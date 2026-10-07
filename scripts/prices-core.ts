@@ -209,51 +209,92 @@ function ladderAt(answer: number, ratio: number, position: number, step: number)
   return [0, 1, 2, 3].map((i) => (i === position ? answer : roundTo(answer * ratio ** (i - position), step)));
 }
 
-function clear(options: readonly number[], below: number | null): boolean {
-  return (
-    options.every((option, i) => option > 0 && (i === 0 || option / (options[i - 1] as number) >= MIN_SPACING))
-    && (below === null || (options[3] as number) < below)
+/**
+ * Spaced at least `MIN_SPACING` apart, none rounded away, and — when `today` is
+ * given — exactly the top `over` of the four at or over it, the rest under.
+ */
+function clear(options: readonly number[], today: number | null, over: 0 | 1): boolean {
+  const spaced = options.every(
+    (option, i) => option > 0 && (i === 0 || option / (options[i - 1] as number) >= MIN_SPACING),
   );
+  if (!spaced || today === null) return spaced;
+  return options.every((option, i) => (i >= options.length - over ? option >= today : option < today));
 }
 
 /**
  * Four options, low to high, with the answer at `position` and the others a
- * geometric ladder around it — **every one under `below`** when it is given,
- * which is today's price for anything that got dearer.
+ * geometric ladder around it, placed against `today`, the price the question
+ * gives: **every one under it** (`over: 0`), or **all but the top one**
+ * (`over: 1`). The top one is the answer when the price fell or held, and a
+ * decoy on about as many questions where it rose — so an option over today's
+ * price never says on its own which it is.
  *
  * The level's own spacing where that fits. If rounding pulls two closer than
- * `MIN_SPACING`, the ladder widens a point at a time until none are; if the
- * ladder would reach today's price, it narrows instead, never under
- * `MIN_SPACING`. The ratio it settled on comes back with it, because that and
- * not the level it was asked for is how hard the question is.
+ * `MIN_SPACING`, or the top rung has to reach today's price, the ladder widens
+ * a point at a time; if it would cross today's price too soon, it narrows,
+ * never under `MIN_SPACING`. The ratio it settled on comes back with it,
+ * because that and not the level it was asked for is how hard the question is.
  *
- * Null when nothing fits. Before 7 October 2026 there was no `below`, and an
+ * Null when nothing fits. Before 7 October 2026 there was no `today`, and an
  * answer at the bottom of an easy ladder put the top option at 3.4× the
  * answer — over today's price for most items, so in six questions of the first
  * office round (`XRUE`) the only option under today's price was the answer.
+ * The first fix put every option under today's price unless the price fell,
+ * which made any option over it mean "this got cheaper"; hence the decoys.
  */
 export function fitLadder({
   answer,
   ratio,
   position,
   step,
-  below,
+  today,
+  over,
 }: {
   answer: number;
   ratio: number;
   position: number;
   step: number;
-  below: number | null;
+  today: number | null;
+  over: 0 | 1;
 }): { options: number[]; ratio: number } | null {
   for (let r = ratio; r < ratio + 3; r += 0.01) {
     const options = ladderAt(answer, r, position, step);
-    if (clear(options, below)) return { options, ratio: r };
+    if (clear(options, today, over)) return { options, ratio: r };
   }
   for (let r = ratio - 0.01; r >= MIN_SPACING - EPSILON; r -= 0.01) {
     const options = ladderAt(answer, r, position, step);
-    if (clear(options, below)) return { options, ratio: r };
+    if (clear(options, today, over)) return { options, ratio: r };
   }
   return null;
+}
+
+/** One question's part in choosing the decoys. */
+export interface DecoyCandidate {
+  slug: string;
+  group: string;
+  /** The price fell or held, so its answer is the option over today's price. */
+  fell: boolean;
+  /** A ladder with a decoy over today's price fits it. */
+  canDecoy: boolean;
+}
+
+/**
+ * Which rising questions carry a decoy over today's price: in each group, as
+ * many as there are questions there whose price fell or held, so an option
+ * over today's price is the answer about half the time and a decoy the rest.
+ * Chosen by a hash of the slug, salted apart from the places.
+ */
+export function pickDecoys(items: readonly DecoyCandidate[]): Set<string> {
+  const picked = new Set<string>();
+  for (const group of new Set(items.map((item) => item.group))) {
+    const inGroup = items.filter((item) => item.group === group);
+    const wanted = inGroup.filter((item) => item.fell).length;
+    const candidates = inGroup
+      .filter((item) => !item.fell && item.canDecoy)
+      .sort((a, b) => hashOf(a.slug, 'price-decoy').localeCompare(hashOf(b.slug, 'price-decoy')));
+    for (const item of candidates.slice(0, wanted)) picked.add(item.slug);
+  }
+  return picked;
 }
 
 /** How far behind the least-used place another may run, to keep a level's own spacing. */
@@ -308,8 +349,8 @@ export function placeAnswers(items: readonly Placeable[], slack = POSITION_SLACK
   return placed;
 }
 
-function hashOf(slug: string): string {
-  return createHash('sha1').update(`price-position:${slug}`).digest('hex');
+function hashOf(slug: string, salt = 'price-position'): string {
+  return createHash('sha1').update(`${salt}:${slug}`).digest('hex');
 }
 
 export function priceQuestion({

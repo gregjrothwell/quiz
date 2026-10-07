@@ -168,7 +168,7 @@ describe('unitChangeYear', () => {
 describe('fitLadder', () => {
   test('puts the answer where it is told to, the rest a ratio apart', () => {
     // #given an answer of £2.00 in third place, a medium spacing, nothing above it
-    const fitted = fitLadder({ answer: 200, ratio: RATIO.medium, position: 2, step: 10, below: null });
+    const fitted = fitLadder({ answer: 200, ratio: RATIO.medium, position: 2, step: 10, today: null, over: 0 });
 
     // #then four, rising, with the answer third, at the level's own spacing
     expect(fitted?.options).toHaveLength(4);
@@ -182,7 +182,7 @@ describe('fitLadder', () => {
     for (const answer of [9, 23, 47, 120, 130, 990, 1_950, 23_000]) {
       for (const position of [0, 1, 2, 3]) {
         const step = stepPence(answer);
-        const fitted = fitLadder({ answer, ratio: RATIO.hard, position, step, below: null });
+        const fitted = fitLadder({ answer, ratio: RATIO.hard, position, step, today: null, over: 0 });
         const options = fitted?.options ?? [];
 
         // #then each is clear of the one below it, and a multiple of the step
@@ -198,7 +198,7 @@ describe('fitLadder', () => {
 
   test('keeps every option under today\'s price, the giveaway Greg saw in XRUE', () => {
     // #given a price that rose by half: £1.00 then, £1.50 now, answer at the bottom
-    const fitted = fitLadder({ answer: 100, ratio: RATIO.easy, position: 0, step: 1, below: 150 });
+    const fitted = fitLadder({ answer: 100, ratio: RATIO.easy, position: 0, step: 1, today: 150, over: 0 });
 
     // #then nothing reaches today's price, so no option rules itself out
     expect(fitted).not.toBeNull();
@@ -208,7 +208,7 @@ describe('fitLadder', () => {
 
   test('narrows the spacing to fit under today, never below the minimum', () => {
     // #given the same rise: an easy ×1.5 ladder from the bottom would reach £3.38
-    const fitted = fitLadder({ answer: 100, ratio: RATIO.easy, position: 0, step: 1, below: 150 });
+    const fitted = fitLadder({ answer: 100, ratio: RATIO.easy, position: 0, step: 1, today: 150, over: 0 });
 
     // #then it is narrower than easy, and no narrower than 12%
     expect(fitted?.ratio).toBeLessThan(RATIO.easy);
@@ -216,15 +216,32 @@ describe('fitLadder', () => {
   });
 
   test('keeps the level\'s spacing when it already fits under today', () => {
-    const fitted = fitLadder({ answer: 100, ratio: RATIO.easy, position: 3, step: 1, below: 150 });
+    const fitted = fitLadder({ answer: 100, ratio: RATIO.easy, position: 3, step: 1, today: 150, over: 0 });
     expect(fitted?.ratio).toBeCloseTo(RATIO.easy, 5);
   });
 
   test('says nothing fits rather than breaking the rule', () => {
     // #given a rise of 10%: three options above the answer cannot all be under today
-    expect(fitLadder({ answer: 100, ratio: RATIO.hard, position: 0, step: 1, below: 110 })).toBeNull();
+    expect(fitLadder({ answer: 100, ratio: RATIO.hard, position: 0, step: 1, today: 110, over: 0 })).toBeNull();
     // #then the answer on top still fits
-    expect(fitLadder({ answer: 100, ratio: RATIO.hard, position: 3, step: 1, below: 110 })).not.toBeNull();
+    expect(fitLadder({ answer: 100, ratio: RATIO.hard, position: 3, step: 1, today: 110, over: 0 })).not.toBeNull();
+  });
+
+  test('can put exactly the top option at or over today, the rest under it', () => {
+    // #given a price that fell: £1.20 then, £1.00 now, the answer on top
+    const fell = fitLadder({ answer: 120, ratio: RATIO.medium, position: 3, step: 1, today: 100, over: 1 });
+
+    // #then only the answer reaches today's price
+    expect(fell?.options[3]).toBe(120);
+    expect(fell?.options.slice(0, 3).every((option) => option < 100)).toBe(true);
+
+    // #given a price that rose by a fifth, a decoy on top and the answer under it
+    const decoy = fitLadder({ answer: 100, ratio: RATIO.medium, position: 2, step: 1, today: 120, over: 1 });
+
+    // #then the decoy reaches today's price, the answer and the rest do not
+    expect(decoy?.options[2]).toBe(100);
+    expect(decoy?.options[3]).toBeGreaterThanOrEqual(120);
+    expect(decoy?.options.slice(0, 3).every((option) => option < 120)).toBe(true);
   });
 
   test('wider spacing for an easier question', () => {

@@ -20,10 +20,11 @@ import { DIFFICULTIES } from '../src/questions/types';
 
 /**
  * What each invented item's earlier price is, as a share of its later one: most
- * rose — a little, a lot, or several times over — and two in seven got cheaper,
- * which is the spread the real pack has to cope with.
+ * rose — a little, a lot, or several times over — one in seven barely rose and
+ * one in seven got cheaper. Two in seven forced to the top place is harsher
+ * than the real pack (16 of 95 on 7 October 2026), which is the point.
  */
-const SHARES = [0.7, 0.3, 0.92, 0.5, 1.15, 0.8, 0.97];
+const SHARES = [0.7, 0.3, 0.92, 0.5, 1.15, 0.8, 0.6];
 
 /** A made-up observation for every spec: later prices vary, earlier ones a share of them. */
 function invented(specs: readonly PriceSpec[] = PRICE_SPECS): Observed {
@@ -123,20 +124,36 @@ describe('buildPricesPack', () => {
     return pence(shown);
   }
 
-  test('where the price rose, every option is under today\'s — none rules itself out', () => {
-    const rose = pack.questions.filter((q) => pence(answers[q.id] as string) < today(q));
+  /** Which of a question's options are at or over the price the question gives. */
+  function over(question: (typeof pack.questions)[number]): number[] {
+    return question.options.flatMap((option, i) => (pence(option) >= today(question) ? [i] : []));
+  }
+
+  const rose = pack.questions.filter((q) => pence(answers[q.id] as string) < today(q));
+  const fell = pack.questions.filter((q) => pence(answers[q.id] as string) >= today(q));
+
+  test('where the price rose, every option is under today\'s but a decoy on top', () => {
     expect(rose.length).toBeGreaterThan(pack.questions.length / 2);
     for (const question of rose) {
-      for (const option of question.options) expect(pence(option)).toBeLessThan(today(question));
+      // #then nothing over today's price, or only the top option, and never the answer
+      expect([[], [3]]).toContainEqual(over(question));
     }
   });
 
-  test('where it fell or held, the answer is at or above today\'s with an option either side', () => {
-    const fell = pack.questions.filter((q) => pence(answers[q.id] as string) >= today(q));
+  test('where it fell or held, the answer is the top option and the only one at or over today\'s', () => {
     expect(fell.length).toBeGreaterThan(0);
     for (const question of fell) {
-      const at = question.options.indexOf(answers[question.id] as string);
-      expect([1, 2]).toContain(at);
+      expect(question.options.indexOf(answers[question.id] as string)).toBe(3);
+      expect(over(question)).toEqual([3]);
+    }
+  });
+
+  test('an option over today\'s price is the answer about half the time, within each gap', () => {
+    // XRUE: once only the cheaper items had one, seeing it said "this got cheaper"
+    for (const gap of Object.keys(GAPS)) {
+      const inGap = (q: (typeof pack.questions)[number]) => q.category === `${gap} years ago`;
+      const decoys = rose.filter((q) => inGap(q) && over(q).length > 0).length;
+      expect(decoys).toBe(fell.filter(inGap).length);
     }
   });
 

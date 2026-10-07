@@ -16,6 +16,7 @@ import {
   fitLadder,
   formatPence,
   levelOf,
+  pickDecoys,
   placeAnswers,
   priceQuestion,
   roundTo,
@@ -92,21 +93,35 @@ interface Priced {
   answer: number;
   step: number;
   ratio: number;
-  /** Today's price as the question shows it, when the item got dearer; null when it fell or held. */
-  below: number | null;
+  /** Today's price as the question shows it. */
+  today: number;
+  /** The price fell or held: the answer is the one option at or over today's. */
+  fell: boolean;
+}
+
+/** How many options sit at or over today's price, and where the answer may go. */
+interface Shape {
+  over: 0 | 1;
+  places: readonly number[];
 }
 
 /**
- * The places an answer may take: anywhere, if the price rose — `fitLadder`
- * keeps every option under today's — and second or third if it fell or held,
- * so the options sit either side of an answer that is itself at or over
- * today's price.
+ * Fell or held: the answer on top, the only option at or over today's. Rose
+ * with a decoy: the decoy on top over today's, the answer in any place under
+ * it. Rose otherwise: all four under today's, the answer anywhere.
  */
-function fitsFor({ answer, ratio, step, below }: Priced): (number | null)[] {
+function shapeOf(item: Priced, decoy: boolean): Shape {
+  if (item.fell) return { over: 1, places: [3] };
+  if (decoy) return { over: 1, places: [0, 1, 2] };
+  return { over: 0, places: [0, 1, 2, 3] };
+}
+
+function fitsFor(item: Priced, shape: Shape): (number | null)[] {
+  const { answer, ratio, step, today } = item;
   return [0, 1, 2, 3].map((position) =>
-    below === null && (position === 0 || position === 3)
-      ? null
-      : (fitLadder({ answer, ratio, position, step, below })?.ratio ?? null),
+    shape.places.includes(position)
+      ? (fitLadder({ answer, ratio, position, step, today, over: shape.over })?.ratio ?? null)
+      : null,
   );
 }
 
@@ -126,24 +141,33 @@ export function buildPricesPack(
     const step = stepFor(later, earlier, ratio);
     const answer = roundTo(earlier, step);
     if (answer <= 0) throw new Error(`${spec.slug}: the answer rounds to nothing`);
-    const shown = roundTo(later, stepPence(later));
-    return { spec, later, answer, step, ratio, below: answer < shown ? shown : null };
+    const today = roundTo(later, stepPence(later));
+    return { spec, later, answer, step, ratio, today, fell: answer >= today };
   });
 
-  const fits = new Map(priced.map((item) => [item.spec.slug, fitsFor(item)]));
+  const decoys = pickDecoys(
+    priced.map((item) => ({
+      slug: item.spec.slug,
+      group: String(item.spec.gap),
+      fell: item.fell,
+      canDecoy: !item.fell && fitsFor(item, shapeOf(item, true)).some((fit) => fit !== null),
+    })),
+  );
+  const shapes = new Map(priced.map((item) => [item.spec.slug, shapeOf(item, decoys.has(item.spec.slug))]));
   const positions = placeAnswers(
     priced.map((item) => ({
       slug: item.spec.slug,
       group: String(item.spec.gap),
-      fits: fits.get(item.spec.slug) ?? [],
+      fits: fitsFor(item, shapes.get(item.spec.slug) as Shape),
       ratio: item.ratio,
     })),
   );
 
   const answers: Record<string, string> = {};
-  const questions = priced.map(({ spec, later, answer, step, ratio, below }) => {
+  const questions = priced.map(({ spec, later, answer, step, ratio, today }) => {
     const position = positions.get(spec.slug) as number;
-    const fitted = fitLadder({ answer, ratio, position, step, below });
+    const { over } = shapes.get(spec.slug) as Shape;
+    const fitted = fitLadder({ answer, ratio, position, step, today, over });
     if (!fitted) throw new Error(`${spec.slug}: placed where no ladder fits`);
 
     const options = fitted.options.map((pence) => formatPence(pence, step));

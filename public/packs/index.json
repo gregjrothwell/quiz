@@ -204,9 +204,9 @@
     "blurb": "Given a recent price, guess what it cost 5, 10, 20 or 30 years before.",
     "count": 95,
     "counts": {
-      "easy": 24,
-      "medium": 28,
-      "hard": 43
+      "easy": 21,
+      "medium": 26,
+      "hard": 48
     }
   }
 ]
