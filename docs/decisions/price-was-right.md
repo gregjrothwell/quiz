@@ -1,6 +1,6 @@
 # The Price Was Right — then and now
 
-> **Owner: Greg Rothwell. Last updated: 6 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 7 October 2026. Budget: 250 lines.**
 
 Parked idea #2 ([`parked-ideas.md`](parked-ideas.md)), picked by Greg 6 October 2026 over ghost
 racing and Blankety Blank's match-the-room, to build **before the next go-live**.
@@ -99,3 +99,53 @@ then `host-room -- 10 --pack prices` to prove a reveal. Both are live writes, so
 **Not covered:** whether the office finds it fun, and whether spacing-as-difficulty holds.
 The first round is the check. The RPI series end January 2025; the quotes refresh monthly,
 so August 2026 is the latest "now" only until 21 October.
+
+## 7 October 2026 — every option under today's price
+
+**The first office round (`XRUE`, 8 seats, 47%) found the hole AC 5 left.** Greg: some questions
+had one option under the price the question gives, "and so it was obviously going to be that
+one". Measured on the shipped pack: **6 of 95** exactly that; 17 more with two under (a coin
+toss); **46 of 95** with an option at or above today's. The ladder was built around the answer at
+a balanced place and never looked at today's price; AC 5 had guarded only prices that fell.
+
+**Built (`17946ce`, local).** AC 5 now reads: *where the price rose, every option is under
+today's; where it fell or held, the answer is in place 2 or 3 with an option either side.*
+`fitLadder` narrows the spacing to fit (never under 12%); `placeAnswers` balances places within
+each gap, taking a place one behind where that keeps the level's own spacing. **AC 6 changed
+with it**: the level is the spacing actually used — **24 easy / 28 medium / 43 hard**, was
+33/32/30. Rounding still comes from the level dealt in turn, so **all 95 answers are unchanged**
+(the writer checks against `.cache/hand-vault.json`: 0 changed) and the vault needs nothing.
+
+| After | |
+|---|---|
+| All four options under today's price | **87** of 95 |
+| Got cheaper or held — options straddle it | 8 |
+| Answer's place per gap (5 / 10 / 20 / 30 years) | 5-6-7-7 · 7-7-8-8 · 4-5-6-5 · 4-5-5-6 |
+| Tests | the three new pack rules fail on the old writer, pass on the new; 1,377/1,377 |
+
+**Not covered.** Whether the round is now too hard: half the pack is hard, and 47% was the
+lowest hit rate of any round on the giveaways included. And a player who notices that only
+the 8 that got cheaper have options above today's price can narrow those to two or three.
+The next office round is the check; `read-games --pack prices`.
+
+### Correction, same day — a decoy over today's price (`c3ec3c6`)
+
+**The rule above made a new giveaway, and the doc's own "not covered" line named it.** Greg,
+on `17946ce`: one answer in `XRUE` was higher than today's price. That item was handled, but
+once only the 8 that got cheaper had an option over today's price, **seeing one said "this got
+cheaper"** — measured: options at or over today's price on 38 rising questions before, 0 after.
+
+AC 5 now reads: *fell or held → the answer is the top option and the only one at or over
+today's price; on as many rising questions in the same gap, the top option is a decoy over
+today's price; every other option under it.* `pickDecoys` chooses them by hash.
+
+| After `c3ec3c6` | |
+|---|---|
+| All four under today's price | 79 |
+| One option over today's — the answer (fell or held) | 8 |
+| One option over today's — a decoy (rose) | 8, matched per gap |
+| Levels | 21 easy / 26 medium / 48 hard |
+| Answers changed against the vault cache | **0** — no reseed |
+
+The two new pack rules fail on `17946ce`'s writer and pass on this one. **Not covered**, still:
+whether the round is too hard now, and whether "did it get cheaper?" lands as a fair question.

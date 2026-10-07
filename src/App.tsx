@@ -17,7 +17,7 @@ import {
   questionDurationMs,
   type Level,
 } from './engine/state';
-import { firestore, isFirebaseConfigured } from './firebase';
+import { firestore, isFirebaseConfigured, vaultFirestore } from './firebase';
 import { keepGameRecord } from './lib/gameRecords';
 import { playerIdFor } from './lib/identity';
 import { recordVote } from './lib/questionVotes';
@@ -635,7 +635,7 @@ function Game() {
           // back from the vault, and only once the server agrees the clock has
           // run out.
           const startedResolve = Date.now();
-          const correctIndex = await resolveAnswer(firestore(), room.code, question);
+          const correctIndex = await resolveAnswer(vaultFirestore(), room.code, question);
           timing.resolveMs = Date.now() - startedResolve;
           // Named rather than assumed: `dispatch` folds over the room as it is
           // when this returns, so that an answer landing during the round trip

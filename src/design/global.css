@@ -2549,14 +2549,28 @@ select.input option {
 /* ── Final podium ───────────────────────────────────────────────────────── */
 
 .finale {
+  /* One riser per person placed third or better (`podiumFor`), so a dead heat
+     stands four or five wide; three is the floor, empty slots included. */
+  --risers: 3;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(var(--risers), 1fr);
   align-items: end;
   gap: 0.7rem;
   /* As a flex child this sizes to content, so max-width alone does nothing. */
   width: 100%;
   max-width: 40rem;
   margin: 0 auto;
+}
+
+/* The same width a riser has when three stand, as long as the screen allows. */
+.finale--4 {
+  --risers: 4;
+  max-width: 53rem;
+}
+
+.finale--5 {
+  --risers: 5;
+  max-width: 66rem;
 }
 
 .riser {
@@ -2691,6 +2705,15 @@ select.input option {
   text-shadow: 0 0 14px rgb(41 214 255 / 0.7);
 }
 
+/* The rest of a tie too big for five risers: "+2 level", under the score. */
+.riser__more {
+  font-family: var(--tech);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
 /* ── The chair ──────────────────────────────────────────────────────────────
    Last place, at the end of the podium and on the floor. Narrower than a riser
    and given no panel of its own: three people are standing on something and
@@ -2701,7 +2724,7 @@ select.input option {
    the third riser. Wide enough for a name rather than for the chair — the chair
    is happy at 3rem, and "Bartholomew" broken across three lines is not. */
 .finale--seated {
-  grid-template-columns: repeat(3, 1fr) minmax(4.5rem, 5.75rem);
+  grid-template-columns: repeat(var(--risers), 1fr) minmax(4.5rem, 5.75rem);
 }
 
 /*
@@ -2718,7 +2741,7 @@ select.input option {
 @media (min-width: 56rem) {
   .finale--seated {
     max-width: none;
-    grid-template-columns: minmax(4rem, 1fr) repeat(3, minmax(0, 12.6rem)) minmax(4rem, 1fr);
+    grid-template-columns: minmax(4rem, 1fr) repeat(var(--risers), minmax(0, 12.6rem)) minmax(4rem, 1fr);
   }
 
   /* Auto-placement would start the risers in the empty left-hand column. */
@@ -2728,6 +2751,40 @@ select.input option {
 
   .finale--seated .seat {
     justify-self: end;
+  }
+}
+
+/*
+ * Four or five risers short of desktop width: a grid track's `1fr` will not go
+ * below its content, so five risers and a chair ran 24px off a 375px phone and
+ * clipped the fifth riser and the chair. Let a track shrink to nothing and tighten what is in it.
+ */
+@media (max-width: 55.99rem) {
+  .finale--4,
+  .finale--5 {
+    gap: 0.35rem;
+    grid-template-columns: repeat(var(--risers), minmax(0, 1fr));
+  }
+
+  .finale--4.finale--seated,
+  .finale--5.finale--seated {
+    grid-template-columns: repeat(var(--risers), minmax(0, 1fr)) minmax(3.5rem, 5.75rem);
+  }
+
+  .finale--4 .riser,
+  .finale--5 .riser {
+    padding: 0.9rem 0.2rem;
+  }
+
+  .finale--4 .riser__name,
+  .finale--5 .riser__name {
+    font-size: 0.7rem;
+    letter-spacing: 0.02em;
+  }
+
+  .finale--4 .riser__score,
+  .finale--5 .riser__score {
+    font-size: 0.8rem;
   }
 }
 

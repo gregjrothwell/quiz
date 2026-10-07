@@ -2,12 +2,14 @@ import { describe, expect, test } from 'vitest';
 import {
   MIN_SPACING,
   RATIO,
-  balancedPositions,
+  fitLadder,
   formatPence,
   isValidQuote,
+  levelOf,
   median,
-  optionPence,
   parseCsv,
+  placeAnswers,
+  type Placeable,
   priceQuestion,
   quoteMedians,
   rpiAveragePrices,
@@ -163,15 +165,16 @@ describe('unitChangeYear', () => {
   });
 });
 
-describe('optionPence', () => {
+describe('fitLadder', () => {
   test('puts the answer where it is told to, the rest a ratio apart', () => {
-    // #given an answer of £2.00 in third place, a medium spacing
-    const options = optionPence({ answer: 200, ratio: RATIO.medium, position: 2, step: 10 });
+    // #given an answer of £2.00 in third place, a medium spacing, nothing above it
+    const fitted = fitLadder({ answer: 200, ratio: RATIO.medium, position: 2, step: 10, today: null, over: 0 });
 
-    // #then four, rising, with the answer third
-    expect(options).toHaveLength(4);
-    expect(options[2]).toBe(200);
-    expect([...options].sort((a, b) => a - b)).toEqual(options);
+    // #then four, rising, with the answer third, at the level's own spacing
+    expect(fitted?.options).toHaveLength(4);
+    expect(fitted?.options[2]).toBe(200);
+    expect([...(fitted?.options ?? [])].sort((a, b) => a - b)).toEqual(fitted?.options);
+    expect(fitted?.ratio).toBeCloseTo(RATIO.medium, 5);
   });
 
   test('every pair is at least the minimum spacing apart, even after rounding', () => {
@@ -179,9 +182,11 @@ describe('optionPence', () => {
     for (const answer of [9, 23, 47, 120, 130, 990, 1_950, 23_000]) {
       for (const position of [0, 1, 2, 3]) {
         const step = stepPence(answer);
-        const options = optionPence({ answer, ratio: RATIO.hard, position, step });
+        const fitted = fitLadder({ answer, ratio: RATIO.hard, position, step, today: null, over: 0 });
+        const options = fitted?.options ?? [];
 
         // #then each is clear of the one below it, and a multiple of the step
+        expect(options).toHaveLength(4);
         for (let i = 1; i < options.length; i += 1) {
           expect((options[i] as number) / (options[i - 1] as number)).toBeGreaterThanOrEqual(MIN_SPACING);
         }
@@ -191,6 +196,54 @@ describe('optionPence', () => {
     }
   });
 
+  test('keeps every option under today\'s price, the giveaway Greg saw in XRUE', () => {
+    // #given a price that rose by half: £1.00 then, £1.50 now, answer at the bottom
+    const fitted = fitLadder({ answer: 100, ratio: RATIO.easy, position: 0, step: 1, today: 150, over: 0 });
+
+    // #then nothing reaches today's price, so no option rules itself out
+    expect(fitted).not.toBeNull();
+    for (const option of fitted?.options ?? []) expect(option).toBeLessThan(150);
+    expect(fitted?.options[0]).toBe(100);
+  });
+
+  test('narrows the spacing to fit under today, never below the minimum', () => {
+    // #given the same rise: an easy ×1.5 ladder from the bottom would reach £3.38
+    const fitted = fitLadder({ answer: 100, ratio: RATIO.easy, position: 0, step: 1, today: 150, over: 0 });
+
+    // #then it is narrower than easy, and no narrower than 12%
+    expect(fitted?.ratio).toBeLessThan(RATIO.easy);
+    expect(fitted?.ratio).toBeGreaterThanOrEqual(MIN_SPACING - 1e-9);
+  });
+
+  test('keeps the level\'s spacing when it already fits under today', () => {
+    const fitted = fitLadder({ answer: 100, ratio: RATIO.easy, position: 3, step: 1, today: 150, over: 0 });
+    expect(fitted?.ratio).toBeCloseTo(RATIO.easy, 5);
+  });
+
+  test('says nothing fits rather than breaking the rule', () => {
+    // #given a rise of 10%: three options above the answer cannot all be under today
+    expect(fitLadder({ answer: 100, ratio: RATIO.hard, position: 0, step: 1, today: 110, over: 0 })).toBeNull();
+    // #then the answer on top still fits
+    expect(fitLadder({ answer: 100, ratio: RATIO.hard, position: 3, step: 1, today: 110, over: 0 })).not.toBeNull();
+  });
+
+  test('can put exactly the top option at or over today, the rest under it', () => {
+    // #given a price that fell: £1.20 then, £1.00 now, the answer on top
+    const fell = fitLadder({ answer: 120, ratio: RATIO.medium, position: 3, step: 1, today: 100, over: 1 });
+
+    // #then only the answer reaches today's price
+    expect(fell?.options[3]).toBe(120);
+    expect(fell?.options.slice(0, 3).every((option) => option < 100)).toBe(true);
+
+    // #given a price that rose by a fifth, a decoy on top and the answer under it
+    const decoy = fitLadder({ answer: 100, ratio: RATIO.medium, position: 2, step: 1, today: 120, over: 1 });
+
+    // #then the decoy reaches today's price, the answer and the rest do not
+    expect(decoy?.options[2]).toBe(100);
+    expect(decoy?.options[3]).toBeGreaterThanOrEqual(120);
+    expect(decoy?.options.slice(0, 3).every((option) => option < 120)).toBe(true);
+  });
+
   test('wider spacing for an easier question', () => {
     expect(RATIO.easy).toBeGreaterThan(RATIO.medium);
     expect(RATIO.medium).toBeGreaterThan(RATIO.hard);
@@ -198,23 +251,83 @@ describe('optionPence', () => {
   });
 });
 
-describe('balancedPositions', () => {
-  test('puts the answer in each of the four places equally often', () => {
-    const slugs = Array.from({ length: 95 }, (_, i) => `price-${String(i + 1).padStart(3, '0')}`);
-    const positions = balancedPositions(slugs);
+describe('levelOf', () => {
+  test('reads a spacing as the widest level it reaches', () => {
+    expect(levelOf(RATIO.easy)).toBe('easy');
+    expect(levelOf(RATIO.easy + 0.2)).toBe('easy');
+    expect(levelOf(RATIO.medium)).toBe('medium');
+    expect(levelOf(RATIO.easy - 0.01)).toBe('medium');
+    expect(levelOf(RATIO.medium - 0.01)).toBe('hard');
+    expect(levelOf(MIN_SPACING)).toBe('hard');
+  });
+});
+
+describe('placeAnswers', () => {
+  const slugs = Array.from({ length: 96 }, (_, i) => `price-${String(i + 1).padStart(3, '0')}`);
+  const free = (slug: string, group = 'g'): Placeable => ({
+    slug,
+    group,
+    ratio: RATIO.medium,
+    fits: [RATIO.medium, RATIO.medium, RATIO.medium, RATIO.medium],
+  });
+
+  /** How often the answer landed in each place. */
+  function tally(placed: Map<string, number>, among: readonly string[]): number[] {
     const counts = [0, 0, 0, 0];
-    for (const slug of slugs) {
-      const at = positions.get(slug) as number;
+    for (const slug of among) {
+      const at = placed.get(slug) as number;
       counts[at] = (counts[at] ?? 0) + 1;
     }
+    return counts;
+  }
+
+  test('puts the answer in each of the four places equally often when every place fits', () => {
+    const counts = tally(placeAnswers(slugs.map((slug) => free(slug))), slugs);
     expect(Math.max(...counts) - Math.min(...counts)).toBeLessThanOrEqual(1);
   });
 
+  test('balances each group on its own', () => {
+    const placed = placeAnswers(slugs.map((slug, i) => free(slug, i % 2 === 0 ? 'five' : 'thirty')));
+    for (const group of [0, 1]) {
+      const counts = tally(placed, slugs.filter((_, i) => i % 2 === group));
+      expect(Math.max(...counts) - Math.min(...counts)).toBeLessThanOrEqual(1);
+    }
+  });
+
+  test('only ever uses a place that fits', () => {
+    // #given a quarter that only fit on top, as a price that barely rose does
+    const items = slugs.map((slug, i) =>
+      i % 4 === 0 ? { ...free(slug), fits: [null, null, null, RATIO.hard] } : free(slug),
+    );
+    const placed = placeAnswers(items);
+
+    // #then those are all on top, and the rest fill the other places to compensate
+    items.forEach((item) => {
+      expect(item.fits[placed.get(item.slug) as number]).not.toBeNull();
+    });
+    const counts = tally(placed, slugs);
+    expect(Math.max(...counts) - Math.min(...counts)).toBeLessThanOrEqual(2);
+  });
+
+  test('gives up a little balance to keep a level\'s own spacing', () => {
+    // #given items whose bottom place only fits narrowed, the rest at full spacing
+    const items = slugs.map((slug) => ({ ...free(slug), fits: [RATIO.hard, RATIO.medium, RATIO.medium, RATIO.medium] }));
+    const placed = placeAnswers(items, 1);
+
+    // #then the bottom is used less, but never more than two behind
+    const counts = tally(placed, slugs);
+    expect(counts[0]).toBeLessThan(counts[1] as number);
+    expect(Math.max(...counts) - Math.min(...counts)).toBeLessThanOrEqual(2);
+  });
+
   test('does not follow slug order, so neighbours in the file are not a pattern', () => {
-    const slugs = Array.from({ length: 12 }, (_, i) => `price-${String(i + 1).padStart(3, '0')}`);
-    const positions = balancedPositions(slugs);
-    const inOrder = slugs.map((slug) => positions.get(slug));
-    expect(inOrder).not.toEqual([0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3]);
+    const twelve = slugs.slice(0, 12);
+    const placed = placeAnswers(twelve.map((slug) => free(slug)));
+    expect(twelve.map((slug) => placed.get(slug))).not.toEqual([0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3]);
+  });
+
+  test('refuses an item with nowhere to go', () => {
+    expect(() => placeAnswers([{ ...free('price-001'), fits: [null, null, null, null] }])).toThrow(/price-001/);
   });
 });
 

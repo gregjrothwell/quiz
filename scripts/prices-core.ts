@@ -195,43 +195,162 @@ export function formatPence(pence: number, step = 1): string {
   return `£${(pence / 100).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+/** Spacings are stepped a point at a time, so compare them with room for float error. */
+const EPSILON = 1e-9;
+
+/** Which level a ladder's spacing reads as: the widest whose ratio it reaches. */
+export function levelOf(ratio: number): Difficulty {
+  if (ratio >= RATIO.easy - EPSILON) return 'easy';
+  if (ratio >= RATIO.medium - EPSILON) return 'medium';
+  return 'hard';
+}
+
+function ladderAt(answer: number, ratio: number, position: number, step: number): number[] {
+  return [0, 1, 2, 3].map((i) => (i === position ? answer : roundTo(answer * ratio ** (i - position), step)));
+}
+
+/**
+ * Spaced at least `MIN_SPACING` apart, none rounded away, and — when `today` is
+ * given — exactly the top `over` of the four at or over it, the rest under.
+ */
+function clear(options: readonly number[], today: number | null, over: 0 | 1): boolean {
+  const spaced = options.every(
+    (option, i) => option > 0 && (i === 0 || option / (options[i - 1] as number) >= MIN_SPACING),
+  );
+  if (!spaced || today === null) return spaced;
+  return options.every((option, i) => (i >= options.length - over ? option >= today : option < today));
+}
+
 /**
  * Four options, low to high, with the answer at `position` and the others a
- * geometric ladder around it. If rounding pulls two closer than `MIN_SPACING`,
- * the ladder widens a point at a time until none are.
+ * geometric ladder around it, placed against `today`, the price the question
+ * gives: **every one under it** (`over: 0`), or **all but the top one**
+ * (`over: 1`). The top one is the answer when the price fell or held, and a
+ * decoy on about as many questions where it rose — so an option over today's
+ * price never says on its own which it is.
+ *
+ * The level's own spacing where that fits. If rounding pulls two closer than
+ * `MIN_SPACING`, or the top rung has to reach today's price, the ladder widens
+ * a point at a time; if it would cross today's price too soon, it narrows,
+ * never under `MIN_SPACING`. The ratio it settled on comes back with it,
+ * because that and not the level it was asked for is how hard the question is.
+ *
+ * Null when nothing fits. Before 7 October 2026 there was no `today`, and an
+ * answer at the bottom of an easy ladder put the top option at 3.4× the
+ * answer — over today's price for most items, so in six questions of the first
+ * office round (`XRUE`) the only option under today's price was the answer.
+ * The first fix put every option under today's price unless the price fell,
+ * which made any option over it mean "this got cheaper"; hence the decoys.
  */
-export function optionPence({
+export function fitLadder({
   answer,
   ratio,
   position,
   step,
+  today,
+  over,
 }: {
   answer: number;
   ratio: number;
   position: number;
   step: number;
-}): number[] {
+  today: number | null;
+  over: 0 | 1;
+}): { options: number[]; ratio: number } | null {
   for (let r = ratio; r < ratio + 3; r += 0.01) {
-    const options = [0, 1, 2, 3].map((i) => (i === position ? answer : roundTo(answer * r ** (i - position), step)));
-    const clear = options.every(
-      (option, i) => option > 0 && (i === 0 || option / (options[i - 1] as number) >= MIN_SPACING),
-    );
-    if (clear) return options;
+    const options = ladderAt(answer, r, position, step);
+    if (clear(options, today, over)) return { options, ratio: r };
   }
-  throw new Error(`No ladder fits an answer of ${answer} at step ${step}`);
+  for (let r = ratio - 0.01; r >= MIN_SPACING - EPSILON; r -= 0.01) {
+    const options = ladderAt(answer, r, position, step);
+    if (clear(options, today, over)) return { options, ratio: r };
+  }
+  return null;
+}
+
+/** One question's part in choosing the decoys. */
+export interface DecoyCandidate {
+  slug: string;
+  group: string;
+  /** The price fell or held, so its answer is the option over today's price. */
+  fell: boolean;
+  /** A ladder with a decoy over today's price fits it. */
+  canDecoy: boolean;
 }
 
 /**
- * Where the answer sits among the four, per slug: each place equally often,
- * dealt in an order taken from a hash so it does not follow the file.
+ * Which rising questions carry a decoy over today's price: in each group, as
+ * many as there are questions there whose price fell or held, so an option
+ * over today's price is the answer about half the time and a decoy the rest.
+ * Chosen by a hash of the slug, salted apart from the places.
  */
-export function balancedPositions(slugs: readonly string[]): Map<string, number> {
-  const hashed = [...slugs].sort((a, b) => hashOf(a).localeCompare(hashOf(b)));
-  return new Map(hashed.map((slug, i) => [slug, i % 4]));
+export function pickDecoys(items: readonly DecoyCandidate[]): Set<string> {
+  const picked = new Set<string>();
+  for (const group of new Set(items.map((item) => item.group))) {
+    const inGroup = items.filter((item) => item.group === group);
+    const wanted = inGroup.filter((item) => item.fell).length;
+    const candidates = inGroup
+      .filter((item) => !item.fell && item.canDecoy)
+      .sort((a, b) => hashOf(a.slug, 'price-decoy').localeCompare(hashOf(b.slug, 'price-decoy')));
+    for (const item of candidates.slice(0, wanted)) picked.add(item.slug);
+  }
+  return picked;
 }
 
-function hashOf(slug: string): string {
-  return createHash('sha1').update(`price-position:${slug}`).digest('hex');
+/** How far behind the least-used place another may run, to keep a level's own spacing. */
+export const POSITION_SLACK = 1;
+
+/** One question waiting for its answer's place. */
+export interface Placeable {
+  slug: string;
+  /** Places are balanced within a group — the gap — not only across the pack. */
+  group: string;
+  /** The spacing `fitLadder` settles on with the answer in each place, or null where nothing fits. */
+  fits: readonly (number | null)[];
+  /** The spacing its level asks for. */
+  ratio: number;
+}
+
+/**
+ * Where each answer sits among the four.
+ *
+ * Each place as often as the ladders allow, within each group. Most items fit
+ * anywhere, but a price that barely rose fits only near the top once every
+ * option has to stay under today's, so the most constrained are placed first
+ * and the rest fill around them. Where the least-used place would narrow the
+ * ladder, a place up to `slack` behind it is taken instead if it keeps the
+ * level's own spacing — a count one out rather than a harder question. Ties go by a hash of the
+ * slug, so neighbours in the file are not a pattern.
+ */
+export function placeAnswers(items: readonly Placeable[], slack = POSITION_SLACK): Map<string, number> {
+  const fitting = (item: Placeable): number[] =>
+    [0, 1, 2, 3].filter((place) => item.fits[place] !== null && item.fits[place] !== undefined);
+  const order = [...items].sort(
+    (a, b) => fitting(a).length - fitting(b).length || hashOf(a.slug).localeCompare(hashOf(b.slug)),
+  );
+
+  const counts = new Map<string, number[]>();
+  const placed = new Map<string, number>();
+  for (const item of order) {
+    const places = fitting(item);
+    if (places.length === 0) throw new Error(`${item.slug}: no place for the answer fits`);
+    const count = counts.get(item.group) ?? [0, 0, 0, 0];
+    counts.set(item.group, count);
+
+    const least = Math.min(...places.map((place) => count[place] as number));
+    const keeps = (place: number): boolean => (item.fits[place] as number) >= item.ratio - EPSILON;
+    const leastUsed = places.filter((place) => count[place] === least);
+    const nearlyLeast = places.filter((place) => (count[place] as number) <= least + slack);
+    const pool = [leastUsed.filter(keeps), nearlyLeast.filter(keeps), leastUsed].find((some) => some.length > 0) ?? [];
+    const place = pool[Number.parseInt(hashOf(item.slug).slice(0, 8), 16) % pool.length] as number;
+    placed.set(item.slug, place);
+    count[place] = (count[place] as number) + 1;
+  }
+  return placed;
+}
+
+function hashOf(slug: string, salt = 'price-position'): string {
+  return createHash('sha1').update(`${salt}:${slug}`).digest('hex');
 }
 
 export function priceQuestion({

@@ -8,8 +8,8 @@ import {
   SPOILED_KEYS,
   type PriceSpec,
 } from './hand-prices-data';
-import { MIN_SPACING } from './prices-core';
-import { buildPricesPack, pricesFor, type Observed } from './write-prices-pack';
+import { MIN_SPACING, RATIO, formatPence, roundTo, stepFor, stepPence } from './prices-core';
+import { buildPricesPack, difficultiesFor, pricesFor, type Observed } from './write-prices-pack';
 import { DIFFICULTIES } from '../src/questions/types';
 
 /*
@@ -18,21 +18,30 @@ import { DIFFICULTIES } from '../src/questions/types';
   it, is a real price. Real ones live only in `.cache/prices/observed.json`.
 */
 
-/** A made-up observation for every spec: later prices vary, earlier ones are 70% of them. */
+/**
+ * What each invented item's earlier price is, as a share of its later one: most
+ * rose — a little, a lot, or several times over — one in seven barely rose and
+ * one in seven got cheaper. Two in seven forced to the top place is harsher
+ * than the real pack (16 of 95 on 7 October 2026), which is the point.
+ */
+const SHARES = [0.7, 0.3, 0.92, 0.5, 1.15, 0.8, 0.6];
+
+/** A made-up observation for every spec: later prices vary, earlier ones a share of them. */
 function invented(specs: readonly PriceSpec[] = PRICE_SPECS): Observed {
   const observed: Observed = { quotes: {}, rpi: {} };
   specs.forEach((spec, i) => {
     const gap = GAPS[spec.gap];
     const later = [0.85, 3.4, 12.5, 49, 420][i % 5] as number;
+    const share = SHARES[i % SHARES.length] as number;
     if (gap.source === 'quotes') {
-      for (const [month, price] of [[gap.later, later], [gap.earlier, later * 0.7]] as const) {
+      for (const [month, price] of [[gap.later, later], [gap.earlier, later * share]] as const) {
         observed.quotes[month] ??= {};
         (observed.quotes[month] as Record<string, unknown>)[spec.key] = { desc: `ITEM ${spec.key}`, median: price, n: 40 };
       }
     } else {
       observed.rpi[spec.key] = {
         title: `RPI: Ave price - item ${spec.key}`,
-        pence: { [gap.later]: later * 100, [gap.earlier]: later * 70 },
+        pence: { [gap.later]: later * 100, [gap.earlier]: later * 100 * share },
       };
     }
   });
@@ -108,13 +117,80 @@ describe('buildPricesPack', () => {
     }
   });
 
-  test('puts the answer in each of the four places about equally often', () => {
-    const counts = [0, 0, 0, 0];
-    for (const question of pack.questions) {
-      const at = question.options.indexOf(answers[question.id] as string);
-      counts[at] = (counts[at] ?? 0) + 1;
+  /** The price the question gives, as the player reads it. */
+  function today(question: (typeof pack.questions)[number]): number {
+    const shown = /cost about (£[\d,]+(?:\.\d+)?|\d+p)\./.exec(question.question)?.[1];
+    if (!shown) throw new Error(`${question.id}: no price in the question`);
+    return pence(shown);
+  }
+
+  /** Which of a question's options are at or over the price the question gives. */
+  function over(question: (typeof pack.questions)[number]): number[] {
+    return question.options.flatMap((option, i) => (pence(option) >= today(question) ? [i] : []));
+  }
+
+  const rose = pack.questions.filter((q) => pence(answers[q.id] as string) < today(q));
+  const fell = pack.questions.filter((q) => pence(answers[q.id] as string) >= today(q));
+
+  test('where the price rose, every option is under today\'s but a decoy on top', () => {
+    expect(rose.length).toBeGreaterThan(pack.questions.length / 2);
+    for (const question of rose) {
+      // #then nothing over today's price, or only the top option, and never the answer
+      expect([[], [3]]).toContainEqual(over(question));
     }
-    expect(Math.max(...counts) - Math.min(...counts)).toBeLessThanOrEqual(1);
+  });
+
+  test('where it fell or held, the answer is the top option and the only one at or over today\'s', () => {
+    expect(fell.length).toBeGreaterThan(0);
+    for (const question of fell) {
+      expect(question.options.indexOf(answers[question.id] as string)).toBe(3);
+      expect(over(question)).toEqual([3]);
+    }
+  });
+
+  test('an option over today\'s price is the answer about half the time, within each gap', () => {
+    // XRUE: once only the cheaper items had one, seeing it said "this got cheaper"
+    for (const gap of Object.keys(GAPS)) {
+      const inGap = (q: (typeof pack.questions)[number]) => q.category === `${gap} years ago`;
+      const decoys = rose.filter((q) => inGap(q) && over(q).length > 0).length;
+      expect(decoys).toBe(fell.filter(inGap).length);
+    }
+  });
+
+  test('keeps the answer in each of the four places about equally often, within each gap', () => {
+    for (const gap of Object.keys(GAPS)) {
+      const counts = [0, 0, 0, 0];
+      for (const question of pack.questions.filter((q) => q.category === `${gap} years ago`)) {
+        const at = question.options.indexOf(answers[question.id] as string);
+        counts[at] = (counts[at] ?? 0) + 1;
+      }
+      expect(Math.max(...counts) - Math.min(...counts)).toBeLessThanOrEqual(3);
+    }
+  });
+
+  test('records the level its spacing actually has', () => {
+    for (const question of pack.questions) {
+      const values = question.options.map(pence);
+      // The whole ladder's spread, so one rounded rung cannot swing it.
+      const spacing = ((values[3] as number) / (values[0] as number)) ** (1 / 3);
+      if (question.difficulty === 'easy') expect(spacing).toBeGreaterThan(RATIO.easy - 0.05);
+      if (question.difficulty === 'medium') expect(spacing).toBeGreaterThan(RATIO.medium - 0.05);
+      if (question.difficulty !== 'easy') expect(spacing).toBeLessThan(RATIO.easy - 0.005);
+      if (question.difficulty === 'hard') expect(spacing).toBeLessThan(RATIO.medium - 0.005);
+    }
+  });
+
+  test('leaves every answer exactly as it was seeded, so the vault needs nothing', () => {
+    // The rounding the first build used: the step from the level dealt in turn.
+    const observed = invented();
+    const levels = difficultiesFor(PRICE_SPECS);
+    pack.questions.forEach((question, i) => {
+      const spec = PRICE_SPECS[i] as PriceSpec;
+      const { later, earlier } = pricesFor(spec, observed);
+      const step = stepFor(later, earlier, RATIO[levels.get(spec.slug) ?? 'medium']);
+      expect(answers[question.id]).toBe(formatPence(roundTo(earlier, step), step));
+    });
+    expect(stepPence(100)).toBeGreaterThan(0);
   });
 
   test('names both dates and the gap', () => {

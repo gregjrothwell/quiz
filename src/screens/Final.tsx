@@ -6,7 +6,7 @@ import { Review } from '../components/Review';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { Standings } from '../components/Standings';
 import { awardsFor, reviewFor, sawWholeGame, type QuestionRecord } from '../engine/awards';
-import { roomStandings, seatedLast } from '../engine/scoring';
+import { podiumFor, roomStandings, seatedLast } from '../engine/scoring';
 import type { RoomState } from '../engine/state';
 // Type-only, so the drawing module itself stays out of this chunk.
 import type * as DrawCard from '../lib/drawCard';
@@ -50,18 +50,6 @@ interface FinalProps {
   onLeave: () => void;
   onSeason: () => void;
 }
-
-/**
- * Which of the top three rows stands on each riser, left to right, so the winner
- * is in the middle. Indexes into the ranked rows rather than matching on position
- * number — with a tie for first there is no position 2, and looking up by
- * position left a hole on the podium and dropped the joint winner entirely.
- */
-const RISER_SLOTS = [
-  { row: 1, height: 'second' },
-  { row: 0, height: 'first' },
-  { row: 2, height: 'third' },
-] as const;
 
 /**
  * The drawing module, fetched at most once per page rather than once per screen.
@@ -129,7 +117,12 @@ export function Final({
       : rows[0]
         ? players[rows[0].uid]?.name
         : undefined;
-  const podium = RISER_SLOTS.map((slot) => ({ ...slot, entry: rows[slot.row] }));
+  /*
+    Who stands and how high is `podiumFor`'s — the card draws from the same
+    call. Joint places stand equally high; it used to index the top three rows,
+    which put one of two joint winners on the second-place riser.
+  */
+  const { slots } = podiumFor(rows);
   const hasPodium = rows.length > 0;
 
   /*
@@ -216,18 +209,27 @@ export function Final({
       </header>
 
       {hasPodium ? (
-        <div className={seatedNames.length > 0 ? 'finale finale--seated' : 'finale'}>
-          {podium.map(({ height, entry }) => {
-            const player = entry ? players[entry.uid] : undefined;
-            if (!entry || !player) return <div key={height} />;
+        <div
+          className={[
+            'finale',
+            slots.length > 3 ? `finale--${slots.length}` : '',
+            seatedNames.length > 0 ? 'finale--seated' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
+          {slots.map((riser, slot) => {
+            const player = riser ? players[riser.uid] : undefined;
+            if (!riser || !player) return <div key={`empty-${slot}`} />;
 
             return (
-              <div key={height} className={`riser riser--${height}`}>
-                <span className="riser__pos">{entry.position}</span>
+              <div key={riser.uid} className={`riser riser--${riser.height}`}>
+                <span className="riser__pos">{riser.position}</span>
                 <span className="riser__name">{player.name}</span>
                 <span className="riser__score">
-                  <ScoreTicker value={entry.score} from={0} />
+                  <ScoreTicker value={riser.score} from={0} />
                 </span>
+                {riser.more > 0 ? <span className="riser__more">+{riser.more} level</span> : null}
               </div>
             );
           })}

@@ -1,5 +1,5 @@
 import type { Award } from './awards';
-import { PODIUM_PLACES, seatedLast, type Standing } from './scoring';
+import { podiumFor, seatedLast, type RiserHeight, type Standing } from './scoring';
 import type { Player } from './state';
 
 /**
@@ -11,6 +11,10 @@ export interface CardPodiumRow {
   position: number;
   name: string;
   score: number;
+  /** By place, as on screen, so joint winners stand equally high. */
+  height: RiserHeight;
+  /** The rest of a tie too big for the podium, as "+N"; 0 otherwise. */
+  more: number;
 }
 
 /**
@@ -42,7 +46,7 @@ export interface CardModel {
   pack: string | null;
   /** Empty when nobody scored: a table level on zero has no winner. */
   winners: string[];
-  /** Up to {@link PODIUM_PLACES} rows, in finishing order. */
+  /** Whoever `podiumFor` stands, in finishing order. */
   podium: CardPodiumRow[];
   /** Whoever finished below the podium, or null when nobody did. */
   chair: { names: string[]; score: number } | null;
@@ -97,9 +101,11 @@ export function cardModel(input: CardInput): CardModel {
   return {
     pack: packTitle,
     winners: namesOf(players, rows.filter((row) => row.position === 1).map((row) => row.uid)),
-    podium: rows.slice(0, PODIUM_PLACES).flatMap((row) => {
-      const name = players[row.uid]?.name;
-      return name ? [{ position: row.position, name, score: row.score }] : [];
+    podium: podiumFor(rows).standing.flatMap((riser) => {
+      const name = players[riser.uid]?.name;
+      return name
+        ? [{ position: riser.position, name, score: riser.score, height: riser.height, more: riser.more }]
+        : [];
     }),
     chair: seated.length > 0
       ? { names: namesOf(players, seated), score: scores[seated[0] ?? ''] ?? 0 }

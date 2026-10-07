@@ -81,49 +81,69 @@ function onlyArg(): Set<string> | null {
   return new Set((process.argv[at + 1] ?? '').split(',').filter(Boolean));
 }
 
-async function main(): Promise<void> {
+/** Where the 8-bit model is, or why there is none. */
+export async function savedModel(): Promise<string> {
   const model = process.env.CATCHPHRASE_MODEL ?? DEFAULT_MODEL;
   if (!(await exists(model))) {
     throw new Error(
       `No saved model at ${model}. Save one first:\n  mflux-save --model z-image-turbo --quantize 8 --path ${model}`,
     );
   }
-  const only = onlyArg();
-  const force = process.argv.includes('--force');
-  const unknown = [...(only ?? [])].filter((slug) => !CATCHPHRASE_SPECS.some((spec) => spec.slug === slug));
-  if (unknown.length > 0) throw new Error(`No spec called ${unknown.join(', ')}`);
+  return model;
+}
 
+/** Whether all three versions of a spec are already on disk. */
+export async function isDrawn(spec: CatchphraseSpec): Promise<boolean> {
+  const have = await Promise.all(DRAW_SEEDS.map((seed) => exists(drawingPath(spec.slug, seed))));
+  return have.every(Boolean);
+}
+
+/** Draws one spec's three versions; the exit code of mflux. */
+export async function drawOne(spec: CatchphraseSpec, model: string): Promise<number> {
   await mkdir(DRAW_DIR, { recursive: true });
-  const failed: string[] = [];
-  let drawn = 0;
-  for (const spec of CATCHPHRASE_SPECS) {
-    if (only && !only.has(spec.slug)) continue;
-    const have = await Promise.all(DRAW_SEEDS.map((seed) => exists(drawingPath(spec.slug, seed))));
-    if (!force && have.every(Boolean)) {
-      console.log(`  ${spec.slug}: already drawn`);
-      continue;
-    }
-    console.log(`=== ${spec.slug} ${new Date().toISOString()}`);
-    // mflux never overwrites: given a name that exists it writes `<name>_1.png`
-    // beside it, so a redraw would leave the old drawing where the pack writer
-    // reads. Found on 2 October 2026, when five redraws reviewed as unchanged.
-    await Promise.all(DRAW_SEEDS.map((seed) => rm(drawingPath(spec.slug, seed), { force: true })));
-    const code = await run('mflux-generate-z-image-turbo', drawArgs(spec, model));
-    if (code === 0) drawn += 1;
-    else failed.push(`${spec.slug} (exit ${code})`);
-  }
+  // mflux never overwrites: given a name that exists it writes `<name>_1.png`
+  // beside it, so a redraw would leave the old drawing where the pack writer
+  // reads. Found on 2 October 2026, when five redraws reviewed as unchanged.
+  await Promise.all(DRAW_SEEDS.map((seed) => rm(drawingPath(spec.slug, seed), { force: true })));
+  return run('mflux-generate-z-image-turbo', drawArgs(spec, model));
+}
 
+/** Reads any writing off every drawing with Vision into `text.json`; the drawings that carry some. */
+export async function readDrawings(): Promise<Record<string, string[]>> {
   const pictures = (await readdir(DRAW_DIR)).filter((name) => name.endsWith('.png')).sort();
-  console.log(`\nReading any writing off ${pictures.length} drawings with Vision…`);
   const read = await readCovers(pictures.map((name) => join(DRAW_DIR, name)));
   const text = Object.fromEntries(
     pictures.map((name) => [name, (read[join(DRAW_DIR, name)] ?? []).map((line) => line.text)]),
   );
   await writeFile(DRAW_TEXT, `${JSON.stringify(text, null, 2)}\n`);
+  return Object.fromEntries(Object.entries(text).filter(([, lines]) => lines.length > 0));
+}
 
-  const lettered = Object.entries(text).filter(([, lines]) => lines.length > 0);
-  console.log(`Drew ${drawn}; ${lettered.length} drawings carry writing:`);
-  for (const [name, lines] of lettered) console.log(`  ${name}: ${lines.join(' / ')}`);
+async function main(): Promise<void> {
+  const model = await savedModel();
+  const only = onlyArg();
+  const force = process.argv.includes('--force');
+  const unknown = [...(only ?? [])].filter((slug) => !CATCHPHRASE_SPECS.some((spec) => spec.slug === slug));
+  if (unknown.length > 0) throw new Error(`No spec called ${unknown.join(', ')}`);
+
+  const failed: string[] = [];
+  let drawn = 0;
+  for (const spec of CATCHPHRASE_SPECS) {
+    if (only && !only.has(spec.slug)) continue;
+    if (!force && (await isDrawn(spec))) {
+      console.log(`  ${spec.slug}: already drawn`);
+      continue;
+    }
+    console.log(`=== ${spec.slug} ${new Date().toISOString()}`);
+    const code = await drawOne(spec, model);
+    if (code === 0) drawn += 1;
+    else failed.push(`${spec.slug} (exit ${code})`);
+  }
+
+  console.log('\nReading any writing off the drawings with Vision…');
+  const lettered = await readDrawings();
+  console.log(`Drew ${drawn}; ${Object.keys(lettered).length} drawings carry writing:`);
+  for (const [name, lines] of Object.entries(lettered)) console.log(`  ${name}: ${lines.join(' / ')}`);
   if (failed.length > 0) {
     console.error(`Failed: ${failed.join(', ')}`);
     process.exitCode = 1;

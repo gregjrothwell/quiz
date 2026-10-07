@@ -3,6 +3,12 @@ import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import { connectAuthEmulator, getAuth, type Auth } from 'firebase/auth';
 import { connectDatabaseEmulator, getDatabase, type Database } from 'firebase/database';
 import { connectFirestoreEmulator, getFirestore, type Firestore } from 'firebase/firestore';
+import {
+  connectFirestoreEmulator as connectLiteEmulator,
+  getFirestore as getLiteFirestore,
+  setLogLevel as setLiteLogLevel,
+  type Firestore as LiteFirestore,
+} from 'firebase/firestore/lite';
 
 import {
   authEmulatorUrl,
@@ -187,4 +193,27 @@ export function firebaseAuth(): Auth {
 
 export function realtimeDb(): Database {
   return connect().rtdb;
+}
+
+let vault: LiteFirestore | null = null;
+
+/**
+ * Firestore Lite on the same app, for the vault's candidate writes only.
+ *
+ * Lite sends every write as its own request, so the three refusals a reveal
+ * expects cost a request each rather than a reopen of the main SDK's write
+ * stream — see `resolveAnswer`. Same app, so the same signed-in user and the
+ * same App Check token. Made on first use, which is the quizmaster's first
+ * reveal; nobody else ever needs it.
+ */
+export function vaultFirestore(): LiteFirestore {
+  if (!vault) {
+    vault = getLiteFirestore(connect().app);
+    if (emulatorsWanted()) connectLiteEmulator(vault, EMULATOR_HOST, EMULATOR_PORTS.firestore);
+    // Lite warns on every refused request — three per reveal, each naming a
+    // wrong option — which buried anything real in the quizmaster's console.
+    // Lite's logger is its own instance, so the main SDK's warnings still show.
+    setLiteLogLevel('error');
+  }
+  return vault;
 }

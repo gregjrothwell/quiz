@@ -13,12 +13,15 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
   RATIO,
-  balancedPositions,
+  fitLadder,
   formatPence,
-  optionPence,
+  levelOf,
+  pickDecoys,
+  placeAnswers,
   priceQuestion,
   roundTo,
   stepFor,
+  stepPence,
   unitChangeYear,
   type QuoteMedian,
   type RpiSeries,
@@ -30,7 +33,7 @@ import {
   PRICES_MIN_QUOTES,
   type PriceSpec,
 } from './hand-prices-data';
-import { stableId } from './write-hand-packs';
+import { readHandVault, stableId } from './write-hand-packs';
 import { writeSealedPack } from './write-sealed-pack';
 import { DIFFICULTIES, PACK_META, sealQuestion, type Difficulty, type Pack } from '../src/questions/types';
 
@@ -83,26 +86,91 @@ export function difficultiesFor(specs: readonly PriceSpec[]): Map<string, Diffic
   );
 }
 
+/** One spec's numbers, before its answer has a place. */
+interface Priced {
+  spec: PriceSpec;
+  later: number;
+  answer: number;
+  step: number;
+  ratio: number;
+  /** Today's price as the question shows it. */
+  today: number;
+  /** The price fell or held: the answer is the one option at or over today's. */
+  fell: boolean;
+}
+
+/** How many options sit at or over today's price, and where the answer may go. */
+interface Shape {
+  over: 0 | 1;
+  places: readonly number[];
+}
+
+/**
+ * Fell or held: the answer on top, the only option at or over today's. Rose
+ * with a decoy: the decoy on top over today's, the answer in any place under
+ * it. Rose otherwise: all four under today's, the answer anywhere.
+ */
+function shapeOf(item: Priced, decoy: boolean): Shape {
+  if (item.fell) return { over: 1, places: [3] };
+  if (decoy) return { over: 1, places: [0, 1, 2] };
+  return { over: 0, places: [0, 1, 2, 3] };
+}
+
+function fitsFor(item: Priced, shape: Shape): (number | null)[] {
+  const { answer, ratio, step, today } = item;
+  return [0, 1, 2, 3].map((position) =>
+    shape.places.includes(position)
+      ? (fitLadder({ answer, ratio, position, step, today, over: shape.over })?.ratio ?? null)
+      : null,
+  );
+}
+
 export function buildPricesPack(
   observed: Observed,
   specs: readonly PriceSpec[] = PRICE_SPECS,
 ): { pack: Pack; answers: Record<string, string> } {
   if (specs.length < PRICES_MIN_PACK) throw new Error(`Only ${specs.length} specs (need ${PRICES_MIN_PACK})`);
 
-  const positions = balancedPositions(specs.map((spec) => spec.slug));
+  // The level dealt in turn still sets the rounding step, and so the answer:
+  // those were seeded into the vault on 6 October, and a different rounding
+  // would be a different answer string. It no longer decides the level shown.
   const levels = difficultiesFor(specs);
-  const answers: Record<string, string> = {};
-
-  const questions = specs.map((spec) => {
+  const priced: Priced[] = specs.map((spec) => {
     const { later, earlier } = pricesFor(spec, observed);
-    const difficulty = levels.get(spec.slug) as Difficulty;
-    const position = positions.get(spec.slug) as number;
-    const ratio = RATIO[difficulty];
+    const ratio = RATIO[levels.get(spec.slug) as Difficulty];
     const step = stepFor(later, earlier, ratio);
     const answer = roundTo(earlier, step);
     if (answer <= 0) throw new Error(`${spec.slug}: the answer rounds to nothing`);
+    const today = roundTo(later, stepPence(later));
+    return { spec, later, answer, step, ratio, today, fell: answer >= today };
+  });
 
-    const options = optionPence({ answer, ratio, position, step }).map((pence) => formatPence(pence, step));
+  const decoys = pickDecoys(
+    priced.map((item) => ({
+      slug: item.spec.slug,
+      group: String(item.spec.gap),
+      fell: item.fell,
+      canDecoy: !item.fell && fitsFor(item, shapeOf(item, true)).some((fit) => fit !== null),
+    })),
+  );
+  const shapes = new Map(priced.map((item) => [item.spec.slug, shapeOf(item, decoys.has(item.spec.slug))]));
+  const positions = placeAnswers(
+    priced.map((item) => ({
+      slug: item.spec.slug,
+      group: String(item.spec.gap),
+      fits: fitsFor(item, shapes.get(item.spec.slug) as Shape),
+      ratio: item.ratio,
+    })),
+  );
+
+  const answers: Record<string, string> = {};
+  const questions = priced.map(({ spec, later, answer, step, ratio, today }) => {
+    const position = positions.get(spec.slug) as number;
+    const { over } = shapes.get(spec.slug) as Shape;
+    const fitted = fitLadder({ answer, ratio, position, step, today, over });
+    if (!fitted) throw new Error(`${spec.slug}: placed where no ladder fits`);
+
+    const options = fitted.options.map((pence) => formatPence(pence, step));
     const correct = options[position] as string;
     const gap = GAPS[spec.gap];
     const id = stableId(spec.slug);
@@ -115,10 +183,8 @@ export function buildPricesPack(
       correct,
       incorrect: options.filter((_, i) => i !== position),
       category: `${spec.gap} years ago`,
-      difficulty,
+      difficulty: levelOf(fitted.ratio),
     });
-    // `sealQuestion` sorts alphabetically, which puts £12 before £3. Low to high
-    // instead, and `ordered` so the client does not shuffle them back.
     return { ...sealed, options, ordered: true };
   });
 
@@ -131,10 +197,30 @@ async function main(): Promise<void> {
     throw new Error(`No ${OBSERVED_PATH} — run \`npm run prices-fetch\` first`);
   });
   const { pack, answers } = buildPricesPack(JSON.parse(raw) as Observed);
+
+  // Read before the write below merges over it. A changed answer is one the
+  // live vault does not hold, and that question would refuse every reveal.
+  const seeded = await readHandVault();
+  const changed = Object.keys(answers).filter((id) => id in seeded && seeded[id] !== answers[id]).length;
+  const unseeded = Object.keys(answers).filter((id) => !(id in seeded)).length;
+
   await writeSealedPack(pack, answers, 'prices.json');
-  const byGap = new Map<string, number>();
-  for (const question of pack.questions) byGap.set(question.category, (byGap.get(question.category) ?? 0) + 1);
-  console.log(`The Price Was Right: ${pack.questions.length} questions`, Object.fromEntries(byGap));
+
+  // Counts only: Greg plays this blind.
+  const byGap = new Map<string, number[]>();
+  const levels = new Map<string, number>();
+  for (const question of pack.questions) {
+    const places = byGap.get(question.category) ?? [0, 0, 0, 0];
+    const at = question.options.indexOf(answers[question.id] as string);
+    places[at] = (places[at] ?? 0) + 1;
+    byGap.set(question.category, places);
+    levels.set(question.difficulty, (levels.get(question.difficulty) ?? 0) + 1);
+  }
+  console.log(`The Price Was Right: ${pack.questions.length} questions`);
+  for (const [gap, places] of byGap) console.log(`  ${gap}: answer in place 1–4 ${places.join(' / ')}`);
+  console.log(`  levels: ${[...levels].map(([level, n]) => `${level} ${n}`).join(', ')}`);
+  console.log(`  against the vault cache: ${changed} answers changed, ${unseeded} not yet seeded`);
+  if (changed > 0) process.exitCode = 1;
 }
 
 const runningDirect = process.argv[1]?.includes('write-prices-pack') === true;
