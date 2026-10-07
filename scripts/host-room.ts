@@ -57,6 +57,8 @@ import {
   updateDoc,
   type DocumentData,
 } from 'firebase/firestore';
+// The vault's candidates go over Lite, as the app sends them — see `resolveAnswer`.
+import { getFirestore as getLiteFirestore } from 'firebase/firestore/lite';
 import { reduce, type Action } from '../src/engine/reducer';
 import { liveAnswers, type AnswerDoc } from '../src/engine/answers';
 import {
@@ -285,7 +287,7 @@ async function main(): Promise<void> {
   const open = stateNow();
   const asked = open ? currentQuestion(open) : null;
   if (!asked) throw new Error('No open question to reveal');
-  const correctIndex = await resolveAnswer(db, code, asked);
+  const correctIndex = await resolveAnswer(getLiteFirestore(db.app), code, asked);
   console.log(`${stamp()}  >>> WRITING reveal (answer ${correctIndex})`);
   const revealed = await dispatch([{ type: 'reveal', correctIndex, questionId: asked.id }]);
 

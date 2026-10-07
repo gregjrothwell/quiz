@@ -35,6 +35,8 @@ import {
   type DocumentData,
   type Firestore,
 } from 'firebase/firestore';
+// The vault's candidates go over Lite, as the app sends them — see `resolveAnswer`.
+import { getFirestore as getLiteFirestore } from 'firebase/firestore/lite';
 import { attachDebugAppCheck } from './appCheck';
 import { reduce, type Action } from '../src/engine/reducer';
 import {
@@ -245,7 +247,7 @@ async function main(): Promise<void> {
     > docs/decisions/reveal-stop-at-hit.md.
   */
   const beforeResolve = Date.now();
-  const correctIndex = await resolveAnswer(db, code, QUESTION);
+  const correctIndex = await resolveAnswer(getLiteFirestore(db.app), code, QUESTION);
   const afterResolve = Date.now();
 
   const revealed = reduce({ ...next, code, answers: {} }, {
@@ -298,7 +300,7 @@ async function main(): Promise<void> {
   }
 
   console.log('  The app\'s own reveal, from the moment its clock expired:\n');
-  console.log(`    resolveAnswer (stops at the hit)     ${String(afterResolve - beforeResolve).padStart(5, ' ')}ms`);
+  console.log(`    resolveAnswer (all four, Lite)       ${String(afterResolve - beforeResolve).padStart(5, ' ')}ms`);
   console.log(`    room update straight after it        ${String(afterDispatch - afterResolve).padStart(5, ' ')}ms`);
   console.log(`    the same room update, nothing denied ${String(afterControl - beforeControl).padStart(5, ' ')}ms   <- control`);
   console.log(`    total before the replay even starts  ${String(afterDispatch - beforeResolve).padStart(5, ' ')}ms`);

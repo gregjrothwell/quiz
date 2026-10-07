@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, type Firestore } from 'firebase/firestore';
+import { doc, getDoc, setDoc, type Firestore } from 'firebase/firestore/lite';
 import type { QuizQuestion } from '../engine/state';
 
 /**
@@ -53,17 +53,20 @@ function isPermissionDenied(cause: unknown): boolean {
  * Finds which option the vault says is correct, and leaves the proof behind at
  * `rooms/{code}/reveal/{questionId}` for anyone who wants to check.
  *
- * **One candidate at a time, stopping at the hit.** This used to fire all four
- * at once on the belief that it cost one round trip. It never did: a refused
- * write closes Firestore's write stream (`__PRIVATE_onWriteStreamClose` in the
- * SDK), and the next write waits for a new one. So the four were always served
- * one stream after another, every reveal paid for all three refusals, and the
- * room update queued behind them paid for a reopen as well unless the hit came
- * last. Asking in order and stopping costs the refusals *before* the hit only —
- * one and a half on average rather than three — and leaves the stream open for
- * the room update. The worst case, the hit last, costs about what every reveal
- * did before — measured a little over it, 570ms against 516ms median on small
- * samples. Measured 6 October 2026: docs/decisions/reveal-stop-at-hit.md.
+ * **All four at once, over Firestore Lite, answered by the first acceptance.**
+ * Lite sends each write as its own HTTPS request, so a refusal is a 403 on that
+ * request and costs nothing else. The main SDK sends writes down one stream,
+ * and a refused write closes it (`__PRIVATE_onWriteStreamClose`): firing four
+ * there was never parallel — every reveal paid three stream reopens, and the
+ * room update behind them paid another. #70 asked one at a time to pay only the
+ * refusals before the hit; in the office that was still ~200ms a refusal and
+ * once 2.8s for two (`XRUE`, 7 October 2026). Over Lite the main stream never
+ * sees a refusal, and the reveal costs one round trip wherever the answer sits.
+ * Measured: docs/decisions/office-feedback-7-oct.md.
+ *
+ * `db` is a **Lite** instance — `vaultFirestore()` in the app — and Lite sends
+ * the App Check header like the main SDK (`x-firebase-appcheck`, checked in the
+ * installed `@firebase/firestore` 4.8.0).
  *
  * A reveal that has already been recorded — because the quizmaster's tab
  * reloaded, or the role changed hands mid-question — is read back rather than
@@ -74,17 +77,20 @@ export async function resolveAnswer(
   code: string,
   question: QuizQuestion,
 ): Promise<number> {
-  for (const [index, option] of question.options.entries()) {
-    try {
-      await setDoc(revealDoc(db, code, question.id), { answer: option });
-      return index;
-    } catch (cause) {
-      // A refusal is the expected outcome for every option but one, and carries
-      // no information beyond "not this one". Anything else — offline, a missing
-      // ruleset — has to surface, or a reveal that cannot happen looks
-      // identical to a question nobody got right.
-      if (!isPermissionDenied(cause)) throw cause;
-    }
+  const candidates = question.options.map((option, index) =>
+    setDoc(revealDoc(db, code, question.id), { answer: option }).then(() => index),
+  );
+
+  try {
+    return await Promise.any(candidates);
+  } catch (cause) {
+    // A refusal is the expected outcome for every option but one, and carries
+    // no information beyond "not this one". Anything else — offline, a missing
+    // ruleset — has to surface, or a reveal that cannot happen looks
+    // identical to a question nobody got right.
+    const failures: unknown[] = cause instanceof AggregateError ? cause.errors : [cause];
+    const other = failures.find((failure) => !isPermissionDenied(failure));
+    if (other !== undefined) throw other;
   }
 
   // Every candidate refused. Either the gate has not opened yet, or this
