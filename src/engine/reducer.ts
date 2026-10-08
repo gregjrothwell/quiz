@@ -245,6 +245,9 @@ function start(state: RoomState, at: number, gameId: string, durationSecs: numbe
     form: null,
     // The last round's final, if it had one, is over.
     standoff: null,
+    // The vote has done its job once the round is chosen.
+    packVotes: {},
+    browsing: null,
     // Everyone starts on zero, including anyone who joined after a previous game.
     scores: Object.fromEntries(Object.keys(state.players).map((uid) => [uid, 0])),
   };
@@ -535,5 +538,7 @@ function reset(state: RoomState): RoomState {
     // Cleared so the next round mints its own id and counts separately.
     gameId: null,
     standoff: null,
+    packVotes: {},
+    browsing: null,
   };
 }
