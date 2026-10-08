@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 7 October 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 8 October 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -23,6 +23,11 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
+
+## 2026-10-08 — Lobby vote built on `lobby-vote`, not deployed, held past Friday's 30
+
+Every player sees the packs and votes; the quizmaster still picks. No ruleset paste; e2e proves a
+second browser's vote counts, and red when the write is refused. [`lobby-vote.md`](decisions/lobby-vote.md).
 
 ## 2026-10-07 — Live: #71 (gh-pages `f89a603`): Lite reveal, podium ties, price decoys
 

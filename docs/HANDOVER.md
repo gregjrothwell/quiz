@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 7 October 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 8 October 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -22,7 +22,7 @@ Built to replace Polly in Teams.
 | the opening titles, honours, rosettes | [`form-and-awards.md`](decisions/form-and-awards.md) |
 | `playerId`, recovery codes, claiming, the anonymous-account purge | [`identity.md`](decisions/identity.md) |
 | the clock and the countdown, and whose clock it runs on | [`clock.md`](decisions/clock.md) · [`shared-clock.md`](decisions/shared-clock.md) |
-| joining, room codes, links, presence | [`decisions/joining.md`](decisions/joining.md) |
+| joining, room codes, links, presence; **the lobby vote** (on `lobby-vote`, **not deployed**) | [`decisions/joining.md`](decisions/joining.md) · [`lobby-vote.md`](decisions/lobby-vote.md) |
 | scoring an answer that lands late; the review panel and the replay | [`late-answers.md`](decisions/late-answers.md) · [`review-replay.md`](decisions/review-replay.md) |
 | packs, harvesting, classification, **On the box / TMDB stills**; **Blankety Blank** and **The Price Was Right** (both blind) | [`questions.md`](decisions/questions.md) · [`blankety-blank.md`](decisions/blankety-blank.md) · [`price-was-right.md`](decisions/price-was-right.md) |
 | **a picture that does not turn up**, preloading, the box a still gets | [`decisions/picture-loading.md`](decisions/picture-loading.md) |
