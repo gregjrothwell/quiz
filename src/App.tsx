@@ -183,6 +183,8 @@ function Game() {
     dispatch,
     submitAnswer,
     writeOwnSquad,
+    writeOwnVote,
+    writeBrowsing,
   } = useRoom();
   const { packs, error: packsError } = usePackIndex();
 
@@ -968,6 +970,8 @@ function Game() {
             rememberSquad(next);
             void writeOwnSquad(next).catch(report);
           }}
+          onVote={(packId) => void writeOwnVote(packId).catch(report)}
+          onBrowse={(packId) => void writeBrowsing(packId).catch(report)}
           onStart={handleStart}
           onLeave={handleLeave}
         />
