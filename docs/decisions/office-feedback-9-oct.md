@@ -66,3 +66,17 @@ deployed: Greg runs `npm run draw-overnight`, and nothing goes live on a 30-play
 ## 4. Name the artist
 
 Parked, not built: [`parked-ideas.md`](parked-ideas.md#4-name-the-artist--parked-9-october-2026).
+
+## 5. Cass's answer, later the same day
+
+**Greg, 9 Oct:** Cass recalls **neither** message, is sure the round behaved normally, and
+simply did not have the points. She is watching for it next time. Taken at face value this
+weakens the shared-clock theory in §1: a late answer should read *didn't reach the room in
+time* (`verdictFor` → `lost`, `src/engine/scoring.ts:299`), and no answer *You didn't answer*.
+
+**One more route, read in code, not tested:** `liveAnswers` (`src/engine/answers.ts:91`) drops
+an answer whose `questionIndex` isn't the question in play, or whose uid the room does not list
+in `players` — and the screen's own answer comes from the same filtered map, so she would read
+*You didn't answer* there too. Every known path shows *some* verdict; if she truly saw a normal
+reveal with her pick, none of them explains it. A second watcher on her screen at Q1 is the
+cheapest next evidence.
