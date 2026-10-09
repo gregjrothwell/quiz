@@ -134,3 +134,8 @@ how far ahead to write (play share × runway still applies), how specs reach the
 **Greg, 9 October 2026, later:** the automated freshness check (`scripts/freshness.ts`) is
 weak. The whole loop should be automated: freshness/play share decides
 what to grow → specs written → Mini draws and checks → pick → pack. Revisit later.
+
+**Greg, 9 October 2026, later still:** the same loop for every popular pack, not just
+Catchphrase — ranked by play share × runway ([[grow what is played]]). Packs that need no
+drawing still use the Mini for the checks. When revisited, this outgrows this file: move it to
+its own `docs/decisions/` doc.
