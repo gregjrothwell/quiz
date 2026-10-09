@@ -22,6 +22,7 @@
     "write-hand-packs": "tsx scripts/write-hand-packs.ts",
     "write-melody-pack": "tsx scripts/write-melody-pack.ts",
     "write-tunes-pack": "tsx scripts/write-tunes-pack.ts",
+    "write-artists-pack": "tsx scripts/write-artists-pack.ts",
     "write-flags-pack": "tsx scripts/write-flags-pack.ts",
     "write-sleeves-pack": "tsx scripts/write-sleeves-pack.ts",
     "still-dimensions": "tsx scripts/still-dimensions.ts",
