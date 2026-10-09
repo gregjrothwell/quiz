@@ -132,5 +132,5 @@ how far ahead to write (play share × runway still applies), how specs reach the
 (push vs `draw-on-mini` copy), and how finished sheets come back.
 
 **Greg, 9 October 2026, later:** the automated freshness check (`scripts/freshness.ts`) is
-weak — it only reports. The whole loop should be automated: freshness/play share decides
+weak. The whole loop should be automated: freshness/play share decides
 what to grow → specs written → Mini draws and checks → pick → pack. Revisit later.
