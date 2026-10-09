@@ -121,3 +121,12 @@ still fails (its deny cases are unchanged). One comment says that two batches no
 
 `npm run typecheck` and `npm run lint` clean. `npm test`: **91 files, 1,424 tests
 passed** (1,415 before; nine new).
+
+## Parked — a standing Mini pipeline (Greg, 9 October 2026, not started)
+
+The Mini is on most of the time, so make it a queue: the MacBook writes many specs ahead,
+the Mini draws them slowly and continuously. For that to be the regular pipeline, the
+checks (duplicate checks, Vision lettering, sheets, possibly the gate tests) move to the
+Mini too, so the MacBook only writes ideas and does the pick. Open questions, owner Greg:
+how far ahead to write (play share × runway still applies), how specs reach the Mini
+(push vs `draw-on-mini` copy), and how finished sheets come back.
