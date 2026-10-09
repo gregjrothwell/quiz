@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 7 October 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 9 October 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -24,7 +24,7 @@ Built to replace Polly in Teams.
 | the clock and the countdown, and whose clock it runs on | [`clock.md`](decisions/clock.md) · [`shared-clock.md`](decisions/shared-clock.md) |
 | joining, room codes, links, presence | [`decisions/joining.md`](decisions/joining.md) |
 | scoring an answer that lands late; the review panel and the replay | [`late-answers.md`](decisions/late-answers.md) · [`review-replay.md`](decisions/review-replay.md) |
-| packs, harvesting, classification, **On the box / TMDB stills**; **Blankety Blank** and **The Price Was Right** (both blind) | [`questions.md`](decisions/questions.md) · [`blankety-blank.md`](decisions/blankety-blank.md) · [`price-was-right.md`](decisions/price-was-right.md) |
+| packs, harvesting, classification, **On the box / TMDB stills**; **Blankety Blank** and **The Price Was Right** (both blind) | [`questions.md`](decisions/questions.md) · [`blankety-blank.md`](decisions/blankety-blank.md) · [`price-was-right.md`](decisions/price-was-right.md) · **Catchphrase drawing, the Mini:** [`catchphrase-batch-5.md`](decisions/catchphrase-batch-5.md) |
 | **a picture that does not turn up**, preloading, the box a still gets | [`decisions/picture-loading.md`](decisions/picture-loading.md) |
 | **an album cover that names its own album**, the sleeve audit; **a song from the album at half the clock** (live 29 Sep, #62) | [`decisions/sleeves-gate.md`](decisions/sleeves-gate.md) · [`sleeves-song.md`](decisions/sleeves-song.md) |
 | voting on a question, retiring one | [`question-votes.md`](decisions/question-votes.md) |
@@ -52,7 +52,7 @@ Built to replace Polly in Teams.
 >   that day.** Two big rounds go past 50k reads ([`cost.md`](decisions/cost.md)).
 > - Untested: 30 people answering at once.
 > - **Catchphrase: Greg plays it blind, so keep its answers out of docs and chat.**
->   **Play an office Catchphrase round before Friday:** it is #66's live check.
+>   **Batches 4+5 (91–180, specs) on local `catchphrase-batch-5`; batch 5 drawing on the Mac Mini (`npm run draw-on-mini`), then one pick. Parked: an automated growth loop for all popular packs — [`catchphrase-batch-5.md`](decisions/catchphrase-batch-5.md).**
 > - **Greg to decide:** answering after the music stops; target B's four
 >   questions ([`public-scale.md`](decisions/public-scale.md)); the two
 >   lead-time cuts ([`ci-deploy.md`](decisions/ci-deploy.md)).
