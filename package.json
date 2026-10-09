@@ -28,6 +28,7 @@
     "sleeve-audit": "tsx scripts/sleeve-audit.ts",
     "catchphrase-draw": "tsx scripts/catchphrase-draw.ts",
     "draw-overnight": "tsx scripts/draw-overnight.ts",
+    "draw-on-mini": "scripts/draw-on-mini.sh",
     "write-catchphrase-pack": "tsx scripts/write-catchphrase-pack.ts",
     "write-screens-pack": "tsx --env-file=.env.local scripts/write-screens-pack.ts",
     "itunes-probe": "tsx scripts/itunes-probe.ts",
