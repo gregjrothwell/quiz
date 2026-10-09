@@ -2,6 +2,7 @@ import type { PackId } from '../questions/types';
 import type { FormFact } from './form';
 import { carryFirstMs, firstTouchOf } from './answers';
 import { BONUS_MULTIPLIER, isBonusCatchphrase } from './catchphraseBonus';
+import { questionPack } from './randomRound';
 import { stealFor, tallyQuestion } from './scoring';
 import { finalistsFor, settleStandoff, stakesFor, type StandoffPick } from './standoff';
 import {
@@ -363,9 +364,12 @@ function reveal(state: RoomState, correctIndex: number, questionId: string): Roo
     answers: eligible,
     ...(isWagerQuestion(state) ? { scores: state.scores } : {}),
     steal,
-    // Read off the pack and the index, like the wager's question, so every
-    // device scores a bonus the same without anything stored to say it was one.
-    ...(isBonusCatchphrase(state.packId, state.index) ? { multiplier: BONUS_MULTIPLIER } : {}),
+    // The question's source pack when the round is a mix, otherwise the room's
+    // pack. Every device reads the same question, so the bonus still agrees
+    // without a second write.
+    ...(isBonusCatchphrase(questionPack(state.packId, question), state.index)
+      ? { multiplier: BONUS_MULTIPLIER }
+      : {}),
   });
 
   const scores = { ...state.scores };

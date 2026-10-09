@@ -162,3 +162,50 @@ describe('every other question', () => {
     expect(squares(container)).toHaveLength(0);
   });
 });
+
+describe('a random round', () => {
+  function mixed(sourceAtFifth: PackId) {
+    return PUZZLES.map((question, index) => ({
+      ...question,
+      sourcePack: index === 4 ? sourceAtFifth : 'blanks',
+    }));
+  }
+
+  test('bonuses the fifth question when that question came from Catchphrase', () => {
+    const { container } = render(
+      <QuestionScreen
+        room={{ ...roomAt(4, 'random'), questions: mixed('catchphrase'), packTitle: 'Random Round' }}
+        youUid="greg"
+        isQuizmaster={false}
+        clock={at(0)}
+        revealed={false}
+        joinedMidQuestion={false}
+        onAnswer={noop}
+        onReveal={noop}
+        onNext={noop}
+        onVote={noop}
+      />,
+    );
+    expect(prompt(container)).toBe('Bonus Catchphrase');
+    expect(squares(container)).toHaveLength(9);
+  });
+
+  test('does not bonus the fifth question when it came from another pack', () => {
+    const { container } = render(
+      <QuestionScreen
+        room={{ ...roomAt(4, 'random'), questions: mixed('screens'), packTitle: 'Random Round' }}
+        youUid="greg"
+        isQuizmaster={false}
+        clock={at(0)}
+        revealed={false}
+        joinedMidQuestion={false}
+        onAnswer={noop}
+        onReveal={noop}
+        onNext={noop}
+        onVote={noop}
+      />,
+    );
+    expect(prompt(container)).toBe('Say what you see');
+    expect(squares(container)).toHaveLength(0);
+  });
+});
