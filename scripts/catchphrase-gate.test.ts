@@ -20,6 +20,10 @@ import { CATCHPHRASE_SPECS, namesTheAnswer, type CatchphraseSpec } from './hand-
  * before it was drawn turned `npm test` red (the third batch's restore point,
  * `ad5d784`). Now only the end of the list may wait, and the pack writer still
  * refuses to run while anything does — so nothing unpicked can ship.
+ *
+ * The waiting tail is any length, so more than one batch can wait: from
+ * 9 October 2026 the fourth (drawn, not picked) and the fifth (not drawn) both
+ * do. Unchanged by that; a hole before a picked spec still fails.
  */
 
 /** Slugs with no picked drawing that come before one that has one: a hole, not a waiting batch. */
