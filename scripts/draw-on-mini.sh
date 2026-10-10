@@ -26,7 +26,8 @@ case "${1:-}" in
       echo "Already drawing on $HOST. Use status." >&2; exit 1
     fi
     git ls-files | rsync -a --files-from=- . "$HOST:$REMOTE/"
-    rsync -a .cache/catchphrase/ "$HOST:$REMOTE/.cache/catchphrase/"
+    # -u: never clobber the Mini's newer log or drawings with older copies from here.
+    rsync -au .cache/catchphrase/ "$HOST:$REMOTE/.cache/catchphrase/"
     ssh "$HOST" "export PATH=/opt/homebrew/bin:\$HOME/.local/bin:\$PATH
       cd $REMOTE && npm ci --silent --no-audit --no-fund \
       && nohup npm run draw-overnight > .cache/catchphrase/mini.out 2>&1 < /dev/null &"
