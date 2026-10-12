@@ -1,6 +1,6 @@
 # Parked ideas — new rounds, in Greg's order
 
-> **Owner: Greg Rothwell. Last updated: 6 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 9 October 2026. Budget: 250 lines.**
 
 Ideas Greg has named and parked, newest last. **None is researched or approved.** Pick them up
 in this order, and only once the work in flight is live. Moved here verbatim from
@@ -33,3 +33,12 @@ structural: a room has **one `packId`**, and per-pack behaviour is keyed on it (
 Catchphrase hold and bonus, `packNeedsSound`, the sleeve song, `ordered` options are the
 exception — that one is per question). A mixed round needs the pack per question.
 
+
+### 4. Name the artist — **parked, 9 October 2026**
+
+Greg's idea: play a clip and ask **who the artist is**, not the song. Should be much easier than
+Name that Tune, and it removes that round's hardest constraint: **a clip that sings its own
+title no longer matters**, so `tunes-title-gate` and `tune-audit`'s cut-offs don't apply.
+Nothing researched or built. Probably reuses the Tunes clip pipeline and `previewUrl`; the
+open questions are the wrong options (other artists of the same era and genre, or it's too
+easy) and whether it is a new pack or a per-question mode on `tunes`.
