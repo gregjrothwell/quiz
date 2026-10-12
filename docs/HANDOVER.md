@@ -24,7 +24,7 @@ Built to replace Polly in Teams.
 | the clock and the countdown, and whose clock it runs on | [`clock.md`](decisions/clock.md) · [`shared-clock.md`](decisions/shared-clock.md) |
 | joining, room codes, links, presence | [`decisions/joining.md`](decisions/joining.md) |
 | scoring an answer that lands late; the review panel and the replay | [`late-answers.md`](decisions/late-answers.md) · [`review-replay.md`](decisions/review-replay.md) |
-| packs, harvesting, classification, **On the box / TMDB stills**; **Blankety Blank** and **The Price Was Right** (both blind); **Name the Artist** (unseeded) | [`questions.md`](decisions/questions.md) · [`blankety-blank.md`](decisions/blankety-blank.md) · [`price-was-right.md`](decisions/price-was-right.md) · [`name-the-artist.md`](decisions/name-the-artist.md) · **Catchphrase drawing, the Mini:** [`catchphrase-batch-5.md`](decisions/catchphrase-batch-5.md) |
+| packs, harvesting, classification, **On the box / TMDB stills**; **Blankety Blank** and **The Price Was Right** (both blind); **Name the Artist** (259, seeded 12 Oct) | [`questions.md`](decisions/questions.md) · [`blankety-blank.md`](decisions/blankety-blank.md) · [`price-was-right.md`](decisions/price-was-right.md) · [`name-the-artist.md`](decisions/name-the-artist.md) · **Catchphrase drawing, the Mini:** [`catchphrase-batch-5.md`](decisions/catchphrase-batch-5.md) |
 | **a picture that does not turn up**, preloading, the box a still gets | [`decisions/picture-loading.md`](decisions/picture-loading.md) |
 | **an album cover that names its own album**, the sleeve audit; **a song from the album at half the clock** (live 29 Sep, #62) | [`decisions/sleeves-gate.md`](decisions/sleeves-gate.md) · [`sleeves-song.md`](decisions/sleeves-song.md) |
 | voting on a question, retiring one | [`question-votes.md`](decisions/question-votes.md) |
@@ -51,7 +51,7 @@ Built to replace Polly in Teams.
 > - A future 30-player round is still one of ≤20 questions (14.6k–32.7k reads,
 >   [`cost.md`](decisions/cost.md)). Two such rounds go past 50k. The 9 October blackout is lifted.
 > - **Catchphrase: Greg plays it blind, so keep its answers out of docs and chat.**
->   **Batches 4+5 (91–180, specs) on local `catchphrase-batch-5`; batch 5 drawing on the Mac Mini (`npm run draw-on-mini`), then one pick. Parked: an automated growth loop for all popular packs — [`catchphrase-batch-5.md`](decisions/catchphrase-batch-5.md).**
+>   **12 Oct release `release-12-oct`: Catchphrase 90 → 178, Random Round, Name the Artist 259.** Vault read back 178/178 and 259/259; both new rounds played to a live reveal from a local build. Parked: an automated growth loop for all popular packs — [`catchphrase-batch-5.md`](decisions/catchphrase-batch-5.md).
 >   **9 Oct:** two 5-seat rounds that morning cost ~1.2k reads, so one 30-player round of ≤20 still fits ([`office-feedback-9-oct.md`](decisions/office-feedback-9-oct.md)).
 > - **Greg to decide:** answering after the music stops; target B's four
 >   questions ([`public-scale.md`](decisions/public-scale.md)); the two
@@ -98,7 +98,7 @@ scoring 500 + rank 500/400/300/200/100.
 9. **Rules are published by hand.** `check-rules` **91/91 both ways, 27
    September**. Read [`security.md`](decisions/security.md) before any paste.
 10. **Seed before any new ids ship** — `npm run seed-vault -- --pack <id>` reads
-    one pack. All seeded as of 27 September; an unseeded pack breaks at reveal.
+    one pack. All seeded as of 12 October; an unseeded pack breaks at reveal.
 11. **`firstMs` and the pack picker are live and unplayed.** It is a deterrent,
     so the only test is whether his behaviour changes next round:
     [`first-touch.md`](decisions/first-touch.md).
