@@ -1,6 +1,6 @@
 # Lobby vote — the room says which set it wants
 
-> **Owner: Greg Rothwell. Last updated: 8 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 12 October 2026. Budget: 250 lines.**
 
 ## Story
 
@@ -84,6 +84,18 @@ the same per click.
   because no Playwright Chromium was downloaded on this Mac. CI runs its own.
 - Preview gallery `#/preview/1` and `/2`: counts, "top", the pressed vote and
   the dashed "Quizmaster's looking" card all render; no sideways scroll at 375px.
+
+## Evidence, 12 October 2026 — after merging #72
+
+Master moved 22 commits (Random Round, Name the Artist, Catchphrase 178). The
+merge conflicted only in `HANDOVER.md` and `TOTAL-RECALL.md`. `random` is in
+`PACK_IDS`, so a vote for Random Round survives `readPackVotes`.
+
+- `typecheck`, `lint`, `build`: exit 0. `npm test`: 1,483 passed, 94 files.
+- Preview `#/preview/2` at 375px: ten cards including Random Round; one vote
+  pressed, "2 votes · top", "Quizmaster's looking" on Flags; no sideways scroll.
+- **e2e not run locally**: this Mac has no Java, so the emulators cannot start.
+  CI's Playwright run on the PR is the e2e.
 
 ## Go live
 
