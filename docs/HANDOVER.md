@@ -56,9 +56,9 @@ Built to replace Polly in Teams.
 >   questions ([`public-scale.md`](decisions/public-scale.md)); the two
 >   lead-time cuts ([`ci-deploy.md`](decisions/ci-deploy.md)).
 
-**Live is `index-CSluHU7x`** (#70: 6 Oct 14:48 BST, merge `6e34bb9`, gh-pages `d3266ae`, CI): the
-vault is asked one option at a time and stops at the hit. Before it, #69 `index-BCpFNLxK` (13:05).
-Firebase chunk `firebase-W6iQUl4r`.
+**Live is `index-DxSLpmmr`** (#71: 7 Oct 11:25 BST, merge `8bba4fd`, gh-pages `f89a603`, CI): the
+vault over Firestore Lite, podium ties, Price Was Right decoys. Before it, #70 `index-CSluHU7x`.
+Firebase chunk `firebase-D9D0c-Mh` (Lite inside, +16 kB gzip).
 **19 packs**; **The Price Was Right 95** and **Blankety Blank 148** (both blind); **Catchphrase 90** (every 5th a double-scoring bonus); **Name that Tune 424**; synth **Classical**; **On the box 445**
 (hashed TMDB stills, at most 8 titles before 1990); **Flags** 76; **Sleeves 212**
 after seven candidate batches, the last pre-screened; picture is **Fine Art** 49.
@@ -104,8 +104,8 @@ scoring 500 + rank 500/400/300/200/100.
 12. **Cass could not join `CUC4`**, no join ever written. Candidate, 27 Sep: one
     App Check 403 makes the SDK lock that browser out for **24 hours** ("Cannot
     reach the server"); seen live in the built-in browser. Ask what she saw.
-13. **Reveal: no stall since #52. #70 live 6 Oct.** `XRUE` 7 Oct read it: 0.2–3.2s; the tail is a slow stream reopen
-    per refused option. **Firestore Lite, after Friday** ([`office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md#4-the-slow-reveal)).
+13. **Reveal over Firestore Lite, live 7 Oct (#71)**: all four at once, median vault step 71ms v #70's 167ms in a
+    browser; **the next office round's `read-games` is the live check** ([`office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md#4-the-slow-reveal)).
 14. **Loose ends from 26–27 September**: five new tunes transcribed to nothing
     and want an ear (`live-forever`, `golden-touch`, `build-me-up-buttercup`,
     `call-the-shots`, `gangnam-style`); **56 rooms past expiry** —
@@ -117,7 +117,7 @@ scoring 500 + rank 500/400/300/200/100.
     artwork (`titleMatches` takes a prefix). **Stopped 6 Oct:** that `host-room` (since 30 Sep),
     two more from 6 Oct, and six Vite servers from 4–9 Sep (5173–5175, 5277, 5288).
 16. **#67 live 6 Oct 08:15:** Catchphrase 60→90 (blind), Sleeves 168→212, On the box 296→445, Tunes 268→424; seeded 378, read back 1,171/1,171. **The first rounds played are the live check** (the harder Catchphrase batches, step 9 of [`go-live-oct-2026.md`](decisions/go-live-oct-2026.md)). Plan for Greg's feedback: [`pack-growth-plan.md`](decisions/pack-growth-plan.md). Freshness weekdays 08:12.
-17. **#69 live 6 Oct 13:05 BST** (after `RRGM`): Blankety Blank 148 (21 American out, 29 British in); **The Price Was Right**, 95 ONS prices, blind ([`price-was-right.md`](decisions/price-was-right.md)), `ordered` options; the chair seats a tie touching the podium; Bonus Catchphrase options from frame one. Seeded 124, read back 243/243; `host-room --pack prices` (`P3E9`) revealed from the vault in 0.28s. **Played `XRUE` 7 Oct (47%); 6 of 95 gave the answer away — fixed, local, `office-feedback-7-oct` (`17946ce`), no reseed; podium ties and overnight drawing planned in [`office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md).** Ask Cass about Catchphrase Q1. `AGENTS.md`: world-famous American is fine, needing American knowledge is not.
+17. **#69 live 6 Oct 13:05 BST** (after `RRGM`): Blankety Blank 148 (21 American out, 29 British in); **The Price Was Right**, 95 ONS prices, blind ([`price-was-right.md`](decisions/price-was-right.md)), `ordered` options; the chair seats a tie touching the podium; Bonus Catchphrase options from frame one. Seeded 124, read back 243/243; `host-room --pack prices` (`P3E9`) revealed from the vault in 0.28s. **Played `XRUE` 7 Oct (47%); 6 of 95 gave the answer away. #71 live 7 Oct: all options under today's price, 8 decoys over it, no reseed; podium ties; `npm run draw-overnight` (Greg runs it, never opens the sheets) — [`office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md).** Ask Cass about Catchphrase Q1. `AGENTS.md`: world-famous American is fine, needing American knowledge is not.
 
 ## Where things are
 

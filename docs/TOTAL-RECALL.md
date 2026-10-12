@@ -24,6 +24,16 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-07 — Live: #71 (gh-pages `f89a603`): Lite reveal, podium ties, price decoys
+
+Greg: "build everything and we can go live to have a demo tomorrow." The first price fix made any
+option over today's price mean "it got cheaper", so 8 rising questions now carry a decoy over it
+(`c3ec3c6`, 0 answers changed). Podium: one riser per person, height by place (`71fcfac`).
+`draw-overnight` (`dd04bbd`). Reveal over Firestore Lite, all four at once (`0d6e964`): median 71ms
+v #70's 167ms, interleaved in a browser; both directions 6/6. `gh pr merge` was refused by the
+session's permission check, so Greg merged `8bba4fd`; CI green, live `index-DxSLpmmr` 11:25 BST,
+markers checked in the served bundle. Depth: [`decisions/office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md).
+
 ## 2026-10-07 — Office feedback from `XRUE`: Price Was Right options rebuilt, four planned
 
 Greg, after `XRUE`: some Price Was Right questions had one option under today's price, and it was
@@ -170,24 +180,12 @@ cut it: [`decisions/ci-deploy.md`](decisions/ci-deploy.md#lead-time-measured-2-o
 
 The lost 15 Aug appendix recovered; seams now (host authority, tenancy, content rule), the rest on a trigger. [`decisions/public-scale.md`](decisions/public-scale.md).
 
-## 2026-10-02 — Catchphrase's first round: 10 of 10, too easy
-
-Greg alone, `H4DS`, 10 s clock: every answer 0.8–3.1 s after the options
-landed, "hard" no slower than "easy". Solved from the picture; the hold works,
-the puzzles are easy. One player, and 17 of the 30 were in a list he skimmed.
-Levers: [`decisions/catchphrase-difficulty.md`](decisions/catchphrase-difficulty.md).
-
-## 2026-10-02 — Live: `index-DPum3N0P` (#64, gh-pages `7a8dc6f`)
-
-Greg said merge and deploy. [#64](https://github.com/gregjrothwell/quiz/pull/64)
-merged `6d1e3a7` 15:57:05Z, PR e2e still running; master verify, e2e, publish
-green; gh-pages `7a8dc6f` (Actions) 16:00:08, Pages `built` 46s. **Live bundle
-byte-identical to a local build** (`94ef589f8400`). 17 packs. **Unplayed.**
-
 ## 2026-10-02 — archived, one line each
 
 Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines.
 
+- **2026-10-02** — [Catchphrase's first round: 10 of 10, too easy](recall/2026-10.md#2026-10-02--catchphrases-first-round-10-of-10-too-easy)
+- **2026-10-02** — [Live: `index-DPum3N0P` (#64, gh-pages `7a8dc6f`)](recall/2026-10.md#2026-10-02--live-index-dpum3n0p-64-gh-pages-7a8dc6f)
 - **2026-10-02** — [Catchphrase: options at halfway, and Greg plays it blind](recall/2026-10.md#2026-10-02--catchphrase-options-at-halfway-and-greg-plays-it-blind)
 - **2026-10-02** — [Catchphrase: the pictures come from a free model on Greg's Mac](recall/2026-10.md#2026-10-02--catchphrase-the-pictures-come-from-a-free-model-on-gregs-mac)
 
