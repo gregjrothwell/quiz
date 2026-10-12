@@ -180,11 +180,11 @@
     "id": "catchphrase",
     "title": "Catchphrase",
     "blurb": "Say what you see. The options wait until halfway.",
-    "count": 90,
+    "count": 178,
     "counts": {
       "easy": 8,
-      "medium": 51,
-      "hard": 31
+      "medium": 78,
+      "hard": 92
     }
   },
   {
@@ -207,6 +207,17 @@
       "easy": 21,
       "medium": 26,
       "hard": 48
+    }
+  },
+  {
+    "id": "artists",
+    "title": "Name the Artist",
+    "blurb": "A clip from Apple Music. Name who is playing, not the song.",
+    "count": 259,
+    "counts": {
+      "easy": 131,
+      "medium": 98,
+      "hard": 30
     }
   }
 ]
