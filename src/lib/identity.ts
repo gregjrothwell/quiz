@@ -61,10 +61,6 @@ export function playerIdFor(uid: string): string {
   return read(PLAYER_ID_KEY) ?? uid;
 }
 
-export function hasClaimedIdentity(uid: string): boolean {
-  return playerIdFor(uid) !== uid;
-}
-
 export function storedRecoveryCode(): string | null {
   return read(RECOVERY_KEY);
 }

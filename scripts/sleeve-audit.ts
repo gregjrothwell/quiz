@@ -276,5 +276,4 @@ if (runningDirect) {
   });
 }
 
-export { readCovers, asModule };
-export type { Row };
+export { readCovers };

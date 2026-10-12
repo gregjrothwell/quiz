@@ -128,7 +128,6 @@ while `cost.md` frames it as what says a prune is due. Two lines in the
 | A round finished offline hangs rather than resolving `'failed'`, so the documented retry never fires. |
 | `scripts/game-report.ts:145` sums `snaps` over all questions while `hitRate` uses `played`, under a header saying skipped questions are left out. |
 | `src/lib/useRoom.ts:448` is the only `onSnapshot` with no error callback — refused, answers stop silently. |
-| `src/lib/identity.ts:64` — `hasClaimedIdentity` is dead, zero call sites. |
 | `docs/decisions/known-limits.md` bundle figures are stale: "262 kB across two chunks" is now **276 kB across four**. |
 | 33 of 49 published stills still breach `MAX_STILL_BYTES`. The generator is fixed; regenerating needs `npm run write-hand-packs`, which re-downloads from Commons and the Met. Question ids are slug-based so **no vault re-seed**. |
 
