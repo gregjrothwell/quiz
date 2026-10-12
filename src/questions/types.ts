@@ -45,6 +45,7 @@ export const PACK_IDS = [
   'catchphrase',
   'blanks',
   'prices',
+  'artists',
   'random',
 ] as const;
 
@@ -62,6 +63,7 @@ export const HAND_BUILT_PACK_IDS = [
   'catchphrase',
   'blanks',
   'prices',
+  'artists',
 ] as const;
 
 /**
@@ -71,11 +73,20 @@ export const HAND_BUILT_PACK_IDS = [
  * cover (from the start of the question since 30 September). A muted player can still answer from the cover, but
  * would miss a clue the rest of the room hears. See
  * docs/decisions/sleeves-song.md.
+ *
+ * Name the Artist is the same preview path as Name that Tune. A muted player
+ * hears nothing they can answer from.
  */
 export function packNeedsSound(packId: PackId): boolean {
   // Random deals tunes and sleeves, so the lobby mute gate applies to the
   // whole round even though the room's pack id is not itself a music pack.
-  return packId === 'melody' || packId === 'tunes' || packId === 'sleeves' || packId === 'random';
+  return (
+    packId === 'melody' ||
+    packId === 'tunes' ||
+    packId === 'sleeves' ||
+    packId === 'artists' ||
+    packId === 'random'
+  );
 }
 
 /**
@@ -88,6 +99,10 @@ export function packNeedsSound(packId: PackId): boolean {
  * audit that trims clips (`npm run tune-audit`) misses a sung title often
  * enough that a shorter clip is the cheaper fix, and ten seconds is enough
  * music to place a song — that room's median answer was 4.0s.
+ *
+ * Name the Artist does not lock. The answer is who is playing, so a sung
+ * title is not the answer, and the lobby's window stands. See
+ * docs/decisions/name-the-artist.md.
  */
 export function fixedDurationFor(packId: PackId): number | null {
   return packId === 'tunes' ? 10 : null;
@@ -308,6 +323,10 @@ export const PACK_META: Record<PackId, { title: string; blurb: string }> = {
   prices: {
     title: 'The Price Was Right',
     blurb: 'Given a recent price, guess what it cost 5, 10, 20 or 30 years before.',
+  },
+  artists: {
+    title: 'Name the Artist',
+    blurb: 'A clip from Apple Music. Name who is playing, not the song.',
   },
   random: {
     title: 'Random Round',
