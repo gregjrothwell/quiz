@@ -45,6 +45,7 @@ export const PACK_IDS = [
   'catchphrase',
   'blanks',
   'prices',
+  'random',
 ] as const;
 
 /**
@@ -72,7 +73,9 @@ export const HAND_BUILT_PACK_IDS = [
  * docs/decisions/sleeves-song.md.
  */
 export function packNeedsSound(packId: PackId): boolean {
-  return packId === 'melody' || packId === 'tunes' || packId === 'sleeves';
+  // Random deals tunes and sleeves, so the lobby mute gate applies to the
+  // whole round even though the room's pack id is not itself a music pack.
+  return packId === 'melody' || packId === 'tunes' || packId === 'sleeves' || packId === 'random';
 }
 
 /**
@@ -305,5 +308,9 @@ export const PACK_META: Record<PackId, { title: string; blurb: string }> = {
   prices: {
     title: 'The Price Was Right',
     blurb: 'Given a recent price, guess what it cost 5, 10, 20 or 30 years before.',
+  },
+  random: {
+    title: 'Random Round',
+    blurb: 'A picture, a tune, a Catchphrase and a price, shuffled into one round.',
   },
 };

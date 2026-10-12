@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { withRandomPack } from '../engine/randomRound';
 import type {
   DifficultyCounts,
   PackId,
@@ -46,7 +47,7 @@ export function usePackIndex(): { packs: PackSummary[]; error: string | null } {
         return response.json() as Promise<RawPackSummary[]>;
       })
       .then((loaded) => {
-        if (!cancelled) setPacks(loaded.map(withCounts));
+        if (!cancelled) setPacks(withRandomPack(loaded.map(withCounts)));
       })
       .catch((cause: unknown) => {
         if (!cancelled) setError(cause instanceof Error ? cause.message : 'Could not load packs');

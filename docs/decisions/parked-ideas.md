@@ -2,8 +2,9 @@
 
 > **Owner: Greg Rothwell. Last updated: 9 October 2026. Budget: 250 lines.**
 
-Ideas Greg has named and parked, newest last. **None is researched or approved.** Pick them up
-in this order, and only once the work in flight is live. Moved here verbatim from
+Ideas Greg has named and parked, newest last. **None is approved.** Random Round was
+built 9 October and is waiting on review; the other two were built on 6 October.
+Pick them up in this order, and only once the work in flight is live. Moved here verbatim from
 [`ideas-review.md`](ideas-review.md), which had reached its 250-line budget.
 
 ### 1. A Blankety Blank round — **parked, 5 October 2026; built 6 October**
@@ -25,7 +26,9 @@ researched yet; the first question is whether it fits four options or wants type
 Greg's twist: compare an item's price today with what it cost ten years ago. Prices need a
 dated source per item, never a guess, because a wrong price is a wrong answer.
 
-### 3. A random round — **parked, 6 October 2026**
+### 3. A random round — **parked, 6 October 2026; built 9 October**
+
+**Built 9 October** on `cursor/random-round`, not yet reviewed. [`random-round.md`](random-round.md). The text below is as parked.
 
 Greg's idea: one round that deals questions from **different round types** — a picture, a
 tune, a Catchphrase, a price — instead of one pack. Nothing researched. The first question is
