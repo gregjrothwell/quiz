@@ -369,6 +369,9 @@ function mockRoom(overrides: Partial<RoomState> = {}): RoomState {
   };
 }
 
+/** Two for one pack, one for another — Priya's is the one the link-joiner sees pressed. */
+const LOBBY_VOTES: RoomState['packVotes'] = { sam: 'screens', alex: 'screens', priya: 'tunes' };
+
 const CLOCK = { elapsedMs: 6_000, remainingMs: 14_000, secondsLeft: 14, expired: false };
 
 /**
@@ -511,7 +514,7 @@ export function Preview() {
       title: 'Lobby · quizmaster',
       node: (
         <Lobby
-          room={mockRoom({ phase: 'lobby' })}
+          room={mockRoom({ phase: 'lobby', packVotes: LOBBY_VOTES, browsing: 'flags' })}
           youUid="greg"
           isQuizmaster
           packs={PACKS}
@@ -525,13 +528,14 @@ export function Preview() {
       title: 'Lobby · link-joiner',
       node: (
         <Lobby
-          room={mockRoom({ phase: 'lobby' })}
+          room={mockRoom({ phase: 'lobby', packVotes: LOBBY_VOTES, browsing: 'flags' })}
           youUid="priya"
           isQuizmaster={false}
           packs={PACKS}
           busy={false}
           autoJoined
           onPickSquad={noop}
+          onVote={noop}
           onStart={noop}
           onLeave={noop}
         />

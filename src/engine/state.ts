@@ -1,6 +1,7 @@
 import type { FormFact } from './form';
 import type { Steal } from './scoring';
 import type { Standoff } from './standoff';
+import type { PackVotes } from './packVote';
 import {
   DIFFICULTIES,
   type Difficulty,
@@ -312,6 +313,17 @@ export interface RoomState {
   standoffEnabled: boolean;
   /** The final in play, or the one just played. Null in every other round. */
   standoff: Standoff | null;
+  /**
+   * The lobby vote: uid → the pack that player would like. Advisory — the
+   * quizmaster still picks. See `packVote.ts` and docs/decisions/lobby-vote.md.
+   *
+   * Written one `packVotes.{uid}` field at a time, like `players`, and never
+   * wholesale by a phase transition except to clear it on the way into or out
+   * of the lobby. No ruleset paste, for the reason `wagerEnabled` gives.
+   */
+  packVotes: PackVotes;
+  /** The pack the quizmaster has highlighted in the lobby, shown to the room. */
+  browsing: PackId | null;
 }
 
 /**
@@ -367,6 +379,8 @@ export function createRoom(code: string): RoomState {
     jigsawEnabled: false,
     standoffEnabled: false,
     standoff: null,
+    packVotes: {},
+    browsing: null,
   };
 }
 

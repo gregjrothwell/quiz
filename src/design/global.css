@@ -1190,6 +1190,34 @@ select.input option {
   font-variant-numeric: tabular-nums;
 }
 
+/* The lobby vote (docs/decisions/lobby-vote.md). Votes ride the count line in
+   amber; the room's leader gets an amber edge; the quizmaster's highlight is a
+   dashed cyan edge and a tag, so a player's own pressed vote is never
+   mistaken for it. */
+.pack__votes {
+  color: var(--amber);
+}
+
+.pack--leading:not([aria-pressed='true']) {
+  border-color: rgb(255 178 38 / 0.55);
+}
+
+.pack--browsing {
+  border-style: dashed;
+  border-color: var(--cyan);
+}
+
+.pack__tag {
+  align-self: flex-start;
+  margin-bottom: 0.35rem;
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+
 /* ── Level picker ───────────────────────────────────────────────────────── */
 
 .picker {

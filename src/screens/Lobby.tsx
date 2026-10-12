@@ -3,6 +3,7 @@ import { QrCode } from '../components/QrCode';
 import { RoomLink } from '../components/RoomLink';
 import { SoundCheck } from '../components/SoundCheck';
 import { joinLink } from '../engine/roomCode';
+import { leadingPacks, nextVote, tallyPackVotes, type PackTally } from '../engine/packVote';
 import { STEAL_SHARE } from '../engine/scoring';
 import { SQUADS } from '../engine/squad';
 import { rememberSquad, rememberedSquad } from '../lib/rememberedSquad';
@@ -87,6 +88,10 @@ interface LobbyProps {
    * the room write is the caller's, because only `useRoom` can touch the seat.
    */
   onPickSquad?: (squad: string) => void;
+  /** This player's lobby vote, or null to take it back. Not offered to the quizmaster. */
+  onVote?: (packId: PackId | null) => void;
+  /** The quizmaster highlighting a pack, so the room can see it. */
+  onBrowse?: (packId: PackId) => void;
   onStart: (
     packId: PackId,
     count: number,
@@ -109,6 +114,8 @@ export function Lobby({
   autoJoined = false,
   squad = '',
   onPickSquad,
+  onVote,
+  onBrowse,
   onStart,
   onLeave,
 }: LobbyProps) {
@@ -171,6 +178,9 @@ export function Lobby({
   const lockedDuration = packId === null ? null : fixedDurationFor(packId);
   const effectiveDuration = lockedDuration ?? durationSecs;
   const link = joinLink(window.location.origin, import.meta.env.BASE_URL, room.code);
+  const tally = tallyPackVotes(room.packVotes, room.players);
+  const leading = leadingPacks(tally);
+  const yourVote = youUid ? room.packVotes[youUid] : undefined;
 
   return (
     <>
@@ -301,16 +311,15 @@ export function Lobby({
                 <button
                   type="button"
                   key={pack.id}
-                  className="pack"
+                  className={packClass(pack.id, leading, null)}
                   aria-pressed={pack.id === packId}
                   onClick={() => {
                     setPackId(pack.id);
                     if (pack.id !== 'picture') setJigsaw(false);
+                    onBrowse?.(pack.id);
                   }}
                 >
-                  <span className="pack__title">{pack.title}</span>
-                  <span className="pack__blurb">{pack.blurb}</span>
-                  <span className="pack__count">{pack.count.toLocaleString('en-GB')} questions</span>
+                  <PackFace pack={pack} tally={tally} leading={leading} browsing={null} />
                 </button>
               ))}
             </div>
@@ -554,10 +563,84 @@ export function Lobby({
           </button>
         </section>
       ) : (
-        <p className="lede centre">
-          Waiting for {quizmasterName ?? 'the quizmaster'} to choose a set and start the round.
-        </p>
+        <section className="stack stack--loose">
+          {/*
+            Advisory. The quizmaster still picks, sets the level and modes, and
+            presses Start — the vote is a count on each card. See
+            docs/decisions/lobby-vote.md.
+          */}
+          <div className="stack">
+            <p className="eyebrow">Vote for a set</p>
+            <p className="muted hint">
+              Tap the one you&rsquo;d like to play. {quizmasterName ?? 'The quizmaster'} sees the
+              votes and has the final say.
+            </p>
+            <div className="packs">
+              {packs.map((pack) => (
+                <button
+                  type="button"
+                  key={pack.id}
+                  className={packClass(pack.id, leading, room.browsing)}
+                  aria-pressed={pack.id === yourVote}
+                  disabled={!onVote}
+                  onClick={() => onVote?.(nextVote(yourVote, pack.id))}
+                >
+                  <PackFace pack={pack} tally={tally} leading={leading} browsing={room.browsing} />
+                </button>
+              ))}
+            </div>
+          </div>
+          <p className="lede centre">
+            Waiting for {quizmasterName ?? 'the quizmaster'} to choose a set and start the round.
+          </p>
+        </section>
       )}
+    </>
+  );
+}
+
+function packClass(id: PackId, leading: PackId[], browsing: PackId | null): string {
+  return [
+    'pack',
+    leading.includes(id) ? 'pack--leading' : null,
+    browsing === id ? 'pack--browsing' : null,
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
+/**
+ * What every pack card says, for the quizmaster and the room alike. `browsing`
+ * is null on the quizmaster's own screen, where their highlight is already the
+ * pressed card.
+ */
+function PackFace({
+  pack,
+  tally,
+  leading,
+  browsing,
+}: {
+  pack: PackSummary;
+  tally: PackTally;
+  leading: PackId[];
+  browsing: PackId | null;
+}) {
+  const votes = tally[pack.id] ?? 0;
+  return (
+    <>
+      {browsing === pack.id ? <span className="pack__tag">Quizmaster&rsquo;s looking</span> : null}
+      <span className="pack__title">{pack.title}</span>
+      <span className="pack__blurb">{pack.blurb}</span>
+      <span className="pack__count">
+        {pack.count.toLocaleString('en-GB')} questions
+        {votes > 0 ? (
+          <span className="pack__votes">
+            {' · '}
+            {votes} {votes === 1 ? 'vote' : 'votes'}
+            {leading.includes(pack.id) ? ' · top' : ''}
+          </span>
+        ) : null}
+      </span>
     </>
   );
 }

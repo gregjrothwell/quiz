@@ -33,6 +33,7 @@ import {
 } from '../engine/roomClock';
 import { planJoin, planSeatSquad } from '../engine/join';
 import { reapAbsent } from '../engine/presence';
+import { readBrowsing, readPackVotes, writesTheVote } from '../engine/packVote';
 import {
   LEGACY_DURATION_SECS,
   createRoom,
@@ -45,6 +46,7 @@ import {
   type RoomState,
 } from '../engine/state';
 import { randomRoomCode } from '../engine/roomCode';
+import type { PackId } from '../questions/types';
 import { playerIdFor } from './identity';
 import { rememberName, rememberedName } from './rememberedName';
 
@@ -170,6 +172,10 @@ export interface UseRoom {
   dispatch: (action: Action | Action[]) => Promise<void>;
   submitAnswer: (optionIndex: number, elapsedMs: number, wager?: number) => Promise<void>;
   writeOwnSquad: (squad: string) => Promise<void>;
+  /** This player's lobby vote, or null to take it back. */
+  writeOwnVote: (packId: PackId | null) => Promise<void>;
+  /** The quizmaster's highlighted pack, shown to the room. */
+  writeBrowsing: (packId: PackId | null) => Promise<void>;
 }
 
 function roomDoc(code: string) {
@@ -232,6 +238,10 @@ function toRoomState(code: string, data: DocumentData, answers: Record<string, A
     // the wager's flag is.
     standoffEnabled: persisted.standoffEnabled ?? false,
     standoff: persisted.standoff ?? null,
+    // Absent in every room from before the vote, and writable by any member,
+    // so read through the guards rather than trusted.
+    packVotes: readPackVotes(data['packVotes']),
+    browsing: readBrowsing(data['browsing']),
   };
 }
 
@@ -262,6 +272,8 @@ function toPersisted(state: RoomState): PersistedRoom {
     lastSteal: state.lastSteal,
     standoffEnabled: state.standoffEnabled,
     standoff: state.standoff,
+    packVotes: state.packVotes,
+    browsing: state.browsing,
   };
 }
 
@@ -291,6 +303,13 @@ function toUpdate(state: RoomState, previous: RoomState | null): Record<string, 
 
   delete update.players;
   delete update.scores;
+
+  // The lobby vote travels as `packVotes.{uid}` field writes, for the reason
+  // `players` does. Written whole only when crossing the lobby, to clear it.
+  if (!writesTheVote(previous?.phase ?? null, state.phase)) {
+    delete update.packVotes;
+    delete update.browsing;
+  }
 
   for (const [uid, score] of Object.entries(persisted.scores)) {
     update[`scores.${uid}`] = score;
@@ -804,6 +823,30 @@ export function useRoom(): UseRoom {
     [code, uid, room],
   );
 
+  /**
+   * This device's lobby vote, as one field path so concurrent votes merge.
+   * Only the lobby: once the show starts the vote is cleared and means nothing.
+   */
+  const writeOwnVote = useCallback(
+    async (packId: PackId | null): Promise<void> => {
+      if (!code || !uid || !room || room.phase !== 'lobby') return;
+      await updateDoc(roomDoc(code), {
+        [`packVotes.${uid}`]: packId ?? deleteField(),
+      });
+    },
+    [code, uid, room],
+  );
+
+  /** The quizmaster's highlighted pack, so the room can see what is being considered. */
+  const writeBrowsing = useCallback(
+    async (packId: PackId | null): Promise<void> => {
+      if (!code || !room || room.phase !== 'lobby' || !isQuizmaster) return;
+      if (room.browsing === packId) return;
+      await updateDoc(roomDoc(code), { browsing: packId });
+    },
+    [code, room, isQuizmaster],
+  );
+
   const leave = useCallback(async (): Promise<void> => {
     if (!code || !uid) return;
     const leavingCode = code;
@@ -986,5 +1029,7 @@ export function useRoom(): UseRoom {
     dispatch,
     submitAnswer,
     writeOwnSquad,
+    writeOwnVote,
+    writeBrowsing,
   };
 }

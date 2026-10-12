@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 9 October 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 12 October 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -16,13 +16,13 @@ Built to replace Polly in Teams.
 
 | If you're changing | Read |
 |---|---|
-| repeats and the question history; staking points on the last question; **the Share or Shaft final** (on `share-or-shaft`: rules live, **not deployed**; `more-picture-questions` stacks on it, so one merge ships both) | [`repeats.md`](decisions/repeats.md) · [`wager.md`](decisions/wager.md) · [`share-or-shaft.md`](decisions/share-or-shaft.md) |
+| repeats and the question history; staking points on the last question; **the Share or Shaft final** (live with #60, 24 Sep) | [`repeats.md`](decisions/repeats.md) · [`wager.md`](decisions/wager.md) · [`share-or-shaft.md`](decisions/share-or-shaft.md) |
 | the vault, reveals, answer secrecy, **the answer window**, and **a reveal that stalls** | [`vault.md`](decisions/vault.md) · [`answer-window.md`](decisions/answer-window.md) · [`reveal-delays.md`](decisions/reveal-delays.md) |
 | the season table, squads, `recordGame`, anything called `team`; the August board; squads **during** a round | [`season.md`](decisions/season.md) · [`season-shipped.md`](decisions/season-shipped.md) · [`live-squads.md`](decisions/live-squads.md) |
 | the opening titles, honours, rosettes | [`form-and-awards.md`](decisions/form-and-awards.md) |
 | `playerId`, recovery codes, claiming, the anonymous-account purge | [`identity.md`](decisions/identity.md) |
 | the clock and the countdown, and whose clock it runs on | [`clock.md`](decisions/clock.md) · [`shared-clock.md`](decisions/shared-clock.md) |
-| joining, room codes, links, presence | [`decisions/joining.md`](decisions/joining.md) |
+| joining, room codes, links, presence; **the lobby vote** (on `lobby-vote`, **not deployed**) | [`decisions/joining.md`](decisions/joining.md) · [`lobby-vote.md`](decisions/lobby-vote.md) |
 | scoring an answer that lands late; the review panel and the replay | [`late-answers.md`](decisions/late-answers.md) · [`review-replay.md`](decisions/review-replay.md) |
 | packs, harvesting, classification, **On the box / TMDB stills**; **Blankety Blank** and **The Price Was Right** (both blind); **Name the Artist** (259, seeded 12 Oct) | [`questions.md`](decisions/questions.md) · [`blankety-blank.md`](decisions/blankety-blank.md) · [`price-was-right.md`](decisions/price-was-right.md) · [`name-the-artist.md`](decisions/name-the-artist.md) · **Catchphrase drawing, the Mini:** [`catchphrase-batch-5.md`](decisions/catchphrase-batch-5.md) |
 | **a picture that does not turn up**, preloading, the box a still gets | [`decisions/picture-loading.md`](decisions/picture-loading.md) |
@@ -42,7 +42,7 @@ Built to replace Polly in Teams.
 | what a finished round left behind, and reading it back | [`decisions/game-record.md`](decisions/game-record.md) |
 | upgrading `package.json`; the studio set and lighting cues | [`dependencies.md`](decisions/dependencies.md) · [`lighting.md`](decisions/lighting.md) |
 
-## State as of 6 October 2026
+## State as of 12 October 2026
 
 > **READ FIRST — the Friday 9 October game of 30 did not happen.**
 > - The biggest room ever played is still 11. Thirty answering at once is untested.
@@ -51,16 +51,16 @@ Built to replace Polly in Teams.
 > - A future 30-player round is still one of ≤20 questions (14.6k–32.7k reads,
 >   [`cost.md`](decisions/cost.md)). Two such rounds go past 50k. The 9 October blackout is lifted.
 > - **Catchphrase: Greg plays it blind, so keep its answers out of docs and chat.**
->   **12 Oct release `release-12-oct`: Catchphrase 90 → 178, Random Round, Name the Artist 259.** Vault read back 178/178 and 259/259; both new rounds played to a live reveal from a local build. Parked: an automated growth loop for all popular packs — [`catchphrase-batch-5.md`](decisions/catchphrase-batch-5.md).
+>   **#72 live 12 Oct: Catchphrase 90 → 178, Random Round, Name the Artist 259.** The first office round of each is the live check (`read-games`); the Catchphrase hold inside Random was never seen live. Parked: an automated growth loop for all popular packs — [`catchphrase-batch-5.md`](decisions/catchphrase-batch-5.md).
 >   **9 Oct:** two 5-seat rounds that morning cost ~1.2k reads, so one 30-player round of ≤20 still fits ([`office-feedback-9-oct.md`](decisions/office-feedback-9-oct.md)).
 > - **Greg to decide:** answering after the music stops; target B's four
 >   questions ([`public-scale.md`](decisions/public-scale.md)); the two
 >   lead-time cuts ([`ci-deploy.md`](decisions/ci-deploy.md)).
 
-**Live is `index-DxSLpmmr`** (#71: 7 Oct 11:25 BST, merge `8bba4fd`, gh-pages `f89a603`, CI): the
-vault over Firestore Lite, podium ties, Price Was Right decoys. Before it, #70 `index-CSluHU7x`.
+**Live is `index-NiEMPDcb`** (#72: 12 Oct 05:41 BST, merge `d4ab6dc`, gh-pages `70535a6`, CI): Catchphrase
+178, Random Round, Name the Artist. Before it, #71 `index-DxSLpmmr` (Lite reveal).
 Firebase chunk `firebase-D9D0c-Mh` (Lite inside, +16 kB gzip).
-**19 packs**; **The Price Was Right 95** and **Blankety Blank 148** (both blind); **Catchphrase 90** (every 5th a double-scoring bonus); **Name that Tune 424**; synth **Classical**; **On the box 445**
+**20 packs** + **Random Round** (six played packs dealt into one); **The Price Was Right 95** and **Blankety Blank 148** (both blind); **Catchphrase 178** (every 5th a double-scoring bonus); **Name that Tune 424**; **Name the Artist 259**; synth **Classical**; **On the box 445**
 (hashed TMDB stills, at most 8 titles before 1990); **Flags** 76; **Sleeves 212**
 after seven candidate batches, the last pre-screened; picture is **Fine Art** 49.
 
@@ -110,8 +110,7 @@ scoring 500 + rank 500/400/300/200/100.
 14. **Loose ends from 26–27 September**: five new tunes transcribed to nothing
     and want an ear (`live-forever`, `golden-touch`, `build-me-up-buttercup`,
     `call-the-shots`, `gangnam-style`); **56 rooms past expiry** —
-    `npm run prune-rooms -- --go`; reCAPTCHA's monthly count is unmeasured
-    (10k free per organisation); #58 `cleanup-dead-code` is open, unreviewed.
+    `npm run prune-rooms -- --go`; reCAPTCHA's monthly count is unmeasured (10k free per organisation).
 15. **Sleeve songs (#62, #63) have been played** — `XDUF` at half the clock, then
     from the first frame ([`sleeves-song.md`](decisions/sleeves-song.md)). Five songs
     still want an ear; *Reasonable Doubt* and *Future Nostalgia* show a **single's**
@@ -119,6 +118,7 @@ scoring 500 + rank 500/400/300/200/100.
     two more from 6 Oct, and six Vite servers from 4–9 Sep (5173–5175, 5277, 5288).
 16. **#67 live 6 Oct 08:15:** Catchphrase 60→90 (blind), Sleeves 168→212, On the box 296→445, Tunes 268→424; seeded 378, read back 1,171/1,171. **The first rounds played are the live check** (the harder Catchphrase batches, step 9 of [`go-live-oct-2026.md`](decisions/go-live-oct-2026.md)). Plan for Greg's feedback: [`pack-growth-plan.md`](decisions/pack-growth-plan.md). Freshness weekdays 08:12.
 17. **#69 live 6 Oct 13:05 BST** (after `RRGM`): Blankety Blank 148 (21 American out, 29 British in); **The Price Was Right**, 95 ONS prices, blind ([`price-was-right.md`](decisions/price-was-right.md)), `ordered` options; the chair seats a tie touching the podium; Bonus Catchphrase options from frame one. Seeded 124, read back 243/243; `host-room --pack prices` (`P3E9`) revealed from the vault in 0.28s. **Played `XRUE` 7 Oct (47%); 6 of 95 gave the answer away. #71 live 7 Oct: all options under today's price, 8 decoys over it, no reseed; podium ties; `npm run draw-overnight` (Greg runs it, never opens the sheets) — [`office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md).** `AGENTS.md`: world-famous American is fine, needing American knowledge is not.
+18. **Next session: improve the styling of the category page** (Greg, 12 Oct). No screen is called that; taken to mean the lobby's pack cards — "Choose a set" and, once the lobby vote is live, "Vote for a set" (`Lobby.tsx`, `.pack` in `global.css`). Confirm which before starting.
 
 ## Where things are
 
