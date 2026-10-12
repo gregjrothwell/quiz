@@ -275,3 +275,5 @@ if (runningDirect) {
     process.exitCode = 1;
   });
 }
+
+export { readCovers };
