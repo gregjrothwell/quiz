@@ -67,6 +67,8 @@ both spent, and they are two of the four rounds the office plays. The better way
 is to deploy early and **have the office play a Catchphrase round before Friday**. That round is
 the live check for Bonus Catchphrase and the harder batch, so Friday runs on proven code.
 
+*Corrected 9 October, evening.* That game did not happen. The blackout is lifted.
+
 ## Decide first: the new Catchphrase batch was named in chat
 
 While picking drawings on 5 October, Claude's chat messages named **all 30 new puzzles

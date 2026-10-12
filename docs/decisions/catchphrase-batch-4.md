@@ -11,7 +11,8 @@ the puzzles live in `scripts/hand-catchphrase-data.ts`.
 - **Greg, 6 October**, after `RRGM` went 78% (from 93%): "a step in the right direction for
   difficulty — can probably push a bit higher" ([`catchphrase-difficulty.md`](catchphrase-difficulty.md)).
 - **Today's round hit 74%**: *as given in this work's brief, not re-read here.* Nothing in this
-  work touched live Firebase (it is a 30-player game day and the read quota matters).
+  work touched live Firebase, because a 30-player game was planned and the read quota mattered.
+  **That game did not happen** (Greg, 9 October, evening).
 - **Written and picked by a subagent** whose working Greg does not see, as batch 3 was.
 
 ## Built — 9 October 2026, specs only
@@ -111,7 +112,7 @@ three versions on disk). It has no dry-run flag, so a scratch script imported bo
 3. `npm run write-catchphrase-pack`. It refuses until all 30 have a seed.
 4. Pin the fourth batch's prompts by hash, as the third's are now.
 5. `seed-vault -- --pack catchphrase`, then `host-room -- 10 --pack catchphrase`.
-   **Not on a game day.**
+   The 9 October game did not happen, so this is not waiting on it.
 
 ## Evidence — 9 October 2026
 

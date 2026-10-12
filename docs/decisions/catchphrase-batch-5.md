@@ -13,8 +13,9 @@ this file holds the batch's shape only; the puzzles live in
   but not yet picked. Specs only.
 - **Greg wants harder**, as for the fourth: mostly hard, some medium, no easy
   ([`catchphrase-difficulty.md`](catchphrase-difficulty.md)).
-- **A 30-player game day.** Nothing in this work read or wrote live Firebase. The answer
-  checks below read local files only.
+- **A 30-player game was planned.** Nothing in this work read or wrote live Firebase. The
+  answer checks below read local files only. **The game did not happen** (Greg, 9 October,
+  evening).
 - **Written by a subagent** whose working Greg does not see, as batches 3 and 4 were.
 
 ## Built — 9 October 2026, specs only
@@ -59,7 +60,7 @@ Every check is case- and punctuation-folded, with a leading article ignored.
   data and the local answer files `.cache/vault.json` and `.cache/hand-vault.json`, which
   between them cover **all 15,785 published question ids**. **Seven were**: three in the
   hand-built packs (Screens 2, Tunes 1) and four in the harvested packs. All seven
-  swapped. *Not re-read from the live vault: a game day.*
+  swapped. *Not re-read from the live vault: a game was planned that day. It did not happen.*
 - **Two answers that remain appear as a wrong option** in harvested packs, never as the
   right one, as five did in the fourth batch. Kept.
 - **No wrong option is the right answer in another pack.** Ten were (Tunes, Sleeves, the
@@ -115,7 +116,7 @@ still fails (its deny cases are unchanged). One comment says that two batches no
 3. `npm run write-catchphrase-pack`. It refuses until all ninety have a seed.
 4. Pin the fourth and fifth batches' prompts by hash.
 5. `seed-vault -- --pack catchphrase`, then `host-room -- 10 --pack catchphrase`.
-   **Not on a game day.**
+   The 9 October game did not happen, so this is not waiting on it.
 
 ## Evidence — 9 October 2026
 

@@ -44,13 +44,12 @@ Built to replace Polly in Teams.
 
 ## State as of 6 October 2026
 
-> **READ FIRST — a game of up to 30 on Friday 9 October.**
-> - The biggest room ever played is 11.
+> **READ FIRST — the Friday 9 October game of 30 did not happen.**
+> - The biggest room ever played is still 11. Thirty answering at once is untested.
 > - #65 (live 2 Oct) folds a crowded lectern into "+N" past 12 chips and keeps
 >   the standings' Next on screen. `sync-harness 30`: 30/30.
-> - **Play one 30-player round of ≤20 questions, and run nothing against live
->   that day.** Two big rounds go past 50k reads ([`cost.md`](decisions/cost.md)).
-> - Untested: 30 people answering at once.
+> - A future 30-player round is still one of ≤20 questions (14.6k–32.7k reads,
+>   [`cost.md`](decisions/cost.md)). Two such rounds go past 50k. The 9 October blackout is lifted.
 > - **Catchphrase: Greg plays it blind, so keep its answers out of docs and chat.**
 >   **Batches 4+5 (91–180, specs) on local `catchphrase-batch-5`; batch 5 drawing on the Mac Mini (`npm run draw-on-mini`), then one pick. Parked: an automated growth loop for all popular packs — [`catchphrase-batch-5.md`](decisions/catchphrase-batch-5.md).**
 > - **Greg to decide:** answering after the music stops; target B's four
