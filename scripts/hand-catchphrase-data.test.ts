@@ -18,6 +18,8 @@ const HARDER_END = CATCHPHRASE_MIN_PACK + 30;
 const THIRD_END = HARDER_END + 30;
 /** Where the fourth batch (9 October 2026) ends and the fifth begins. */
 const FOURTH_END = THIRD_END + 30;
+/** Where the fifth batch (9 October 2026) ends. */
+const FIFTH_END = FOURTH_END + 60;
 
 /*
   The rules here came out of the trial on 2 October 2026 —
@@ -337,6 +339,13 @@ describe('the fourth batch', () => {
     expect(added).toHaveLength(30);
   });
 
+  test('its 30 prompts are exactly as drawn', () => {
+    // Pinned once picked and shipped, 12 October 2026, as the third was. A
+    // dropped puzzle is pinned too: it stays in the list as drawn.
+    const hash = createHash('sha256').update(added.map(promptFor).join('\n')).digest('hex');
+    expect(hash).toBe('aa102656356218a58615698729b6138dbb051f43a67c6240e07bd15e5be441e2');
+  });
+
   test('is medium or hard, never easy', () => {
     expect(added.filter((spec) => spec.difficulty === 'easy').map((spec) => spec.slug)).toEqual([]);
   });
@@ -393,8 +402,8 @@ describe('the fourth batch', () => {
 /*
   The fifth batch — 9 October 2026. Sixty more after the fourth, written while
   the fourth was drawn but not yet picked, on the fourth's rules and its lean:
-  docs/decisions/catchphrase-batch-5.md. Not pinned by hash until it is picked
-  and shipped, as the fourth is not.
+  docs/decisions/catchphrase-batch-5.md. Picked and pinned by hash with the
+  fourth, 12 October 2026.
 */
 describe('the fifth batch', () => {
   const before = CATCHPHRASE_SPECS.slice(0, FOURTH_END);
@@ -404,6 +413,14 @@ describe('the fifth batch', () => {
 
   test('is sixty puzzles', () => {
     expect(added).toHaveLength(60);
+  });
+
+  test('its 60 prompts are exactly as drawn', () => {
+    // Pinned once picked and shipped, 12 October 2026, with the fourth.
+    const hash = createHash('sha256')
+      .update(CATCHPHRASE_SPECS.slice(FOURTH_END, FIFTH_END).map(promptFor).join('\n'))
+      .digest('hex');
+    expect(hash).toBe('e1ecf32f6f9a3e31dcd1b7d4482c7fc565ced1078c19af4a3671764790a1767e');
   });
 
   test('is medium or hard, never easy', () => {

@@ -23,7 +23,10 @@ import { CATCHPHRASE_SPECS, namesTheAnswer, type CatchphraseSpec } from './hand-
  *
  * The waiting tail is any length, so more than one batch can wait: from
  * 9 October 2026 the fourth (drawn, not picked) and the fifth (not drawn) both
- * do. Unchanged by that; a hole before a picked spec still fails.
+ * did. Unchanged by that; a hole before a picked spec still fails.
+ *
+ * **A dropped spec is decided, not waiting** (12 October 2026): looked at and
+ * kept out, so it is no hole wherever it sits, and it never has a seed.
  */
 
 /** Slugs with no picked drawing that come before one that has one: a hole, not a waiting batch. */
@@ -31,7 +34,7 @@ function holesBeforeTheTail(specs: readonly CatchphraseSpec[]): string[] {
   const lastPicked = specs.reduce((last, spec, i) => (spec.seed === undefined ? last : i), -1);
   return specs
     .slice(0, lastPicked + 1)
-    .filter((spec) => spec.seed === undefined)
+    .filter((spec) => spec.seed === undefined && spec.dropped === undefined)
     .map((spec) => spec.slug);
 }
 
@@ -53,16 +56,22 @@ describe('the shipped catchphrase drawings', () => {
   test('only the newest puzzles wait for a pick; everything before them says which drawing it shipped', () => {
     expect(holesBeforeTheTail(CATCHPHRASE_SPECS)).toEqual([]);
   });
+
+  test('nothing is both dropped and picked', () => {
+    const both = CATCHPHRASE_SPECS.filter((spec) => spec.dropped !== undefined && spec.seed !== undefined);
+    expect(both.map((spec) => spec.slug)).toEqual([]);
+  });
 });
 
 describe('the waiting-batch check', () => {
-  const spec = (slug: string, seed?: number): CatchphraseSpec => ({
+  const spec = (slug: string, seed?: number, dropped?: CatchphraseSpec['dropped']): CatchphraseSpec => ({
     slug,
     correct: 'Invented',
     incorrect: ['One', 'Two', 'Three'],
     difficulty: 'medium',
     scene: 'A hill.',
     ...(seed === undefined ? {} : { seed }),
+    ...(dropped === undefined ? {} : { dropped }),
   });
 
   test('refuses a puzzle that lost its pick with picked ones after it', () => {
@@ -73,5 +82,10 @@ describe('the waiting-batch check', () => {
   test('allows a batch waiting on the end, and a pack with none waiting', () => {
     expect(holesBeforeTheTail([spec('a', 1), spec('b', 2), spec('c'), spec('d')])).toEqual([]);
     expect(holesBeforeTheTail([spec('a', 1), spec('b', 2)])).toEqual([]);
+  });
+
+  test('allows a dropped puzzle mid-list, and still refuses a real hole beside it', () => {
+    expect(holesBeforeTheTail([spec('a', 1), spec('b', undefined, 'spoiled'), spec('c', 2)])).toEqual([]);
+    expect(holesBeforeTheTail([spec('a', undefined, 'misdrawn'), spec('b'), spec('c', 3)])).toEqual(['b']);
   });
 });
