@@ -99,14 +99,14 @@ export interface SheetCell {
   path: string;
 }
 
-/** Every drawn puzzle with no `seed` yet, three versions each, {@link PUZZLES_PER_SHEET} puzzles a sheet. */
+/** Every drawn puzzle with no `seed` yet and not dropped, three versions each, {@link PUZZLES_PER_SHEET} puzzles a sheet. */
 export function sheetsFor(
   specs: readonly CatchphraseSpec[],
   drawn: (slug: string) => boolean,
 ): SheetCell[][] {
   const waiting = specs
     .map((spec, i) => ({ spec, number: i + 1 }))
-    .filter(({ spec }) => spec.seed === undefined && drawn(spec.slug));
+    .filter(({ spec }) => spec.seed === undefined && spec.dropped === undefined && drawn(spec.slug));
   const sheets: SheetCell[][] = [];
   for (let start = 0; start < waiting.length; start += PUZZLES_PER_SHEET) {
     sheets.push(

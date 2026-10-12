@@ -10,6 +10,7 @@ import { ScoreTicker } from '../components/ScoreTicker';
 import { replayDurationMs, replayTimeline, type Arrival } from '../engine/replay';
 import { BONUS_PROMPT, isBonusCatchphrase } from '../engine/catchphraseBonus';
 import { optionsAtMs, optionsDue } from '../engine/optionsHold';
+import { questionPack } from '../engine/randomRound';
 import type { Verdict } from '../engine/questionVote';
 import { stakeFor, verdictFor, WAGER_SHARES } from '../engine/scoring';
 import { songClueAtMs, songClueDue } from '../engine/songClue';
@@ -299,13 +300,16 @@ export function QuestionScreen({
     clock could outlast the room's; they are ranked as though they answered on
     the buzzer, so early options buy them nothing.
   */
+  // The room's pack on an ordinary round. On a random round, the question's
+  // own source — `random` is not Catchphrase.
+  const behavingAs = questionPack(room.packId, question);
   const optionsOut =
     revealed
     || joinedMidQuestion
-    || optionsDue(elapsedMs, optionsAtMs(room.packId, room.index, questionDurationMs(room)));
+    || optionsDue(elapsedMs, optionsAtMs(behavingAs, room.index, questionDurationMs(room)));
 
   // Every fifth Catchphrase question, by position — `src/engine/catchphraseBonus.ts`.
-  const bonus = isBonusCatchphrase(room.packId, room.index);
+  const bonus = isBonusCatchphrase(behavingAs, room.index);
 
   // Fetched while the cover plays alone, so the clue starts on time.
   useEffect(() => {

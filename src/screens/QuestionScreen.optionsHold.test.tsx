@@ -180,6 +180,45 @@ describe('the hold is Catchphrase’s alone', () => {
     expect(onAnswer).toHaveBeenCalledWith(0, undefined);
   });
 
+  test('a random round holds a Catchphrase question and shows any other at once', () => {
+    const held = roomWith('random', 0);
+    held.questions = held.questions.map((question) => ({ ...question, sourcePack: 'catchphrase' }));
+    const hidden = render(
+      <QuestionScreen
+        room={held}
+        youUid="greg"
+        isQuizmaster={false}
+        clock={at(500)}
+        revealed={false}
+        joinedMidQuestion={false}
+        onAnswer={noop}
+        onReveal={noop}
+        onNext={noop}
+        onVote={noop}
+      />,
+    );
+    expect(hidden.container.textContent).not.toContain('Option one');
+    hidden.unmount();
+
+    const open = roomWith('random', 0);
+    open.questions = open.questions.map((question) => ({ ...question, sourcePack: 'prices' }));
+    const shown = render(
+      <QuestionScreen
+        room={open}
+        youUid="greg"
+        isQuizmaster={false}
+        clock={at(500)}
+        revealed={false}
+        joinedMidQuestion={false}
+        onAnswer={noop}
+        onReveal={noop}
+        onNext={noop}
+        onVote={noop}
+      />,
+    );
+    expect(shown.container.textContent).toContain('Option one');
+  });
+
   test('somebody who walked in mid-question gets the options at once', () => {
     // Their clock counts from when they arrived, not from when the room's did,
     // so a hold on it could run past the room's reveal. They are ranked as

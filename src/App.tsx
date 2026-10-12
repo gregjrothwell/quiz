@@ -30,7 +30,8 @@ import {
 } from './lib/rememberedSquad';
 import { useFinalSnapshot } from './lib/useFinalSnapshot';
 import { useGameLog } from './lib/useGameLog';
-import { NO_HISTORY } from './engine/askedHistory';
+import { NO_HISTORY, type AskedHistory } from './engine/askedHistory';
+import { dealRandomRound, RANDOM_SOURCES, type RandomSource } from './engine/randomRound';
 import { loadAsked, loadForm, recordAsked, recordGame, type Banked } from './lib/season';
 import { play } from './lib/sound';
 import { useStillPreload } from './lib/stills';
@@ -427,6 +428,102 @@ function Game() {
     void leave().catch(report);
   }, [leave, report]);
 
+  /**
+   * One pack, as every round before the mix did.
+   *
+   * A history this round cannot read is a round that repeats a question, which
+   * is a far smaller problem than a round that will not start — so that failure
+   * is swallowed rather than reported.
+   *
+   * `NO_HISTORY` rather than an empty set, and the distinction is not cosmetic:
+   * `recordAsked` writes the document whole, so a failure that arrives here
+   * looking like "this pack has never been played" gets written back as exactly
+   * that, wiping the real history. It says "we do not know", and the write
+   * below declines to guess.
+   */
+  async function prepareSinglePack(
+    packId: PackId,
+    count: number,
+    level: Level,
+    jigsawEnabled: boolean,
+  ): Promise<{ questions: Awaited<ReturnType<typeof buildQuizQuestions>>; remember: () => Promise<void> }> {
+    const pool = await loadPackQuestions(packId);
+    const asked = await loadAsked(packId).catch(() => NO_HISTORY);
+    const playable = jigsawEnabled ? pool.filter((question) => question.jigsaw === true) : pool;
+    const questions = buildQuizQuestions(playable, count, level, Math.random, asked.ids);
+    return {
+      questions,
+      remember: async () => {
+        await recordAsked(
+          packId,
+          questions.map((question) => question.id),
+          asked,
+        ).catch(() => undefined);
+      },
+    };
+  }
+
+  /**
+   * Samples the six source packs and writes one list. Each source's season
+   * history is read and, when the read succeeded, written back — a `random`
+   * history would not stop On the box serving the same still next round.
+   */
+  async function prepareRandomRound(
+    count: number,
+    level: Level,
+  ): Promise<{ questions: Awaited<ReturnType<typeof buildQuizQuestions>>; remember: () => Promise<void> }> {
+    const loaded = await Promise.all(
+      RANDOM_SOURCES.map(async (source) => {
+        const [pool, history] = await Promise.all([
+          loadPackQuestions(source),
+          loadAsked(source).catch(() => NO_HISTORY),
+        ]);
+        return { source, pool, history };
+      }),
+    );
+    const bySource = new Map(loaded.map((row) => [row.source, row]));
+    const take = (source: RandomSource): { pool: Awaited<ReturnType<typeof loadPackQuestions>>; history: AskedHistory } => {
+      const row = bySource.get(source);
+      if (!row) throw new Error(`Could not load the ${source} pack`);
+      return row;
+    };
+    const questions = dealRandomRound(
+      {
+        screens: take('screens').pool,
+        sleeves: take('sleeves').pool,
+        tunes: take('tunes').pool,
+        catchphrase: take('catchphrase').pool,
+        blanks: take('blanks').pool,
+        prices: take('prices').pool,
+      },
+      {
+        screens: take('screens').history.ids,
+        sleeves: take('sleeves').history.ids,
+        tunes: take('tunes').history.ids,
+        catchphrase: take('catchphrase').history.ids,
+        blanks: take('blanks').history.ids,
+        prices: take('prices').history.ids,
+      },
+      count,
+      level,
+      Math.random,
+    );
+    return {
+      questions,
+      remember: async () => {
+        await Promise.all(
+          RANDOM_SOURCES.map((source) => {
+            const history = take(source).history;
+            const ids = questions
+              .filter((question) => question.sourcePack === source)
+              .map((question) => question.id);
+            return recordAsked(source, ids, history).catch(() => undefined);
+          }),
+        );
+      },
+    };
+  }
+
   const handleStart = useCallback(
     (
       packId: PackId,
@@ -440,23 +537,13 @@ function Game() {
     ) => {
       setBusy(true);
       setActionError(null);
-      loadPackQuestions(packId)
-        .then(async (pool) => {
+      const prepared =
+        packId === 'random'
+          ? prepareRandomRound(count, level)
+          : prepareSinglePack(packId, count, level, jigsawEnabled);
+      prepared
+        .then(async ({ questions, remember }) => {
           const pack = packs.find((entry) => entry.id === packId);
-          // A history this round cannot read is a round that repeats a
-          // question, which is a far smaller problem than a round that will not
-          // start — so this failure is swallowed rather than reported.
-          //
-          // `NO_HISTORY` rather than an empty set, and the distinction is not
-          // cosmetic: `recordAsked` writes the document whole, so a failure that
-          // arrives here looking like "this pack has never been played" gets
-          // written back as exactly that, wiping the real history. It says "we
-          // do not know", and the write below declines to guess.
-          const asked = await loadAsked(packId).catch(() => NO_HISTORY);
-          const playable = jigsawEnabled
-            ? pool.filter((question) => question.jigsaw === true)
-            : pool;
-          const questions = buildQuizQuestions(playable, count, level, Math.random, asked.ids);
 
           /*
             The opening titles, and the reason the round does not simply start
@@ -512,11 +599,7 @@ function Game() {
           ]);
 
           // After the round is safely under way, for the same reason.
-          await recordAsked(
-            packId,
-            questions.map((question) => question.id),
-            asked,
-          ).catch(() => undefined);
+          await remember();
         })
         .catch(report)
         .finally(() => setBusy(false));

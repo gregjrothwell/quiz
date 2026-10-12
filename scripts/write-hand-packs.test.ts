@@ -59,6 +59,7 @@ describe('mergeIndex', () => {
       'catchphrase',
       'blanks',
       'prices',
+      'artists',
     ]);
   });
 });

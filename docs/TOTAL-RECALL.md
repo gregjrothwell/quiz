@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 8 October 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 12 October 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -23,6 +23,16 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
+
+## 2026-10-12 — Live: #72 (gh-pages `70535a6`): Catchphrase 178, Random Round, Name the Artist
+
+Greg: "we have multiple changes to go live with". He chose all five branches, merged into one
+`release-12-oct`: Catchphrase batches 4+5 (88 in, 2 dropped), Cursor's Random Round and Name the
+Artist (259), and two docs branches. The two features clashed only on adding a pack id; kept both.
+Artist answers rebuilt here (`artists.json` byte-identical), seeded 259, read back 259/259.
+Played live from a local build: a Random Round of 15, all revealed, bonus squares on Q15; one Artist
+reveal. Not seen live: the Catchphrase hold inside Random. Local e2e has no Java; CI ran it.
+Greg merged `d4ab6dc` 05:37; live `index-NiEMPDcb` 05:41, byte-identical to a local build.
 
 ## 2026-10-08 — Lobby vote built on `lobby-vote`, not deployed, held past Friday's 30
 
@@ -167,28 +177,12 @@ Greg chose the show's Bonus Catchphrase as every fifth question, scoring more;
 story approved, not built. Then harder puzzles, and maybe a house character,
 "Mr Fries". [`decisions/catchphrase-difficulty.md`](decisions/catchphrase-difficulty.md).
 
-## 2026-10-02 — Live: `index-RzBR8yIZ` (#65, gh-pages `a49f801`): ready for thirty
-
-[#65](https://github.com/gregjrothwell/quiz/pull/65) merged as `66c4413` at
-23:33:07. Live at 23:37:16, byte-identical to a local build (`8ab702612ad7`).
-Contents:
-- A crowded lectern counts past 12 chips instead of growing.
-- The standings' Next is sticky.
-- 30-player preview screens.
-- `sync-harness 30`: 30/30.
-- A 30-player round costs 14.6k–32.7k reads ([`decisions/cost.md`](decisions/cost.md)).
-
-Word go → live took 43 minutes, "push" → live 12; where it went and how to
-cut it: [`decisions/ci-deploy.md`](decisions/ci-deploy.md#lead-time-measured-2-october-2026--word-go-to-live-in-43-minutes).
-
-## 2026-10-02 — Public scale: target B chosen; PLAN written, not confirmed
-
-The lost 15 Aug appendix recovered; seams now (host authority, tenancy, content rule), the rest on a trigger. [`decisions/public-scale.md`](decisions/public-scale.md).
-
 ## 2026-10-02 — archived, one line each
 
-Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines.
+Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294.
 
+- **2026-10-02** — [Live: `index-RzBR8yIZ` (#65, gh-pages `a49f801`): ready for thirty](recall/2026-10.md#2026-10-02--live-index-rzbr8yiz-65-gh-pages-a49f801-ready-for-thirty)
+- **2026-10-02** — [Public scale: target B chosen; PLAN written, not confirmed](recall/2026-10.md#2026-10-02--public-scale-target-b-chosen-plan-written-not-confirmed)
 - **2026-10-02** — [Catchphrase's first round: 10 of 10, too easy](recall/2026-10.md#2026-10-02--catchphrases-first-round-10-of-10-too-easy)
 - **2026-10-02** — [Live: `index-DPum3N0P` (#64, gh-pages `7a8dc6f`)](recall/2026-10.md#2026-10-02--live-index-dpum3n0p-64-gh-pages-7a8dc6f)
 - **2026-10-02** — [Catchphrase: options at halfway, and Greg plays it blind](recall/2026-10.md#2026-10-02--catchphrase-options-at-halfway-and-greg-plays-it-blind)

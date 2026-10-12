@@ -88,6 +88,26 @@ describe('writing the Catchphrase pack', () => {
     expect(shipped['cp-test-7']).toBe('NUMBER');
   });
 
+  test('leaves a dropped puzzle out, answer and all, without refusing the run', async () => {
+    const specs = picked(31);
+    const dropped = specs.map((spec, i) => {
+      if (i !== 4) return spec;
+      const copy: CatchphraseSpec = { ...spec, dropped: 'spoiled' };
+      delete copy.seed;
+      return copy;
+    });
+    const { pack, answers, shipped } = await buildCatchphrasePack(deps(dropped));
+    expect(pack.questions).toHaveLength(30);
+    expect(pack.questions.some((question) => question.id === stableId('cp-test-4'))).toBe(false);
+    expect(answers[stableId('cp-test-4')]).toBeUndefined();
+    expect(shipped['cp-test-4']).toBeUndefined();
+  });
+
+  test('refuses a puzzle that is both dropped and picked', async () => {
+    const specs = picked().map((spec, i): CatchphraseSpec => (i === 6 ? { ...spec, dropped: 'misdrawn' } : spec));
+    await expect(buildCatchphrasePack(deps(specs))).rejects.toThrow(/cp-test-6: dropped and picked both/);
+  });
+
   test('refuses a pack under the minimum', async () => {
     await expect(buildCatchphrasePack(deps(picked(29)))).rejects.toThrow(/Only 29 catchphrases/);
   });

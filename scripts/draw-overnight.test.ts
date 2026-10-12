@@ -88,6 +88,14 @@ describe('sheetsFor', () => {
     const sheets = sheetsFor(specs, (slug) => slug !== 'cp-invented-6');
     expect(sheets.flat().some((cell) => cell.number === 6)).toBe(false);
   });
+
+  test('leaves out a puzzle that was dropped, but not its neighbours', () => {
+    const withDrop = specs.map((each, i): CatchphraseSpec => (i === 6 ? { ...each, dropped: 'spoiled' } : each));
+    const cells = sheetsFor(withDrop, (slug) => drawn.has(slug)).flat();
+    expect(cells.some((cell) => cell.number === 7)).toBe(false);
+    expect(cells.some((cell) => cell.number === 8)).toBe(true);
+    expect(cells).toHaveLength(24 * 3);
+  });
 });
 
 describe('cellLabel', () => {

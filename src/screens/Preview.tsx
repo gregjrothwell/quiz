@@ -9,6 +9,7 @@ import type { Standoff } from '../engine/standoff';
 import { createRoom, type QuizQuestion, type RoomState } from '../engine/state';
 import type { SeasonRow } from '../lib/season';
 import type { PackSummary } from '../lib/usePacks';
+import { PACK_META } from '../questions/types';
 import type { StandoffView } from '../lib/useStandoff';
 import { Final } from './Final';
 import { Landing } from './Landing';
@@ -344,6 +345,15 @@ const PACKS: PackSummary[] = [
     blurb: 'Film and TV from a still. Untitled backdrops, no jigsaw.',
     count: 54,
     counts: { easy: 37, medium: 16, hard: 1 },
+  },
+  {
+    id: 'random',
+    title: PACK_META.random.title,
+    blurb: PACK_META.random.blurb,
+    // The live lobby derives this from the six source packs. The gallery only
+    // needs a row the quizmaster can press.
+    count: 540,
+    counts: { easy: 48, medium: 156, hard: 186 },
   },
 ];
 

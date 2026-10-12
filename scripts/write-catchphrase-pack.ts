@@ -10,6 +10,8 @@
  * read, and a drawing whose writing names its own answer. A skipped puzzle is a
  * smaller pack nobody notices; the sleeves taught that a picture which prints
  * its answer is a question that answers itself (docs/decisions/sleeves-gate.md).
+ * The one skip is deliberate: a spec marked `dropped` was looked at and kept
+ * out, so it ships nothing and refuses nothing.
  * What each shipped drawing says is written to `catchphrase-picture-text.ts`
  * so `npm test` holds the rule offline.
  */
@@ -61,6 +63,12 @@ export async function buildCatchphrasePack(deps: CatchphraseBuildDeps = {}): Pro
   const shipped: Record<string, string> = {};
 
   for (const spec of specs) {
+    if (spec.dropped !== undefined) {
+      // Decided, not waiting: a dropped spec ships nothing. One with a seed as
+      // well is a contradiction, and refused like any other.
+      if (spec.seed !== undefined) refused.push(`${spec.slug}: dropped and picked both — remove one`);
+      continue;
+    }
     if (spec.seed === undefined) {
       refused.push(`${spec.slug}: no drawing picked — set \`seed\` once somebody has looked`);
       continue;
