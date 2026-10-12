@@ -9,6 +9,7 @@ import {
   type GameRecord,
   type RevealTiming,
 } from './gameRecord';
+import type { Standoff } from './standoff';
 import { createRoom, type Player, type QuizQuestion, type RoomState } from './state';
 
 const OPTIONS = ['A', 'B', 'C', 'D'];
@@ -244,6 +245,26 @@ describe('foldGameRecord', () => {
     expect(greg !== undefined && 'firstMs' in greg).toBe(false);
   });
 
+  test('an answer without an arrival stamp carries no at key at all', () => {
+    const greg = foldGameRecord(finishedRoom(), WHOLE_LOG, 'greg')?.questions[0]?.answers.greg;
+    expect(greg !== undefined && 'at' in greg).toBe(false);
+  });
+
+  test('an arrival stamp rides into the record as milliseconds', () => {
+    const log: QuestionRecord[] = [
+      {
+        ...WHOLE_LOG[0]!,
+        answers: {
+          greg: { optionIndex: 2, elapsedMs: 3_400, at: 1_700_000_000_123 },
+        },
+      },
+      WHOLE_LOG[1]!,
+    ];
+
+    const greg = foldGameRecord(finishedRoom(), log, 'greg')?.questions[0]?.answers.greg;
+    expect(greg).toEqual({ optionIndex: 2, elapsedMs: 3_400, at: 1_700_000_000_123 });
+  });
+
   test('a stray field on an answer does not reach the record', () => {
     // #given — whatever an older bundle or a curious player put in storage
     const log: QuestionRecord[] = [
@@ -379,6 +400,19 @@ describe('kindOf', () => {
   test('a question with iTunes artwork is a picture', () => {
     expect(kindOf({ artworkUrl: 'https://is1-ssl.mzstatic.com/image/thumb/x.jpg' })).toBe('picture');
   });
+
+  test('a sleeve with a song is still a picture', () => {
+    // #given a cover with a song that arrives halfway as a clue
+    // #then the picture is the question, so the round is recorded as it was
+    // before songs existed — and Sleeves stays comparable with its own
+    // baseline in `read-games`. See docs/decisions/sleeves-song.md.
+    expect(
+      kindOf({
+        artworkUrl: 'https://is1-ssl.mzstatic.com/image/thumb/x.jpg',
+        previewUrl: 'https://audio-ssl.itunes.apple.com/x.m4a',
+      }),
+    ).toBe('picture');
+  });
 });
 
 /**
@@ -445,5 +479,58 @@ describe('what the reveal cost', () => {
       dispatchMs: 0,
       attempts: 1,
     });
+  });
+});
+
+/*
+  Share or Shaft is kept inside the players map rather than as a key of its own,
+  for the reason `RevealTiming` rides inside `questions`: the rules bound the
+  document only at the top level, where every key is required. A new top-level
+  key would refuse every record from a bundle that predates it the moment the
+  rules learned about it.
+*/
+describe('what the final left behind', () => {
+  const standoff: Standoff = {
+    finalists: ['greg', 'sam'],
+    stakes: { greg: 1_900, sam: 500 },
+    stage: 'revealed',
+    sealed: ['greg'],
+    picks: { greg: 'shaft', sam: null },
+  };
+  const settled = finishedRoom({ standoffEnabled: true, scores: { greg: 2_400, sam: 0 }, standoff });
+
+  test('each finalist carries what they staked and what they picked', () => {
+    const record = foldGameRecord(settled, WHOLE_LOG, 'greg');
+    expect(record?.players).toEqual({
+      greg: { name: 'Greg', squad: 'Hermes', standoff: { stake: 1_900, pick: 'shaft' } },
+      sam: { name: 'Sam', standoff: { stake: 500, pick: null } },
+    });
+  });
+
+  test('adds no key to the document', () => {
+    const record = foldGameRecord(settled, WHOLE_LOG, 'greg');
+    expect(Object.keys(record ?? {}).sort()).toEqual([...GAME_RECORD_KEYS].sort());
+  });
+
+  test('a player who was not in the final carries nothing about it', () => {
+    const record = foldGameRecord(
+      finishedRoom({
+        players: { ...PLAYERS, rach: { name: 'Rach', joinedAt: 3 } },
+        scores: { greg: 2_400, sam: 0, rach: 300 },
+        standoff,
+      }),
+      WHOLE_LOG,
+      'greg',
+    );
+    expect(record?.players['rach']).toEqual({ name: 'Rach' });
+  });
+
+  test('a final that was never settled is not recorded as one', () => {
+    const record = foldGameRecord(
+      finishedRoom({ standoff: { ...standoff, stage: 'pick', picks: null } }),
+      WHOLE_LOG,
+      'greg',
+    );
+    expect(record?.players['greg']).toEqual({ name: 'Greg', squad: 'Hermes' });
   });
 });

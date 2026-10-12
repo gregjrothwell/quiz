@@ -8,8 +8,12 @@ import { PodiumTile, type TileArrival, type TileState } from '../components/Podi
 import { QuestionVote } from '../components/QuestionVote';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { replayDurationMs, replayTimeline, type Arrival } from '../engine/replay';
+import { BONUS_PROMPT, isBonusCatchphrase } from '../engine/catchphraseBonus';
+import { optionsAtMs, optionsDue } from '../engine/optionsHold';
+import { questionPack } from '../engine/randomRound';
 import type { Verdict } from '../engine/questionVote';
 import { stakeFor, verdictFor, WAGER_SHARES } from '../engine/scoring';
+import { songClueAtMs, songClueDue } from '../engine/songClue';
 import {
   currentQuestion,
   isWagerQuestion,
@@ -20,6 +24,7 @@ import {
   CLOCK_LEAD_SECONDS,
   playPreview,
   playSequence,
+  primePreview,
   startClock,
   stopClock,
   stopPreview,
@@ -264,19 +269,67 @@ export function QuestionScreen({
   const { remainingMs, elapsedMs } = clock;
   const clockKey = `${room.gameId ?? ''}:${room.index}`;
   const startedClockRef = useRef<string | null>(null);
+  const startedSongRef = useRef<string | null>(null);
   const voices = question?.voices;
   const previewUrl = question?.previewUrl;
   const hasMelody = Boolean(voices && voices.length > 0);
   const hasPreview = Boolean(previewUrl);
   const hasTune = hasMelody || hasPreview;
 
+  /*
+    A tune's song is due at once, and so is a sleeve's since 30 September 2026 —
+    `SONG_CLUE_SHARE` is the dial that would hold it back.
+
+    On the room's shared clock, so it lands together on every screen — the rank
+    bonus is decided in these seconds. See `src/engine/songClue.ts` and
+    docs/decisions/sleeves-song.md.
+  */
+  const songDue = songClueDue(
+    elapsedMs,
+    question ? songClueAtMs(question, questionDurationMs(room)) : null,
+  );
+  // Whether there is anything to hear yet. A melody is always out at once.
+  const tuneOut = hasMelody || songDue;
+
+  /*
+    A Catchphrase picture plays alone for half the clock, on the room's shared
+    clock so the options land together on every screen —
+    `src/engine/optionsHold.ts`. A Bonus Catchphrase does not: its squares do
+    that job, and its options are there from the first frame. Somebody who
+    walked in mid-question counts from their own arrival, so a hold on their
+    clock could outlast the room's; they are ranked as though they answered on
+    the buzzer, so early options buy them nothing.
+  */
+  // The room's pack on an ordinary round. On a random round, the question's
+  // own source — `random` is not Catchphrase.
+  const behavingAs = questionPack(room.packId, question);
+  const optionsOut =
+    revealed
+    || joinedMidQuestion
+    || optionsDue(elapsedMs, optionsAtMs(behavingAs, room.index, questionDurationMs(room)));
+
+  // Every fifth Catchphrase question, by position — `src/engine/catchphraseBonus.ts`.
+  const bonus = isBonusCatchphrase(behavingAs, room.index);
+
+  // Fetched while the cover plays alone, so the clue starts on time.
   useEffect(() => {
-    if (revealed || startedClockRef.current === clockKey) return;
-    if (hasPreview && previewUrl) {
+    if (!revealed && hasPreview && previewUrl && !songDue) primePreview(previewUrl);
+  }, [revealed, hasPreview, previewUrl, songDue]);
+
+  useEffect(() => {
+    if (revealed) return;
+    // Its own guard rather than the bed's: on a sleeve the bed may already be
+    // running when the song lands, and the song has to be able to cut in.
+    // `playPreview` stops the bed, and marking the bed started here stops it
+    // coming back for the rest of the question.
+    if (hasPreview && previewUrl && songDue) {
+      if (startedSongRef.current === clockKey) return;
+      startedSongRef.current = clockKey;
       startedClockRef.current = clockKey;
       playPreview(previewUrl, question?.previewStart ?? 0, question?.previewSeconds);
       return;
     }
+    if (startedClockRef.current === clockKey) return;
     if (hasMelody) {
       startedClockRef.current = clockKey;
       playSequence(voices ?? []);
@@ -292,6 +345,7 @@ export function QuestionScreen({
     hasMelody,
     hasPreview,
     previewUrl,
+    songDue,
     voices,
     question?.previewStart,
     question?.previewSeconds,
@@ -315,9 +369,11 @@ export function QuestionScreen({
    * context has been waiting for.
    */
   const { muted, toggle: toggleMuted, previewBlocked } = useSound();
-  const canReplay = hasTune && !revealed && !clock.expired;
+  // Not before the song is out: a replay that could start a sleeve's song early
+  // would hand the clue to whoever pressed it.
+  const canReplay = hasTune && tuneOut && !revealed && !clock.expired;
   const replayTune = (): void => {
-    if (!hasTune) return;
+    if (!canReplay) return;
     if (muted) toggleMuted();
     if (hasPreview && previewUrl) playPreview(previewUrl, question?.previewStart ?? 0, question?.previewSeconds);
     else playSequence(voices ?? []);
@@ -335,6 +391,7 @@ export function QuestionScreen({
     }
     return () => {
       startedClockRef.current = null;
+      startedSongRef.current = null;
       stopClock();
       stopSequence();
       stopPreview();
@@ -353,7 +410,8 @@ export function QuestionScreen({
       const pick = letter >= 0 ? letter : digit;
       // Gated on the clock rather than on having answered, so a key can change a
       // pick as well as make one — and so a late press cannot write past expiry.
-      if (pick >= 0 && !revealed && !clock.expired && pick < optionCount) {
+      // Not before the options are out: a key would pick a lectern nobody can see.
+      if (pick >= 0 && optionsOut && !revealed && !clock.expired && pick < optionCount) {
         event.preventDefault();
         // The stake goes with a keyed answer as well as a tapped one. Answering
         // with `a` is the fastest way to play, so dropping it here would lose
@@ -388,6 +446,7 @@ export function QuestionScreen({
   }, [
     revealed,
     optionCount,
+    optionsOut,
     isQuizmaster,
     clock.expired,
     onAnswer,
@@ -448,17 +507,20 @@ export function QuestionScreen({
         snap: arrival.snap,
       }));
 
+  // Held options are dark, empty lecterns rather than no lecterns, so nothing
+  // moves under a player's pointer when they light up — and empty rather than
+  // merely hidden, so the words are not in the page to be read early.
   const tiles = question.options.map((option, index) => (
     <PodiumTile
       key={`${question.id}-${index}`}
       index={index}
-      text={option}
-      state={stateFor(index)}
+      text={optionsOut ? option : ''}
+      state={optionsOut ? stateFor(index) : 'hushed'}
       arrivals={crowdFor(index)}
       // The clock closes the lecterns, not the first press. Expiry matters on
       // its own now: it used to be covered incidentally, because having answered
       // disabled the tiles and everyone had answered or run out of time.
-      disabled={revealed || clock.expired}
+      disabled={!optionsOut || revealed || clock.expired}
       onPick={(picked: number) => onAnswer(picked, wagering ? stake : undefined)}
       order={index}
     />
@@ -528,7 +590,7 @@ export function QuestionScreen({
         <div className="stack">
           {/* Keyed on the question so the CSS entrance replays for each new one. */}
           <h1 key={question.id} className="prompt">
-            {question.prompt}
+            {bonus ? BONUS_PROMPT : question.prompt}
           </h1>
 
           {/*
@@ -553,19 +615,62 @@ export function QuestionScreen({
                 </p>
               ) : null}
               <div className="btn-row">
+                {/*
+                  There before a sleeve's song is, disabled and saying what is
+                  coming, so nothing moves under a player's pointer when it
+                  arrives.
+                */}
                 <button
                   type="button"
                   className={previewBlocked && !muted ? 'btn' : 'btn btn--ghost'}
-                  disabled={clock.expired}
+                  disabled={clock.expired || !tuneOut}
                   onClick={replayTune}
                 >
-                  {playLabel(muted, previewBlocked)}
+                  {tuneOut ? playLabel(muted, previewBlocked) : 'Song from the album at halfway'}
                 </button>
               </div>
             </div>
           ) : null}
 
-          {question.storeUrl ? (
+          {/*
+            Apple's condition (iii): a song preview carries "provided courtesy
+            of iTunes".
+
+            Shown whenever the question has a preview, playing or not, because
+            the alternative is deciding per-frame whether the clip is currently
+            audible. It names nothing and gives nothing away — the string is
+            fixed. This was simply never implemented: the round shipped on 9
+            September 2026 meeting five of the six conditions, and nobody had
+            read the sixth. See docs/decisions/known-limits.md.
+          */}
+          {hasPreview ? (
+            <p className="tune-credit">Provided courtesy of iTunes</p>
+          ) : null}
+
+          {/*
+            The store link is one tap from the answer, so it waits for the
+            reveal — on a sleeve and on a tune alike.
+
+            "View in Apple Music" under *Which album is this?* opens the
+            album's own page. It sat on screen for the whole answering window,
+            on all 44 sleeves and all 177 tunes. Greg, 22 September 2026: "it
+            literally tells you the answer." At the reveal it costs nothing and
+            still carries the link.
+
+            **This is a decision against one clause of Apple's terms, taken
+            knowingly.** The iTunes Search API allows previews and album art on
+            six conditions; one is that they sit proximate to a store badge
+            linking to the purchase page. Apple defines neither "proximate" nor
+            anything about timing, so a badge at the reveal is unaddressed
+            rather than plainly refused — but it is not the reading Apple would
+            argue for. Greg's call, 22 September 2026, on being shown that the
+            two conditions the round *cannot* meet are the ones about promoting
+            the item and not using it for independent entertainment — which a
+            quiz fails whatever the badge does. Weighed and recorded in
+            docs/decisions/tunes-round.md; the whole exposure is in
+            docs/decisions/known-limits.md.
+          */}
+          {question.storeUrl && revealed ? (
             <StoreBadge href={question.storeUrl} kind={hasPreview ? 'listen' : 'view'} />
           ) : null}
 
@@ -587,6 +692,7 @@ export function QuestionScreen({
             {question.image || question.artworkUrl ? (
               <PicturePrompt
                 jigsaw={Boolean(room.jigsawEnabled && question.jigsaw)}
+                bonus={bonus}
                 questionId={question.id}
                 gameId={room.gameId ?? ''}
                 elapsedMs={elapsedMs}
@@ -648,11 +754,23 @@ export function QuestionScreen({
                 </div>
                 <p className="muted hint">
                   {stake === 0
-                    ? 'Playing it safe — this one is worth the usual 1,000.'
+                    ? bonus
+                      ? 'Playing it safe — a bonus is still worth double.'
+                      : 'Playing it safe — this one is worth the usual 1,000.'
                     : `${stakeFor(held, stake).toLocaleString('en-GB')} points on the line.`}
                 </p>
               </div>
             ) : null}
+
+            {bonus && !revealed ? (
+              <p className="nudge hint" role="status">
+                Double points. Guess as the squares come off.
+              </p>
+            ) : optionsOut ? null : (
+              <p className="nudge hint" role="status">
+                The options arrive at halfway.
+              </p>
+            )}
 
             <div className="podium">{tiles}</div>
             </div>

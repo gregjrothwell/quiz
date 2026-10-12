@@ -244,7 +244,13 @@ textarea {
   at the exact moment somebody is reading a question and choosing an answer.
   It comes back at the reveal, which is when there is something to look at.
 */
-.stage[data-mood='question'] .beams {
+/*
+  The final takes the question's cue for the question's reason: two people are
+  deciding something, and the room's light belongs on them rather than on the
+  rig. It blazes again on the results, like every round.
+*/
+.stage[data-mood='question'] .beams,
+.stage[data-mood='standoff'] .beams {
   opacity: 0.3;
 }
 
@@ -583,6 +589,22 @@ textarea {
   outline: 2px solid var(--cyan);
   outline-offset: 3px;
   border-radius: 999px;
+}
+
+/*
+  The lobby's sound check. The same slider as the corner's, given room: here it
+  is the point of the panel rather than furniture, so it gets a thumb's travel
+  worth dragging. Wraps under the button on a phone.
+*/
+.sound-check__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+.sound-check .sound-volume {
+  width: min(14rem, 100%);
 }
 
 /*
@@ -1428,6 +1450,18 @@ select.input option {
   color: rgb(255 255 255 / 0.72);
 }
 
+/*
+  Apple's condition (iii) on a song preview. Quiet on purpose — it is a licence
+  term, not something the room needs to read — but not hidden: `0.72` is the
+  same alpha the picture credit carries, and that one was chosen to stay legible
+  on the darkest panel.
+*/
+.tune-credit {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgb(255 255 255 / 0.72);
+}
+
 .jigsaw {
   display: grid;
   gap: 2px;
@@ -1442,6 +1476,36 @@ select.input option {
   aspect-ratio: 1;
   background-size: 300% 300%;
   background-repeat: no-repeat;
+}
+
+/* Bonus Catchphrase: nine squares over the whole picture, at the picture's own
+   shape — the grid stretches to whatever box the `<img>` reserved, so a 4:3
+   still gets 4:3 squares. Lifting is `opacity`/`transform` only, and the
+   blanket reduced-motion rule at the foot of this file collapses the fade
+   without touching which squares are up. src/engine/catchphraseBonus.ts. */
+.bonus-squares {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  /* No gap: a gap is nine slivers of the picture showing from the first frame.
+     The seams are the squares' own inset edges. */
+  gap: 0;
+  pointer-events: none;
+}
+
+.bonus-squares__square {
+  background: linear-gradient(160deg, var(--panel-hi), var(--panel));
+  box-shadow: inset 0 0 0 1px var(--edge), inset 0 0 18px rgb(41 214 255 / 0.18);
+  transition:
+    opacity 450ms ease-out,
+    transform 450ms ease-out;
+}
+
+.bonus-squares__square--lifted {
+  opacity: 0;
+  transform: scale(0.85);
 }
 
 /* ── Lecterns ───────────────────────────────────────────────────────────── */
@@ -2015,6 +2079,13 @@ select.input option {
   color: var(--amber);
 }
 
+/* Everybody past the twelfth chip, counted rather than named (src/engine/crowd.ts). */
+.tile__pick--more {
+  border-style: dashed;
+  color: var(--ink-dim);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Lands rather than fades — the drop is what makes it read as an arrival. */
 @keyframes pick-in {
   from {
@@ -2478,14 +2549,28 @@ select.input option {
 /* ── Final podium ───────────────────────────────────────────────────────── */
 
 .finale {
+  /* One riser per person placed third or better (`podiumFor`), so a dead heat
+     stands four or five wide; three is the floor, empty slots included. */
+  --risers: 3;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(var(--risers), 1fr);
   align-items: end;
   gap: 0.7rem;
   /* As a flex child this sizes to content, so max-width alone does nothing. */
   width: 100%;
   max-width: 40rem;
   margin: 0 auto;
+}
+
+/* The same width a riser has when three stand, as long as the screen allows. */
+.finale--4 {
+  --risers: 4;
+  max-width: 53rem;
+}
+
+.finale--5 {
+  --risers: 5;
+  max-width: 66rem;
 }
 
 .riser {
@@ -2620,6 +2705,15 @@ select.input option {
   text-shadow: 0 0 14px rgb(41 214 255 / 0.7);
 }
 
+/* The rest of a tie too big for five risers: "+2 level", under the score. */
+.riser__more {
+  font-family: var(--tech);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
 /* ── The chair ──────────────────────────────────────────────────────────────
    Last place, at the end of the podium and on the floor. Narrower than a riser
    and given no panel of its own: three people are standing on something and
@@ -2630,7 +2724,7 @@ select.input option {
    the third riser. Wide enough for a name rather than for the chair — the chair
    is happy at 3rem, and "Bartholomew" broken across three lines is not. */
 .finale--seated {
-  grid-template-columns: repeat(3, 1fr) minmax(4.5rem, 5.75rem);
+  grid-template-columns: repeat(var(--risers), 1fr) minmax(4.5rem, 5.75rem);
 }
 
 /*
@@ -2647,7 +2741,7 @@ select.input option {
 @media (min-width: 56rem) {
   .finale--seated {
     max-width: none;
-    grid-template-columns: minmax(4rem, 1fr) repeat(3, minmax(0, 12.6rem)) minmax(4rem, 1fr);
+    grid-template-columns: minmax(4rem, 1fr) repeat(var(--risers), minmax(0, 12.6rem)) minmax(4rem, 1fr);
   }
 
   /* Auto-placement would start the risers in the empty left-hand column. */
@@ -2657,6 +2751,40 @@ select.input option {
 
   .finale--seated .seat {
     justify-self: end;
+  }
+}
+
+/*
+ * Four or five risers short of desktop width: a grid track's `1fr` will not go
+ * below its content, so five risers and a chair ran 24px off a 375px phone and
+ * clipped the fifth riser and the chair. Let a track shrink to nothing and tighten what is in it.
+ */
+@media (max-width: 55.99rem) {
+  .finale--4,
+  .finale--5 {
+    gap: 0.35rem;
+    grid-template-columns: repeat(var(--risers), minmax(0, 1fr));
+  }
+
+  .finale--4.finale--seated,
+  .finale--5.finale--seated {
+    grid-template-columns: repeat(var(--risers), minmax(0, 1fr)) minmax(3.5rem, 5.75rem);
+  }
+
+  .finale--4 .riser,
+  .finale--5 .riser {
+    padding: 0.9rem 0.2rem;
+  }
+
+  .finale--4 .riser__name,
+  .finale--5 .riser__name {
+    font-size: 0.7rem;
+    letter-spacing: 0.02em;
+  }
+
+  .finale--4 .riser__score,
+  .finale--5 .riser__score {
+    font-size: 0.8rem;
   }
 }
 
@@ -3490,4 +3618,133 @@ select.input option {
   .lede {
     max-width: 46rem;
   }
+}
+
+/* ── Share or Shaft ─────────────────────────────────────────────────────────
+   The final: two seats, the pot, a clock, and then the two words. The seats
+   carry the drama — each shows only what the whole room is allowed to know,
+   which is "locked in" and nothing more until both picks turn over.
+
+   The picks are the one place green and red mean something other than right
+   and wrong, and they borrow those two on purpose: share is the kind outcome
+   and shaft the cruel one, and at the reveal nobody should have to read a
+   word to know which happened.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.standoff {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(0.75rem, 3vw, 1.5rem);
+}
+
+.standoff__seat {
+  text-align: center;
+  padding: clamp(1rem, 3vw, 1.6rem) 0.75rem;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, var(--panel-hi), var(--panel));
+  min-width: 0;
+}
+
+.standoff__seat--you {
+  border-color: var(--cyan-dim);
+}
+
+.standoff__seat p {
+  margin: 0;
+}
+
+.standoff__name {
+  font-family: var(--shout);
+  font-size: clamp(1.3rem, 4vw, 2rem);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
+}
+
+.standoff__you {
+  font-family: var(--body);
+  font-size: 0.8rem;
+  text-transform: none;
+  color: var(--ink-dim);
+}
+
+.standoff__stake {
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  letter-spacing: 0.08em;
+}
+
+/* Two classes, so it outranks the seat's own `p` reset without `!important`. */
+.standoff__seat .standoff__state {
+  margin-top: 0.75rem;
+}
+
+.standoff__state {
+  font-family: var(--tech);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.standoff__state[data-state='locked'] {
+  color: var(--amber);
+}
+
+.standoff__state[data-state='share'],
+.standoff__state[data-state='shaft'] {
+  font-family: var(--shout);
+  font-weight: 400;
+  font-size: clamp(2rem, 8vw, 3.5rem);
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.standoff__state[data-state='share'] {
+  color: var(--correct);
+}
+
+.standoff__state[data-state='shaft'] {
+  color: var(--wrong);
+}
+
+.standoff__stage {
+  align-items: center;
+  text-align: center;
+}
+
+/* Centred copy, full-width controls: the picker and the table keep the
+   column's width rather than shrinking to their content. */
+.standoff__stage .picker,
+.standoff__stage .standings {
+  width: 100%;
+  align-self: stretch;
+  text-align: left;
+}
+
+/* Both buttons lock once a pick is made, but the one chosen stays lit rather
+   than fading with the other — the finalist should see what they locked in. */
+.standoff__stage .pick[aria-pressed='true']:disabled {
+  opacity: 1;
+}
+
+.standoff__clock {
+  margin: 0;
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: clamp(2rem, 7vw, 3rem);
+  line-height: 1;
+  color: var(--cyan);
+  font-variant-numeric: tabular-nums;
+}
+
+.standoff__headline {
+  margin: 0;
+  font-family: var(--shout);
+  font-size: clamp(1.5rem, 5vw, 2.4rem);
+  text-transform: uppercase;
+  line-height: 1.1;
 }

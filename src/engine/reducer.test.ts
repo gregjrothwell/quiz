@@ -811,6 +811,46 @@ describe('reveal only scores people in the room', () => {
   });
 });
 
+describe('a Bonus Catchphrase scores double', () => {
+  const FIVE: QuizQuestion[] = ['cp1', 'cp2', 'cp3', 'cp4', 'cp5'].map((id) => ({
+    id,
+    prompt: 'Say what you see',
+    options: ['One', 'Two', 'Three', 'Four'],
+    correctIndex: null,
+    category: 'Catchphrase',
+    difficulty: 'easy',
+  }));
+
+  /** The first answer right on question `index` of a five-question round. */
+  function revealedAt(index: number, packId: RoomState['packId']): RoomState {
+    const room: RoomState = {
+      ...playingRoom(),
+      packId,
+      questions: FIVE,
+      index,
+      answers: { guest: { optionIndex: 1, elapsedMs: 0 } },
+    };
+    return reduce(room, { type: 'reveal', correctIndex: 1, questionId: FIVE[index]?.id ?? '' });
+  }
+
+  test('on the fifth question of a Catchphrase round', () => {
+    expect(revealedAt(4, 'catchphrase').lastDeltas).toEqual({ guest: 2000 });
+  });
+
+  test('and only the fifth', () => {
+    expect(revealedAt(3, 'catchphrase').lastDeltas).toEqual({ guest: 1000 });
+  });
+
+  test('and only in Catchphrase', () => {
+    expect(revealedAt(4, 'screens').lastDeltas).toEqual({ guest: 1000 });
+  });
+
+  test('and a skip after the reveal takes the whole 2,000 back', () => {
+    const skipped = reduce(revealedAt(4, 'catchphrase'), { type: 'skip' });
+    expect(skipped.scores['guest']).toBe(0);
+  });
+});
+
 describe('the opening titles', () => {
   const FACTS = [{ id: 'champion' as const, uids: ['host'], wins: 3 }];
 

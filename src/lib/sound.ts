@@ -556,6 +556,8 @@ export function play(cue: Cue): void {
 let clockNodes: { gain: GainNode; sources: OscillatorNode[] } | null = null;
 let sequenceNodes: { gain: GainNode; sources: OscillatorNode[] } | null = null;
 let previewEl: HTMLAudioElement | null = null;
+/** A song fetched ahead of being played. See {@link primePreview}. */
+let primed: { url: string; el: HTMLAudioElement } | null = null;
 
 /**
  * Starts the closing clock, given the milliseconds actually left on it.
@@ -583,6 +585,8 @@ let previewEl: HTMLAudioElement | null = null;
  * soundtrack, which is the entertainment use Apple's terms exclude.
  */
 export function playPreview(url: string, startSeconds = 0, seconds?: number): void {
+  // Taken before the stop below, which would otherwise release it.
+  const ready = takePrimed(url);
   stopPreview();
   stopSequence();
   stopClock();
@@ -590,10 +594,12 @@ export function playPreview(url: string, startSeconds = 0, seconds?: number): vo
   // the outcome so a clip that plays never inherits the last question's notice;
   // the worst case is the hint appearing a frame after the refusal.
   setPreviewBlocked(false);
-  if (muted || !isItunesPreviewUrl(url)) return;
-  if (typeof Audio === 'undefined') return;
+  if (muted || !isItunesPreviewUrl(url) || typeof Audio === 'undefined') {
+    if (ready) release(ready);
+    return;
+  }
 
-  const el = new Audio();
+  const el = ready ?? new Audio();
   el.preload = 'auto';
   el.loop = false;
   // Set before `src`, so a clip that starts the instant it can never gets one
@@ -601,7 +607,7 @@ export function playPreview(url: string, startSeconds = 0, seconds?: number): vo
   // — Apple's CDN sends no CORS header, so it cannot be — which is why the
   // master gain does not reach it and this line has to exist at all.
   el.volume = volume;
-  el.src = url;
+  if (!ready) el.src = url;
   previewEl = el;
 
   /*
@@ -647,21 +653,94 @@ export function playPreview(url: string, startSeconds = 0, seconds?: number): vo
   };
 
   if (startSeconds > 0) {
+    // A primed clip whose metadata is already in can seek at once. Reloading it
+    // would throw away the buffer priming was for.
+    if (ready && el.readyState >= HAVE_METADATA) {
+      start();
+      return;
+    }
     el.addEventListener('loadedmetadata', start, { once: true });
+    // Reloaded even when primed. iOS Safari ignores `preload`, so a primed
+    // element there may never have started fetching, and waiting on it for a
+    // `loadedmetadata` that is not coming would be a song that never plays.
+    // This is exactly what an unprimed clip does, so it is never worse.
     el.load();
     return;
   }
   start();
 }
 
-/** Drops the preview element so the browser does not keep the file around. */
-export function stopPreview(): void {
-  const el = previewEl;
-  previewEl = null;
-  if (!el) return;
+/** `HTMLMediaElement.HAVE_METADATA`, spelled out: Node has no such global. */
+const HAVE_METADATA = 1;
+
+/**
+ * Fetches a song that will play later in this question.
+ *
+ * A sleeve's song is a clue that lands at half the clock
+ * (`src/engine/songClue.ts`). Fetching it only then would put Apple's CDN
+ * latency between the clue and each player, so a slow connection would get
+ * less of the song than the rest of the room, on a question whose rank bonus
+ * is decided in those same seconds.
+ *
+ * Silent until {@link playPreview} is called with the same URL, which then
+ * plays this element rather than fetching another. Idempotent, because the
+ * caller runs on every clock tick. A muted player fetches nothing.
+ */
+export function primePreview(url: string): void {
+  if (primed?.url === url) return;
+  dropPrimed();
+  if (muted || !isItunesPreviewUrl(url) || typeof Audio === 'undefined') return;
+  const el = new Audio();
+  el.preload = 'auto';
+  el.loop = false;
+  el.src = url;
+  primed = { url, el };
+}
+
+/** The primed element for this URL, handed over once; any other is released. */
+function takePrimed(url: string): HTMLAudioElement | null {
+  const was = primed;
+  primed = null;
+  if (!was) return null;
+  if (was.url === url) return was.el;
+  release(was.el);
+  return null;
+}
+
+function dropPrimed(): void {
+  const was = primed;
+  primed = null;
+  if (was) release(was.el);
+}
+
+/** Lets an element go so the browser does not keep the file around. */
+function release(el: HTMLAudioElement): void {
   el.pause();
   el.removeAttribute('src');
   el.load();
+}
+
+/**
+ * Drops the preview element, and any primed one, so the browser does not keep
+ * the file around. A question that reveals before its clue landed ends here.
+ */
+export function stopPreview(): void {
+  dropPrimed();
+  stopPlaying();
+}
+
+/**
+ * Stops the clip that is playing and leaves a primed one alone.
+ *
+ * For the clock bed, which starts a second into a 10s sleeve and stops any
+ * clip on its way in. Stopping the primed song there too released it four
+ * seconds before the clue — caught in a live room on 29 September 2026.
+ */
+function stopPlaying(): void {
+  const el = previewEl;
+  previewEl = null;
+  if (!el) return;
+  release(el);
 }
 
 export function playSequence(voices: Voice[]): void {
@@ -701,7 +780,7 @@ export function stopSequence(): void {
 }
 
 export function startClock(remainingMs: number): void {
-  stopPreview();
+  stopPlaying();
   stopSequence();
   stopClock();
   if (muted || remainingMs <= 0) return;

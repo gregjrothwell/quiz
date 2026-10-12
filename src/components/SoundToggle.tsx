@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { positionForVolume, unlock, useSound, volumeForPosition } from '../lib/sound';
+import { unlock, useSound } from '../lib/sound';
+import { VolumeSlider } from './VolumeSlider';
 
 /**
  * The house sound switch, parked in the corner of every screen, with the
@@ -22,11 +23,7 @@ import { positionForVolume, unlock, useSound, volumeForPosition } from '../lib/s
  * at whatever the last level was to find out.
  */
 export function SoundToggle() {
-  const { muted, toggle, volume, setVolume } = useSound();
-  // The slider's own units, not the amplitude. They are not the same thing and
-  // treating them as one is what put every useful level in the bottom tenth of
-  // the travel — see `volumeForPosition`.
-  const percent = Math.round(positionForVolume(volume) * 100);
+  const { muted, toggle } = useSound();
 
   useEffect(() => {
     const wake = (): void => unlock();
@@ -64,29 +61,7 @@ export function SoundToggle() {
         </svg>
       </button>
 
-      {/*
-        `step` of 5 rather than 1: this is a corner control the size of a
-        thumbnail, and a hundred stops on it means the arrow keys take forever
-        and no drag lands where you meant. Twenty is plenty of resolution for
-        "under the person talking" — and on the decibel travel each of those
-        stops is a flat 2 dB, so every one of them is worth pressing.
-
-        The position is not the amplitude. `volumeForPosition` converts, and the
-        amplitude is what gets stored, so a level somebody already chose by hand
-        survives this change at the loudness they chose it at.
-      */}
-      <input
-        type="range"
-        className="sound-volume"
-        min={0}
-        max={100}
-        step={5}
-        value={percent}
-        aria-label="Volume"
-        aria-valuetext={`${percent}%`}
-        title={`Volume ${percent}%`}
-        onChange={(event) => setVolume(volumeForPosition(Number(event.target.value) / 100))}
-      />
+      <VolumeSlider />
     </div>
   );
 }

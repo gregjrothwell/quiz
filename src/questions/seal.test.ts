@@ -67,7 +67,7 @@ describe('the published packs are sealed', () => {
   // Guards the guard. A glob that quietly matched nothing would make every
   // assertion below pass while checking not one thing.
   test('there are packs to check', () => {
-    expect(packFiles.length).toBe(16);
+    expect(packFiles.length).toBe(20);
   });
 
   test.each(packFiles)('%s ships no answer', (name) => {
@@ -171,6 +171,33 @@ describe('hand-built packs', () => {
     }
   });
 
+  test('name the artist reuses an Apple preview and does not cut it', () => {
+    const pack = JSON.parse(readFileSync(join(PACKS, 'artists.json'), 'utf8')) as {
+      questions: {
+        question: string;
+        previewUrl?: string;
+        storeUrl?: string;
+        previewStart?: number;
+        previewSeconds?: number;
+        voices?: unknown;
+        image?: string;
+        artworkUrl?: string;
+      }[];
+    };
+    expect(pack.questions.length).toBeGreaterThanOrEqual(45);
+    for (const question of pack.questions) {
+      expect(question.question).toBe('Name the artist.');
+      expect(question.previewUrl).toMatch(/^https:\/\/audio-ssl\.itunes\.apple\.com\//);
+      expect(question.storeUrl).toMatch(/^https:\/\/(music|itunes)\.apple\.com\//);
+      expect(question.storeUrl).not.toMatch(/\/album\/[^/]+\/\d+/);
+      expect(question.previewStart).toBeUndefined();
+      expect(question.previewSeconds).toBeUndefined();
+      expect(question.voices).toBeUndefined();
+      expect(question.image).toBeUndefined();
+      expect(question.artworkUrl).toBeUndefined();
+    }
+  });
+
   test('flags are hashed stills and never a jigsaw', () => {
     const pack = JSON.parse(readFileSync(join(PACKS, 'flags.json'), 'utf8')) as {
       questions: { image?: string; jigsaw?: boolean }[];
@@ -202,6 +229,26 @@ describe('hand-built packs', () => {
       expect(question.image).toBeUndefined();
       expect(question.storeUrl).toMatch(/^https:\/\/(music|itunes)\.apple\.com\//);
       expect(question.storeUrl).not.toMatch(/\/album\/[^/]+\/\d+/);
+    }
+  });
+
+  /**
+   * A Catchphrase drawing is generated from a prompt that describes its answer,
+   * and mflux embeds generation metadata in a picture unless told not to. The
+   * draw script passes `--no-metadata`; this is the check that it held all the
+   * way to Pages, through `compressStill`, on every published still.
+   */
+  test('catchphrase are hashed stills, never a jigsaw, with no prompt inside', () => {
+    const pack = JSON.parse(readFileSync(join(PACKS, 'catchphrase.json'), 'utf8')) as {
+      questions: { image?: string; jigsaw?: boolean; question: string }[];
+    };
+    expect(pack.questions.length).toBeGreaterThanOrEqual(30);
+    for (const question of pack.questions) {
+      expect(question.image).toMatch(HASH_FILE);
+      expect(question.jigsaw).toBeUndefined();
+      expect(question.question).toBe('Say what you see');
+      const bytes = readFileSync(join(PACKS, 'images', question.image as string)).toString('latin1');
+      expect(bytes).not.toMatch(/mflux|prompt|z-image/i);
     }
   });
 

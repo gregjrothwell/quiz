@@ -1,6 +1,6 @@
 # The configurable answer window
 
-> **Owner: Greg Rothwell. Last updated: 20 August 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 21 September 2026. Budget: 250 lines.**
 
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
@@ -130,5 +130,26 @@ refused for another ten, and the round stalls on "the vault would not confirm an
 answer".
 
 So: publish `firestore.rules`, run `npm run check-rules`, then `npm run deploy`.
+
+## The 8,000 ms grace leaves the default window unguarded
+
+**21 September 2026.** The floor shipped 8 September (`elapsedMs >= arrival −
+openedAt − 8000`). What was never written down: on the default 10-second window
+that floor is ≤ 0 for eighty percent of it, so `elapsedMs: 0` is accepted. Rank
+is `elapsedMs` ascending. The client's own guard is bypassed by writing
+Firestore directly. The grace stays at 8000 — Greg's call, measure first.
+
+The instrument is `at: serverTimestamp()` on the answer, optional so the live
+bundle still scores. Rank still reads `elapsedMs`. `(at − openedAt) −
+elapsedMs` is the implied network delay: small and noisy for an honest write,
+large and systematic for a fabricated stamp. One round of `npm run
+audit-players` is the number that replaces 8000.
+
+**Deploy order:** paste the permissive rule (`at` optional) → deploy the
+client → only then consider requiring it. A client ahead of the console has
+every answer refused in silence.
+
+An answer that lands after the buzzer but before the reveal fold still
+scores. `useRoom.ts` notes it in a comment; it is accepted, not a bug.
 
 ---

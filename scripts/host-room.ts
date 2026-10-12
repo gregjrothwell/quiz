@@ -14,6 +14,32 @@
  *
  *   npm run host-room -- 10
  *
+ * `--pack sleeves` plays two real sleeves instead of the harness questions:
+ * the first with its song, which should start at once (half the clock until
+ * 30 September 2026), and the second with the song taken off, which should
+ * play silent as a sleeve always did. Both are published ids, so the vault
+ * already holds their answers. See docs/decisions/sleeves-song.md.
+ *
+ *   npm run host-room -- 10 --pack sleeves
+ *
+ * `--pack catchphrase` plays two published Catchphrase puzzles. A browser in
+ * the room should show each picture alone until halfway, then the options. New
+ * ids stall at the reveal until `seed-vault` has run, which is what this
+ * proves before a deploy. See docs/decisions/catchphrase.md.
+ *
+ *   npm run host-room -- 10 --pack catchphrase
+ *
+ * `--pack blanks` does the same with the first two Blankety Blank questions, so
+ * a reveal proves the vault holds their answers before the pack deploys. See
+ * docs/decisions/blankety-blank.md.
+ *
+ *   npm run host-room -- 10 --pack blanks
+ *
+ * `--pack prices` does the same for The Price Was Right. Greg plays it blind,
+ * so read only the reveal's right/wrong, not the options, if he is watching.
+ *
+ *   npm run host-room -- 10 --pack prices
+ *
  * Not part of the build or the test suite: it talks to the live project.
  */
 
@@ -31,10 +57,13 @@ import {
   updateDoc,
   type DocumentData,
 } from 'firebase/firestore';
+// The vault's candidates go over Lite, as the app sends them — see `resolveAnswer`.
+import { getFirestore as getLiteFirestore } from 'firebase/firestore/lite';
 import { reduce, type Action } from '../src/engine/reducer';
 import { liveAnswers, type AnswerDoc } from '../src/engine/answers';
 import {
   DEFAULT_DURATION_SECS,
+  buildQuizQuestions,
   createRoom,
   currentQuestion,
   isDurationAllowed,
@@ -42,6 +71,9 @@ import {
   type RoomState,
 } from '../src/engine/state';
 import { randomRoomCode } from '../src/engine/roomCode';
+import type { SealedQuestion } from '../src/questions/types';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { resolveAnswer } from '../src/lib/vault';
 
 /** Reads a required value from .env.local, so a missing one fails with a name. */
@@ -96,6 +128,54 @@ const QUESTIONS: QuizQuestion[] = Array.from({ length: 3 }, (_, i) => ({
   category: 'General Knowledge',
   difficulty: 'easy',
 }));
+
+/** Two published sleeves: one keeps its song, one has it taken off. */
+function sleeveQuestions(): QuizQuestion[] {
+  const pack = JSON.parse(
+    readFileSync(join(import.meta.dirname, '..', 'public', 'packs', 'sleeves.json'), 'utf8'),
+  ) as { questions: SealedQuestion[] };
+  const withSong = pack.questions.filter((question) => question.previewUrl !== undefined);
+  if (withSong.length < 2) throw new Error('sleeves.json has fewer than two sleeves with a song');
+  const [sung, silenced] = buildQuizQuestions(withSong.slice(0, 2), 2);
+  if (!sung || !silenced) throw new Error('could not build two sleeve questions');
+  const silent: QuizQuestion = { ...silenced };
+  delete silent.previewUrl;
+  delete silent.previewStart;
+  delete silent.previewSeconds;
+  return [sung, silent];
+}
+
+/** The first two questions of a published pack, as the app would deal them. */
+function firstTwo(file: 'catchphrase.json' | 'blanks.json' | 'prices.json'): QuizQuestion[] {
+  const pack = JSON.parse(
+    readFileSync(join(import.meta.dirname, '..', 'public', 'packs', file), 'utf8'),
+  ) as { questions: SealedQuestion[] };
+  const built = buildQuizQuestions(pack.questions.slice(0, 2), 2);
+  if (built.length < 2) throw new Error(`${file} has fewer than two questions`);
+  return built;
+}
+
+const packArg = process.argv.indexOf('--pack');
+const PACK = packArg > 0 ? process.argv[packArg + 1] : undefined;
+if (
+  PACK !== undefined
+  && PACK !== 'sleeves'
+  && PACK !== 'catchphrase'
+  && PACK !== 'blanks'
+  && PACK !== 'prices'
+) {
+  throw new Error(`--pack takes sleeves, catchphrase, blanks or prices, not ${PACK}`);
+}
+const ROUND =
+  PACK === 'sleeves'
+    ? { packId: 'sleeves' as const, packTitle: 'Sleeves', questions: sleeveQuestions() }
+    : PACK === 'catchphrase'
+      ? { packId: 'catchphrase' as const, packTitle: 'Catchphrase', questions: firstTwo('catchphrase.json') }
+      : PACK === 'blanks'
+        ? { packId: 'blanks' as const, packTitle: 'Blankety Blank', questions: firstTwo('blanks.json') }
+        : PACK === 'prices'
+          ? { packId: 'prices' as const, packTitle: 'The Price Was Right', questions: firstTwo('prices.json') }
+          : { packId: 'general-knowledge' as const, packTitle: 'GK', questions: QUESTIONS };
 
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 const stamp = (): string => new Date().toISOString().slice(11, 23);
@@ -197,7 +277,7 @@ async function main(): Promise<void> {
 
   console.log(`${stamp()}  >>> WRITING start`);
   await dispatch([
-    { type: 'selectPack', packId: 'general-knowledge', packTitle: 'GK', questions: QUESTIONS, wagerEnabled: false, stealEnabled: false },
+    { type: 'selectPack', ...ROUND, wagerEnabled: false, stealEnabled: false },
     { type: 'start', at: Date.now(), gameId: `host-${Date.now()}`, durationSecs: DURATION_SECS },
   ]);
 
@@ -207,7 +287,7 @@ async function main(): Promise<void> {
   const open = stateNow();
   const asked = open ? currentQuestion(open) : null;
   if (!asked) throw new Error('No open question to reveal');
-  const correctIndex = await resolveAnswer(db, code, asked);
+  const correctIndex = await resolveAnswer(getLiteFirestore(db.app), code, asked);
   console.log(`${stamp()}  >>> WRITING reveal (answer ${correctIndex})`);
   const revealed = await dispatch([{ type: 'reveal', correctIndex, questionId: asked.id }]);
 

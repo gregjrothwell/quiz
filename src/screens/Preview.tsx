@@ -5,14 +5,18 @@ import { RecoveryPanel } from '../components/RecoveryPanel';
 import { SquadPanel } from '../components/SquadPanel';
 import { WeekTable } from '../components/WeekBoard';
 import type { QuestionRecord } from '../engine/awards';
+import type { Standoff } from '../engine/standoff';
 import { createRoom, type QuizQuestion, type RoomState } from '../engine/state';
 import type { SeasonRow } from '../lib/season';
 import type { PackSummary } from '../lib/usePacks';
+import { PACK_META } from '../questions/types';
+import type { StandoffView } from '../lib/useStandoff';
 import { Final } from './Final';
 import { Landing } from './Landing';
 import { Lobby } from './Lobby';
 import { QuestionScreen } from './QuestionScreen';
 import { Scoreboard } from './Scoreboard';
+import { ShareOrShaft } from './ShareOrShaft';
 
 /**
  * A design gallery of every screen with fixed data.
@@ -105,6 +109,42 @@ const SLEEVES_QUESTION: QuizQuestion = {
   trackId: 1474815798,
 };
 
+/*
+  A Catchphrase puzzle's layout, not a real one. The still is borrowed from the
+  screens fixture and the options are sayings the pack does not use: Greg plays
+  the round and reviews this gallery. See docs/decisions/catchphrase.md.
+*/
+/**
+ * The Price Was Right, on an invented item at invented prices — Greg plays the
+ * real pack blind. The longest name in the pack's shape, so the prompt's wrap
+ * is the one that matters, and the options low to high as the pack sends them.
+ */
+const PRICE_QUESTION: QuizQuestion = {
+  id: 'price-fixture',
+  prompt: 'In August 2026, an evening seat at a puppet show in the front row cost about £24.50. What did it cost in August 2016?',
+  options: ['£9.50', '£12.50', '£16.00', '£21.00'],
+  correctIndex: null,
+  category: '10 years ago',
+  difficulty: 'medium',
+};
+
+const CATCHPHRASE_QUESTION: QuizQuestion = {
+  id: 'catchphrase-1',
+  prompt: 'Say what you see',
+  options: [
+    'A watched pot never boils',
+    'Every dog has its day',
+    'Many hands make light work',
+    'The early bird catches the worm',
+  ],
+  correctIndex: null,
+  category: 'Catchphrase',
+  difficulty: 'medium',
+  image: '78f0a0c5bb1877d83147d18ab197d1c569775babc4f38814873f1dd1de95cbfc.jpg',
+  imageWidth: 780,
+  imageHeight: 439,
+};
+
 const SCREENS_QUESTION: QuizQuestion = {
   id: 'screen-1',
   prompt: 'Which film is this?',
@@ -133,9 +173,8 @@ const PLAYERS = {
  * Seven, which is what it takes to see the chair hold more than one person:
  * three on risers, one clear of the tie, and three level at the bottom.
  *
- * The four above cannot show it at all — `seatedLast` refuses to seat a tie that
- * reaches into the podium, so in a room of four a shared last place is not a
- * shared last place, it is a dead heat for third.
+ * The four above can only show a tie for last as one on the riser and one in
+ * the chair: whoever the podium stands up stays there (`seatedLast`).
  */
 const SEATED_ROOM = {
   ...PLAYERS,
@@ -172,6 +211,72 @@ const CROWD = Object.fromEntries(
     name.toLowerCase(),
     { name, joinedAt: 100 },
   ]),
+);
+
+/**
+ * Thirty, the most this room has been asked to hold: a one-off office game,
+ * nearly three times the eleven of the biggest round ever played (`RX4P`,
+ * 9 September 2026). Long names, three squads and the unaligned, so the lamps,
+ * the standings and the podium are seen at the width they will actually be.
+ */
+const THIRTY_NAMES = [
+  'Greg', 'Sam', 'Priya', 'Alex', 'Jo', 'Nadia', 'Tom', 'Rhian', 'Marcus', 'Bea',
+  'Christopher', 'Anne-Marie', 'Siobhán', 'Maximilian', 'Oluwaseun', 'Kat', 'Dev',
+  'Rach', 'Inès', 'Bartholomew', 'Lou', 'Yusuf', 'Gwenllian', 'Ed', 'Mei',
+  'Fitzgerald', 'Zara', 'Callum', 'Hannah-Rose', 'Pip',
+];
+const THIRTY_SQUADS = ['Hermes', 'Bundae', 'Engineering', ''];
+const thirtyUid = (index: number): string => (index === 0 ? 'greg' : `p${index}`);
+
+const THIRTY = Object.fromEntries(
+  THIRTY_NAMES.map((name, index) => {
+    const squad = THIRTY_SQUADS[index % THIRTY_SQUADS.length];
+    return [thirtyUid(index), { name, joinedAt: 100 + index, ...(squad ? { squad } : {}) }];
+  }),
+);
+
+/** Half the room in, spread across the lecterns and the clock. */
+const THIRTY_HALF_IN = Object.fromEntries(
+  THIRTY_NAMES.slice(0, 15).map((_, index) => [
+    thirtyUid(index * 2),
+    { optionIndex: index % 4, elapsedMs: 1_200 + index * 420 },
+  ]),
+);
+
+/** Twenty-eight in at the reveal, two who never answered. */
+const THIRTY_ALL_IN = Object.fromEntries(
+  THIRTY_NAMES.slice(0, 28).map((_, index) => [
+    thirtyUid(index),
+    { optionIndex: index % 3 === 0 ? 0 : (index % 4), elapsedMs: 900 + index * 310 },
+  ]),
+);
+
+/**
+ * What a picture round actually does at the reveal: On the box lands 83–90%,
+ * so twenty-six on the right lectern, three scattered, one who never answered.
+ */
+const THIRTY_PILE_ON = Object.fromEntries(
+  THIRTY_NAMES.slice(0, 29).map((_, index) => [
+    thirtyUid(index),
+    { optionIndex: index < 26 ? 0 : index - 25, elapsedMs: 1_100 + index * 230 },
+  ]),
+);
+
+const THIRTY_DELTAS = Object.fromEntries(
+  Object.entries(THIRTY_ALL_IN).map(([uid, answer], index) => [
+    uid,
+    answer.optionIndex === 0 ? 1_000 - Math.min(index, 5) * 100 : 0,
+  ]),
+);
+
+/** Descending: Greg and Sam level at the top, fourteenth and fifteenth level mid-table. */
+function thirtyScore(index: number): number {
+  const rung = index === 15 ? 14 : index;
+  return 6_100 - Math.max(0, rung - 1) * 180;
+}
+
+const THIRTY_SCORES = Object.fromEntries(
+  THIRTY_NAMES.map((_, index) => [thirtyUid(index), thirtyScore(index)]),
 );
 
 const PACKS: PackSummary[] = [
@@ -241,6 +346,15 @@ const PACKS: PackSummary[] = [
     count: 54,
     counts: { easy: 37, medium: 16, hard: 1 },
   },
+  {
+    id: 'random',
+    title: PACK_META.random.title,
+    blurb: PACK_META.random.blurb,
+    // The live lobby derives this from the six source packs. The gallery only
+    // needs a row the quizmaster can press.
+    count: 540,
+    counts: { easy: 48, medium: 156, hard: 186 },
+  },
 ];
 
 function mockRoom(overrides: Partial<RoomState> = {}): RoomState {
@@ -256,6 +370,36 @@ function mockRoom(overrides: Partial<RoomState> = {}): RoomState {
 }
 
 const CLOCK = { elapsedMs: 6_000, remainingMs: 14_000, secondsLeft: 14, expired: false };
+
+/**
+ * Share or Shaft between Sam (3,100) and Greg (2,450), for the five moments the
+ * final has. A gallery fixture for the reason the stake band got one: a screen
+ * that appears once a round, at the end, is never reviewed otherwise.
+ */
+const FINAL_SCORES = { sam: 3_100, greg: 2_450, priya: 1_800, alex: 1_200 };
+
+function finalRoom(standoff: Partial<Standoff>, overrides: Partial<RoomState> = {}): RoomState {
+  return mockRoom({
+    phase: 'standoff',
+    index: 1,
+    gameId: 'preview-game',
+    standoffEnabled: true,
+    scores: FINAL_SCORES,
+    standoff: {
+      finalists: ['sam', 'greg'],
+      stakes: { sam: 3_100, greg: 2_450 },
+      stage: 'talk',
+      sealed: null,
+      picks: null,
+      ...standoff,
+    },
+    ...overrides,
+  });
+}
+
+function finalView(overrides: Partial<StandoffView> = {}): StandoffView {
+  return { lockedIn: { sam: false, greg: false }, myPick: null, secondsLeft: 42, pick: () => undefined, ...overrides };
+}
 
 /**
  * A two-question game built to earn all four rosettes: Greg in on the buzzer and
@@ -558,6 +702,106 @@ export function Preview() {
         />
       ),
     },
+    // The two halves of a Catchphrase question: the picture alone, then the
+    // options landing at halfway. A 20s window, so `CLOCK`'s 6s is the first half.
+    {
+      title: 'Question · catchphrase, before halfway',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'question',
+            questionOpenedAt: 1_000,
+            durationSecs: 20,
+            packId: 'catchphrase',
+            packTitle: 'Catchphrase',
+            questions: [CATCHPHRASE_QUESTION],
+            index: 0,
+          })}
+          youUid="priya"
+          isQuizmaster={false}
+          clock={CLOCK}
+          revealed={false}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      title: 'Question · catchphrase, from halfway',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'question',
+            questionOpenedAt: 1_000,
+            durationSecs: 20,
+            packId: 'catchphrase',
+            packTitle: 'Catchphrase',
+            questions: [CATCHPHRASE_QUESTION],
+            index: 0,
+          })}
+          youUid="priya"
+          isQuizmaster={false}
+          clock={{ elapsedMs: 12_000, remainingMs: 8_000, secondsLeft: 8, expired: false }}
+          revealed={false}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      title: 'Question · The Price Was Right',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'question',
+            questionOpenedAt: 1_000,
+            durationSecs: 20,
+            packId: 'prices',
+            packTitle: 'The Price Was Right',
+            questions: [PRICE_QUESTION],
+            index: 0,
+          })}
+          youUid="priya"
+          isQuizmaster={false}
+          clock={{ elapsedMs: 6_000, remainingMs: 14_000, secondsLeft: 14, expired: false }}
+          revealed={false}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    // A Bonus Catchphrase, the fifth question, at `CLOCK`'s 6 s of 20: three
+    // squares up, the options still to come.
+    {
+      title: 'Question · Bonus Catchphrase, three squares up',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'question',
+            questionOpenedAt: 1_000,
+            durationSecs: 20,
+            packId: 'catchphrase',
+            packTitle: 'Catchphrase',
+            questions: [1, 2, 3, 4, 5].map((n) => ({ ...CATCHPHRASE_QUESTION, id: `catchphrase-${n}` })),
+            index: 4,
+          })}
+          youUid="priya"
+          isQuizmaster={false}
+          clock={CLOCK}
+          revealed={false}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
     {
       title: 'Question · walked in on it',
       node: (
@@ -838,6 +1082,77 @@ export function Preview() {
       ),
     },
     {
+      title: 'Share or Shaft · talking it over, watching',
+      node: (
+        <ShareOrShaft
+          room={finalRoom({})}
+          youUid="priya"
+          isQuizmaster
+          view={finalView()}
+          onOpenPicks={noop}
+          onNext={noop}
+        />
+      ),
+    },
+    {
+      title: 'Share or Shaft · picking, as a finalist',
+      node: (
+        <ShareOrShaft
+          room={finalRoom({ stage: 'pick' })}
+          youUid="greg"
+          isQuizmaster={false}
+          view={finalView({ lockedIn: { sam: true, greg: false }, secondsLeft: 11 })}
+          onOpenPicks={noop}
+          onNext={noop}
+        />
+      ),
+    },
+    {
+      title: 'Share or Shaft · locked in',
+      node: (
+        <ShareOrShaft
+          room={finalRoom({ stage: 'pick' })}
+          youUid="greg"
+          isQuizmaster={false}
+          view={finalView({ lockedIn: { sam: true, greg: true }, myPick: 'shaft', secondsLeft: 6 })}
+          onOpenPicks={noop}
+          onNext={noop}
+        />
+      ),
+    },
+    {
+      title: 'Share or Shaft · shafted, told to the one who lost it',
+      node: (
+        <ShareOrShaft
+          room={finalRoom(
+            { stage: 'revealed', sealed: ['sam', 'greg'], picks: { sam: 'shaft', greg: 'share' } },
+            { scores: { ...FINAL_SCORES, sam: 5_550, greg: 0 }, lastDeltas: { sam: 2_450, greg: -2_450 } },
+          )}
+          youUid="greg"
+          isQuizmaster
+          view={finalView()}
+          onOpenPicks={noop}
+          onNext={noop}
+        />
+      ),
+    },
+    {
+      title: 'Share or Shaft · both shafted, and third place wins',
+      node: (
+        <ShareOrShaft
+          room={finalRoom(
+            { stage: 'revealed', sealed: ['sam', 'greg'], picks: { sam: 'shaft', greg: 'shaft' } },
+            { scores: { ...FINAL_SCORES, sam: 0, greg: 0 }, lastDeltas: { sam: -3_100, greg: -2_450 } },
+          )}
+          youUid="priya"
+          isQuizmaster={false}
+          view={finalView()}
+          onOpenPicks={noop}
+          onNext={noop}
+        />
+      ),
+    },
+    {
       title: 'Final · tie for first',
       node: (
         <Final
@@ -918,6 +1233,84 @@ export function Preview() {
               rach: 0,
               dev: 0,
             },
+          })}
+          youUid="greg"
+          isQuizmaster
+          log={[]}
+          onPlayAgain={noop}
+          onLeave={noop}
+          onSeason={noop}
+        />
+      ),
+    },
+    {
+      /*
+        Room RRGM, 6 October 2026: four of six staked everything on the last
+        question and lost it, so third place is one of four on nothing. That
+        round ended with no chair at all; now the riser keeps its one and the
+        other three sit down.
+      */
+      title: 'Final · a tie for last that reaches the podium',
+      node: (
+        <Final
+          banked={null}
+          youPlayerId="greg"
+          snapshot={null}
+          room={mockRoom({
+            phase: 'finished',
+            index: 1,
+            players: { ...PLAYERS, jo: SEATED_ROOM.jo, rach: SEATED_ROOM.rach },
+            scores: { greg: 22_000, sam: 9_200, priya: 0, alex: 0, jo: 0, rach: 0 },
+          })}
+          youUid="greg"
+          isQuizmaster
+          log={[]}
+          onPlayAgain={noop}
+          onLeave={noop}
+          onSeason={noop}
+        />
+      ),
+    },
+    {
+      /*
+        XRUE, 7 October 2026, Greg: the podium should say what the header says.
+        Joint places stand equally high, and everybody placed third stands —
+        here three level on third, above the bottom, so five risers and a chair.
+      */
+      title: 'Final · a three-way tie for third',
+      node: (
+        <Final
+          banked={null}
+          youPlayerId="greg"
+          snapshot={null}
+          room={mockRoom({
+            phase: 'finished',
+            index: 1,
+            players: SEATED_ROOM,
+            scores: { greg: 14_000, sam: 11_200, priya: 7_400, alex: 7_400, jo: 7_400, rach: 2_100, dev: 900 },
+          })}
+          youUid="greg"
+          isQuizmaster
+          log={[]}
+          onPlayAgain={noop}
+          onLeave={noop}
+          onSeason={noop}
+        />
+      ),
+    },
+    {
+      /* Six level at the top of seven: five stand, the fifth carries "+1". */
+      title: 'Final · six joint winners',
+      node: (
+        <Final
+          banked={null}
+          youPlayerId="greg"
+          snapshot={null}
+          room={mockRoom({
+            phase: 'finished',
+            index: 1,
+            players: SEATED_ROOM,
+            scores: { greg: 6_000, sam: 6_000, priya: 6_000, alex: 6_000, jo: 6_000, rach: 6_000, dev: 1_500 },
           })}
           youUid="greg"
           isQuizmaster
@@ -1036,6 +1429,150 @@ export function Preview() {
           youUid="greg"
           isQuizmaster
           log={REVIEWED_GAME}
+          onPlayAgain={noop}
+          onLeave={noop}
+          onSeason={noop}
+        />
+      ),
+    },
+    // ── Thirty in the room ─────────────────────────────────────────────────
+    // Appended rather than placed beside their four-player twins, so every
+    // `#/preview/N` index above keeps pointing where it did.
+    {
+      title: 'Lobby · thirty',
+      node: (
+        <Lobby
+          room={mockRoom({ phase: 'lobby', players: THIRTY })}
+          youUid="greg"
+          isQuizmaster
+          packs={PACKS}
+          busy={false}
+          onStart={noop}
+          onLeave={noop}
+        />
+      ),
+    },
+    {
+      title: 'Question · thirty, half in',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'question',
+            questionOpenedAt: 1_000,
+            questions: LONG_ROUND,
+            index: 6,
+            players: THIRTY,
+            scores: THIRTY_SCORES,
+            answers: THIRTY_HALF_IN,
+          })}
+          youUid="greg"
+          isQuizmaster
+          clock={CLOCK}
+          revealed={false}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      title: 'Question · thirty, what a player sees',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'question',
+            questionOpenedAt: 1_000,
+            questions: LONG_ROUND,
+            index: 6,
+            players: THIRTY,
+            scores: THIRTY_SCORES,
+            answers: THIRTY_HALF_IN,
+          })}
+          youUid="p13"
+          isQuizmaster={false}
+          clock={CLOCK}
+          revealed={false}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      title: 'Reveal · thirty',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'reveal',
+            players: THIRTY,
+            scores: THIRTY_SCORES,
+            answers: THIRTY_ALL_IN,
+            lastDeltas: THIRTY_DELTAS,
+          })}
+          youUid="greg"
+          isQuizmaster
+          clock={CLOCK}
+          revealed
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      title: 'Reveal · thirty, a pile-on',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'reveal',
+            players: THIRTY,
+            scores: THIRTY_SCORES,
+            answers: THIRTY_PILE_ON,
+            lastDeltas: Object.fromEntries(
+              Object.entries(THIRTY_PILE_ON).map(([uid, answer]) => [uid, answer.optionIndex === 0 ? 600 : 0]),
+            ),
+          })}
+          youUid="p13"
+          isQuizmaster={false}
+          clock={CLOCK}
+          revealed
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      title: 'Standings · thirty',
+      node: (
+        <Scoreboard
+          room={mockRoom({
+            phase: 'scoreboard',
+            players: THIRTY,
+            scores: THIRTY_SCORES,
+            lastDeltas: THIRTY_DELTAS,
+          })}
+          youUid="p13"
+          isQuizmaster
+          onNext={noop}
+        />
+      ),
+    },
+    {
+      title: 'Final · thirty',
+      node: (
+        <Final
+          banked={null}
+          youPlayerId="p13"
+          snapshot={null}
+          room={mockRoom({ phase: 'finished', index: 1, players: THIRTY, scores: THIRTY_SCORES })}
+          youUid="p13"
+          isQuizmaster={false}
+          log={[]}
           onPlayAgain={noop}
           onLeave={noop}
           onSeason={noop}

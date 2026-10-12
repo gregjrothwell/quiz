@@ -56,6 +56,10 @@ describe('mergeIndex', () => {
       'flags',
       'sleeves',
       'screens',
+      'catchphrase',
+      'blanks',
+      'prices',
+      'artists',
     ]);
   });
 });

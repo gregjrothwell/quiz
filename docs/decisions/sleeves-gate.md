@@ -1,6 +1,6 @@
 # When the cover is the answer key
 
-**Owner: Greg Rothwell. Last updated: 21 September 2026. Budget: 250 lines.**
+**Owner: Greg Rothwell. Last updated: 26 September 2026. Budget: 250 lines.**
 
 Sleeves asks you to name an album from its cover. Most album covers have the
 album's name written on them. That was never checked, and the round played on
@@ -162,6 +162,15 @@ what iTunes will return — so the ones refused stay in the file as a record of
 what was tried. The second batch was weighted towards what had actually survived
 the first: designer-led sleeves, portraits where the artist is the image, and
 photographic covers from before a title on the front was the default.
+
+**Third batch, 26 September 2026: 44 → 86.** 59 stuck albums resolved by listing
+the artist's GB catalogue (`lookup?id=<artistId>&entity=album`) instead of album
+search, plus 141 new candidates. Audit cleared 99 of 406. By eye, 11 of the 55
+new clears print their title (a third of the rate before, not zero) and 2 were
+the wrong release — a live album, a remix single — because `titleMatches`
+accepts a name that merely contains the album's. All in `sleeve-refusals.ts`.
+Two covers named a *distractor* (blink-182's badge, MGMT's logo); those options
+were swapped. **That pass was a model's.** The rule above still stands.
 
 ## The ratings were redone, and they are judgements
 

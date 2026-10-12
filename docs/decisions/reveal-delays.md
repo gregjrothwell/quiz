@@ -1,6 +1,6 @@
 # Why a reveal stalls, and what is kept about it
 
-> **Owner: Greg Rothwell. Last updated: 11 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 6 October 2026. Budget: 250 lines.**
 
 [`vault.md`](vault.md) is about *whether* and *when* the gate opens, and it was
 at 248 of its 250 lines when this happened. This file is the third question:
@@ -109,7 +109,7 @@ they are the same device.
 | field | what it catches |
 |---|---|
 | `gateMs` | local clock expiring → the gate provably open. Slow means the server's acknowledgement was late. |
-| `resolveMs` | the vault round trip — four candidates, three refused. Healthy is under 300ms. |
+| `resolveMs` | the vault: one write per option up to the hit (all four, three refused, before 6 Oct 2026). Healthy is under 300ms. |
 | `dispatchMs` | the room update that puts the answer on everybody else's screen. |
 | `attempts` | 1, unless the vault refused or the connection stalled. |
 
@@ -158,6 +158,12 @@ it passed only because `.env.local` exists on this laptop. The formatter lives i
    recording. `attempts` is the field that will say.
 3. **A stall shorter than four seconds still shows as a pause** and always did.
    That is the reveal waiting for a write, and it is honest.
+
+## 6 October 2026 — what a healthy reveal costs
+
+Moved to [`reveal-stop-at-hit.md`](reveal-stop-at-hit.md): the time read back
+from `RevealTiming`, the three refusals that each reopen the write stream,
+asking one option at a time, and the 1191ms chased with a trace.
 
 ## A correction to `HANDOVER.md`, 11 September 2026
 

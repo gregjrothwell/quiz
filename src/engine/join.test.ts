@@ -110,6 +110,24 @@ describe('planJoin', () => {
     expect(plan.score).toBeNull();
   });
 
+  test('opens no score for somebody arriving during the final', () => {
+    // #given the questions are over and the top two are deciding
+    const plan = planJoin({
+      players: UNDER_WAY,
+      scores: { greg: 4_675, amier: 3_786 },
+      phase: 'standoff',
+      uid: 'late',
+      name: 'Late',
+      playerId: 'late',
+      squad: '',
+      restored: null,
+      now: 1_786_963_646_911,
+    });
+
+    // #then they stay off the board, as they would a moment later on the results
+    expect(plan.score).toBeNull();
+  });
+
   test('keeps a real score on a finished board', () => {
     // #given somebody who played the round and is rejoining the final screen
     const plan = planJoin({

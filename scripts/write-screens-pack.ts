@@ -95,7 +95,8 @@ export async function buildScreensPack(
   const answers: Record<string, string> = {};
   const questions: SealedQuestion[] = [];
   const skipped: string[] = [];
-  const tmdbIds: number[] = [];
+  // TMDB numbers films and TV separately: movie 95 is Armageddon, tv 95 is Buffy.
+  const tmdbIds: string[] = [];
 
   for (const spec of SCREEN_SPECS) {
     process.stdout.write(`  screen ${spec.slug}…`);
@@ -109,7 +110,7 @@ export async function buildScreensPack(
         const fetched = await fetchImage(item.imageUrl);
         filename = await store(fetched.bytes, fetched.contentType);
         posterCrop = item.posterCrop === true;
-        tmdbIds.push(item.tmdbId);
+        tmdbIds.push(`${spec.kind}/${item.tmdbId}`);
         console.log(` ${item.tmdbId} ${filename}`);
       }
       const question: Question = {

@@ -28,7 +28,7 @@ React 18, TypeScript, Vite, Vitest. Firebase client SDK. Deploy is `gh-pages` fr
 | `npm run rank-harness [-- --browser]` | Seven answerers in one live question — the whole rank ladder, proved |
 | `npm run seed-vault` | Admin SDK; needs `GOOGLE_APPLICATION_CREDENTIALS` under `.secrets/` |
 | `npm run fold-votes [-- --go]` | What the office voted out. Dry run by default; `--go` writes the blocklist |
-| `npm run read-games [-- --last n]` | The rounds the app kept, read back. Admin SDK; the client is never allowed to |
+| `npm run read-games` / `audit-players` | Kept rounds, then per-player timings. Admin SDK; the client cannot |
 | `npm run deploy` | `build` then `gh-pages` |
 
 `scripts/` that touch the live project stay out of `npm test` on purpose.
@@ -54,15 +54,12 @@ docs/recall/          Archived spine entries, by month. Verbatim, no budget
 
 ## Conventions
 
+- **Questions are for a British office.** American things famous worldwide are fine; anything that needs American knowledge is not — US sport, politics, and brands, slogans or shows nobody here would know. No pack leans American overall. Hand-built packs as much as harvested (`classify.ts` filters only the harvest): Blankety Blank leaned American on 6 Oct 2026 because this was never written down. Greg's rule, 6 Oct 2026.
 - No `any`, no `@ts-ignore`, no `@ts-expect-error`.
 - Quizmaster is derived (`resolveQuizmaster`), never stored.
 - Answers live in a subcollection. `elapsedMs` is measured on the answering device, not a wall-clock timestamp.
 - A phase transition never writes the `players` map. Membership changes are `players.{uid}` only.
-- **Published packs are sealed: no file in `public/packs/` may contain an answer.**
-  They are static files on GitHub Pages, so anything in one is readable by
-  anybody with the URL. `src/questions/seal.test.ts` enforces it in both
-  directions. (`correctIndex` under `src/` is fine and expected — it is the
-  runtime field that exists only once the vault has resolved an answer.)
+- **Published packs are sealed: no file in `public/packs/` may contain an answer** — anyone with the URL can read them. `src/questions/seal.test.ts` enforces it both ways. (`correctIndex` under `src/` is fine: the runtime field, set once the vault resolves.)
 
 ## What bites
 

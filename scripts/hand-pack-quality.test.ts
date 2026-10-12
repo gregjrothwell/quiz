@@ -1,7 +1,11 @@
 import { describe, expect, test } from 'vitest';
+import { BLANK_SPECS } from './hand-blanks-data';
+import { PRICE_SPECS } from './hand-prices-data';
+import { CATCHPHRASE_MIN_PACK, CATCHPHRASE_SPECS } from './hand-catchphrase-data';
 import { FLAG_SPECS } from './hand-flags-data';
 import { SCREEN_SPECS } from './hand-screens-data';
 import { SLEEVE_SPECS } from './hand-sleeves-data';
+import { artistSlug } from './artists-core';
 import { TUNE_SPECS, TUNES_MIN_PACK } from './hand-tunes-data';
 
 function assertPlayable(
@@ -39,6 +43,10 @@ describe('hand-built media specs', () => {
       ...FLAG_SPECS.map((spec) => spec.slug),
       ...SLEEVE_SPECS.map((spec) => spec.slug),
       ...SCREEN_SPECS.map((spec) => spec.slug),
+      ...CATCHPHRASE_SPECS.map((spec) => spec.slug),
+      ...BLANK_SPECS.map((spec) => spec.slug),
+      ...PRICE_SPECS.map((spec) => spec.slug),
+      ...TUNE_SPECS.map((spec) => artistSlug(spec.slug)),
     ];
 
     // #then every one of them is its own question
@@ -67,6 +75,10 @@ describe('hand-built media specs', () => {
 
   test('screens cover three default rounds, unique slugs, four distinct options', () => {
     assertPlayable(SCREEN_SPECS, 45);
+  });
+
+  test('catchphrase covers two default rounds, unique slugs, four distinct options', () => {
+    assertPlayable(CATCHPHRASE_SPECS, CATCHPHRASE_MIN_PACK);
   });
 
   test('every tune clip window fits inside Apple’s thirty seconds', () => {

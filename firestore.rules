@@ -165,6 +165,83 @@ service cloud.firestore {
           && player.get('squad', '').size() <= 40;
       }
 
+      // `joinedAt` decides the quizmaster (`resolveQuizmaster` takes the
+      // lowest). A bare `is number` meant `players.<myuid>.joinedAt: 0`
+      // seized the role — every phase transition, every reveal, every
+      // `scores.*` write. New entries must be within five minutes of the
+      // server's clock; existing ones must not move. The window also
+      // refuses the accidental stale timestamp from another room (6JA5).
+      //
+      // A reaped player restored after more than five minutes is a *new*
+      // entry carrying the old value, and is refused. Reap is lobby-only.
+      // Widening the window reopens the steal; see
+      // docs/decisions/security-round-sept-2026.md.
+      function joinedAtGraceMs() { return 300000; }
+
+      function newJoinedAtOk() {
+        return request.resource.data.players.keys().hasAny([request.auth.uid])
+          && request.resource.data.players[request.auth.uid].joinedAt
+               >= request.time.toMillis() - joinedAtGraceMs()
+          && request.resource.data.players[request.auth.uid].joinedAt
+               <= request.time.toMillis() + joinedAtGraceMs();
+      }
+
+      function ownJoinedAtOk() {
+        return !request.resource.data.players.keys().hasAny([request.auth.uid])
+          || (resource.data.players.keys().hasAny([request.auth.uid])
+                ? request.resource.data.players[request.auth.uid].joinedAt
+                    == resource.data.players[request.auth.uid].joinedAt
+                : newJoinedAtOk());
+      }
+
+      // The reveal gate asks the room which question is in play, so a room
+      // that can rewrite its own question list can ask about anything in
+      // the vault.
+      //
+      // **`selectPack` and `reset` are not the only writers.** The first cut
+      // of this rule said they were, pinned the list byte for byte, and so
+      // refused the reveal — which stamps the resolved answer into
+      // `questions[index].correctIndex`, so every other client reads it off
+      // the room update it is already listening to rather than paying for its
+      // own vault round trip (`reveal` in src/engine/reducer.ts). Every round
+      // in the project stopped dead on its first question. 22 September 2026;
+      // see docs/decisions/security-round-sept-2026.md.
+      //
+      // So the question in play may change, and nothing else about the list
+      // may: not its id, not `index` on the same write, not any other entry.
+      // That is still the whole of what closes the oracle. Substituting into
+      // another slot is refused outright, so the two-write version — edit slot
+      // 1, then move `index` onto it — dies on the first write; and
+      // substituting into this slot cannot change the id, which is the only
+      // thing `isTheQuestionInPlay()` reads. Options may move and buy nothing:
+      // the reveal document still has to carry the vault's own answer string.
+      //
+      // Deliberately not narrowed to the `question` → `reveal` transition. The
+      // property holds at any phase, and a rule that refuses a reveal written
+      // from an unexpected phase is the failure this comment exists about.
+      function onlyTheQuestionInPlayMoved() {
+        return request.resource.data.index == resource.data.index
+          && resource.data.index < resource.data.questions.size()
+          && request.resource.data.index < request.resource.data.questions.size()
+          && request.resource.data.questions[request.resource.data.index].id
+               == resource.data.questions[resource.data.index].id
+          // Everything but the question in play, on both sides. `removeAll`
+          // strips every element equal to the one given, so a write that made
+          // some other entry a duplicate of this one leaves the two lists
+          // different sizes and is refused — the safe direction.
+          && request.resource.data.questions
+               .removeAll([request.resource.data.questions[request.resource.data.index]])
+             == resource.data.questions
+               .removeAll([resource.data.questions[resource.data.index]]);
+      }
+
+      function questionsPinned() {
+        return request.resource.data.questions == resource.data.questions
+          || resource.data.phase == 'lobby'
+          || request.resource.data.phase == 'lobby'
+          || onlyTheQuestionInPlayMoved();
+      }
+
       // The writer's own entry is the only one a rule can check without
       // iterating the map, which rules cannot do. A member can still write a
       // neighbour's entry — see the `update` rule.
@@ -242,7 +319,7 @@ service cloud.firestore {
       function wellFormed() {
         return request.resource.data.code == code
           && request.resource.data.phase in
-               ['lobby', 'question', 'reveal', 'scoreboard', 'finished']
+               ['lobby', 'question', 'reveal', 'scoreboard', 'standoff', 'finished']
           && request.resource.data.players.keys().size() <= maxPlayers()
           && request.resource.data.scores.keys().size() <= maxPlayers()
           && request.resource.data.questions.size() <= maxQuestions()
@@ -260,7 +337,8 @@ service cloud.firestore {
       allow get: if signedIn();
 
       // Creating a room means putting yourself in it as the only player, in a
-      // lobby with no questions yet.
+      // lobby with no questions yet. `newJoinedAtOk` rather than
+      // `ownJoinedAtOk`: there is no `resource` on create.
       allow create: if signedIn()
         && request.resource.data.players.keys().hasOnly([request.auth.uid])
         // `hasOnly` is satisfied by the empty map, which would mint a room with
@@ -268,20 +346,25 @@ service cloud.firestore {
         && request.resource.data.players.keys().size() == 1
         && request.resource.data.phase == 'lobby'
         && request.resource.data.questions.size() == 0
-        && wellFormed();
+        && wellFormed()
+        && newJoinedAtOk();
 
       // Members drive the game. Joining is also an update, so allow a writer who
       // is a member either before or after the write.
       //
-      // A member can still overwrite the phase, the scores, the questions and
-      // other players: the quizmaster is derived rather than stored, so there is
-      // no uid here to compare against. That is accepted for a room of colleagues
-      // and written down in docs/HANDOVER.md. `wellFormed` is what keeps the
-      // worst case to mischief rather than an unplayable or expensive room.
+      // A member can still overwrite the phase, the scores and other
+      // players: the quizmaster is derived rather than stored, so there is
+      // no uid here to compare against. That is accepted for a room of
+      // colleagues. `wellFormed` keeps the worst case to mischief rather
+      // than an unplayable or expensive room. `questionsPinned` is the
+      // exception — rewriting the question list mid-round was an unlimited
+      // vault oracle; see docs/decisions/security-round-sept-2026.md.
       allow update: if signedIn()
         && (isMember() || request.resource.data.players.keys().hasAny([request.auth.uid]))
         && wellFormed()
-        && timingOk();
+        && timingOk()
+        && questionsPinned()
+        && ownJoinedAtOk();
 
       // Rooms are disposable; nobody needs to delete one mid-quiz.
       allow delete: if false;
@@ -362,9 +445,15 @@ service cloud.firestore {
         // only on the last question of a round the room agreed to play for
         // stakes, so a wager sent on any other is ignored by every client
         // alike.
+        // `at` is the server's stamp of when this write landed, optional so
+        // a bundle that has never heard of it still scores. When present it
+        // must be `request.time` — `serverTimestamp()` and nothing else —
+        // so a client cannot backdate it. Rank still reads `elapsedMs`.
+        // Paste this before deploying the client that writes it, or every
+        // answer is refused in silence.
         allow create, update: if signedIn()
           && request.auth.uid == uid
-          && request.resource.data.keys().hasOnly(['optionIndex', 'elapsedMs', 'questionIndex', 'wager', 'firstMs'])
+          && request.resource.data.keys().hasOnly(['optionIndex', 'elapsedMs', 'questionIndex', 'wager', 'firstMs', 'at'])
           && request.resource.data.optionIndex is int
           && request.resource.data.optionIndex >= 0
           && request.resource.data.optionIndex < 10
@@ -383,6 +472,8 @@ service cloud.firestore {
               && request.resource.data.firstMs >= 0
               && request.resource.data.firstMs <= 600000
               && request.resource.data.firstMs <= request.resource.data.elapsedMs))
+          && (!('at' in request.resource.data.keys())
+            || request.resource.data.at == request.time)
           && arrivalOk();
 
         allow delete: if signedIn() && request.auth.uid == uid;
@@ -402,11 +493,16 @@ service cloud.firestore {
       //   2. the server itself has seen the room's answer window pass since it
       //      opened.
       //
-      // The first stops a member holding question one open and quietly asking
-      // about the other fourteen. The second means nobody — in this room or in
-      // a decoy of their own — can ask before the answering window has already
-      // closed, because `openedAt` can only be written as `request.time` and
-      // `durationSecs` cannot move while a question is open.
+      // The first *used* to claim it stopped a member holding question one
+      // open and quietly asking about the other fourteen. It did not: the
+      // room could rewrite `questions` without moving phase or index, so
+      // `opensAQuestion()` stayed false and `timingOk()` was satisfied.
+      // `questionsPinned()` on the room update is what actually stops that.
+      // The second means nobody — in this room or in a decoy of their own —
+      // can ask before the answering window has already closed, because
+      // `openedAt` can only be written as `request.time` and `durationSecs`
+      // cannot move while a question is open. The accepted decoy (one gate
+      // per question, five-second floor) is unchanged.
       //
       // What this does not stop is written down in docs/HANDOVER.md. The short
       // version: the questions come from a public database, so a determined
@@ -462,6 +558,75 @@ service cloud.firestore {
         // being derived rather than stored already permits. In exchange the
         // preflight can exercise this path on every run instead of once ever.
         allow delete: if signedIn();
+      }
+
+      // ── Share or Shaft ────────────────────────────────────────────────────
+      //
+      // A finalist's sealed pick, one document per player. The scheme is in
+      // src/engine/sealedPick.ts; the decisions are in
+      // docs/decisions/share-or-shaft.md.
+      //
+      // Readable by everyone, like answers, and safe for a different reason:
+      // tapping writes a SHA-256 of the pick and a 128-bit nonce, never the
+      // pick. The pick and nonce are added only once both commitments exist,
+      // and every client checks them against the hash. So these rules do not
+      // decide whether a pick counts — the engine does, identically on every
+      // device, and ignores a document from anybody who is not a finalist, as
+      // it ignores a `wager` sent on the wrong question.
+      //
+      // What the rules must give is the one property a hash cannot: a
+      // commitment that cannot move once the other finalist has revealed.
+      // Pinning it within a document is not enough on its own. "Another round"
+      // reuses the room, so a new `gameId` has to be able to replace last
+      // round's commitment — and if any `gameId` could, a finalist could hop
+      // to a made-up one and back, re-committing after reading the reveal. So
+      // the `gameId` must be the room's own: one `get()` per pick, a handful
+      // of writes a game.
+      match /standoff/{uid} {
+        function roomGameId() {
+          return get(/databases/$(database)/documents/rooms/$(code)).data.get('gameId', null);
+        }
+
+        function commitmentOk() {
+          return request.resource.data.keys().hasOnly(['gameId', 'commit'])
+            && request.resource.data.gameId is string
+            && request.resource.data.gameId == roomGameId()
+            && request.resource.data.commit is string
+            && request.resource.data.commit.size() == 64;
+        }
+
+        function revealOk() {
+          return request.resource.data.keys().hasOnly(['gameId', 'commit', 'pick', 'nonce'])
+            && request.resource.data.gameId == resource.data.gameId
+            && request.resource.data.commit == resource.data.commit
+            && request.resource.data.pick in ['share', 'shaft']
+            && request.resource.data.nonce is string
+            && request.resource.data.nonce.size() <= 64;
+        }
+
+        allow read: if signedIn();
+
+        allow create: if signedIn()
+          && request.auth.uid == uid
+          && exists(/databases/$(database)/documents/rooms/$(code))
+          && commitmentOk();
+
+        // The reveal, or a fresh commitment for the round the room is now on.
+        allow update: if signedIn()
+          && request.auth.uid == uid
+          && (revealOk()
+            || (request.resource.data.gameId != resource.data.gameId
+              && exists(/databases/$(database)/documents/rooms/$(code))
+              && commitmentOk()));
+
+        // Your own, and never while a final is on: deleting and re-creating
+        // mid-final would re-commit exactly as the `gameId` hop would. Outside
+        // one there is nothing left to protect, and `check-rules` sweeps its
+        // probe pick rather than leave one behind on every run. `prune-rooms`
+        // removes the rest with their room, through the Admin SDK.
+        allow delete: if signedIn()
+          && request.auth.uid == uid
+          && get(/databases/$(database)/documents/rooms/$(code)).data.phase != 'standoff';
       }
     }
 
@@ -602,9 +767,12 @@ service cloud.firestore {
     }
 
     match /seasons/{season}/players/{playerId} {
-      // A round is at most 25 questions at 1,000 points, so 100k leaves room for
-      // a long season's best game and still rejects a fantasy number.
-      function maxBest() { return 100000; }
+      // A round is at most 25 questions at 1,000 points, so 100k left room for a
+      // long season's best game and still rejected a fantasy number. Share or
+      // Shaft can then hand one finalist both finalists' scores, so a game's
+      // best is up to twice what one player can score — 200k, or the stealer's
+      // bank is refused and their night is lost. docs/decisions/share-or-shaft.md.
+      function maxBest() { return 200000; }
       function maxPoints() { return 100000000; }
       function maxPlayed() { return 10000; }
 

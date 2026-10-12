@@ -48,13 +48,25 @@ describe('liveAnswers', () => {
     });
   });
 
-  test('carries only the two fields scoring reads', () => {
+  test('carries only the two fields scoring reads, when nothing optional is set', () => {
     const docs = { greg: { optionIndex: 1, elapsedMs: 900, questionIndex: 0 } };
 
     expect(Object.keys(liveAnswers(players, 0, docs)['greg'] ?? {}).sort()).toEqual([
       'elapsedMs',
       'optionIndex',
     ]);
+  });
+
+  test('carries at when the document has one', () => {
+    const docs = {
+      greg: { optionIndex: 1, elapsedMs: 900, questionIndex: 0, at: 1_700_000_000_000 },
+    };
+
+    expect(liveAnswers(players, 0, docs)['greg']).toEqual({
+      optionIndex: 1,
+      elapsedMs: 900,
+      at: 1_700_000_000_000,
+    });
   });
 
   test('an empty room answers nothing', () => {

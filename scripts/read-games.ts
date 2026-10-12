@@ -35,6 +35,7 @@ import {
   parseGameRecord,
   summariseGame,
   tallyByKind,
+  tallyFinalists,
   type GameSummary,
   revealCost,
   type KindTally,
@@ -145,6 +146,7 @@ function printGame(game: KeptGame, everyQuestion: boolean): void {
       + `median ${seconds(summary.medianElapsedMs)}  snaps ${String(summary.snaps).padStart(2)}${flags}${skipped}`,
   );
   console.log(`      game ${game.gameId}`);
+  if (summary.final) console.log(`      final ${summary.final}`);
 
   if (!everyQuestion) return;
 
@@ -224,6 +226,13 @@ async function main(): Promise<void> {
   for (const game of shown) printGame(game, options.game !== null || shown.length === 1);
 
   if (shown.length > 1) printKinds(tallyByKind(shown.map((game) => game.record)));
+
+  const finalists = tallyFinalists(shown.map((game) => game.record));
+  if (finalists.length > 0) {
+    console.log(
+      `\nIn the final, across these rounds: ${finalists.map(({ name, finals }) => `${name} ${finals}`).join(' · ')}`,
+    );
+  }
 
   if (malformed.length > 0) {
     console.log(`\n${malformed.length} document(s) would not parse and were skipped:`);

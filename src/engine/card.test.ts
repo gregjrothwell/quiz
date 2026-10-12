@@ -77,9 +77,9 @@ describe('cardModel', () => {
     expect({ winners: card.winners, podium: card.podium }).toEqual({
       winners: ['Greg'],
       podium: [
-        { position: 1, name: 'Greg', score: 2_000 },
-        { position: 2, name: 'Sam', score: 900 },
-        { position: 3, name: 'Priya', score: 600 },
+        { position: 1, name: 'Greg', score: 2_000, height: 'first', more: 0 },
+        { position: 2, name: 'Sam', score: 900, height: 'second', more: 0 },
+        { position: 3, name: 'Priya', score: 600, height: 'third', more: 0 },
       ],
     });
   });
@@ -96,6 +96,21 @@ describe('cardModel', () => {
     // than a position 2 nobody holds
     expect(card.winners).toEqual(['Greg', 'Sam']);
     expect(card.podium.map((row) => row.position)).toEqual([1, 1, 3]);
+    // #and both stand at the winner's height, as on the screen
+    expect(card.podium.map((row) => row.height)).toEqual(['first', 'first', 'third']);
+  });
+
+  test('stands everybody the screen stands, joint places included', () => {
+    // #given four level at the top
+    const players = playersNamed('Greg', 'Sam', 'Priya', 'Alex', 'Jo');
+    const scores = { greg: 900, sam: 900, priya: 900, alex: 900, jo: 100 };
+
+    // #when the card is modelled
+    const card = modelFor({ players, scores });
+
+    // #then four risers, every one a winner's, and the fifth in the chair
+    expect(card.podium.map((row) => row.height)).toEqual(['first', 'first', 'first', 'first']);
+    expect(card.chair?.names).toEqual(['Jo']);
   });
 
   test('seats the player below the podium in the chair', () => {

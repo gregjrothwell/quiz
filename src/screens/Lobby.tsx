@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { QrCode } from '../components/QrCode';
 import { RoomLink } from '../components/RoomLink';
+import { SoundCheck } from '../components/SoundCheck';
 import { joinLink } from '../engine/roomCode';
 import { STEAL_SHARE } from '../engine/scoring';
 import { SQUADS } from '../engine/squad';
@@ -14,7 +15,7 @@ import {
   type Level,
   type RoomState,
 } from '../engine/state';
-import { packNeedsSound, type PackId, type PackSummary } from '../questions/types';
+import { fixedDurationFor, packNeedsSound, type PackId, type PackSummary } from '../questions/types';
 
 const ROUND_LENGTHS = [10, 15, 20, 25] as const;
 
@@ -94,6 +95,7 @@ interface LobbyProps {
     wagerEnabled: boolean,
     stealEnabled: boolean,
     jigsawEnabled: boolean,
+    standoffEnabled: boolean,
   ) => void;
   onLeave: () => void;
 }
@@ -129,6 +131,13 @@ export function Lobby({
     rather than adding a moment to the end of it.
   */
   const [steal, setSteal] = useState(false);
+  /*
+    Off by default and opt-in, for the wager's reason and more so: the top two
+    stake everything they scored, so a round can be won on the questions and
+    lost on a conversation. The room agrees to that before it starts or not at
+    all. See docs/decisions/share-or-shaft.md.
+  */
+  const [standoff, setStandoff] = useState(false);
   const [jigsaw, setJigsaw] = useState(false);
   const [durationSecs, setDurationSecs] = useState<number>(DEFAULT_DURATION_SECS);
   /*
@@ -157,6 +166,10 @@ export function Lobby({
   const selected = packs.find((pack) => pack.id === packId);
   const available = selected ? availableFor(selected, level, jigsaw) : 0;
   const effectiveCount = Math.min(count, available);
+  // A pack that fixes its own window overrides the picker without forgetting
+  // what was picked, so switching back to another pack restores it.
+  const lockedDuration = packId === null ? null : fixedDurationFor(packId);
+  const effectiveDuration = lockedDuration ?? durationSecs;
   const link = joinLink(window.location.origin, import.meta.env.BASE_URL, room.code);
 
   return (
@@ -260,7 +273,8 @@ export function Lobby({
         {muted ? (
           <div className="stack">
             <p className="muted hint">
-              Sound is off. Name that Tune and Classical are silent unless you turn it on.
+              Sound is off. Name that Tune and Classical are silent unless you turn it on,
+              and Sleeves plays a song from the album.
             </p>
             <div className="btn-row">
               <button type="button" className="btn" onClick={toggle}>
@@ -269,6 +283,13 @@ export function Lobby({
             </div>
           </div>
         ) : null}
+
+        {/*
+          For every player, whatever gets picked: nobody but the quizmaster
+          can see the pack until the round starts. See
+          docs/decisions/sound-check.md.
+        */}
+        <SoundCheck />
       </section>
 
       {isQuizmaster ? (
@@ -337,7 +358,8 @@ export function Lobby({
                     type="button"
                     key={option}
                     className="pick"
-                    aria-pressed={option === durationSecs}
+                    aria-pressed={option === effectiveDuration}
+                    disabled={lockedDuration !== null && option !== lockedDuration}
                     onClick={() => setDurationSecs(option)}
                   >
                     <b>{meta?.title ?? `${option}s`}</b>
@@ -354,7 +376,10 @@ export function Lobby({
               until the window has closed. See docs/decisions/answer-window.md.
             */}
             <p className="muted hint">
-              Every question runs the full {durationSecs} seconds — the answer is locked away
+              {lockedDuration !== null
+                ? `${selected?.title ?? 'This pack'} always runs at ${lockedDuration} seconds — any longer and the clips start singing their own titles. `
+                : null}
+              Every question runs the full {effectiveDuration} seconds — the answer is locked away
               until then, so it can&rsquo;t be revealed early.
             </p>
           </div>
@@ -443,6 +468,37 @@ export function Lobby({
             ) : null}
           </div>
 
+          <div className="stack">
+            <p className="eyebrow">How it ends</p>
+            <div className="picker">
+              <button
+                type="button"
+                className="pick"
+                aria-pressed={!standoff}
+                onClick={() => setStandoff(false)}
+              >
+                <b>On the last answer</b>
+                <span>Top of the board wins</span>
+              </button>
+              <button
+                type="button"
+                className="pick"
+                aria-pressed={standoff}
+                onClick={() => setStandoff(true)}
+              >
+                <b>Share or Shaft</b>
+                <span>The top two play for everything</span>
+              </button>
+            </div>
+            {standoff ? (
+              <p className="muted hint">
+                After the last question the top two put both their scores in one pot, talk it
+                over, then pick in secret. Both share: half each. One shafts: they take the lot.
+                Both shaft: both lose it all, and whoever is third wins. It counts for the season.
+              </p>
+            ) : null}
+          </div>
+
           {packId === 'picture' ? (
             <div className="stack">
               <p className="eyebrow">How the pictures show</p>
@@ -487,7 +543,7 @@ export function Lobby({
             }
             onClick={() =>
               packId &&
-              onStart(packId, effectiveCount, level, durationSecs, wager, steal, jigsaw)
+              onStart(packId, effectiveCount, level, effectiveDuration, wager, steal, jigsaw, standoff)
             }
           >
             {busy

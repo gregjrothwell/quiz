@@ -42,6 +42,11 @@ export const PACK_IDS = [
   'flags',
   'sleeves',
   'screens',
+  'catchphrase',
+  'blanks',
+  'prices',
+  'artists',
+  'random',
 ] as const;
 
 /**
@@ -55,11 +60,52 @@ export const HAND_BUILT_PACK_IDS = [
   'flags',
   'sleeves',
   'screens',
+  'catchphrase',
+  'blanks',
+  'prices',
+  'artists',
 ] as const;
 
-/** Packs that are silent unless the player can hear the clip. */
+/**
+ * Packs that play a sound a player must hear.
+ *
+ * Sleeves since 29 September 2026: a song from the album plays with the
+ * cover (from the start of the question since 30 September). A muted player can still answer from the cover, but
+ * would miss a clue the rest of the room hears. See
+ * docs/decisions/sleeves-song.md.
+ *
+ * Name the Artist is the same preview path as Name that Tune. A muted player
+ * hears nothing they can answer from.
+ */
 export function packNeedsSound(packId: PackId): boolean {
-  return packId === 'melody' || packId === 'tunes';
+  // Random deals tunes and sleeves, so the lobby mute gate applies to the
+  // whole round even though the room's pack id is not itself a music pack.
+  return (
+    packId === 'melody' ||
+    packId === 'tunes' ||
+    packId === 'sleeves' ||
+    packId === 'artists' ||
+    packId === 'random'
+  );
+}
+
+/**
+ * The answer window a pack is always played on, or null when the lobby's
+ * choice stands.
+ *
+ * **Name that Tune is ten seconds**, Greg's call on 30 September 2026. On
+ * fifteen, round `SQ8V` heard many of its clips sing their own titles: Apple's
+ * preview is usually the chorus, and the chorus is where the title is. The
+ * audit that trims clips (`npm run tune-audit`) misses a sung title often
+ * enough that a shorter clip is the cheaper fix, and ten seconds is enough
+ * music to place a song — that room's median answer was 4.0s.
+ *
+ * Name the Artist does not lock. The answer is who is playing, so a sung
+ * title is not the answer, and the lobby's window stands. See
+ * docs/decisions/name-the-artist.md.
+ */
+export function fixedDurationFor(packId: PackId): number | null {
+  return packId === 'tunes' ? 10 : null;
 }
 
 export type PackId = (typeof PACK_IDS)[number];
@@ -176,6 +222,13 @@ export interface SealedQuestion {
   previewSeconds?: number;
   artworkUrl?: string;
   posterCrop?: boolean;
+  /**
+   * Show the options in the order the pack gives them, rather than shuffled.
+   * The Price Was Right: four prices read low to high, and the pack has already
+   * spread the answer evenly over the four places (`balancedPositions`), so the
+   * order says nothing about which is right. docs/decisions/price-was-right.md.
+   */
+  ordered?: boolean;
 }
 
 /** Puts the options in an order that says nothing about which one is right. */
@@ -258,5 +311,25 @@ export const PACK_META: Record<PackId, { title: string; blurb: string }> = {
   screens: {
     title: 'On the box',
     blurb: 'Film and TV from a still. Untitled backdrops, no jigsaw.',
+  },
+  catchphrase: {
+    title: 'Catchphrase',
+    blurb: 'Say what you see. The options wait until halfway.',
+  },
+  blanks: {
+    title: 'Blankety Blank',
+    blurb: 'Fill the blank: sayings, ad slogans and TV catchphrases.',
+  },
+  prices: {
+    title: 'The Price Was Right',
+    blurb: 'Given a recent price, guess what it cost 5, 10, 20 or 30 years before.',
+  },
+  artists: {
+    title: 'Name the Artist',
+    blurb: 'A clip from Apple Music. Name who is playing, not the song.',
+  },
+  random: {
+    title: 'Random Round',
+    blurb: 'A picture, a tune, a Catchphrase and a price, shuffled into one round.',
   },
 };

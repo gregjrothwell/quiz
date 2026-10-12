@@ -1,6 +1,6 @@
 # The question pipeline
 
-> **Owner: Greg Rothwell. Last updated: 9 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 6 October 2026. Budget: 250 lines.**
 
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
@@ -73,6 +73,30 @@ iTunes movie Search is empty in US as well as GB; that is why this is TMDB.
 [`round-types.md`](round-types.md).
 
 ---
+
+## On the box, second harvest
+
+**24 September 2026: 54 → 187** (54/98/35 easy/medium/hard) on
+`more-picture-questions`, stacked on `share-or-shaft`. The first 54 had been
+played out in four rounds and were 37 easy to 1 hard, so the new 133 lean medium
+and hard, each paired with the titles it is most easily mistaken for.
+
+The untitled gate (`iso_639_1 === null`) reads TMDB's metadata, not the picture.
+All 135 went through a contact sheet, and two printed their own answer — the
+diary in *Bridget Jones's Diary* reads "DIARY", the *Jumanji* box reads
+"JUMANJI". They were **dropped, not swapped**: this pack has no refusal list like
+`sleeve-refusals.ts`. If one is ever wanted, it is a `refuse?: string[]` of TMDB
+file paths on `ScreenSpec`. **The sheet was read by a model**, and the sleeves
+lesson is that a person should look too ([`sleeves-gate.md`](sleeves-gate.md)).
+
+**26 September 2026: 187 → 296** (+42/47/20 e/m/h) on `more-on-the-box`. Fresh easy
+was down to 9. The pre-1990 cap of eight held: 39 draft titles were swapped, not the test.
+Three dropped for printing their answer — WALL·E (on the robot), the Grand Budapest
+(on the facade), Aftersun ("Sun" on the shelves). Model-read sheet again; a person has not.
+**6 October 2026: 296 → 445**, the fourth harvest — [`screens-growth.md`](screens-growth.md).
+
+**Fine Art: 53 paintings added and reverted, 26 September 2026** — unplayed, so not
+worth Greg's review. Restorable: `git revert` the revert of `d9efbea`.
 
 ## The second question source
 

@@ -38,6 +38,7 @@ import {
   Timestamp,
   collection,
   deleteDoc,
+  deleteField,
   doc,
   getDoc,
   getDocs,
@@ -96,6 +97,18 @@ const LIVE_ROOM = 'rules-check-live';
 /** Seeded by `npm run seed-vault`. Its answer is 'The right one'. */
 const PROBE_QUESTION = 'rules-check-q';
 
+/** A question id that is never the one in play, used to prove the list is pinned. */
+const SUBSTITUTE_QUESTION = 'rules-check-other-q';
+
+/**
+ * Two commitments of the right shape. The rules bound the shape and pin the
+ * value; whether one opens is the engine's business, so these need not be real
+ * hashes of anything.
+ */
+const FINAL_COMMIT_A = 'a'.repeat(64);
+const FINAL_COMMIT_B = 'b'.repeat(64);
+const FINAL_NONCE = '0123456789abcdef0123456789abcdef';
+
 /**
  * The gate is no longer a fixed twenty seconds — it is `durationSecs` on the
  * room — so the probe picks its own, and the two windows exist for opposite
@@ -131,6 +144,17 @@ const IMPOSSIBLY_FAST_MS = 3;
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
+function sealedProbeQuestion(id: string): Record<string, unknown> {
+  return {
+    id,
+    prompt: 'Does the vault open on time?',
+    options: ['The right one', 'A wrong one', 'Another wrong one', 'A third wrong one'],
+    correctIndex: null,
+    category: 'General Knowledge',
+    difficulty: 'easy',
+  };
+}
+
 /**
  * Puts a real question in front of a room owned by this client, so the reveal
  * checks have something legitimate to ask about. Returns when the server has
@@ -140,25 +164,17 @@ async function openProbeQuestion(
   db: Firestore,
   uid: string,
   durationSecs: number,
+  joinedAt: number,
 ): Promise<void> {
   const room = doc(db, 'rooms', LIVE_ROOM);
-  const player = { name: 'Rules check', joinedAt: Date.now() };
+  const player = { name: 'Rules check', joinedAt };
 
   const base = {
     code: LIVE_ROOM,
     players: { [uid]: player },
     packId: null,
     packTitle: null,
-    questions: [
-      {
-        id: PROBE_QUESTION,
-        prompt: 'Does the vault open on time?',
-        options: ['The right one', 'A wrong one', 'Another wrong one', 'A third wrong one'],
-        correctIndex: null,
-        category: 'General Knowledge',
-        difficulty: 'easy',
-      },
-    ],
+    questions: [sealedProbeQuestion(PROBE_QUESTION)],
     index: 0,
     questionOpenedAt: null,
     scores: { [uid]: 0 },
@@ -287,6 +303,8 @@ interface Probes {
   probeGameId: string;
   /** Client clock at the moment `openProbeQuestion` returned, for the arrival-floor wait. */
   openedAtMs: number;
+  /** The host's `joinedAt` on LIVE_ROOM, reused so later writes do not restamp it. */
+  hostJoinedAt: number;
   presence: DatabaseReference;
   ownSeasonRow: DocumentReference;
   ownWeekRow: DocumentReference;
@@ -302,11 +320,31 @@ interface Probes {
  */
 function buildChecks(probes: Probes): Check[] {
   const {
-    uid, db, rtdb, uidB, dbB, probeCode, probeGameId, openedAtMs, presence, ownSeasonRow,
+    uid, db, rtdb, uidB, dbB, probeCode, probeGameId, openedAtMs, hostJoinedAt, presence, ownSeasonRow,
     ownWeekRow, validSeasonRow,
   } = probes;
 
   const ownAnswer = doc(db, 'rooms', LIVE_ROOM, 'answers', uid);
+  const ownPick = doc(db, 'rooms', LIVE_ROOM, 'standoff', uid);
+  // Fresh every run: a pick's commitment is pinned within its game, so reusing
+  // one id would refuse this run's commitment against the last run's.
+  const finalGame = `${probeGameId}-final`;
+
+  /** LIVE_ROOM in the shape the room checks write it, in the phase and game given. */
+  const liveRoom = (phase: string, gameId: string): Record<string, unknown> => ({
+    code: LIVE_ROOM,
+    phase,
+    players: { [uid]: { name: 'Rules check', joinedAt: hostJoinedAt } },
+    packId: null,
+    packTitle: null,
+    questions: [],
+    index: 0,
+    questionOpenedAt: null,
+    scores: { [uid]: 0 },
+    lastDeltas: {},
+    skipped: [],
+    gameId,
+  });
 
   return [
     {
@@ -360,7 +398,7 @@ function buildChecks(probes: Probes): Check[] {
         updateDoc(doc(db, 'rooms', LIVE_ROOM), {
           code: LIVE_ROOM,
           phase: 'lobby',
-          players: { [uid]: { name: 'Rules check', joinedAt: Date.now() } },
+          players: { [uid]: { name: 'Rules check', joinedAt: hostJoinedAt } },
           packId: null,
           packTitle: null,
           questions: [],
@@ -397,7 +435,7 @@ function buildChecks(probes: Probes): Check[] {
         updateDoc(doc(db, 'rooms', LIVE_ROOM), {
           code: LIVE_ROOM,
           phase: 'lobby',
-          players: { [uid]: { name: 'Rules check', joinedAt: Date.now() } },
+          players: { [uid]: { name: 'Rules check', joinedAt: hostJoinedAt } },
           packId: null,
           packTitle: null,
           questions: [],
@@ -411,6 +449,103 @@ function buildChecks(probes: Probes): Check[] {
           stealEnabled: true,
           lastSteal: { from: uid, to: uid, points: 50 },
         }),
+    },
+    /*
+      Share or Shaft. The whole sequence runs against LIVE_ROOM as a finalist
+      would: the room opens the final, a pick is committed, and then everything
+      that must not move — the commitment, another player's pick, a pick for a
+      game the room is not playing, a deletion mid-final, a third word — is
+      tried and refused, before the reveal and the sweep are allowed.
+
+      Before the paste every deny below passes for the wrong reason: nothing
+      under `standoff/` is allowed at all. The four allow cases are what say
+      the paste landed. docs/decisions/share-or-shaft.md.
+    */
+    {
+      label: 'Firestore   · open the Share or Shaft final',
+      expect: 'allow',
+      hint: 'the published firestore.rules does not list `standoff` among the '
+        + 'phases — the round stops dead on its last scoreboard. Paste the repo copy.',
+      run: () =>
+        updateDoc(doc(db, 'rooms', LIVE_ROOM), {
+          ...liveRoom('standoff', finalGame),
+          standoffEnabled: true,
+          standoff: {
+            finalists: [uid, uidB],
+            stakes: { [uid]: 1000, [uidB]: 900 },
+            stage: 'pick',
+            sealed: null,
+            picks: null,
+          },
+        }),
+    },
+    {
+      label: 'Firestore   · commit to a pick in the final',
+      expect: 'allow',
+      hint: 'firestore.rules has no `standoff/{uid}` block, or refuses a commitment '
+        + 'to the game the room is playing — every pick is lost and both finalists '
+        + 'count as sharing',
+      run: () => setDoc(ownPick, { gameId: finalGame, commit: FINAL_COMMIT_A }),
+    },
+    {
+      label: 'Firestore   · change a pick once committed',
+      expect: 'deny',
+      hint: 'firestore.rules lets a finalist rewrite their commitment — they can '
+        + 'read the other reveal and then commit to the pick that beats it',
+      run: () => setDoc(ownPick, { gameId: finalGame, commit: FINAL_COMMIT_B }),
+    },
+    {
+      label: 'Firestore   · commit for a game the room is not playing',
+      expect: 'deny',
+      hint: 'firestore.rules takes any gameId on a pick — a finalist can hop to a '
+        + 'made-up game and back to re-commit after reading a reveal',
+      run: () =>
+        setDoc(doc(dbB, 'rooms', LIVE_ROOM, 'standoff', uidB), {
+          gameId: `${finalGame}-elsewhere`,
+          commit: FINAL_COMMIT_B,
+        }),
+    },
+    {
+      label: "Firestore   · write someone else's pick",
+      expect: 'deny',
+      hint: 'firestore.rules lets one player commit for another',
+      run: () =>
+        setDoc(doc(db, 'rooms', LIVE_ROOM, 'standoff', uidB), {
+          gameId: finalGame,
+          commit: FINAL_COMMIT_B,
+        }),
+    },
+    {
+      label: 'Firestore   · delete your pick during the final',
+      expect: 'deny',
+      hint: 'firestore.rules lets a finalist delete a commitment mid-final — '
+        + 'delete and re-create is a re-commit after reading the reveal',
+      run: () => deleteDoc(ownPick),
+    },
+    {
+      label: 'Firestore   · reveal a third word',
+      expect: 'deny',
+      hint: 'firestore.rules is missing the share/shaft bound on `pick`',
+      run: () => updateDoc(ownPick, { pick: 'split', nonce: FINAL_NONCE }),
+    },
+    {
+      label: 'Firestore   · reveal a committed pick',
+      expect: 'allow',
+      hint: 'firestore.rules refuses the reveal — the picking closes and every '
+        + 'pick counts as share, so no final can ever be won by shafting',
+      run: () => updateDoc(ownPick, { pick: 'share', nonce: FINAL_NONCE }),
+    },
+    {
+      label: 'Firestore   · sweep your pick once the final is over',
+      expect: 'allow',
+      hint: 'firestore.rules refuses an owner deleting their pick outside a final '
+        + '— check-rules leaves a document behind on every run',
+      run: async () => {
+        // Back to the lobby first, which is the shape every other room check
+        // expects to find it in.
+        await updateDoc(doc(db, 'rooms', LIVE_ROOM), liveRoom('lobby', 'rules-check'));
+        return deleteDoc(ownPick);
+      },
     },
     {
       label: 'Firestore   · stake points on your own answer',
@@ -483,6 +618,41 @@ function buildChecks(probes: Probes): Check[] {
           elapsedMs: 10,
           questionIndex: 0,
           firstMs: 'ages ago',
+        }),
+    },
+    {
+      /*
+        The paste proof for `at`. Against the live ruleset `hasOnly` refuses
+        the extra key, so this FAILs until Greg pastes — that FAIL is the
+        proof. After the paste it flips to PASS, and old clients that omit
+        the field still score because it is optional.
+      */
+      label: 'Firestore   · stamp an answer with the server time',
+      expect: 'allow',
+      hint: 'firestore.rules has not taken `at` into the answers hasOnly list '
+        + '— the whole answer write is refused, so after this client deploys '
+        + 'nobody in the room scores',
+      run: async () => {
+        await setDoc(ownAnswer, {
+          optionIndex: 0,
+          elapsedMs: 4000,
+          questionIndex: 0,
+          at: serverTimestamp(),
+        });
+        return deleteDoc(ownAnswer);
+      },
+    },
+    {
+      label: 'Firestore   · backdate the answer stamp',
+      expect: 'deny',
+      hint: 'firestore.rules accepts an `at` that is not request.time — a '
+        + 'client can forge the arrival the Alistair instrument reads',
+      run: () =>
+        setDoc(ownAnswer, {
+          optionIndex: 0,
+          elapsedMs: 4000,
+          questionIndex: 0,
+          at: Timestamp.fromMillis(Date.now() - 60_000),
         }),
     },
     {
@@ -581,6 +751,15 @@ function buildChecks(probes: Probes): Check[] {
         + 'minimum stake refuses the season row and the night is lost. Paste '
         + 'the repo copy before deploying the client that produces a negative.',
       run: () => setDoc(ownSeasonRow, { ...validSeasonRow, points: -500, best: 1000 }),
+    },
+    {
+      // Share or Shaft can hand one finalist both finalists' scores, so a
+      // game's best can pass what one player could ever score alone.
+      label: 'Firestore   · bank a game above 100,000',
+      expect: 'allow',
+      hint: 'firestore.rules still caps a game at 100,000 — a stolen pot in a long '
+        + 'round is refused at the bank and the stealer\'s night is lost. Paste.',
+      run: () => setDoc(ownSeasonRow, { ...validSeasonRow, points: 150_000, best: 150_000 }),
     },
     {
       label: 'Firestore   · write a season row below -maxPoints()',
@@ -830,6 +1009,99 @@ function buildChecks(probes: Probes): Check[] {
         }),
     },
     {
+      label: 'Firestore   · rewrite the question list while a question is open',
+      expect: 'deny',
+      hint: 'firestore.rules does not pin `questions` outside the lobby — a '
+        + 'member can substitute any vault id and dump the answers',
+      run: async () => {
+        await openProbeQuestion(db, uid, LONG_WINDOW_SECS, hostJoinedAt);
+        return updateDoc(doc(db, 'rooms', LIVE_ROOM), {
+          questions: [sealedProbeQuestion(SUBSTITUTE_QUESTION)],
+        });
+      },
+    },
+    {
+      label: 'Firestore   · ask about a question after substituting it into play',
+      expect: 'deny',
+      hint: 'rewriting questions[0].id still opens the vault — questionsPinned '
+        + 'is unpublished or the reveal gate does not consult the list',
+      run: async () => {
+        try {
+          await updateDoc(doc(db, 'rooms', LIVE_ROOM), {
+            questions: [sealedProbeQuestion(SUBSTITUTE_QUESTION)],
+          });
+        } catch (error) {
+          if (!isPermissionDenied(error)) throw error;
+        }
+        return setDoc(doc(db, 'rooms', LIVE_ROOM, 'reveal', SUBSTITUTE_QUESTION), {
+          answer: 'The right one',
+        });
+      },
+    },
+    {
+      // **The allow direction the pin never had, and the reason it shipped
+      // broken.** Every deny case above passed the afternoon `questionsPinned`
+      // went live, because a rule that refuses everything refuses those too.
+      // What nothing asked was whether an ordinary reveal still got through —
+      // and it did not: `reveal` stamps the vault's answer into
+      // `questions[index].correctIndex` (src/engine/reducer.ts), so the list a
+      // reveal writes is never the list that is stored, and every round in the
+      // project stopped dead on its first question. See EVIDENCE.md: read the
+      // allow direction to know a change landed.
+      label: 'Firestore   · reveal, stamping the answer into the question in play',
+      expect: 'allow',
+      hint: 'firestore.rules refuses the write every reveal makes — '
+        + '`questionsPinned` does not allow `correctIndex` to be stamped into '
+        + 'the question in play, so no round can get past its first question',
+      run: async () => {
+        await openProbeQuestion(db, uid, LONG_WINDOW_SECS, hostJoinedAt);
+        return updateDoc(doc(db, 'rooms', LIVE_ROOM), {
+          phase: 'reveal',
+          questions: [{ ...sealedProbeQuestion(PROBE_QUESTION), correctIndex: 0 }],
+        });
+      },
+    },
+    {
+      // The other half of the pin. Letting the question in play move is only
+      // safe while every *other* entry is still frozen — otherwise the
+      // substitution goes into a slot nobody is looking at, and a second write
+      // moves `index` onto it once the list already says so.
+      label: 'Firestore   · add a question to the list while one is open',
+      expect: 'deny',
+      hint: 'firestore.rules pins only the question in play — a member can '
+        + 'plant a vault id in another slot and then move `index` onto it, '
+        + 'which is the substitution attack in two writes instead of one',
+      run: async () => {
+        await openProbeQuestion(db, uid, LONG_WINDOW_SECS, hostJoinedAt);
+        return updateDoc(doc(db, 'rooms', LIVE_ROOM), {
+          questions: [
+            sealedProbeQuestion(PROBE_QUESTION),
+            sealedProbeQuestion(SUBSTITUTE_QUESTION),
+          ],
+        });
+      },
+    },
+    {
+      label: 'Firestore   · reset to the lobby and clear the questions',
+      expect: 'allow',
+      hint: 'firestore.rules refuses a reset that clears `questions` — a finished '
+        + 'round cannot go back to the lobby',
+      run: () =>
+        updateDoc(doc(db, 'rooms', LIVE_ROOM), { phase: 'lobby', questions: [] }),
+    },
+    {
+      label: 'Firestore   · select a pack in the lobby',
+      expect: 'allow',
+      hint: 'firestore.rules refuses to set `questions` even in the lobby — '
+        + 'nobody can start a round',
+      run: async () => {
+        await updateDoc(doc(db, 'rooms', LIVE_ROOM), { phase: 'lobby', questions: [] });
+        return updateDoc(doc(db, 'rooms', LIVE_ROOM), {
+          questions: [sealedProbeQuestion(PROBE_QUESTION)],
+        });
+      },
+    },
+    {
       // The path a round reads before it picks its questions. If this is
       // denied, every round silently falls back to repeating whatever it likes.
       label: 'Firestore   · read and write a pack’s question history',
@@ -861,7 +1133,7 @@ function buildChecks(probes: Probes): Check[] {
         + 'write carries the field and hasOnly refuses it',
       run: () =>
         updateDoc(doc(db, 'rooms', LIVE_ROOM), {
-          [`players.${uid}`]: { name: 'Rules check', joinedAt: Date.now(), squad: 'Hermes' },
+          [`players.${uid}`]: { name: 'Rules check', joinedAt: hostJoinedAt, squad: 'Hermes' },
         }),
     },
     {
@@ -873,7 +1145,7 @@ function buildChecks(probes: Probes): Check[] {
         updateDoc(doc(db, 'rooms', LIVE_ROOM), {
           [`players.${uid}`]: {
             name: 'Rules check',
-            joinedAt: Date.now(),
+            joinedAt: hostJoinedAt,
             squad: 'H'.repeat(41),
           },
         }),
@@ -885,8 +1157,47 @@ function buildChecks(probes: Probes): Check[] {
         + 'inflate a document the whole room re-reads on every transition',
       run: () =>
         updateDoc(doc(db, 'rooms', LIVE_ROOM), {
-          [`players.${uid}`]: { name: 'Rules check', joinedAt: Date.now(), colour: 'red' },
+          [`players.${uid}`]: { name: 'Rules check', joinedAt: hostJoinedAt, colour: 'red' },
         }),
+    },
+    {
+      label: 'Firestore   · join with joinedAt at zero',
+      expect: 'deny',
+      hint: 'firestore.rules does not bound a new joinedAt — any member can '
+        + 'seize the quizmaster role with one write',
+      run: () =>
+        updateDoc(doc(dbB, 'rooms', LIVE_ROOM), {
+          [`players.${uidB}`]: { name: 'Rules check B', joinedAt: 0 },
+          [`scores.${uidB}`]: 0,
+        }),
+    },
+    {
+      label: 'Firestore   · lower your own joinedAt',
+      expect: 'deny',
+      hint: 'firestore.rules lets an existing joinedAt move — the host can '
+        + 'be displaced mid-round',
+      run: () =>
+        updateDoc(doc(db, 'rooms', LIVE_ROOM), {
+          [`players.${uid}`]: { name: 'Rules check', joinedAt: 0 },
+        }),
+    },
+    {
+      label: 'Firestore   · join with a fresh joinedAt',
+      expect: 'allow',
+      hint: 'firestore.rules is refusing a well-formed join — the joinedAt '
+        + 'window is too tight, or the pin is unpublished in a way that '
+        + 'broke joining',
+      run: async () => {
+        const room = doc(dbB, 'rooms', LIVE_ROOM);
+        await updateDoc(room, {
+          [`players.${uidB}`]: { name: 'Rules check B', joinedAt: Date.now() },
+          [`scores.${uidB}`]: 0,
+        });
+        return updateDoc(room, {
+          [`players.${uidB}`]: deleteField(),
+          [`scores.${uidB}`]: deleteField(),
+        });
+      },
     },
     {
       label: 'Firestore   · vote on a question',
@@ -1051,7 +1362,16 @@ function buildChecks(probes: Probes): Check[] {
     {
       label: 'Realtime DB · write presence',
       expect: 'allow',
-      hint: 'publish database.rules.json — closed tabs will never be cleaned up',
+      hint: 'publish database.rules.json with `.validate` requiring only `at` '
+        + '— closed tabs will never be cleaned up, and the new client cannot '
+        + 'write presence at all',
+      run: () => set(presence, { at: Date.now() }),
+    },
+    {
+      label: 'Realtime DB · write presence still carrying a name',
+      expect: 'deny',
+      hint: 'the name child rule is still live — a signed-in client can still '
+        + 'harvest a roster off room-code space',
       run: () => set(presence, { name: 'Rules check', at: Date.now() }),
     },
     {
@@ -1064,14 +1384,14 @@ function buildChecks(probes: Probes): Check[] {
       label: "Realtime DB · write another player's presence",
       expect: 'deny',
       hint: 'database.rules.json lets anyone write presence as somebody else',
-      run: () => set(ref(rtdb, `presence/${PROBE_ROOM}/not-my-uid`), { name: 'X', at: Date.now() }),
+      run: () => set(ref(rtdb, `presence/${PROBE_ROOM}/not-my-uid`), { at: Date.now() }),
     },
     {
       label: 'Realtime DB · attach an unexpected field to your presence',
       expect: 'deny',
       hint: 'database.rules.json is missing the `$other` validate — presence '
         + 'entries can carry arbitrary payloads',
-      run: () => set(presence, { name: 'Rules check', at: Date.now(), junk: 'x'.repeat(64) }),
+      run: () => set(presence, { at: Date.now(), junk: 'x'.repeat(64) }),
     },
     {
       label: 'Realtime DB · read the whole database',
@@ -1097,7 +1417,7 @@ function buildChecks(probes: Probes): Check[] {
       run: async () => {
         // Re-opened rather than reusing the question the deny checks poked at,
         // so this proves the gate opens on its own terms.
-        await openProbeQuestion(db, uid, SHORT_WINDOW_SECS);
+        await openProbeQuestion(db, uid, SHORT_WINDOW_SECS, hostJoinedAt);
         await sleep(SHORT_WINDOW_SECS * 1000 + GATE_SLACK_MS);
         const reveal = doc(db, 'rooms', LIVE_ROOM, 'reveal', PROBE_QUESTION);
         await setDoc(reveal, { answer: 'The right one' });
@@ -1203,7 +1523,8 @@ async function main(): Promise<void> {
   // ask about — a reveal refused because nothing is in play would look exactly
   // like a reveal refused by the time gate, and prove nothing. On a long window,
   // because a dozen round-trips happen before the last of them runs.
-  await openProbeQuestion(db, uid, LONG_WINDOW_SECS);
+  const hostJoinedAt = Date.now();
+  await openProbeQuestion(db, uid, LONG_WINDOW_SECS, hostJoinedAt);
   const openedAtMs = Date.now();
 
   /**
@@ -1240,7 +1561,7 @@ async function main(): Promise<void> {
   };
 
   const checks = buildChecks({
-    uid, db, rtdb, uidB, dbB, probeCode, probeGameId, openedAtMs, presence, ownSeasonRow,
+    uid, db, rtdb, uidB, dbB, probeCode, probeGameId, openedAtMs, hostJoinedAt, presence, ownSeasonRow,
     ownWeekRow, validSeasonRow,
   });
 

@@ -1,4 +1,5 @@
 import { cardModel, type CardInput, type CardModel, type CardRosette } from '../engine/card';
+import { PODIUM_PLACES, podiumOrder, type RiserHeight } from '../engine/scoring';
 import { pileOns, seatLabel, SEAT_BEHIND_ALPHA } from '../engine/seat';
 
 /**
@@ -209,11 +210,8 @@ function drawChair(
   ctx.restore();
 }
 
-/** Left to right, so the winner stands in the middle as they do on screen. */
-const RISER_ORDER = [1, 0, 2] as const;
-
 /**
- * By finishing position, tallest first.
+ * By the place a riser stands for, so joint winners stand equally high.
  *
  * **The floor is 152 and that is load-bearing**, not a look. The three lines
  * inside a riser — position, name, score — are laid out from its top and reach
@@ -222,19 +220,22 @@ const RISER_ORDER = [1, 0, 2] as const;
  * invisible until you look at the picture: nothing throws, and the number is
  * still perfectly legible sitting in mid-air.
  */
-const RISER_HEIGHTS = [200, 172, 152] as const;
+const RISER_HEIGHTS: Record<RiserHeight, number> = { first: 200, second: 172, third: 152 };
 
 const CHAIR_WIDTH = 168;
 const CHAIR_HEIGHT = 138;
 
 /**
- * The three risers and, when the round seated somebody, the chair on the floor
+ * The risers and, when the round seated somebody, the chair on the floor
  * beside them — one row, one floor, exactly as `.finale--seated` lays it out.
  */
 function drawPodium(ctx: CanvasRenderingContext2D, card: CardModel, floor: number): void {
-  const width = 236;
+  // Three risers' worth of stage however many stand, so a tie narrows the
+  // risers rather than pushing the chair off the card.
   const gap = 26;
-  const risers = width * 3 + gap * 2;
+  const risers = 236 * 3 + gap * 2;
+  const slots = Math.max(PODIUM_PLACES, card.podium.length);
+  const width = (risers - gap * (slots - 1)) / slots;
   const total = card.chair ? risers + gap + CHAIR_WIDTH : risers;
   const left = (CARD_WIDTH - total) / 2;
 
@@ -260,33 +261,34 @@ function drawPodium(ctx: CanvasRenderingContext2D, card: CardModel, floor: numbe
     drawChair(ctx, middle, floor, CHAIR_HEIGHT, card.chair.names.length);
   }
 
-  RISER_ORDER.forEach((rowIndex, slot) => {
-    const row = card.podium[rowIndex];
+  podiumOrder(slots).forEach((rank, slot) => {
+    const row = card.podium[rank];
     if (!row) return;
 
-    const height = RISER_HEIGHTS[rowIndex] ?? 104;
+    const won = row.height === 'first';
+    const height = RISER_HEIGHTS[row.height];
     const x = left + slot * (width + gap);
     const y = floor - height;
 
     ctx.fillStyle = PANEL;
     roundedRect(ctx, x, y, width, height, 6);
     ctx.fill();
-    ctx.strokeStyle = rowIndex === 0 ? CYAN : EDGE;
-    ctx.lineWidth = rowIndex === 0 ? 2 : 1;
+    ctx.strokeStyle = won ? CYAN : EDGE;
+    ctx.lineWidth = won ? 2 : 1;
     ctx.stroke();
 
     ctx.textAlign = 'center';
     const middle = x + width / 2;
 
-    ctx.fillStyle = rowIndex === 0 ? CYAN : INK_DIM;
+    ctx.fillStyle = won ? CYAN : INK_DIM;
     ctx.font = `700 28px ${TECH}, monospace`;
-    ctx.fillText(`${row.position}`, middle, y + 44);
+    ctx.fillText(row.more > 0 ? `${row.position}  +${row.more}` : `${row.position}`, middle, y + 44);
 
     ctx.fillStyle = INK;
     fitted(ctx, row.name, (s) => `400 ${s}px ${SHOUT}, Impact, sans-serif`, width - 28, 42, 20);
     ctx.fillText(row.name, middle, y + 94);
 
-    ctx.fillStyle = rowIndex === 0 ? AMBER : INK_SOFT;
+    ctx.fillStyle = won ? AMBER : INK_SOFT;
     ctx.font = `600 28px ${TECH}, monospace`;
     ctx.fillText(row.score.toLocaleString('en-GB'), middle, y + 132);
   });

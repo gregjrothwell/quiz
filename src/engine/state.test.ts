@@ -19,6 +19,7 @@ import {
   type Question,
   type SealedQuestion,
 } from '../questions/types';
+import { mergeAsked } from './askedHistory';
 
 /** Deterministic pseudo-random source so shuffles are reproducible in tests. */
 function seededRng(seed: number): () => number {
@@ -252,6 +253,26 @@ describe('buildQuizQuestions', () => {
 
     // #then shuffling changed the order without losing or inventing an option
     expect([...(thames?.options ?? [])].sort()).toEqual(['Mersey', 'Severn', 'Thames', 'Tyne']);
+  });
+
+  test('keeps the order of a question whose options are ordered', () => {
+    // #given a price question, its options low to high
+    const prices: SealedQuestion = {
+      id: 'price',
+      question: 'In August 2026, a toy boat cost about £2. What did it cost in August 2016?',
+      options: ['90p', '£1.20', '£1.60', '£2.10'],
+      category: '10 years ago',
+      difficulty: 'easy',
+      ordered: true,
+    };
+
+    // #when it is built, many times over
+    const orders = [1, 2, 3, 4, 5, 6].map(
+      (seed) => buildQuizQuestions([prices], 1, 'mixed', seededRng(seed))[0]?.options,
+    );
+
+    // #then every room sees them low to high — a price ladder shuffled is just noise
+    for (const order of orders) expect(order).toEqual(['90p', '£1.20', '£1.60', '£2.10']);
   });
 
   test('takes only the requested number of questions', () => {
@@ -562,6 +583,79 @@ describe('selectQuestions with a season history', () => {
     expect(picked.filter((question) => asked.has(question.id))).toEqual([]);
   });
 
+  /*
+    The history as the app actually holds it: `recordAsked` writes
+    `mergeAsked(thisRound, previous)`, and `loadAsked` reads the array back into
+    a Set in the same order. Built that way here rather than by hand, so the
+    tests below fail if the storage order ever stops being newest first.
+  */
+  function historyOf(...rounds: SealedQuestion[][]): ReadonlySet<string> {
+    let ids: string[] = [];
+    for (const round of rounds) {
+      ids = mergeAsked(round.map((question) => question.id), new Set(ids));
+    }
+    return new Set(ids);
+  }
+
+  test('a spent pack repeats what it served longest ago, not last round', () => {
+    /*
+      #given a pack of twenty the season has served in full over two rounds.
+      Measured 26 September 2026: Sleeves had 7 of 44 left and Fine Art 24 of
+      49, so this is the next round on both. Repeats were drawn at random from
+      everything served, so yesterday's question was as likely as last month's.
+    */
+    const pool = spread({ easy: 20, medium: 0, hard: 0 });
+    const older = pool.slice(0, 10);
+    const lastRound = pool.slice(10);
+    const asked = historyOf(older, lastRound);
+
+    for (let seed = 1; seed <= 20; seed += 1) {
+      // #when a round of ten is selected
+      const picked = selectQuestions(pool, 10, 'mixed', seededRng(seed), asked);
+
+      // #then every repeat comes from the older round
+      expect(picked.map((question) => question.id).sort()).toEqual(
+        older.map((question) => question.id).sort(),
+      );
+    }
+  });
+
+  test('a part-spent pack takes its fresh questions, then the oldest repeats', () => {
+    // #given twelve questions: four served two rounds ago, four last round, four fresh
+    const pool = spread({ easy: 12, medium: 0, hard: 0 });
+    const oldest = pool.slice(0, 4);
+    const asked = historyOf(oldest, pool.slice(4, 8));
+    const expected = [...oldest, ...pool.slice(8)].map((question) => question.id).sort();
+
+    for (let seed = 1; seed <= 20; seed += 1) {
+      // #when a round of eight is selected
+      const picked = selectQuestions(pool, 8, 'mixed', seededRng(seed), asked);
+
+      // #then it is the four fresh ones and the four served longest ago
+      expect(picked.map((question) => question.id).sort()).toEqual(expected);
+    }
+  });
+
+  test('a ramped round on a spent pack repeats the oldest at every level', () => {
+    // #given a pack of twelve, half served two rounds ago and half last round
+    const pool = spread({ easy: 4, medium: 4, hard: 4 });
+    const older = pool.filter((question) => question.id.endsWith('-0') || question.id.endsWith('-1'));
+    const lastRound = pool.filter((question) => !older.includes(question));
+    const asked = historyOf(older, lastRound);
+
+    for (let seed = 1; seed <= 20; seed += 1) {
+      // #when a ramped round of six is built
+      const picked = selectQuestions(pool, 6, 'ramp', seededRng(seed), asked);
+      const ranks = picked.map((question) => ['easy', 'medium', 'hard'].indexOf(question.difficulty));
+
+      // #then it still climbs, and every question in it is from the older round
+      expect([...ranks].sort((a, b) => a - b)).toEqual(ranks);
+      expect(picked.map((question) => question.id).sort()).toEqual(
+        older.map((question) => question.id).sort(),
+      );
+    }
+  });
+
   test('an empty history behaves exactly as before', () => {
     // #given a pool and no history at all
     const pool = spread({ easy: 20, medium: 0, hard: 0 });
@@ -612,5 +706,21 @@ describe('the answer window agrees with the security rules', () => {
   test('every window the lobby offers is one the rules accept', () => {
     // #then no option can start a round the vault would refuse to open
     expect(DURATION_CHOICES.filter((secs) => !isDurationAllowed(secs))).toEqual([]);
+  });
+});
+
+describe('the room update pin agrees with the security rules', () => {
+  const RULES = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8');
+
+  test('questions may only change in the lobby', () => {
+    expect(RULES).toMatch(/function questionsPinned\(\)/);
+    expect(RULES).toMatch(/resource\.data\.phase == 'lobby'/);
+    expect(RULES).toMatch(/&& questionsPinned\(\)/);
+  });
+
+  test('an existing joinedAt cannot be rewritten', () => {
+    expect(RULES).toMatch(/function ownJoinedAtOk\(\)/);
+    expect(RULES).toMatch(/function joinedAtGraceMs\(\) \{ return 300000; \}/);
+    expect(RULES).toMatch(/&& ownJoinedAtOk\(\)/);
   });
 });

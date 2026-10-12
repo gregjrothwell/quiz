@@ -198,8 +198,15 @@ export function tallyQuestion(params: {
    * would make it impossible to play one without the other.
    */
   steal?: Steal | null;
+  /**
+   * What the question itself is worth against an ordinary one — 2 on a Bonus
+   * Catchphrase, `BONUS_MULTIPLIER`. Base and rank only: a stake is a share of
+   * what the player holds and a steal a share of what the leader holds, and
+   * neither is about this question.
+   */
+  multiplier?: number;
 }): Record<string, number> {
-  const { correctIndex, answers, scores, steal } = params;
+  const { correctIndex, answers, scores, steal, multiplier = 1 } = params;
   const deltas: Record<string, number> = {};
 
   const stake = (uid: string, answer: Answer): number =>
@@ -217,7 +224,7 @@ export function tallyQuestion(params: {
       position = i + 1;
       previousElapsed = answer.elapsedMs;
     }
-    deltas[uid] = BASE_POINTS + rankBonus(position) + stake(uid, answer);
+    deltas[uid] = (BASE_POINTS + rankBonus(position)) * multiplier + stake(uid, answer);
   });
 
   for (const [uid, answer] of Object.entries(answers)) {
@@ -341,31 +348,127 @@ export function roomStandings(
   return standings(scores).filter((entry) => players[entry.uid]);
 }
 
-/** How many the podium stands up, and so where the floor begins. */
+/** The places the podium stands: first, second and third, each as many as tie for it. */
 export const PODIUM_PLACES = 3;
+
+/** Most risers the podium stands up; past this, the rest of a tie folds into "+N". */
+export const PODIUM_MAX_RISERS = 5;
+
+/** A riser's height follows the place it stands for, not the row it came from. */
+export type RiserHeight = 'first' | 'second' | 'third';
+
+export interface Riser {
+  uid: string;
+  position: number;
+  score: number;
+  height: RiserHeight;
+  /** How many more of this tie did not fit, shown as "+N"; 0 on every other riser. */
+  more: number;
+}
+
+export interface Podium {
+  /** Who stands, in finishing order. */
+  standing: Riser[];
+  /**
+   * Left to right, the winner in the middle and the places spreading out, at
+   * least three wide so a room of one or two still has its winner in the
+   * middle. Null is an empty slot.
+   */
+  slots: (Riser | null)[];
+}
+
+function heightFor(position: number): RiserHeight {
+  if (position === 1) return 'first';
+  if (position === 2) return 'second';
+  return 'third';
+}
+
+/**
+ * Finishing order to left to right: first in the middle, second left of it,
+ * third right, fourth further left. Shared with the card so both lay out alike.
+ */
+export function podiumOrder(count: number): number[] {
+  const order: number[] = [];
+  for (let rank = 0; rank < count; rank += 1) {
+    if (rank % 2 === 1) order.unshift(rank);
+    else order.push(rank);
+  }
+  return order;
+}
+
+/**
+ * Who stands on the podium, how high, and in what order.
+ *
+ * **Everybody placed third or better stands, and a riser's height follows the
+ * place.** It used to stand the top three *rows* at first, second and third
+ * height, so of two joint winners one stood on the shorter second-place riser
+ * while both were labelled 1, and a three-way tie for third showed one of
+ * them. Greg, 7 October 2026, after `XRUE`: one riser per person, as high as
+ * their place.
+ *
+ * **Except a tie for last, which only fills the podium up to three.** Greg's
+ * 6 October rule (`RRGM`, four of six on nothing, third place one of them):
+ * whoever the podium stands up stays there and the rest of the tie sits down in
+ * the chair. Standing all four would have emptied the chair again. A table
+ * level all the way up is the exception to the exception — everybody is a joint
+ * winner and nobody is last, as the dead-heat header has always said.
+ *
+ * Past {@link PODIUM_MAX_RISERS}, the last riser carries the rest of its tie
+ * as "+N", the way a crowded lectern counts past twelve.
+ */
+export function podiumFor(rows: readonly Standing[]): Podium {
+  const lowest = rows[rows.length - 1]?.score;
+  const everyoneLevel = rows[0]?.score === lowest;
+  const placed = rows.filter((row) => row.position <= PODIUM_PLACES);
+  const above = everyoneLevel ? placed : placed.filter((row) => row.score !== lowest);
+  const eligible =
+    above.length >= PODIUM_PLACES
+      ? above
+      : [
+          ...above,
+          ...rows
+            .filter((row) => row.score === lowest && !above.includes(row))
+            .slice(0, PODIUM_PLACES - above.length),
+        ];
+
+  const shown = eligible.slice(0, PODIUM_MAX_RISERS);
+  const more = eligible.length - shown.length;
+  const standing: Riser[] = shown.map((row, i) => ({
+    uid: row.uid,
+    position: row.position,
+    score: row.score,
+    height: heightFor(row.position),
+    more: i === shown.length - 1 ? more : 0,
+  }));
+
+  const slots = podiumOrder(Math.max(PODIUM_PLACES, standing.length)).map((rank) => standing[rank] ?? null);
+  return { standing: rows.length === 0 ? [] : standing, slots: rows.length === 0 ? [] : slots };
+}
 
 /**
  * Who finished on the lowest score, for the chair at the end of the podium.
  *
- * One condition does all the work: the tie for last has to *start* below the
- * podium. That is what keeps the three edge cases honest, and each of them is a
- * real office round rather than a hypothetical.
+ * Everyone on the lowest score who is not already stood on a riser — see
+ * {@link podiumFor}, which decides who stands. Each edge case is a real office
+ * round rather than a hypothetical.
  *
- * A round where nobody scored is not a round somebody lost, so a table tied on
- * zero seats no one — the tie starts at the top. A room of three has a third
- * place already standing on a riser, and nobody should be on a riser and in the
- * chair at once. And a tie that reaches up into the podium is the same clash a
- * place lower down: last is only last when everybody above it is genuinely above
- * it.
+ * A round where nobody scored is not a round somebody lost, so a table tied all
+ * the way to the top seats no one. A room of three has nobody off the podium to
+ * seat, and nobody should be on a riser and in the chair at once.
+ *
+ * **A tie for last that reaches up into the podium used to seat nobody**, on the
+ * argument that last is only last when everybody above it is genuinely above
+ * it. Reversed by Greg, 6 October 2026: room RRGM finished with four of six on
+ * nothing after the wager, third place was one of the four, and the round ended
+ * with no chair at all — which read as broken, not as principled. Whoever the
+ * podium stands up stays there; the rest of the tie sits down.
  *
  * Returns everyone on that score, because a shared last place is still last.
  */
 export function seatedLast(rows: readonly Standing[]): string[] {
   const lowest = rows[rows.length - 1]?.score;
-  if (lowest === undefined) return [];
+  if (lowest === undefined || rows[0]?.score === lowest) return [];
 
-  const first = rows.findIndex((row) => row.score === lowest);
-  if (first < PODIUM_PLACES) return [];
-
-  return rows.slice(first).map((row) => row.uid);
+  const standing = new Set(podiumFor(rows).standing.map((riser) => riser.uid));
+  return rows.filter((row) => row.score === lowest && !standing.has(row.uid)).map((row) => row.uid);
 }

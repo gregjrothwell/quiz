@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 21 September 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 7 October 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -10,7 +10,7 @@ Append; do not rewrite an earlier entry to make it look as if we always knew. A
 correction is a new dated note that says what changed, and the wrong claim stays
 visible.
 
-**Split six times, 28 August to 21 September 2026** — every time this file hit
+**Split eight times, 28 August to 29 September 2026** — every time this file hit
 300. Entries move *verbatim* to [`recall/2026-08.md`](recall/2026-08.md) or
 [`recall/2026-09.md`](recall/2026-09.md) and leave a dated pointer here, so the
 chronology still reads end to end. Shortening an old entry to make the number go
@@ -24,225 +24,220 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
-## 2026-09-21 — Live: `index-BHcNzJzP` (#54, gh-pages `026d7cd`)
+## 2026-10-07 — Live: #71 (gh-pages `f89a603`): Lite reveal, podium ties, price decoys
 
-Greg said go live. [#54](https://github.com/gregjrothwell/quiz/pull/54) merged as
-`f6c1298` at 15:11; CI published gh-pages `026d7cd` at 15:15:29, author **GitHub
-Actions**. **Published bundle matches a local build of that commit exactly** —
-`index-BHcNzJzP.js` both sides, the cross-check worth keeping. Firebase chunk
-unmoved at `firebase-W6iQUl4r`. All three checks green on the PR and again on
-master; Playwright against the emulators passed both times.
+Greg: "build everything and we can go live to have a demo tomorrow." The first price fix made any
+option over today's price mean "it got cheaper", so 8 rising questions now carry a decoy over it
+(`c3ec3c6`, 0 answers changed). Podium: one riser per person, height by place (`71fcfac`).
+`draw-overnight` (`dd04bbd`). Reveal over Firestore Lite, all four at once (`0d6e964`): median 71ms
+v #70's 167ms, interleaved in a browser; both directions 6/6. `gh pr merge` was refused by the
+session's permission check, so Greg merged `8bba4fd`; CI green, live `index-DxSLpmmr` 11:25 BST,
+markers checked in the served bundle. Depth: [`decisions/office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md).
 
-Merged with a **merge commit rather than a squash, on purpose**. This branch was
-cut from `live-after-52`, so it contained #53's commit — a squash would have left
-#53 open and conflicting against docs that had since been rewritten.
-[#53](https://github.com/gregjrothwell/quiz/pull/53) closed itself as merged two
-seconds after #54 landed.
+## 2026-10-07 — Office feedback from `XRUE`: Price Was Right options rebuilt, four planned
 
-**Live and verified**: sleeves **44** (12/20/12), screens **54 of 54** sized,
-all five new CSS rules present, picture beside the answers at **614×345** against
-448×252 — read off the live site at 1512px, not a local build.
+Greg, after `XRUE`: some Price Was Right questions had one option under today's price, and it was
+the answer. Measured: 6 of 95 like that, 46 of 95 with an option at or above today's. Rebuilt
+(`17946ce`, local): every option under today's when the price rose; 87 of 95 now all-under, the 8
+that fell or held straddle it; 0 answers changed, no reseed. Levels now 24/28/43. Planned, with
+Greg's calls: podium ties (riser per person, height by place), overnight drawing, reveal over
+Firestore Lite **after Friday** (worst `XRUE` reveal 3.2s, two refusals). Greg has a Claude Design
+system this session cannot see. Depth: [`decisions/office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md).
 
-**The site served the old build for four minutes after gh-pages was correct** —
-the whole site, assets 404ing, not the `index.html` cache of 11 September. The
-**Pages build is a second step after the branch push**; `gh api
-repos/…/pages/builds` says which, and the last three took ~50s. gh-pages alone
-said fine; the live URL alone said failed. Read both.
+## 2026-10-06 — Live: #70 (gh-pages `d3266ae`): the vault stops at the hit
 
-**Unplayed.** Everything here — the reserved box, the preload, the side-by-side
-layout, 44 sleeves and their re-rated difficulties — has been verified but not
-played. The ratings especially are judgements and want a round against them.
+Greg: the reveal "taking a little longer than it should", ahead of Friday's 30. Each refused vault
+candidate closes Firestore's write stream, so firing all four paid three reopens every reveal; now
+one option at a time, stopping at the hit. Browser against live: 516→388ms median; worst case a
+little over the old. One untraced 1191ms, then 20 traced reveals with none slow. Merged `6e34bb9`
+14:44 BST → CI green → live `index-CSluHU7x` 14:49, marker checked in the served bundle. The
+production-site reveal was **not** run: App Check refuses the built-in browser at sign-in (item 12).
+Depth: [`decisions/reveal-stop-at-hit.md`](decisions/reveal-stop-at-hit.md).
 
-## 2026-09-21 — Correction: the sleeve audit missed a third of them, and a person found the rest
+## 2026-10-06 — Live: #69 (gh-pages `51a30de`): The Price Was Right, British Blankety Blank, 19 packs
 
-The entry below says 40 published against a 36 floor. **Both numbers were wrong
-by the time the day ended, and the reason is worth more than the numbers.**
+Greg seeded (`seed-vault -- --pack blanks,prices`: 124 added, 119 already correct); read back
+243/243. `host-room -- 15 --pack prices`, room `P3E9`, a background browser tab joined: options
+rendered low to high through the real client path, the vault resolved in 0.28s, a wrong pick
+scored +0. Merged `d958cc0` 13:00:49 BST (`gh pr merge` worked) → CI green 13:04:38 → Pages
+`built` 13:05:30. Live bundle `index-BCpFNLxK` carries `ordered`. **Correction to the entry
+below:** "nothing American" was not Greg's rule — American things famous worldwide are fine;
+`AGENTS.md` reworded (`3e798ae`). Random round parked as #3.
 
-Apple's Vision reads printed prose well and stylised cover type not at all. Of
-the 37 covers it cleared, **eleven print their own title** — letterspaced (`T H E
-J O S H U A  T R E E`), scripted (*The Fame*, on the sunglasses), or upside down
-in one tile of a grid (*Achtung Baby*). A second batch of candidates the same
-afternoon held the rate almost exactly: eight of 26. **Roughly a third, twice.**
+## 2026-10-06 — The Price Was Right built; "nothing American" written down (`office-feedback-6-oct`)
 
-So the audit narrows the field and a person settles it, by looking —
-`sleeve-audit -- --sheet` writes a labelled contact sheet and every one of the
-nineteen is obvious in it at 190px. The nineteen are in `sleeve-refusals.ts`
-with what is on each cover and what Vision read instead, so the judgement
-survives a regenerate.
+Greg believed "no American questions" was already a principle; it was only `classify.ts`'s
+harvest filter, which hand packs never pass through. Now in `AGENTS.md`. Parked idea #2 built
+blind: 95 ONS prices, given now, guess 5/10/20/30 years back — shop-quote medians for 5 and
+10, RPI average prices for 20 and 30 (the quotes have nothing 1996–2009). AC "no engine
+change" broke: the client shuffles options, so `ordered` (`1de868b`). Unseeded
+([`price-was-right.md`](decisions/price-was-right.md)).
 
-216 candidate albums added in all. **229 resolved, 185 refused, 44 published** —
-the 36 floor held without moving. Re-rated against the covers themselves:
-3/15/26 easy/medium/hard becomes **12/20/12**. Those ratings are judgements, not
-measurements, and stand exactly as the season's seeded `form` figures do.
+## 2026-10-06 — First office rounds of #67 and #68: chair, bonus, Blankety Blank (`office-feedback-6-oct`)
 
-**Vault seeded and read back: 44 of 44 published sleeves hold a valid answer.**
-Nothing was deleted, so the 52-question pack still live keeps working. Also
-live-affecting and fixed: a one-character title is now refused outright, because
-`words('÷')` is empty and the glyph *is* the artwork.
+Room `RRGM`, 6 seats: Blankety Blank then Catchphrase. **No chair on the first:** the wager
+left four on 0 and third place was one of them; `seatedLast` refused a tie touching the podium
+by design. Reversed ([`final-card.md`](decisions/final-card.md)). **Cass, Catchphrase Q1:** no
+answer of hers reached the room, nor Roberto's; the other four came in at 7.6–9.7 s of 10.
+Unresolved until she says whether her screen read *You didn't answer* or *didn't reach the
+room in time*. **Bonus options now from the first frame**; Catchphrase 93% → 78%, Greg wants
+harder still ([`catchphrase-difficulty.md`](decisions/catchphrase-difficulty.md)). **Blankety
+Blank:** 21 American out, 29 British in, 148, not seeded ([`blankety-blank.md`](decisions/blankety-blank.md)).
 
-Depth: [`decisions/sleeves-gate.md`](decisions/sleeves-gate.md).
+## 2026-10-06 — Live: #68 (gh-pages `3fbc003`): Blankety Blank, 18 packs
 
-## 2026-09-21 — The picture sits beside the answers now
+Greg's "let's go live" 08:56 → merged `28263ec` 08:59:25 (Greg; the harness's classifier
+refused `gh pr merge`) → master CI green 09:03:26 → Pages `built` 09:04:32: **about 8 minutes**.
+Live `index.json` lists 18 packs; `blanks.json` serves 140, no answer field. The bundle hash is
+unchanged and that is correct: no client code imports `PACK_IDS`, and the local build that
+played `N9AS` produced the same `index-DdEoFaVD`.
 
-Greg: the pictures are a bit small. Measured on a 1512px laptop — a 448px still
-capped at 28rem in a 965px card, **517px of the row beside it empty**, and 12px
-between the picture and the top lectern. No vertical room to grow into and a
-whole column going unused.
+## 2026-10-06 — Blankety Blank built and seeded, 140 questions, played blind
 
-Above 64rem a picture question puts the still on the left and the four lecterns
-in a single column on the right. Flags 448×224 → **614×307**; On the box
-448×252 → **614×345** — 1.88× the area, both. Squares are left alone: a sleeve
-at full column width is taller than the lecterns beside it and pushes the row
-below the fold. The row height is still set by the lecterns, so nothing moved
-further down the page.
+Greg's parked idea #1, as a four-option pack: no engine change, no paste. Every phrase and
+every distractor checked against its source both ways (`blanks-check`, 140/140); the first
+run caught three distractors that were real variants. Seeded 140, read back 140/140; a
+`host-room` reveal proved it end to end. Branch `blankety-blank`, **not deployed**.
+[`blankety-blank.md`](decisions/blankety-blank.md).
 
-**Hover-to-enlarge was asked for and then dropped** — Greg, once the numbers
-were on the table: the layout change will probably be enough.
+## 2026-10-06 — Live: #67 (gh-pages `9124fc0`): every played pack grown
 
-## 2026-09-21 — Sleeves: the cover was the answer key on 11 of 15
+Word go 08:04 → live 08:15:54, about 12 minutes. The packs read 90 / 212 / 445 / 424 on the live site. The bundle
+is unchanged (`index-DdEoFaVD`), so the pack sizes were the check. Seeded 378, read back 1,171/1,171 by Greg.
+Freshness after: Catchphrase 4.6 fresh rounds (was 2.3), Sleeves 8.0 (5.0), On the box 19.7, Tunes 19.9.
+Claude's `gh pr merge` went through this time.
 
-`53FN` this morning, 4 seats, hit 85% at a 3.0s median against 37%/5.3s for a
-text round. **Eleven of the fifteen covers had the album title printed on them.**
-The tell is the hard questions: the four with a printed title all scored **100%**
-and the one with a wordless cover — Björk, *Vespertine* — scored **50%**. The
-difficulty rating was decorative.
+## 2026-10-06 — Overnight: every played pack grown, nothing live
 
-An edition problem more than a curation one: the specs name an album, iTunes GB
-returns whatever edition it holds, and reissues print titles on artwork the
-original never carried. *The Wall* is a bare brick wall; the mzstatic art reads
-`PINK FLOYD THE WALL`.
+Greg: "beef up the packs", then "we need more catchphrases". Two background agents and two Whisper audits ran,
+with a pause at the 5-hour limit, 23:15–03:10. Catchphrase 60 → 90, built blind. Sleeves 168 → 212 (pre-screened,
+44 of 759). On the box 296 → 445. Tunes 268 → 424. All local, unseeded:
+[`pack-growth-plan.md`](decisions/pack-growth-plan.md#done-overnight--6-october-2026).
 
-`npm run sleeve-audit` reads the text off every cover with Apple's Vision and
-writes `sleeve-cover-text.ts`; the builder refuses any sleeve whose cover names
-its own album *or* is simply covered in writing. Of **143 covers read, 103 are
-refused**; 106 candidate albums added to refill it. Published **52 → 40**, but
-the pack that actually worked was 19. `SLEEVES_MIN_PACK` 45 → 36, which is an
-honest bar rather than a loosened one. Depth:
-[`decisions/sleeves-gate.md`](decisions/sleeves-gate.md).
+## 2026-10-05 — #66 live: Catchphrase 60, Bonus Catchphrase, Sleeves 168
 
-**And a wrong picture, not a giveaway.** `resolveAlbum` trusted a hand-typed
-`collectionId` with no title check. `californication` carried `947680622` — Red
-Hot Chili Peppers' *The Studio Album Collection 1991-2011*. The question showed a
-box set and offered *Stadium Arcadium*. It scored **25%** in `53FN`, the worst of
-the fifteen, and it was not hard, it was wrong. Green build throughout.
+Live at 22:13 (`index-DdEoFaVD`, gh-pages `f8a3552`). The batch was **kept** for the office.
+Seeded 94, read back 228/228. Word go → live took about 1h46m, roughly 70 minutes of it GitHub
+Actions runner queues, during an incident. The first office Catchphrase round is the live check,
+before Fri 9 Oct. [`go-live-oct-2026.md`](decisions/go-live-oct-2026.md#done--5-october-2026).
 
-*Superseded the same afternoon — see the correction above.*
+## 2026-10-05 — Catchphrase 60, everything prepped, and the batch named in chat
 
-## 2026-09-21 — The pictures did not turn up, and it was never the files
+The harder batch was drawn (one redraw) and picked; it is 30 → 60, with Mr Fries in 21 (`08d09e9`).
+Nothing is seeded, pushed or deployed: [`go-live-oct-2026.md`](decisions/go-live-oct-2026.md).
+**Claude named all 30 new answers in chat while picking**, so Greg decides keep or replace.
 
-Bret, Friday 18 September 15:11, with a screenshot; others reported the same on
-slow connections. **The files are fine** — 82KB median, 158KB max, 200 from
-Pages, 179 of 179 on gh-pages, ~0.2s from here. And in the round he played
-(`M9YU`) **file size predicts nothing**: ≥100KB scored 88%/3.9s, under 86%/3.1s.
-Shrinking them would have fixed nothing, which is the finding that saved a blind
-alley.
+## 2026-10-05 — Sleeves 168, a freshness check, and the harder batch half drawn
 
-Three faults. **Nothing was preloaded** — the `<img>` was created when the
-question rendered, the same frame the countdown starts in, though every device
-has held all fifteen filenames since the round was built and the lobby sits open
-while people join. **The box was zero pixels tall** — `width:100%; height:auto`
-with no intrinsic size resolves to 0, and `alt=""` left nothing in the gap, so it
-read as a question with no picture rather than a picture that was late; measured
-at 0 before, 448×224 after. **A failure was silent and permanent.**
+Catchphrase (30 of 30) and Sleeves (105 of 104) were both spent. Sleeves 104 → 168
+(`9095987`, about 1 in 7 candidates ships). `npm run freshness` plus a weekday scheduled
+task, because launchd cannot read ~/Documents. Harder batch: 8 of 30 drawn, paused at 7%
+battery. [`sleeves-growth.md`](decisions/sleeves-growth.md) · [`pack-freshness.md`](decisions/pack-freshness.md).
 
-Packs now carry `imageWidth`/`imageHeight`, read off the file header at build
-time and written into all 179 stills in place — no id, hash or option touched, so
-nothing needs reseeding. The header parser was **cross-checked against `sips`
-over all 179: zero disagreements**. Depth:
-[`decisions/picture-loading.md`](decisions/picture-loading.md).
+## 2026-10-05 — Mr Fries: the bean chosen, and the hook for him built
 
-**Bret was not blind for the whole round** — eight questions came back 6/6. He
-confirmed later the same day that it stopped showing him pictures partway
-through, which is the diagnosis exactly.
+Greg chose A, the bean, from four bodies. D drew SpongeBob, so look-alikes
+are now part of the by-eye check. A spec opts in with `fries`; the 30 shipped
+prompts are pinned by hash. No new pictures yet. [`decisions/mr-fries.md`](decisions/mr-fries.md#chosen--5-october-2026).
 
-## 2026-09-11 — #52 live: `index-n26s0ofl`
+## 2026-10-05 — Mr Fries researched: prompt-only holds, movement is charm
 
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
+Six drawings, one fixed description: the same chap in all six, but the bow tie
+held in only 3. A Vision cut-out plus a stretch makes an 81–94 KB breathing WebP,
+but only where he stands clear of things. Nothing built; Greg decides.
+[`decisions/mr-fries.md`](decisions/mr-fries.md).
 
-## 2026-09-11 — The round was the best yet, and three things came out of it
+## 2026-10-05 — Bonus Catchphrase built, local only (`106863d`)
 
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
+Every 5th question: nine squares lift one per tenth of the clock, five up at
+the options, and it pays double base and rank (Greg's pick; not the stake or
+steal). No rule, field or paste. Gallery + 1,245 tests; **no live room** —
+Greg: the next office round is the check. [`decisions/catchphrase-difficulty.md`](decisions/catchphrase-difficulty.md#built--5-october-2026).
 
-## 2026-09-10 — Playwright prerequisites: jsdom, emulators, e2e job
+## 2026-10-05 — Catchphrase: the office agrees, and a Bonus Catchphrase is next
 
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
+Office round `K3EN`, 7 seats, 15 s clock: 93% right, median 1.7 s after the
+options landed, "hard" the best-answered label. A longer hold would not help.
+Greg chose the show's Bonus Catchphrase as every fifth question, scoring more;
+story approved, not built. Then harder puzzles, and maybe a house character,
+"Mr Fries". [`decisions/catchphrase-difficulty.md`](decisions/catchphrase-difficulty.md).
 
-## 2026-09-10 — Node 20 deprecation: the four actions clear it at three different majors
+## 2026-10-02 — Live: `index-RzBR8yIZ` (#65, gh-pages `a49f801`): ready for thirty
 
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
+[#65](https://github.com/gregjrothwell/quiz/pull/65) merged as `66c4413` at
+23:33:07. Live at 23:37:16, byte-identical to a local build (`8ab702612ad7`).
+Contents:
+- A crowded lectern counts past 12 chips instead of growing.
+- The standings' Next is sticky.
+- 30-player preview screens.
+- `sync-harness 30`: 30/30.
+- A 30-player round costs 14.6k–32.7k reads ([`decisions/cost.md`](decisions/cost.md)).
 
-## 2026-09-10 — Season form seeded on old rows, and they are estimates
+Word go → live took 43 minutes, "push" → live 12; where it went and how to
+cut it: [`decisions/ci-deploy.md`](decisions/ci-deploy.md#lead-time-measured-2-october-2026--word-go-to-live-in-43-minutes).
 
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
+## 2026-10-02 — Public scale: target B chosen; PLAN written, not confirmed
 
-## 2026-09-10 — Deploys come from CI now (`index-qJCbuGrA`)
+The lost 15 Aug appendix recovered; seams now (host authority, tenancy, content rule), the rest on a trigger. [`decisions/public-scale.md`](decisions/public-scale.md).
 
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
+## 2026-10-02 — archived, one line each
 
-## 2026-09-10 — Three corrections the live project made to the docs
+Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines.
 
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
+- **2026-10-02** — [Catchphrase's first round: 10 of 10, too easy](recall/2026-10.md#2026-10-02--catchphrases-first-round-10-of-10-too-easy)
+- **2026-10-02** — [Live: `index-DPum3N0P` (#64, gh-pages `7a8dc6f`)](recall/2026-10.md#2026-10-02--live-index-dpum3n0p-64-gh-pages-7a8dc6f)
+- **2026-10-02** — [Catchphrase: options at halfway, and Greg plays it blind](recall/2026-10.md#2026-10-02--catchphrase-options-at-halfway-and-greg-plays-it-blind)
+- **2026-10-02** — [Catchphrase: the pictures come from a free model on Greg's Mac](recall/2026-10.md#2026-10-02--catchphrase-the-pictures-come-from-a-free-model-on-gregs-mac)
 
-## 2026-09-10 — The season form ranking was live, then silently reverted
+## 2026-09-22 to 2026-09-30 — archived, one line each
 
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
+Moved verbatim to [`recall/2026-09.md`](recall/2026-09.md) on 6 October, at 300 lines.
 
-## 2026-09-10 — Deploy guard added; CI outlined for later
+- **2026-09-30** — [Live: `index-frzpKPeW` (#63, gh-pages `9cf24c8`)](recall/2026-09.md#2026-09-30--live-index-frzpkpew-63-gh-pages-9cf24c8)
+- **2026-09-30** — [Joe's missing points were not missing; the music rounds start at once](recall/2026-09.md#2026-09-30--joes-missing-points-were-not-missing-the-music-rounds-start-at-once)
+- **2026-09-29** — [Live: `index-BJxsEAQd` (#62, gh-pages `f5a273b`)](recall/2026-09.md#2026-09-29--live-index-bjxseaqd-62-gh-pages-f5a273b)
+- **2026-09-27** — [Live: `index-BJIHPrGR` (#61, gh-pages `6b06c51`)](recall/2026-09.md#2026-09-27--live-index-bjihprgr-61-gh-pages-6b06c51)
+- **2026-09-22** — [Live: `index-BE_5Hyg5` (#59, gh-pages `7b72a40`)](recall/2026-09.md#2026-09-22--live-index-be_5hyg5-59-gh-pages-7b72a40)
 
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
+## 2026-09-04 to 2026-09-24 — archived, one line each
 
-## 2026-09-10 — Token revoked and reissued; leak closed
+*Collapsed from four-line stubs on 30 September 2026 to make room, and the
+21 September stubs the same way on 5 October; every entry is verbatim in the
+archive, and nothing was shortened. Four more (21–22 September) collapsed the
+same way on the afternoon of 5 October, and the three of 24 September archived whole
+that evening.*
 
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
+- **2026-09-24** — [Live: `index-fy6Fyqpa` (#60, gh-pages `5bf6290`)](recall/2026-09.md#2026-09-24--live-index-fy6fyqpa-60-gh-pages-5bf6290)
+- **2026-09-24** — [On the box: 54 to 187, stacked on Share or Shaft](recall/2026-09.md#2026-09-24--on-the-box-54-to-187-stacked-on-share-or-shaft)
+- **2026-09-24** — [Split or Steal: a final after the last question, not a mode](recall/2026-09.md#2026-09-24--split-or-steal-a-final-after-the-last-question-not-a-mode)
+- **2026-09-22** — [The store badge was handing out the answer, on both packs](recall/2026-09.md#2026-09-22--the-store-badge-was-handing-out-the-answer-on-both-packs)
+- **2026-09-22** — [The pin refused the reveal: every round stuck on question one](recall/2026-09.md#2026-09-22--the-pin-refused-the-reveal-every-round-stuck-on-question-one) · depth: [`decisions/postmortem-the-pin-that-refused-the-reveal.md`](decisions/postmortem-the-pin-that-refused-the-reveal.md)
+- **2026-09-21** — [Live: `index-OfECpKrx` (#56, gh-pages `f78379e`)](recall/2026-09.md#2026-09-21--live-index-ofecpkrx-56-gh-pages-f78379e)
+- **2026-09-21** — [Vault oracle, joinedAt, and the `at` stamp](recall/2026-09.md#2026-09-21--vault-oracle-joinedat-and-the-at-stamp) · depth: [`decisions/security-round-sept-2026.md`](decisions/security-round-sept-2026.md)
+- **2026-09-21** — [Live: `index-BHcNzJzP` (#54, gh-pages `026d7cd`)](recall/2026-09.md#2026-09-21--live-index-bhcnzjzp-54-gh-pages-026d7cd)
+- **2026-09-21** — [Correction: the sleeve audit missed a third of them, and a person found the rest](recall/2026-09.md#2026-09-21--correction-the-sleeve-audit-missed-a-third-of-them-and-a-person-found-the-rest)
+- **2026-09-21** — [The picture sits beside the answers now](recall/2026-09.md#2026-09-21--the-picture-sits-beside-the-answers-now)
+- **2026-09-21** — [Sleeves: the cover was the answer key on 11 of 15](recall/2026-09.md#2026-09-21--sleeves-the-cover-was-the-answer-key-on-11-of-15)
+- **2026-09-21** — [The pictures did not turn up, and it was never the files](recall/2026-09.md#2026-09-21--the-pictures-did-not-turn-up-and-it-was-never-the-files)
 
-## 2026-09-10 — Live: the debug-token gate (`index-V9wVdhyu`), and #40 for the rules
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-10 — Correction: the console was ahead of the repo, not behind
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-10 — Live: volume, clip cuts, 177 songs (`index-C3jZR3XU`)
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-10 — Name that Tune worked; volume, giveaways, 177 songs
-
-Archived whole: [`recall/2026-09.md`](recall/2026-09.md). Depth:
-[`decisions/tunes-round.md`](decisions/tunes-round.md).
-
-## 2026-09-09 — The whole day, archived
-
-iTunes Name that Tune (79 GB previews), Flags (76, hashed), Sleeves (52,
-mzstatic hotlink), picture retitled Fine Art, the vault topped up 206, all live
-as `index-6odlsKCm`; and On the box via TMDB untitled backdrops, built but not
-live. Moved whole on 10 September at 299/300, to keep the CI entry inside
-budget: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-08 — The whole day, archived
-
-`firstMs` shipped — the snap guess *shown* at the reveal, not banned (Greg chose
-exposure over restriction on cost) — and the A–D spam lottery that exposed;
-`games/{gameId}` built so a finished round survives its answers subcollection,
-and the A/B gap that forced it (test per-question things, never per-round); the
-melody round given **Hear it again**; and all of it live as `index-BDZpMBAG`,
-`check-rules` 65/65. Plus the two moved earlier — the melody round abandoned
-after four, the five-column picker. Moved whole on 10 September at 299/300:
-[`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-04 — Three more entries archived
-
-"The rest of the file is stale" is not evidence about a line; melody and picture
-going live with the vault as the gate; and the `melody-round` branch itself.
-Moved whole on 10 September at 322/300: [`recall/2026-09.md`](recall/2026-09.md).
-
-## 2026-09-04 — Three entries archived
-
-The squad-write correction, the negatives paste (`check-rules` allow **PASS**
-after the paste, which is what made the two deny cases mean anything), and the
-lobby writing the squad plus a stake that can go below zero. Moved whole on
-10 September at 313/300: [`recall/2026-09.md`](recall/2026-09.md).
+- **2026-09-11** — [#52 live: `index-n26s0ofl`](recall/2026-09.md#2026-09-11--52-live-index-n26s0ofl)
+- **2026-09-11** — [The round was the best yet, and three things came out of it](recall/2026-09.md#2026-09-11--the-round-was-the-best-yet-and-three-things-came-out-of-it)
+- **2026-09-10** — [Playwright prerequisites: jsdom, emulators, e2e job](recall/2026-09.md#2026-09-10--playwright-prerequisites-jsdom-emulators-e2e-job)
+- **2026-09-10** — [Node 20 deprecation: the four actions clear it at three different majors](recall/2026-09.md#2026-09-10--node-20-deprecation-the-four-actions-clear-it-at-three-different-majors)
+- **2026-09-10** — [Season form seeded on old rows, and they are estimates](recall/2026-09.md#2026-09-10--season-form-seeded-on-old-rows-and-they-are-estimates)
+- **2026-09-10** — [Deploys come from CI now (`index-qJCbuGrA`)](recall/2026-09.md#2026-09-10--deploys-come-from-ci-now-index-qjcbugra)
+- **2026-09-10** — [Three corrections the live project made to the docs](recall/2026-09.md#2026-09-10--three-corrections-the-live-project-made-to-the-docs)
+- **2026-09-10** — [The season form ranking was live, then silently reverted](recall/2026-09.md#2026-09-10--the-season-form-ranking-was-live-then-silently-reverted)
+- **2026-09-10** — [Deploy guard added; CI outlined for later](recall/2026-09.md#2026-09-10--deploy-guard-added-ci-outlined-for-later)
+- **2026-09-10** — [Token revoked and reissued; leak closed](recall/2026-09.md#2026-09-10--token-revoked-and-reissued-leak-closed)
+- **2026-09-10** — [Live: the debug-token gate (`index-V9wVdhyu`), and #40 for the rules](recall/2026-09.md#2026-09-10--live-the-debug-token-gate-index-v9wvdhyu-and-40-for-the-rules)
+- **2026-09-10** — [Correction: the console was ahead of the repo, not behind](recall/2026-09.md#2026-09-10--correction-the-console-was-ahead-of-the-repo-not-behind)
+- **2026-09-10** — [Live: volume, clip cuts, 177 songs (`index-C3jZR3XU`)](recall/2026-09.md#2026-09-10--live-volume-clip-cuts-177-songs-index-c3jzr3xu)
+- **2026-09-10** — Name that Tune worked; volume, giveaways, 177 songs — [`recall/2026-09.md`](recall/2026-09.md) · depth: [`decisions/tunes-round.md`](decisions/tunes-round.md)
+- **2026-09-09** — The whole day, archived — [`recall/2026-09.md`](recall/2026-09.md)
+- **2026-09-08** — The whole day, archived — [`recall/2026-09.md`](recall/2026-09.md)
+- **2026-09-04** — Three more entries archived — [`recall/2026-09.md`](recall/2026-09.md)
+- **2026-09-04** — Three entries archived — [`recall/2026-09.md`](recall/2026-09.md)
 
 ## Earlier — the full chronology, archived
 

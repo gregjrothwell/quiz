@@ -151,6 +151,46 @@ function lookupUrl(id: number): string {
   return `https://itunes.apple.com/lookup?id=${id}&country=${ITUNES_COUNTRY}`;
 }
 
+/** One of an album's songs that has a preview to play. */
+export interface AlbumTrack {
+  trackId: number;
+  trackName: string;
+  previewUrl: string;
+  storeUrl: string;
+}
+
+/**
+ * An album's songs, in album order, from one GB lookup.
+ *
+ * Only songs with a preview: Apple withholds some, and a clue that cannot play
+ * is no clue. The collection row Apple puts first is not a track and is
+ * dropped with the rest.
+ */
+export async function albumTracks(
+  collectionId: number,
+  get: ItunesGet = defaultItunesGet,
+): Promise<AlbumTrack[]> {
+  const query = new URLSearchParams({
+    id: String(collectionId),
+    entity: 'song',
+    country: ITUNES_COUNTRY,
+    limit: '200',
+  });
+  const data = asList(await get(`https://itunes.apple.com/lookup?${query.toString()}`));
+  const out: AlbumTrack[] = [];
+  for (const row of data.results ?? []) {
+    if (row.kind !== 'song') continue;
+    if (row.trackId === undefined || !row.trackName || !row.previewUrl || !row.trackViewUrl) continue;
+    out.push({
+      trackId: row.trackId,
+      trackName: row.trackName,
+      previewUrl: row.previewUrl,
+      storeUrl: row.trackViewUrl,
+    });
+  }
+  return out;
+}
+
 /**
  * The GB store's preview for a song.
  *

@@ -85,6 +85,39 @@ function openedAtMillis(data: DocumentData | undefined): number | null {
   return value instanceof Timestamp ? value.toMillis() : null;
 }
 
+/**
+ * `at` off an answer document. A resolved Timestamp becomes milliseconds; a
+ * pending `serverTimestamp()` write, or a document that predates the field,
+ * is absent so `liveAnswers` keeps the shape every earlier round produced.
+ */
+function stampMillis(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (value instanceof Timestamp) return value.toMillis();
+  return undefined;
+}
+
+function asFiniteNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+function answerDocFrom(data: DocumentData): AnswerDoc | null {
+  const optionIndex = asFiniteNumber(data.optionIndex);
+  const elapsedMs = asFiniteNumber(data.elapsedMs);
+  const questionIndex = asFiniteNumber(data.questionIndex);
+  if (optionIndex === undefined || elapsedMs === undefined || questionIndex === undefined) {
+    return null;
+  }
+  const at = stampMillis(data.at);
+  return {
+    optionIndex,
+    elapsedMs,
+    questionIndex,
+    ...(typeof data.firstMs === 'number' ? { firstMs: data.firstMs } : {}),
+    ...(typeof data.wager === 'number' ? { wager: data.wager } : {}),
+    ...(at === undefined ? {} : { at }),
+  };
+}
+
 export type ConnectionState = 'connecting' | 'ready' | 'error';
 
 export interface UseRoom {
@@ -195,6 +228,10 @@ function toRoomState(code: string, data: DocumentData, answers: Record<string, A
     // `null` rather than undefined: Firestore rejects undefined outright, and
     // every room from before the steal has no field at all.
     lastSteal: persisted.lastSteal ?? null,
+    // Absent in every room from before Share or Shaft, defaulted for the reason
+    // the wager's flag is.
+    standoffEnabled: persisted.standoffEnabled ?? false,
+    standoff: persisted.standoff ?? null,
   };
 }
 
@@ -223,6 +260,8 @@ function toPersisted(state: RoomState): PersistedRoom {
     stealEnabled: state.stealEnabled,
     jigsawEnabled: state.jigsawEnabled,
     lastSteal: state.lastSteal,
+    standoffEnabled: state.standoffEnabled,
+    standoff: state.standoff,
   };
 }
 
@@ -336,7 +375,7 @@ export function useRoom(): UseRoom {
    * A callback holds the room from the render that made it, which is fine for
    * an action dispatched straight away and wrong for one dispatched after an
    * await. The reveal is the case that matters: `handleReveal` asks the vault
-   * first, which is four writes and a network round trip, and every answer that
+   * first, which is up to four writes one after another, and every answer that
    * lands during it belongs to a room object that closure will never see. See
    * `dispatch`.
    */
@@ -448,7 +487,8 @@ export function useRoom(): UseRoom {
     return onSnapshot(answersCollection(code), (snapshot) => {
       const next: Record<string, AnswerDoc> = {};
       for (const document of snapshot.docs) {
-        next[document.id] = document.data() as AnswerDoc;
+        const parsed = answerDocFrom(document.data());
+        if (parsed) next[document.id] = parsed;
       }
       setAnswers(next);
     });
@@ -469,7 +509,11 @@ export function useRoom(): UseRoom {
       // missing or unpublished this write fails for everyone, and as a bare
       // `void` it surfaced only as a console warning — presence silently stopped
       // working and the room filled with ghosts with nothing on screen to say so.
-      rtdbSet(own, { name: nameRef.current, at: Date.now() }).then(
+      // `name` used to ride along and was never read — the reaper takes
+      // Object.keys only. Dropping it is what stops a signed-in client
+      // sweeping room codes from harvesting a roster. See
+      // docs/decisions/security-round-sept-2026.md.
+      rtdbSet(own, { at: Date.now() }).then(
         () => setPresenceWorking(true),
         () => setPresenceWorking(false),
       );
@@ -527,7 +571,7 @@ export function useRoom(): UseRoom {
    * **Folded over the newest room this client has seen, not the one this
    * callback was created with.** The difference is the length of an await, and
    * the reveal spends one: `handleReveal` asks the vault before it dispatches,
-   * which is four writes and a round trip. An answer arriving in that gap is in
+   * which is up to four writes one after another. An answer arriving in that gap is in
    * a newer room object, and folding over the closure's copy dropped it — the
    * player answered inside the window, watched their lectern light up, and
    * scored nothing, while the round moved on without them. It costs whoever
@@ -877,7 +921,10 @@ export function useRoom(): UseRoom {
         ...first,
         ...staked,
       };
-      await setDoc(doc(answersCollection(code), uid), answer);
+      await setDoc(doc(answersCollection(code), uid), {
+        ...answer,
+        at: serverTimestamp(),
+      });
     },
     [code, uid, room],
   );

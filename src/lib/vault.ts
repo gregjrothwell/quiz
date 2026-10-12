@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, type Firestore } from 'firebase/firestore';
+import { doc, getDoc, setDoc, type Firestore } from 'firebase/firestore/lite';
 import type { QuizQuestion } from '../engine/state';
 
 /**
@@ -53,10 +53,20 @@ function isPermissionDenied(cause: unknown): boolean {
  * Finds which option the vault says is correct, and leaves the proof behind at
  * `rooms/{code}/reveal/{questionId}` for anyone who wants to check.
  *
- * All four candidates go at once. Three will be refused and one accepted, so
- * the reveal costs one round trip rather than up to four — the difference
- * between an imperceptible pause and most of a second with the whole room
- * watching.
+ * **All four at once, over Firestore Lite, answered by the first acceptance.**
+ * Lite sends each write as its own HTTPS request, so a refusal is a 403 on that
+ * request and costs nothing else. The main SDK sends writes down one stream,
+ * and a refused write closes it (`__PRIVATE_onWriteStreamClose`): firing four
+ * there was never parallel — every reveal paid three stream reopens, and the
+ * room update behind them paid another. #70 asked one at a time to pay only the
+ * refusals before the hit; in the office that was still ~200ms a refusal and
+ * once 2.8s for two (`XRUE`, 7 October 2026). Over Lite the main stream never
+ * sees a refusal, and the reveal costs one round trip wherever the answer sits.
+ * Measured: docs/decisions/office-feedback-7-oct.md.
+ *
+ * `db` is a **Lite** instance — `vaultFirestore()` in the app — and Lite sends
+ * the App Check header like the main SDK (`x-firebase-appcheck`, checked in the
+ * installed `@firebase/firestore` 4.8.0).
  *
  * A reveal that has already been recorded — because the quizmaster's tab
  * reloaded, or the role changed hands mid-question — is read back rather than
@@ -67,23 +77,21 @@ export async function resolveAnswer(
   code: string,
   question: QuizQuestion,
 ): Promise<number> {
-  const attempts = question.options.map(async (option, index) => {
-    try {
-      await setDoc(revealDoc(db, code, question.id), { answer: option });
-      return index;
-    } catch (cause) {
-      // A refusal is the expected outcome for three of the four, and carries no
-      // information beyond "not this one". Anything else — offline, a missing
-      // ruleset — has to surface, or a reveal that cannot happen looks
-      // identical to a question nobody got right.
-      if (isPermissionDenied(cause)) return -1;
-      throw cause;
-    }
-  });
+  const candidates = question.options.map((option, index) =>
+    setDoc(revealDoc(db, code, question.id), { answer: option }).then(() => index),
+  );
 
-  const results = await Promise.all(attempts);
-  const found = results.find((index) => index >= 0);
-  if (found !== undefined) return found;
+  try {
+    return await Promise.any(candidates);
+  } catch (cause) {
+    // A refusal is the expected outcome for every option but one, and carries
+    // no information beyond "not this one". Anything else — offline, a missing
+    // ruleset — has to surface, or a reveal that cannot happen looks
+    // identical to a question nobody got right.
+    const failures: unknown[] = cause instanceof AggregateError ? cause.errors : [cause];
+    const other = failures.find((failure) => !isPermissionDenied(failure));
+    if (other !== undefined) throw other;
+  }
 
   // Every candidate refused. Either the gate has not opened yet, or this
   // question was already revealed once — a reloaded tab, or the role changing

@@ -8,6 +8,7 @@ import { SLEEVE_COVER_TEXT } from './sleeve-cover-text';
 import { sleeveVerdict } from './title-on-cover';
 import { SLEEVE_HAND_REFUSALS } from './sleeve-refusals';
 import { TUNE_SPECS } from './hand-tunes-data';
+import { stableId } from './write-hand-packs';
 
 const PREVIEW = 'https://audio-ssl.itunes.apple.com/itunes-assets/x.m4a';
 const ART = 'https://is1-ssl.mzstatic.com/image/thumb/Music/v4/aa/source/100x100bb.jpg';
@@ -16,20 +17,32 @@ const get: ItunesGet = async (url) => {
   const parsed = new URL(url);
   if (parsed.pathname.endsWith('/lookup')) {
     const id = Number(parsed.searchParams.get('id'));
-    const spec = SLEEVE_SPECS.find((row) => row.collectionId === id);
+    // A hand-typed id, or the one the album search below handed out.
+    const spec = SLEEVE_SPECS.find((row) => row.collectionId === id) ?? SLEEVE_SPECS[id - 1000];
     if (!spec) throw new Error(`unexpected lookup ${id}`);
-    return {
-      results: [
-        {
-          wrapperType: 'collection',
-          collectionId: id,
-          collectionName: spec.correct,
-          artistName: spec.artist,
-          collectionViewUrl: `https://music.apple.com/gb/album/${spec.slug}/${id}`,
-          artworkUrl100: ART,
-        },
-      ],
+    const album = {
+      wrapperType: 'collection',
+      collectionId: id,
+      collectionName: spec.correct,
+      artistName: spec.artist,
+      collectionViewUrl: `https://music.apple.com/gb/album/${spec.slug}/${id}`,
+      artworkUrl100: ART,
     };
+    if (parsed.searchParams.get('entity') !== 'song') return { results: [album] };
+    // The album's songs: the title track first, as Apple so often lists it,
+    // then the one the spec chose — so a build that took track one would
+    // publish the answer and fail below.
+    const tracks = [spec.correct, ...(spec.song === undefined ? [] : [spec.song])].map(
+      (trackName, index) => ({
+        wrapperType: 'track',
+        kind: 'song',
+        trackId: id * 100 + index,
+        trackName,
+        previewUrl: PREVIEW,
+        trackViewUrl: `https://music.apple.com/gb/album/${spec.slug}/${id}?i=${id * 100 + index}`,
+      }),
+    );
+    return { results: [album, ...tracks] };
   }
   const term = parsed.searchParams.get('term') ?? '';
   const entity = parsed.searchParams.get('entity');
@@ -147,6 +160,43 @@ describe('buildSleevesPack', () => {
     }
     const ids = pack.questions.map((question) => question.trackId);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  test('a sleeve carries the song its spec chose, and only that one', async () => {
+    // #given specs that name a song, on albums whose first track is the title
+    // track — see the fake lookup above
+    const { pack } = await buildSleevesPack(get);
+    const bySlug = new Map(SLEEVE_SPECS.map((spec) => [stableId(spec.slug), spec]));
+
+    let withSong = 0;
+    for (const question of pack.questions) {
+      const spec = bySlug.get(question.id);
+      expect(spec).toBeDefined();
+      if (spec?.song === undefined) {
+        // #then a sleeve nobody chose a song for plays exactly as it did
+        expect(question.previewUrl).toBeUndefined();
+        continue;
+      }
+      withSong += 1;
+      // #and one that did carries a preview, and its album's store page is
+      // still the link — the song adds no new identifier to the pack
+      expect(question.previewUrl).toBe(PREVIEW);
+      expect(question.storeUrl).toMatch(/^https:\/\/music\.apple\.com\/gb\/album\/\d+$/);
+      expect(question.previewStart ?? 0).toBe(spec.previewStart ?? 0);
+      expect(question.previewSeconds).toBe(spec.previewSeconds);
+    }
+    // Guards the loop: with no songs it would pass having checked nothing.
+    expect(withSong).toBeGreaterThanOrEqual(90);
+  });
+
+  test('a song does not change a sleeve’s id, so the vault needs no reseed', async () => {
+    // #given ids are the slug's hash, and the vault is keyed by them
+    const { pack } = await buildSleevesPack(get);
+    const slugIds = new Set(SLEEVE_SPECS.map((spec) => stableId(spec.slug)));
+
+    // #then every id is still its slug's hash, whatever else the question now
+    // carries — so a sleeve seeded before it had a song is found by the same id
+    expect(pack.questions.filter((question) => !slugIds.has(question.id))).toEqual([]);
   });
 });
 

@@ -8,10 +8,11 @@ import { SLEEVE_SPECS } from './hand-sleeves-data';
 import { SLEEVE_COVER_TEXT } from './sleeve-cover-text';
 import { SLEEVE_HAND_REFUSALS } from './sleeve-refusals';
 import { sleeveVerdict } from './title-on-cover';
-import { cachedItunesGet, resolveAlbum, type ItunesGet } from './itunes';
+import { albumTracks, cachedItunesGet, resolveAlbum, type ItunesGet } from './itunes';
+import { pickAlbumSong } from './sleeve-song';
 import { writeSealedPack } from './write-sealed-pack';
 import { stableId } from './write-hand-packs';
-import { isItunesArtworkUrl } from '../src/lib/apple-media';
+import { isItunesArtworkUrl, isItunesPreviewUrl } from '../src/lib/apple-media';
 import { PACK_META, sealQuestion, type Pack, type Question } from '../src/questions/types';
 
 /**
@@ -38,6 +39,7 @@ export async function buildSleevesPack(
   const questions = [];
   const skipped: string[] = [];
   const refused: string[] = [];
+  const silent: string[] = [];
   for (const spec of SLEEVE_SPECS) {
     process.stdout.write(`  sleeve ${spec.slug}…`);
     try {
@@ -77,6 +79,23 @@ export async function buildSleevesPack(
         throw new Error(`artwork is not on mzstatic`);
       }
       console.log(` ${album.id}`);
+
+      /*
+        The song played halfway through, off this album's own track list.
+
+        A song that cannot be had leaves the sleeve silent rather than failing
+        it: the cover is still a question, exactly the one it was before songs
+        existed. Listed below so a person can pick another.
+      */
+      let song: { previewUrl: string } | null = null;
+      if (spec.song !== undefined) {
+        const picked = pickAlbumSong(await albumTracks(album.id, lookup), spec.song, spec.correct);
+        if ('refused' in picked) silent.push(`${spec.slug}: ${picked.refused}`);
+        else if (!isItunesPreviewUrl(picked.song.previewUrl)) {
+          silent.push(`${spec.slug}: preview is not on Apple’s audio CDN`);
+        } else song = picked.song;
+      }
+
       const question: Question = {
         id: stableId(spec.slug),
         source: 'hand',
@@ -88,6 +107,17 @@ export async function buildSleevesPack(
         artworkUrl: album.artworkUrl,
         storeUrl: album.storeUrl,
         trackId: album.id,
+        // The album's store page stays the link, so the song adds no new
+        // identifier to the pack. Its own trackId is deliberately not kept.
+        ...(song
+          ? {
+              previewUrl: song.previewUrl,
+              ...(spec.previewStart && spec.previewStart > 0 ? { previewStart: spec.previewStart } : {}),
+              ...(spec.previewSeconds && spec.previewSeconds > 0
+                ? { previewSeconds: spec.previewSeconds }
+                : {}),
+            }
+          : {}),
       };
       answers[question.id] = spec.correct;
       questions.push(sealQuestion(question));
@@ -102,6 +132,11 @@ export async function buildSleevesPack(
   }
   if (skipped.length > 0) {
     console.warn(`\nSkipped ${skipped.length} sleeves:\n${skipped.join('\n')}`);
+  }
+  const withSong = questions.filter((question) => question.previewUrl !== undefined).length;
+  console.log(`\n${withSong} of ${questions.length} sleeves carry a song.`);
+  if (silent.length > 0) {
+    console.warn(`Silent — the song was refused, so pick another:\n${silent.join('\n')}`);
   }
   if (questions.length < SLEEVES_MIN_PACK) {
     throw new Error(

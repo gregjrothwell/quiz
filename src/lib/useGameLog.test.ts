@@ -90,4 +90,24 @@ describe('parseLog', () => {
     // #then the junk is gone and the real answer is untouched
     expect(log.records[0]).toEqual(GAME.records[0]);
   });
+
+  test('an arrival stamp survives a reload', () => {
+    const raw = JSON.stringify({
+      gameId: 'game-1',
+      records: [
+        {
+          index: 0,
+          correctIndex: 2,
+          answers: { greg: { optionIndex: 2, elapsedMs: 900, at: 1_700_000_000_123 } },
+          deltas: { greg: 960 },
+        },
+      ],
+    });
+
+    expect(parseLog(raw).records[0]?.answers.greg).toEqual({
+      optionIndex: 2,
+      elapsedMs: 900,
+      at: 1_700_000_000_123,
+    });
+  });
 });

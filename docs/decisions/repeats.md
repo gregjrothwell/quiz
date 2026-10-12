@@ -1,6 +1,6 @@
 # Why the office kept seeing the same questions
 
-> **Owner: Greg Rothwell. Last updated: 2 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 26 September 2026. Budget: 250 lines.**
 
 Office feedback after the round of 1 September: too many repeats, and a suspicion
 that the squad work broke something. The suspicion was half right, and the half
@@ -112,3 +112,25 @@ the **pool**, which says nothing about any one difficulty. Both are gone.
 - The refusing direction — a failed read writing nothing — is covered by
   `askedHistory.test.ts` and **not** proved live, because forcing it would mean
   publishing a broken ruleset. Said plainly rather than implied.
+
+## 26 September 2026 — a spent pack repeats its oldest questions first
+
+The picture packs are small, and they are what the office plays: 8 of the last
+10 rounds were picture or music. Measured against the live history that day,
+**Sleeves had 7 fresh questions of 44 and Fine Art 24 of 49**. Once a pack is
+spent, a round is mostly repeats, and they were drawn at random from everything
+the season had served, so yesterday's question was as likely as last month's.
+
+`partitionByAsked` now orders repeats oldest first. The age comes from the
+history's own order: `mergeAsked` writes each round's ids at the front, and
+`loadAsked` keeps the array order. The tests build their history through
+`mergeAsked`, so they break if that order ever changes. Fresh questions are
+untouched, and so is the no-repeat-per-difficulty rule above.
+
+**Measured on the real Sleeves pack and its live history**, 1,000 simulated
+15-question rounds each: before, **8.0 repeats a round, 2.11 of them from the
+last round played**. After, the same 8.0 repeats, and **0.00 from the last
+round**. Fine Art still has enough fresh questions that neither version repeats.
+
+This makes a spent pack less bad; it does not make it fresh. The fix for that
+is more questions.

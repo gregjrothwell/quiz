@@ -1,3 +1,5 @@
+import { visibleCrowd } from '../engine/crowd';
+
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'] as const;
 
 /**
@@ -101,6 +103,7 @@ export function PodiumTile({
   // Named for the screen reader, since the chips themselves are aria-hidden and
   // the marker would otherwise exist only for people who can see it.
   const snappers = arrivals.filter((arrival) => arrival.snap).map((arrival) => arrival.name);
+  const crowd = visibleCrowd(arrivals);
 
   return (
     <button
@@ -129,7 +132,7 @@ export function PodiumTile({
               ? `. ${sentence(snappers)} committed before the question could be read.`
               : null}
           </span>
-          {arrivals.map((arrival) => (
+          {crowd.shown.map((arrival) => (
             <span
               key={arrival.uid}
               className={arrival.isYou ? 'tile__pick tile__pick--you' : 'tile__pick'}
@@ -144,6 +147,11 @@ export function PodiumTile({
               </i>
             </span>
           ))}
+          {crowd.hidden > 0 ? (
+            <span className="tile__pick tile__pick--more" aria-hidden="true">
+              +{crowd.hidden}
+            </span>
+          ) : null}
         </span>
       ) : null}
 

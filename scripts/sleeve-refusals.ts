@@ -62,4 +62,89 @@ export const SLEEVE_HAND_REFUSALS: Record<string, string> = {
   'harvest-neil': '“Harvest — Neil Young” in the centre',
   'after-the-gold-rush': '“AFTER THE GOLD RUSH • NEIL YOUNG” across the top',
   doolittle: '“Doolittle” top left, “PIXIES” top right',
+
+  // The third batch, 26 September 2026. Read by a model at 400px, full size
+  // where there was doubt — a person has not done this pass yet. Eleven of the
+  // 55 new covers Vision cleared print their title, some only as initials.
+  'the-doors-album': '“the doors” logo, which is the album’s title as well as the band’s',
+  'whitney-1987': '“Whitney” in script, top left',
+  'sour-or': '“SOUR” on the sticker on her tongue',
+  'guts-or': '“GUTS” spelt out in the rings on her fingers',
+  'heavy-is-the-head': '“h.i.t.h” on the crown — the title’s initials',
+  'mylo-xyloto': '“MX” as the whole design — the title’s initials',
+  'queen-ii': '“Queen II” logo, top left',
+  'songs-in-the-key-of-life': '“Songs in the Key of Life” in script round the rings',
+  'settle-disclosure': '“DISCLOSURE SETTLE” across the top',
+  'alright-still': '“ALRIGHT, STILL” in the artwork behind her',
+  'spice-album': '“SPICE” as the whole cover',
+
+  // Not a giveaway: the wrong picture. `titleMatches` accepted a release whose
+  // name merely contains the album's, the californication shape again.
+  'dua-lipa-2017': 'resolved to “Dua Lipa - Live from the Royal Albert Hall”, not the album',
+  'lust-for-life-ldr': 'resolved to a BloodPop remix single, not the album',
+
+  // Fourth batch, same afternoon, same model pass. Eight of 26 new clears.
+  'sasha-fierce': '“I AM…” bottom right, “BEYONCÉ” bottom left',
+  'rated-r': '“R A T E D R” letterspaced along the bottom',
+  'kiwanuka-album': '“KIWANUKA” above the portrait',
+  'planet-her': '“PLANET HER · DOJA CAT” down the left-hand edge',
+  'scorpion-drake': '“SCORPION 2018” handwritten under the signature',
+  abraxas: '“SANTANA ABRAXAS” in the red lettering, top right',
+  'sound-of-silver': '“LCD SOUNDSYSTEM SOUND OF SILVER” across the middle',
+  // Not the title, but the answer all the same: her name is on the sash, and
+  // with one album to her name every distractor is somebody else's.
+  'midwest-princess': '“CHAPPELL” on the sash, and all three distractors are other artists',
+  // Fifth batch, 5 October 2026: 32 of the 68 new clears, Claude's pass on the
+  // contact sheet, confirmed by Greg ("fine"). docs/decisions/sleeves-growth.md.
+  'the-king-of-limbs': '“RADIOHEAD THE KING OF LIMBS” across the middle',
+  'the-2nd-law': '“T H E  2 N D  L A W” letterspaced under MUSE, top left',
+  dirt: '“D I R T” letterspaced under the logo',
+  'invaders-must-die': '“INVADERS MUST DIE” in the orange logo',
+  'perfect-symmetry': '“PERFECT SYMMETRY” under KEANE',
+  'coming-up': '“Coming Up” in yellow script along the bottom',
+  'why-me-why-not': '“WHY ME? WHY NOT.” under the name, top left',
+  konk: '“KONK” in neon over the door',
+  spiceworld: '“SPICE” spelt in figures across the middle, which is also a distractor',
+  'taylor-swift': 'her signature across the bottom, and the album is her name',
+  'can-t-rush-greatness': '“RUSH” on the rings',
+  kylie: '“K Y L I E  M I N O G U E” along the top, and the album is her name',
+  'body-language': '“BODY LANGUAGE” top left',
+  madonna: '“M A D O N N A” down both sides, and the album is her name',
+  erotica: '“Madonna Erotica” in gold script',
+  '1999': '“PRINCE 1999” in the painted lettering',
+  janet: '“janet.” across the top',
+  'break-every-rule': '“Tina Turner Break Every Rule” in red script',
+  reckless: '“R E C K L E S S” letterspaced along the bottom',
+  'slippery-when-wet': '“SLIPPERY WHEN WET” written on the wet glass',
+  hysteria: '“Hysteria” in the lettering under the triangle',
+  'use-your-illusion-i': '“USE YOUR ILLUSION I” down the right',
+  metallica: 'the METALLICA logo, black on black, and the album is the band',
+  'bella-donna': '“Stevie Nicks Bella Donna” in script, top right',
+  'the-cars': '“T H E  C A R S” letterspaced across the top, and the album is the band',
+  'hunting-high-and-low': '“hunting high and low” under a-ha, and DELUXE EDITION down the side',
+  'the-1975': '“THE 1975” in the light box, and the album is the band',
+  uprising: '“UPRISING” in the red lettering',
+  kaya: '“Kaya” in yellow script, bottom right',
+  diana: '“diana” top right',
+  'spirits-having-flown': '“Spirits Having Flown” under BEE GEES',
+  'black-cherry': '“BLACK CHERRY” handwritten on the right',
+  // Sixth batch, 5 October 2026: 14 of the 42 new clears, Claude's pass on the
+  // contact sheet, confirmed by Greg ("fine").
+  'the-life-of-a-showgirl': '“THE LIFE OF A SHOWGIRL” painted down the left',
+  artpop: '“ARTPOP” across the ball, under LADY GAGA',
+  'hot-pink': '“Hot Pink” in pink script, top left',
+  animal: '“ANIMAL” in purple lettering, bottom right',
+  purpose: '“Purpose” in script along the bottom',
+  justice: '“JUSTICE” across the middle',
+  camila: '“C A M I L A” across the middle, and the album is her name',
+  'my-head-is-an-animal': 'the title in small type down the left, under the band name',
+  'be-the-cowboy': '“Be the … Cowboy” in script around MITSKI',
+  aja: '“aja” in red script, top right',
+  'g-i-r-l': '“G I R L” across the bottom',
+  'last-splash': '“Last Splash” in script over the logo',
+  secrets: '“S e c r e t s” along the bottom',
+  millennium: '“millennium 2.0” across the middle',
+  // Seventh batch, 6 October 2026. Not a new album: the re-audit read less of
+  // this cover than the last one did, and it flipped from refused to clear.
+  yeezus: '“YEEZUS” in the small print round the disc',
 };

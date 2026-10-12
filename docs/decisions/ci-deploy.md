@@ -1,6 +1,6 @@
 # Deploy from CI, not a laptop
 
-> **Owner: Greg Rothwell. Last updated: 10 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 2 October 2026. Budget: 250 lines.**
 > **Status: built, 10 September 2026** — `.github/workflows/ci.yml`. The outline
 > below is kept; what actually shipped, and the two places the outline was
 > wrong, are in *What was built* at the end.
@@ -215,3 +215,36 @@ Playwright. The e2e job sits between `verify` and `deploy`, downloads the same
 The switch is a **runtime flag**, not a build-time `VITE_*` — otherwise the
 tested artefact would differ from the one that ships. Depth:
 [`emulators.md`](emulators.md).
+
+## Lead time, measured 2 October 2026 — word go to live in 43 minutes
+
+#65, prep for a game of thirty. BST, from the transcript, `gh` and the Pages API.
+
+| From → to | Time | What it was |
+|---|---|---|
+| Greg asks, 22:54:14 → "push", 23:25:15 | 31m01s | Building and checking. About 8 minutes were rework: the Monitoring detour, and a reveal pile-on Greg had to point out |
+| "push" → PR open, 23:25:40 | 25s | |
+| PR CI, 23:25:45 → 23:28:24 | 2m39s | verify 1m11s, then e2e 1m23s; e2e tests verify's `dist` |
+| **Green → merged, 23:33:07** | **4m43s** | **Waiting for a person.** Auto-merge is refused: *"Auto merge is not allowed for this repository"* |
+| Master CI, 23:33:09 → 23:36:37 | 3m28s | **2m37s of it re-runs verify and e2e on a tree byte-identical to the PR's** |
+| Pages build, 23:36:35 → 23:37:16 | 41s | |
+| **"push" → live** | **12m01s** | Word go → live: **43m02s** |
+
+**To cut next time, by owner:**
+
+1. **Greg: turn on Settings → General → Allow auto-merge.** That removes the
+   4m43s wait for a person. It's a repo setting, so it's Greg's call.
+2. **Greg to decide: publish the PR's tested `dist` when master's tree equals
+   the PR head**, instead of rebuilding and re-testing it. That saves about 2m40s
+   per deploy. The trade-off: master's own run is the last check before
+   production. It only adds anything if master moved between the PR run and the
+   merge, and the tree comparison detects that case.
+3. **Claude, before the first pass:**
+   - Build fixtures from `read-games` (real pile-ons and seat counts), not
+     invented spreads.
+   - Prove a whole path works before asking Greg to change a setting.
+   - Branch from a fresh `origin/master`.
+   - Never trust the old Vite on `:5273`: it served code that isn't in the
+     source.
+
+With 1 and 2 done, "push" → live is about 4½ minutes of machine time.
