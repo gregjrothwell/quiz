@@ -67,7 +67,7 @@ describe('the published packs are sealed', () => {
   // Guards the guard. A glob that quietly matched nothing would make every
   // assertion below pass while checking not one thing.
   test('there are packs to check', () => {
-    expect(packFiles.length).toBe(19);
+    expect(packFiles.length).toBe(20);
   });
 
   test.each(packFiles)('%s ships no answer', (name) => {
@@ -168,6 +168,33 @@ describe('hand-built packs', () => {
       expect(question.storeUrl).toMatch(/^https:\/\/(music|itunes)\.apple\.com\//);
       expect(question.storeUrl).not.toMatch(/\/album\/[^/]+\/\d+/);
       expect(question.voices).toBeUndefined();
+    }
+  });
+
+  test('name the artist reuses an Apple preview and does not cut it', () => {
+    const pack = JSON.parse(readFileSync(join(PACKS, 'artists.json'), 'utf8')) as {
+      questions: {
+        question: string;
+        previewUrl?: string;
+        storeUrl?: string;
+        previewStart?: number;
+        previewSeconds?: number;
+        voices?: unknown;
+        image?: string;
+        artworkUrl?: string;
+      }[];
+    };
+    expect(pack.questions.length).toBeGreaterThanOrEqual(45);
+    for (const question of pack.questions) {
+      expect(question.question).toBe('Name the artist.');
+      expect(question.previewUrl).toMatch(/^https:\/\/audio-ssl\.itunes\.apple\.com\//);
+      expect(question.storeUrl).toMatch(/^https:\/\/(music|itunes)\.apple\.com\//);
+      expect(question.storeUrl).not.toMatch(/\/album\/[^/]+\/\d+/);
+      expect(question.previewStart).toBeUndefined();
+      expect(question.previewSeconds).toBeUndefined();
+      expect(question.voices).toBeUndefined();
+      expect(question.image).toBeUndefined();
+      expect(question.artworkUrl).toBeUndefined();
     }
   });
 

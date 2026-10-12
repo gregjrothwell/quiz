@@ -9,6 +9,9 @@ describe('packNeedsSound', () => {
     // still answer from the cover, but would miss a clue the rest of the room
     // hears — Greg, 29 September 2026. See docs/decisions/sleeves-song.md.
     expect(packNeedsSound('sleeves')).toBe(true);
+    expect(packNeedsSound('artists')).toBe(true);
+    // Tunes and sleeves are dealt into it, so a muted quizmaster must not start.
+    expect(packNeedsSound('random')).toBe(true);
     expect(packNeedsSound('flags')).toBe(false);
     expect(packNeedsSound('picture')).toBe(false);
     expect(packNeedsSound('screens')).toBe(false);

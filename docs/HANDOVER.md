@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 7 October 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 9 October 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -24,7 +24,7 @@ Built to replace Polly in Teams.
 | the clock and the countdown, and whose clock it runs on | [`clock.md`](decisions/clock.md) · [`shared-clock.md`](decisions/shared-clock.md) |
 | joining, room codes, links, presence | [`decisions/joining.md`](decisions/joining.md) |
 | scoring an answer that lands late; the review panel and the replay | [`late-answers.md`](decisions/late-answers.md) · [`review-replay.md`](decisions/review-replay.md) |
-| packs, harvesting, classification, **On the box / TMDB stills**; **Blankety Blank** and **The Price Was Right** (both blind) | [`questions.md`](decisions/questions.md) · [`blankety-blank.md`](decisions/blankety-blank.md) · [`price-was-right.md`](decisions/price-was-right.md) |
+| packs, harvesting, classification, **On the box / TMDB stills**; **Blankety Blank** and **The Price Was Right** (both blind); **Name the Artist** (259, seeded 12 Oct) | [`questions.md`](decisions/questions.md) · [`blankety-blank.md`](decisions/blankety-blank.md) · [`price-was-right.md`](decisions/price-was-right.md) · [`name-the-artist.md`](decisions/name-the-artist.md) · **Catchphrase drawing, the Mini:** [`catchphrase-batch-5.md`](decisions/catchphrase-batch-5.md) |
 | **a picture that does not turn up**, preloading, the box a still gets | [`decisions/picture-loading.md`](decisions/picture-loading.md) |
 | **an album cover that names its own album**, the sleeve audit; **a song from the album at half the clock** (live 29 Sep, #62) | [`decisions/sleeves-gate.md`](decisions/sleeves-gate.md) · [`sleeves-song.md`](decisions/sleeves-song.md) |
 | voting on a question, retiring one | [`question-votes.md`](decisions/question-votes.md) |
@@ -36,30 +36,30 @@ Built to replace Polly in Teams.
 | what a question is worth, and why it is not a speed curve | [`decisions/scoring.md`](decisions/scoring.md) |
 | the shareable result card, and how it gets to the player | [`decisions/final-card.md`](decisions/final-card.md) |
 | what to build next, what each idea costs, what was turned down | [`what-to-build-next.md`](decisions/what-to-build-next.md) · [`picking-up.md`](decisions/picking-up.md) · [`ideas-review.md`](decisions/ideas-review.md) · [`scope.md`](decisions/scope.md) |
-| picture, music, jigsaw or steal rounds, **negative points**, and why melody played badly | [`round-types.md`](decisions/round-types.md) · [`melody-round.md`](decisions/melody-round.md) |
-| **Name that Tune** clips that give it away; **the volume slider and the two autoplay gates**; **the lobby sound check**; **the Apple Music badge and Apple's terms** | [`tunes-round.md`](decisions/tunes-round.md) · [`tunes-title-gate.md`](decisions/tunes-title-gate.md) · [`audio-stack.md`](decisions/audio-stack.md) · [`sound-check.md`](decisions/sound-check.md) · [`known-limits.md`](decisions/known-limits.md) |
+| picture, music, jigsaw or steal rounds, **negative points**, why melody played badly; **a random round** | [`round-types.md`](decisions/round-types.md) · [`melody-round.md`](decisions/melody-round.md) · [`random-round.md`](decisions/random-round.md) |
+| **Name that Tune** clips that give it away; **the volume slider and the two autoplay gates**; **the lobby sound check**; **the Apple Music badge and Apple's terms**; **Name the Artist** | [`tunes-round.md`](decisions/tunes-round.md) · [`tunes-title-gate.md`](decisions/tunes-title-gate.md) · [`audio-stack.md`](decisions/audio-stack.md) · [`sound-check.md`](decisions/sound-check.md) · [`known-limits.md`](decisions/known-limits.md) · [`name-the-artist.md`](decisions/name-the-artist.md) |
 | whether an answer can change and the spam exploit; `firstMs` and the snap guess | [`answer-spam.md`](decisions/answer-spam.md) · [`first-touch.md`](decisions/first-touch.md) |
 | what a finished round left behind, and reading it back | [`decisions/game-record.md`](decisions/game-record.md) |
 | upgrading `package.json`; the studio set and lighting cues | [`dependencies.md`](decisions/dependencies.md) · [`lighting.md`](decisions/lighting.md) |
 
 ## State as of 6 October 2026
 
-> **READ FIRST — a game of up to 30 on Friday 9 October.**
-> - The biggest room ever played is 11.
+> **READ FIRST — the Friday 9 October game of 30 did not happen.**
+> - The biggest room ever played is still 11. Thirty answering at once is untested.
 > - #65 (live 2 Oct) folds a crowded lectern into "+N" past 12 chips and keeps
 >   the standings' Next on screen. `sync-harness 30`: 30/30.
-> - **Play one 30-player round of ≤20 questions, and run nothing against live
->   that day.** Two big rounds go past 50k reads ([`cost.md`](decisions/cost.md)).
-> - Untested: 30 people answering at once.
+> - A future 30-player round is still one of ≤20 questions (14.6k–32.7k reads,
+>   [`cost.md`](decisions/cost.md)). Two such rounds go past 50k. The 9 October blackout is lifted.
 > - **Catchphrase: Greg plays it blind, so keep its answers out of docs and chat.**
->   **Play an office Catchphrase round before Friday:** it is #66's live check.
+>   **12 Oct release `release-12-oct`: Catchphrase 90 → 178, Random Round, Name the Artist 259.** Vault read back 178/178 and 259/259; both new rounds played to a live reveal from a local build. Parked: an automated growth loop for all popular packs — [`catchphrase-batch-5.md`](decisions/catchphrase-batch-5.md).
+>   **9 Oct:** two 5-seat rounds that morning cost ~1.2k reads, so one 30-player round of ≤20 still fits ([`office-feedback-9-oct.md`](decisions/office-feedback-9-oct.md)).
 > - **Greg to decide:** answering after the music stops; target B's four
 >   questions ([`public-scale.md`](decisions/public-scale.md)); the two
 >   lead-time cuts ([`ci-deploy.md`](decisions/ci-deploy.md)).
 
-**Live is `index-CSluHU7x`** (#70: 6 Oct 14:48 BST, merge `6e34bb9`, gh-pages `d3266ae`, CI): the
-vault is asked one option at a time and stops at the hit. Before it, #69 `index-BCpFNLxK` (13:05).
-Firebase chunk `firebase-W6iQUl4r`.
+**Live is `index-DxSLpmmr`** (#71: 7 Oct 11:25 BST, merge `8bba4fd`, gh-pages `f89a603`, CI): the
+vault over Firestore Lite, podium ties, Price Was Right decoys. Before it, #70 `index-CSluHU7x`.
+Firebase chunk `firebase-D9D0c-Mh` (Lite inside, +16 kB gzip).
 **19 packs**; **The Price Was Right 95** and **Blankety Blank 148** (both blind); **Catchphrase 90** (every 5th a double-scoring bonus); **Name that Tune 424**; synth **Classical**; **On the box 445**
 (hashed TMDB stills, at most 8 titles before 1990); **Flags** 76; **Sleeves 212**
 after seven candidate batches, the last pre-screened; picture is **Fine Art** 49.
@@ -98,15 +98,15 @@ scoring 500 + rank 500/400/300/200/100.
 9. **Rules are published by hand.** `check-rules` **91/91 both ways, 27
    September**. Read [`security.md`](decisions/security.md) before any paste.
 10. **Seed before any new ids ship** — `npm run seed-vault -- --pack <id>` reads
-    one pack. All seeded as of 27 September; an unseeded pack breaks at reveal.
+    one pack. All seeded as of 12 October; an unseeded pack breaks at reveal.
 11. **`firstMs` and the pack picker are live and unplayed.** It is a deterrent,
     so the only test is whether his behaviour changes next round:
     [`first-touch.md`](decisions/first-touch.md).
-12. **Cass could not join `CUC4`**, no join ever written. Candidate, 27 Sep: one
-    App Check 403 makes the SDK lock that browser out for **24 hours** ("Cannot
-    reach the server"); seen live in the built-in browser. Ask what she saw.
-13. **Reveal: no stall since #52. #70 live 6 Oct.** `XRUE` 7 Oct read it: 0.2–3.2s; the tail is a slow stream reopen
-    per refused option. **Firestore Lite, after Friday** ([`office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md#4-the-slow-reveal)).
+12. **Cass loses question 1**: no Q1 answer in 4 of her 10 rounds since 6 Oct, none before;
+    later fine. She saw **neither** verdict message, just no points; shared-clock theory may be
+    wrong ([`office-feedback-9-oct.md`](decisions/office-feedback-9-oct.md)). She is watching for it.
+13. **Reveal over Firestore Lite, live 7 Oct (#71)**: all four at once, median vault step 71ms v #70's 167ms in a
+    browser; **the next office round's `read-games` is the live check** ([`office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md#4-the-slow-reveal)).
 14. **Loose ends from 26–27 September**: five new tunes transcribed to nothing
     and want an ear (`live-forever`, `golden-touch`, `build-me-up-buttercup`,
     `call-the-shots`, `gangnam-style`); **56 rooms past expiry** —
@@ -118,7 +118,7 @@ scoring 500 + rank 500/400/300/200/100.
     artwork (`titleMatches` takes a prefix). **Stopped 6 Oct:** that `host-room` (since 30 Sep),
     two more from 6 Oct, and six Vite servers from 4–9 Sep (5173–5175, 5277, 5288).
 16. **#67 live 6 Oct 08:15:** Catchphrase 60→90 (blind), Sleeves 168→212, On the box 296→445, Tunes 268→424; seeded 378, read back 1,171/1,171. **The first rounds played are the live check** (the harder Catchphrase batches, step 9 of [`go-live-oct-2026.md`](decisions/go-live-oct-2026.md)). Plan for Greg's feedback: [`pack-growth-plan.md`](decisions/pack-growth-plan.md). Freshness weekdays 08:12.
-17. **#69 live 6 Oct 13:05 BST** (after `RRGM`): Blankety Blank 148 (21 American out, 29 British in); **The Price Was Right**, 95 ONS prices, blind ([`price-was-right.md`](decisions/price-was-right.md)), `ordered` options; the chair seats a tie touching the podium; Bonus Catchphrase options from frame one. Seeded 124, read back 243/243; `host-room --pack prices` (`P3E9`) revealed from the vault in 0.28s. **Played `XRUE` 7 Oct (47%); 6 of 95 gave the answer away — fixed, local, `office-feedback-7-oct` (`17946ce`), no reseed; podium ties and overnight drawing planned in [`office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md).** Ask Cass about Catchphrase Q1. `AGENTS.md`: world-famous American is fine, needing American knowledge is not.
+17. **#69 live 6 Oct 13:05 BST** (after `RRGM`): Blankety Blank 148 (21 American out, 29 British in); **The Price Was Right**, 95 ONS prices, blind ([`price-was-right.md`](decisions/price-was-right.md)), `ordered` options; the chair seats a tie touching the podium; Bonus Catchphrase options from frame one. Seeded 124, read back 243/243; `host-room --pack prices` (`P3E9`) revealed from the vault in 0.28s. **Played `XRUE` 7 Oct (47%); 6 of 95 gave the answer away. #71 live 7 Oct: all options under today's price, 8 decoys over it, no reseed; podium ties; `npm run draw-overnight` (Greg runs it, never opens the sheets) — [`office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md).** `AGENTS.md`: world-famous American is fine, needing American knowledge is not.
 
 ## Where things are
 

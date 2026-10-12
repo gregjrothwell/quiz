@@ -5,6 +5,7 @@ import { CATCHPHRASE_MIN_PACK, CATCHPHRASE_SPECS } from './hand-catchphrase-data
 import { FLAG_SPECS } from './hand-flags-data';
 import { SCREEN_SPECS } from './hand-screens-data';
 import { SLEEVE_SPECS } from './hand-sleeves-data';
+import { artistSlug } from './artists-core';
 import { TUNE_SPECS, TUNES_MIN_PACK } from './hand-tunes-data';
 
 function assertPlayable(
@@ -45,6 +46,7 @@ describe('hand-built media specs', () => {
       ...CATCHPHRASE_SPECS.map((spec) => spec.slug),
       ...BLANK_SPECS.map((spec) => spec.slug),
       ...PRICE_SPECS.map((spec) => spec.slug),
+      ...TUNE_SPECS.map((spec) => artistSlug(spec.slug)),
     ];
 
     // #then every one of them is its own question

@@ -202,6 +202,15 @@ export interface QuizQuestion {
   previewSeconds?: number;
   artworkUrl?: string;
   posterCrop?: boolean;
+  /**
+   * The pack this question was dealt from, when the round mixes several.
+   *
+   * Absent on an ordinary round: those take hold, bonus and sound from
+   * `RoomState.packId`. A random round writes it, because that room's pack id
+   * stays `random` for the whole round. The published rules do not inspect
+   * question keys, so this needs no paste. See docs/decisions/random-round.md.
+   */
+  sourcePack?: PackId;
 }
 
 export interface RoomState {
