@@ -170,7 +170,7 @@ export function Lobby({
   const [pickedSquad, setPickedSquad] = useState<string>(squad || rememberedSquad());
   /*
     Taps on the vote in this lobby. Held here, not on the room: the lobby
-    unmounts when the round starts, so a reset back to it gives three again.
+    unmounts when the round starts, so a reset back to it starts afresh.
     A reload does too, which is accepted — docs/decisions/lobby-vote.md.
   */
   const [voteTaps, setVoteTaps] = useState(0);

@@ -7,7 +7,7 @@ import type { PackId, PackSummary } from '../questions/types';
 import { Lobby } from './Lobby';
 
 /**
- * Three taps on the lobby vote, then it locks (docs/decisions/lobby-vote.md).
+ * Two taps on the lobby vote, then it locks (docs/decisions/lobby-vote.md).
  *
  * The harness plays the room's part: a vote written through `onVote` comes back
  * on `room.packVotes`, as it does live, so the card under test reads the vote
@@ -61,32 +61,31 @@ function card(title: string): HTMLElement {
 }
 
 describe('the lobby vote limit', () => {
-  test('three taps land, and the fourth writes nothing', async () => {
+  test('two taps land, and the third writes nothing', async () => {
     // #given a player in the lobby
     const onVote = vi.fn();
     render(<Room onVote={onVote} />);
     const user = userEvent.setup();
 
-    // #when they cast, change, and change again
+    // #when they cast, then change their mind
     await user.click(card('Sleeves'));
     await user.click(card('Flags'));
-    await user.click(card('On the box'));
 
-    // #then all three are written and the last one stands
-    expect(onVote.mock.calls).toEqual([['sleeves'], ['flags'], ['screens']]);
-    expect(card('On the box')).toHaveAttribute('aria-pressed', 'true');
+    // #then both are written and the change stands
+    expect(onVote.mock.calls).toEqual([['sleeves'], ['flags']]);
+    expect(card('Flags')).toHaveAttribute('aria-pressed', 'true');
 
     // #when they keep clicking
-    await user.click(card('Sleeves'));
     await user.click(card('On the box'));
+    await user.click(card('Flags'));
 
     // #then nothing more is written and the vote has not moved
-    expect(onVote).toHaveBeenCalledTimes(3);
-    expect(card('On the box')).toHaveAttribute('aria-pressed', 'true');
-    expect(card('Sleeves')).toBeDisabled();
+    expect(onVote).toHaveBeenCalledTimes(2);
+    expect(card('Flags')).toHaveAttribute('aria-pressed', 'true');
+    expect(card('On the box')).toBeDisabled();
   });
 
-  test('taking it back is one of the three', async () => {
+  test('taking it back is one of the two', async () => {
     const onVote = vi.fn();
     render(<Room onVote={onVote} />);
     const user = userEvent.setup();
@@ -94,25 +93,21 @@ describe('the lobby vote limit', () => {
     await user.click(card('Sleeves'));
     await user.click(card('Sleeves'));
     await user.click(card('Flags'));
-    await user.click(card('Sleeves'));
 
-    expect(onVote.mock.calls).toEqual([['sleeves'], [null], ['flags']]);
-    expect(card('Flags')).toHaveAttribute('aria-pressed', 'true');
+    expect(onVote.mock.calls).toEqual([['sleeves'], [null]]);
+    expect(card('Flags')).toHaveAttribute('aria-pressed', 'false');
   });
 
-  test('the hint counts down the changes, then says it is locked', async () => {
+  test('the hint says one change is left, then that it is locked', async () => {
     render(<Room onVote={noop} />);
     const user = userEvent.setup();
 
     expect(screen.getByText(/Tap the one you.d like to play/)).toBeInTheDocument();
 
     await user.click(card('Sleeves'));
-    expect(screen.getByText(/2 changes left/)).toBeInTheDocument();
-
-    await user.click(card('Flags'));
     expect(screen.getByText(/1 change left/)).toBeInTheDocument();
 
-    await user.click(card('On the box'));
+    await user.click(card('Flags'));
     expect(screen.getByText(/Your vote is locked in/)).toBeInTheDocument();
   });
 
@@ -121,8 +116,7 @@ describe('the lobby vote limit', () => {
     const user = userEvent.setup();
 
     await user.click(card('Sleeves'));
-    await user.click(card('Flags'));
-    await user.click(card('Flags'));
+    await user.click(card('Sleeves'));
 
     expect(screen.getByText(/You’ve used your taps/)).toBeInTheDocument();
   });
@@ -133,8 +127,7 @@ describe('the lobby vote limit', () => {
 
     await user.click(card('Sleeves'));
     await user.click(card('Flags'));
-    await user.click(card('Sleeves'));
 
-    expect(card('Sleeves')).toHaveTextContent('1 vote · top');
+    expect(card('Flags')).toHaveTextContent('1 vote · top');
   });
 });

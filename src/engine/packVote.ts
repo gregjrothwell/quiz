@@ -62,11 +62,12 @@ export function leadingPacks(tally: PackTally): PackId[] {
 
 /**
  * How many taps a player gets on the vote in one lobby: cast it, then change it
- * or take it back twice. Enough to correct a mis-tap on a phone; few enough that
- * clicking round the cards for fun stops after a second. Each tap is a write
- * every screen in the room reads. See docs/decisions/lobby-vote.md.
+ * or take it back once. Greg, 14 October 2026: one each, then two — to be
+ * relaxed if the room learns. Enough to correct a mis-tap; clicking round the
+ * cards for fun stops at once. Each tap is a write every screen in the room
+ * reads. See docs/decisions/lobby-vote.md.
  */
-export const VOTE_TAPS = 3;
+export const VOTE_TAPS = 2;
 
 /** Taps this player has left, given how many they have used. Never negative. */
 export function tapsLeft(used: number): number {

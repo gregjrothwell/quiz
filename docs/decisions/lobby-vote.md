@@ -111,7 +111,7 @@ merge conflicted only in `HANDOVER.md` and `TOTAL-RECALL.md`. `random` is in
 passed on the PR and on master; the served `index-D-g9FXdU` is byte-identical to a local build and
 carries "Vote for a set". Step 3 — the first office lobby — has not happened yet.
 
-## Three taps, then it locks — 14 October 2026
+## Two taps, then it locks — 14 October 2026
 
 Greg, 14 October: people are abusing the vote by clicking around for the fun of
 it. Every tap is a write every screen in the room reads, and the counts flicker
@@ -122,23 +122,23 @@ mean something and the room is not a toy while I pick.
 
 **Acceptance criteria**
 
-1. A player gets **three taps** per lobby: cast, then change or take back
-   twice. AC 2 above still holds inside them.
-2. After the third the cards stay on screen with their counts, but a tap does
+1. A player gets **two taps** per lobby: cast, then change or take back once.
+   AC 2 above still holds inside them.
+2. After the second the cards stay on screen with their counts, but a tap does
    nothing — no write, no change.
-3. The hint says how many changes are left, and says the vote is locked once
-   it is.
-4. A new lobby — after a reset — gives three taps again.
+3. The hint says a change is left, and says the vote is locked once it is.
+4. A new lobby — after a reset — gives two taps again.
 5. The quizmaster's highlight is not limited: it is one person, and theirs.
 
-**Why three and not one.** One locks a mis-tap on a phone, which is the honest
-reason to change. Three allows cast, a mistake and a correction; a fun-clicker
-burns them in a second and stops. The number is `VOTE_TAPS` in
-`src/engine/packVote.ts`, so changing it is one line.
+**Why two.** Built at three (cast, a mistake, a correction); Greg cut it the
+same evening: "1 vote per player — we can relax later if lessons have been
+learned", then "actually — 2". Two keeps one change for a mis-tap on a phone.
+The number is `VOTE_TAPS` in `src/engine/packVote.ts`, so relaxing it is one
+line and the tests that name it.
 
 **Not covered.** The count is in the lobby's own state, not the room: a reload
-gives three more, and the console can write `packVotes.{uid}` at will — the
+gives two more, and the console can write `packVotes.{uid}` at will — the
 first is seconds of effort for a joke, the second is a hand-published rule for
-a room of colleagues. **Cost** gains a ceiling: at most three writes a player,
-so at thirty seats 90 writes × 30 readers ≈ 2,700 reads, where before there was
+a room of colleagues. **Cost** gains a ceiling: at most two writes a player,
+so at thirty seats 60 writes × 30 readers ≈ 1,800 reads, where before there was
 none.

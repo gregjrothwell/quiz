@@ -101,14 +101,14 @@ describe('nextVote', () => {
 });
 
 describe('tapsLeft', () => {
-  test('three taps: cast, then change your mind twice', () => {
-    expect(VOTE_TAPS).toBe(3);
-    expect(tapsLeft(0)).toBe(3);
-    expect(tapsLeft(1)).toBe(2);
+  test('two taps: cast, then change your mind once', () => {
+    expect(VOTE_TAPS).toBe(2);
+    expect(tapsLeft(0)).toBe(2);
+    expect(tapsLeft(1)).toBe(1);
   });
 
   test('spent is spent, however many taps were counted', () => {
-    expect(tapsLeft(3)).toBe(0);
+    expect(tapsLeft(2)).toBe(0);
     expect(tapsLeft(7)).toBe(0);
   });
 });
