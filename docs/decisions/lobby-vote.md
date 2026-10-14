@@ -142,3 +142,8 @@ first is seconds of effort for a joke, the second is a hand-published rule for
 a room of colleagues. **Cost** gains a ceiling: at most two writes a player,
 so at thirty seats 60 writes × 30 readers ≈ 1,800 reads, where before there was
 none.
+
+**Live 14 October 2026, 22:26 BST** — #75 (release with #74), merge `2bf10aa`, gh-pages `21ccbd5`. CI's
+Playwright, including the lock, passed on the PR and on master; the served `index-DV3kGh-I` is
+byte-identical to a local build and carries "Your vote is locked in". The live check is the first office
+lobby: a player's second tap locks their cards.

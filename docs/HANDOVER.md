@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 12 October 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 14 October 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -27,7 +27,7 @@ Built to replace Polly in Teams.
 | packs, harvesting, classification, **On the box / TMDB stills**; **Blankety Blank** and **The Price Was Right** (both blind); **Name the Artist** (259, seeded 12 Oct) | [`questions.md`](decisions/questions.md) · [`blankety-blank.md`](decisions/blankety-blank.md) · [`price-was-right.md`](decisions/price-was-right.md) · [`name-the-artist.md`](decisions/name-the-artist.md) · **Catchphrase drawing, the Mini:** [`catchphrase-batch-5.md`](decisions/catchphrase-batch-5.md) |
 | **a picture that does not turn up**, preloading, the box a still gets | [`decisions/picture-loading.md`](decisions/picture-loading.md) |
 | **an album cover that names its own album**, the sleeve audit; **a song from the album at half the clock** (live 29 Sep, #62) | [`decisions/sleeves-gate.md`](decisions/sleeves-gate.md) · [`sleeves-song.md`](decisions/sleeves-song.md) |
-| voting on a question, retiring one | [`question-votes.md`](decisions/question-votes.md) |
+| voting on a question, retiring one; **first real data 14 Oct — 88 prompts cut off at a colon** | [`question-votes.md`](decisions/question-votes.md#the-first-real-data--14-october-2026) |
 | rules and App Check — Firestore and RTDB, then **auth**, then the debug token and why a deploy must not come off `master` | [`security.md`](decisions/security.md) · [`app-check-auth.md`](decisions/app-check-auth.md) · [`debug-token-leak.md`](decisions/debug-token-leak.md) |
 | **the vault oracle, `joinedAt`, the `at` stamp, presence names** | [`security-round-sept-2026.md`](decisions/security-round-sept-2026.md) |
 | **tightening any rule, gate or permission** — read this one *first*, it is why #56 broke the game | [`postmortem-the-pin-that-refused-the-reveal.md`](decisions/postmortem-the-pin-that-refused-the-reveal.md) |
@@ -42,7 +42,7 @@ Built to replace Polly in Teams.
 | what a finished round left behind, and reading it back | [`decisions/game-record.md`](decisions/game-record.md) |
 | upgrading `package.json`; the studio set and lighting cues | [`dependencies.md`](decisions/dependencies.md) · [`lighting.md`](decisions/lighting.md) |
 
-## State as of 12 October 2026
+## State as of 14 October 2026
 
 > **READ FIRST — the Friday 9 October game of 30 did not happen.**
 > - The biggest room ever played is still 11. Thirty answering at once is untested.
@@ -57,8 +57,8 @@ Built to replace Polly in Teams.
 >   questions ([`public-scale.md`](decisions/public-scale.md)); the two
 >   lead-time cuts ([`ci-deploy.md`](decisions/ci-deploy.md)).
 
-**Live is `index-D-g9FXdU`** (#73 lobby vote + #58 dead code: 12 Oct 10:09 BST, merge `05238b7`, gh-pages `ed0bac5`, CI;
-byte-identical to a local build). **Live check: the first office lobby** — a player's vote shows on the quizmaster's card. Before it, #72 `index-NiEMPDcb`.
+**Live is `index-DV3kGh-I`** (#75: the lobby vote locks after two taps, + #74 docs: 14 Oct 22:26 BST, merge `2bf10aa`, gh-pages `21ccbd5`, CI;
+byte-identical to a local build). **Live check: the first office lobby** — a vote shows on the quizmaster's card, and a second tap locks the cards. Before it, #73 `index-D-g9FXdU`.
 Firebase chunk `firebase-D9D0c-Mh` (Lite inside, +16 kB gzip).
 **20 packs** + **Random Round** (six played packs dealt into one); **The Price Was Right 95** and **Blankety Blank 148** (both blind); **Catchphrase 178** (every 5th a double-scoring bonus); **Name that Tune 424**; **Name the Artist 259**; synth **Classical**; **On the box 445**
 (hashed TMDB stills, at most 8 titles before 1990); **Flags** 76; **Sleeves 212**
