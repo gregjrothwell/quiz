@@ -3,7 +3,13 @@ import { QrCode } from '../components/QrCode';
 import { RoomLink } from '../components/RoomLink';
 import { SoundCheck } from '../components/SoundCheck';
 import { joinLink } from '../engine/roomCode';
-import { leadingPacks, nextVote, tallyPackVotes, type PackTally } from '../engine/packVote';
+import {
+  leadingPacks,
+  nextVote,
+  tallyPackVotes,
+  tapsLeft,
+  type PackTally,
+} from '../engine/packVote';
 import { STEAL_SHARE } from '../engine/scoring';
 import { SQUADS } from '../engine/squad';
 import { rememberSquad, rememberedSquad } from '../lib/rememberedSquad';
@@ -162,6 +168,12 @@ export function Lobby({
     be recorded rather than an empty control next to a squad they already have.
   */
   const [pickedSquad, setPickedSquad] = useState<string>(squad || rememberedSquad());
+  /*
+    Taps on the vote in this lobby. Held here, not on the room: the lobby
+    unmounts when the round starts, so a reset back to it gives three again.
+    A reload does too, which is accepted — docs/decisions/lobby-vote.md.
+  */
+  const [voteTaps, setVoteTaps] = useState(0);
   const { muted, toggle } = useSound();
 
   const youName = youUid ? room.players[youUid]?.name : undefined;
@@ -181,6 +193,7 @@ export function Lobby({
   const tally = tallyPackVotes(room.packVotes, room.players);
   const leading = leadingPacks(tally);
   const yourVote = youUid ? room.packVotes[youUid] : undefined;
+  const votesLeft = tapsLeft(voteTaps);
 
   return (
     <>
@@ -571,9 +584,8 @@ export function Lobby({
           */}
           <div className="stack">
             <p className="eyebrow">Vote for a set</p>
-            <p className="muted hint">
-              Tap the one you&rsquo;d like to play. {quizmasterName ?? 'The quizmaster'} sees the
-              votes and has the final say.
+            <p className="muted hint" aria-live="polite">
+              {voteHint(voteTaps, votesLeft, yourVote !== undefined, quizmasterName)}
             </p>
             <div className="packs">
               {packs.map((pack) => (
@@ -582,8 +594,12 @@ export function Lobby({
                   key={pack.id}
                   className={packClass(pack.id, leading, room.browsing)}
                   aria-pressed={pack.id === yourVote}
-                  disabled={!onVote}
-                  onClick={() => onVote?.(nextVote(yourVote, pack.id))}
+                  disabled={!onVote || votesLeft === 0}
+                  onClick={() => {
+                    if (votesLeft === 0) return;
+                    setVoteTaps((used) => used + 1);
+                    onVote?.(nextVote(yourVote, pack.id));
+                  }}
                 >
                   <PackFace pack={pack} tally={tally} leading={leading} browsing={room.browsing} />
                 </button>
@@ -597,6 +613,22 @@ export function Lobby({
       )}
     </>
   );
+}
+
+/** The line above the cards: what a tap does, how many changes are left, or that it is locked. */
+function voteHint(
+  used: number,
+  left: number,
+  voted: boolean,
+  quizmasterName: string | undefined,
+): string {
+  if (used === 0) {
+    return `Tap the one you’d like to play. ${quizmasterName ?? 'The quizmaster'} sees the votes and has the final say.`;
+  }
+  if (left === 0) {
+    return voted ? 'Your vote is locked in.' : 'You’ve used your taps.';
+  }
+  return `${left} ${left === 1 ? 'change' : 'changes'} left.`;
 }
 
 function packClass(id: PackId, leading: PackId[], browsing: PackId | null): string {

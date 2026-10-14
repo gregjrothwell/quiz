@@ -59,6 +59,10 @@ test('a player votes, the quizmaster sees it counted, and the room sees the high
   await expect(packCard(host, 'Flags')).not.toContainText('vote');
   await expect(packCard(guest, 'Flags')).toHaveAttribute('aria-pressed', 'false');
 
+  // #then that was their third tap, and the cards stop taking more
+  await expect(guest.getByText('You’ve used your taps.')).toBeVisible();
+  await expect(packCard(guest, 'Sleeves')).toBeDisabled();
+
   // #when the quizmaster highlights a pack
   await packCard(host, 'On the box').click();
 

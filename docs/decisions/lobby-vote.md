@@ -1,6 +1,6 @@
 # Lobby vote — the room says which set it wants
 
-> **Owner: Greg Rothwell. Last updated: 12 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 14 October 2026. Budget: 250 lines.**
 
 ## Story
 
@@ -110,3 +110,35 @@ merge conflicted only in `HANDOVER.md` and `TOTAL-RECALL.md`. `random` is in
 **Live 12 October 2026, 10:09 BST** — #73, merge `05238b7`, gh-pages `ed0bac5`. CI's Playwright
 passed on the PR and on master; the served `index-D-g9FXdU` is byte-identical to a local build and
 carries "Vote for a set". Step 3 — the first office lobby — has not happened yet.
+
+## Three taps, then it locks — 14 October 2026
+
+Greg, 14 October: people are abusing the vote by clicking around for the fun of
+it. Every tap is a write every screen in the room reads, and the counts flicker
+on the quizmaster's cards while they are trying to read them.
+
+**Story.** As the quizmaster, I want each player's vote to settle, so the counts
+mean something and the room is not a toy while I pick.
+
+**Acceptance criteria**
+
+1. A player gets **three taps** per lobby: cast, then change or take back
+   twice. AC 2 above still holds inside them.
+2. After the third the cards stay on screen with their counts, but a tap does
+   nothing — no write, no change.
+3. The hint says how many changes are left, and says the vote is locked once
+   it is.
+4. A new lobby — after a reset — gives three taps again.
+5. The quizmaster's highlight is not limited: it is one person, and theirs.
+
+**Why three and not one.** One locks a mis-tap on a phone, which is the honest
+reason to change. Three allows cast, a mistake and a correction; a fun-clicker
+burns them in a second and stops. The number is `VOTE_TAPS` in
+`src/engine/packVote.ts`, so changing it is one line.
+
+**Not covered.** The count is in the lobby's own state, not the room: a reload
+gives three more, and the console can write `packVotes.{uid}` at will — the
+first is seconds of effort for a joke, the second is a hand-published rule for
+a room of colleagues. **Cost** gains a ceiling: at most three writes a player,
+so at thirty seats 90 writes × 30 readers ≈ 2,700 reads, where before there was
+none.

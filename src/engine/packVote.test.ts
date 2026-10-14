@@ -5,6 +5,8 @@ import {
   readBrowsing,
   readPackVotes,
   tallyPackVotes,
+  tapsLeft,
+  VOTE_TAPS,
   writesTheVote,
 } from './packVote';
 import type { Player } from './state';
@@ -95,6 +97,19 @@ describe('nextVote', () => {
 
   test('tapping your own again takes it back', () => {
     expect(nextVote('sleeves', 'sleeves')).toBeNull();
+  });
+});
+
+describe('tapsLeft', () => {
+  test('three taps: cast, then change your mind twice', () => {
+    expect(VOTE_TAPS).toBe(3);
+    expect(tapsLeft(0)).toBe(3);
+    expect(tapsLeft(1)).toBe(2);
+  });
+
+  test('spent is spent, however many taps were counted', () => {
+    expect(tapsLeft(3)).toBe(0);
+    expect(tapsLeft(7)).toBe(0);
   });
 });
 

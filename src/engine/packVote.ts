@@ -60,6 +60,19 @@ export function leadingPacks(tally: PackTally): PackId[] {
   return entries.filter(([, count]) => count === top).map(([packId]) => packId);
 }
 
+/**
+ * How many taps a player gets on the vote in one lobby: cast it, then change it
+ * or take it back twice. Enough to correct a mis-tap on a phone; few enough that
+ * clicking round the cards for fun stops after a second. Each tap is a write
+ * every screen in the room reads. See docs/decisions/lobby-vote.md.
+ */
+export const VOTE_TAPS = 3;
+
+/** Taps this player has left, given how many they have used. Never negative. */
+export function tapsLeft(used: number): number {
+  return Math.max(0, VOTE_TAPS - used);
+}
+
 /** What a tap on `tapped` makes this player's vote: cast, moved, or taken back. */
 export function nextVote(current: PackId | undefined, tapped: PackId): PackId | null {
   return current === tapped ? null : tapped;
