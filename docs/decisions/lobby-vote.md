@@ -106,3 +106,7 @@ merge conflicted only in `HANDOVER.md` and `TOTAL-RECALL.md`. `random` is in
 3. The live check is the first office lobby after: a player's vote should show
    on the quizmaster's card. If it does not, the live ruleset differs from the
    repo — `npm run check-rules` before anything else.
+
+**Live 12 October 2026, 10:09 BST** — #73, merge `05238b7`, gh-pages `ed0bac5`. CI's Playwright
+passed on the PR and on master; the served `index-D-g9FXdU` is byte-identical to a local build and
+carries "Vote for a set". Step 3 — the first office lobby — has not happened yet.

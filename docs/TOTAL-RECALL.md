@@ -24,6 +24,12 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-12 — Live: #73 + #58 (gh-pages `ed0bac5`): the lobby vote, dead code out
+
+`lobby-vote` (local-only since 8 Oct) merged with `live-after-72`; no paste (room `update` has no key whitelist; `check-rules` live 91/91).
+#58 would have broken typecheck: master's `catchphrase-draw.ts` imports `readCovers`; kept it (`fd725c0`). Greg merged both 33s
+apart: two deploys, #58 alone live 09:07–09:09 UTC. Hence AGENTS.md: one PR per release. Live `index-D-g9FXdU`, byte-identical.
+
 ## 2026-10-12 — Live: #72 (gh-pages `70535a6`): Catchphrase 178, Random Round, Name the Artist
 
 Greg: "we have multiple changes to go live with". He chose all five branches, merged into one
