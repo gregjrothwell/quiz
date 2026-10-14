@@ -1145,9 +1145,15 @@ select.input option {
   }
 }
 
-.pack:hover {
+.pack:hover:not(:disabled) {
   border-color: var(--cyan-dim);
   transform: translateY(-2px);
+}
+
+/* A spent lobby vote (docs/decisions/lobby-vote.md): the card stays readable,
+   it just stops offering itself. */
+.pack:disabled {
+  cursor: default;
 }
 
 .pack[aria-pressed='true'] {

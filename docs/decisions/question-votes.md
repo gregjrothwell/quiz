@@ -1,6 +1,6 @@
 # Voting on questions
 
-> **Owner: Greg Rothwell. Last updated: 28 August 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 14 October 2026. Budget: 250 lines.**
 
 Split out of [`questions.md`](questions.md) on 28 August 2026, which reached 259
 lines against a 250 budget when this was added to it. The text is unchanged;
@@ -80,3 +80,28 @@ different uids, and the five-vote floor is the only thing blunting it. And the
 thresholds will not have been tested against real data until a round has been
 played and voted on.
 
+
+## The first real data — 14 October 2026
+
+`npm run fold-votes` (dry run) plus a read-only per-pack tally against live:
+
+- **54 verdicts from 11 uids on 45 questions**, against 53 kept games,
+  770 questions served and 5,195 player-questions since 9 September — **about
+  1 in 100 answers gets a verdict.** 49 of the 54 are `bad`: people vote when
+  annoyed, not when pleased, so a `good` count is no signal of quality.
+- Almost all land on the **harvested text packs** — General Knowledge 12
+  questions, Best of British 6, Geography 5, Science 4 — not on what the
+  office mostly plays (On the box 2, Sleeves 3, Tunes and Catchphrase 0).
+  8 voted ids are in no current pack.
+- **One question is over the line in force** (5 votes, 60%): `038268fabd1b`,
+  Mixed Bag, 5 bad / 0 good. Its prompt ends at a colon — the epitaph it asks
+  about is missing. Three more go at 3 votes / 50%.
+- **That is a harvest bug, not one bad question.** 88 prompts across the
+  non-blind text packs end in a colon; a sample shows many lost the quoted
+  material ("which song contains the following lyrics:", "when was this
+  headline breaking news:"), some are fine. Several other `bad` verdicts are
+  American-knowledge questions (a US freeway, a 1982 US sitcom), which the
+  British-office rule already says should not ship.
+
+Not done: no `--go`, no re-sort. 1 in 100 is too thin to pick thresholds from;
+the colon prompts are the bigger, cheaper win and want fixing at the harvest.
