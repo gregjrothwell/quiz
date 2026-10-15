@@ -211,6 +211,10 @@ mention. A host in either keeps the chair only while presence holds.
 failed `PERMISSION_DENIED` (no rule for the beat), and the AC8 round failed (no
 `hostUid`). Serial mode skipped the rest; it is off now.
 
+**After** (CI run 38767293760, `40fccb7`): all nine rules cases pass, the canary
+included. The AC8 round timed out on the opening titles, a test fault (fixed in
+`126650e`); its result is on PR #86.
+
 **Not built:**
 - **The six scripts were not changed.** Under the expand rules they still work,
   as rooms without `hostUid`, which proves nothing about W3. Before the deploy,
