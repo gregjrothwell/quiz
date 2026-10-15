@@ -138,7 +138,11 @@ export function PodiumTile({
               className={arrival.isYou ? 'tile__pick tile__pick--you' : 'tile__pick'}
               aria-hidden="true"
             >
-              {arrival.name}
+              {/*
+                Its own element so a long name can be cut short without
+                taking the time with it. The full name is in the sentence above.
+              */}
+              <span className="tile__name">{arrival.name}</span>
               <i className={arrival.snap ? 'tile__snap' : undefined}>
                 {arrival.snap && arrival.firstMs < arrival.elapsedMs
                   ? `${seconds(arrival.firstMs)} → `

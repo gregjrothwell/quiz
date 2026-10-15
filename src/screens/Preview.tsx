@@ -262,6 +262,19 @@ const THIRTY_PILE_ON = Object.fromEntries(
   ]),
 );
 
+/**
+ * Names at both caps on the chips: 24 is what the name box takes
+ * (`MAX_NAME_LENGTH`), 40 is what the rules let a room hold. Wide letters on
+ * purpose, and the 40 is a snap, the chip with two times in it. Bartholomew is
+ * the control: eleven letters, and it must not be cut.
+ */
+const LONG_NAMES = {
+  ...PLAYERS,
+  bart: { name: 'Bartholomew', joinedAt: 500 },
+  chris: { name: 'Christopher Featherstone', joinedAt: 600 },
+  wolf: { name: 'Wolfgang Amadeus Montgomery-Featherstone', joinedAt: 700 },
+};
+
 const THIRTY_DELTAS = Object.fromEntries(
   Object.entries(THIRTY_ALL_IN).map(([uid, answer], index) => [
     uid,
@@ -1580,6 +1593,33 @@ export function Preview() {
           onPlayAgain={noop}
           onLeave={noop}
           onSeason={noop}
+        />
+      ),
+    },
+    {
+      // Last, so no scene the decision docs name by number moves.
+      title: 'Reveal · long names',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'reveal',
+            players: LONG_NAMES,
+            answers: {
+              chris: { optionIndex: 0, elapsedMs: 2_300 },
+              bart: { optionIndex: 0, elapsedMs: 3_400 },
+              greg: { optionIndex: 2, elapsedMs: 4_100 },
+              wolf: { optionIndex: 3, elapsedMs: 5_200, firstMs: 80 },
+            },
+            lastDeltas: { chris: 1_000, bart: 900, greg: 0, wolf: 0 },
+          })}
+          youUid="chris"
+          isQuizmaster={false}
+          clock={CLOCK}
+          revealed
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
         />
       ),
     },

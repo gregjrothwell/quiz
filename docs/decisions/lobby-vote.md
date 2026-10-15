@@ -193,3 +193,8 @@ after the lock and asserts it still holds — **CI only**, no Java on this Mac.
 
 **Go live.** Through a `release-<date>` branch per AGENTS.md; no paste, no seed.
 The live check is the first office lobby after: lock a vote, reload, still locked.
+
+**Live 15 October 2026, 11:01 BST** — #77 (carrying #76), merge `74b1c91`, gh-pages `3b63b5a`. No
+release branch: one PR already held both. CI's Playwright, including the reload, passed on the PR and on
+master; the served `index-BWSiBKMq` is byte-identical to a local build (SHA-256 `fe7789a6…`) and carries
+`voteTaps`. The office-lobby check has not happened yet.
