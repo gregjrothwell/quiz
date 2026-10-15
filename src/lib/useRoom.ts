@@ -12,6 +12,7 @@ import {
   deleteField,
   doc,
   getDoc,
+  increment,
   onSnapshot,
   serverTimestamp,
   setDoc,
@@ -33,7 +34,7 @@ import {
 } from '../engine/roomClock';
 import { planJoin, planSeatSquad } from '../engine/join';
 import { reapAbsent } from '../engine/presence';
-import { readBrowsing, readPackVotes, writesTheVote } from '../engine/packVote';
+import { readBrowsing, readPackVotes, readVoteTaps, writesTheVote } from '../engine/packVote';
 import {
   LEGACY_DURATION_SECS,
   createRoom,
@@ -241,6 +242,7 @@ function toRoomState(code: string, data: DocumentData, answers: Record<string, A
     // Absent in every room from before the vote, and writable by any member,
     // so read through the guards rather than trusted.
     packVotes: readPackVotes(data['packVotes']),
+    voteTaps: readVoteTaps(data['voteTaps']),
     browsing: readBrowsing(data['browsing']),
   };
 }
@@ -273,6 +275,7 @@ function toPersisted(state: RoomState): PersistedRoom {
     standoffEnabled: state.standoffEnabled,
     standoff: state.standoff,
     packVotes: state.packVotes,
+    voteTaps: state.voteTaps,
     browsing: state.browsing,
   };
 }
@@ -308,6 +311,7 @@ function toUpdate(state: RoomState, previous: RoomState | null): Record<string, 
   // `players` does. Written whole only when crossing the lobby, to clear it.
   if (!writesTheVote(previous?.phase ?? null, state.phase)) {
     delete update.packVotes;
+    delete update.voteTaps;
     delete update.browsing;
   }
 
@@ -826,12 +830,17 @@ export function useRoom(): UseRoom {
   /**
    * This device's lobby vote, as one field path so concurrent votes merge.
    * Only the lobby: once the show starts the vote is cleared and means nothing.
+   *
+   * The tap is counted in the same write, so the limit costs no write of its
+   * own and no read anybody was not already making. `increment` rather than a
+   * value, so two taps in flight both count.
    */
   const writeOwnVote = useCallback(
     async (packId: PackId | null): Promise<void> => {
       if (!code || !uid || !room || room.phase !== 'lobby') return;
       await updateDoc(roomDoc(code), {
         [`packVotes.${uid}`]: packId ?? deleteField(),
+        [`voteTaps.${uid}`]: increment(1),
       });
     },
     [code, uid, room],

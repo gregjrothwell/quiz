@@ -56,6 +56,15 @@ test('a player votes, the quizmaster sees it counted, and the room sees the high
   await expect(guest.getByText('Your vote is locked in.')).toBeVisible();
   await expect(packCard(guest, 'Sleeves')).toBeDisabled();
 
+  // #when they reload, which used to hand out two more taps
+  await guest.reload();
+
+  // #then they are back in the lobby with the count read off the room: still locked
+  await expect(guest.getByText('Vote for a set')).toBeVisible();
+  await expect(guest.getByText('Your vote is locked in.')).toBeVisible();
+  await expect(packCard(guest, 'Flags')).toHaveAttribute('aria-pressed', 'true');
+  await expect(packCard(guest, 'Sleeves')).toBeDisabled();
+
   // #when the quizmaster highlights a pack
   await packCard(host, 'On the box').click();
 

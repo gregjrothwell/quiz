@@ -1053,13 +1053,14 @@ describe('the lobby vote', () => {
       { type: 'join', uid: 'host', name: 'Greg', at: 100 },
       { type: 'join', uid: 'guest', name: 'Sam', at: 200 },
     );
-    return { ...room, packVotes: { guest: 'geography' }, browsing: 'geography' };
+    return { ...room, packVotes: { guest: 'geography' }, voteTaps: { guest: 1 }, browsing: 'geography' };
   }
 
   test('a new room has nobody voting and nothing highlighted', () => {
     const room = createRoom('ABCD');
-    expect({ packVotes: room.packVotes, browsing: room.browsing }).toEqual({
+    expect({ packVotes: room.packVotes, voteTaps: room.voteTaps, browsing: room.browsing }).toEqual({
       packVotes: {},
+      voteTaps: {},
       browsing: null,
     });
   });
@@ -1071,8 +1072,9 @@ describe('the lobby vote', () => {
       wagerEnabled: false, stealEnabled: false,
     });
 
-    // #then the room can still see what it voted for
+    // #then the room can still see what it voted for, and nobody's taps come back
     expect(result.packVotes).toEqual({ guest: 'geography' });
+    expect(result.voteTaps).toEqual({ guest: 1 });
   });
 
   test('starting the round clears the votes and the highlight', () => {
@@ -1081,22 +1083,29 @@ describe('the lobby vote', () => {
       { type: 'selectPack', packId: 'geography', packTitle: 'Geography', questions: QUESTIONS, wagerEnabled: false, stealEnabled: false },
       { type: 'start', at: 1_000, gameId: 'game-1', durationSecs: DEFAULT_DURATION_SECS },
     );
-    expect({ packVotes: result.packVotes, browsing: result.browsing }).toEqual({
+    expect({ packVotes: result.packVotes, voteTaps: result.voteTaps, browsing: result.browsing }).toEqual({
       packVotes: {},
+      voteTaps: {},
       browsing: null,
     });
   });
 
   test('a reset comes back to a lobby with nobody voting', () => {
     // #given a vote that somehow survived into the round
-    const room = { ...playingRoom(), packVotes: { guest: 'sleeves' as const }, browsing: 'sleeves' as const };
+    const room = {
+      ...playingRoom(),
+      packVotes: { guest: 'sleeves' as const },
+      voteTaps: { guest: 2 },
+      browsing: 'sleeves' as const,
+    };
 
     // #when the room goes back to the lobby
     const result = reduce(room, { type: 'reset' });
 
-    // #then the next round's vote starts from nothing
-    expect({ packVotes: result.packVotes, browsing: result.browsing }).toEqual({
+    // #then the next round's vote starts from nothing, with two taps each again
+    expect({ packVotes: result.packVotes, voteTaps: result.voteTaps, browsing: result.browsing }).toEqual({
       packVotes: {},
+      voteTaps: {},
       browsing: null,
     });
   });
