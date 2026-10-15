@@ -16,6 +16,9 @@
  * clause that can refuse it is `windowClosed()` — a refusal here is the gate and
  * nothing else, which is the whole point of the measurement.
  *
+ * Since W3 the room is hosted (`hostUid`, and a beat every 15 s), so the probe
+ * asks the vault as the host, the only member the reveal rule now lets ask.
+ *
  * Not part of the build or the test suite: it talks to the live project. Costs
  * one room, a handful of writes and no meaningful reads.
  */
@@ -38,6 +41,7 @@ import {
 // The vault's candidates go over Lite, as the app sends them — see `resolveAnswer`.
 import { getFirestore as getLiteFirestore } from 'firebase/firestore/lite';
 import { attachDebugAppCheck } from './appCheck';
+import { startBeat } from './hostBeat';
 import { reduce, type Action } from '../src/engine/reducer';
 import {
   DEFAULT_DURATION_SECS,
@@ -158,10 +162,13 @@ async function main(): Promise<void> {
   const view: { latest: PersistedRoom | null } = { latest: null };
 
   const fresh = reduce(createRoom(code), { type: 'join', uid, name: 'Probe', at: Date.now() });
+  // Hosted, as the app makes a room since W3: the creator is host and beats.
   await setDoc(reference, {
     ...toPersisted(fresh),
+    hostUid: uid,
     expiresAt: Timestamp.fromMillis(Date.now() + 60 * 60 * 1_000),
   });
+  const stopBeat = await startBeat(db, code);
 
   const marks: Marks = { issuedAt: 0, localAt: null, confirmedAt: null, openedAt: null };
 
@@ -264,6 +271,7 @@ async function main(): Promise<void> {
   const afterControl = Date.now();
 
   stop();
+  stopBeat();
 
   const t = marks.issuedAt;
   console.log('  Measured from the moment the open write was issued:\n');

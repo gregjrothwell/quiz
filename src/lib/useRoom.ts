@@ -41,6 +41,7 @@ import { reduce, type Action } from '../engine/reducer';
 import { carryFirstMs, firstTouchOf, liveAnswers, type AnswerDoc } from '../engine/answers';
 import {
   answerDocFrom,
+  lampKey,
   openedAtMillis,
   toPersisted,
   toRoomState,
@@ -166,11 +167,6 @@ function answersCollection(code: string) {
 
 function presenceRef(code: string, uid: string) {
   return rtdbRef(realtimeDb(), `presence/${code}/${uid}`);
-}
-
-/** Which question a lamp belongs to. `gameId` because "Another round" reuses the room. */
-function lampKey(gameId: string | null, index: number): string {
-  return `${gameId ?? 'none'}:${index}`;
 }
 
 function lampsRef(code: string, key: string) {

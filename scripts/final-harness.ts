@@ -24,6 +24,11 @@
  * them from the function under test would only prove the engine agrees with
  * itself.
  *
+ * **Since W3 the room is hosted** (`hostUid`, and a beat every 15 s), so every
+ * dispatch here is the host's, under the host-only rule: this is the live allow
+ * case for the final's `openPicks`, `closePicks` and `settle`, as `check-rules`
+ * is for the probe room. docs/decisions/host-authority.md.
+ *
  * Not part of the build or the test suite: it talks to the live project. It
  * never calls `recordGame`, so nothing lands on the season board.
  */
@@ -48,6 +53,8 @@ import {
 // The vault's candidates go over Lite, as the app sends them — see `resolveAnswer`.
 import { getFirestore as getLiteFirestore } from 'firebase/firestore/lite';
 import { attachDebugAppCheck } from './appCheck';
+import { startBeat } from './hostBeat';
+import { lightLamp } from './lamp';
 import { liveAnswers, type AnswerDoc } from '../src/engine/answers';
 import { reduce, type Action } from '../src/engine/reducer';
 import { randomRoomCode } from '../src/engine/roomCode';
@@ -146,11 +153,14 @@ async function main(): Promise<void> {
   const fresh = reduce(createRoom(code), { type: 'join', uid: host.uid, name: host.name, at: Date.now() });
   const persisted: Record<string, unknown> = { ...fresh };
   delete persisted.answers;
+  // Hosted, as the app makes a room since W3: the creator is host and beats.
   await setDoc(reference, {
     ...persisted,
+    hostUid: host.uid,
     expiresAt: Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1_000),
   });
-  console.log(`${stamp()}  Room ${code} created by Host`);
+  const stopBeat = await startBeat(host.db, code);
+  console.log(`${stamp()}  Room ${code} created by Host, who hosts it`);
 
   const view: { latest: PersistedRoom | null } = { latest: null };
   const stopRoom = onSnapshot(reference, (snapshot) => {
@@ -171,6 +181,7 @@ async function main(): Promise<void> {
   });
 
   const teardown = async (): Promise<void> => {
+    stopBeat();
     stopRoom();
     stopAnswers();
     stopPicks();
@@ -232,7 +243,11 @@ async function main(): Promise<void> {
   await Promise.all(
     finalists.map(({ client, seat }) => {
       const answer: AnswerDoc = { optionIndex: 0, elapsedMs: seat.elapsedMs, questionIndex: 0 };
-      return setDoc(doc(collection(client.db, 'rooms', code, 'answers'), client.uid), answer);
+      // The lamp beside it, as the app lights it (W3).
+      return Promise.all([
+        setDoc(doc(collection(client.db, 'rooms', code, 'answers'), client.uid), answer),
+        lightLamp(client.app, code, gameId, 0, client.uid),
+      ]);
     }),
   );
   await sleep(DURATION_SECS * 1_000 + GATE_SLACK_MS);
