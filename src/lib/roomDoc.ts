@@ -108,7 +108,35 @@ export function toRoomState(code: string, data: DocumentData, answers: Record<st
     packVotes: readPackVotes(data['packVotes']),
     voteTaps: readVoteTaps(data['voteTaps']),
     browsing: readBrowsing(data['browsing']),
+    // Absent in every room made before W3, which is what makes it one: such a
+    // room keeps the derived quizmaster. See `resolveHost`.
+    hostUid: typeof data['hostUid'] === 'string' ? data['hostUid'] : null,
+    lastPicks: readPicks(data['lastPicks']),
   };
+}
+
+/**
+ * The published picks, read through the same guard as an answer document: the
+ * host writes them, but the rules cannot walk a map, so what arrives is checked
+ * here rather than trusted.
+ */
+function readPicks(value: unknown): Record<string, Answer> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return {};
+  const picks: Record<string, Answer> = {};
+  for (const [uid, entry] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof entry !== 'object' || entry === null) continue;
+    const parsed = answerDocFrom({ ...(entry as DocumentData), questionIndex: 0 });
+    if (!parsed) continue;
+    const { optionIndex, elapsedMs, firstMs, wager, at } = parsed;
+    picks[uid] = {
+      optionIndex,
+      elapsedMs,
+      ...(firstMs === undefined ? {} : { firstMs }),
+      ...(wager === undefined ? {} : { wager }),
+      ...(at === undefined ? {} : { at }),
+    };
+  }
+  return picks;
 }
 
 /**
@@ -141,6 +169,8 @@ export function toPersisted(state: RoomState): PersistedRoom {
     packVotes: state.packVotes,
     voteTaps: state.voteTaps,
     browsing: state.browsing,
+    hostUid: state.hostUid,
+    lastPicks: state.lastPicks,
   };
 }
 
@@ -170,6 +200,10 @@ export function toUpdate(state: RoomState, previous: RoomState | null): Record<s
 
   delete update.players;
   delete update.scores;
+  // The chair moves only by Leave or a claim, each its own write. A dispatch is
+  // folded over this device's snapshot, so writing it here could hand the chair
+  // back to whoever this device last saw holding it.
+  delete update.hostUid;
 
   // The lobby vote travels as `packVotes.{uid}` field writes, for the reason
   // `players` does. Written whole only when crossing the lobby, to clear it.

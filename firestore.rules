@@ -1,8 +1,9 @@
 rules_version = '2';
 
-// The quizmaster is derived, not stored: it is whoever has been in the room
-// longest. Rules cannot compute that cheaply, so they enforce the weaker but
-// sufficient invariant that every writer must be a signed-in member of the room.
+// Since W3 (host authority) a room names its host in `hostUid`, and only the
+// host moves the game on. A room made before W3 derives its quizmaster from
+// who has been there longest, and there the rules enforce the weaker invariant
+// that every writer must be a signed-in member of the room.
 // The engine enforces game legality; these rules stop outsiders touching a room,
 // bound what a member can write, and stop anyone editing someone else's answer.
 //
@@ -323,8 +324,91 @@ service cloud.firestore {
           && request.resource.data.players.keys().size() <= maxPlayers()
           && request.resource.data.scores.keys().size() <= maxPlayers()
           && request.resource.data.questions.size() <= maxQuestions()
+          && request.resource.data.get('lastPicks', {}).size() <= maxPlayers()
           && durationOk()
           && ownEntryOk();
+      }
+
+      // ── Host authority (W3) ─────────────────────────────────────────────
+      //
+      // A room made since W3 names its host in `hostUid`, and only that uid may
+      // move the game on: phase, index, questions, settings, titles,
+      // `browsing`, scores, other players' seats, the reveal and `hostUid`
+      // itself. Every member keeps the writes about themselves. A room with no
+      // `hostUid` was made before W3 and keeps the member rule below until it
+      // expires — expand, then contract. docs/decisions/host-authority.md.
+      //
+      // `get('hostUid', null) is string` rather than `in`: every client since
+      // W3 carries the field on `RoomState`, and a harness that spreads the
+      // whole state writes it as null. Null is a room made the old way.
+      function hosted() {
+        return resource.data.get('hostUid', null) is string;
+      }
+
+      function isHost() {
+        return resource.data.hostUid == request.auth.uid;
+      }
+
+      // The host may write anything the shape checks allow, but may not drop
+      // the field: that would turn the room back into one any member may write.
+      function stillHosted() {
+        return request.resource.data.get('hostUid', null) is string
+          && request.resource.data.hostUid.size() <= 128;
+      }
+
+      function changed() {
+        return request.resource.data.diff(resource.data).affectedKeys();
+      }
+
+      // Within one of the room's per-player maps, only the writer's own key moved.
+      function onlyMine(field) {
+        return request.resource.data.get(field, {})
+          .diff(resource.data.get(field, {})).affectedKeys()
+          .hasOnly([request.auth.uid]);
+      }
+
+      // What a member writes about themselves (`writeSelfIntoRoom`, `leave`,
+      // `writeOwnSquad`, `writeOwnVote`): their seat, their score, their vote
+      // and their tap count, and nothing else. A score a member writes is never
+      // new — `planJoin` writes the score already there, or zero.
+      function selfWrite() {
+        return changed().hasOnly(['players', 'scores', 'packVotes', 'voteTaps'])
+          && onlyMine('players')
+          && onlyMine('scores')
+          && onlyMine('packVotes')
+          && onlyMine('voteTaps')
+          && (request.resource.data.scores.get(request.auth.uid, 0) == 0
+              || request.resource.data.scores.get(request.auth.uid, 0)
+                   == resource.data.scores.get(request.auth.uid, 0));
+      }
+
+      // The claim threshold. `CLAIM_AFTER_SILENT_MS` in src/engine/host.ts
+      // holds the same number and host.test.ts fails if they differ. 75 s, not
+      // 30: a hidden tab's timers can run once a minute (Chrome's intensive
+      // throttling), and a throttled host must keep the chair.
+      function beatSilentMs() { return 75000; }
+
+      function beatPath() {
+        return /databases/$(database)/documents/rooms/$(code)/host/beat;
+      }
+
+      // The host's beat has gone quiet. `get`, not `getAfter`: the claim batch
+      // writes a fresh beat beside it, and the question is about the old one.
+      // A room with no beat at all has a host that never beat.
+      function beatSilent() {
+        return !exists(beatPath())
+          || get(beatPath()).data.at.toMillis() + beatSilentMs() < request.time.toMillis();
+      }
+
+      // A member takes the chair, and changes nothing else in the same write.
+      // The client asks only when the host's presence has gone (`planClaim`);
+      // the rule asks only about the beat, so a rogue claim needs 75 silent
+      // seconds first, and a second claimant finds the first one's fresh beat.
+      function claim() {
+        return isMember()
+          && changed().hasOnly(['hostUid'])
+          && request.resource.data.hostUid == request.auth.uid
+          && beatSilent();
       }
 
       // Anyone signed in can look up a room in order to join it.
@@ -346,50 +430,70 @@ service cloud.firestore {
         && request.resource.data.players.keys().size() == 1
         && request.resource.data.phase == 'lobby'
         && request.resource.data.questions.size() == 0
+        // The creator is the host. Absent or null is a client from before W3,
+        // accepted until the contract deploy.
+        && (request.resource.data.get('hostUid', null) == null
+            || request.resource.data.hostUid == request.auth.uid)
         && wellFormed()
         && newJoinedAtOk();
 
-      // Members drive the game. Joining is also an update, so allow a writer who
-      // is a member either before or after the write.
+      // Joining is also an update, so a writer may be a member either before
+      // or after the write.
       //
-      // A member can still overwrite the phase, the scores and other
-      // players: the quizmaster is derived rather than stored, so there is
-      // no uid here to compare against. That is accepted for a room of
-      // colleagues. `wellFormed` keeps the worst case to mischief rather
-      // than an unplayable or expensive room. `questionsPinned` is the
-      // exception — rewriting the question list mid-round was an unlimited
-      // vault oracle; see docs/decisions/security-round-sept-2026.md.
+      // **A room with a host** (made since W3): the host drives it, members
+      // write only about themselves, and a member may claim the chair once the
+      // host's beat has been silent for 75 s.
+      //
+      // **A room without one** (made before W3): any member can still
+      // overwrite the phase, the scores and other players, because there the
+      // quizmaster is derived rather than stored. `wellFormed` keeps the worst
+      // case to mischief. This branch goes in the contract deploy, once every
+      // such room has passed `expiresAt`.
+      //
+      // `questionsPinned` holds in both: rewriting the question list
+      // mid-round was an unlimited vault oracle; see
+      // docs/decisions/security-round-sept-2026.md.
       allow update: if signedIn()
         && (isMember() || request.resource.data.players.keys().hasAny([request.auth.uid]))
         && wellFormed()
         && timingOk()
         && questionsPinned()
-        && ownJoinedAtOk();
+        && ownJoinedAtOk()
+        && (!hosted()
+            || (isHost() ? stillHosted() : (selfWrite() || claim())));
 
       // Rooms are disposable; nobody needs to delete one mid-quiz.
       allow delete: if false;
 
       match /answers/{uid} {
-        // Everyone in the room reads answers so the reveal can render.
-        //
-        // Restricting this to members would cost a document read per rule
-        // evaluation — on a listener, per snapshot — and buy almost nothing:
-        // reaching this path needs the room code, and anyone with the code can
-        // simply join. Members seeing each other's answers before the reveal is
-        // inherent without server-side logic, and is accepted rather than fixed.
-        //
-        // **This read must not `get()` the room.** The write rule below does,
-        // once per answer; a listener evaluates this per snapshot, which is
-        // the Q·N² term. See docs/decisions/cost.md.
-        allow read: if signedIn();
-
-        // The parent room, for the arrival floor. `exists()` first: a `get()`
-        // on a missing document returns null, and reading `.data` off null
-        // errors the rule, which denies. Both hit the same document in one
-        // evaluation, so Firestore caches them as one read.
+        // The parent room, for the arrival floor and the read below. `exists()`
+        // first where it matters: a `get()` on a missing document returns null,
+        // and reading `.data` off null errors the rule, which denies. Both hit
+        // the same document in one evaluation, so Firestore caches them as one
+        // read.
         function answerRoom() {
           return get(/databases/$(database)/documents/rooms/$(code));
         }
+
+        // **W3: the host and the author only.** Until the reveal nobody else
+        // may see a pick; the host's reveal write then publishes them on the
+        // room (`lastPicks`), which every device is already listening to. A
+        // room made before W3 has no `hostUid` and stays readable by everyone
+        // signed in, as it was.
+        //
+        // This now `get()`s the room, which `cost.md` warned against when
+        // every client held a listener here. Now one listener does, the
+        // host's, so the term is about Q·N rather than Q·N². **Not measured:**
+        // whether a rules `get()` on a listener is billed per snapshot.
+        // `sync-harness 30` after the deploy is the count (AC10).
+        function mayReadAll() {
+          return answerRoom().data.get('hostUid', null) == null
+            || answerRoom().data.hostUid == request.auth.uid;
+        }
+
+        // Your own first, so it costs no room read.
+        allow get: if signedIn() && (request.auth.uid == uid || mayReadAll());
+        allow list: if signedIn() && mayReadAll();
 
         // How late a write may land after the claimed tap. Eight seconds,
         // not three: the 17 August office delay was five, the named flaky
@@ -534,11 +638,18 @@ service cloud.firestore {
             && room().questions[room().index].id == questionId;
         }
 
+        // W3: only the host asks the vault, in a room that has one.
+        function mayReveal() {
+          return room().get('hostUid', null) == null
+            || room().hostUid == request.auth.uid;
+        }
+
         // Everyone reads the reveal, so a client that missed the room update
         // can still find out what the answer was.
         allow read: if signedIn();
 
         allow create: if signedIn()
+          && mayReveal()
           && request.resource.data.keys().hasOnly(['answer'])
           && request.resource.data.answer is string
           && isTheQuestionInPlay()
@@ -557,7 +668,27 @@ service cloud.firestore {
         // same class of nuisance as rewriting the phase, which the quizmaster
         // being derived rather than stored already permits. In exchange the
         // preflight can exercise this path on every run instead of once ever.
-        allow delete: if signedIn();
+        // Since W3, in a room with a host, only the host.
+        allow delete: if signedIn() && mayReveal();
+      }
+
+      // ── The host's heartbeat (W3) ─────────────────────────────────────────
+      //
+      // `rooms/{code}/host/beat`, `{ at }`, written by the host every 15 s and
+      // read by nobody but the claim rule above. `getAfter`, not `get`: the
+      // claim batch makes the claimant host and writes this in one commit, and
+      // the room has to be read as it will be once that lands.
+      match /host/{name} {
+        allow read: if false;
+
+        allow create, update: if signedIn()
+          && name == 'beat'
+          && request.resource.data.keys().hasOnly(['at'])
+          && request.resource.data.at == request.time
+          && getAfter(/databases/$(database)/documents/rooms/$(code)).data.get('hostUid', null)
+               == request.auth.uid;
+
+        allow delete: if false;
       }
 
       // ── Share or Shaft ────────────────────────────────────────────────────
