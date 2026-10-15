@@ -57,8 +57,8 @@ Built to replace Polly in Teams.
 >   questions ([`public-scale.md`](decisions/public-scale.md)); the two
 >   lead-time cuts ([`ci-deploy.md`](decisions/ci-deploy.md)).
 
-**Live is `index-BWSiBKMq`** (#77: a reload no longer resets the two-tap vote lock, + #76 docs: 15 Oct 11:01 BST, merge `74b1c91`, gh-pages `3b63b5a`, CI;
-byte-identical to a local build). **Live check: the first office lobby** — lock a vote with two taps, reload, still locked. Before it, #75 `index-DV3kGh-I`.
+**Live is `index-BUTUL1rQ`** (#79: long names cut on the reveal chips, + #78 docs: 15 Oct 16:11 BST, merge `aa6b1e3`, gh-pages `54fb8d8`, CI;
+byte-identical to a local build). **Live checks: the first office round** — a long name ends "…", its time whole; **the first office lobby** — two taps, reload, still locked (#77). Before it, #77 `index-BWSiBKMq`.
 Firebase chunk `firebase-D9D0c-Mh` (Lite inside, +16 kB gzip).
 **20 packs** + **Random Round** (six played packs dealt into one); **The Price Was Right 95** and **Blankety Blank 148** (both blind); **Catchphrase 178** (every 5th a double-scoring bonus); **Name that Tune 424**; **Name the Artist 259**; synth **Classical**; **On the box 445**
 (hashed TMDB stills, at most 8 titles before 1990); **Flags** 76; **Sleeves 212**

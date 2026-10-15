@@ -24,6 +24,11 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-15 — Live: #79 (gh-pages `54fb8d8`): long names cut on the reveal chips
+
+Greg merged #79 (it carried #78) at 16:04; live 16:11 BST. `index-BUTUL1rQ`, byte-identical to a local build; the
+live gallery's "Reveal · long names" measures as the preview did. Office check: the first round with a long name.
+
 ## 2026-10-15 — Branch `reveal-name-truncate`: long names cut on the reveal chips
 
 A long name on a reveal chip squeezed the option text on a laptop and drew over it on a phone. The name now ellipsises
@@ -171,17 +176,11 @@ The harder batch was drawn (one redraw) and picked; it is 30 → 60, with Mr Fri
 Nothing is seeded, pushed or deployed: [`go-live-oct-2026.md`](decisions/go-live-oct-2026.md).
 **Claude named all 30 new answers in chat while picking**, so Greg decides keep or replace.
 
-## 2026-10-05 — Sleeves 168, a freshness check, and the harder batch half drawn
-
-Catchphrase (30 of 30) and Sleeves (105 of 104) were both spent. Sleeves 104 → 168
-(`9095987`, about 1 in 7 candidates ships). `npm run freshness` plus a weekday scheduled
-task, because launchd cannot read ~/Documents. Harder batch: 8 of 30 drawn, paused at 7%
-battery. [`sleeves-growth.md`](decisions/sleeves-growth.md) · [`pack-freshness.md`](decisions/pack-freshness.md).
-
 ## 2026-10-02 to 2026-10-05 — archived, one line each
 
-Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303.
+Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again.
 
+- **2026-10-05** — [Sleeves 168, a freshness check, and the harder batch half drawn](recall/2026-10.md#2026-10-05--sleeves-168-a-freshness-check-and-the-harder-batch-half-drawn)
 - **2026-10-05** — [Mr Fries: the bean chosen, and the hook for him built](recall/2026-10.md#2026-10-05--mr-fries-the-bean-chosen-and-the-hook-for-him-built)
 - **2026-10-05** — [Mr Fries researched: prompt-only holds, movement is charm](recall/2026-10.md#2026-10-05--mr-fries-researched-prompt-only-holds-movement-is-charm)
 - **2026-10-05** — [Bonus Catchphrase built, local only (`106863d`)](recall/2026-10.md#2026-10-05--bonus-catchphrase-built-local-only-106863d)
