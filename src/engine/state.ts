@@ -330,6 +330,23 @@ export interface RoomState {
   voteTaps: VoteTaps;
   /** The pack the quizmaster has highlighted in the lobby, shown to the room. */
   browsing: PackId | null;
+  /**
+   * Who runs the room (W3). Set to the creator when the room is made; moved by
+   * the host's Leave, or by a claim once the host's beat has gone quiet. Null in
+   * every room made before W3, which keeps the derived quizmaster — read it
+   * through `resolveHost`. docs/decisions/host-authority.md.
+   *
+   * Never written by a phase transition: `toUpdate` drops it, as it drops
+   * `players`, so a dispatch folded over a stale room cannot move the chair.
+   */
+  hostUid: string | null;
+  /**
+   * Every counted pick on the question just revealed, published by the host in
+   * the reveal write. Since W3 only the host can read the answers subcollection,
+   * so this is how everybody else gets the reveal chips, the replay and the
+   * game log. A sibling of `lastDeltas`, and cleared when they are.
+   */
+  lastPicks: Record<string, Answer>;
 }
 
 /**
@@ -388,6 +405,8 @@ export function createRoom(code: string): RoomState {
     packVotes: {},
     voteTaps: {},
     browsing: null,
+    hostUid: null,
+    lastPicks: {},
   };
 }
 

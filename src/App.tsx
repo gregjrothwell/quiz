@@ -175,6 +175,8 @@ function Game() {
     connection,
     error,
     isQuizmaster,
+    lamps,
+    answersReady,
     presenceWorking,
     questionConfirmedAt,
     questionOriginAt,
@@ -678,6 +680,10 @@ function Game() {
 
   const handleReveal = useCallback(async (): Promise<void> => {
     if (!room || room.phase !== 'question') return;
+    // A host who has only just taken the chair mid-question has not yet heard
+    // from the answers listener, and a reveal now would score an empty room.
+    // The effect below re-runs when it has. See `answersReady` in useRoom.
+    if (!answersReady) return;
 
     const question = currentQuestion(room);
     if (!question) return;
@@ -740,7 +746,7 @@ function Game() {
       revealingRef.current = null;
       throw cause;
     }
-  }, [room, dispatch]);
+  }, [room, dispatch, answersReady]);
 
   const form = room?.form ?? null;
   const showTitles = room?.phase === 'lobby' && form !== null;
@@ -1067,6 +1073,7 @@ function Game() {
             clock={clock}
             joinedMidQuestion={joinedMidQuestion}
             revealed={room.phase === 'reveal'}
+            lamps={lamps}
             // Derived rather than held: an automatic reveal is outstanding from
             // the moment the clock expires until the attempts are used up,
             // whether it is currently waiting for the gate or waiting for a

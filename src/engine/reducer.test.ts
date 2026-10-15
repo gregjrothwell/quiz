@@ -1110,3 +1110,51 @@ describe('the lobby vote', () => {
     });
   });
 });
+
+describe('the reveal publishes the picks (W3, AC5)', () => {
+  test('carries every counted answer, so a player who reads only their own still sees the room’s', () => {
+    // #given two answers, one with a stake field the room does not play for
+    const room = apply(
+      playingRoom(),
+      { type: 'answer', uid: 'host', optionIndex: 1, elapsedMs: 900 },
+      { type: 'answer', uid: 'guest', optionIndex: 0, elapsedMs: 1500 },
+    );
+
+    // #when the question is revealed
+    const result = reduce(room, revealNow(room));
+
+    // #then both picks ride on the room, exactly as answered
+    expect(result.lastPicks).toEqual({
+      host: { optionIndex: 1, elapsedMs: 900 },
+      guest: { optionIndex: 0, elapsedMs: 1500 },
+    });
+  });
+
+  test('leaves out an answer from somebody the room does not list', () => {
+    // #given an answer from a stranger alongside a member's
+    const room = { ...playingRoom(), answers: { stranger: { optionIndex: 1, elapsedMs: 10 } } };
+
+    // #when it is revealed
+    const result = reduce(room, revealNow(room));
+
+    // #then only members' picks are published
+    expect(result.lastPicks).toEqual({});
+  });
+
+  test('is cleared when the next question opens, and by skip, start and reset', () => {
+    // #given a revealed question with a pick on it
+    const revealed = apply(
+      playingRoom(),
+      { type: 'answer', uid: 'guest', optionIndex: 1, elapsedMs: 900 },
+      (state) => revealNow(state),
+    );
+    expect(Object.keys(revealed.lastPicks)).toEqual(['guest']);
+
+    // #then the standings keep it, and every way out of the question drops it
+    const standings = reduce(revealed, { type: 'next', at: 2_000 });
+    expect(Object.keys(standings.lastPicks)).toEqual(['guest']);
+    expect(reduce(standings, { type: 'next', at: 3_000 }).lastPicks).toEqual({});
+    expect(reduce(revealed, { type: 'skip' }).lastPicks).toEqual({});
+    expect(reduce(revealed, { type: 'reset' }).lastPicks).toEqual({});
+  });
+});

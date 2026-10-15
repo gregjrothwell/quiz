@@ -64,6 +64,13 @@ interface QuestionScreenProps {
   joinedMidQuestion?: boolean;
   revealed: boolean;
   /**
+   * Who has answered, for the lamps. Since W3 a player reads only their own
+   * answer before the reveal, so this comes from useRoom's RTDB lamps. Absent,
+   * it is everybody in `room.answers`, which is what a device that reads every
+   * answer — and every test here — already holds.
+   */
+  lamps?: ReadonlySet<string>;
+  /**
    * Whether the reveal is already on its way, so the button says so instead of
    * offering itself again.
    *
@@ -116,6 +123,7 @@ export function QuestionScreen({
   clock,
   joinedMidQuestion = false,
   revealed,
+  lamps,
   revealing = false,
   onAnswer,
   onReveal,
@@ -818,7 +826,11 @@ export function QuestionScreen({
           */
           <QuestionVote key={room.index} onVote={onVote} />
         ) : (
-          <AnswerLamps players={room.players} answers={room.answers} youUid={youUid} />
+          <AnswerLamps
+            players={room.players}
+            lit={lamps ?? new Set(Object.keys(room.answers))}
+            youUid={youUid}
+          />
         )}
 
         <div className="row row--between">

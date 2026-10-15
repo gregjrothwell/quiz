@@ -20,9 +20,33 @@ import {
   updateDoc,
   type DocumentData,
 } from 'firebase/firestore';
-import { firebaseAuth, firestore, realtimeDb } from '../firebase';
+// The beat and the claim go over Lite, as the vault's candidates do: a write the
+// rules refuse is a 403 on its own request there, and does not close the main
+// SDK's write stream under the answers. See `resolveAnswer` in vault.ts.
+import {
+  doc as liteDoc,
+  serverTimestamp as liteServerTimestamp,
+  setDoc as liteSetDoc,
+  writeBatch as liteWriteBatch,
+} from 'firebase/firestore/lite';
+import { firebaseAuth, firestore, realtimeDb, vaultFirestore } from '../firebase';
+import {
+  BEAT_EVERY_MS,
+  CLAIM_RETRY_MS,
+  planClaim,
+  resolveHost,
+  successorOnLeave,
+} from '../engine/host';
 import { reduce, type Action } from '../engine/reducer';
 import { carryFirstMs, firstTouchOf, liveAnswers, type AnswerDoc } from '../engine/answers';
+import {
+  answerDocFrom,
+  openedAtMillis,
+  toPersisted,
+  toRoomState,
+  toUpdate,
+  type PersistedRoom,
+} from './roomDoc';
 import { forgetRoom, rememberRoom, rememberedRoom } from './rememberedRoom';
 import { rememberedPlayingWith, rememberedSquad } from './rememberedSquad';
 import { sideFor } from '../engine/squadScore';
@@ -34,14 +58,10 @@ import {
 } from '../engine/roomClock';
 import { planJoin, planSeatSquad } from '../engine/join';
 import { reapAbsent } from '../engine/presence';
-import { readBrowsing, readPackVotes, readVoteTaps, writesTheVote } from '../engine/packVote';
 import {
-  LEGACY_DURATION_SECS,
   createRoom,
   isWagerQuestion,
   questionDurationMs,
-  resolveQuizmaster,
-  type Answer,
   type Phase,
   type Player,
   type RoomState,
@@ -50,14 +70,6 @@ import { randomRoomCode } from '../engine/roomCode';
 import type { PackId } from '../questions/types';
 import { playerIdFor } from './identity';
 import { rememberName, rememberedName } from './rememberedName';
-
-/**
- * Fields the engine owns but that are not persisted on the room document.
- * `answers` lives in a subcollection so that a player answering does not push a
- * room-document update to every other client — that fan-out is what burns the
- * Firestore free tier.
- */
-type PersistedRoom = Omit<RoomState, 'answers'>;
 
 /**
  * What this device knows about the question in play: when it first heard about
@@ -71,54 +83,6 @@ interface QuestionConfirmation {
   key: string;
   at: number;
   openedAtMs: number | null;
-}
-
-/**
- * `openedAt` off a raw snapshot, in milliseconds.
- *
- * Read here rather than through `toRoomState` because it is not part of
- * `RoomState` and should not become part of it: no screen renders it, and the
- * one thing that needs it needs the *server's* value rather than anything a
- * client could have written. Anything that is not a resolved `Timestamp` — a
- * pending write, an older room, a field that never landed — reads as null, and
- * the clock falls back to counting locally.
- */
-function openedAtMillis(data: DocumentData | undefined): number | null {
-  const value: unknown = data?.['openedAt'];
-  return value instanceof Timestamp ? value.toMillis() : null;
-}
-
-/**
- * `at` off an answer document. A resolved Timestamp becomes milliseconds; a
- * pending `serverTimestamp()` write, or a document that predates the field,
- * is absent so `liveAnswers` keeps the shape every earlier round produced.
- */
-function stampMillis(value: unknown): number | undefined {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
-  if (value instanceof Timestamp) return value.toMillis();
-  return undefined;
-}
-
-function asFiniteNumber(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
-}
-
-function answerDocFrom(data: DocumentData): AnswerDoc | null {
-  const optionIndex = asFiniteNumber(data.optionIndex);
-  const elapsedMs = asFiniteNumber(data.elapsedMs);
-  const questionIndex = asFiniteNumber(data.questionIndex);
-  if (optionIndex === undefined || elapsedMs === undefined || questionIndex === undefined) {
-    return null;
-  }
-  const at = stampMillis(data.at);
-  return {
-    optionIndex,
-    elapsedMs,
-    questionIndex,
-    ...(typeof data.firstMs === 'number' ? { firstMs: data.firstMs } : {}),
-    ...(typeof data.wager === 'number' ? { wager: data.wager } : {}),
-    ...(at === undefined ? {} : { at }),
-  };
 }
 
 export type ConnectionState = 'connecting' | 'ready' | 'error';
@@ -139,6 +103,19 @@ export interface UseRoom {
   connection: ConnectionState;
   error: string | null;
   isQuizmaster: boolean;
+  /**
+   * Who has answered the question in play, as uids: the RTDB lamps (W3), plus
+   * every answer this device can read. Since W3 a player reads only their own
+   * answer before the reveal, so the lamps are how they see the room commit.
+   */
+  lamps: ReadonlySet<string>;
+  /**
+   * Whether this device holds every answer to the question in play, read from
+   * the server. Always true where it never reads them all; false for a host
+   * whose listener has not delivered yet — a player who has just claimed the
+   * chair mid-question, above all — so the reveal cannot score an empty room.
+   */
+  answersReady: boolean;
   /**
    * False when this device cannot write its presence entry, which means players
    * who close a tab will linger in the lobby. The game itself is unaffected.
@@ -191,6 +168,44 @@ function presenceRef(code: string, uid: string) {
   return rtdbRef(realtimeDb(), `presence/${code}/${uid}`);
 }
 
+/** Which question a lamp belongs to. `gameId` because "Another round" reuses the room. */
+function lampKey(gameId: string | null, index: number): string {
+  return `${gameId ?? 'none'}:${index}`;
+}
+
+function lampsRef(code: string, key: string) {
+  return rtdbRef(realtimeDb(), `lamps/${code}/${key}`);
+}
+
+/**
+ * Takes the chair: `hostUid` and a fresh beat, in one batch, so a second
+ * claimant finds the beat fresh and is refused. The rules allow it only once
+ * the old beat is 75 s old (`claim()` in firestore.rules).
+ */
+async function claimChair(code: string, uid: string): Promise<void> {
+  const db = vaultFirestore();
+  const batch = liteWriteBatch(db);
+  batch.update(liteDoc(db, 'rooms', code), { hostUid: uid });
+  batch.set(liteDoc(db, 'rooms', code, 'host', 'beat'), { at: liteServerTimestamp() });
+  await batch.commit();
+}
+
+/** What the answers listener last delivered, and for which feed. */
+interface AnswersFeed {
+  key: string;
+  docs: Record<string, AnswerDoc>;
+  /** Delivered from the server rather than the local cache. */
+  fromServer: boolean;
+}
+
+interface LampsFeed {
+  key: string;
+  lit: ReadonlySet<string>;
+}
+
+const NO_LAMPS: ReadonlySet<string> = new Set();
+const NO_ANSWERS: Record<string, AnswerDoc> = {};
+
 /**
  * How long a finished room is kept before a TTL policy may remove it.
  *
@@ -205,144 +220,6 @@ function presenceRef(code: string, uid: string) {
  */
 const ROOM_RETENTION_MS = 30 * 24 * 60 * 60 * 1_000;
 
-/** Answer documents carry the question index so a stale answer never scores. */
-function toRoomState(code: string, data: DocumentData, answers: Record<string, Answer>): RoomState {
-  const persisted = data as PersistedRoom;
-  return {
-    ...persisted,
-    code,
-    answers,
-    // A room started before the window was selectable has no field, and the
-    // rules fall back to the same twenty with `get('durationSecs', 20)`. Not
-    // the lobby's default, which is ten and has nothing to do with this — see
-    // LEGACY_DURATION_SECS. Filled in here, at the one place a document becomes
-    // state, so nothing downstream has to defend against a missing number.
-    durationSecs: persisted.durationSecs ?? LEGACY_DURATION_SECS,
-    // Every room that predates the opening titles has no field at all, and
-    // `undefined` is not `null` — `coldOpenRunning` tests against null, so
-    // leaving it undefined would read as "the titles are up" in every room
-    // created before this shipped. Defaulted here for the same reason
-    // `durationSecs` is: so nothing downstream has to defend against it.
-    form: persisted.form ?? null,
-    // Absent in every room created before the wager, and `undefined` is not
-    // `false` — `isWagerQuestion` would read as neither on nor off. Defaulted
-    // here for the same reason `durationSecs` and `form` are.
-    wagerEnabled: persisted.wagerEnabled ?? false,
-    // Absent in every room created before the steal, and defaulted for the
-    // same reason as the line above.
-    stealEnabled: persisted.stealEnabled ?? false,
-    jigsawEnabled: persisted.jigsawEnabled ?? false,
-    // `null` rather than undefined: Firestore rejects undefined outright, and
-    // every room from before the steal has no field at all.
-    lastSteal: persisted.lastSteal ?? null,
-    // Absent in every room from before Share or Shaft, defaulted for the reason
-    // the wager's flag is.
-    standoffEnabled: persisted.standoffEnabled ?? false,
-    standoff: persisted.standoff ?? null,
-    // Absent in every room from before the vote, and writable by any member,
-    // so read through the guards rather than trusted.
-    packVotes: readPackVotes(data['packVotes']),
-    voteTaps: readVoteTaps(data['voteTaps']),
-    browsing: readBrowsing(data['browsing']),
-  };
-}
-
-/**
- * Strips the subcollection-backed `answers` before writing. Listed field by
- * field on purpose: adding a field to RoomState without deciding how it
- * persists then fails to compile here rather than silently going missing.
- */
-function toPersisted(state: RoomState): PersistedRoom {
-  return {
-    code: state.code,
-    phase: state.phase,
-    players: state.players,
-    packId: state.packId,
-    packTitle: state.packTitle,
-    questions: state.questions,
-    index: state.index,
-    durationSecs: state.durationSecs,
-    questionOpenedAt: state.questionOpenedAt,
-    scores: state.scores,
-    lastDeltas: state.lastDeltas,
-    skipped: state.skipped,
-    gameId: state.gameId,
-    form: state.form,
-    wagerEnabled: state.wagerEnabled,
-    stealEnabled: state.stealEnabled,
-    jigsawEnabled: state.jigsawEnabled,
-    lastSteal: state.lastSteal,
-    standoffEnabled: state.standoffEnabled,
-    standoff: state.standoff,
-    packVotes: state.packVotes,
-    voteTaps: state.voteTaps,
-    browsing: state.browsing,
-  };
-}
-
-/**
- * What a phase transition is allowed to write.
- *
- * Two things are deliberately not written wholesale:
- *
- * `players` is omitted entirely. A dispatch folds actions over the *writer's*
- * snapshot, so writing the whole map back stamps their view of who is in the
- * room over everyone else's — anybody who joined in the moment between that
- * snapshot and the write is erased. With two people it is a rare race; with ten
- * joining as the code is read out it is close to guaranteed. Membership is only
- * ever changed through single-field writes (`players.{uid}`), so no phase
- * transition needs to touch the map at all.
- *
- * `scores` is expanded into one field path per player so the write merges
- * instead of replacing. A late joiner's zero then survives a round starting.
- *
- * Derived from {@link toPersisted} by destructuring rather than listed afresh,
- * so a new field on RoomState still fails to compile until someone decides how
- * it persists.
- */
-function toUpdate(state: RoomState, previous: RoomState | null): Record<string, unknown> {
-  const persisted = toPersisted(state);
-  const update: Record<string, unknown> = { ...persisted };
-
-  delete update.players;
-  delete update.scores;
-
-  // The lobby vote travels as `packVotes.{uid}` field writes, for the reason
-  // `players` does. Written whole only when crossing the lobby, to clear it.
-  if (!writesTheVote(previous?.phase ?? null, state.phase)) {
-    delete update.packVotes;
-    delete update.voteTaps;
-    delete update.browsing;
-  }
-
-  for (const [uid, score] of Object.entries(persisted.scores)) {
-    update[`scores.${uid}`] = score;
-  }
-
-  // `openedAt` is the server's own record of when the question went live, and
-  // the vault's time gate is measured from it. It is written with
-  // `serverTimestamp()` and the rules require exactly that, so no client can
-  // claim a question opened earlier than it did and unlock the answer early.
-  // See src/lib/vault.ts.
-  if (opensAQuestion(state, previous)) update.openedAt = serverTimestamp();
-
-  return update;
-}
-
-/**
- * Whether this transition puts a *new* question in front of the room, as
- * opposed to any other write while one is open.
- *
- * The distinction matters because a player joining mid-question is also an
- * update to a room whose phase is `question`, and restamping `openedAt` for
- * that would hand everybody a fresh window — and, worse, would let a steady
- * trickle of joins hold the vault shut indefinitely.
- */
-function opensAQuestion(next: RoomState, previous: RoomState | null): boolean {
-  if (next.phase !== 'question') return false;
-  if (!previous || previous.phase !== 'question') return true;
-  return previous.index !== next.index;
-}
 
 export function useRoom(): UseRoom {
   const [uid, setUid] = useState<string | null>(null);
@@ -362,7 +239,8 @@ export function useRoom(): UseRoom {
    * working out its own clock offset from the server. See `roomClock.ts`.
    */
   const [clockDeltas, setClockDeltas] = useState<ClockDeltas>({});
-  const [answers, setAnswers] = useState<Record<string, Answer>>({});
+  const [answersFeed, setAnswersFeed] = useState<AnswersFeed>({ key: '', docs: {}, fromServer: false });
+  const [lampsFeed, setLampsFeed] = useState<LampsFeed>({ key: '', lit: NO_LAMPS });
   /*
     Restored on the first render rather than in an effect, and that ordering is
     load-bearing: the auto-join in `App` refuses while this tab is already in a
@@ -502,20 +380,66 @@ export function useRoom(): UseRoom {
     );
   }, [code]);
 
-  // Answers subcollection. Everyone subscribes, but documents are small and only
-  // written once per player per question.
-  useEffect(() => {
-    if (!code) return;
+  /*
+    Who this device is in the room, read straight off the document so the
+    answers listener below can depend on it without depending on the answers.
 
-    return onSnapshot(answersCollection(code), (snapshot) => {
-      const next: Record<string, AnswerDoc> = {};
-      for (const document of snapshot.docs) {
-        const parsed = answerDocFrom(document.data());
-        if (parsed) next[document.id] = parsed;
-      }
-      setAnswers(next);
+    W3: the host reads every answer, everybody else reads their own, and the
+    rules refuse anything more. A room made before W3 has no `hostUid`, and
+    there every client reads every answer as it always did, so a round in
+    flight when the deploy lands plays on unchanged (AC11).
+  */
+  const roomHostUid = persisted ? (persisted as { hostUid?: unknown }).hostUid : undefined;
+  const hostUid = typeof roomHostUid === 'string' ? roomHostUid : null;
+  // Not before the room has been read. Until then `hostUid` is unknown, not
+  // absent, and a joiner took it for a pre-W3 room: it listed every answer and
+  // the rules refused it. When the chair later passed to that joiner, the same
+  // query listened again never came back from the server (fromCache stayed
+  // true, no error), so the reveal waited forever. Seen in CI on 15 Oct; the
+  // SDK's reason is not established, only that gating here cures it (AC8).
+  const roomKnown = persisted !== null;
+  const readsAll = roomKnown && (hostUid === null || hostUid === uid);
+  const feedKey = code && uid ? `${code}:${readsAll ? '*' : uid}` : '';
+
+  // Answers subcollection: the whole of it for whoever may read it, otherwise
+  // this player's own document.
+  useEffect(() => {
+    if (!code || !uid || !roomKnown) return;
+    const key = `${code}:${readsAll ? '*' : uid}`;
+
+    if (readsAll) {
+      return onSnapshot(answersCollection(code), { includeMetadataChanges: true }, (snapshot) => {
+        const next: Record<string, AnswerDoc> = {};
+        for (const document of snapshot.docs) {
+          const parsed = answerDocFrom(document.data());
+          if (parsed) next[document.id] = parsed;
+        }
+        setAnswersFeed({ key, docs: next, fromServer: !snapshot.metadata.fromCache });
+      });
+    }
+
+    return onSnapshot(doc(answersCollection(code), uid), (snapshot) => {
+      const parsed = snapshot.exists() ? answerDocFrom(snapshot.data()) : null;
+      setAnswersFeed({ key, docs: parsed ? { [uid]: parsed } : {}, fromServer: true });
     });
-  }, [code]);
+  }, [code, uid, readsAll, roomKnown]);
+
+  const answers = answersFeed.key === feedKey ? answersFeed.docs : NO_ANSWERS;
+  const answersReady = !readsAll || (answersFeed.key === feedKey && answersFeed.fromServer);
+
+  // Lamps (W3): who has answered the question in play, from the Realtime
+  // Database rather than from the answers nobody else may now read.
+  const phaseNow = persisted?.phase ?? null;
+  const questionLampKey =
+    persisted && phaseNow === 'question' ? lampKey(persisted.gameId ?? null, persisted.index) : null;
+
+  useEffect(() => {
+    if (!code || questionLampKey === null) return;
+    const key = `${code}/${questionLampKey}`;
+    return onValue(lampsRef(code, questionLampKey), (snapshot) => {
+      setLampsFeed({ key, lit: new Set(Object.keys((snapshot.val() as Record<string, unknown>) ?? {})) });
+    });
+  }, [code, questionLampKey]);
 
   // Presence. Own entry is written with an onDisconnect cleanup so a closed tab
   // removes itself without needing a graceful sign-out.
@@ -560,12 +484,23 @@ export function useRoom(): UseRoom {
     // the way in, so a client can write an answer to a room it is not a member
     // of — which used to leave the "how many have answered" pips reading more
     // than the number of players.
-    const live = liveAnswers(persisted.players, persisted.index, answers as Record<string, AnswerDoc>);
-    return toRoomState(code, persisted, live);
-  }, [code, persisted, answers]);
+    const live = liveAnswers(persisted.players, persisted.index, answers);
+    const state = toRoomState(code, persisted, live);
+    // A player since W3 holds only their own answer until the reveal, which
+    // publishes the room's. Their own stays alongside, so an answer that missed
+    // the host's fold still reads as "didn't reach the room in time".
+    if (readsAll || state.phase === 'question') return state;
+    return { ...state, answers: { ...live, ...state.lastPicks } };
+  }, [code, persisted, answers, readsAll]);
 
-  const quizmasterUid = room ? resolveQuizmaster(room.players) : null;
-  const isQuizmaster = Boolean(uid && quizmasterUid === uid);
+  const isQuizmaster = Boolean(uid && room && resolveHost(room) === uid);
+
+  const lamps = useMemo<ReadonlySet<string>>(() => {
+    if (!room || room.phase !== 'question') return NO_LAMPS;
+    const key = `${room.code}/${lampKey(room.gameId, room.index)}`;
+    const fromRtdb = lampsFeed.key === key ? lampsFeed.lit : NO_LAMPS;
+    return new Set([...fromRtdb, ...Object.keys(room.answers)]);
+  }, [room, lampsFeed]);
 
   // Read by the reaper's Realtime Database callback, which must not have `room`
   // in its dependencies — see the reaper effect below, and by `dispatch`, which
@@ -732,7 +667,7 @@ export function useRoom(): UseRoom {
         const existing = await getDoc(roomDoc(candidate));
         if (existing.exists()) continue;
 
-        const fresh = reduce(createRoom(candidate), {
+        const joined = reduce(createRoom(candidate), {
           type: 'join',
           uid,
           name,
@@ -746,6 +681,9 @@ export function useRoom(): UseRoom {
           // takes, and they are in every room.
           squad: sideFor(rememberedSquad(), rememberedPlayingWith()),
         });
+        // W3: the creator is the host, named on the room rather than derived.
+        // The beat starts from the effect below once this lands.
+        const fresh = { ...joined, hostUid: uid };
         // `expiresAt` is storage only — it is not on RoomState and nothing in
         // the app reads it. It exists so a Firestore TTL policy on `rooms` has
         // a field to expire against, because otherwise every room ever created
@@ -860,6 +798,13 @@ export function useRoom(): UseRoom {
     if (!code || !uid) return;
     const leavingCode = code;
     const leavingUid = uid;
+    // Read before the local state is dropped below. A host who leaves hands the
+    // chair to the longest-seated of the people left, in the same write (AC7).
+    const leavingRoom = roomRef.current;
+    const handover =
+      leavingRoom && leavingRoom.code === leavingCode && leavingRoom.hostUid === leavingUid
+        ? successorOnLeave(leavingRoom.players, leavingUid)
+        : null;
 
     // Drop out locally first, so leaving always works.
     //
@@ -869,7 +814,6 @@ export function useRoom(): UseRoom {
     forgetRoom();
     setCode(null);
     setPersisted(null);
-    setAnswers({});
 
     // The two cleanup writes are best-effort. Once the local listeners are gone
     // the rules can stop recognising this client as a member and refuse them,
@@ -879,6 +823,7 @@ export function useRoom(): UseRoom {
     await rtdbRemove(presenceRef(leavingCode, leavingUid)).catch(() => undefined);
     await updateDoc(roomDoc(leavingCode), {
       [`players.${leavingUid}`]: deleteField(),
+      ...(handover ? { hostUid: handover } : {}),
     }).catch(() => undefined);
   }, [code, uid]);
 
@@ -973,10 +918,17 @@ export function useRoom(): UseRoom {
         ...first,
         ...staked,
       };
-      await setDoc(doc(answersCollection(code), uid), {
+      const written = setDoc(doc(answersCollection(code), uid), {
         ...answer,
         at: serverTimestamp(),
       });
+      // The lamp, beside it (W3). Best-effort: a lamp that fails to light costs
+      // the room a dot, never the answer.
+      void rtdbSet(
+        rtdbRef(realtimeDb(), `lamps/${code}/${lampKey(room.gameId, room.index)}/${uid}`),
+        true,
+      ).catch(() => undefined);
+      await written;
     },
     [code, uid, room],
   );
@@ -1012,6 +964,70 @@ export function useRoom(): UseRoom {
     });
   }, [code, isQuizmaster]);
 
+  /*
+    The heartbeat (W3, D2 b): while this device holds the chair of a room with
+    a host, it writes `rooms/{code}/host/beat` every 15 s. Nobody listens; the
+    claim rule reads it. Writes only, about 240 an hour per open room.
+  */
+  const beating = Boolean(code && uid && hostUid === uid);
+  useEffect(() => {
+    if (!code || !beating) return;
+    const beat = (): void => {
+      const db = vaultFirestore();
+      void liteSetDoc(liteDoc(db, 'rooms', code, 'host', 'beat'), { at: liteServerTimestamp() }).catch(
+        () => undefined,
+      );
+    };
+    beat();
+    const timer = window.setInterval(beat, BEAT_EVERY_MS);
+    return () => window.clearInterval(timer);
+  }, [code, beating]);
+
+  /*
+    The claim (W3, AC8): every other device in a room with a host watches
+    presence, and the longest-seated present player asks for the chair once the
+    host has been gone from it for a while — see `planClaim`. The rules refuse
+    until the beat is 75 s old, so this retries every few seconds until then.
+  */
+  const watchingHost = Boolean(code && uid && hostUid !== null && hostUid !== uid);
+  useEffect(() => {
+    if (!code || !uid || !watchingHost) return;
+
+    let present: ReadonlySet<string> = new Set();
+    let absentSince: number | null = null;
+    let asking = false;
+
+    const off = onValue(rtdbRef(realtimeDb(), `presence/${code}`), (snapshot) => {
+      present = new Set(Object.keys((snapshot.val() as Record<string, unknown>) ?? {}));
+    });
+
+    const timer = window.setInterval(() => {
+      const current = roomRef.current;
+      if (!current || current.code !== code || asking) return;
+      const plan = planClaim({
+        hostUid: current.hostUid,
+        players: current.players,
+        present,
+        absentSince,
+        now: Date.now(),
+        uid,
+      });
+      absentSince = plan.absentSince;
+      if (!plan.claim) return;
+      asking = true;
+      void claimChair(code, uid)
+        .catch(() => undefined)
+        .finally(() => {
+          asking = false;
+        });
+    }, CLAIM_RETRY_MS);
+
+    return () => {
+      off();
+      window.clearInterval(timer);
+    };
+  }, [code, uid, watchingHost]);
+
   const questionKey = room && room.phase === 'question' ? `${room.gameId ?? ''}:${room.index}` : null;
 
   return {
@@ -1021,6 +1037,8 @@ export function useRoom(): UseRoom {
     connection,
     error,
     isQuizmaster,
+    lamps,
+    answersReady,
     presenceWorking,
     questionConfirmedAt:
       questionKey !== null && questionConfirmed.key === questionKey ? questionConfirmed.at : null,

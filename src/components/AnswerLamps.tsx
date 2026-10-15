@@ -1,8 +1,9 @@
-import type { Answer, Player } from '../engine/state';
+import type { Player } from '../engine/state';
 
 interface AnswerLampsProps {
   players: Record<string, Player>;
-  answers: Record<string, Answer>;
+  /** Who has answered, as uids. See `lamps` in useRoom. */
+  lit: ReadonlySet<string>;
   youUid: string | null;
 }
 
@@ -16,20 +17,20 @@ interface AnswerLampsProps {
  * for", and counting lit circles does not answer it.
  *
  * What must not leak is *which lectern* somebody picked, and that is untouched:
- * this says a name has answered, never what they answered. Both sides of it are
- * already on every device — the answers subcollection is streamed to everyone —
- * so nothing here costs a read.
+ * this says a name has answered, never what they answered. Since W3 the answers
+ * themselves are the host's alone, so who has answered comes from the lamps on
+ * the Realtime Database, which cost no Firestore read at all.
  *
  * Ordered by arrival in the room and never by answer state, so a name keeps its
  * place all question. Sorting the answered to the front would make the row
  * reshuffle under the eye of the person trying to read it.
  */
-export function AnswerLamps({ players, answers, youUid }: AnswerLampsProps) {
+export function AnswerLamps({ players, lit, youUid }: AnswerLampsProps) {
   const seats = Object.entries(players).sort(
     ([aUid, a], [bUid, b]) => a.joinedAt - b.joinedAt || aUid.localeCompare(bUid),
   );
 
-  const answered = seats.filter(([uid]) => answers[uid]).length;
+  const answered = seats.filter(([uid]) => lit.has(uid)).length;
 
   return (
     <div className="lamps">
@@ -39,7 +40,7 @@ export function AnswerLamps({ players, answers, youUid }: AnswerLampsProps) {
       {seats.map(([uid, player]) => {
         const classes = [
           'lamp',
-          answers[uid] ? 'lamp--in' : '',
+          lit.has(uid) ? 'lamp--in' : '',
           uid === youUid ? 'lamp--you' : '',
         ]
           .filter(Boolean)
