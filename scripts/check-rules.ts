@@ -48,9 +48,14 @@ import {
   serverTimestamp,
   setDoc,
   updateDoc,
+  writeBatch,
   type Firestore,
   type DocumentReference,
 } from 'firebase/firestore';
+import { planJoin } from '../src/engine/join';
+import { reduce, type Action } from '../src/engine/reducer';
+import { createRoom, type QuizQuestion, type RoomState } from '../src/engine/state';
+import { toPersisted, toRoomState, toUpdate } from '../src/lib/roomDoc';
 
 /**
  * The rule is `match /seasons/{season}/players/{uid}`, so any season id
@@ -1428,6 +1433,277 @@ function buildChecks(probes: Probes): Check[] {
   ];
 }
 
+/** How long the host's beat must be silent before a claim is allowed (`beatSilent()`), plus slack. */
+const CLAIM_WAIT_MS = 75_000 + GATE_SLACK_MS;
+
+/** The question a hosted room plays: the seeded probe, so the reveal doc can be written for real. */
+const HOSTED_QUESTION: QuizQuestion = {
+  id: PROBE_QUESTION,
+  prompt: 'Does the vault open on time?',
+  options: ['The right one', 'A wrong one', 'Another wrong one', 'A third wrong one'],
+  correctIndex: null,
+  category: 'General Knowledge',
+  difficulty: 'easy',
+};
+
+interface HostProbes {
+  /** Fresh per run: rooms cannot be deleted, and `hostUid` names a uid that dies with this process. */
+  code: string;
+  uid: string;
+  db: Firestore;
+  rtdb: Database;
+  uidB: string;
+  dbB: Firestore;
+  /** The round the room plays; its lamps live under `lamps/{code}/{gameId}:0`. */
+  gameId: string;
+  /** When the room was made and its first beat written, for the claim's wait. */
+  beatAt: { ms: number };
+}
+
+/**
+ * W3, host authority, against the live rules: a room made the way
+ * `createAndJoin` makes one, driven through the client's own `reduce` and
+ * `toUpdate`, with uid as the host and uidB as a member. Every rule function W3
+ * touches has an allow case here, beside its denies (the postmortem's rule);
+ * the emulator twin is `e2e/host-authority-rules.spec.ts`.
+ *
+ * The claim's allow case waits out the real 75 s of beat silence, because only
+ * the Admin SDK could age the beat and this script never holds a key.
+ */
+function buildHostChecks(probes: HostProbes): Check[] {
+  const { code, uid, db, rtdb, uidB, dbB, gameId, beatAt } = probes;
+  const room = (as: Firestore) => doc(as, 'rooms', code);
+  const beat = (as: Firestore) => doc(as, 'rooms', code, 'host', 'beat');
+  const answerOf = (as: Firestore, owner: string) => doc(as, 'rooms', code, 'answers', owner);
+  const lamps = `lamps/${code}/${gameId}:0`;
+
+  const read = async (as: Firestore): Promise<RoomState> => {
+    const data = (await getDoc(room(as))).data();
+    if (!data) throw new Error(`room ${code} is not readable`);
+    return toRoomState(code, data, {});
+  };
+
+  /** `useRoom.dispatch`: fold the actions over the room as read, write the difference. */
+  const dispatch = async (as: Firestore, actions: Action[], answers: RoomState['answers'] = {}): Promise<void> => {
+    const current = await read(as);
+    const next = actions.reduce(reduce, { ...current, answers });
+    await updateDoc(room(as), toUpdate(next, current));
+  };
+
+  const ownAnswer = (as: Firestore, owner: string, optionIndex: number) =>
+    setDoc(answerOf(as, owner), { optionIndex, elapsedMs: 1200, questionIndex: 0, at: serverTimestamp() });
+
+  const hint = 'firestore.rules W3 (host authority) is not what is published';
+
+  return [
+    {
+      label: 'W3: the creator makes a room that names them host, and beats',
+      expect: 'allow',
+      hint,
+      run: async () => {
+        const fresh = reduce(createRoom(code), { type: 'join', uid, name: 'Rules check', at: Date.now() });
+        await setDoc(room(db), {
+          ...toPersisted(fresh),
+          hostUid: uid,
+          expiresAt: Timestamp.fromMillis(Date.now() + 60 * 60 * 1000),
+        });
+        await setDoc(beat(db), { at: serverTimestamp() });
+        beatAt.ms = Date.now();
+      },
+    },
+    {
+      label: 'W3: a member seats themselves in a hosted room (`writeSelfIntoRoom`)',
+      expect: 'allow',
+      hint,
+      run: async () => {
+        const current = await read(dbB);
+        const { entry, score } = planJoin({
+          players: current.players,
+          scores: current.scores,
+          phase: current.phase,
+          uid: uidB,
+          name: 'Rules check B',
+          playerId: uidB,
+          squad: '',
+          restored: null,
+          now: Date.now(),
+        });
+        await updateDoc(room(dbB), {
+          [`players.${uidB}`]: entry,
+          ...(score === null ? {} : { [`scores.${uidB}`]: score }),
+        });
+      },
+    },
+    {
+      label: 'W3: the host opens a question (selectPack, start)',
+      expect: 'allow',
+      hint,
+      run: () =>
+        dispatch(db, [
+          {
+            type: 'selectPack',
+            packId: 'general-knowledge',
+            packTitle: 'Rules check',
+            questions: [HOSTED_QUESTION],
+            wagerEnabled: false,
+            stealEnabled: false,
+          },
+          { type: 'start', at: Date.now(), gameId, durationSecs: SHORT_WINDOW_SECS },
+        ]),
+    },
+    { label: 'W3: a member answers', expect: 'allow', hint, run: () => ownAnswer(dbB, uidB, 1) },
+    { label: 'W3: the host answers', expect: 'allow', hint, run: () => ownAnswer(db, uid, 0) },
+    {
+      label: 'W3: a member reads their own answer',
+      expect: 'allow',
+      hint,
+      run: async () => {
+        if (!(await getDoc(answerOf(dbB, uidB))).exists()) throw new Error('own answer missing');
+      },
+    },
+    {
+      label: 'W3: a member cannot list the answers before the reveal',
+      expect: 'deny',
+      hint,
+      run: () => getDocs(collection(dbB, 'rooms', code, 'answers')),
+    },
+    {
+      label: "W3: a member cannot read the host's answer",
+      expect: 'deny',
+      hint,
+      run: () => getDoc(answerOf(dbB, uid)),
+    },
+    {
+      label: 'W3: the host lists every answer',
+      expect: 'allow',
+      hint,
+      run: async () => {
+        const all = await getDocs(collection(db, 'rooms', code, 'answers'));
+        if (all.size !== 2) throw new Error(`host read ${all.size} answers, expected 2`);
+      },
+    },
+    { label: 'W3: a member cannot move the phase', expect: 'deny', hint, run: () => updateDoc(room(dbB), { phase: 'reveal' }) },
+    { label: 'W3: a member cannot move the index', expect: 'deny', hint, run: () => updateDoc(room(dbB), { index: 1 }) },
+    {
+      label: "W3: a member cannot write the host's score",
+      expect: 'deny',
+      hint,
+      run: () => updateDoc(room(dbB), { [`scores.${uid}`]: 5000 }),
+    },
+    {
+      label: 'W3: a member cannot raise their own score',
+      expect: 'deny',
+      hint,
+      run: () => updateDoc(room(dbB), { [`scores.${uidB}`]: 5000 }),
+    },
+    { label: 'W3: a member cannot change settings', expect: 'deny', hint, run: () => updateDoc(room(dbB), { wagerEnabled: true }) },
+    { label: 'W3: a member cannot write `browsing`', expect: 'deny', hint, run: () => updateDoc(room(dbB), { browsing: 'flags' }) },
+    {
+      label: "W3: a member cannot remove the host's seat",
+      expect: 'deny',
+      hint,
+      run: () => updateDoc(room(dbB), { [`players.${uid}`]: deleteField() }),
+    },
+    {
+      label: 'W3: a member cannot write the beat',
+      expect: 'deny',
+      hint,
+      run: () => setDoc(beat(dbB), { at: serverTimestamp() }),
+    },
+    {
+      label: 'W3: a member cannot claim the chair while the beat is fresh',
+      expect: 'deny',
+      hint,
+      run: () => {
+        const batch = writeBatch(dbB);
+        batch.update(room(dbB), { hostUid: uidB });
+        batch.set(beat(dbB), { at: serverTimestamp() });
+        return batch.commit();
+      },
+    },
+    {
+      label: 'W3: the host may not drop `hostUid`',
+      expect: 'deny',
+      hint,
+      run: () => updateDoc(room(db), { hostUid: deleteField() }),
+    },
+    {
+      label: 'W3: a member lights their own lamp (RTDB)',
+      expect: 'allow',
+      hint: 'database.rules.json has no `lamps` block, or it is not published',
+      run: () => set(ref(rtdb, `${lamps}/${uid}`), true),
+    },
+    {
+      label: "W3: nobody lights another player's lamp (RTDB)",
+      expect: 'deny',
+      hint: 'database.rules.json `lamps` is open to anyone signed in',
+      run: () => set(ref(rtdb, `${lamps}/${uidB}`), true),
+    },
+    {
+      label: 'W3: a member cannot write the vault reveal doc, even once the window has closed',
+      expect: 'deny',
+      hint,
+      run: async () => {
+        await sleep(SHORT_WINDOW_SECS * 1000 + GATE_SLACK_MS);
+        return setDoc(doc(dbB, 'rooms', code, 'reveal', PROBE_QUESTION), { answer: 'The right one' });
+      },
+    },
+    {
+      label: 'W3: the host writes the reveal doc, reveals with every pick, and moves on',
+      expect: 'allow',
+      hint,
+      run: async () => {
+        await setDoc(doc(db, 'rooms', code, 'reveal', PROBE_QUESTION), { answer: 'The right one' });
+        const all = await getDocs(collection(db, 'rooms', code, 'answers'));
+        const answers = Object.fromEntries(
+          all.docs.map((each) => [each.id, { optionIndex: each.data().optionIndex as number, elapsedMs: 1200 }]),
+        );
+        await dispatch(db, [{ type: 'reveal', correctIndex: 0, questionId: PROBE_QUESTION }], answers);
+        await dispatch(db, [{ type: 'next', at: Date.now() }]);
+      },
+    },
+    {
+      label: 'W3: once the beat is 75 s silent, a member claims the chair (AC8)',
+      expect: 'allow',
+      hint,
+      run: async () => {
+        await sleep(Math.max(0, beatAt.ms + CLAIM_WAIT_MS - Date.now()));
+        const batch = writeBatch(dbB);
+        batch.update(room(dbB), { hostUid: uidB });
+        batch.set(beat(dbB), { at: serverTimestamp() });
+        await batch.commit();
+      },
+    },
+    {
+      label: 'W3: the old host is a member now, and cannot move the phase',
+      expect: 'deny',
+      hint,
+      run: () => updateDoc(room(db), { phase: 'lobby' }),
+    },
+    {
+      label: 'W3: the old host cannot take the chair back while the new beat is fresh',
+      expect: 'deny',
+      hint,
+      run: () => updateDoc(room(db), { hostUid: uid }),
+    },
+    {
+      label: 'W3: the new host leaves and hands the chair over in the same write (AC7)',
+      expect: 'allow',
+      hint,
+      run: () => updateDoc(room(dbB), { [`players.${uidB}`]: deleteField(), hostUid: uid }),
+    },
+    {
+      label: 'W3: the handed-over host beats and drives',
+      expect: 'allow',
+      hint,
+      run: async () => {
+        await setDoc(beat(db), { at: serverTimestamp() });
+        await dispatch(db, [{ type: 'reset' }]);
+      },
+    },
+  ];
+}
+
 /**
  * Runs every check and reports it, returning how many failed.
  *
@@ -1517,7 +1793,8 @@ async function main(): Promise<void> {
     `Project ${config.projectId}, signed in anonymously as ${uid.slice(0, 8)}… `
       + `and ${uidB.slice(0, 8)}…`,
   );
-  console.log(`The last check waits out a real ${SHORT_WINDOW_SECS}-second gate.\n`);
+  console.log(`The last check waits out a real ${SHORT_WINDOW_SECS}-second gate;`);
+  console.log("W3's claim waits out 75 s of the host's beat falling silent.\n");
 
   // Opened up front so the deny checks below have a genuinely live question to
   // ask about — a reveal refused because nothing is in play would look exactly
@@ -1565,7 +1842,17 @@ async function main(): Promise<void> {
     ownWeekRow, validSeasonRow,
   });
 
-  const failed = await runChecks(checks);
+  let failed = await runChecks(checks);
+
+  // W3, in a room of its own made this run: a hosted room names a uid that
+  // stops existing when this process exits, so it cannot be reused.
+  const hosted = {
+    code: `rules-check-h-${Math.random().toString(36).slice(2, 8)}`,
+    gameId: `rules-check-${Math.random().toString(36).slice(2, 8)}`,
+    beatAt: { ms: Date.now() },
+  };
+  console.log(`\nW3, host authority, in ${hosted.code}:`);
+  failed += await runChecks(buildHostChecks({ ...hosted, uid, db, rtdb, uidB, dbB }));
 
   // A leftover under the throwaway season id or the probe room is never read by
   // the app, and only exists at all if a check already failed.
@@ -1589,6 +1876,7 @@ async function main(): Promise<void> {
     tidy(ownWeekRow.path, deleteDoc(ownWeekRow)),
     tidy(`recovery/${probeCode}`, deleteDoc(doc(db, 'recovery', probeCode))),
     tidy('presence', remove(presence)),
+    tidy('lamps', remove(ref(rtdb, `lamps/${hosted.code}/${hosted.gameId}:0/${uid}`))),
   ]);
 
   const stranded = swept.filter((path) => path !== null);
