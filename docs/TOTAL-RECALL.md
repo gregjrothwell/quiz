@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 14 October 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 15 October 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -23,6 +23,11 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
+
+## 2026-10-15 — Branch `vote-taps-on-room`: a reload no longer resets the vote lock
+
+Somebody refreshed past #75's two taps — the gap it had accepted. The count moves to the room (`voteTaps.{uid}`,
+`increment(1)` in the vote's own write): no extra write or read, no paste. Not live ([`lobby-vote.md`](decisions/lobby-vote.md)).
 
 ## 2026-10-14 — Live: #75 (gh-pages `21ccbd5`): the lobby vote locks after two taps
 
