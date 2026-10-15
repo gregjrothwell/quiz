@@ -75,7 +75,10 @@ test('the host vanishes mid-question and the room carries on', async ({ browser 
   await expect(ann.page.getByRole('button', { name: 'Start the show' })).toHaveCount(0);
 
   // #when the host starts a round
+  // Twenty seconds rather than the default ten, so the host's own reveal cannot
+  // beat the tab closing on a slow runner.
   await packCard(host.page, 'General Knowledge').click();
+  await host.page.locator('button.pick', { hasText: 'Generous' }).click();
   await host.page.getByRole('button', { name: 'Start the show' }).click();
   await until(() => readRoom(code), (room) => room.phase === 'question');
   await seedVault(code);

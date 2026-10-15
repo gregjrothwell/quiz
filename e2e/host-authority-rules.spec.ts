@@ -34,7 +34,6 @@ import { admin, player, seedVault, type Player } from './nodeClient';
  * `allow write: if false` — docs/decisions/postmortem-the-pin-that-refused-the-reveal.md.
  */
 
-test.describe.configure({ mode: 'serial' });
 test.setTimeout(60_000);
 
 const QUESTIONS: QuizQuestion[] = Array.from({ length: 3 }, (_, i) => ({
