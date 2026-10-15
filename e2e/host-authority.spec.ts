@@ -80,6 +80,9 @@ test('the host vanishes mid-question and the room carries on', async ({ browser 
   await packCard(host.page, 'General Knowledge').click();
   await host.page.locator('button.pick', { hasText: 'Generous' }).click();
   await host.page.getByRole('button', { name: 'Start the show' }).click();
+  // Nobody here has a season row, so the opening titles go up first (every
+  // player a newcomer) and the round waits for the host's second press.
+  await host.page.getByRole('button', { name: 'Start the round' }).click();
   await until(() => readRoom(code), (room) => room.phase === 'question');
   await seedVault(code);
 
