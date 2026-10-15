@@ -53,8 +53,8 @@ Built to replace Polly in Teams.
 > - **Catchphrase: Greg plays it blind, so keep its answers out of docs and chat.**
 >   **#72 live 12 Oct: Catchphrase 90 → 178, Random Round, Name the Artist 259.** The first office round of each is the live check (`read-games`); the Catchphrase hold inside Random was never seen live. Parked: an automated growth loop for all popular packs — [`catchphrase-batch-5.md`](decisions/catchphrase-batch-5.md).
 >   **9 Oct:** two 5-seat rounds that morning cost ~1.2k reads, so one 30-player round of ≤20 still fits ([`office-feedback-9-oct.md`](decisions/office-feedback-9-oct.md)).
-> - **Greg to decide:** answering after the music stops; target B's four
->   questions ([`public-scale.md`](decisions/public-scale.md)); the two
+> - **Greg to decide:** answering after the music stops; the productionisation plan's five
+>   decisions, and **a TMDB credit the live site lacks** ([`public-scale.md`](decisions/public-scale.md#the-plan-15-october-2026)); the two
 >   lead-time cuts ([`ci-deploy.md`](decisions/ci-deploy.md)).
 
 **Live is `index-BUTUL1rQ`** (#79: long names cut on the reveal chips, + #78 docs: 15 Oct 16:11 BST, merge `aa6b1e3`, gh-pages `54fb8d8`, CI;

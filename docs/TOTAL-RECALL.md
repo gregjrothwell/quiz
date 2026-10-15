@@ -24,6 +24,12 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-15 — Productionisation plan: five work items, five decisions for Greg, a TMDB gap
+
+Nothing on the public-scale list had moved since 2 Oct. Sequenced it: TMDB credit → rules from CI → host authority →
+tenancy → a TMDB still refresh before 9 Mar 2027; rules from CI now goes *before* host authority. TMDB's terms (fetched
+today) need a logo and notice in the app for every user, and the live site has neither. [`public-scale.md`](decisions/public-scale.md#the-plan-15-october-2026).
+
 ## 2026-10-15 — Live: #79 (gh-pages `54fb8d8`): long names cut on the reveal chips
 
 Greg merged #79 (it carried #78) at 16:04; live 16:11 BST. `index-BUTUL1rQ`, byte-identical to a local build; the
@@ -170,16 +176,11 @@ Seeded 94, read back 228/228. Word go → live took about 1h46m, roughly 70 minu
 Actions runner queues, during an incident. The first office Catchphrase round is the live check,
 before Fri 9 Oct. [`go-live-oct-2026.md`](decisions/go-live-oct-2026.md#done--5-october-2026).
 
-## 2026-10-05 — Catchphrase 60, everything prepped, and the batch named in chat
-
-The harder batch was drawn (one redraw) and picked; it is 30 → 60, with Mr Fries in 21 (`08d09e9`).
-Nothing is seeded, pushed or deployed: [`go-live-oct-2026.md`](decisions/go-live-oct-2026.md).
-**Claude named all 30 new answers in chat while picking**, so Greg decides keep or replace.
-
 ## 2026-10-02 to 2026-10-05 — archived, one line each
 
 Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again.
 
+- **2026-10-05** — [Catchphrase 60, everything prepped, and the batch named in chat](recall/2026-10.md#2026-10-05--catchphrase-60-everything-prepped-and-the-batch-named-in-chat)
 - **2026-10-05** — [Sleeves 168, a freshness check, and the harder batch half drawn](recall/2026-10.md#2026-10-05--sleeves-168-a-freshness-check-and-the-harder-batch-half-drawn)
 - **2026-10-05** — [Mr Fries: the bean chosen, and the hook for him built](recall/2026-10.md#2026-10-05--mr-fries-the-bean-chosen-and-the-hook-for-him-built)
 - **2026-10-05** — [Mr Fries researched: prompt-only holds, movement is charm](recall/2026-10.md#2026-10-05--mr-fries-researched-prompt-only-holds-movement-is-charm)
