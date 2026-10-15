@@ -24,6 +24,11 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-15 — Live: #77 (gh-pages `3b63b5a`): a reload no longer resets the vote lock
+
+Greg merged #77 (it carried #76) at 10:56; live 11:01 BST. `index-BWSiBKMq`, byte-identical to a local build.
+Office-lobby check still to come ([`lobby-vote.md`](decisions/lobby-vote.md)).
+
 ## 2026-10-15 — Branch `vote-taps-on-room`: a reload no longer resets the vote lock
 
 Somebody refreshed past #75's two taps — the gap it had accepted. The count moves to the room (`voteTaps.{uid}`,

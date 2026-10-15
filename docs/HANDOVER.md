@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 14 October 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 15 October 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -57,8 +57,8 @@ Built to replace Polly in Teams.
 >   questions ([`public-scale.md`](decisions/public-scale.md)); the two
 >   lead-time cuts ([`ci-deploy.md`](decisions/ci-deploy.md)).
 
-**Live is `index-DV3kGh-I`** (#75: the lobby vote locks after two taps, + #74 docs: 14 Oct 22:26 BST, merge `2bf10aa`, gh-pages `21ccbd5`, CI;
-byte-identical to a local build). **Live check: the first office lobby** — a vote shows on the quizmaster's card, and a second tap locks the cards. Before it, #73 `index-D-g9FXdU`.
+**Live is `index-BWSiBKMq`** (#77: a reload no longer resets the two-tap vote lock, + #76 docs: 15 Oct 11:01 BST, merge `74b1c91`, gh-pages `3b63b5a`, CI;
+byte-identical to a local build). **Live check: the first office lobby** — lock a vote with two taps, reload, still locked. Before it, #75 `index-DV3kGh-I`.
 Firebase chunk `firebase-D9D0c-Mh` (Lite inside, +16 kB gzip).
 **20 packs** + **Random Round** (six played packs dealt into one); **The Price Was Right 95** and **Blankety Blank 148** (both blind); **Catchphrase 178** (every 5th a double-scoring bonus); **Name that Tune 424**; **Name the Artist 259**; synth **Classical**; **On the box 445**
 (hashed TMDB stills, at most 8 titles before 1990); **Flags** 76; **Sleeves 212**
