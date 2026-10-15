@@ -392,9 +392,11 @@ export function useRoom(): UseRoom {
   const roomHostUid = persisted ? (persisted as { hostUid?: unknown }).hostUid : undefined;
   const hostUid = typeof roomHostUid === 'string' ? roomHostUid : null;
   // Not before the room has been read. Until then `hostUid` is unknown, not
-  // absent, and a joiner taking it for a pre-W3 room would list every answer,
-  // be refused, and leave that query unable to be heard from again when the
-  // chair later passes to them (AC8, CI 15 Oct).
+  // absent, and a joiner took it for a pre-W3 room: it listed every answer and
+  // the rules refused it. When the chair later passed to that joiner, the same
+  // query listened again never came back from the server (fromCache stayed
+  // true, no error), so the reveal waited forever. Seen in CI on 15 Oct; the
+  // SDK's reason is not established, only that gating here cures it (AC8).
   const roomKnown = persisted !== null;
   const readsAll = roomKnown && (hostUid === null || hostUid === uid);
   const feedKey = code && uid ? `${code}:${readsAll ? '*' : uid}` : '';
@@ -404,7 +406,6 @@ export function useRoom(): UseRoom {
   useEffect(() => {
     if (!code || !uid || !roomKnown) return;
     const key = `${code}:${readsAll ? '*' : uid}`;
-    console.warn(`[w3-debug] answers ${key}: subscribing`);
 
     if (readsAll) {
       return onSnapshot(answersCollection(code), { includeMetadataChanges: true }, (snapshot) => {
@@ -413,18 +414,14 @@ export function useRoom(): UseRoom {
           const parsed = answerDocFrom(document.data());
           if (parsed) next[document.id] = parsed;
         }
-        console.warn(
-          `[w3-debug] answers ${key} size=${snapshot.size} fromCache=${String(snapshot.metadata.fromCache)} pending=${String(snapshot.metadata.hasPendingWrites)}`,
-        );
         setAnswersFeed({ key, docs: next, fromServer: !snapshot.metadata.fromCache });
-      }, (cause) => console.warn(`[w3-debug] answers ${key} listener error: ${cause.code} ${cause.message}`));
+      });
     }
 
-    console.warn(`[w3-debug] answers ${key}: own document only`);
     return onSnapshot(doc(answersCollection(code), uid), (snapshot) => {
       const parsed = snapshot.exists() ? answerDocFrom(snapshot.data()) : null;
       setAnswersFeed({ key, docs: parsed ? { [uid]: parsed } : {}, fromServer: true });
-    }, (cause) => console.warn(`[w3-debug] own answer listener error: ${cause.code} ${cause.message}`));
+    });
   }, [code, uid, readsAll, roomKnown]);
 
   const answers = answersFeed.key === feedKey ? answersFeed.docs : NO_ANSWERS;

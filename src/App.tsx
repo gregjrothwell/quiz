@@ -683,21 +683,14 @@ function Game() {
     // A host who has only just taken the chair mid-question has not yet heard
     // from the answers listener, and a reveal now would score an empty room.
     // The effect below re-runs when it has. See `answersReady` in useRoom.
-    if (!answersReady) {
-      console.warn('[w3-debug] handleReveal: answers not ready');
-      return;
-    }
+    if (!answersReady) return;
 
     const question = currentQuestion(room);
     if (!question) return;
 
     const key = `${room.gameId ?? ''}:${room.index}`;
-    if (revealingRef.current === key) {
-      console.warn(`[w3-debug] handleReveal: already revealing ${key}`);
-      return;
-    }
+    if (revealingRef.current === key) return;
     revealingRef.current = key;
-    console.warn(`[w3-debug] handleReveal: asking the vault for ${key}`);
 
     const gameId = room.gameId ?? '';
     if (timingsGameRef.current !== gameId) {
@@ -822,9 +815,6 @@ function Game() {
   if (retry.key !== revealKey) setRetry({ key: revealKey, n: 0 });
 
   useEffect(() => {
-    console.warn(
-      `[w3-debug] expiry effect: qm=${String(isQuizmaster)} phase=${phase} expired=${String(clock.expired)} confirmedAt=${String(questionConfirmedAt)} retry=${retry.n}`,
-    );
     if (!isQuizmaster || phase !== 'question' || !clock.expired) return;
 
     // The moment the gate wait is measured from. Stamped here rather than in
@@ -846,7 +836,6 @@ function Game() {
 
     // Nothing to count from yet: the server has not acknowledged the question.
     // The effect re-runs when it does, because `questionConfirmedAt` changes.
-    console.warn(`[w3-debug] expiry effect: wait=${String(wait)}`);
     if (wait === null) return;
 
     let timer = 0;

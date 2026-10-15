@@ -17,8 +17,9 @@ import { admin, seedVault, until } from './nodeClient';
 async function seat(browser: Browser, name: string): Promise<{ context: BrowserContext; page: Page }> {
   const context = await browser.newContext();
   const page = await context.newPage();
+  // Each player's console errors land in the CI log, so a stall names its cause.
   page.on('console', (message) => {
-    if (message.text().includes('[w3-debug]') || message.type() === 'error') {
+    if (message.type() === 'error') {
       console.log(`[${name}:${message.type()}] ${message.text()}`);
     }
   });
