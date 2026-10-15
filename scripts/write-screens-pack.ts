@@ -67,8 +67,10 @@ function screensAttributionMarkdown(): string {
 Film and TV stills fetched from [TMDB](https://www.themoviedb.org) at pack-build
 and content-hashed into \`images/\`, same as the flags. Untitled backdrops only
 — a language tag on TMDB is usually titled keyart, which would print the
-answer. This product uses the TMDB API but is not endorsed or certified by
-TMDB. The stills remain studio copyright; hashing them is a seal, not a licence.
+answer. This website uses TMDB and the TMDB APIs but is not endorsed,
+certified, or otherwise approved by TMDB. The app shows that notice and TMDB's
+logo in the lobby, and the logo under every still. The stills remain studio
+copyright; hashing them is a seal, not a licence.
 `;
 }
 

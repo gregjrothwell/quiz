@@ -1,9 +1,9 @@
 # Public scale — strangers in the room, and money
 
-> **Owner: Greg Rothwell. Last updated: 2 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 15 October 2026. Budget: 250 lines.**
 
-**Status: PLAN, not confirmed.** Nothing here is built. The open decisions at the
-bottom are Greg's.
+**Status: PLAN, confirmed 15 October 2026.** W1 built on `tmdb-credit`, W2 on `rules-from-ci`; neither live. **The work, in order, and
+Greg's six decisions are at the bottom** ([15 October](#the-plan-15-october-2026)).
 
 **Where this came from.** The 15 August 2026 audit ended with a costed appendix,
 *"scaling, tiers and monetisation"*, written into a Claude Code plan file. That
@@ -164,12 +164,18 @@ Against **6–10 weeks** for all of B at once.
   any figure.
 - reCAPTCHA past 10,000 assessments a month is unstated ([`cost.md`](cost.md)).
 - Not checked:
-  - the sources of Flags and Fine Art;
+  - the sources of Flags and Fine Art; **checked 15 Oct:** public-domain flags
+    from Flagcdn / Wikimedia (`write-flags-pack.ts`), PD-Art paintings from
+    Commons (`hand-picture-data.ts`). Clean for commercial use;
   - whether round names borrowed from TV formats ("Name that Tune",
     "Catchphrase") matter commercially;
-  - TMDB's attribution requirement for non-commercial use.
+  - TMDB's attribution requirement for non-commercial use. **Checked 15 Oct:
+    it applies to everyone, and the live site does not meet it** — below.
 
-## Open decisions — all Greg's
+## Open decisions — all Greg's (decided 15 October, below)
+
+*Restated 15 October as D1–D3 of the plan below. Item 4 changed: rules from CI
+now go before host authority.*
 
 1. **Is B "seams now, the rest on a trigger"?** Or build all of B now?
 2. **Host authority: give up the automatic quizmaster handover?** For the office
@@ -178,3 +184,66 @@ Against **6–10 weeks** for all of B at once.
 3. **The iTunes and TMDB rounds: office-only, or ask TMDB for an agreement?**
 4. **Order.** Recommended: host authority first. It is the riskier seam, and it
    deletes the RTDB item.
+
+## The plan, 15 October 2026
+
+Nothing above had moved since 2 October (`roomCode.ts`, `firestore.rules`,
+`ci.yml`, read 15 Oct). One finding is new, and it does not wait for B.
+
+**TMDB, fetched 15 Oct 2026** (themoviedb.org/api-terms-of-use):
+
+- **The licence is conditional on attribution, for every user.** The TMDB logo,
+  less prominent than the quiz's own marks, and a notice prominently in the app:
+  *"This website uses TMDB and the TMDB APIs but is not endorsed, certified, or
+  otherwise approved by TMDB."* The quiz has a notice only in
+  `public/packs/ATTRIBUTION.md`, which nothing links to, in older wording.
+- **Nothing from TMDB may be cached for more than six months.** The first stills
+  were committed 9 September (`a07eb85`), so they reach six months on
+  **9 March 2027**. That hashed copies count as a cache is a reading, not legal
+  advice; the terms define TMDB content to include images.
+
+### The work, in order
+
+| # | Work | Size | Waits on | Done means |
+|---|---|---|---|---|
+| W1 | TMDB's logo under every On the box still, Random Round included; logo and notice in the lobby; `ATTRIBUTION.md` reworded. **Built 15 Oct, `tmdb-credit`** | under 1 session | "go live" only | Both on the live site; seal test green |
+| W2 | CI publishes both rulesets on `master`, after e2e passes. **Built 15 Oct, `rules-from-ci`**: [`rules-from-ci.md`](rules-from-ci.md) | 1 session, plus Greg's console step | D5; then Greg's step, then "go live" | A rules-only merge appears in the console's history; a broken rules file stops the deploy before it publishes; `check-rules` both ways after |
+| W3 | Host authority (seam 1) | 3–5 sessions | D1, D2 | One allow case per rule function touched; `check-rules` both ways; `sync-harness 30`, `rank-harness`, `host-room`; an office round |
+| W4 | Tenancy (seam 2); licensed packs flagged office-only; a league owner signs in | 3–5 sessions (sign-in adds 1–2, estimate) | D1, D3, D6 | The office board reads back identical after the `season-2` migration; a second league sees none of it; an owner who signs in keeps their history |
+| W5 | Re-fetch every TMDB still. A rebuild alone re-fetches nothing: `write-screens-pack.ts` reuses stills on disk (`existingBySlug`), so W5 forces it | under 1 session | D4 | Done by 1 March 2027, and on a cycle under six months |
+
+About 8–13 sessions. The additive table above is unchanged and stays on its triggers.
+
+**W2 before W3.** Host authority is the largest rules change this repo will make,
+and a hand paste is its most repeated failure (`CLAUDE.md`, What bites 2; the
+postmortem). After W2, rules and the client they match ship in one deploy.
+
+- e2e already runs the repo's own `firestore.rules` and `database.rules.json` in
+  the emulator (`package.json` `e2e`), so CI would publish what it just exercised.
+- `check-rules` stays a local step after publishing. CI never holds the debug
+  token, by design (`ci.yml` header).
+- Merging to `master` already publishes the site; after W2 it publishes rules
+  too. The same "go live" words cover both.
+- Unverified: how `firebase-tools` signs in on a runner under each D5 option.
+  Read Google's docs before the console step, not memory. **Read 15 Oct:**
+  through one impersonated service account, three roles ([`rules-from-ci.md`](rules-from-ci.md)).
+
+**W3, expand then contract.** A rule that requires `hostUid` refuses every tab
+still running the old client. Publish rules that accept both, then tighten after
+the client is live: one extra deploy, not an extra session. Host-only answers
+would also make a 30-player round's reads roughly linear in N rather than Q·N²
+(estimate, not measured: [`cost.md`](cost.md)).
+
+**W4's product cost.** The packs the office plays most (On the box, Sleeves,
+Tunes) are the licensed ones. A public league under D3 (a) has none of them.
+
+### Greg's decisions — all six taken as recommended, Greg, 15 October 2026 (D6 added that day)
+
+| | Decision | Options | Recommended, and **decided** | Unblocks | By |
+|---|---|---|---|---|---|
+| D1 | Do B, and how much | (a) seams now, the rest on a trigger · (b) all of B now, 6–10 weeks · (c) stay office-only; this file is the record | (a): W3 pays off in the office too | W3, W4 | before W3 |
+| D2 | When the host drops out | (a) the room pauses; `host-room` rescues it (the 2 Oct proposal) · (b) the host beats a heartbeat doc nobody listens to; once it is stale, any member may claim host, checked in rules with `get()`. Keeps the automatic handover for about one write per beat | (b), if W3's story proves it. One mode for office and public either way | W3 | before W3 |
+| D3 | Licensed rounds for strangers | (a) office-only, a flag on the pack · (b) ask TMDB for an agreement; Apple's terms fail regardless | (a), plus the content rule: new media rounds use licence-clean sources | W4 | before W4 |
+| D4 | TMDB's six-month cap | (a) re-fetch before 9 March 2027, then on a cycle · (b) read hashed copies as outside "cache" and carry the risk | (a) | W5 | 1 Mar 2027 |
+| D5 | How CI may publish rules | (a) keyless (Workload Identity Federation), scoped to this repo's `master`; Google's auth action joins a deploy path that is GitHub-only today · (b) a service-account key in a GitHub secret, rules role only; no new action, but a long-lived key that opens the vault if it leaks | (a) | W2 | before W2 |
+| D6 | Accounts | (a) players stay anonymous; a league owner signs in with Google, linked to their anonymous account (`linkWithCredential`: the docs, fetched 15 Oct, say the new account keeps the old one's data, but not that the uid survives) · (b) everyone signs in · (c) nobody, and a league belongs to one browser | (a). Reverses [`identity.md`](identity.md)'s no-accounts rule for owners only; a join stays code and name | W4 | before W4 |
