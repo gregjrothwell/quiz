@@ -116,7 +116,9 @@ compile. Releases follow, the RTDB first.
     So this half of the gate rests on e2e making a Firestore write (two of its
     three tests do);
   - `rules` and `deploy` skipped on both. On a PR they always are, so the proof
-    is e2e red, which `needs` turns into a skip on master.
+    is e2e red, which `needs` turns into a skip on master. **The allow case:**
+    this branch's own run (#84, run 38765460301), same workflow and files
+    unbroken: e2e 3/3 passed. That is what makes the two reds mean something.
 - `typecheck`, `lint`, `npm test` 1,503/1,503; `check-bundle` with `CI=true`
   against the new workflow: passes. (`npm test` says nothing about rules.)
 
