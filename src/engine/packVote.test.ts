@@ -4,6 +4,7 @@ import {
   nextVote,
   readBrowsing,
   readPackVotes,
+  readVoteTaps,
   tallyPackVotes,
   tapsLeft,
   VOTE_TAPS,
@@ -40,6 +41,26 @@ describe('readPackVotes', () => {
   test('a room from before the vote has no field, and reads as nobody voting', () => {
     for (const raw of [undefined, null, 'sleeves', 7, ['sleeves']]) {
       expect(readPackVotes(raw)).toEqual({});
+    }
+  });
+});
+
+describe('readVoteTaps', () => {
+  test('keeps the taps each player has used', () => {
+    expect(readVoteTaps({ sam: 1, priya: 2 })).toEqual({ sam: 1, priya: 2 });
+  });
+
+  test('drops anything that is not a count, since any member can write the field', () => {
+    // #given a map a member scribbled on
+    const raw = { sam: 2, priya: -1, alex: 1.5, bo: '2', cy: null, di: Number.NaN };
+
+    // #then only the honest count survives
+    expect(readVoteTaps(raw)).toEqual({ sam: 2 });
+  });
+
+  test('a room from before the count has no field, and reads as nobody having tapped', () => {
+    for (const raw of [undefined, null, 2, 'sam', [2]]) {
+      expect(readVoteTaps(raw)).toEqual({});
     }
   });
 });

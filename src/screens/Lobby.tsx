@@ -169,11 +169,11 @@ export function Lobby({
   */
   const [pickedSquad, setPickedSquad] = useState<string>(squad || rememberedSquad());
   /*
-    Taps on the vote in this lobby. Held here, not on the room: the lobby
-    unmounts when the round starts, so a reset back to it starts afresh.
-    A reload does too, which is accepted — docs/decisions/lobby-vote.md.
+    Taps on the vote in this lobby, counted here as well as on the room. The
+    room's count is what survives a reload; this one counts a tap the moment it
+    lands, before the room's copy comes back. docs/decisions/lobby-vote.md.
   */
-  const [voteTaps, setVoteTaps] = useState(0);
+  const [tapsHere, setTapsHere] = useState(0);
   const { muted, toggle } = useSound();
 
   const youName = youUid ? room.players[youUid]?.name : undefined;
@@ -193,6 +193,7 @@ export function Lobby({
   const tally = tallyPackVotes(room.packVotes, room.players);
   const leading = leadingPacks(tally);
   const yourVote = youUid ? room.packVotes[youUid] : undefined;
+  const voteTaps = Math.max(tapsHere, youUid ? (room.voteTaps[youUid] ?? 0) : 0);
   const votesLeft = tapsLeft(voteTaps);
 
   return (
@@ -597,7 +598,7 @@ export function Lobby({
                   disabled={!onVote || votesLeft === 0}
                   onClick={() => {
                     if (votesLeft === 0) return;
-                    setVoteTaps((used) => used + 1);
+                    setTapsHere((used) => used + 1);
                     onVote?.(nextVote(yourVote, pack.id));
                   }}
                 >

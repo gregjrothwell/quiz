@@ -1,7 +1,7 @@
 import type { FormFact } from './form';
 import type { Steal } from './scoring';
 import type { Standoff } from './standoff';
-import type { PackVotes } from './packVote';
+import type { PackVotes, VoteTaps } from './packVote';
 import {
   DIFFICULTIES,
   type Difficulty,
@@ -322,6 +322,12 @@ export interface RoomState {
    * of the lobby. No ruleset paste, for the reason `wagerEnabled` gives.
    */
   packVotes: PackVotes;
+  /**
+   * uid → how many taps that player has spent on the vote in this lobby.
+   * On the room rather than in the lobby's own state so a reload does not hand
+   * out more. Counted up in the same write as the vote, cleared with it.
+   */
+  voteTaps: VoteTaps;
   /** The pack the quizmaster has highlighted in the lobby, shown to the room. */
   browsing: PackId | null;
 }
@@ -380,6 +386,7 @@ export function createRoom(code: string): RoomState {
     standoffEnabled: false,
     standoff: null,
     packVotes: {},
+    voteTaps: {},
     browsing: null,
   };
 }

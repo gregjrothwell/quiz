@@ -248,6 +248,7 @@ function start(state: RoomState, at: number, gameId: string, durationSecs: numbe
     standoff: null,
     // The vote has done its job once the round is chosen.
     packVotes: {},
+    voteTaps: {},
     browsing: null,
     // Everyone starts on zero, including anyone who joined after a previous game.
     scores: Object.fromEntries(Object.keys(state.players).map((uid) => [uid, 0])),
@@ -543,6 +544,7 @@ function reset(state: RoomState): RoomState {
     gameId: null,
     standoff: null,
     packVotes: {},
+    voteTaps: {},
     browsing: null,
   };
 }

@@ -1,6 +1,6 @@
 # Lobby vote — the room says which set it wants
 
-> **Owner: Greg Rothwell. Last updated: 14 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 15 October 2026. Budget: 250 lines.**
 
 ## Story
 
@@ -142,3 +142,54 @@ first is seconds of effort for a joke, the second is a hand-published rule for
 a room of colleagues. **Cost** gains a ceiling: at most two writes a player,
 so at thirty seats 60 writes × 30 readers ≈ 1,800 reads, where before there was
 none.
+
+> **The reload half was used, and is closed — 15 October 2026.** See the next
+> section. The ceiling above did not hold while it was open.
+
+**Live 14 October 2026, 22:26 BST** — #75 (release with #74), merge `2bf10aa`, gh-pages `21ccbd5`. CI's
+Playwright, including the lock, passed on the PR and on master; the served `index-DV3kGh-I` is
+byte-identical to a local build and carries "Your vote is locked in". The live check is the first office
+lobby: a player's second tap locks their cards.
+
+## The count moves to the room — 15 October 2026
+
+Greg, 15 October: somebody got round the lock by refreshing the page — the gap
+the section above accepted. The tap count was `useState(0)` in the lobby, so a
+reload, or Leave and rejoin, started it from zero.
+
+**Story.** As the quizmaster, I want the two-tap limit to hold across a reload,
+so the counts settle as the 14 October story meant them to.
+
+**Acceptance criteria**
+
+1. A reload after both taps comes back locked, with the vote still pressed.
+2. A reload after one tap leaves one change, not two.
+3. The count costs no write and no read of its own.
+4. A new lobby — after a start or a reset — gives two taps again.
+
+**How.** `voteTaps.{uid}` on the room document, counted with `increment(1)` in
+the same `updateDoc` as `packVotes.{uid}` (`writeOwnVote`, `useRoom.ts`). Every
+player already listens to the room, so the count arrives with the vote. Cleared
+by `start` and `reset` and dropped by `toUpdate` inside the lobby, exactly as
+`packVotes` is. Read through `readVoteTaps`, untrusted: only a whole,
+non-negative count survives. The lobby takes the larger of the room's count and
+its own, so a fast second tap still counts before the room's copy comes back.
+
+**No ruleset paste**, for the reason the vote needed none: the room's `update`
+rule bounds the fields `wellFormed()` names (`firestore.rules:319`) and has no
+key whitelist.
+
+**Not covered.** The console can still write `voteTaps.{uid}` back to zero —
+deliberate effort, where a refresh was not; closing it is a hand-published rule.
+A private window or another device is another seat with its own vote, as it
+always was.
+
+**Evidence, 15 October 2026.** `typecheck`, `lint`, `build`: exit 0. `npm test`
+1,495/1,495, 95 files — `readVoteTaps` (3), the reducer's start and reset cases,
+and two reload cases in `Lobby.voteLimit.test.tsx`. **Proved it can fail:** with
+the lobby reading only its own count, exactly the two reload cases went red;
+green again with the room's. `e2e/lobby-vote.spec.ts` now reloads the guest
+after the lock and asserts it still holds — **CI only**, no Java on this Mac.
+
+**Go live.** Through a `release-<date>` branch per AGENTS.md; no paste, no seed.
+The live check is the first office lobby after: lock a vote, reload, still locked.

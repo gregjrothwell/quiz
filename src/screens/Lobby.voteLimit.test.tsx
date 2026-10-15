@@ -10,8 +10,10 @@ import { Lobby } from './Lobby';
  * Two taps on the lobby vote, then it locks (docs/decisions/lobby-vote.md).
  *
  * The harness plays the room's part: a vote written through `onVote` comes back
- * on `room.packVotes`, as it does live, so the card under test reads the vote
- * it just cast rather than a fixture that never moves.
+ * on `room.packVotes`, with `room.voteTaps` counted up in the same write, as it
+ * does live, so the card under test reads the vote it just cast rather than a
+ * fixture that never moves. `held` starts the room part-way, which is what a
+ * reload looks like from the lobby's side.
  */
 
 afterEach(cleanup);
@@ -24,13 +26,20 @@ function pack(id: PackId, title: string): PackSummary {
 
 const PACKS = [pack('sleeves', 'Sleeves'), pack('flags', 'Flags'), pack('screens', 'On the box')];
 
-function Room({ onVote }: { onVote: (packId: PackId | null) => void }) {
+function Room({
+  onVote,
+  held = {},
+}: {
+  onVote: (packId: PackId | null) => void;
+  held?: Partial<Pick<RoomState, 'packVotes' | 'voteTaps'>>;
+}) {
   const [room, setRoom] = useState<RoomState>({
     ...createRoom('HKQ7'),
     players: {
       greg: { name: 'Greg', joinedAt: 1 },
       priya: { name: 'Priya', joinedAt: 2 },
     },
+    ...held,
   });
   return (
     <Lobby
@@ -45,7 +54,8 @@ function Room({ onVote }: { onVote: (packId: PackId | null) => void }) {
           const packVotes = { ...held.packVotes };
           if (packId === null) delete packVotes['priya'];
           else packVotes['priya'] = packId;
-          return { ...held, packVotes };
+          const voteTaps = { ...held.voteTaps, priya: (held.voteTaps['priya'] ?? 0) + 1 };
+          return { ...held, packVotes, voteTaps };
         });
       }}
       onStart={noop}
@@ -119,6 +129,38 @@ describe('the lobby vote limit', () => {
     await user.click(card('Sleeves'));
 
     expect(screen.getByText(/You’ve used your taps/)).toBeInTheDocument();
+  });
+
+  test('a reload after both taps comes back locked', async () => {
+    // #given a player who used both taps, then reloaded: the lobby is new, the room is not
+    const onVote = vi.fn();
+    render(<Room onVote={onVote} held={{ packVotes: { priya: 'flags' }, voteTaps: { priya: 2 } }} />);
+    const user = userEvent.setup();
+
+    // #then the vote they cast is still theirs and still locked
+    expect(screen.getByText(/Your vote is locked in/)).toBeInTheDocument();
+    expect(card('Sleeves')).toBeDisabled();
+
+    // #when they try again anyway
+    await user.click(card('Sleeves'));
+
+    // #then nothing is written
+    expect(onVote).not.toHaveBeenCalled();
+    expect(card('Flags')).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  test('a reload after one tap leaves one change, not two', async () => {
+    const onVote = vi.fn();
+    render(<Room onVote={onVote} held={{ packVotes: { priya: 'sleeves' }, voteTaps: { priya: 1 } }} />);
+    const user = userEvent.setup();
+
+    expect(screen.getByText(/1 change left/)).toBeInTheDocument();
+
+    await user.click(card('Flags'));
+    await user.click(card('On the box'));
+
+    expect(onVote.mock.calls).toEqual([['flags']]);
+    expect(screen.getByText(/Your vote is locked in/)).toBeInTheDocument();
   });
 
   test('the counts stay readable on a locked card', async () => {

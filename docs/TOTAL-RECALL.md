@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 12 October 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 15 October 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -23,6 +23,18 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
+
+## 2026-10-15 — Branch `vote-taps-on-room`: a reload no longer resets the vote lock
+
+Somebody refreshed past #75's two taps — the gap it had accepted. The count moves to the room (`voteTaps.{uid}`,
+`increment(1)` in the vote's own write): no extra write or read, no paste. Not live ([`lobby-vote.md`](decisions/lobby-vote.md)).
+
+## 2026-10-14 — Live: #75 (gh-pages `21ccbd5`): the lobby vote locks after two taps
+
+Players were clicking round the vote cards for fun. Built at three taps; Greg: "1 vote per player — we can
+relax later", then "actually — 2". Client-side, no paste ([`lobby-vote.md`](decisions/lobby-vote.md)). First real
+question-vote data: ~1 verdict per 100 answers, 49/54 bad, and the one over the line is a prompt cut off at a colon —
+88 such ([`question-votes.md`](decisions/question-votes.md)). One PR with #74; Greg merged. Live `index-DV3kGh-I`, byte-identical.
 
 ## 2026-10-12 — Live: #73 + #58 (gh-pages `ed0bac5`): the lobby vote, dead code out
 
@@ -161,32 +173,13 @@ Greg chose A, the bean, from four bodies. D drew SpongeBob, so look-alikes
 are now part of the by-eye check. A spec opts in with `fries`; the 30 shipped
 prompts are pinned by hash. No new pictures yet. [`decisions/mr-fries.md`](decisions/mr-fries.md#chosen--5-october-2026).
 
-## 2026-10-05 — Mr Fries researched: prompt-only holds, movement is charm
+## 2026-10-02 to 2026-10-05 — archived, one line each
 
-Six drawings, one fixed description: the same chap in all six, but the bow tie
-held in only 3. A Vision cut-out plus a stretch makes an 81–94 KB breathing WebP,
-but only where he stands clear of things. Nothing built; Greg decides.
-[`decisions/mr-fries.md`](decisions/mr-fries.md).
+Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299.
 
-## 2026-10-05 — Bonus Catchphrase built, local only (`106863d`)
-
-Every 5th question: nine squares lift one per tenth of the clock, five up at
-the options, and it pays double base and rank (Greg's pick; not the stake or
-steal). No rule, field or paste. Gallery + 1,245 tests; **no live room** —
-Greg: the next office round is the check. [`decisions/catchphrase-difficulty.md`](decisions/catchphrase-difficulty.md#built--5-october-2026).
-
-## 2026-10-05 — Catchphrase: the office agrees, and a Bonus Catchphrase is next
-
-Office round `K3EN`, 7 seats, 15 s clock: 93% right, median 1.7 s after the
-options landed, "hard" the best-answered label. A longer hold would not help.
-Greg chose the show's Bonus Catchphrase as every fifth question, scoring more;
-story approved, not built. Then harder puzzles, and maybe a house character,
-"Mr Fries". [`decisions/catchphrase-difficulty.md`](decisions/catchphrase-difficulty.md).
-
-## 2026-10-02 — archived, one line each
-
-Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294.
-
+- **2026-10-05** — [Mr Fries researched: prompt-only holds, movement is charm](recall/2026-10.md#2026-10-05--mr-fries-researched-prompt-only-holds-movement-is-charm)
+- **2026-10-05** — [Bonus Catchphrase built, local only (`106863d`)](recall/2026-10.md#2026-10-05--bonus-catchphrase-built-local-only-106863d)
+- **2026-10-05** — [Catchphrase: the office agrees, and a Bonus Catchphrase is next](recall/2026-10.md#2026-10-05--catchphrase-the-office-agrees-and-a-bonus-catchphrase-is-next)
 - **2026-10-02** — [Live: `index-RzBR8yIZ` (#65, gh-pages `a49f801`): ready for thirty](recall/2026-10.md#2026-10-02--live-index-rzbr8yiz-65-gh-pages-a49f801-ready-for-thirty)
 - **2026-10-02** — [Public scale: target B chosen; PLAN written, not confirmed](recall/2026-10.md#2026-10-02--public-scale-target-b-chosen-plan-written-not-confirmed)
 - **2026-10-02** — [Catchphrase's first round: 10 of 10, too easy](recall/2026-10.md#2026-10-02--catchphrases-first-round-10-of-10-too-easy)

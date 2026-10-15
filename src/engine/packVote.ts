@@ -12,6 +12,9 @@ import type { Phase, Player } from './state';
 /** uid → the pack that player voted for. One vote each. */
 export type PackVotes = Record<string, PackId>;
 
+/** uid → taps that player has spent on the vote in this lobby. */
+export type VoteTaps = Record<string, number>;
+
 export type PackTally = Partial<Record<PackId, number>>;
 
 function isPackId(value: unknown): value is PackId {
@@ -32,6 +35,21 @@ export function readPackVotes(raw: unknown): PackVotes {
     if (isPackId(value)) votes[uid] = value;
   }
   return votes;
+}
+
+/**
+ * The taps spent off a raw room document.
+ *
+ * Untrusted for the reason the votes are: only a whole, non-negative count
+ * survives. A room from before the count reads as nobody having tapped.
+ */
+export function readVoteTaps(raw: unknown): VoteTaps {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return {};
+  const taps: VoteTaps = {};
+  for (const [uid, value] of Object.entries(raw)) {
+    if (typeof value === 'number' && Number.isInteger(value) && value >= 0) taps[uid] = value;
+  }
+  return taps;
 }
 
 /** The quizmaster's highlighted pack off a raw room document, or null. */
@@ -80,7 +98,7 @@ export function nextVote(current: PackId | undefined, tapped: PackId): PackId | 
 }
 
 /**
- * Whether a phase transition may write `packVotes` and `browsing` wholesale.
+ * Whether a phase transition may write `packVotes`, `voteTaps` and `browsing` wholesale.
  *
  * Only when it crosses into or out of the lobby, which is where `start` and
  * `reset` clear them. Any other dispatch — `selectPack`, the opening titles,
