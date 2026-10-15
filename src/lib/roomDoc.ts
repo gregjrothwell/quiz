@@ -241,3 +241,14 @@ export function opensAQuestion(next: RoomState, previous: RoomState | null): boo
   if (!previous || previous.phase !== 'question') return true;
   return previous.index !== next.index;
 }
+
+/**
+ * Which question a lamp belongs to (W3): `lamps/{code}/{lampKey}/{uid}` in the
+ * Realtime Database. `gameId` because "Another round" reuses the room.
+ *
+ * Here rather than in `useRoom.ts` so the harnesses light their seats' lamps
+ * under the same key the app reads (`scripts/lamp.ts`).
+ */
+export function lampKey(gameId: string | null, index: number): string {
+  return `${gameId ?? 'none'}:${index}`;
+}
