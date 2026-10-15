@@ -46,6 +46,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { attachDebugAppCheck } from './appCheck';
+import { startBeat } from './hostBeat';
 import {
   collection,
   doc,
@@ -199,10 +200,14 @@ async function main(): Promise<void> {
   const fresh = reduce(createRoom(code), { type: 'join', uid, name: 'Host', at: Date.now() });
   // See the note in sync-harness: a day, so a hosted test room reaps itself
   // rather than joining the pile nothing can reach.
+  // Hosted, as the app makes a room since W3: this process is host and beats,
+  // or a browser that joins may claim the chair after 75 s.
   await setDoc(reference, {
     ...toPersisted(fresh),
+    hostUid: uid,
     expiresAt: Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1_000),
   });
+  const stopBeat = await startBeat(db, code);
 
   onSnapshot(reference, (snapshot) => {
     if (!snapshot.exists()) return;
@@ -309,6 +314,7 @@ async function main(): Promise<void> {
   await dispatch([{ type: 'next', at: Date.now() }]);
 
   await sleep(15_000);
+  stopBeat();
   console.log('Done.');
 }
 

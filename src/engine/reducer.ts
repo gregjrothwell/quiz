@@ -8,6 +8,7 @@ import { finalistsFor, settleStandoff, stakesFor, type StandoffPick } from './st
 import {
   currentQuestion,
   isDurationAllowed,
+  type Answer,
   isStealQuestion,
   isWagerQuestion,
   questionDurationMs,
@@ -173,7 +174,9 @@ function leave(state: RoomState, uid: string): RoomState {
   const answers = { ...state.answers };
   delete answers[uid];
 
-  // The quizmaster role needs no handover: it is derived from who remains.
+  // In a room made before W3 the role is derived from who remains. In one made
+  // since, the handover is `hostUid`, written by `leave` in useRoom beside the
+  // seat it removes — this action is the engine's own and never persisted.
   return { ...state, players, answers };
 }
 
@@ -240,6 +243,7 @@ function start(state: RoomState, at: number, gameId: string, durationSecs: numbe
     answers: {},
     lastDeltas: {},
     lastSteal: null,
+    lastPicks: {},
     // The titles have done their job the moment the first question is up, and
     // leaving them on the document would put them back on screen at the end of
     // the round, when `reset` returns the room to the lobby.
@@ -395,8 +399,32 @@ function reveal(state: RoomState, correctIndex: number, questionId: string): Roo
     questionOpenedAt: null,
     lastDeltas: deltas,
     lastSteal: steal,
+    // Every counted pick, on the room. Since W3 only the host reads the answers
+    // subcollection, so this is how every other device gets the reveal chips,
+    // the replay and its game log — from the update it is already receiving.
+    lastPicks: publishedPicks(eligible),
     scores,
   };
+}
+
+/**
+ * The picks as they go on the room: the fields an answer carries and nothing
+ * else, and no key whose value is undefined, which Firestore refuses outright.
+ * An answer document also carries `questionIndex`, which the room does not need.
+ */
+function publishedPicks(answers: Record<string, Answer>): Record<string, Answer> {
+  return Object.fromEntries(
+    Object.entries(answers).map(([uid, { optionIndex, elapsedMs, firstMs, wager, at }]) => [
+      uid,
+      {
+        optionIndex,
+        elapsedMs,
+        ...(firstMs === undefined ? {} : { firstMs }),
+        ...(wager === undefined ? {} : { wager }),
+        ...(at === undefined ? {} : { at }),
+      },
+    ]),
+  );
 }
 
 /**
@@ -425,6 +453,7 @@ function skip(state: RoomState): RoomState {
     answers: {},
     lastDeltas: {},
     lastSteal: null,
+    lastPicks: {},
     scores,
     skipped: [...state.skipped, question.id],
   };
@@ -450,6 +479,7 @@ function next(state: RoomState, at: number): RoomState {
           answers: {},
           lastDeltas: {},
           lastSteal: null,
+          lastPicks: {},
           standoff: {
             finalists,
             stakes: stakesFor(state.scores, finalists),
@@ -459,7 +489,7 @@ function next(state: RoomState, at: number): RoomState {
           },
         };
       }
-      return { ...state, phase: 'finished', answers: {}, lastDeltas: {}, lastSteal: null };
+      return { ...state, phase: 'finished', answers: {}, lastDeltas: {}, lastSteal: null, lastPicks: {} };
     }
     return {
       ...state,
@@ -469,6 +499,7 @@ function next(state: RoomState, at: number): RoomState {
       answers: {},
       lastDeltas: {},
       lastSteal: null,
+      lastPicks: {},
     };
   }
 
@@ -476,7 +507,7 @@ function next(state: RoomState, at: number): RoomState {
   // take the room to the results before anything had been decided.
   if (state.phase === 'standoff') {
     if (state.standoff?.stage !== 'revealed') return state;
-    return { ...state, phase: 'finished', answers: {}, lastDeltas: {}, lastSteal: null };
+    return { ...state, phase: 'finished', answers: {}, lastDeltas: {}, lastSteal: null, lastPicks: {} };
   }
 
   return state;
@@ -537,6 +568,7 @@ function reset(state: RoomState): RoomState {
     answers: {},
     lastDeltas: {},
     lastSteal: null,
+    lastPicks: {},
     form: null,
     scores: Object.fromEntries(Object.keys(state.players).map((uid) => [uid, 0])),
     skipped: [],

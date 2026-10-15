@@ -47,6 +47,7 @@
 import { initializeApp, deleteApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { attachDebugAppCheck } from './appCheck';
+import { startBeat } from './hostBeat';
 import {
   collection,
   doc,
@@ -230,11 +231,15 @@ async function main(): Promise<void> {
   });
   // The same day-long `expiresAt` the other harnesses write, so a run cannot
   // leave a room behind that nothing will ever reap.
+  // Hosted, as the app makes a room since W3: the creator is host and beats,
+  // or a browser in the room may claim the chair after 75 s.
   await setDoc(reference, {
     ...toPersisted(fresh),
+    hostUid: host.uid,
     expiresAt: Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1_000),
   });
-  console.log(`${stamp()}  Room ${code} created by Host`);
+  const stopBeat = await startBeat(host.db, code);
+  console.log(`${stamp()}  Room ${code} created by Host, who hosts it`);
 
   // The host's own view, kept current the way the app keeps it — the dispatch
   // folds actions over the latest snapshot rather than over anything local.
@@ -432,20 +437,27 @@ async function main(): Promise<void> {
 
   /*
     Acceptance criterion 6: every device computes identical deltas from the same
-    reveal. Re-derived here on a client that did *not* fold it, from the answers
-    as that client reads them off the server — `liveAnswers` then `tallyQuestion`,
-    the same two functions the browsers use.
+    reveal. Re-derived here on a client that did *not* fold it.
+
+    Since W3 a player may not list the answers, before the reveal or after: the
+    host's reveal publishes them on the room as `lastPicks`, and that is what a
+    browser re-derives from. So the verifier is first refused the list it used
+    to read, then re-derives from `lastPicks` as the server holds it.
   */
   const verifier = players[players.length - 1];
   if (!verifier) throw new Error('no verifier client');
-  const answerDocs = await getDocsFromServer(collection(verifier.db, 'rooms', code, 'answers'));
-  const seen: Record<string, AnswerDoc> = {};
-  for (const document of answerDocs.docs) seen[document.id] = document.data() as AnswerDoc;
+  const listed = await getDocsFromServer(collection(verifier.db, 'rooms', code, 'answers')).then(
+    () => 'allowed',
+    (cause: unknown) => String((cause as { code?: unknown }).code ?? cause),
+  );
+  if (listed.includes('permission')) {
+    console.log(`  ${verifier.name}, a player, is refused the answers list (${listed}) ✓`);
+  } else {
+    failures.push(`${verifier.name}, a player, listed the answers: ${listed}. The W3 read rule is not live`);
+  }
 
-  const rederived = tallyQuestion({
-    correctIndex,
-    answers: liveAnswers(room.players, room.index, seen),
-  });
+  const picks = room.lastPicks;
+  const rederived = tallyQuestion({ correctIndex, answers: picks });
 
   const agrees =
     Object.keys(rederived).length === Object.keys(deltas).length &&
@@ -474,7 +486,7 @@ async function main(): Promise<void> {
   */
   if (browser.uid) {
     const paid = deltas[browser.uid];
-    const answer = seen[browser.uid];
+    const answer = picks[browser.uid];
     const slowest = Math.max(...CAST.map((seat) => seat.elapsedMs));
 
     if (!answer) {
@@ -519,7 +531,7 @@ async function main(): Promise<void> {
     {
       index: 0,
       correctIndex,
-      answers: liveAnswers(room.players, room.index, seen),
+      answers: picks,
       deltas,
     },
   ];
@@ -577,6 +589,7 @@ async function main(): Promise<void> {
     await sleep(45_000);
   }
 
+  stopBeat();
   stopRoom();
   stopAnswers();
   for (const client of [host, ...players]) await deleteApp(client.app);

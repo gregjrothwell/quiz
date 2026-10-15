@@ -12,6 +12,7 @@ import {
   type PackTally,
 } from '../engine/packVote';
 import { STEAL_SHARE } from '../engine/scoring';
+import { resolveHost } from '../engine/host';
 import { SQUADS } from '../engine/squad';
 import { rememberSquad, rememberedSquad } from '../lib/rememberedSquad';
 import { useSound } from '../lib/sound';
@@ -19,7 +20,6 @@ import {
   DEFAULT_DURATION_SECS,
   DURATION_CHOICES,
   LEVELS,
-  resolveQuizmaster,
   type Level,
   type RoomState,
 } from '../engine/state';
@@ -178,7 +178,7 @@ export function Lobby({
   const { muted, toggle } = useSound();
 
   const youName = youUid ? room.players[youUid]?.name : undefined;
-  const quizmasterUid = resolveQuizmaster(room.players);
+  const quizmasterUid = resolveHost(room);
   const quizmasterName = quizmasterUid ? room.players[quizmasterUid]?.name : undefined;
   const playerEntries = Object.entries(room.players).sort(
     ([, a], [, b]) => a.joinedAt - b.joinedAt,
