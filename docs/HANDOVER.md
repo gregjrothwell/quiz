@@ -55,7 +55,7 @@ Built to replace Polly in Teams.
 >   **9 Oct:** two 5-seat rounds that morning cost ~1.2k reads, so one 30-player round of ≤20 still fits ([`office-feedback-9-oct.md`](decisions/office-feedback-9-oct.md)).
 > - **Greg to decide:** answering after the music stops; the two lead-time cuts ([`ci-deploy.md`](decisions/ci-deploy.md)).
 >   **Productionisation plan decided 15 Oct** (all six as recommended; D6: league owners sign in, players stay anonymous); W1, **a TMDB credit the live site
->   lacks**; **W2, rules from CI** ([`rules-from-ci.md`](decisions/rules-from-ci.md)); both merged to `master` in #87, **not live** (deploy cancelled 15 Oct, master ahead of live); **W3, host authority, `w3-host-authority` (#86), not live** — [`public-scale.md`](decisions/public-scale.md#the-plan-15-october-2026).
+>   lacks**; **W2, rules from CI** ([`rules-from-ci.md`](decisions/rules-from-ci.md)); **W3, host authority** ([`host-authority.md`](decisions/host-authority.md)). **None live:** W1+W2 on `master` (#87, its run cancelled), W3+#85 on `release-15-oct-2`; one deploy on Greg's word, then `check-rules`, `host-room`, `rank-harness -- --browser`, `sync-harness 30` — [`public-scale.md`](decisions/public-scale.md#the-plan-15-october-2026).
 
 **Live is `index-BUTUL1rQ`** (#79: long names cut on the reveal chips, + #78 docs: 15 Oct 16:11 BST, merge `aa6b1e3`, gh-pages `54fb8d8`, CI;
 byte-identical to a local build). **Live checks: the first office round** — a long name ends "…", its time whole; **the first office lobby** — two taps, reload, still locked (#77). Before it, #77 `index-BWSiBKMq`.
