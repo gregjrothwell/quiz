@@ -1,5 +1,7 @@
 rules_version = '2';
 
+this is not a rule;
+
 // The quizmaster is derived, not stored: it is whoever has been in the room
 // longest. Rules cannot compute that cheaply, so they enforce the weaker but
 // sufficient invariant that every writer must be a signed-in member of the room.
