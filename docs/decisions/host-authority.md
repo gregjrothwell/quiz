@@ -2,9 +2,10 @@
 
 > **Owner: Greg Rothwell. Last updated: 15 October 2026. Budget: 250 lines.**
 
-**Status: BUILT on `w3-host-authority` (PR #86), 15 October 2026. Not live; no
-ruleset published.** Story approved by Greg the same day, with both defaults
-below as written. What was built and what was not: [below](#what-was-built-15-october-2026).
+**Status: BUILT on `w3-host-authority` (PR #86), 15 October 2026; e2e 15/15 that
+evening, AC8 included. Not live; no ruleset published.** Ships with W2 in one
+release. Story approved by Greg the same day, with both defaults below as
+written. What was built and what was not: [below](#what-was-built-15-october-2026).
 W3 of the plan in
 [`public-scale.md`](public-scale.md#the-plan-15-october-2026), under D1 (seams
 now) and D2 (b) (a heartbeat claim), both decided 15 October. **No rule from
@@ -202,10 +203,10 @@ mention. A host in either keeps the chair only while presence holds.
 | AC | Evidence | State |
 |---|---|---|
 | AC1, AC3, AC4, AC6, AC7, AC9, AC11 | `e2e/host-authority-rules.spec.ts`, client SDK + `reduce`/`toUpdate` | CI |
-| AC2 | same file, one allow test through selectPack+titles, clearTitles, start, reveal doc, reveal, next ×2, skip, reset, reaper, browsing, beat. **Not** settle, openPicks, closePicks (the final) | partial |
-| AC5, AC6, AC8, AC12 | `e2e/host-authority.spec.ts`: the host's tab closes mid-question; Ann claims, reveals both answers, moves on | CI |
+| AC2 | same file: selectPack+titles, clearTitles, start, reveal doc, reveal, next ×2, skip, reset, reaper, browsing, beat; and the final, openPicks, closePicks, settle (15 Oct evening) | CI |
+| AC5, AC6, AC8, AC12 | `e2e/host-authority.spec.ts`: the host's tab closes mid-question, Ann claims, reveals both answers, moves on; and an ordinary round the creator reveals | CI, 15/15 |
 | AC10 | `sync-harness 30` reads | **not done** — needs a live deploy |
-| live | `check-rules` both ways, `host-room`, `rank-harness -- --browser`, an office round | **not done** — W2 |
+| live | `check-rules` (28 W3 cases now), `host-room`, `rank-harness -- --browser`, an office round | **not done** — after the deploy |
 
 **Before the change** (CI, `0c605f0`, tests only): the AC2/AC3 allow case
 failed `PERMISSION_DENIED` (no rule for the beat), and the AC8 round failed (no
@@ -216,11 +217,11 @@ included. The AC8 round timed out on the opening titles, a test fault (fixed in
 `126650e`); its result is on PR #86.
 
 **Not built:**
-- **The six scripts were not changed.** Under the expand rules they still work,
-  as rooms without `hostUid`, which proves nothing about W3. Before the deploy,
-  `check-rules` needs W3's cases both ways and `host-room`, `rank-harness` and
-  `sync-harness` need to make hosted rooms; each also needs RTDB presence and a
-  beat, or a browser player will claim the room after 75 s.
+- **Two of the six scripts still make legacy rooms**: `final-harness` and
+  `reveal-gate-probe`. Under the expand rules they work, and prove nothing about
+  W3. The other four moved on 15 Oct evening (below). None writes RTDB presence,
+  so a browser in a harness room asks for the chair every 5 s from 50 s; the
+  beat keeps every ask refused.
 - **Lamps are never deleted.** About 40 bytes per player per question. A
   `prune-rooms` pass over `lamps/{code}` is the tidy.
 - **The beat costs writes:** about 240 an hour per open room, all day if a tab
@@ -231,3 +232,19 @@ included. The AC8 round timed out on the opening titles, a test fault (fixed in
   before the expand deploy is past `expiresAt`, 30 days.
 - Whether a rules `get()` on the host's listener is billed per snapshot: AC10.
 
+## 15 October evening: the AC8 stall, and the gaps closed
+
+**The stall.** CI showed Ann take the chair at +75 s, then sit on "Revealing…":
+`handleReveal` returned at `answersReady` every time, and her answers listener
+gave one cached snapshot (`fromCache: true`, her own answer) and never one from
+the server, with no error. Cause found by logging every early return (run
+38799952009): before the room's first snapshot, `hostUid` read as absent, so a
+joiner listed every answer as if the room were pre-W3, and was refused. **Fix:**
+no answers listener until the room has been read (`roomKnown`, `useRoom.ts`).
+After it, the same claim gets the server's snapshot (2 answers) in 50 ms and
+reveals (run 38801025236). Why the SDK never re-confirmed that query is not
+established; only that gating cures it.
+
+**Also closed:** AC12 in a browser (never run before; "Correct · +1,000", not
+"Correct"); the final's allow cases; 28 W3 cases in `check-rules`; three
+harnesses make hosted rooms that beat (`scripts/hostBeat.ts`).

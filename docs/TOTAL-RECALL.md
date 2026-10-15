@@ -24,6 +24,14 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-15 — W3 finished; the release with W2 and W3 built, not live
+
+#87 (W1, W2, #79 record) was merged 20:50 BST on "go live by the end of the session", which was a deadline, not
+the words; the master run was cancelled before rules or Pages, so `master` sits ahead of live. Then W3: the AC8
+stall found and fixed (a joiner listed answers before the room was read, was refused, and the same query never
+confirmed when the chair passed to it); AC12 and the final's allow cases added; `check-rules` 28 W3 cases;
+three harnesses make hosted rooms that beat. e2e 15/15. [`host-authority.md`](decisions/host-authority.md#15-october-evening-the-ac8-stall-and-the-gaps-closed).
+
 ## 2026-10-15 — Branch `w3-host-authority` (PR #86): W3, host authority, built and not live
 
 The room names its host (`hostUid`); only the host moves it on, members write only about themselves, answers are the
@@ -161,26 +169,12 @@ room in time*. **Bonus options now from the first frame**; Catchphrase 93% → 7
 harder still ([`catchphrase-difficulty.md`](decisions/catchphrase-difficulty.md)). **Blankety
 Blank:** 21 American out, 29 British in, 148, not seeded ([`blankety-blank.md`](decisions/blankety-blank.md)).
 
-## 2026-10-06 — Live: #68 (gh-pages `3fbc003`): Blankety Blank, 18 packs
-
-Greg's "let's go live" 08:56 → merged `28263ec` 08:59:25 (Greg; the harness's classifier
-refused `gh pr merge`) → master CI green 09:03:26 → Pages `built` 09:04:32: **about 8 minutes**.
-Live `index.json` lists 18 packs; `blanks.json` serves 140, no answer field. The bundle hash is
-unchanged and that is correct: no client code imports `PACK_IDS`, and the local build that
-played `N9AS` produced the same `index-DdEoFaVD`.
-
-## 2026-10-06 — Blankety Blank built and seeded, 140 questions, played blind
-
-Greg's parked idea #1, as a four-option pack: no engine change, no paste. Every phrase and
-every distractor checked against its source both ways (`blanks-check`, 140/140); the first
-run caught three distractors that were real variants. Seeded 140, read back 140/140; a
-`host-room` reveal proved it end to end. Branch `blankety-blank`, **not deployed**.
-[`blankety-blank.md`](decisions/blankety-blank.md).
-
 ## 2026-10-02 to 2026-10-06 — archived, one line each
 
-Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's.
+Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's; #68 and Blankety Blank built the same night, at 309 with the W3 release entry.
 
+- **2026-10-06** — [Live: #68 (gh-pages `3fbc003`): Blankety Blank, 18 packs](recall/2026-10.md#2026-10-06--live-68-gh-pages-3fbc003-blankety-blank-18-packs)
+- **2026-10-06** — [Blankety Blank built and seeded, 140 questions, played blind](recall/2026-10.md#2026-10-06--blankety-blank-built-and-seeded-140-questions-played-blind)
 - **2026-10-06** — [Live: #67 (gh-pages `9124fc0`): every played pack grown](recall/2026-10.md#2026-10-06--live-67-gh-pages-9124fc0-every-played-pack-grown)
 - **2026-10-06** — [Overnight: every played pack grown, nothing live](recall/2026-10.md#2026-10-06--overnight-every-played-pack-grown-nothing-live)
 - **2026-10-05** — [#66 live: Catchphrase 60, Bonus Catchphrase, Sleeves 168](recall/2026-10.md#2026-10-05--66-live-catchphrase-60-bonus-catchphrase-sleeves-168)
