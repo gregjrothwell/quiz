@@ -15,6 +15,7 @@
 import { initializeApp, deleteApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { attachDebugAppCheck } from './appCheck';
+import { startBeat } from './hostBeat';
 import {
   doc,
   getDoc,
@@ -195,11 +196,14 @@ async function main(): Promise<void> {
   // Same `expiresAt` the app writes, so a harness run does not leave a room
   // behind that nothing can ever reap. Deliberately a day rather than the app's
   // thirty: these are pure test data and worth nothing an hour later.
+  // Hosted, as the app makes a room since W3: the creator is host and beats.
   await setDoc(doc(host.db, 'rooms', code), {
     ...toPersisted(fresh),
+    hostUid: host.uid,
     expiresAt: Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1_000),
   });
-  console.log(`Room ${code} created by ${host.name}`);
+  const stopBeat = await startBeat(host.db, code);
+  console.log(`Room ${code} created by ${host.name}, who hosts it`);
 
   for (const client of clients) watch(client, code);
   await sleep(600);
@@ -255,6 +259,7 @@ async function main(): Promise<void> {
   console.log(`\nPlayers left in the room after start: ${finalPlayers}/${count}`);
   console.log(`Clients that never saw the question: ${missed}/${count}`);
 
+  stopBeat();
   for (const client of clients) {
     client.stop();
     await deleteApp(client.app);

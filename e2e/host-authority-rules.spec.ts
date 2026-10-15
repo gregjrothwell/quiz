@@ -238,6 +238,53 @@ test('AC2/AC3 allow: the host creates, beats and drives; members seat, vote, squ
   expect(after?.hostUid).toBe(host.uid);
 });
 
+test('AC2 allow: the host runs the final (openPicks, closePicks, settle); a member cannot', async () => {
+  const code = await hostedRoom(host);
+  await join(ann, code, 'Ann');
+  await join(bob, code, 'Bob');
+  await dispatch(host, code, [
+    {
+      type: 'selectPack',
+      packId: 'general-knowledge',
+      packTitle: 'General Knowledge',
+      questions: [QUESTIONS[0]!],
+      wagerEnabled: false,
+      stealEnabled: false,
+      standoffEnabled: true,
+    },
+    { type: 'start', at: Date.now(), gameId: `e2e-final-${Date.now()}`, durationSecs: 5 },
+  ]);
+  await answer(ann, code, 0);
+  await answer(bob, code, 0);
+
+  // Reveal with both picks, so Ann and Bob lead the host and reach the final.
+  await seedVault(code);
+  await new Promise((resolve) => setTimeout(resolve, 6_000));
+  await setDoc(doc(host.db, 'rooms', code, 'reveal', QUESTIONS[0]!.id), { answer: 'First' });
+  const all = await getDocs(collection(host.db, 'rooms', code, 'answers'));
+  const picks = Object.fromEntries(
+    all.docs.map((d) => [d.id, { optionIndex: d.data().optionIndex as number, elapsedMs: 1200 }]),
+  );
+  const current = await state(host, code);
+  const revealed = reduce({ ...current, answers: picks }, { type: 'reveal', correctIndex: 0, questionId: QUESTIONS[0]!.id });
+  await updateDoc(roomRef(host.db, code), toUpdate(revealed, current));
+  await dispatch(host, code, [{ type: 'next', at: Date.now() }]);
+  const final = await dispatch(host, code, [{ type: 'next', at: Date.now() }]);
+  expect(final.phase).toBe('standoff');
+  expect([...(final.standoff?.finalists ?? [])].sort()).toEqual([ann.uid, bob.uid].sort());
+
+  // A member cannot move the final on for the host.
+  expect(await denied(updateDoc(roomRef(ann.db, code), { 'standoff.stage': 'pick' })), 'openPicks as a member').toBe(true);
+
+  await dispatch(host, code, [{ type: 'openPicks' }]);
+  await dispatch(host, code, [{ type: 'closePicks', sealed: [ann.uid, bob.uid] }]);
+  const settled = await dispatch(host, code, [{ type: 'settle', picks: { [ann.uid]: 'share', [bob.uid]: 'share' } }]);
+  expect(settled.standoff?.stage).toBe('revealed');
+
+  const after = (await admin().doc(`rooms/${code}`).get()).data();
+  expect(after?.standoff?.stage).toBe('revealed');
+});
+
 test('AC1 deny: a member cannot write what is the host’s', async () => {
   const code = await hostedRoom(host);
   await join(ann, code, 'Ann');
