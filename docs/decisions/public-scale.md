@@ -2,8 +2,8 @@
 
 > **Owner: Greg Rothwell. Last updated: 15 October 2026. Budget: 250 lines.**
 
-**Status: PLAN, not confirmed.** Nothing here is built. **The work, in order, and
-Greg's five decisions are at the bottom** ([15 October](#the-plan-15-october-2026)).
+**Status: PLAN, confirmed 15 October 2026.** W1 in progress. **The work, in order, and
+Greg's six decisions are at the bottom** ([15 October](#the-plan-15-october-2026)).
 
 **Where this came from.** The 15 August 2026 audit ended with a costed appendix,
 *"scaling, tiers and monetisation"*, written into a Claude Code plan file. That
@@ -172,7 +172,7 @@ Against **6–10 weeks** for all of B at once.
   - TMDB's attribution requirement for non-commercial use. **Checked 15 Oct:
     it applies to everyone, and the live site does not meet it** — below.
 
-## Open decisions — all Greg's
+## Open decisions — all Greg's (decided 15 October, below)
 
 *Restated 15 October as D1–D3 of the plan below. Item 4 changed: rules from CI
 now go before host authority.*
@@ -209,10 +209,10 @@ Nothing above had moved since 2 October (`roomCode.ts`, `firestore.rules`,
 | W1 | TMDB logo and notice on each On the box question and in the lobby; `ATTRIBUTION.md` reworded | under 1 session | "go live" only | Both on the live site; seal test green |
 | W2 | CI publishes both rulesets on `master`, after e2e passes | 1 session, plus Greg's console step | D5 | A rules-only merge appears in the console's history; a broken rules file stops the deploy before it publishes; `check-rules` both ways after |
 | W3 | Host authority (seam 1) | 3–5 sessions | D1, D2 | One allow case per rule function touched; `check-rules` both ways; `sync-harness 30`, `rank-harness`, `host-room`; an office round |
-| W4 | Tenancy (seam 2); licensed packs flagged office-only | 2–3 sessions | D1, D3 | The office board reads back identical after the `season-2` migration; a second league sees none of it |
+| W4 | Tenancy (seam 2); licensed packs flagged office-only; a league owner signs in | 3–5 sessions (sign-in adds 1–2, estimate) | D1, D3, D6 | The office board reads back identical after the `season-2` migration; a second league sees none of it; an owner who signs in keeps their history |
 | W5 | Re-fetch every TMDB still | under 1 session | D4 | Done by 1 March 2027, and on a cycle under six months |
 
-About 7–11 sessions. The additive table above is unchanged and stays on its triggers.
+About 8–13 sessions. The additive table above is unchanged and stays on its triggers.
 
 **W2 before W3.** Host authority is the largest rules change this repo will make,
 and a hand paste is its most repeated failure (`CLAUDE.md`, What bites 2; the
@@ -236,12 +236,13 @@ would also make a 30-player round's reads roughly linear in N rather than Q·N²
 **W4's product cost.** The packs the office plays most (On the box, Sleeves,
 Tunes) are the licensed ones. A public league under D3 (a) has none of them.
 
-### Greg's decisions
+### Greg's decisions — all six taken as recommended, Greg, 15 October 2026 (D6 added that day)
 
-| | Decision | Options | Recommended | Unblocks | By |
+| | Decision | Options | Recommended, and **decided** | Unblocks | By |
 |---|---|---|---|---|---|
 | D1 | Do B, and how much | (a) seams now, the rest on a trigger · (b) all of B now, 6–10 weeks · (c) stay office-only; this file is the record | (a): W3 pays off in the office too | W3, W4 | before W3 |
 | D2 | When the host drops out | (a) the room pauses; `host-room` rescues it (the 2 Oct proposal) · (b) the host beats a heartbeat doc nobody listens to; once it is stale, any member may claim host, checked in rules with `get()`. Keeps the automatic handover for about one write per beat | (b), if W3's story proves it. One mode for office and public either way | W3 | before W3 |
 | D3 | Licensed rounds for strangers | (a) office-only, a flag on the pack · (b) ask TMDB for an agreement; Apple's terms fail regardless | (a), plus the content rule: new media rounds use licence-clean sources | W4 | before W4 |
 | D4 | TMDB's six-month cap | (a) re-fetch before 9 March 2027, then on a cycle · (b) read hashed copies as outside "cache" and carry the risk | (a) | W5 | 1 Mar 2027 |
 | D5 | How CI may publish rules | (a) keyless (Workload Identity Federation), scoped to this repo's `master`; Google's auth action joins a deploy path that is GitHub-only today · (b) a service-account key in a GitHub secret, rules role only; no new action, but a long-lived key that opens the vault if it leaks | (a) | W2 | before W2 |
+| D6 | Accounts | (a) players stay anonymous; a league owner signs in with Google, linked to their anonymous account (`linkWithCredential`: the docs, fetched 15 Oct, say the new account keeps the old one's data, but not that the uid survives) · (b) everyone signs in · (c) nobody, and a league belongs to one browser | (a). Reverses [`identity.md`](identity.md)'s no-accounts rule for owners only; a join stays code and name | W4 | before W4 |
