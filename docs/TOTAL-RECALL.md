@@ -24,6 +24,12 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-15 — Branch `reveal-name-truncate`: long names cut on the reveal chips
+
+A long name on a reveal chip squeezed the option text on a laptop and drew over it on a phone. The name now ellipsises
+at 7rem (~16 letters) or less where the lectern is tighter; the time is never cut. The option text wraps first, so
+short names stayed whole at every width measured, 320–1440. Gallery "Reveal · long names" (`#/preview/53`). Not live.
+
 ## 2026-10-15 — Live: #77 (gh-pages `3b63b5a`): a reload no longer resets the vote lock
 
 Greg merged #77 (it carried #76) at 10:56; live 11:01 BST. `index-BWSiBKMq`, byte-identical to a local build.
@@ -172,16 +178,11 @@ Catchphrase (30 of 30) and Sleeves (105 of 104) were both spent. Sleeves 104 →
 task, because launchd cannot read ~/Documents. Harder batch: 8 of 30 drawn, paused at 7%
 battery. [`sleeves-growth.md`](decisions/sleeves-growth.md) · [`pack-freshness.md`](decisions/pack-freshness.md).
 
-## 2026-10-05 — Mr Fries: the bean chosen, and the hook for him built
-
-Greg chose A, the bean, from four bodies. D drew SpongeBob, so look-alikes
-are now part of the by-eye check. A spec opts in with `fries`; the 30 shipped
-prompts are pinned by hash. No new pictures yet. [`decisions/mr-fries.md`](decisions/mr-fries.md#chosen--5-october-2026).
-
 ## 2026-10-02 to 2026-10-05 — archived, one line each
 
-Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299.
+Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303.
 
+- **2026-10-05** — [Mr Fries: the bean chosen, and the hook for him built](recall/2026-10.md#2026-10-05--mr-fries-the-bean-chosen-and-the-hook-for-him-built)
 - **2026-10-05** — [Mr Fries researched: prompt-only holds, movement is charm](recall/2026-10.md#2026-10-05--mr-fries-researched-prompt-only-holds-movement-is-charm)
 - **2026-10-05** — [Bonus Catchphrase built, local only (`106863d`)](recall/2026-10.md#2026-10-05--bonus-catchphrase-built-local-only-106863d)
 - **2026-10-05** — [Catchphrase: the office agrees, and a Bonus Catchphrase is next](recall/2026-10.md#2026-10-05--catchphrase-the-office-agrees-and-a-bonus-catchphrase-is-next)
