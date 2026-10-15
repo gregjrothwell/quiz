@@ -55,11 +55,11 @@ Built to replace Polly in Teams.
 >   **9 Oct:** two 5-seat rounds that morning cost ~1.2k reads, so one 30-player round of ≤20 still fits ([`office-feedback-9-oct.md`](decisions/office-feedback-9-oct.md)).
 > - **Greg to decide:** answering after the music stops; the two lead-time cuts ([`ci-deploy.md`](decisions/ci-deploy.md)).
 >   **Productionisation plan decided 15 Oct** (all six as recommended; D6: league owners sign in, players stay anonymous); W1, **a TMDB credit the live site
->   lacks**; **W2, rules from CI** ([`rules-from-ci.md`](decisions/rules-from-ci.md)); **W3, host authority** ([`host-authority.md`](decisions/host-authority.md)). **None live:** W1+W2 on `master` (#87, its run cancelled), W3+#85 on `release-15-oct-2`; one deploy on Greg's word, then `check-rules`, `host-room`, `rank-harness -- --browser`, `sync-harness 30` — [`public-scale.md`](decisions/public-scale.md#the-plan-15-october-2026).
+>   lacked**; **W2, rules from CI** ([`rules-from-ci.md`](decisions/rules-from-ci.md)); **W3, host authority, expand half** ([`host-authority.md`](decisions/host-authority.md)). **All three live 15 Oct.** Next: W3's contract half after 14 Nov; W4; W5 by 1 Mar 2027 — [`public-scale.md`](decisions/public-scale.md#the-plan-15-october-2026).
 
-**Live is `index-BUTUL1rQ`** (#79: long names cut on the reveal chips, + #78 docs: 15 Oct 16:11 BST, merge `aa6b1e3`, gh-pages `54fb8d8`, CI;
-byte-identical to a local build). **Live checks: the first office round** — a long name ends "…", its time whole; **the first office lobby** — two taps, reload, still locked (#77). Before it, #77 `index-BWSiBKMq`.
-Firebase chunk `firebase-D9D0c-Mh` (Lite inside, +16 kB gzip).
+**Live is `index-C__7fXbz`** (#88 + #87: W1 TMDB credit, W2 rules published by CI, W3 host authority; 15 Oct 21:40 BST, merge `72791a9`,
+gh-pages `7d42c0e`, byte-identical to a local build; CI published both rulesets, WIF's first sign-in). Live: `check-rules` 119/119, `rank-harness -- --browser`, `sync-harness 30` 30/30, `host-room`. **Live check: the first office round under W3** (`read-games`); also #79's long name and #77's lobby reload. Before it, #79 `index-BUTUL1rQ`.
+Firebase chunk `firebase-BlgQ_Gm8`.
 **20 packs** + **Random Round** (six played packs dealt into one); **The Price Was Right 95** and **Blankety Blank 148** (both blind); **Catchphrase 178** (every 5th a double-scoring bonus); **Name that Tune 424**; **Name the Artist 259**; synth **Classical**; **On the box 445**
 (hashed TMDB stills, at most 8 titles before 1990); **Flags** 76; **Sleeves 212**
 after seven candidate batches, the last pre-screened; picture is **Fine Art** 49.

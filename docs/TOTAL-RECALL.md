@@ -24,6 +24,15 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-15 — Live: #88 + #87 (gh-pages `7d42c0e`): W1, W2 and W3 in one deploy
+
+Greg's "go live" on #88 → merged `72791a9` 21:34 BST → e2e → the `rules` job (WIF's first sign-in; the W3 Firestore
+ruleset uploaded and released, RTDB released) → Pages 21:40. `index-C__7fXbz` byte-identical to a local build.
+Live: `check-rules` 119/119 (91 + 28 W3), `rank-harness -- --browser` all ✓ in a hosted room, `sync-harness 30`
+30/30 within 102 ms, `host-room` reveal from `lastPicks`. Found: App Check 429s a burst of debug-token exchanges and
+`appCheck.ts` blames safelisting; the `--browser` run banked "Claude 600" on the week board (documented cost).
+AC10 is not measurable here: Cloud Monitoring needs billing. [`host-authority.md`](decisions/host-authority.md).
+
 ## 2026-10-15 — W3 finished; the release with W2 and W3 built, not live
 
 #87 (W1, W2, #79 record) was merged 20:50 BST on "go live by the end of the session", which was a deadline, not
@@ -158,21 +167,11 @@ blind: 95 ONS prices, given now, guess 5/10/20/30 years back — shop-quote medi
 change" broke: the client shuffles options, so `ordered` (`1de868b`). Unseeded
 ([`price-was-right.md`](decisions/price-was-right.md)).
 
-## 2026-10-06 — First office rounds of #67 and #68: chair, bonus, Blankety Blank (`office-feedback-6-oct`)
-
-Room `RRGM`, 6 seats: Blankety Blank then Catchphrase. **No chair on the first:** the wager
-left four on 0 and third place was one of them; `seatedLast` refused a tie touching the podium
-by design. Reversed ([`final-card.md`](decisions/final-card.md)). **Cass, Catchphrase Q1:** no
-answer of hers reached the room, nor Roberto's; the other four came in at 7.6–9.7 s of 10.
-Unresolved until she says whether her screen read *You didn't answer* or *didn't reach the
-room in time*. **Bonus options now from the first frame**; Catchphrase 93% → 78%, Greg wants
-harder still ([`catchphrase-difficulty.md`](decisions/catchphrase-difficulty.md)). **Blankety
-Blank:** 21 American out, 29 British in, 148, not seeded ([`blankety-blank.md`](decisions/blankety-blank.md)).
-
 ## 2026-10-02 to 2026-10-06 — archived, one line each
 
-Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's; #68 and Blankety Blank built the same night, at 309 with the W3 release entry.
+Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's; #68 and Blankety Blank built the same night, at 309 with the W3 release entry; the first office rounds of #67 and #68 the same night again, at 304 with the go-live.
 
+- **2026-10-06** — [First office rounds of #67 and #68: chair, bonus, Blankety Blank](recall/2026-10.md#2026-10-06--first-office-rounds-of-67-and-68-chair-bonus-blankety-blank-office-feedback-6-oct)
 - **2026-10-06** — [Live: #68 (gh-pages `3fbc003`): Blankety Blank, 18 packs](recall/2026-10.md#2026-10-06--live-68-gh-pages-3fbc003-blankety-blank-18-packs)
 - **2026-10-06** — [Blankety Blank built and seeded, 140 questions, played blind](recall/2026-10.md#2026-10-06--blankety-blank-built-and-seeded-140-questions-played-blind)
 - **2026-10-06** — [Live: #67 (gh-pages `9124fc0`): every played pack grown](recall/2026-10.md#2026-10-06--live-67-gh-pages-9124fc0-every-played-pack-grown)
