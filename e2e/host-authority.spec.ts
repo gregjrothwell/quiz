@@ -17,6 +17,11 @@ import { admin, seedVault, until } from './nodeClient';
 async function seat(browser: Browser, name: string): Promise<{ context: BrowserContext; page: Page }> {
   const context = await browser.newContext();
   const page = await context.newPage();
+  page.on('console', (message) => {
+    if (message.text().includes('[w3-debug]') || message.type() === 'error') {
+      console.log(`[${name}:${message.type()}] ${message.text()}`);
+    }
+  });
   await setEmulatorFlag(page);
   await page.goto('./');
   await page.getByPlaceholder('e.g. Greg').fill(name);
@@ -98,15 +103,8 @@ test('the host vanishes mid-question and the room carries on', async ({ browser 
   await expect(lit(ann.page, 'Bob')).toBeVisible();
   await expect(lit(bob.page, 'Ann')).toBeVisible();
 
-  // What each player's console says and where the room stands while the chair
-  // is empty, so a stall names its own cause in the CI log.
-  for (const [name, each] of [['ann', ann], ['bob', bob]] as const) {
-    each.page.on('console', (message) => {
-      if (message.type() === 'error' || message.type() === 'warning') {
-        console.log(`[${name} ${message.type()}] ${message.text()}`);
-      }
-    });
-  }
+  // Where the room stands while the chair is empty, so a stall names its own
+  // cause in the CI log beside each player's console (see `seat`).
   const closedAt = Date.now();
   const watch = setInterval(() => {
     void readRoom(code).then(
@@ -124,7 +122,7 @@ test('the host vanishes mid-question and the room carries on', async ({ browser 
   // #then within about 90 s Ann, the longest-seated present player, has the
   // chair and the open question is revealed with both answers counted (AC8)
   try {
-    await expect(ann.page.getByText('Correct', { exact: true })).toBeVisible({ timeout: 120_000 });
+    await expect(ann.page.getByText(/^Correct · \+/)).toBeVisible({ timeout: 120_000 });
   } finally {
     clearInterval(watch);
   }
@@ -136,7 +134,7 @@ test('the host vanishes mid-question and the room carries on', async ({ browser 
   expect(revealed.scores[bobUid]).toBeGreaterThan(0);
 
   // #and every device shows every pick (AC5): Bob sees Ann's chip and his own verdict
-  await expect(bob.page.getByText('Correct', { exact: true })).toBeVisible();
+  await expect(bob.page.getByText(/^Correct · \+/)).toBeVisible();
   await expect(bob.page.locator('.tile__name', { hasText: 'Ann' })).toBeVisible();
   await expect(ann.page.locator('.tile__name', { hasText: 'Bob' })).toBeVisible();
 
@@ -158,14 +156,6 @@ test('an ordinary hosted round: the creator reveals with every answer counted (A
   await ann.page.getByRole('button', { name: 'Join the round' }).click();
   await expect(ann.page.getByText('Vote for a set')).toBeVisible();
 
-  for (const [name, each] of [['host', host], ['ann', ann]] as const) {
-    each.page.on('console', (message) => {
-      if (message.type() === 'error' || message.type() === 'warning') {
-        console.log(`[ac12 ${name} ${message.type()}] ${message.text()}`);
-      }
-    });
-  }
-
   await until(() => readRoom(code), (room) => Object.keys(room.players).length === 2);
   await packCard(host.page, 'General Knowledge').click();
   await host.page.getByRole('button', { name: 'Start the show' }).click();
@@ -177,7 +167,7 @@ test('an ordinary hosted round: the creator reveals with every answer counted (A
   await ann.page.keyboard.press('a');
 
   // The host's own device reveals when the clock runs out, as it does today.
-  await expect(ann.page.getByText('Correct', { exact: true })).toBeVisible({ timeout: 60_000 });
+  await expect(ann.page.getByText(/^Correct · \+/)).toBeVisible({ timeout: 60_000 });
   const revealed = await until(() => readRoom(code), (room) => room.phase === 'reveal', 10_000);
   expect(revealed.hostUid).toBe(uidOf(revealed, 'Host'));
   expect(revealed.scores[uidOf(revealed, 'Ann')]).toBeGreaterThan(0);
