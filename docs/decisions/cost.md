@@ -1,6 +1,6 @@
 # What it costs
 
-> **Owner: Greg Rothwell. Last updated: 2 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 15 October 2026. Budget: 250 lines.**
 
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
@@ -136,6 +136,9 @@ presence, and is billed on bytes rather than per document. A 50-player game is
 ~7.5 MB against a 10 GB/month allowance — roughly 35× the headroom, on the same
 free tier. It is contained to `useRoom.ts`, because `submitAnswer` and
 `room.answers` are the only surface anything else sees.
+
+> **Correction, 15 October 2026.** Not one file since 2 October, and host authority would make answer
+> reads roughly linear in N instead, deleting this item: [`public-scale.md`](public-scale.md) item 3, seam 1.
 
 ### What voting added
 

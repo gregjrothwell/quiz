@@ -198,3 +198,22 @@ The live check is the first office lobby after: lock a vote, reload, still locke
 release branch: one PR already held both. CI's Playwright, including the reload, passed on the PR and on
 master; the served `index-BWSiBKMq` is byte-identical to a local build (SHA-256 `fe7789a6…`) and carries
 `voteTaps`. The office-lobby check has not happened yet.
+
+## Later — the vote onto the Realtime Database (noted 15 October 2026)
+
+Greg, 15 October: note it for later. Not built, and not costed beyond this.
+
+- **Why.** Every tap rewrites the room document, which every player listens to,
+  so one tap is *N* Firestore reads: at most 2 × 30 × 30 ≈ 1,800 a lobby at
+  thirty seats. The RTDB bills bytes, not documents, and each tab already holds
+  its one connection for presence, so the vote would add no connections.
+- **Why not yet.** Office days run at a median 2.6k reads of 50k
+  ([`cost.md`](cost.md)). The trigger is thirty-seat lobbies becoming routine.
+- **What forces it first is host authority, not cost.** Seam 1 in
+  [`public-scale.md`](public-scale.md) lets everyone but the host write only
+  their own `players.{uid}`, which refuses `packVotes.{uid}` and `voteTaps.{uid}`
+  as built. Votes are on its unverified list already; the RTDB is one place
+  they could go.
+- **What it costs.** Its own hand-published RTDB rule, which like presence's
+  cannot read the Firestore room; and `start` and `reset` clearing the vote
+  becomes a write to a second database.
