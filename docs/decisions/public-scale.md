@@ -2,7 +2,7 @@
 
 > **Owner: Greg Rothwell. Last updated: 15 October 2026. Budget: 250 lines.**
 
-**Status: PLAN, confirmed 15 October 2026.** W1 built on `tmdb-credit`, not live. **The work, in order, and
+**Status: PLAN, confirmed 15 October 2026.** W1 built on `tmdb-credit`, W2 on `rules-from-ci`; neither live. **The work, in order, and
 Greg's six decisions are at the bottom** ([15 October](#the-plan-15-october-2026)).
 
 **Where this came from.** The 15 August 2026 audit ended with a costed appendix,
@@ -207,7 +207,7 @@ Nothing above had moved since 2 October (`roomCode.ts`, `firestore.rules`,
 | # | Work | Size | Waits on | Done means |
 |---|---|---|---|---|
 | W1 | TMDB's logo under every On the box still, Random Round included; logo and notice in the lobby; `ATTRIBUTION.md` reworded. **Built 15 Oct, `tmdb-credit`** | under 1 session | "go live" only | Both on the live site; seal test green |
-| W2 | CI publishes both rulesets on `master`, after e2e passes | 1 session, plus Greg's console step | D5 | A rules-only merge appears in the console's history; a broken rules file stops the deploy before it publishes; `check-rules` both ways after |
+| W2 | CI publishes both rulesets on `master`, after e2e passes. **Built 15 Oct, `rules-from-ci`**: [`rules-from-ci.md`](rules-from-ci.md) | 1 session, plus Greg's console step | D5; Greg's step done 15 Oct; merged in #87, not live | A rules-only merge appears in the console's history; a broken rules file stops the deploy before it publishes; `check-rules` both ways after |
 | W3 | Host authority (seam 1). **Built 15 Oct, expand half, PR #86, not live: [`host-authority.md`](host-authority.md#what-was-built-15-october-2026)**; harnesses and `check-rules` still to move | 3–5 sessions | D1, D2 | One allow case per rule function touched; `check-rules` both ways; `sync-harness 30`, `rank-harness`, `host-room`; an office round |
 | W4 | Tenancy (seam 2); licensed packs flagged office-only; a league owner signs in | 3–5 sessions (sign-in adds 1–2, estimate) | D1, D3, D6 | The office board reads back identical after the `season-2` migration; a second league sees none of it; an owner who signs in keeps their history |
 | W5 | Re-fetch every TMDB still. A rebuild alone re-fetches nothing: `write-screens-pack.ts` reuses stills on disk (`existingBySlug`), so W5 forces it | under 1 session | D4 | Done by 1 March 2027, and on a cycle under six months |
@@ -225,7 +225,8 @@ postmortem). After W2, rules and the client they match ship in one deploy.
 - Merging to `master` already publishes the site; after W2 it publishes rules
   too. The same "go live" words cover both.
 - Unverified: how `firebase-tools` signs in on a runner under each D5 option.
-  Read Google's docs before the console step, not memory.
+  Read Google's docs before the console step, not memory. **Read 15 Oct:**
+  through one impersonated service account, three roles ([`rules-from-ci.md`](rules-from-ci.md)).
 
 **W3, expand then contract.** A rule that requires `hostUid` refuses every tab
 still running the old client. Publish rules that accept both, then tighten after

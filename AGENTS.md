@@ -69,7 +69,7 @@ docs/recall/          Archived spine entries, by month. Verbatim, no budget
    any depth kills a script before its own code runs. `host-room` was dead that
    way for weeks. `scripts/imports.test.ts` walks the graph and fails if it
    comes back.
-2. **Rules are published by hand.** The repo copy is not what Firebase is running. An unpublished Realtime Database ruleset, or `firestore.seed.rules` left live, is the usual "nothing works" failure. `npm run check-rules` is the check — it must refuse as well as allow.
+2. **Rules are published by CI**, on `master` after e2e, before the site (W2, [`rules-from-ci.md`](docs/decisions/rules-from-ci.md)). Do not paste `firestore.rules` or `database.rules.json` into the console: the next merge overwrites it. `firestore.seed.rules` is still pasted by hand, and left live it is the usual "nothing works" failure. After a rules merge, `npm run check-rules` locally — it must refuse as well as allow.
 3. **Never add `localhost` to the reCAPTCHA allowlist.** The site key is public. Local and Node use a debug token. App Check is enforced on **Firestore, the RTDB and auth** — `appcheck-probe` is refused at sign-in.
 4. **Do not undo derived-quizmaster or the no-whole-`players`-map rule** without reading the handover table. Both were bugs that already shipped.
 

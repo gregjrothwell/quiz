@@ -32,6 +32,13 @@ over; a 15 s beat and a claim at 75 s of silence cover the host whose tab closes
 without `hostUid` keep the member rule. **No rule published** — W2 is not live. Harnesses and `check-rules` not yet
 moved to hosted rooms; AC10 unmeasured. [`host-authority.md`](decisions/host-authority.md#what-was-built-15-october-2026).
 
+## 2026-10-15 — Branch `rules-from-ci`: W2, CI publishes both rulesets, keyless
+
+A `rules` job after e2e and before the site, master only, through one impersonated service account (no key). The
+third role, Service Usage Consumer, was found by a 403 in a dry run, not in any doc. Live rules equal the repo, so the
+first publish is a no-op. Probe PRs #82/#83: a broken file of either kind turns e2e red. Not live: Greg's Cloud Shell step, then W1, then "go live".
+[`rules-from-ci.md`](decisions/rules-from-ci.md).
+
 ## 2026-10-15 — Branch `tmdb-credit`: W1, TMDB's logo and notice; D6 added
 
 Greg took the plan's five decisions as recommended, then added D6: league owners sign in (Google, linked to their
