@@ -217,11 +217,8 @@ included. The AC8 round timed out on the opening titles, a test fault (fixed in
 `126650e`); its result is on PR #86.
 
 **Not built:**
-- **Two of the six scripts still make legacy rooms**: `final-harness` and
-  `reveal-gate-probe`. Under the expand rules they work, and prove nothing about
-  W3. The other four moved on 15 Oct evening (below). None writes RTDB presence,
-  so a browser in a harness room asks for the chair every 5 s from 50 s; the
-  beat keeps every ask refused.
+- **No script writes RTDB presence**, so a browser in a harness room asks for
+  the chair every 5 s from 50 s; the beat keeps every ask refused.
 - **Lamps are never deleted.** About 40 bytes per player per question. A
   `prune-rooms` pass over `lamps/{code}` is the tidy.
 - **The beat costs writes:** about 240 an hour per open room, all day if a tab
@@ -247,4 +244,7 @@ established; only that gating cures it.
 
 **Also closed:** AC12 in a browser (never run before; "Correct · +1,000", not
 "Correct"); the final's allow cases; 28 W3 cases in `check-rules`; three
-harnesses make hosted rooms that beat (`scripts/hostBeat.ts`).
+harnesses make hosted rooms that beat (`scripts/hostBeat.ts`). **Late 15 Oct,
+#90:** all six do; `final-harness` is the live allow case for the final (FAE8);
+`rank-`/`final-harness` light lamps (Gus reads 7 of 7, 4NW8); a 429 is named.
+An RTDB write keeps Node alive past `deleteApp`, so both now `process.exit`.
