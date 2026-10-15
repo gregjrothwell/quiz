@@ -31,7 +31,7 @@ Built to replace Polly in Teams.
 | rules and App Check — Firestore and RTDB, then **auth**, then the debug token and why a deploy must not come off `master` | [`security.md`](decisions/security.md) · [`app-check-auth.md`](decisions/app-check-auth.md) · [`debug-token-leak.md`](decisions/debug-token-leak.md) |
 | **the vault oracle, `joinedAt`, the `at` stamp, presence names** | [`security-round-sept-2026.md`](decisions/security-round-sept-2026.md) |
 | **tightening any rule, gate or permission** — read this one *first*, it is why #56 broke the game | [`postmortem-the-pin-that-refused-the-reveal.md`](decisions/postmortem-the-pin-that-refused-the-reveal.md) |
-| **the CI deploy, the secret check, Playwright, the emulator**; anything that adds reads or writes | [`ci-deploy.md`](decisions/ci-deploy.md) · [`emulators.md`](decisions/emulators.md) · [`cost.md`](decisions/cost.md) · [`audit-backlog.md`](decisions/audit-backlog.md) |
+| **the CI deploy, the secret check, Playwright, the emulator**; anything that adds reads or writes | [`ci-deploy.md`](decisions/ci-deploy.md) · [`rules-from-ci.md`](decisions/rules-from-ci.md) · [`emulators.md`](decisions/emulators.md) · [`cost.md`](decisions/cost.md) · [`audit-backlog.md`](decisions/audit-backlog.md) |
 | — before assuming a style choice, a bug, or a claim in here | [`gotchas.md`](decisions/gotchas.md) · [`known-limits.md`](decisions/known-limits.md) · [`state-of-play.md`](decisions/state-of-play.md) |
 | what a question is worth, and why it is not a speed curve | [`decisions/scoring.md`](decisions/scoring.md) |
 | the shareable result card, and how it gets to the player | [`decisions/final-card.md`](decisions/final-card.md) |
@@ -55,7 +55,7 @@ Built to replace Polly in Teams.
 >   **9 Oct:** two 5-seat rounds that morning cost ~1.2k reads, so one 30-player round of ≤20 still fits ([`office-feedback-9-oct.md`](decisions/office-feedback-9-oct.md)).
 > - **Greg to decide:** answering after the music stops; the two lead-time cuts ([`ci-deploy.md`](decisions/ci-deploy.md)).
 >   **Productionisation plan decided 15 Oct** (all six as recommended; D6: league owners sign in, players stay anonymous); W1, **a TMDB credit the live site
->   lacks**, built on `tmdb-credit`, not live — [`public-scale.md`](decisions/public-scale.md#the-plan-15-october-2026).
+>   lacks**, built on `tmdb-credit`, not live; **W2, rules from CI**, built on `rules-from-ci` (stacked on W1), waits on Greg's Cloud Shell step — [`public-scale.md`](decisions/public-scale.md#the-plan-15-october-2026), [`rules-from-ci.md`](decisions/rules-from-ci.md).
 
 **Live is `index-BUTUL1rQ`** (#79: long names cut on the reveal chips, + #78 docs: 15 Oct 16:11 BST, merge `aa6b1e3`, gh-pages `54fb8d8`, CI;
 byte-identical to a local build). **Live checks: the first office round** — a long name ends "…", its time whole; **the first office lobby** — two taps, reload, still locked (#77). Before it, #77 `index-BWSiBKMq`.
@@ -95,8 +95,8 @@ scoring 500 + rank 500/400/300/200/100.
    spent — it substitutes medium. The fix is a fold of `games/` into real
    difficulty, **a query now rather than a build**, and `games/` now holds
    eleven rounds rather than three, so it is no longer gated on playing.
-9. **Rules are published by hand.** `check-rules` **91/91 both ways, 27
-   September**. Read [`security.md`](decisions/security.md) before any paste.
+9. **Rules are published by hand until W2 is live; then by CI on `master`** ([`rules-from-ci.md`](decisions/rules-from-ci.md)). Live = repo, read 15 Oct.
+   `check-rules` **91/91 both ways, 27 September**; run it after any rules merge. Read [`security.md`](decisions/security.md) first.
 10. **Seed before any new ids ship** — `npm run seed-vault -- --pack <id>` reads
     one pack. All seeded as of 12 October; an unseeded pack breaks at reveal.
 11. **`firstMs` and the pack picker are live and unplayed.** It is a deterrent,
@@ -144,7 +144,7 @@ safe. If rules matter: `npm run check-rules` (91/91, 27 September) and
 id seeded earlier from an unpublished spec), read back 680/680. The seed only
 ever adds, so anything still live keeps working.
 
-Bitten more than once: **the rules are published by hand**, so the repo copy is
-not what Firebase runs ([`security.md`](decisions/security.md)); **the answer
+Bitten more than once: **the rules were published by hand** (CI from W2), so the repo copy
+was not what Firebase ran ([`security.md`](decisions/security.md)); **the answer
 window lives in `firestore.rules` as well as the client**
 ([`answer-window.md`](decisions/answer-window.md)).
