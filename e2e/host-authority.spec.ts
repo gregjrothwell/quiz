@@ -98,12 +98,36 @@ test('the host vanishes mid-question and the room carries on', async ({ browser 
   await expect(lit(ann.page, 'Bob')).toBeVisible();
   await expect(lit(bob.page, 'Ann')).toBeVisible();
 
+  // What each player's console says and where the room stands while the chair
+  // is empty, so a stall names its own cause in the CI log.
+  for (const [name, each] of [['ann', ann], ['bob', bob]] as const) {
+    each.page.on('console', (message) => {
+      if (message.type() === 'error' || message.type() === 'warning') {
+        console.log(`[${name} ${message.type()}] ${message.text()}`);
+      }
+    });
+  }
+  const closedAt = Date.now();
+  const watch = setInterval(() => {
+    void readRoom(code).then(
+      (room) => {
+        const host = room.hostUid ? (room.players[room.hostUid]?.name ?? room.hostUid) : 'none';
+        console.log(`[room +${Math.round((Date.now() - closedAt) / 1000)}s] phase=${room.phase} index=${room.index} host=${host}`);
+      },
+      (cause: unknown) => console.log(`[room] read failed: ${String(cause)}`),
+    );
+  }, 5_000);
+
   // #when the host's tab closes before the clock runs out
   await host.context.close();
 
   // #then within about 90 s Ann, the longest-seated present player, has the
   // chair and the open question is revealed with both answers counted (AC8)
-  await expect(ann.page.getByText('Correct', { exact: true })).toBeVisible({ timeout: 120_000 });
+  try {
+    await expect(ann.page.getByText('Correct', { exact: true })).toBeVisible({ timeout: 120_000 });
+  } finally {
+    clearInterval(watch);
+  }
   const revealed = await until(() => readRoom(code), (room) => room.phase === 'reveal', 10_000);
   const annUid = uidOf(revealed, 'Ann');
   const bobUid = uidOf(revealed, 'Bob');
