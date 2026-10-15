@@ -1,5 +1,10 @@
 rules_version = '2';
 
+// Published by CI: the `rules` job in .github/workflows/ci.yml, on `master`,
+// after e2e has run this file in the emulator and before the site goes out.
+// Do not paste it into the console; the next merge replaces whatever is there.
+// docs/decisions/rules-from-ci.md.
+//
 // Since W3 (host authority) a room names its host in `hostUid`, and only the
 // host moves the game on. A room made before W3 derives its quizmaster from
 // who has been there longest, and there the rules enforce the weaker invariant
@@ -777,7 +782,7 @@ service cloud.firestore {
     // a tally — the fold that turns these into a retirement list runs on the
     // Admin SDK, which is not subject to these rules at all — and a collection
     // nobody can enumerate is a collection nobody can mine. Granting `list`
-    // later is one paste, and is what a live tally would need.
+    // later is one rules change, and is what a live tally would need.
     //
     // The document id is the voter's uid, so one person's opinion of a question
     // counts once. `update` is allowed for the same reason it is on an answer:
@@ -931,8 +936,8 @@ service cloud.firestore {
       // fields, and a client one deploy behind writes none. Required would
       // lock those rows out. The *new* client writes both on every bank, so
       // the published hasOnly list refuses those writes until this block is
-      // pasted — paste, then check-rules, then deploy. Same order as firstMs
-      // and keep-the-round. Rules cannot walk a list, so the six slots are
+      // live. CI publishes rules before the site in one run, which keeps that
+      // order; check-rules after. Same order as firstMs and keep-the-round. Rules cannot walk a list, so the six slots are
       // unrolled; an entry past size() is skipped, not read.
       function recentEntryOk(entry) {
         return entry is map
