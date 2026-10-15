@@ -17,10 +17,19 @@
 # docs/decisions/audit-backlog.md.
 #
 # Actions used are GitHub's own (checkout, setup-node, setup-java,
-# upload/download-artifact).
-# Publishing uses the `gh-pages` npm package already in devDependencies, the same
-# tool `npm run deploy` uses, so a hand deploy and a CI deploy produce the same
-# artefact the same way and nothing new enters the deploy path.
+# upload/download-artifact), plus **one that is not**: Google's
+# `google-github-actions/auth`, in the `rules` job only, pinned to a commit.
+# That is the accepted cost of keyless rules publishing (D5, Greg, 15 October
+# 2026, docs/decisions/public-scale.md): the alternative was a long-lived
+# service-account key in a GitHub secret, which opens the vault if it leaks.
+# The site is published with the `gh-pages` npm package and the rules with
+# `firebase-tools`, both already in devDependencies — the same two tools a hand
+# deploy uses — so nothing else new enters the deploy path.
+#
+# The rules job holds a short-lived Google credential that can only be minted on
+# `master`: Google's own pool refuses any other ref. It is still
+# not the debug token, and nothing here can reach the live project as a client,
+# which is why `npm run check-rules` stays a local step after a merge.
 #
 # The four majors are deliberately uneven, and levelling them to one number
 # re-breaks this. Node 20 is deprecated, so every action here has to declare
@@ -137,12 +146,83 @@ jobs:
           path: playwright-report/
           if-no-files-found: ignore
 
-  deploy:
-    name: Publish to gh-pages
+  # Publishes both rulesets named in firebase.json — firestore.rules and
+  # database.rules.json — once verify and e2e have passed. e2e has just run these
+  # same two files in the emulator, so what goes live is what was exercised.
+  # Until W2 they were pasted into the console by hand, this repo's most repeated
+  # failure (docs/decisions/ci-deploy.md, "Rules from CI").
+  #
+  # Keyless (D5): GitHub's OIDC token is swapped for a short-lived token for one
+  # service account that holds the rules roles and nothing else. The pool admits
+  # only this repository's `master` (an attribute condition on repository_id and
+  # ref), so a pull request, a fork or another branch is refused by Google even
+  # if the `if` below were wrong. The two variables name the provider and the
+  # account; they identify, they do not authorise, so they are not secrets.
+  #
+  # firebase-tools checks both files against the live project before it releases
+  # either: the RTDB rules by a dry-run PUT, the Firestore rules by the Rules
+  # API's compile. A file that does not compile stops this job having published
+  # nothing. Read off firebase-tools' deploy/index.js (every prepare runs before
+  # any release) and proved with `--dry-run`, 15 October 2026.
+  #
+  # Before `deploy`, so a client never goes live ahead of the rules it needs, and
+  # a failed publish holds the site back too. It does not make a breaking rule
+  # safe: tabs still open run the old bundle against the new rules the moment
+  # this finishes. A rule that would refuse the old client still needs
+  # expand-then-contract (public-scale.md, W3).
+  rules:
+    name: Publish rules to Firebase
     needs: [verify, e2e]
     if: >-
-      github.event_name == 'workflow_dispatch'
-      || (github.event_name == 'push' && github.ref == 'refs/heads/master')
+      github.ref == 'refs/heads/master'
+      && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Lets the job ask GitHub for the OIDC token that Google's pool checks.
+      # Granted to this job alone; no other job can mint a Google credential.
+      id-token: write
+    # One publish at a time; the newest queued run wins, which is the newest
+    # master.
+    concurrency:
+      group: firebase-rules
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # The lockfile's firebase-tools: the same version that ran the emulator in
+      # e2e.
+      - run: npm ci
+
+      # Pinned to the commit behind v3.0.0, not the tag: it is the one action
+      # here from outside GitHub, in the only job that can change the rules, and
+      # a tag can be moved. Declares `runs.using: node24` (its action.yml at that
+      # commit). Writes an external-account credentials file and exports
+      # GOOGLE_APPLICATION_CREDENTIALS, which firebase-tools reads through
+      # google-auth-library when nobody is logged in (lib/requireAuth.js).
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_RULES_SERVICE_ACCOUNT }}
+
+      - name: Publish both rulesets
+        run: npx firebase deploy --only firestore:rules,database --project quiz-d686e --non-interactive
+
+  deploy:
+    name: Publish to gh-pages
+    # After `rules`: see that job. Since `rules` runs only on `master`, so does
+    # this, a manual run included. Until W2 a workflow_dispatch from any other
+    # branch could publish that branch's site, which is the drift this file
+    # exists to stop.
+    needs: [verify, e2e, rules]
+    if: >-
+      github.ref == 'refs/heads/master'
+      && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       # The repository default is read-only, so this is not decoration: without

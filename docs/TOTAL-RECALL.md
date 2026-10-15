@@ -24,6 +24,13 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-15 — Branch `rules-from-ci`: W2, CI publishes both rulesets, keyless
+
+A `rules` job after e2e and before the site, master only, through one impersonated service account (no key). The
+third role, Service Usage Consumer, was found by a 403 in a dry run, not in any doc. Live rules equal the repo, so the
+first publish is a no-op. Probe PRs #82/#83: a broken file of either kind turns e2e red. Not live: Greg's Cloud Shell step, then W1, then "go live".
+[`rules-from-ci.md`](decisions/rules-from-ci.md).
+
 ## 2026-10-15 — Branch `tmdb-credit`: W1, TMDB's logo and notice; D6 added
 
 Greg took the plan's five decisions as recommended, then added D6: league owners sign in (Google, linked to their
@@ -169,17 +176,11 @@ is unchanged (`index-DdEoFaVD`), so the pack sizes were the check. Seeded 378, r
 Freshness after: Catchphrase 4.6 fresh rounds (was 2.3), Sleeves 8.0 (5.0), On the box 19.7, Tunes 19.9.
 Claude's `gh pr merge` went through this time.
 
-## 2026-10-06 — Overnight: every played pack grown, nothing live
+## 2026-10-02 to 2026-10-06 — archived, one line each
 
-Greg: "beef up the packs", then "we need more catchphrases". Two background agents and two Whisper audits ran,
-with a pause at the 5-hour limit, 23:15–03:10. Catchphrase 60 → 90, built blind. Sleeves 168 → 212 (pre-screened,
-44 of 759). On the box 296 → 445. Tunes 268 → 424. All local, unseeded:
-[`pack-growth-plan.md`](decisions/pack-growth-plan.md#done-overnight--6-october-2026).
+Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again. The 6 October overnight growth on 15 October, at 306.
 
-## 2026-10-02 to 2026-10-05 — archived, one line each
-
-Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again.
-
+- **2026-10-06** — [Overnight: every played pack grown, nothing live](recall/2026-10.md#2026-10-06--overnight-every-played-pack-grown-nothing-live)
 - **2026-10-05** — [#66 live: Catchphrase 60, Bonus Catchphrase, Sleeves 168](recall/2026-10.md#2026-10-05--66-live-catchphrase-60-bonus-catchphrase-sleeves-168)
 - **2026-10-05** — [Catchphrase 60, everything prepped, and the batch named in chat](recall/2026-10.md#2026-10-05--catchphrase-60-everything-prepped-and-the-batch-named-in-chat)
 - **2026-10-05** — [Sleeves 168, a freshness check, and the harder batch half drawn](recall/2026-10.md#2026-10-05--sleeves-168-a-freshness-check-and-the-harder-batch-half-drawn)

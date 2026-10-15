@@ -1,9 +1,9 @@
 # Deploy from CI, not a laptop
 
-> **Owner: Greg Rothwell. Last updated: 2 October 2026. Budget: 250 lines.**
-> **Status: built, 10 September 2026** — `.github/workflows/ci.yml`. The outline
-> below is kept; what actually shipped, and the two places the outline was
-> wrong, are in *What was built* at the end.
+> **Owner: Greg Rothwell. Last updated: 15 October 2026. Budget: 250 lines.**
+> **Status: built, 10 September 2026** — `.github/workflows/ci.yml`; outline kept,
+> what shipped in *What was built*. **Rules from CI** (W2, built 15 Oct, not live):
+> a `rules` job before `deploy`, keyless — [`rules-from-ci.md`](rules-from-ci.md).
 
 ## Why
 
@@ -209,7 +209,7 @@ The second is the **Firebase emulator**, which is why the CI check is shaped as
 glob (**done**), jsdom component tests (Vitest `dom` project), emulator, then
 Playwright. The e2e job sits between `verify` and `deploy`, downloads the same
 `dist` artefact, and talks to Auth / Firestore / RTDB emulators. `deploy`
-`needs: [verify, e2e]`. No workflow names the debug-token variable;
+`needs: [verify, e2e]` (W2 adds `rules`). No workflow names the debug-token variable;
 `check-bundle` also scans `playwright.config.ts` and `e2e/`.
 
 The switch is a **runtime flag**, not a build-time `VITE_*` — otherwise the
