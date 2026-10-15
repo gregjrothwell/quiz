@@ -704,6 +704,7 @@ export function QuestionScreen({
                 {...(question.artworkUrl ? { artworkUrl: question.artworkUrl } : {})}
                 {...(question.posterCrop ? { posterCrop: true } : {})}
                 {...(question.credit ? { credit: question.credit } : {})}
+                tmdb={behavingAs === 'screens'}
               />
             ) : null}
 

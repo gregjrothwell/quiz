@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { QrCode } from '../components/QrCode';
 import { RoomLink } from '../components/RoomLink';
 import { SoundCheck } from '../components/SoundCheck';
+import { TmdbNotice } from '../components/TmdbCredit';
 import { joinLink } from '../engine/roomCode';
 import {
   leadingPacks,
@@ -612,6 +613,8 @@ export function Lobby({
           </p>
         </section>
       )}
+
+      <TmdbNotice />
     </>
   );
 }
