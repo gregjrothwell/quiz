@@ -386,7 +386,12 @@ async function main(): Promise<void> {
   );
 }
 
-main().catch((error: unknown) => {
-  console.error('\nfinal-harness failed:', error instanceof Error ? error.message : error);
-  process.exitCode = 1;
-});
+main()
+  .catch((error: unknown) => {
+    console.error('\nfinal-harness failed:', error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  })
+  // The lamps' Realtime Database connection outlives `deleteApp` and holds the
+  // event loop open, `goOffline` or not (measured 15 Oct 2026), so the run
+  // ends here, with its exit code, as `check-rules` does.
+  .finally(() => process.exit());

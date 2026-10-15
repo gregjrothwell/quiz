@@ -48,7 +48,7 @@ import { initializeApp, deleteApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { attachDebugAppCheck } from './appCheck';
 import { startBeat } from './hostBeat';
-import { lightLamp } from './lamp';
+import { lightLamp, litLamps } from './lamp';
 import {
   collection,
   doc,
@@ -375,6 +375,17 @@ async function main(): Promise<void> {
     console.log(`    ${seat.name.padEnd(4)} ${lectern}  at ${String(seat.elapsedMs).padStart(5)}ms`);
   }
 
+  // What a browser counts "N answered" from: the lamps, read by a player who
+  // may not read anybody's answer. Every seat must be lit.
+  const lampReader = players[players.length - 1];
+  if (!lampReader) throw new Error('no lamp reader');
+  const lit = new Set(await litLamps(lampReader.app, code, gameId, 0));
+  const unlit = players.filter((client) => !lit.has(client.uid)).map((client) => client.name);
+  console.log(
+    `${stamp()}  ${lampReader.name} sees ${lit.size} lamps lit` +
+      (unlit.length === 0 ? ', every seat ✓' : `; unlit: ${unlit.join(', ')} ✗`),
+  );
+
   // Past this room's own gate, so the vault will answer.
   await sleep(DURATION_SECS * 1_000 + GATE_SLACK_MS);
 
@@ -412,6 +423,7 @@ async function main(): Promise<void> {
   console.log(`  ${'─'.repeat(51)}`);
 
   const failures: string[] = [];
+  if (unlit.length > 0) failures.push(`lamps not lit for ${unlit.join(', ')}: a browser would not count them answered`);
 
   for (const [uid, seat] of byUid) {
     if (!seat) continue;
@@ -609,7 +621,12 @@ async function main(): Promise<void> {
   );
 }
 
-main().catch((error: unknown) => {
-  console.error('\nrank-harness failed:', error instanceof Error ? error.message : error);
-  process.exitCode = 1;
-});
+main()
+  .catch((error: unknown) => {
+    console.error('\nrank-harness failed:', error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  })
+  // The lamps' Realtime Database connection outlives `deleteApp` and holds the
+  // event loop open, `goOffline` or not (measured 15 Oct 2026), so the run
+  // ends here, with its exit code, as `check-rules` does.
+  .finally(() => process.exit());

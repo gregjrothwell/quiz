@@ -14,7 +14,7 @@
  */
 
 import type { FirebaseApp } from 'firebase/app';
-import { getDatabase, ref, set } from 'firebase/database';
+import { get, getDatabase, ref, set } from 'firebase/database';
 import { lampKey } from '../src/lib/roomDoc';
 
 /**
@@ -30,4 +30,15 @@ export function lightLamp(
   uid: string,
 ): Promise<void> {
   return set(ref(getDatabase(app), `lamps/${code}/${lampKey(gameId, index)}/${uid}`), true);
+}
+
+/** The uids whose lamps are lit for that question, read as any member reads them. */
+export async function litLamps(
+  app: FirebaseApp,
+  code: string,
+  gameId: string | null,
+  index: number,
+): Promise<string[]> {
+  const snapshot = await get(ref(getDatabase(app), `lamps/${code}/${lampKey(gameId, index)}`));
+  return Object.keys((snapshot.val() as Record<string, unknown> | null) ?? {});
 }
