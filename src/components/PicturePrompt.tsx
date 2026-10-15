@@ -10,6 +10,7 @@ import {
 import { BONUS_SQUARES, liftOrder, liftedSquareCount } from '../engine/catchphraseBonus';
 import { isItunesArtworkUrl } from '../lib/apple-media';
 import { stillSrc, useStillStatus } from '../lib/stills';
+import { TmdbStillCredit } from './TmdbCredit';
 
 interface PicturePromptProps {
   image?: string;
@@ -17,6 +18,8 @@ interface PicturePromptProps {
   imageHeight?: number;
   artworkUrl?: string;
   credit?: string;
+  /** On the box: TMDB's terms want their logo where their content shows. */
+  tmdb?: boolean;
   jigsaw: boolean;
   /** Bonus Catchphrase: the picture under nine squares that lift on the clock. */
   bonus?: boolean;
@@ -81,6 +84,7 @@ export function PicturePrompt({
   imageHeight,
   artworkUrl,
   credit,
+  tmdb = false,
   jigsaw,
   bonus = false,
   posterCrop = false,
@@ -185,6 +189,7 @@ export function PicturePrompt({
         {overlay}
       </div>
       {credit ? <figcaption className="still__credit">{credit}</figcaption> : null}
+      {tmdb ? <TmdbStillCredit /> : null}
     </figure>
   );
 }

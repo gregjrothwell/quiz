@@ -1496,6 +1496,42 @@ select.input option {
   color: rgb(255 255 255 / 0.72);
 }
 
+/*
+  TMDB's terms: their logo, less prominent than ours, and their notice
+  prominently. The mark sits at cap height beside the credit's own text, and
+  at 0.8rem in the lobby footer — well under the room code and the title.
+*/
+.tmdb-mark {
+  display: inline-block;
+  width: auto;
+  height: 0.7em;
+  vertical-align: baseline;
+}
+
+.still__credit--tmdb {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+}
+
+.tmdb-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+  margin-top: 2rem;
+  font-size: 0.8rem;
+  color: rgb(255 255 255 / 0.72);
+}
+
+.tmdb-notice p {
+  margin: 0;
+}
+
+.tmdb-notice .tmdb-mark {
+  height: 0.8rem;
+}
+
 .jigsaw {
   display: grid;
   gap: 2px;
