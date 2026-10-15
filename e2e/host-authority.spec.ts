@@ -144,3 +144,41 @@ test('the host vanishes mid-question and the room carries on', async ({ browser 
   await ann.page.keyboard.press(' ');
   await until(() => readRoom(code), (room) => room.phase === 'scoreboard', 10_000);
 });
+
+test('an ordinary hosted round: the creator reveals with every answer counted (AC12)', async ({ browser }) => {
+  test.setTimeout(120_000);
+
+  const host = await seat(browser, 'Host');
+  await host.page.getByRole('button', { name: 'Start a new room' }).click();
+  const label = await host.page.getByLabel(/Room code [A-Z0-9]{4}/).getAttribute('aria-label');
+  const code = label?.replace('Room code ', '') ?? '';
+
+  const ann = await seat(browser, 'Ann');
+  await ann.page.getByPlaceholder('––––').fill(code);
+  await ann.page.getByRole('button', { name: 'Join the round' }).click();
+  await expect(ann.page.getByText('Vote for a set')).toBeVisible();
+
+  for (const [name, each] of [['host', host], ['ann', ann]] as const) {
+    each.page.on('console', (message) => {
+      if (message.type() === 'error' || message.type() === 'warning') {
+        console.log(`[ac12 ${name} ${message.type()}] ${message.text()}`);
+      }
+    });
+  }
+
+  await until(() => readRoom(code), (room) => Object.keys(room.players).length === 2);
+  await packCard(host.page, 'General Knowledge').click();
+  await host.page.getByRole('button', { name: 'Start the show' }).click();
+  await host.page.getByRole('button', { name: 'Start the round' }).click();
+  await until(() => readRoom(code), (room) => room.phase === 'question');
+  await seedVault(code);
+
+  await expect(ann.page.locator('.podium')).toBeVisible();
+  await ann.page.keyboard.press('a');
+
+  // The host's own device reveals when the clock runs out, as it does today.
+  await expect(ann.page.getByText('Correct', { exact: true })).toBeVisible({ timeout: 60_000 });
+  const revealed = await until(() => readRoom(code), (room) => room.phase === 'reveal', 10_000);
+  expect(revealed.hostUid).toBe(uidOf(revealed, 'Host'));
+  expect(revealed.scores[uidOf(revealed, 'Ann')]).toBeGreaterThan(0);
+});

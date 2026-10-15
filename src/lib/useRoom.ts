@@ -407,14 +407,18 @@ export function useRoom(): UseRoom {
           const parsed = answerDocFrom(document.data());
           if (parsed) next[document.id] = parsed;
         }
+        console.warn(
+          `[w3-debug] answers ${key} size=${snapshot.size} fromCache=${String(snapshot.metadata.fromCache)} pending=${String(snapshot.metadata.hasPendingWrites)}`,
+        );
         setAnswersFeed({ key, docs: next, fromServer: !snapshot.metadata.fromCache });
-      });
+      }, (cause) => console.warn(`[w3-debug] answers ${key} listener error: ${cause.code} ${cause.message}`));
     }
 
+    console.warn(`[w3-debug] answers ${key}: own document only`);
     return onSnapshot(doc(answersCollection(code), uid), (snapshot) => {
       const parsed = snapshot.exists() ? answerDocFrom(snapshot.data()) : null;
       setAnswersFeed({ key, docs: parsed ? { [uid]: parsed } : {}, fromServer: true });
-    });
+    }, (cause) => console.warn(`[w3-debug] own answer listener error: ${cause.code} ${cause.message}`));
   }, [code, uid, readsAll]);
 
   const answers = answersFeed.key === feedKey ? answersFeed.docs : NO_ANSWERS;
