@@ -2,7 +2,8 @@
 
 > **Owner: Greg Rothwell. Last updated: 15 October 2026. Budget: 250 lines.**
 
-**Status: STORY, for Greg to approve.** Nothing is built. W3 of the plan in
+**Status: STORY, approved by Greg 15 October 2026**, with both defaults below as
+written. Nothing is built. W3 of the plan in
 [`public-scale.md`](public-scale.md#the-plan-15-october-2026), under D1 (seams
 now) and D2 (b) (a heartbeat claim), both decided 15 October. **No rule from
 this ships until W2 is live**, so that rules and the client they match go out in
@@ -163,11 +164,12 @@ D6's signed-in owner). Recorded so W3 is not mistaken for closing them.
 
 The riskiest part is AC8, so it is built and proven first.
 
-## For Greg
+## For Greg — decided 15 October 2026, as written
 
-1. **Approve the story,** or change it.
+1. **Approve the story.** Approved.
 2. **Heartbeat timing:** a beat every 15 s, and a claim after 75 s of silence.
    A host whose laptop sleeps loses the chair after about 75–90 s. Shorter means
    faster recovery and more wrongful claims from throttled tabs.
+   **Taken: 15 s / 75 s.**
 3. **Lamps on the Realtime Database:** fine that a player could light their own
-   lamp without answering?
+   lamp without answering? **Yes.**

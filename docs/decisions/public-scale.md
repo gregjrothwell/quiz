@@ -208,7 +208,7 @@ Nothing above had moved since 2 October (`roomCode.ts`, `firestore.rules`,
 |---|---|---|---|---|
 | W1 | TMDB's logo under every On the box still, Random Round included; logo and notice in the lobby; `ATTRIBUTION.md` reworded. **Built 15 Oct, `tmdb-credit`** | under 1 session | "go live" only | Both on the live site; seal test green |
 | W2 | CI publishes both rulesets on `master`, after e2e passes | 1 session, plus Greg's console step | D5 | A rules-only merge appears in the console's history; a broken rules file stops the deploy before it publishes; `check-rules` both ways after |
-| W3 | Host authority (seam 1). **Story: [`host-authority.md`](host-authority.md), for approval** | 3–5 sessions | D1, D2 | One allow case per rule function touched; `check-rules` both ways; `sync-harness 30`, `rank-harness`, `host-room`; an office round |
+| W3 | Host authority (seam 1). **Story approved 15 Oct: [`host-authority.md`](host-authority.md)** | 3–5 sessions | D1, D2 | One allow case per rule function touched; `check-rules` both ways; `sync-harness 30`, `rank-harness`, `host-room`; an office round |
 | W4 | Tenancy (seam 2); licensed packs flagged office-only; a league owner signs in | 3–5 sessions (sign-in adds 1–2, estimate) | D1, D3, D6 | The office board reads back identical after the `season-2` migration; a second league sees none of it; an owner who signs in keeps their history |
 | W5 | Re-fetch every TMDB still. A rebuild alone re-fetches nothing: `write-screens-pack.ts` reuses stills on disk (`existingBySlug`), so W5 forces it | under 1 session | D4 | Done by 1 March 2027, and on a cycle under six months |
 
