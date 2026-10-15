@@ -24,6 +24,14 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-15 — Branch `w3-host-authority` (PR #86): W3, host authority, built and not live
+
+The room names its host (`hostUid`); only the host moves it on, members write only about themselves, answers are the
+host's and the author's, the reveal publishes the picks (`lastPicks`), lamps are on the RTDB. Leave hands the chair
+over; a 15 s beat and a claim at 75 s of silence cover the host whose tab closes (AC8, e2e). Expand half only: rooms
+without `hostUid` keep the member rule. **No rule published** — W2 is not live. Harnesses and `check-rules` not yet
+moved to hosted rooms; AC10 unmeasured. [`host-authority.md`](decisions/host-authority.md#what-was-built-15-october-2026).
+
 ## 2026-10-15 — Branch `tmdb-credit`: W1, TMDB's logo and notice; D6 added
 
 Greg took the plan's five decisions as recommended, then added D6: league owners sign in (Google, linked to their
@@ -162,24 +170,12 @@ run caught three distractors that were real variants. Seeded 140, read back 140/
 `host-room` reveal proved it end to end. Branch `blankety-blank`, **not deployed**.
 [`blankety-blank.md`](decisions/blankety-blank.md).
 
-## 2026-10-06 — Live: #67 (gh-pages `9124fc0`): every played pack grown
+## 2026-10-02 to 2026-10-06 — archived, one line each
 
-Word go 08:04 → live 08:15:54, about 12 minutes. The packs read 90 / 212 / 445 / 424 on the live site. The bundle
-is unchanged (`index-DdEoFaVD`), so the pack sizes were the check. Seeded 378, read back 1,171/1,171 by Greg.
-Freshness after: Catchphrase 4.6 fresh rounds (was 2.3), Sleeves 8.0 (5.0), On the box 19.7, Tunes 19.9.
-Claude's `gh pr merge` went through this time.
+Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's.
 
-## 2026-10-06 — Overnight: every played pack grown, nothing live
-
-Greg: "beef up the packs", then "we need more catchphrases". Two background agents and two Whisper audits ran,
-with a pause at the 5-hour limit, 23:15–03:10. Catchphrase 60 → 90, built blind. Sleeves 168 → 212 (pre-screened,
-44 of 759). On the box 296 → 445. Tunes 268 → 424. All local, unseeded:
-[`pack-growth-plan.md`](decisions/pack-growth-plan.md#done-overnight--6-october-2026).
-
-## 2026-10-02 to 2026-10-05 — archived, one line each
-
-Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again.
-
+- **2026-10-06** — [Live: #67 (gh-pages `9124fc0`): every played pack grown](recall/2026-10.md#2026-10-06--live-67-gh-pages-9124fc0-every-played-pack-grown)
+- **2026-10-06** — [Overnight: every played pack grown, nothing live](recall/2026-10.md#2026-10-06--overnight-every-played-pack-grown-nothing-live)
 - **2026-10-05** — [#66 live: Catchphrase 60, Bonus Catchphrase, Sleeves 168](recall/2026-10.md#2026-10-05--66-live-catchphrase-60-bonus-catchphrase-sleeves-168)
 - **2026-10-05** — [Catchphrase 60, everything prepped, and the batch named in chat](recall/2026-10.md#2026-10-05--catchphrase-60-everything-prepped-and-the-batch-named-in-chat)
 - **2026-10-05** — [Sleeves 168, a freshness check, and the harder batch half drawn](recall/2026-10.md#2026-10-05--sleeves-168-a-freshness-check-and-the-harder-batch-half-drawn)

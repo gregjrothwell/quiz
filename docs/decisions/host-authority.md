@@ -2,8 +2,10 @@
 
 > **Owner: Greg Rothwell. Last updated: 15 October 2026. Budget: 250 lines.**
 
-**Status: STORY, approved by Greg 15 October 2026**, with both defaults below as
-written. Nothing is built. W3 of the plan in
+**Status: BUILT on `w3-host-authority` (PR #86), 15 October 2026. Not live; no
+ruleset published.** Story approved by Greg the same day, with both defaults
+below as written. What was built and what was not: [below](#what-was-built-15-october-2026).
+W3 of the plan in
 [`public-scale.md`](public-scale.md#the-plan-15-october-2026), under D1 (seams
 now) and D2 (b) (a heartbeat claim), both decided 15 October. **No rule from
 this ships until W2 is live**, so that rules and the client they match go out in
@@ -173,3 +175,55 @@ The riskiest part is AC8, so it is built and proven first.
    **Taken: 15 s / 75 s.**
 3. **Lamps on the Realtime Database:** fine that a player could light their own
    lamp without answering? **Yes.**
+
+## What was built, 15 October 2026
+
+Expand half only, on `w3-host-authority`, PR #86. Branch cut from
+`host-authority-story`, so it carries W1's commits too (#81).
+
+| | Where |
+|---|---|
+| `hostUid`, `resolveHost`, `successorOnLeave`, `planClaim`; 15 s / 75 s / ask from 50 s, retry 5 s | `src/engine/host.ts` |
+| The reveal publishes `lastPicks`; next, skip, start, reset clear it | `src/engine/reducer.ts` |
+| Room document both ways, moved out of `useRoom` so Node can load it | `src/lib/roomDoc.ts` |
+| Create names the host; beat and claim over Lite; Leave hands over; own-answer listener; lamps; `answersReady` | `src/lib/useRoom.ts` |
+| Host-only writes, `selfWrite`, `claim`, answers `get`/`list`, reveal `mayReveal`, `host/beat` | `firestore.rules` |
+| `lamps/{code}/{question}/{uid}` | `database.rules.json` |
+
+**Chrome, checked 15 Oct** (MDN `setTimeout`, last modified 3 Sep 2026): after
+five minutes hidden, with five or more chained timers (`setInterval` counts),
+silent 30 s and no WebRTC, timers run **once a minute**. A throttled host's beats
+are then up to ~60 s apart, under 75. Not covered: Firefox for Android (15-minute
+minimum, may unload the tab) and Chrome's tab freezing, which the page does not
+mention. A host in either keeps the chair only while presence holds.
+
+**Proof, by criterion.** e2e is CI only (no JDK here).
+
+| AC | Evidence | State |
+|---|---|---|
+| AC1, AC3, AC4, AC6, AC7, AC9, AC11 | `e2e/host-authority-rules.spec.ts`, client SDK + `reduce`/`toUpdate` | CI |
+| AC2 | same file, one allow test through selectPack+titles, clearTitles, start, reveal doc, reveal, next ×2, skip, reset, reaper, browsing, beat. **Not** settle, openPicks, closePicks (the final) | partial |
+| AC5, AC6, AC8, AC12 | `e2e/host-authority.spec.ts`: the host's tab closes mid-question; Ann claims, reveals both answers, moves on | CI |
+| AC10 | `sync-harness 30` reads | **not done** — needs a live deploy |
+| live | `check-rules` both ways, `host-room`, `rank-harness -- --browser`, an office round | **not done** — W2 |
+
+**Before the change** (CI, `0c605f0`, tests only): the AC2/AC3 allow case
+failed `PERMISSION_DENIED` (no rule for the beat), and the AC8 round failed (no
+`hostUid`). Serial mode skipped the rest; it is off now.
+
+**Not built:**
+- **The six scripts were not changed.** Under the expand rules they still work,
+  as rooms without `hostUid`, which proves nothing about W3. Before the deploy,
+  `check-rules` needs W3's cases both ways and `host-room`, `rank-harness` and
+  `sync-harness` need to make hosted rooms; each also needs RTDB presence and a
+  beat, or a browser player will claim the room after 75 s.
+- **Lamps are never deleted.** About 40 bytes per player per question. A
+  `prune-rooms` pass over `lamps/{code}` is the tidy.
+- **The beat costs writes:** about 240 an hour per open room, all day if a tab
+  is left open, against 20,000 a day.
+- **An old tab in a new room** (not reloaded since the deploy) lists every
+  answer and is refused, so it loses the replay. Reload fixes it.
+- **The contract deploy** (no `hostUid`, no write) waits until every room made
+  before the expand deploy is past `expiresAt`, 30 days.
+- Whether a rules `get()` on the host's listener is billed per snapshot: AC10.
+
