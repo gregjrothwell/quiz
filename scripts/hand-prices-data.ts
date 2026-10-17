@@ -52,8 +52,12 @@ export interface PriceSpec {
  * Shown to Greg on 6 October 2026, in a draft of the decision doc and in a
  * question: a man's haircut, a pub pint of lager (as a quote and as an RPI
  * series), takeaway fish and chips, a double duvet. Never in the pack.
+ *
+ * And `430623`: batch 2's `price-155` (id `c2722f4e4a75`), cut 17 October 2026
+ * after a `host-room` check printed three of its four options into a
+ * transcript Greg can read. It has no twin in either source.
  */
-export const SPOILED_KEYS = ['520301', '310109', 'CZMS', '220301', '430211'];
+export const SPOILED_KEYS = ['520301', '310109', 'CZMS', '220301', '430211', '430623'];
 
 export const PRICES_MIN_PACK = 60;
 export const PRICES_MIN_PER_LEVEL = 15;
@@ -233,7 +237,7 @@ export const PRICE_SPECS: PriceSpec[] = [
   spec(152, 5, '630138', 'a DAB digital radio', 'leisure'),
   spec(153, 5, '430621', "a pet's annual booster jab at the vet", 'pets'),
   spec(154, 5, '430613', 'a tin of dog food', 'pets'),
-  spec(155, 5, '430623', 'a hamster, gerbil or similar small pet', 'pets'),
+  // price-155 was cut on 17 October 2026 (`SPOILED_KEYS`). Never reuse a slug: it is a vault id.
 ];
 
 /** Where the first build (6 October 2026) ends and batch 2 begins. */

@@ -152,6 +152,8 @@ whether the round is too hard now, and whether "did it get cheaper?" lands as a 
 
 ## Batch 2 — 17 October 2026
 
+17 Oct: one batch-2 question cut after its options were shown in a transcript; 155 → 154.
+
 **Why.** Live freshness, 17 October: 95 questions, 56 asked, **39 unseen**. The office uses about
 16 a week, mostly through Random Round (1–4 Price questions a round): two and a half weeks of
 runway. Goal **+60, to 155**. Shape only below — Greg plays it blind.
@@ -160,8 +162,8 @@ runway. Goal **+60, to 155**. Shape only below — Greg plays it blind.
 months and every RPI series for the three Januaries, from the files cached on 6 October.
 
 **Shop quotes only.** Of the 25 RPI series not in the first build, 1 is spoiled, 2 are twins of
-items already asked and 22 lack a value in both months of either gap. All 60 are 5- or 10-year
-questions, so the pack's mix moves: **115 of 155 at 5 or 10 years**, was 55 of 95.
+items already asked and 22 lack a value in both months of either gap. All 59 are 5- or 10-year
+questions, so the pack's mix moves: **114 of 154 at 5 or 10 years**, was 55 of 95.
 
 | Candidates — 360 not in the first build (335 quote items, 25 RPI series) | |
 |---|---|
@@ -173,26 +175,29 @@ questions, so the pack's mix moves: **115 of 155 at 5 or 10 years**, was 55 of 9
 | Not for an office round | 4 |
 | Fits only on top — fell, held or barely rose — cut so each gap's places stay even | 15 |
 | Suitable, not needed for +60: a reserve, not reviewed as closely | 111 |
-| **Added**, numbered on from the first build | **60** |
+| **Added**, numbered on from the first build; the last, `price-155`, cut since (`SPOILED_KEYS`) | **60 → 59** |
 
-| After | Pack (155) | Batch 2 (60) |
+| After the cut | Pack (154) | Batch 2 (59) |
 |---|---|---|
-| Per gap, 5 / 10 / 20 / 30 years | 54 / 61 / 20 / 20 | 29 / 31 / 0 / 0 |
-| Levels, easy / medium / hard | 29 / 35 / 91 | 9 / 10 / 41 |
-| Largest category (cap: a quarter) | 24 — 15.5% | 12 — 20% |
-| Answer's place per gap (5 / 10 / 20 / 30) | 13-13-14-14 · 15-15-15-16 · 4-5-6-5 · 4-5-5-6 | |
-| All four under today's / answer over (fell, held) / decoy over | 127 / 14 / 14 | 45 / 6 / 9 |
-| Answers changed against the vault cache | **0** — and 60 new ids to seed | |
+| Per gap, 5 / 10 / 20 / 30 years | 53 / 61 / 20 / 20 | 28 / 31 / 0 / 0 |
+| Levels, easy / medium / hard | 32 / 31 / 91 | 11 / 8 / 40 |
+| Largest category (cap: a quarter) | 24 — 15.6% | 12 — 20.3% |
+| Answer's place per gap (5 / 10 / 20 / 30) | 12-13-14-14 · 15-15-15-16 · 4-5-6-5 · 4-5-5-6 | |
+| All four under today's / answer over (fell, held) / decoy over | 126 / 14 / 14 | 45 / 6 / 8 |
+| Answers changed against the vault cache | **0** — and 59 new ids to seed | |
+| Re-laid by the cut: it held a five-year decoy, so that gap's decoys and places moved | 13 options, 8 levels — all five-year | |
 
 **The first 95 keep their slugs, gaps and keys in order** (pinned by hash), so the level dealt
 in turn, the rounding and every seeded answer are unchanged. Placing and decoys work per gap,
-so **8 of the 95 had their options re-laid and 4 changed level**; no answer or wording changed.
+so **8 of the 95 had their options re-laid and 4 changed level** (8 and 5 after the cut, against
+`master`); no answer or wording changed.
 
 **One test bound moved.** "The answer in each place about equally" allowed a spread of 3 per gap
 on invented prices that put two in seven where only the top fits — more than a quarter. The
 five-year gap is now 54, of which 16 fit only on top, and no placing gets under 4 (an
-independent count). The bound is now 3 or that least, whichever is wider. A placer that always
-takes the first place still fails it; on the real pack the spread is 1 in both quote gaps.
+independent count; 53, 15 and 3 after the cut). The bound is now 3 or that least, whichever is
+wider. A placer that always takes the first place still fails it; on the real pack the spread is
+2 in the five-year gap and 1 in the ten-year (was 1 in both before the cut).
 
 **New rules, each with a deny case and an allow case.** `twinsIn`: one item once, across sources
 and codes, and never a twin of a spoiled one. `prices-pack.test.ts`, on the published file: one
@@ -205,4 +210,4 @@ rose modestly, and every option under today's price narrows their ladders. Wheth
 hard is for the next rounds — `read-games --pack prices`.
 
 **Before it ships:** `write-prices-pack` in the checkout that seeds, so its `.cache/hand-vault.json`
-holds the 60 new answers; then `seed-vault -- --pack prices` and one `host-room` reveal.
+holds the 59 new answers; then `seed-vault -- --pack prices` and one `host-room` reveal.
