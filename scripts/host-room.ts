@@ -40,6 +40,17 @@
  *
  *   npm run host-room -- 10 --pack prices
  *
+ * `--last` plays the last two questions of the pack instead of the first two.
+ * A batch appends, so the first two are old ids the vault already held; only
+ * the last two prove a fresh batch was seeded before it deploys.
+ *
+ *   npm run host-room -- 10 --pack prices --last
+ *
+ * Safe for blind packs: Lite logs every refused reveal candidate with its
+ * payload (the option text), and four candidates means three refusals a
+ * question. Its log level is turned down to errors below, so the options never
+ * reach the terminal; a real failure still throws out of `resolveAnswer`.
+ *
  * Not part of the build or the test suite: it talks to the live project.
  */
 
@@ -59,7 +70,7 @@ import {
   type DocumentData,
 } from 'firebase/firestore';
 // The vault's candidates go over Lite, as the app sends them — see `resolveAnswer`.
-import { getFirestore as getLiteFirestore } from 'firebase/firestore/lite';
+import { getFirestore as getLiteFirestore, setLogLevel as setLiteLogLevel } from 'firebase/firestore/lite';
 import { reduce, type Action } from '../src/engine/reducer';
 import { liveAnswers, type AnswerDoc } from '../src/engine/answers';
 import {
@@ -146,12 +157,14 @@ function sleeveQuestions(): QuizQuestion[] {
   return [sung, silent];
 }
 
-/** The first two questions of a published pack, as the app would deal them. */
-function firstTwo(file: 'catchphrase.json' | 'blanks.json' | 'prices.json'): QuizQuestion[] {
+const LAST = process.argv.includes('--last');
+
+/** Two questions of a published pack — the first two, or the last two with `--last`. */
+function twoOf(file: 'catchphrase.json' | 'blanks.json' | 'prices.json'): QuizQuestion[] {
   const pack = JSON.parse(
     readFileSync(join(import.meta.dirname, '..', 'public', 'packs', file), 'utf8'),
   ) as { questions: SealedQuestion[] };
-  const built = buildQuizQuestions(pack.questions.slice(0, 2), 2);
+  const built = buildQuizQuestions(LAST ? pack.questions.slice(-2) : pack.questions.slice(0, 2), 2);
   if (built.length < 2) throw new Error(`${file} has fewer than two questions`);
   return built;
 }
@@ -167,21 +180,28 @@ if (
 ) {
   throw new Error(`--pack takes sleeves, catchphrase, blanks or prices, not ${PACK}`);
 }
+if (LAST && (PACK === undefined || PACK === 'sleeves')) {
+  throw new Error('--last needs --pack catchphrase, blanks or prices');
+}
 const ROUND =
   PACK === 'sleeves'
     ? { packId: 'sleeves' as const, packTitle: 'Sleeves', questions: sleeveQuestions() }
     : PACK === 'catchphrase'
-      ? { packId: 'catchphrase' as const, packTitle: 'Catchphrase', questions: firstTwo('catchphrase.json') }
+      ? { packId: 'catchphrase' as const, packTitle: 'Catchphrase', questions: twoOf('catchphrase.json') }
       : PACK === 'blanks'
-        ? { packId: 'blanks' as const, packTitle: 'Blankety Blank', questions: firstTwo('blanks.json') }
+        ? { packId: 'blanks' as const, packTitle: 'Blankety Blank', questions: twoOf('blanks.json') }
         : PACK === 'prices'
-          ? { packId: 'prices' as const, packTitle: 'The Price Was Right', questions: firstTwo('prices.json') }
+          ? { packId: 'prices' as const, packTitle: 'The Price Was Right', questions: twoOf('prices.json') }
           : { packId: 'general-knowledge' as const, packTitle: 'GK', questions: QUESTIONS };
 
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 const stamp = (): string => new Date().toISOString().slice(11, 23);
 
 async function main(): Promise<void> {
+  // Lite warns on every refused write with the request body, which for a reveal
+  // candidate is the option itself. Three of four refuse by design, so warnings
+  // here are noise at best and a blind pack's options at worst. Errors still log.
+  setLiteLogLevel('error');
   const app = initializeApp(config, 'host');
   await attachDebugAppCheck(app);
   const auth = getAuth(app);
