@@ -1,11 +1,15 @@
+import { createHash } from 'node:crypto';
 import { describe, expect, test } from 'vitest';
 import {
   GAPS,
   PRICE_SPECS,
+  PRICES_FIRST_BUILD,
   PRICES_MIN_PACK,
   PRICES_MIN_PER_GAP,
   PRICES_MIN_PER_LEVEL,
   SPOILED_KEYS,
+  twinsIn,
+  type Kind,
   type PriceSpec,
 } from './hand-prices-data';
 import { MIN_SPACING, RATIO, formatPence, roundTo, stepFor, stepPence } from './prices-core';
@@ -89,6 +93,72 @@ describe('the specs', () => {
     );
     expect(wrong.map((spec) => spec.slug)).toEqual([]);
   });
+
+  test('never ask about one item twice under two codes, or a twin of a spoiled one', () => {
+    expect(twinsIn(PRICE_SPECS)).toEqual([]);
+  });
+});
+
+/** An invented spec: a slug past the pack's end and a key chosen to test a rule. */
+function made(n: number, key: string, gap: PriceSpec['gap'] = 10, kind: Kind = 'home'): PriceSpec {
+  return { slug: `price-${900 + n}`, gap, key, name: `made-up item ${n}`, kind };
+}
+
+describe('twinsIn', () => {
+  test('refuses both halves of a twin — the same item from the quotes and an RPI series', () => {
+    expect(twinsIn([made(1, 'CZMT', 30), made(2, '310102')])).toEqual(['price-901', 'price-902']);
+  });
+
+  test('refuses the twin of an item Greg has already seen the price of', () => {
+    expect(twinsIn([made(1, '310110')])).toEqual(['price-901']);
+  });
+
+  test('allows either half on its own', () => {
+    // #given the main-dealer service without the local-garage one, and the reverse
+    expect(twinsIn([made(1, '610232')])).toEqual([]);
+    expect(twinsIn([made(1, '610231')])).toEqual([]);
+  });
+
+  test("allows keys that are nobody's twin", () => {
+    expect(twinsIn([made(1, '999901'), made(2, '999902')])).toEqual([]);
+  });
+});
+
+/*
+  Batch 2 — 17 October 2026: sixty more after the first build's ninety-five,
+  because the office had seen 56 of 95. The same day the last of them was cut,
+  its options shown in a transcript (`SPOILED_KEYS`): fifty-nine.
+  docs/decisions/price-was-right.md.
+*/
+describe('batch 2', () => {
+  const first = PRICE_SPECS.slice(0, PRICES_FIRST_BUILD);
+  const added = PRICE_SPECS.slice(PRICES_FIRST_BUILD);
+
+  test('leaves the first build exactly as seeded: same slugs, gaps and keys, in the same order', () => {
+    // The level dealt in turn within a gap sets each answer's rounding, so a
+    // spec moved or inserted among these would change a seeded answer.
+    const hash = createHash('sha256')
+      .update(first.map((spec) => `${spec.slug} ${spec.gap} ${spec.key}`).join('\n'))
+      .digest('hex');
+    expect(hash).toBe('b06f468858dc3fe9165271c4cd3f776a6122f4e8425ed8fcdda22b242d79edc8');
+  });
+
+  test('is fifty-nine specs, numbered on from the first build', () => {
+    expect(added).toHaveLength(59);
+    expect(added.map((spec) => spec.slug)).toEqual(
+      added.map((_, i) => `price-${String(PRICES_FIRST_BUILD + 1 + i).padStart(3, '0')}`),
+    );
+  });
+
+  test('reads the shop quotes only — every RPI series left is asked already or a twin', () => {
+    expect(added.filter((spec) => GAPS[spec.gap].source !== 'quotes').map((spec) => spec.slug)).toEqual([]);
+  });
+
+  test('lets no one kind of shopping be more than a quarter of the batch on its own', () => {
+    const counts = new Map<string, number>();
+    for (const spec of added) counts.set(spec.kind, (counts.get(spec.kind) ?? 0) + 1);
+    expect([...counts].filter(([, n]) => n > added.length / 4).map(([kind]) => kind)).toEqual([]);
+  });
 });
 
 describe('buildPricesPack', () => {
@@ -157,14 +227,27 @@ describe('buildPricesPack', () => {
     }
   });
 
-  test('keeps the answer in each of the four places about equally often, within each gap', () => {
+  test('keeps the answer in each of the four places as equally as the ladders allow, within each gap', () => {
     for (const gap of Object.keys(GAPS)) {
+      const inGap = pack.questions.filter((q) => q.category === `${gap} years ago`);
       const counts = [0, 0, 0, 0];
-      for (const question of pack.questions.filter((q) => q.category === `${gap} years ago`)) {
+      for (const question of inGap) {
         const at = question.options.indexOf(answers[question.id] as string);
         counts[at] = (counts[at] ?? 0) + 1;
       }
-      expect(Math.max(...counts) - Math.min(...counts)).toBeLessThanOrEqual(3);
+      // Fits only on top: fell or held, or rose too little for a rung over the
+      // answer to stay under today's price, with no decoy to sit over it. This
+      // invented mix puts two in seven there — more than a quarter — so once a
+      // gap outgrew thirty no placing could hold the spread to 3: batch 2 made
+      // the five-year gap 54, of which 16 fit only on top, and 4 is the least
+      // any placing gets (53, 15 and 3 once one was cut, 17 October). The
+      // bound is 3, or that least, whichever is wider.
+      const onlyTop = inGap.filter((q) => {
+        const answer = pence(answers[q.id] as string);
+        return answer >= today(q) || (over(q).length === 0 && answer * MIN_SPACING >= today(q));
+      }).length;
+      const least = onlyTop - Math.floor((inGap.length - onlyTop) / 3);
+      expect(Math.max(...counts) - Math.min(...counts)).toBeLessThanOrEqual(Math.max(3, least));
     }
   });
 
