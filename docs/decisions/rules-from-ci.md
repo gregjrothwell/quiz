@@ -178,6 +178,12 @@ nothing, and holds that merge's site deploy back until it is done.
 
 ## Going live, in order
 
+**Done 15 October 2026** (run 38803015567, #88): WIF signed in on the first try;
+Firestore compiled, uploaded and released a new ruleset (W3's, with #85's
+comments), and the RTDB rules released, then Pages. W3's ruleset was the
+rules-only proof, so #85 rode along. `check-rules` after: 119/119. **Not
+checked:** the console's rules history and the audit log naming the account.
+
 1. Greg's step above.
 2. **W1 (#81) first.** This branch is stacked on `tmdb-credit`; merged alone,
    it would carry W1 with it.

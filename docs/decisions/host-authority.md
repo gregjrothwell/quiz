@@ -2,10 +2,10 @@
 
 > **Owner: Greg Rothwell. Last updated: 15 October 2026. Budget: 250 lines.**
 
-**Status: BUILT on `w3-host-authority` (PR #86), 15 October 2026; e2e 15/15 that
-evening, AC8 included. Not live; no ruleset published.** Ships with W2 in one
-release. Story approved by Greg the same day, with both defaults below as
-written. What was built and what was not: [below](#what-was-built-15-october-2026).
+**Status: LIVE, expand half, 15 October 2026 21:40 BST** (#88, gh-pages
+`7d42c0e`; rules published by CI). e2e 15/15; live `check-rules` 119/119. The
+contract half waits until 14 November. Story approved by Greg the same day, with
+both defaults below as written. What was built and what was not: [below](#what-was-built-15-october-2026).
 W3 of the plan in
 [`public-scale.md`](public-scale.md#the-plan-15-october-2026), under D1 (seams
 now) and D2 (b) (a heartbeat claim), both decided 15 October. **No rule from
@@ -205,8 +205,8 @@ mention. A host in either keeps the chair only while presence holds.
 | AC1, AC3, AC4, AC6, AC7, AC9, AC11 | `e2e/host-authority-rules.spec.ts`, client SDK + `reduce`/`toUpdate` | CI |
 | AC2 | same file: selectPack+titles, clearTitles, start, reveal doc, reveal, next ×2, skip, reset, reaper, browsing, beat; and the final, openPicks, closePicks, settle (15 Oct evening) | CI |
 | AC5, AC6, AC8, AC12 | `e2e/host-authority.spec.ts`: the host's tab closes mid-question, Ann claims, reveals both answers, moves on; and an ordinary round the creator reveals | CI, 15/15 |
-| AC10 | `sync-harness 30` reads | **not done** — needs a live deploy |
-| live | `check-rules` (28 W3 cases now), `host-room`, `rank-harness -- --browser`, an office round | **not done** — after the deploy |
+| AC10 | `sync-harness 30` reads | **not measurable here**: Cloud Monitoring needs billing; the console's usage graph is Greg's |
+| live | `check-rules` 119/119, `host-room`, `rank-harness -- --browser`, `sync-harness 30` 30/30; an office round | live 15 Oct; **office round to come** |
 
 **Before the change** (CI, `0c605f0`, tests only): the AC2/AC3 allow case
 failed `PERMISSION_DENIED` (no rule for the beat), and the AC8 round failed (no
