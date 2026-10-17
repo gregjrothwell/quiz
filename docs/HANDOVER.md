@@ -57,10 +57,10 @@ Built to replace Polly in Teams.
 >   **Productionisation plan decided 15 Oct** (all six as recommended; D6: league owners sign in, players stay anonymous); W1, **a TMDB credit the live site
 >   lacked**; **W2, rules from CI** ([`rules-from-ci.md`](decisions/rules-from-ci.md)); **W3, host authority, expand half** ([`host-authority.md`](decisions/host-authority.md)). **All three live 15 Oct.** Next: W3's contract half after 14 Nov; W4; W5 by 1 Mar 2027 — [`public-scale.md`](decisions/public-scale.md#the-plan-15-october-2026).
 
+**#91 live 17 Oct 21:34 BST** (merge `9017238`, gh-pages `f6268e6`): packs only, so the bundle is unchanged; live check is the first office round of each.
 **Live is `index-C__7fXbz`** (#88 + #87: W1 TMDB credit, W2 rules published by CI, W3 host authority; 15 Oct 21:40 BST, merge `72791a9`,
-gh-pages `7d42c0e`, byte-identical to a local build; CI published both rulesets, WIF's first sign-in). Live: `check-rules` 119/119, `rank-harness -- --browser`, `sync-harness 30` 30/30, `host-room`. **Live check: the first office round under W3** (`read-games`); also #79's long name and #77's lobby reload. Before it, #79 `index-BUTUL1rQ`.
-Firebase chunk `firebase-BlgQ_Gm8`.
-**20 packs** + **Random Round** (six played packs dealt into one); **The Price Was Right 95** and **Blankety Blank 148** (both blind); **Catchphrase 178** (every 5th a double-scoring bonus); **Name that Tune 424**; **Name the Artist 259**; synth **Classical**; **On the box 445**
+gh-pages `7d42c0e`, byte-identical to a local build; CI published both rulesets, WIF's first sign-in). Live: `check-rules` 119/119, `rank-harness -- --browser`, `sync-harness 30` 30/30, `host-room`. **Live check: the first office round under W3** (`read-games`); also #79's long name and #77's lobby reload. Before it, #79 `index-BUTUL1rQ`. Firebase chunk `firebase-BlgQ_Gm8`.
+**20 packs** + **Random Round** (six played packs dealt into one); **The Price Was Right 154** and **Blankety Blank 148** (both blind); **Catchphrase 233** (every 5th a double-scoring bonus); **Name that Tune 424**; **Name the Artist 259**; synth **Classical**; **On the box 445**
 (hashed TMDB stills, at most 8 titles before 1990); **Flags** 76; **Sleeves 212**
 after seven candidate batches, the last pre-screened; picture is **Fine Art** 49.
 

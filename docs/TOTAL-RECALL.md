@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 15 October 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 17 October 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -23,6 +23,15 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
+
+## 2026-10-17 — Live: #91 (gh-pages `f6268e6`): The Price Was Right 154, Catchphrase 233
+
+Ranked by runway (Random Round's six-way deal is most of the burn, and `freshness` files it under Random): Prices
+95 → 154 and Catchphrase 178 → 233, both blind, written by subagents in worktrees; drawn on the MacBook (Greg: the Mini
+would crash). "go live with #91" → seeded 60 + 55, 0 changed, read back 154/154 and 233/233 → `host-room` on two *new*
+ids each (`--pack` plays the first two, which are old) → merged `9017238` 21:27 BST → Pages by 21:34, packs and
+`index.html` byte-identical to a local build, 55 stills served. **One Prices question cut before merge**: a loose grep of
+host-room's log printed three of its options (the SDK logs refused reveals in clear). Live check: the first office round.
 
 ## 2026-10-15 — Live: #88 + #87 (gh-pages `7d42c0e`): W1, W2 and W3 in one deploy
 
@@ -158,19 +167,11 @@ scored +0. Merged `d958cc0` 13:00:49 BST (`gh pr merge` worked) → CI green 13:
 below:** "nothing American" was not Greg's rule — American things famous worldwide are fine;
 `AGENTS.md` reworded (`3e798ae`). Random round parked as #3.
 
-## 2026-10-06 — The Price Was Right built; "nothing American" written down (`office-feedback-6-oct`)
-
-Greg believed "no American questions" was already a principle; it was only `classify.ts`'s
-harvest filter, which hand packs never pass through. Now in `AGENTS.md`. Parked idea #2 built
-blind: 95 ONS prices, given now, guess 5/10/20/30 years back — shop-quote medians for 5 and
-10, RPI average prices for 20 and 30 (the quotes have nothing 1996–2009). AC "no engine
-change" broke: the client shuffles options, so `ordered` (`1de868b`). Unseeded
-([`price-was-right.md`](decisions/price-was-right.md)).
-
 ## 2026-10-02 to 2026-10-06 — archived, one line each
 
-Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's; #68 and Blankety Blank built the same night, at 309 with the W3 release entry; the first office rounds of #67 and #68 the same night again, at 304 with the go-live.
+Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's; #68 and Blankety Blank built the same night, at 309 with the W3 release entry; the first office rounds of #67 and #68 the same night again, at 304 with the go-live; The Price Was Right built on 17 October, at 302 with #91's go-live.
 
+- **2026-10-06** — [The Price Was Right built; "nothing American" written down (`office-feedback-6-oct`)](recall/2026-10.md#2026-10-06--the-price-was-right-built-nothing-american-written-down-office-feedback-6-oct)
 - **2026-10-06** — [First office rounds of #67 and #68: chair, bonus, Blankety Blank](recall/2026-10.md#2026-10-06--first-office-rounds-of-67-and-68-chair-bonus-blankety-blank-office-feedback-6-oct)
 - **2026-10-06** — [Live: #68 (gh-pages `3fbc003`): Blankety Blank, 18 packs](recall/2026-10.md#2026-10-06--live-68-gh-pages-3fbc003-blankety-blank-18-packs)
 - **2026-10-06** — [Blankety Blank built and seeded, 140 questions, played blind](recall/2026-10.md#2026-10-06--blankety-blank-built-and-seeded-140-questions-played-blind)
