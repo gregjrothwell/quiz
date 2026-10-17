@@ -168,4 +168,109 @@ export const PRICE_SPECS: PriceSpec[] = [
   spec(93, 20, 'ZPTX', 'a kilo of salmon fillets', 'meat and fish'),
   spec(94, 20, 'CZMR', 'a single whisky in a pub', 'pub'),
   spec(95, 20, 'CZNW', 'a kilo of cheddar', 'larder'),
+
+  // Batch 2, 17 October 2026 — shop quotes only: no RPI series with both
+  // months is left that is not already asked or a twin of one (`TWIN_KEYS`).
+  // Ten years, August 2016 → August 2026.
+  spec(96, 10, '220209', 'a primary school dinner', 'eating out'),
+  spec(97, 10, '220117', 'a bottle of mineral water in a café', 'eating out'),
+  spec(98, 10, '220116', 'a glass of draught cola or lemonade', 'eating out'),
+  spec(99, 10, '220318', 'a main dish from an Indian takeaway', 'takeaway'),
+  spec(100, 10, '440113', 'a window clean for a three-bedroom semi', 'services'),
+  spec(101, 10, '440131', 'a new battery fitted in a watch', 'services'),
+  spec(102, 10, '440101', "an hour of a domestic cleaner's time", 'services'),
+  spec(103, 10, '440116', 'a washing machine repair', 'services'),
+  spec(104, 10, '520138', 'a pair of glasses with lenses', 'health and beauty'),
+  spec(105, 10, '520331', 'a basic manicure', 'health and beauty'),
+  spec(106, 10, '520241', 'a pack of razor blade refills', 'health and beauty'),
+  spec(107, 10, '520227', 'a packet of painkillers', 'health and beauty'),
+  spec(108, 10, '520223', 'a mascara', 'health and beauty'),
+  spec(109, 10, '610231', 'a car service at a local garage', 'motoring'),
+  spec(110, 10, '620307', "a day's basic self-drive car hire", 'motoring'),
+  spec(111, 10, '430317', 'an electric iron', 'home'),
+  spec(112, 10, '430362', 'a fridge freezer', 'home'),
+  spec(113, 10, '430356', 'a dishwasher', 'home'),
+  spec(114, 10, '430530', 'a black inkjet printer cartridge', 'home'),
+  spec(115, 10, '430137', 'a leather sofa', 'home'),
+  spec(116, 10, '430134', 'a table lamp', 'home'),
+  spec(117, 10, '510419', "a man's tie", 'clothes'),
+  spec(118, 10, '510407', 'a bra', 'clothes'),
+  spec(119, 10, '510517', "a pair of women's trainers", 'clothes'),
+  spec(120, 10, '510506', "a pair of women's sandals", 'clothes'),
+  spec(121, 10, '630309', 'a boxed board game', 'leisure'),
+  spec(122, 10, '630332', "a child's soft toy or teddy bear", 'leisure'),
+  spec(123, 10, '630342', "a beginner's acoustic guitar", 'leisure'),
+  spec(124, 10, '640222', 'an exercise class of up to an hour', 'leisure'),
+  spec(125, 10, '630520', 'an electric lawnmower', 'leisure'),
+  spec(126, 10, '630357', 'a tennis or squash racquet', 'leisure'),
+
+  // Five years, August 2021 → August 2026.
+  spec(127, 5, '220125', 'a small bottle of fruit juice in a café', 'eating out'),
+  spec(128, 5, '220310', 'a single bag of crisps from a café or snack bar', 'takeaway'),
+  spec(129, 5, '220319', 'a main dish from a Chinese takeaway', 'takeaway'),
+  spec(130, 5, '310306', 'a bottle of mixer in a pub', 'pub'),
+  spec(131, 5, '440120', 'an hour with a childminder', 'services'),
+  spec(132, 5, '520313', 'a private physiotherapy session', 'health and beauty'),
+  spec(133, 5, '520311', "highlights at a women's hairdresser", 'health and beauty'),
+  spec(134, 5, '520242', 'a box of cold and flu drink sachets', 'health and beauty'),
+  spec(135, 5, '520247', 'a bottle of liquid hand soap', 'health and beauty'),
+  spec(136, 5, '520215', 'a pot of facial moisturiser', 'health and beauty'),
+  spec(137, 5, '520202', 'a packet of indigestion tablets', 'health and beauty'),
+  spec(138, 5, '610303', 'a litre of engine oil', 'motoring'),
+  spec(139, 5, '430527', 'a 500-sheet ream of A4 printer paper', 'home'),
+  spec(140, 5, '430422', 'a plain glass tumbler', 'home'),
+  spec(141, 5, '430127', 'a chest of drawers', 'home'),
+  spec(142, 5, '430132', 'a single mattress', 'home'),
+  spec(143, 5, '410607', 'a two-inch paintbrush', 'home'),
+  spec(144, 5, '620304', 'a pushchair', 'home'),
+  spec(145, 5, '510233', "a woman's cardigan", 'clothes'),
+  spec(146, 5, '510508', "a pair of girls' school shoes", 'clothes'),
+  spec(147, 5, '510132', "a man's short-sleeved T-shirt", 'clothes'),
+  spec(148, 5, '630507', 'a houseplant', 'leisure'),
+  spec(149, 5, '630505', 'a garden spade', 'leisure'),
+  spec(150, 5, '630518', 'a single cut carnation', 'leisure'),
+  spec(151, 5, '640226', "a year's membership of a private health club", 'leisure'),
+  spec(152, 5, '630138', 'a DAB digital radio', 'leisure'),
+  spec(153, 5, '430621', "a pet's annual booster jab at the vet", 'pets'),
+  spec(154, 5, '430613', 'a tin of dog food', 'pets'),
+  spec(155, 5, '430623', 'a hamster, gerbil or similar small pet', 'pets'),
 ];
+
+/** Where the first build (6 October 2026) ends and batch 2 begins. */
+export const PRICES_FIRST_BUILD = 95;
+
+/**
+ * ONS keys that measure the same thing as another key — across the two
+ * sources, or as near alike as makes one answer the other — mapped to that
+ * other key. AC 3 asks for each item once, and a unique key alone does not
+ * say it: a pint of bitter is one item whether it comes from the shop quotes
+ * or an RPI series. Found going through the candidates for batch 2.
+ */
+export const TWIN_KEYS: Record<string, string> = {
+  '310102': 'CZMT', // a pint of bitter, quotes and RPI
+  '310301': 'CZMR', // a single whisky, quotes and RPI
+  '420103': 'CZMN', // a bag of smokeless fuel, quotes and RPI
+  '310110': '310109', // a pint of lager, premium and standard
+  '310302': '310316', // a single measure of a spirit in a pub
+  '310315': '310310', // wine in a pub, by the bottle and the glass
+  '520248': '520226', // shampoo and conditioner
+  '610232': '610231', // a car service, main dealer and local garage
+  CZOG: 'CZOH', // a white loaf, unwrapped and sliced
+  CZNK: 'VKYY', // a kilo of potatoes, new and old
+};
+
+/**
+ * Slugs whose key is the twin of another spec's key, or of an item Greg has
+ * already seen the price of — either way round.
+ */
+export function twinsIn(specs: readonly PriceSpec[]): string[] {
+  const keys = new Set([...specs.map((spec) => spec.key), ...SPOILED_KEYS]);
+  const partners = new Map<string, string[]>();
+  for (const [key, other] of Object.entries(TWIN_KEYS)) {
+    partners.set(key, [...(partners.get(key) ?? []), other]);
+    partners.set(other, [...(partners.get(other) ?? []), key]);
+  }
+  return specs
+    .filter((spec) => (partners.get(spec.key) ?? []).some((other) => other !== spec.key && keys.has(other)))
+    .map((spec) => spec.slug);
+}
