@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 15 October 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 17 October 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -97,8 +97,8 @@ scoring 500 + rank 500/400/300/200/100.
    eleven rounds rather than three, so it is no longer gated on playing.
 9. **Rules are published by hand until W2 is live; then by CI on `master`** ([`rules-from-ci.md`](decisions/rules-from-ci.md)). Live = repo, read 15 Oct.
    `check-rules` **91/91 both ways, 27 September**; run it after any rules merge. Read [`security.md`](decisions/security.md) first.
-10. **Seed before any new ids ship** — `npm run seed-vault -- --pack <id>` reads
-    one pack. All seeded as of 12 October; an unseeded pack breaks at reveal.
+10. **Seed before any new ids ship** — `seed-vault -- --pack <id>`; unseeded breaks at reveal. All seeded to 12 Oct. **Unseeded,
+    `release-17-oct`:** Prices 95→155, Catchphrase 178→233, both blind ([`price-was-right.md`](decisions/price-was-right.md), [`catchphrase-batch-6.md`](decisions/catchphrase-batch-6.md)).
 11. **`firstMs` and the pack picker are live and unplayed.** It is a deterrent,
     so the only test is whether his behaviour changes next round:
     [`first-touch.md`](decisions/first-touch.md).

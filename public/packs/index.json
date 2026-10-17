@@ -180,11 +180,11 @@
     "id": "catchphrase",
     "title": "Catchphrase",
     "blurb": "Say what you see. The options wait until halfway.",
-    "count": 178,
+    "count": 233,
     "counts": {
       "easy": 8,
-      "medium": 78,
-      "hard": 92
+      "medium": 94,
+      "hard": 131
     }
   },
   {
@@ -202,11 +202,11 @@
     "id": "prices",
     "title": "The Price Was Right",
     "blurb": "Given a recent price, guess what it cost 5, 10, 20 or 30 years before.",
-    "count": 95,
+    "count": 155,
     "counts": {
-      "easy": 21,
-      "medium": 26,
-      "hard": 48
+      "easy": 29,
+      "medium": 35,
+      "hard": 91
     }
   },
   {
