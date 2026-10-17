@@ -163,34 +163,85 @@ the next pick. The new test covers the sixth batch only, so it is not red for th
 `catchphrase-gate.test.ts` — **no change.** Its waiting tail was always any length, so
 the sixty unpicked at the end (181–240) pass, and a hole before a picked spec still fails.
 
-## Drawing — not done
+## Drawn — 17 October 2026
 
-**Checked without drawing**, with `draw-overnight`'s own `isDrawn` and `sheetsFor` from a
-scratch script, reading the main checkout's `.cache/catchphrase` through this worktree's
-link to it:
+**60 puzzles, 180 versions:** 5 on the Mac Mini (181–185, about 15 min each), 55 on the
+MacBook in 4 h 52 min (median 5.3 min a puzzle; 6.4–11.3 h estimated before the draw),
+**0 failed, 0 pauses**, and `draw.log` still prints no slug. The first started
+a minute after `fb7468f`; the PNGs carry no prompt, so that is timing, not a file read.
 
-- **Drawn: 180. To draw: 60, spec numbers 181–240, contiguous: 180 versions.**
-- **No seed and not dropped: 60, the same 181–240.** Sheets now: 0. After the draw:
-  **15 sheets, 180 cells**, 4 puzzles a sheet.
-- **Time:** about **6.4 hours** at batch 3's ~128 s a version; about **11.3 hours** at the
-  median of the 100 puzzles timed in `draw.log` (676 s a puzzle). The Mac Mini route
-  (`scripts/draw-on-mini.sh`) suits either better than a MacBook night.
-- **`draw.log` prints no slugs:** 234 lines, none containing one; its lines are puzzle
-  numbers, counts and the battery.
-- Run it where `.cache/catchphrase` is the real cache, as before: from a fresh checkout
-  with no cache it would find nothing drawn and draw all 240.
+## Picked — 17 October 2026
+
+From the 15 sheets (`key.json`, number to slug), then every picked version again at full
+size. **The four checks, as batches 3 to 5:** reads as the phrase, and the picture supports
+the answer over the three wrong options; only the asked-for lettering; Mr Fries on model;
+no look-alike. **Batches 4 and 5's precedent for a puzzle with no usable version: drop it,
+not redraw.** Followed: nothing was redrawn, so no scene was rewritten.
+
+| Specs 181–240 | Count |
+|---|---|
+| **Shipped** | **55** |
+| Version 1 / 2 / 3 | 18 / 15 / 22 |
+| Redrawn | 0 |
+| Dropped, `misdrawn` | 5 — numbers 205, 211, 217, 220, 223 |
+| Dropped, `spoiled` | 0 |
+
+**Drops, by the check no version passed:**
+
+- **Reads as the phrase: 4** (205, 211, 217, 220). In three, every version left out the
+  part that singles the answer out, and a wrong option described the picture as well or
+  better. In the fourth, every version drew the wrong thing in place of the one detail the
+  puzzle turns on; it also fails the lettering check.
+- **Only the asked-for lettering: 1** (223), on that alone. Every version added writing
+  beyond its asked-for characters. The extra writing names no option and points to none.
+  **A decision for Greg:** keep the rule (dropped, as now) or ship it (version 3 is its best).
+- **Mr Fries on model, no look-alike: 0** drops.
+
+**Versions set aside where another passed**, where that decided the pick: lettering 1,
+Mr Fries 6 in 4 puzzles (merged or off model), look-alike 2 in 1 puzzle; the rest on reading.
+
+**Weaker than written, shipped: 5** (182, 195, 226, 232, 235). A detail the scene asked for
+is missing or changed, but the picture still supports the answer over the wrong options;
+the first to re-label or retire once played.
+
+**For the next specs, no puzzle named:**
+
+- **Mr Fries beside another figure:** describe the other figure first and hard, or leave
+  him out (batch 3's lesson, needed again). **A number or letter that acts:** say so first.
+- **An object that normally carries writing:** say it carries none but the asked-for mark
+  (both lettering failures). **A pile of things:** describe their look, not just the name.
+
+**Vision, and a look by eye, on the 55 shipped:**
+
+- **9 lettered:** 2 read their asked-for characters, each with one stray character that is
+  not writing (checked by eye); 7 read nothing.
+- **46 unlettered:** 41 read nothing; 5 carry a stray read, each checked by eye: marks, not
+  writing.
+- **None names its answer** (`write-catchphrase-pack` refuses one that does;
+  `catchphrase-gate.test.ts` holds it offline). Every shipped version was also looked at
+  whole for writing Vision missed: none beyond the asked-for characters.
+
+## Written — 17 October 2026
+
+- **Published Catchphrase: 178 → 233** (8 easy, 94 medium, 131 hard). 55 new stills, the
+  largest 176 KB. **Every earlier question is unchanged** in the new pack.
+- **Sealed:** no question carries an answer field; `src/questions/seal.test.ts` passes.
+- **`.cache/hand-vault.json`** (the local answer cache): **2,163 → 2,218 entries**: 55
+  added, one per new published id; none removed or changed. **Not seeded.**
+- **`hand-catchphrase-data.test.ts`:** the sixth batch's **60 prompts pinned by hash**
+  (`SIXTH_END`), the five dropped included, as the fourth's and fifth's are. **Proved:** one
+  character added to one scene turned it red (a hash mismatch; it prints hashes only), green
+  once restored. `added` stays open, so a seventh batch still trips *is sixty puzzles*.
+  `catchphrase-gate.test.ts` unchanged: a dropped spec is no hole, and nothing waits.
 
 ## Go-live, not done
 
-1. Draw the sixty (`draw-overnight`, or `draw-on-mini.sh start`).
-2. Pick from the 15 sheets: four checks as before. Set `seed`, or `dropped`.
-3. `npm run write-catchphrase-pack`. It refuses until every spec has one or the other.
-4. Pin the sixth batch's prompts by hash, as the fourth's and fifth's are.
-5. `seed-vault -- --pack catchphrase`, then `host-room -- 10 --pack catchphrase`.
-6. It ships in that day's `release-<date>` PR with anything else going live (CLAUDE.md).
+1. `seed-vault -- --pack catchphrase`, then `host-room -- 10 --pack catchphrase`.
+2. Ships in that day's `release-<date>` PR (CLAUDE.md). Merging deploys: Greg's words.
 
 ## Evidence — 17 October 2026
 
-`npm run typecheck` and `npm run lint` clean. `npm test`: **100 files, 1,536 tests
-passed** (1,525 before; eleven new). The measurement's scratch scripts read Firestore
-through `read-games` only and wrote nothing.
+- **Specs:** typecheck and lint clean; `npm test` **100 files, 1,536 passed** (1,525 before).
+  The measurement read Firestore through `read-games` only and wrote nothing.
+- **Pick:** typecheck and lint clean; `npm test` **100 files, 1,537 passed** (1,536 before;
+  one new). `build` and `check-bundle` clean. No live Firebase read or written.

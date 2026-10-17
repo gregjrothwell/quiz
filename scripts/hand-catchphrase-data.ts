@@ -1886,6 +1886,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Eye-watering', 'Work in progress', 'Sore loser'],
     difficulty: 'hard',
     scene: 'On a building site full of scaffolding and piles of bricks, every builder is a giant eyeball in a yellow hard hat, each one red, bloodshot and wrapped in a bandage, carrying bricks and pushing wheelbarrows, and the character, the foreman with a clipboard, hands out little bottles of eye drops.',
+    seed: 3,
   },
   {
     slug: 'cp-baited-gasp',
@@ -1895,6 +1896,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Take a deep breath', 'Off the hook', 'The one that got away'],
     difficulty: 'hard',
     scene: 'A man holds his breath so hard that his cheeks puff out and his face turns purple, while three fishing hooks, each with a wriggling pink worm on it, dangle on lines right in front of his mouth, and the character, an angler sitting on a riverbank, holds the fishing rod.',
+    seed: 1,
   },
   {
     slug: 'cp-pear-vault',
@@ -1904,6 +1906,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Safe as houses', 'Two of a kind', 'Under lock and key'],
     difficulty: 'hard',
     scene: 'Two plump green pears with faces sit side by side on a velvet cushion inside a big open steel bank safe with a heavy round door, and the character, a bank manager in a pinstripe waistcoat, guards them proudly with its arms folded.',
+    seed: 1,
   },
   {
     slug: 'cp-clock-belt',
@@ -1913,6 +1916,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Tighten your belt', 'Kill time', 'Round the clock'],
     difficulty: 'hard',
     scene: 'The character wears a big round ticking alarm clock as the buckle of a belt fastened tightly around its waist, sucking its tummy in and pointing proudly at the clock, while a tailor measures round its middle with a tape measure.',
+    seed: 3,
   },
   {
     slug: 'cp-holed-heart',
@@ -1922,6 +1926,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Half-hearted', 'Cross my heart', 'Dig a hole'],
     difficulty: 'hard',
     scene: 'A big red cartoon heart with a perfectly round hole right through its middle stands upright on a table like a doughnut, and the character peers through the hole with one eye, waving.',
+    seed: 3,
   },
   {
     slug: 'cp-crab-clock',
@@ -1931,6 +1936,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['A rude awakening', 'Wake-up call', 'Feeling crabby'],
     difficulty: 'hard',
     scene: 'A bright red crab on a bedside table grips a ringing brass alarm clock tightly in its two big claws, shaking it so the bells clang, and the character, in bed in striped pyjamas, sits bolt upright with its eyes wide open.',
+    seed: 3,
   },
   {
     slug: 'cp-vain-altar',
@@ -1940,6 +1946,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Holier than thou', 'Full of yourself', 'Big-headed'],
     difficulty: 'hard',
     scene: 'A stone church altar with a smug face and sunglasses, a golden cross and two candles on top of it, admires itself in a big hand mirror and puffs out its chest, and the character, a vicar in a black shirt and white collar, rolls its eyes.',
+    seed: 1,
   },
   {
     slug: 'cp-weeping-stag',
@@ -1949,6 +1956,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Lonely hearts', 'Love letter', 'Stag do'],
     difficulty: 'hard',
     scene: 'A brown deer with big antlers sits at a kitchen table reading a letter covered in wavy squiggles, tears streaming down its face onto the paper, and the character, a postman with a sack of post, tiptoes away out of the door.',
+    seed: 1,
   },
   {
     slug: 'cp-bride-lane',
@@ -1958,6 +1966,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Walk down the aisle', 'Off the beaten track', 'Something borrowed'],
     difficulty: 'hard',
     scene: 'A long, narrow, muddy country lane between two green hedges is crowded with brides in white wedding dresses and veils, walking along it in single file holding bouquets, and the character, out for a walk in wellies, squeezes past them the other way.',
+    seed: 2,
   },
   {
     slug: 'cp-stump-batsman',
@@ -1967,6 +1976,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Out for a duck', 'Out on a limb', 'Scratch your head'],
     difficulty: 'hard',
     scene: 'The character, in white cricket clothes and pads and holding a cricket bat, stands on top of an old sawn-off tree stump in the middle of a field, scratching its head with a puzzled frown.',
+    seed: 1,
   },
   {
     slug: 'cp-bowling-roses',
@@ -1976,6 +1986,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Knocked for six', 'Swept off your feet', 'Strike a pose'],
     difficulty: 'medium',
     scene: 'A giant black bowling ball rolls down a bowling alley and knocks a smiling woman flat on her back like a skittle, and she lies there beaming happily, while the character stands over her holding out a big bunch of red roses.',
+    seed: 3,
   },
   {
     slug: 'cp-hen-counter',
@@ -1984,6 +1995,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Rule the roost', 'Order, order', 'Mother hen'],
     difficulty: 'hard',
     scene: 'A queue of brown hens stands at the counter of a little café, and the hen at the front pecks at a blank menu card with its beak, while a waiter in a white apron behind the counter leans in to listen with a pencil behind his ear.',
+    seed: 3,
   },
   {
     slug: 'cp-bearded-herb',
@@ -1993,6 +2005,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Words of wisdom', 'Older and wiser', 'Mind your own business'],
     difficulty: 'hard',
     scene: 'A sprig of soft grey-green sage leaves with a long white beard and little round spectacles sits in a big leather armchair, wagging one leafy finger wisely, and the character sits on a stool at its feet, listening carefully and nodding.',
+    seed: 1,
   },
   {
     slug: 'cp-plum-boss',
@@ -2002,6 +2015,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Fruit of your labours', 'Jobs for the boys', 'Moving up in the world'],
     difficulty: 'hard',
     scene: 'A big round purple plum in a shirt and tie leans back in a huge leather chair with its feet up on a grand wooden desk in a corner office with a view over the city, and the character brings it a cup of tea on a silver tray.',
+    seed: 2,
   },
   {
     slug: 'cp-empty-allotment',
@@ -2011,6 +2025,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Run to seed', 'Dig deep', 'Lost for words'],
     difficulty: 'hard',
     scene: 'The character, a gardener in wellies and a flat cap holding a watering can, wanders round a huge bare field of empty brown earth looking lost and confused, turning a crumpled blank map upside down, with no vegetables, fences or sheds anywhere in sight.',
+    seed: 3,
   },
   {
     slug: 'cp-potato-eyes',
@@ -2020,6 +2035,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Keep a lookout', 'Eagle-eyed', 'Out of sight, out of mind'],
     difficulty: 'hard',
     scene: 'The character, wearing an apron at the kitchen sink, peels a big brown potato with a vegetable peeler, and the potato is covered all over in cartoon eyeballs, every one of them wide awake and looking around nervously.',
+    seed: 2,
   },
   {
     slug: 'cp-seashell-outfit',
@@ -2029,6 +2045,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Suit yourself', 'Shell out', 'She sells seashells'],
     difficulty: 'medium',
     scene: 'The character struts along a sandy beach wearing a smart jacket and trousers made entirely of seashells, scallops, cockles and winkles all stuck together, and does a twirl like a fashion model.',
+    seed: 3,
   },
   {
     slug: 'cp-bandaged-brass',
@@ -2038,6 +2055,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Patch things up', 'On the mend', 'Play it by ear'],
     difficulty: 'hard',
     scene: 'A row of brass band musicians in red uniforms and peaked caps sit on chairs, every one of them covered in plasters, slings and bandages, still trying to play their trumpets and tubas, while the character, a paramedic in green, wraps another bandage round the drummer\'s head.',
+    seed: 2,
   },
   {
     slug: 'cp-runway-cats',
@@ -2047,6 +2065,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ["The cat's whiskers", 'Strut your stuff', 'Fashion victim'],
     difficulty: 'medium',
     scene: 'Cats in glittering evening gowns and feather boas strut one after another along a long raised fashion show runway, with photographers flashing cameras on both sides, and the character, the fashion designer with a tape measure round its neck, claps at the far end.',
+    seed: 3,
   },
   {
     slug: 'cp-wolf-referee',
@@ -2055,6 +2074,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Blow the whistle', 'Cry wolf', 'Wet your whistle'],
     difficulty: 'medium',
     scene: 'A grey wolf dressed as a football referee in a black kit blows hard on a silver whistle on a muddy football pitch, holding up a plain yellow card, while the players stand round it and stare.',
+    seed: 2,
   },
   {
     slug: 'cp-greasy-joint',
@@ -2064,6 +2084,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Grease the wheels', 'Elbow room', 'Rub it in'],
     difficulty: 'hard',
     scene: "The character scoops a big dollop of thick black grease out of a tin with its gloved hand and rubs it all over a man's bare, bent elbow, while the man holds his sleeve rolled up and looks puzzled, a muddy car beside them waiting to be scrubbed.",
+    seed: 1,
   },
   {
     slug: 'cp-salted-globe',
@@ -2073,6 +2094,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Worth your salt', 'The ends of the earth', 'Rub salt in the wound'],
     difficulty: 'hard',
     scene: 'Out in starry space, a giant white salt cellar tips over planet Earth and shakes a shower of white grains all over it, and the character, an astronaut in a white spacesuit floating beside it, watches open-mouthed.',
+    seed: 3,
   },
   {
     slug: 'cp-driver-deckchair',
@@ -2081,6 +2103,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Holiday romance', 'Take a break', 'All aboard'],
     difficulty: 'hard',
     scene: 'A bus driver in a uniform and peaked cap, with a knotted hanky on his head and an ice cream in one hand, sits at the steering wheel of a red double-decker bus parked on a sunny beach, while holidaymakers in swimsuits carrying buckets and spades climb aboard. The bus has no signs and no numbers.',
+    seed: 1,
   },
   {
     slug: 'cp-hens-disco',
@@ -2090,6 +2113,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ["Girls' night out", 'Night owl', "Rare as hen's teeth"],
     difficulty: 'medium',
     scene: 'Brown hens wearing pink sashes and little sparkly tiaras, one of them in a white veil, dance under a glitter ball in a nightclub, with a crescent moon and stars showing through the window, and the character, the DJ in big headphones, spins records.',
+    seed: 2,
   },
   {
     slug: 'cp-sky-eyeball',
@@ -2099,6 +2123,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Room with a view', 'Eye in the sky', 'Bird brain'],
     difficulty: 'medium',
     scene: 'One enormous round bird\'s eye, with a yellow ring, a black pupil and feathers all round it, peers down through a gap in the clouds at a tiny town of houses and roads far below, and the character, standing on a rooftop, waves up at it.',
+    dropped: 'misdrawn',
   },
   {
     slug: 'cp-windup-date',
@@ -2107,6 +2132,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Throw your toys out of the pram', 'Cradle snatcher', 'Boys will be boys'],
     difficulty: 'hard',
     scene: 'A young wind-up tin toy man with a big metal key turning in his back and a painted-on grin walks stiffly arm in arm with a glamorous older woman in pearls and a fur stole at a posh party, while the other guests whisper behind their hands.',
+    seed: 1,
   },
   {
     slug: 'cp-pig-driver',
@@ -2116,6 +2142,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Hit the road', 'Sunday driver', 'Go the whole hog'],
     difficulty: 'medium',
     scene: 'A fat pink pig in driving goggles drives a big car straight down the middle of a two-lane road, taking up both lanes, while smaller cars are squeezed off onto the grass verges, and the character, in one of them, shakes its fist.',
+    seed: 1,
   },
   {
     slug: 'cp-lizard-bar',
@@ -2125,6 +2152,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Cold-blooded', 'Smooth talker', 'Happy hour'],
     difficulty: 'hard',
     scene: 'A green lizard in a red velvet smoking jacket and a cravat lounges on a stool at a dimly lit cocktail bar, sipping a martini and winking, while the character, the barman, polishes a glass.',
+    seed: 2,
   },
   {
     slug: 'cp-beans-abacus',
@@ -2133,6 +2161,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Under the counter', 'Count your blessings', 'Every penny counts'],
     difficulty: 'hard',
     scene: 'Little orange baked beans in tiny suits and glasses stand on top of a shop counter, busily counting coins and sliding the beads of a wooden abacus, while a queue of customers waits.',
+    seed: 1,
   },
   {
     slug: 'cp-brain-plughole',
@@ -2142,6 +2171,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Down the drain', "Pick someone's brains", 'Mind like a sieve'],
     difficulty: 'hard',
     scene: 'A wobbly pink brain swirls round and round a white bathroom sink and is disappearing down the plughole, and the character, a plumber in blue overalls, grabs at it with a sink plunger.',
+    seed: 2,
   },
   {
     slug: 'cp-wagging-chin',
@@ -2151,6 +2181,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Keep your chin up', 'The tail wagging the dog', 'Over the garden fence'],
     difficulty: 'hard',
     scene: "Two neighbours lean over a garden fence gossiping, and one of them, an old lady in curlers, has a long chin that wags from side to side like a happy dog's tail, while the character, the other neighbour, listens eagerly with a cup of tea.",
+    dropped: 'misdrawn',
   },
   {
     slug: 'cp-shark-bank',
@@ -2160,6 +2191,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Money talks', 'In the red', 'Sink or swim'],
     difficulty: 'hard',
     scene: 'A big grey shark in a pinstripe suit and a gold watch sits behind a bank counter, grinning with rows of sharp teeth and sliding a fat bundle of plain green paper money towards the character, a nervous customer clutching its hat.',
+    seed: 3,
   },
   {
     slug: 'cp-sleeping-pipe',
@@ -2169,6 +2201,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Dream on', 'Up in smoke', 'Castles in the air'],
     difficulty: 'hard',
     scene: 'An old brown wooden smoking pipe in a nightcap lies asleep in a little bed, smiling, and above it a big thought bubble shows a desert island with a palm tree, while the character tucks the blanket round it.',
+    seed: 1,
   },
   {
     slug: 'cp-spinning-medic',
@@ -2178,6 +2211,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ["Doctor's orders", 'Spin a yarn', 'In a spin'],
     difficulty: 'hard',
     scene: 'A doctor in a white coat with a stethoscope round his neck whirls round and round on one foot like a spinning top in a hospital ward, a blur of motion lines around him, while the character, a patient in bed, watches dizzily.',
+    seed: 2,
   },
   {
     slug: 'cp-jam-jazz',
@@ -2187,6 +2221,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['In a jam', 'Jam tomorrow', 'All that jazz'],
     difficulty: 'medium',
     scene: 'Glass jars of strawberry jam with faces and plain lids play a saxophone, a double bass and a drum kit on the little stage of a smoky jazz club, and the character, in the audience, clicks its fingers along.',
+    seed: 2,
   },
   {
     slug: 'cp-striped-sparrow',
@@ -2196,6 +2231,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Behind bars', 'Sing like a canary', 'Doing time'],
     difficulty: 'medium',
     scene: 'A little brown sparrow in a black and white striped prison uniform peers glumly out between the bars of a prison cell window, holding a tin cup, and the character, a prison guard with a ring of keys, brings it a bowl of birdseed.',
+    seed: 3,
   },
   {
     slug: 'cp-clock-elevens',
@@ -2206,6 +2242,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     difficulty: 'hard',
     scene: 'A big round wall clock has the number 11 in every place round its face instead of the usual numbers, and both of its hands point straight up at the top, while the character stands underneath it, sweating and panicking, frantically stuffing papers into a briefcase.',
     lettering: '11',
+    dropped: 'misdrawn',
   },
   {
     slug: 'cp-number-pint',
@@ -2216,6 +2253,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     difficulty: 'hard',
     scene: 'A big red number 1 with little arms and legs holds a pint of beer and strolls off along a long empty country road that winds away into the distance, and the character waves goodbye to it from the doorway of a cosy pub. The pub has no sign.',
     lettering: '1',
+    seed: 3,
   },
   {
     slug: 'cp-gym-number',
@@ -2226,6 +2264,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     difficulty: 'medium',
     scene: 'A big orange number 6 with a belly of bulging, chunky stomach muscles flexes its arms in a gym while lifting a heavy dumbbell, and the character, in a sweatband, spots for it.',
     lettering: '6',
+    seed: 1,
   },
   {
     slug: 'cp-market-tens',
@@ -2236,6 +2275,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     difficulty: 'hard',
     scene: 'A market stall is piled high with hundreds of identical number 10s spilling onto the ground, a single plain copper coin with no markings sits on a little stand where the price should be, and the character, the stallholder, calls out to shoppers who walk past without looking.',
     lettering: '10',
+    dropped: 'misdrawn',
   },
   {
     slug: 'cp-night-desks',
@@ -2246,6 +2286,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     difficulty: 'hard',
     scene: 'A big blue number 24 and a big green number 7 sit side by side at office desks typing away, with dark rings under their eyes and piles of coffee cups around them, while through the window behind them the moon sets and the sun rises, and the character, the office cleaner with a mop, yawns.',
     lettering: '24 and 7',
+    seed: 3,
   },
   {
     slug: 'cp-spa-number',
@@ -2256,6 +2297,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     difficulty: 'hard',
     scene: 'A big gold number 1 lies back in a fluffy white dressing gown at a spa, with cucumber slices over its eyes and a green face mask on, sipping a smoothie through a straw, while the character, a spa attendant, massages its feet.',
     lettering: '1',
+    seed: 3,
   },
   {
     slug: 'cp-cheering-threes',
@@ -2266,6 +2308,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     difficulty: 'medium',
     scene: 'Three big red number 3s in cheerleader skirts jump in the air waving pom-poms and shouting with joy on a sports field, and the character, on a winners\' podium in front of them, holds up a gold trophy.',
     lettering: '3',
+    dropped: 'misdrawn',
   },
   {
     slug: 'cp-itchy-number',
@@ -2275,6 +2318,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     difficulty: 'hard',
     scene: 'A big purple number 7 covered in red spots scratches itself all over with a long wooden back scratcher, wriggling and grimacing, beside a table with a birthday cake on it that has seven lit candles.',
     lettering: '7',
+    seed: 2,
   },
   {
     slug: 'cp-waistcoat-number',
@@ -2284,6 +2328,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     difficulty: 'medium',
     scene: "A big navy blue number 3 wears a smart matching jacket, waistcoat and trousers, with a pocket watch on a gold chain, and admires itself in a long mirror in an old-fashioned gentlemen's outfitters.",
     lettering: '3',
+    seed: 2,
   },
   {
     slug: 'cp-sawn-number',
@@ -2294,6 +2339,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     difficulty: 'hard',
     scene: "On a theatre stage, the character, a magician in a top hat and cape, has sawn a big gold number 50 clean in half inside a long magician's box, and the two halves of the box are pulled apart, both ends wiggling.",
     lettering: '50',
+    seed: 2,
   },
   {
     slug: 'cp-ignored-letter',
@@ -2303,6 +2349,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     difficulty: 'hard',
     scene: 'On a red carpet, a crowd of photographers jostle and flash their cameras at a big shiny gold capital letter A in sunglasses, while a smaller grey capital letter B in a bow tie stands alone at the back, waving hopefully, ignored by everyone.',
     lettering: 'A and B',
+    seed: 3,
   },
   {
     slug: 'cp-level-letter',
@@ -2313,6 +2360,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     difficulty: 'hard',
     scene: "In a school exam hall full of rows of desks, a big round capital letter O balances perfectly on top of a builder's yellow spirit level with its bubble exactly in the middle, while the character, the exam invigilator in a black gown, watches it closely.",
     lettering: 'O',
+    seed: 3,
   },
   {
     slug: 'cp-party-whale',
@@ -2322,6 +2370,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Life and soul of the party', 'Make a splash', 'The time of your life'],
     difficulty: 'medium',
     scene: 'A huge blue whale in a paper party hat dances on a beach at a party, blowing a party blower out of its blowhole as balloons and streamers fly, and the character dances beside it.',
+    seed: 3,
   },
   {
     slug: 'cp-honey-stumps',
@@ -2331,6 +2380,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ["It's not cricket", 'A sticky end', 'Off your own bat'],
     difficulty: 'hard',
     scene: 'On a cricket pitch, the three wooden stumps at one end drip with thick golden honey, with bees buzzing round them, and the character, the batsman in white pads, is stuck fast to the ground in front of them, tugging at its bat.',
+    seed: 3,
   },
   {
     slug: 'cp-prickly-leg',
@@ -2340,6 +2390,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['On tenterhooks', 'Pin money', 'Sharp as a tack'],
     difficulty: 'medium',
     scene: 'The character sits on a chair grimacing and rubbing one of its legs, which is stuck all over with dozens of silver sewing pins and long sewing needles, like a pincushion.',
+    seed: 3,
   },
   {
     slug: 'cp-tiny-husband',
@@ -2348,6 +2399,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Rule of thumb', 'Wrapped round your little finger', 'Stick out like a sore thumb'],
     difficulty: 'medium',
     scene: 'A tiny husband in a cardigan is pinned flat to the living room carpet beneath the huge thumb of his giant wife, who calmly reads a magazine with a plain cover in her other hand.',
+    seed: 1,
   },
   {
     slug: 'cp-kennel-husband',
@@ -2356,6 +2408,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Sent to Coventry', 'Rough night', 'Home and dry'],
     difficulty: 'medium',
     scene: 'A sulky husband in pyjamas sits squashed inside a small wooden dog kennel in the back garden at night with his knees up to his chin, while through the bedroom window above, his dog lies happily in his bed.',
+    seed: 1,
   },
   {
     slug: 'cp-green-neighbour',
@@ -2365,6 +2418,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Green light', 'Keeping up with the Joneses', 'The grass is always greener'],
     difficulty: 'medium',
     scene: 'A man who has turned completely bright green, face, hands and all, glares over a garden fence at the shiny new red sports car that the character is proudly polishing on its drive next door.',
+    seed: 1,
   },
   {
     slug: 'cp-ladder-bump',
@@ -2374,6 +2428,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Through the roof', 'Break the mould', 'Raise the bar'],
     difficulty: 'hard',
     scene: 'An office worker in a suit climbs a tall ladder and bumps her head on a clear sheet of glass stretched right across the top of the office, and above the glass, men in suits sit at big desks. The character, at the foot of the ladder, holds it steady.',
+    seed: 3,
   },
   {
     slug: 'cp-mole-peak',
@@ -2383,6 +2438,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Move mountains', 'Over the hill', 'Make a meal of it'],
     difficulty: 'medium',
     scene: 'In the middle of a neat garden lawn, a little mole in a yellow hard hat shovels earth up into an enormous towering mountain with a snowy peak poking through the clouds, and the character, holding a garden rake, stares up at it in disbelief.',
+    seed: 1,
   },
   {
     slug: 'cp-frying-ledgers',
@@ -2392,6 +2448,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['By the book', 'Cooking on gas', "What's cooking"],
     difficulty: 'hard',
     scene: 'The character, a chef in a tall white hat, fries a stack of thick office account ledgers in a big sizzling frying pan on a stove, flipping one into the air, while a man in a suit glances nervously over his shoulder.',
+    seed: 2,
   },
   {
     slug: 'cp-disco-ewe',
@@ -2400,6 +2457,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Act your age', 'Dressed to impress', 'Mutton chops'],
     difficulty: 'hard',
     scene: 'An old grey sheep with wrinkles, reading glasses and a walking stick wears a short pink party dress, big hoop earrings and bright lipstick and dances at a disco among a crowd of young fluffy white lambs, who stare at her.',
+    seed: 1,
   },
   {
     slug: 'cp-straight-crow',
@@ -2409,6 +2467,7 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['The straight and narrow', "Crow's feet", 'Fly the nest'],
     difficulty: 'hard',
     scene: 'High above a twisting, winding country road, a black crow flies in a perfectly straight line from one village to another, leaving a ruler-straight dotted trail behind it, while far below the character drives a little car round bend after bend.',
+    seed: 2,
   },
   {
     slug: 'cp-empty-fridge',
@@ -2418,5 +2477,6 @@ export const CATCHPHRASE_SPECS: CatchphraseSpec[] = [
     incorrect: ['Not a dicky bird', 'Old Mother Hubbard', 'Running on empty'],
     difficulty: 'hard',
     scene: 'The character, in a dressing gown and slippers and holding a knife and fork, stares hungrily into a wide-open fridge that is completely bare, with nothing on any shelf but one empty clear plastic tray with six sausage-shaped dents in it.',
+    seed: 3,
   },
 ];

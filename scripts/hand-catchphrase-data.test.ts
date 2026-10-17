@@ -22,6 +22,8 @@ const THIRD_END = HARDER_END + 30;
 const FOURTH_END = THIRD_END + 30;
 /** Where the fifth batch (9 October 2026) ends and the sixth begins. */
 const FIFTH_END = FOURTH_END + 60;
+/** Where the sixth batch (17 October 2026) ends. Pins its prompts; `added` stays open until a seventh goes on. */
+const SIXTH_END = FIFTH_END + 60;
 
 /*
   The rules here came out of the trial on 2 October 2026 —
@@ -496,7 +498,8 @@ function blankClashes(specs: CatchphraseSpec[]): number {
 /*
   The sixth batch — 17 October 2026. Sixty more after the fifth, on the fifth's
   mix: the fourth and fifth measured inside the target band once live —
-  docs/decisions/catchphrase-batch-6.md. Not drawn yet.
+  docs/decisions/catchphrase-batch-6.md. Drawn, picked and pinned by hash on
+  17 October 2026.
 
   Every assertion here reports counts or spec numbers, never a slug or an
   option, so a failing run spoils nothing for somebody who plays blind.
@@ -517,6 +520,15 @@ describe('the sixth batch', () => {
 
   test('is sixty puzzles', () => {
     expect(added.length).toBe(60);
+  });
+
+  test('its 60 prompts are exactly as drawn', () => {
+    // Pinned once picked, 17 October 2026, as the fourth and fifth were. The
+    // five dropped puzzles are pinned too: they stay in the list as drawn.
+    const hash = createHash('sha256')
+      .update(CATCHPHRASE_SPECS.slice(FIFTH_END, SIXTH_END).map(promptFor).join('\n'))
+      .digest('hex');
+    expect(hash).toBe('be85330a3795a0a69daa276bb170c7a3a9c853833655f8a6f19db2524aa90212');
   });
 
   test('is medium or hard, never easy', () => {
