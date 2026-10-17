@@ -126,7 +126,9 @@ describe('twinsIn', () => {
 
 /*
   Batch 2 — 17 October 2026: sixty more after the first build's ninety-five,
-  because the office had seen 56 of 95. docs/decisions/price-was-right.md.
+  because the office had seen 56 of 95. The same day the last of them was cut,
+  its options shown in a transcript (`SPOILED_KEYS`): fifty-nine.
+  docs/decisions/price-was-right.md.
 */
 describe('batch 2', () => {
   const first = PRICE_SPECS.slice(0, PRICES_FIRST_BUILD);
@@ -141,8 +143,8 @@ describe('batch 2', () => {
     expect(hash).toBe('b06f468858dc3fe9165271c4cd3f776a6122f4e8425ed8fcdda22b242d79edc8');
   });
 
-  test('is sixty specs, numbered on from the first build', () => {
-    expect(added).toHaveLength(60);
+  test('is fifty-nine specs, numbered on from the first build', () => {
+    expect(added).toHaveLength(59);
     expect(added.map((spec) => spec.slug)).toEqual(
       added.map((_, i) => `price-${String(PRICES_FIRST_BUILD + 1 + i).padStart(3, '0')}`),
     );
@@ -238,7 +240,8 @@ describe('buildPricesPack', () => {
       // invented mix puts two in seven there — more than a quarter — so once a
       // gap outgrew thirty no placing could hold the spread to 3: batch 2 made
       // the five-year gap 54, of which 16 fit only on top, and 4 is the least
-      // any placing gets. The bound is 3, or that least, whichever is wider.
+      // any placing gets (53, 15 and 3 once one was cut, 17 October). The
+      // bound is 3, or that least, whichever is wider.
       const onlyTop = inGap.filter((q) => {
         const answer = pence(answers[q.id] as string);
         return answer >= today(q) || (over(q).length === 0 && answer * MIN_SPACING >= today(q));
