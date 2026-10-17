@@ -1,5 +1,7 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, test } from 'vitest';
+import { overlapsWith } from './blanks-core';
+import { BLANK_SPECS } from './hand-blanks-data';
 import {
   CATCHPHRASE_MIN_PACK,
   CATCHPHRASE_SPECS,
@@ -18,7 +20,7 @@ const HARDER_END = CATCHPHRASE_MIN_PACK + 30;
 const THIRD_END = HARDER_END + 30;
 /** Where the fourth batch (9 October 2026) ends and the fifth begins. */
 const FOURTH_END = THIRD_END + 30;
-/** Where the fifth batch (9 October 2026) ends. */
+/** Where the fifth batch (9 October 2026) ends and the sixth begins. */
 const FIFTH_END = FOURTH_END + 60;
 
 /*
@@ -407,7 +409,8 @@ describe('the fourth batch', () => {
 */
 describe('the fifth batch', () => {
   const before = CATCHPHRASE_SPECS.slice(0, FOURTH_END);
-  const added = CATCHPHRASE_SPECS.slice(FOURTH_END);
+  // Bounded once the sixth went on the end, 17 October 2026.
+  const added = CATCHPHRASE_SPECS.slice(FOURTH_END, FIFTH_END);
   const fourth = CATCHPHRASE_SPECS.slice(THIRD_END, FOURTH_END);
   const hard = (specs: CatchphraseSpec[]) => specs.filter((spec) => spec.difficulty === 'hard').length;
 
@@ -444,7 +447,7 @@ describe('the fifth batch', () => {
   });
 
   test('has Mr Fries in more than half of this batch on its own', () => {
-    expect(friesShareOk(CATCHPHRASE_SPECS, FOURTH_END)).toBe(true);
+    expect(friesShareOk(CATCHPHRASE_SPECS.slice(0, FIFTH_END), FOURTH_END)).toBe(true);
   });
 
   test('offers no option the pack already uses, as an answer or a wrong one', () => {
@@ -470,6 +473,107 @@ describe('the fifth batch', () => {
     expect(repeats([fixture(['One', latest.correct, 'Three'])], before)).toHaveLength(1);
     expect(repeats([fixture(['One', latest.correct, 'Three'])], CATCHPHRASE_SPECS.slice(0, THIRD_END))).toEqual([]);
     expect(repeats([fixture(['One', 'Two', 'Three'])], before)).toEqual([]);
+  });
+
+  test('has not been drawn yet, or has a picked drawing — never half of one', () => {
+    for (const spec of added) expect(spec.seed === undefined || [1, 2, 3].includes(spec.seed)).toBe(true);
+  });
+});
+
+/**
+ * How many options in `specs` contain a Blankety Blank phrase or sit inside
+ * one. Greg plays that round blind as well, so an option that carries one of
+ * its phrases gives a blank away. `blanks-core.test.ts` holds every Catchphrase
+ * answer to this; from the sixth batch on, the wrong options are held to it
+ * too. A count, never the options: a failure must not print a phrase.
+ */
+function blankClashes(specs: CatchphraseSpec[]): number {
+  return specs
+    .flatMap((spec) => [spec.correct, ...spec.incorrect])
+    .filter((option) => BLANK_SPECS.some((blank) => overlapsWith(blank.phrase, option))).length;
+}
+
+/*
+  The sixth batch — 17 October 2026. Sixty more after the fifth, on the fifth's
+  mix: the fourth and fifth measured inside the target band once live —
+  docs/decisions/catchphrase-batch-6.md. Not drawn yet.
+
+  Every assertion here reports counts or spec numbers, never a slug or an
+  option, so a failing run spoils nothing for somebody who plays blind.
+*/
+describe('the sixth batch', () => {
+  const before = CATCHPHRASE_SPECS.slice(0, FIFTH_END);
+  const added = CATCHPHRASE_SPECS.slice(FIFTH_END);
+  const fifth = CATCHPHRASE_SPECS.slice(FOURTH_END, FIFTH_END);
+  const hard = (specs: CatchphraseSpec[]) => specs.filter((spec) => spec.difficulty === 'hard').length;
+  const numbers = (specs: CatchphraseSpec[]) => specs.map((spec) => CATCHPHRASE_SPECS.indexOf(spec) + 1);
+  const fixture = (incorrect: string[]): CatchphraseSpec => ({
+    slug: 'fixture',
+    correct: 'A saying nobody uses',
+    incorrect,
+    difficulty: 'hard',
+    scene: 'A hill.',
+  });
+
+  test('is sixty puzzles', () => {
+    expect(added.length).toBe(60);
+  });
+
+  test('is medium or hard, never easy', () => {
+    expect(numbers(added.filter((spec) => spec.difficulty === 'easy'))).toEqual([]);
+  });
+
+  test("keeps the fifth batch's lean: mostly hard, and no smaller a share of hard than the fifth", () => {
+    expect(hard(added) * 2).toBeGreaterThan(added.length);
+    expect(hard(added) * fifth.length).toBeGreaterThanOrEqual(hard(fifth) * added.length);
+  });
+
+  test('says what kind each puzzle is, and no more than a third are one literal scene', () => {
+    expect(numbers(added.filter((spec) => spec.kind === undefined))).toEqual([]);
+    expect(added.filter((spec) => spec.kind === 'scene').length * 3).toBeLessThanOrEqual(added.length);
+  });
+
+  test('uses each of the harder kinds the show used', () => {
+    for (const kind of ['rebus', 'lettered', 'soundalike'] as const) {
+      expect(added.filter((spec) => spec.kind === kind).length).toBeGreaterThan(0);
+    }
+  });
+
+  test('has Mr Fries in more than half of this batch on its own', () => {
+    expect(friesShareOk(CATCHPHRASE_SPECS, FIFTH_END)).toBe(true);
+  });
+
+  test('offers no option the pack already uses, as an answer or a wrong one', () => {
+    // Dropped puzzles included: they stay in the list, so their options count.
+    expect(repeats(added, before).length).toBe(0);
+  });
+
+  test('the repeat check reaches the fifth batch, however an option is written', () => {
+    // The deny half. If `before` stopped at the fourth batch, the first two
+    // would come back empty.
+    const latest = fifth[fifth.length - 1];
+    if (latest === undefined) throw new Error('no fifth batch');
+    const wrong = latest.incorrect[0] ?? '';
+    expect(repeats([fixture([`  ${wrong.toLowerCase()}!`, 'Two', 'Three'])], before).length).toBe(1);
+    expect(repeats([fixture(['One', 'Two', latest.correct])], before).length).toBe(1);
+    expect(repeats([fixture(['One', 'Two', latest.correct])], CATCHPHRASE_SPECS.slice(0, FOURTH_END)).length).toBe(0);
+    expect(repeats([fixture(['One', 'Two', 'Three'])], before).length).toBe(0);
+  });
+
+  test('no option, right or wrong, carries a Blankety Blank phrase', () => {
+    expect(blankClashes(added)).toBe(0);
+  });
+
+  test('the Blankety Blank check catches a phrase either way round, and passes a clean option', () => {
+    // The deny half, and the allow half beside it: a check that matched
+    // nothing would pass the test above.
+    const phrase = BLANK_SPECS.map((blank) => blank.phrase).find((each) => each.split(' ').length >= 3);
+    if (phrase === undefined) throw new Error('no Blankety Blank phrase of three words');
+    const firstTwo = phrase.split(' ').slice(0, 2).join(' ');
+    expect(blankClashes([fixture([phrase.toUpperCase(), 'Two', 'Three'])])).toBe(1);
+    expect(blankClashes([fixture(['One', `${phrase}, and then some`, 'Three'])])).toBe(1);
+    expect(blankClashes([fixture(['One', 'Two', firstTwo])])).toBe(1);
+    expect(blankClashes([fixture(['One', 'Two', 'Three'])])).toBe(0);
   });
 
   test('has not been drawn yet, or has a picked drawing — never half of one', () => {
