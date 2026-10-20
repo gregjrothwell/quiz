@@ -98,7 +98,9 @@ by hash alone fail two.
 **Style samples, 20 October:** a teapot and a watering can, each as A (catalogue: pale grey
 studio), B (prize podium: navy studio, spotlights, a round podium) and C (flat illustration);
 then a garden shed and a motor scooter in A and B, to see whether a podium copes with something
-furniture-sized. None is an ONS item; none ships. ~1.5 minutes a drawing on the MacBook.
+furniture-sized. None is an ONS item; none ships. ~1.5 minutes a drawing on the MacBook. **Greg picked B, the
+prize podium, 20 October.** The shed on a podium came out as a low round stage, so furniture
+fits it.
 
 **Before it ships:** Greg's pick → `TAGS_STYLE`; `npm run tags-draw` (162 drawings, about four
 hours, on the charger, lid open); Claude picks a version per spec from the sheets; `write-tags-pack`

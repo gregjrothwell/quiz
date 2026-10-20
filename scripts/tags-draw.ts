@@ -45,8 +45,12 @@ export const TAG_STYLES = {
 
 export type TagStyle = keyof typeof TAG_STYLES;
 
-/** Greg's pick. Null until he has seen the samples. */
-export const TAGS_STYLE: TagStyle | null = null;
+/**
+ * Greg's pick, 20 October 2026, from the samples: B, the prize podium. A
+ * garden shed drawn the same way showed the podium widens to a low stage, so
+ * it holds furniture as well as a teapot.
+ */
+export const TAGS_STYLE: TagStyle | null = 'podium';
 
 export function tagPrompt(spec: TagSpec, style: TagStyle): string {
   return TAG_STYLES[style].replace('{object}', spec.picture);
