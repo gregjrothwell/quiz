@@ -34,6 +34,16 @@ export const RANDOM_SOURCES = [
 
 export type RandomSource = (typeof RANDOM_SOURCES)[number];
 
+/**
+ * The sources a Random Round may end on. Sleeves and The Price Was Right are
+ * left out: the last question carries the wager and the final, and theirs are
+ * a lottery there. Measured on the nine Random Rounds played 12–19 October
+ * 2026, all on The Ladder: a sleeve was last in seven of them and 18% of the
+ * room got it; hard prices hit 6%. Both still appear earlier in the round.
+ * Greg, 20 October 2026.
+ */
+export const FINALE_SOURCES: readonly RandomSource[] = ['screens', 'tunes', 'catchphrase', 'blanks'];
+
 export type RandomPools = { [S in RandomSource]: readonly SealedQuestion[] };
 
 export type RandomAsked = { [S in RandomSource]: ReadonlySet<string> };
@@ -114,6 +124,49 @@ export function withRandomPack(packs: readonly PackSummary[]): PackSummary[] {
 }
 
 /**
+ * The question a Random Round ends on, from one source.
+ *
+ * On The Ladder it is the hardest question that source has not served this
+ * season, so the climb still finishes at the top. Only once the source has no
+ * fresh question at all does it fall back to a repeat. Any other level takes
+ * one question the way the rest of the round does.
+ */
+function dealFinale(
+  pool: readonly SealedQuestion[],
+  level: Level,
+  rng: Rng,
+  asked: ReadonlySet<string>,
+): QuizQuestion | undefined {
+  if (level !== 'ramp') return buildQuizQuestions(pool, 1, level, rng, asked)[0];
+  const fresh = pool.filter((question) => !asked.has(question.id));
+  for (const difficulty of ['hard', 'medium', 'easy'] as const) {
+    const [pick] = buildQuizQuestions(fresh, 1, difficulty, rng);
+    if (pick) return pick;
+  }
+  return buildQuizQuestions(pool, 1, 'hard', rng, asked)[0] ?? buildQuizQuestions(pool, 1, 'mixed', rng, asked)[0];
+}
+
+/**
+ * Which source the round ends on: one of {@link FINALE_SOURCES} that supplies
+ * a question at all. On The Ladder, one that still has a fresh hard question
+ * is preferred, so the last question is not a step down.
+ */
+function finaleSource(
+  pools: RandomPools,
+  asked: RandomAsked,
+  quotas: readonly number[],
+  level: Level,
+  rng: Rng,
+): RandomSource | undefined {
+  const supplying = FINALE_SOURCES.filter((source) => (quotas[RANDOM_SOURCES.indexOf(source)] ?? 0) > 0);
+  const climbing = supplying.filter((source) =>
+    pools[source].some((question) => question.difficulty === 'hard' && !asked[source].has(question.id)),
+  );
+  const choices = level === 'ramp' && climbing.length > 0 ? climbing : supplying;
+  return choices[Math.floor(rng() * choices.length)];
+}
+
+/**
  * Deals one mixed round.
  *
  * Each source is sampled with the same `buildQuizQuestions` a single pack
@@ -124,6 +177,10 @@ export function withRandomPack(packs: readonly PackSummary[]): PackSummary[] {
  * a difficulty the types stay mixed. Both orders are a pure function of
  * `rng`; the room stores the result, and that stored list is what the
  * other clients render.
+ *
+ * The last question is dealt apart, from {@link FINALE_SOURCES}, and counts
+ * against that source's share, so every source still supplies what
+ * {@link quotasFor} says.
  */
 export function dealRandomRound(
   pools: RandomPools,
@@ -133,25 +190,34 @@ export function dealRandomRound(
   rng: Rng,
 ): QuizQuestion[] {
   const quotas = quotasFor(count, RANDOM_SOURCES.length);
+  const ending = finaleSource(pools, asked, quotas, level, rng);
   const dealt: QuizQuestion[] = [];
+  let finale: QuizQuestion | undefined;
 
-  RANDOM_SOURCES.forEach((source, index) => {
-    const wanted = quotas[index] ?? 0;
-    if (wanted === 0) return;
+  for (const [index, source] of RANDOM_SOURCES.entries()) {
+    let wanted = quotas[index] ?? 0;
+    if (wanted === 0) continue;
+    let pool = pools[source];
+    if (source === ending) {
+      finale = dealFinale(pool, level, rng, asked[source]);
+      if (finale) {
+        const finaleId = finale.id;
+        finale = { ...finale, sourcePack: source };
+        wanted -= 1;
+        pool = pool.filter((question) => question.id !== finaleId);
+      }
+    }
     const selectionLevel: Level = level === 'ramp' ? 'mixed' : level;
-    const questions = buildQuizQuestions(
-      pools[source],
-      wanted,
-      selectionLevel,
-      rng,
-      asked[source],
-    );
+    const questions = buildQuizQuestions(pool, wanted, selectionLevel, rng, asked[source]);
     for (const question of questions) {
       dealt.push({ ...question, sourcePack: source });
     }
-  });
+  }
 
   const mixed = shuffle(dealt, rng);
-  if (level !== 'ramp') return mixed;
-  return mixed.sort((a, b) => DIFFICULTY_RANK[a.difficulty] - DIFFICULTY_RANK[b.difficulty]);
+  const ordered =
+    level === 'ramp'
+      ? mixed.sort((a, b) => DIFFICULTY_RANK[a.difficulty] - DIFFICULTY_RANK[b.difficulty])
+      : mixed;
+  return finale ? [...ordered, finale] : ordered;
 }
