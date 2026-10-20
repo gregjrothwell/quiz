@@ -70,6 +70,41 @@ play from their own shopping.
 
 Not in Random Round. That is Greg's call once the office has played it.
 
-## Built — 20 October 2026, branch `price-is-right`, local
+## Built — 20 October 2026, branch `price-is-right`
 
-*(filled in as it lands)*
+| | |
+|---|---|
+| Specs | `scripts/hand-tags-data.ts`: **81**, nine kinds, the largest 13 (16%) |
+| Prices | the August 2026 medians already in `.cache/prices/observed.json`; nothing downloaded. **81 of 81 priced**, each from at least 30 quotes |
+| Spread (AC 5) | **21 under £10, 39 from £10 to £100, 21 over £100** (5 over £500) |
+| Levels | dealt in turn: **27 / 27 / 27** |
+| Answer's place 1–4 | **21 / 20 / 20 / 20** — each place once every four specs, the order per block by hash |
+| Overlap (AC 4) | `overlapsWithPriceWasRight`: 0 of 81; its deny case refuses an asked key, a spoiled key and a twin of one |
+| Writer | `npm run write-tags-pack`; refuses an unpicked spec, a drawing Vision never read, and any writing at all |
+| Draw | `npm run tags-draw`: two versions a spec, Vision, contact sheets; **refuses to start until `TAGS_STYLE` is set** |
+| Tests | `write-tags-pack.test.ts`, 17, on invented prices; 1,573/1,573 overall |
+
+**The rounding step is read off the ladder the player sees** (`stepForLadder`): the middle of
+the four options, finer if the cheapest would have under five steps of room. A step taken from
+the answer's own price leaks near a band edge — at £11, two places would round to 10p and two to
+50p, and the rounding would say which half the answer is in. The test sits on that edge; with
+the step taken from the answer it fails.
+
+**Places are append-stable.** Every four specs in list order use each place once, so adding a
+batch, or dropping a spec (`dropped` keeps its slot), moves no earlier answer and the vault needs
+nothing reseeded. Two mutations were run: the step from the answer's price fails one test; places
+by hash alone fail two.
+
+**Style samples, 20 October:** a teapot and a watering can, each as A (catalogue: pale grey
+studio), B (prize podium: navy studio, spotlights, a round podium) and C (flat illustration);
+then a garden shed and a motor scooter in A and B, to see whether a podium copes with something
+furniture-sized. None is an ONS item; none ships. ~1.5 minutes a drawing on the MacBook.
+
+**Before it ships:** Greg's pick → `TAGS_STYLE`; `npm run tags-draw` (162 drawings, about four
+hours, on the charger, lid open); Claude picks a version per spec from the sheets; `write-tags-pack`
+in the checkout that seeds; `seed-vault -- --pack tags` and a read-back; one `host-room` reveal;
+`tags` added to `SHOW_ROUNDS` once the lobby shelves are on `master`. No engine or rules change.
+
+**Not covered:** whether the drawings read as the thing named, and whether a median is a fair
+answer for an item that varies as much as a handbag or a sofa does. The first office round is the
+check, `read-games --pack tags`.
