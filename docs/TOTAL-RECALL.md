@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 17 October 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 20 October 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -23,6 +23,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
+
+## 2026-10-20 — Random Round's last question, the lobby shelves, The Price is Right begun
+
+Greg: Random Round always ended on an album, "almost like the last question is a random answer". Measured: 9 rounds, all The Ladder; a sleeve last in 7, 18% right; hard prices 6%. Decided: the last is never a sleeve or a price ([`random-round.md`](decisions/random-round.md#20-october-2026--the-last-question-is-never-a-sleeve-or-a-price)). Handover item 18, both lobby grids: show rounds first (45 of the last 60 rounds), Random Round two tiles wide, a sound mark ([`lobby-shelves.md`](decisions/lobby-shelves.md)). Both on `release-20-oct`, not live. **The Price is Right** (`tags`, blind): a picture, guess today's price; 81 ONS items, writer and draw script on `price-is-right`, waiting on Greg's pick of drawing style (`decisions/price-is-right.md` on that branch). Lint is red locally from five stale `.claude/worktrees`, not from the code.
 
 ## 2026-10-17 — Live: #91 (gh-pages `f6268e6`): The Price Was Right 154, Catchphrase 233
 
@@ -147,30 +151,12 @@ Greg's calls: podium ties (riser per person, height by place), overnight drawing
 Firestore Lite **after Friday** (worst `XRUE` reveal 3.2s, two refusals). Greg has a Claude Design
 system this session cannot see. Depth: [`decisions/office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md).
 
-## 2026-10-06 — Live: #70 (gh-pages `d3266ae`): the vault stops at the hit
-
-Greg: the reveal "taking a little longer than it should", ahead of Friday's 30. Each refused vault
-candidate closes Firestore's write stream, so firing all four paid three reopens every reveal; now
-one option at a time, stopping at the hit. Browser against live: 516→388ms median; worst case a
-little over the old. One untraced 1191ms, then 20 traced reveals with none slow. Merged `6e34bb9`
-14:44 BST → CI green → live `index-CSluHU7x` 14:49, marker checked in the served bundle. The
-production-site reveal was **not** run: App Check refuses the built-in browser at sign-in (item 12).
-Depth: [`decisions/reveal-stop-at-hit.md`](decisions/reveal-stop-at-hit.md).
-
-## 2026-10-06 — Live: #69 (gh-pages `51a30de`): The Price Was Right, British Blankety Blank, 19 packs
-
-Greg seeded (`seed-vault -- --pack blanks,prices`: 124 added, 119 already correct); read back
-243/243. `host-room -- 15 --pack prices`, room `P3E9`, a background browser tab joined: options
-rendered low to high through the real client path, the vault resolved in 0.28s, a wrong pick
-scored +0. Merged `d958cc0` 13:00:49 BST (`gh pr merge` worked) → CI green 13:04:38 → Pages
-`built` 13:05:30. Live bundle `index-BCpFNLxK` carries `ordered`. **Correction to the entry
-below:** "nothing American" was not Greg's rule — American things famous worldwide are fine;
-`AGENTS.md` reworded (`3e798ae`). Random round parked as #3.
-
 ## 2026-10-02 to 2026-10-06 — archived, one line each
 
-Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's; #68 and Blankety Blank built the same night, at 309 with the W3 release entry; the first office rounds of #67 and #68 the same night again, at 304 with the go-live; The Price Was Right built on 17 October, at 302 with #91's go-live.
+Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's; #68 and Blankety Blank built the same night, at 309 with the W3 release entry; the first office rounds of #67 and #68 the same night again, at 304 with the go-live; The Price Was Right built on 17 October, at 302 with #91's go-live; #70 and #69 on 20 October, at 296, with the Random Round, lobby and Price is Right entry.
 
+- **2026-10-06** — [Live: #70 (gh-pages `d3266ae`): the vault stops at the hit](recall/2026-10.md#2026-10-06--live-70-gh-pages-d3266ae-the-vault-stops-at-the-hit)
+- **2026-10-06** — [Live: #69 (gh-pages `51a30de`): The Price Was Right, British Blankety Blank, 19 packs](recall/2026-10.md#2026-10-06--live-69-gh-pages-51a30de-the-price-was-right-british-blankety-blank-19-packs)
 - **2026-10-06** — [The Price Was Right built; "nothing American" written down (`office-feedback-6-oct`)](recall/2026-10.md#2026-10-06--the-price-was-right-built-nothing-american-written-down-office-feedback-6-oct)
 - **2026-10-06** — [First office rounds of #67 and #68: chair, bonus, Blankety Blank](recall/2026-10.md#2026-10-06--first-office-rounds-of-67-and-68-chair-bonus-blankety-blank-office-feedback-6-oct)
 - **2026-10-06** — [Live: #68 (gh-pages `3fbc003`): Blankety Blank, 18 packs](recall/2026-10.md#2026-10-06--live-68-gh-pages-3fbc003-blankety-blank-18-packs)
