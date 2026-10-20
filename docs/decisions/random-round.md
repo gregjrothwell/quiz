@@ -1,6 +1,6 @@
 # Random Round
 
-> **Owner: Greg Rothwell. Last updated: 9 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 20 October 2026. Budget: 250 lines.**
 
 One round that deals questions from different round types — a picture, a tune, a Catchphrase, a price — instead of one pack. Parked 6 October 2026 ([`parked-ideas.md`](parked-ideas.md)); built 9 October on `cursor/random-round`, not played, not deployed.
 
@@ -47,3 +47,21 @@ The lobby's supply number is six times the thinnest source, so a level that sour
 ## What this did not do
 
 No live Firebase: no `seed-vault`, `host-room`, `check-rules`, or `sync-harness`. The vault already holds these question ids (unique across the six packs; checked 9 October, 1,414 ids, no collision). No rules paste, no change to derived quizmaster, no write of the whole `players` map. No Name the artist. No Catchphrase answer in this file or the commit. The Mac Mini drawing pipeline was not touched. The game record does not store `sourcePack`.
+
+## 20 October 2026 — the last question is never a sleeve or a price
+
+**Greg:** the last question is always a music album, the hardest kind, "so it's almost like the last question is a random answer". The last question carries the wager and Share or Shaft, so that matters more than one question's worth.
+
+**Measured** (`read-games --pack random`, each question id mapped back to its pack): nine Random Rounds, 12–19 October, **all on The Ladder** (the lobby's default), so the last question is always one labelled `hard`. A sleeve was last in **7 of 9**, and 18% of the room got those right. Hard questions by source across the nine: Sleeves 31% (21 asked), The Price Was Right **6%** (9), Blankety Blank 38% (4), Catchphrase 77% (18), On the box 88% (2). A fair shuffle would have put a sleeve last about 3.8 times in 9, so 7 is above chance as well as structural: Sleeves is 58% `hard`, against 18% for On the box and 12% for Tunes.
+
+**Decided, Greg, 20 October:** the last question is never an album or a price. They still appear earlier in the round.
+
+**Built** (`randomRound.ts`): `FINALE_SOURCES` is On the box, Tunes, Catchphrase and Blankety Blank. One of them, at random, deals the last question, and it counts against that source's share, so `quotasFor` still holds. On The Ladder it is that source's hardest fresh question, and a source whose hard questions have all been served is passed over, so the climb still ends on `hard`. Every other level deals it the way it deals the rest.
+
+| Check | Result |
+|---|---|
+| Two new rules (never a sleeve or price last; a fair source with no fresh hard is passed over) | fail on `master`'s deal, pass on this one |
+| Allow direction: sleeves and prices still dealt; every share still `quotasFor` | pass on both |
+| 2,000 Ladder deals each at 10, 15 and 20, real packs | last question ~25% each across the four; 100% `hard` |
+
+**Not covered.** Whether a hard Blankety Blank or Tunes question is fair as a finale: four hard blanks and no hard tunes were played in the nine rounds. The next office rounds are the check (`read-games --pack random`). The deal is client-only: no rules change, nothing seeded.
