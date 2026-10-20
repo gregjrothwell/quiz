@@ -47,6 +47,7 @@ export const PACK_IDS = [
   'prices',
   'artists',
   'random',
+  'tags',
 ] as const;
 
 /**
@@ -64,6 +65,7 @@ export const HAND_BUILT_PACK_IDS = [
   'blanks',
   'prices',
   'artists',
+  'tags',
 ] as const;
 
 /**
@@ -331,5 +333,9 @@ export const PACK_META: Record<PackId, { title: string; blurb: string }> = {
   random: {
     title: 'Random Round',
     blurb: 'A picture, a tune, a Catchphrase and a price, shuffled into one round.',
+  },
+  tags: {
+    title: 'The Price is Right',
+    blurb: 'Here it is. What does it cost in the shops today?',
   },
 };
