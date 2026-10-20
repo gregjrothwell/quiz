@@ -1213,6 +1213,104 @@ select.input option {
   border-color: var(--cyan);
 }
 
+/*
+  Shelves (src/questions/shelves.ts): the show rounds the office plays, then
+  straight trivia. Twenty-one identical tiles in harvest order put the ten
+  text packs first and the rounds played three times in four last. The label
+  is a quieter eyebrow, so "Choose a set" still reads as the one heading.
+*/
+.shelf {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.shelf + .shelf {
+  margin-top: 0.9rem;
+}
+
+.shelf__label {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin: 0;
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.shelf__label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--edge), transparent);
+}
+
+/*
+  The way in: Random Round, drawn two tiles wide with its own lit edge, so a
+  quizmaster who just wants a round has one obvious thing to press. Twice a
+  tile's basis plus the gap it swallows, at each breakpoint above.
+*/
+.pack--feature {
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgb(41 214 255 / 0.14), transparent 55%),
+    radial-gradient(120% 140% at 100% 100%, rgb(255 178 38 / 0.12), transparent 55%),
+    linear-gradient(180deg, var(--panel-hi), var(--panel));
+}
+
+.pack--feature::after {
+  --lit-edge-fill: linear-gradient(90deg, var(--cyan), var(--amber));
+}
+
+.pack--feature .pack__title {
+  font-size: 1.7rem;
+}
+
+@media (min-width: 30rem) {
+  .pack--feature {
+    flex-basis: 100%;
+  }
+}
+
+@media (min-width: 44rem) {
+  .pack--feature {
+    flex-basis: calc(66.666% - 0.45rem);
+  }
+}
+
+@media (min-width: 64rem) {
+  .pack--feature {
+    flex-basis: calc(50% - 0.65rem);
+  }
+}
+
+/* A round that plays sound says so before it is picked: the lobby will not
+   start it muted, and a player at a silent desk needs to know. */
+.pack__sound {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.8rem;
+  color: var(--cyan-dim);
+  line-height: 0;
+}
+
+.pack__sound svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pack:has(.pack__sound) .pack__title {
+  padding-right: 1.4rem;
+}
+
 .pack__tag {
   align-self: flex-start;
   margin-bottom: 0.35rem;

@@ -370,6 +370,28 @@ const PACKS: PackSummary[] = [
   },
 ];
 
+/**
+ * Every pack the live index lists, at its published size (20 October 2026), so
+ * the lobby's shelves can be judged at the length the office actually sees —
+ * {@link PACKS} is ten and hides the wall of twenty-one. Level counts are a
+ * rough third each; nothing here reads them.
+ */
+const EVERY_PACK: PackSummary[] = (
+  [
+    ['general-knowledge', 1500], ['geography', 1500], ['history', 1500], ['mixed-bag', 1500],
+    ['music', 1500], ['science', 1500], ['sport', 776], ['tv-and-film', 1500],
+    ['uk-leaning', 1500], ['video-games', 1400], ['melody', 70], ['picture', 49],
+    ['flags', 76], ['tunes', 424], ['sleeves', 212], ['screens', 445],
+    ['catchphrase', 233], ['blanks', 148], ['prices', 154], ['artists', 259], ['random', 294],
+  ] as const
+).map(([id, count]) => ({
+  id,
+  title: PACK_META[id].title,
+  blurb: PACK_META[id].blurb,
+  count,
+  counts: { easy: Math.round(count / 3), medium: Math.round(count / 3), hard: Math.round(count / 3) },
+}));
+
 function mockRoom(overrides: Partial<RoomState> = {}): RoomState {
   return {
     ...createRoom('HKQ7'),
@@ -1620,6 +1642,36 @@ export function Preview() {
           onReveal={noop}
           onNext={noop}
           onVote={noop}
+        />
+      ),
+    },
+    {
+      title: 'Lobby · every pack, quizmaster',
+      node: (
+        <Lobby
+          room={mockRoom({ phase: 'lobby', packVotes: LOBBY_VOTES })}
+          youUid="greg"
+          isQuizmaster
+          packs={EVERY_PACK}
+          busy={false}
+          onStart={noop}
+          onLeave={noop}
+        />
+      ),
+    },
+    {
+      title: 'Lobby · every pack, voting',
+      node: (
+        <Lobby
+          room={mockRoom({ phase: 'lobby', packVotes: LOBBY_VOTES, browsing: 'screens' })}
+          youUid="priya"
+          isQuizmaster={false}
+          packs={EVERY_PACK}
+          busy={false}
+          onPickSquad={noop}
+          onVote={noop}
+          onStart={noop}
+          onLeave={noop}
         />
       ),
     },
