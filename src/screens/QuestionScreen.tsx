@@ -9,7 +9,8 @@ import { QuestionVote } from '../components/QuestionVote';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { replayDurationMs, replayTimeline, type Arrival } from '../engine/replay';
 import { BONUS_PROMPT, isBonusCatchphrase } from '../engine/catchphraseBonus';
-import { optionsAtMs, optionsDue } from '../engine/optionsHold';
+import { isCall, optionsAtMs, optionsDue } from '../engine/optionsHold';
+import { isUnmatched, matchTypedAnswer } from '../engine/typedAnswer';
 import { questionPack } from '../engine/randomRound';
 import type { Verdict } from '../engine/questionVote';
 import { stakeFor, verdictFor, WAGER_SHARES } from '../engine/scoring';
@@ -157,6 +158,12 @@ export function QuestionScreen({
   const held = youUid ? (room.scores[youUid] ?? 0) : 0;
   const [wager, setWager] = useState(0);
   const stake = myAnswer?.wager ?? wager;
+  // The box is local. What was typed is never written — only the lectern it
+  // matched, once they submit. Keyed so a new question starts with an empty box.
+  const callKey = `${room.gameId ?? ''}:${room.index}`;
+  const [draftState, setDraftState] = useState<{ key: string; text: string }>({ key: '', text: '' });
+  const [lockedCall, setLockedCall] = useState<string | null>(null);
+  const draft = draftState.key === callKey ? draftState.text : '';
 
   /*
     Read off the reveal rather than worked out here, because "your answer was not
@@ -193,7 +200,9 @@ export function QuestionScreen({
     verdict === 'correct'
       ? 'Correct'
       : verdict === 'wrong'
-        ? 'Not this time'
+        ? myAnswer && isUnmatched(myAnswer.optionIndex)
+          ? 'Not this time — that didn’t match'
+          : 'Not this time'
         : verdict === 'lost'
           ? 'Your answer didn’t reach the room in time'
           : 'You didn’t answer';
@@ -327,10 +336,14 @@ export function QuestionScreen({
   // The room's pack on an ordinary round. On a random round, the question's
   // own source — `random` is not Catchphrase.
   const behavingAs = questionPack(room.packId, question);
-  const optionsOut =
-    revealed
-    || joinedMidQuestion
-    || optionsDue(elapsedMs, optionsAtMs(behavingAs, room.index, questionDurationMs(room)));
+  const holdAt = optionsAtMs(behavingAs, room.index, questionDurationMs(room));
+  const optionsOut = revealed || joinedMidQuestion || optionsDue(elapsedMs, holdAt);
+  // The text box lives in the hold only. A Bonus Catchphrase has no hold.
+  const calling = holdAt > 0 && !optionsOut;
+  // Final once it has landed, including before the write comes back: a tap in
+  // that gap must not replace it. A wrong call loses the question.
+  const called =
+    lockedCall === callKey || (myAnswer !== undefined && isCall(myAnswer.elapsedMs, holdAt));
 
   // Every fifth Catchphrase question, by position — `src/engine/catchphraseBonus.ts`.
   const bonus = isBonusCatchphrase(behavingAs, room.index);
@@ -427,6 +440,10 @@ export function QuestionScreen({
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
+      // The call box is an input. Space and Enter belong to it, and a letter
+      // there is part of the phrase rather than a lectern.
+      const target = event.target;
+      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return;
       const key = event.key.toLowerCase();
 
       const letter = ['a', 'b', 'c', 'd'].indexOf(key);
@@ -435,7 +452,7 @@ export function QuestionScreen({
       // Gated on the clock rather than on having answered, so a key can change a
       // pick as well as make one — and so a late press cannot write past expiry.
       // Not before the options are out: a key would pick a lectern nobody can see.
-      if (pick >= 0 && optionsOut && !revealed && !clock.expired && pick < optionCount) {
+      if (pick >= 0 && optionsOut && !called && !revealed && !clock.expired && pick < optionCount) {
         event.preventDefault();
         // The stake goes with a keyed answer as well as a tapped one. Answering
         // with `a` is the fastest way to play, so dropping it here would lose
@@ -473,6 +490,7 @@ export function QuestionScreen({
     optionsOut,
     isQuizmaster,
     clock.expired,
+    called,
     onAnswer,
     onReveal,
     onNext,
@@ -544,7 +562,7 @@ export function QuestionScreen({
       // The clock closes the lecterns, not the first press. Expiry matters on
       // its own now: it used to be covered incidentally, because having answered
       // disabled the tiles and everyone had answered or run out of time.
-      disabled={!optionsOut || revealed || clock.expired}
+      disabled={!optionsOut || revealed || clock.expired || called}
       onPick={(picked: number) => onAnswer(picked, wagering ? stake : undefined)}
       order={index}
       // Your points, popped over your own lectern as the verdict lands. Only
@@ -619,6 +637,56 @@ export function QuestionScreen({
           <h1 key={question.id} className="prompt">
             {bonus ? BONUS_PROMPT : question.prompt}
           </h1>
+
+          {/*
+            Above the picture, not under it. On a 375px phone the keyboard
+            covers the bottom two-fifths, and a box under the still sits in
+            that band. Up here the picture and the lecterns move together when
+            the box goes, so the two stay aligned.
+          */}
+          {calling ? (
+            <form
+              className="call"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (called || clock.expired || draft.trim() === '') return;
+                const index = matchTypedAnswer(draft, question.options);
+                setLockedCall(callKey);
+                onAnswer(index, wagering ? stake : undefined);
+              }}
+              onCopy={(event) => event.stopPropagation()}
+              onCut={(event) => event.stopPropagation()}
+            >
+              <label className="field__label" htmlFor={`call-${question.id}`}>
+                Call it
+              </label>
+              <div className="call__row">
+                <input
+                  id={`call-${question.id}`}
+                  className="input"
+                  value={draft}
+                  autoComplete="off"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  enterKeyHint="done"
+                  maxLength={80}
+                  placeholder="Type what you see"
+                  disabled={called || clock.expired}
+                  onChange={(event) => setDraftState({ key: callKey, text: event.target.value })}
+                  onFocus={(event) => event.currentTarget.scrollIntoView({ block: 'nearest' })}
+                />
+                <button
+                  type="submit"
+                  className="btn btn--primary"
+                  disabled={called || clock.expired || draft.trim() === ''}
+                >
+                  Call it
+                </button>
+              </div>
+              <p className="muted hint">Final. A wrong call loses it. The options arrive at halfway.</p>
+            </form>
+          ) : null}
 
           {/*
             Where a picture question shows its picture, a melody question offers
@@ -767,13 +835,13 @@ export function QuestionScreen({
                       className={share === stake ? 'btn' : 'btn btn--ghost'}
                       // Locked with the lecterns, so a stake cannot be moved after
                       // the clock has run out on the answer it belongs to.
-                      disabled={clock.expired}
+                      disabled={clock.expired || called}
                       aria-pressed={share === stake}
                       onClick={() => {
                         setWager(share);
                         // Already answered? Then the stake is a change to an
                         // answer that exists, and has to be written to count.
-                        if (myAnswer) onAnswer(myAnswer.optionIndex, share);
+                        if (myAnswer && !called) onAnswer(myAnswer.optionIndex, share);
                       }}
                     >
                       {share === 0 ? 'Nothing' : `${share}%`}
@@ -794,11 +862,7 @@ export function QuestionScreen({
               <p className="nudge hint" role="status">
                 Double points. Guess as the squares come off.
               </p>
-            ) : optionsOut ? null : (
-              <p className="nudge hint" role="status">
-                The options arrive at halfway.
-              </p>
-            )}
+            ) : null}
 
             <div className="podium">{tiles}</div>
             </div>
@@ -809,9 +873,11 @@ export function QuestionScreen({
       </div>
 
       <p className="legend" aria-hidden="true">
-        <span>
-          <kbd>A</kbd>–<kbd>D</kbd> answer
-        </span>
+        {optionsOut ? (
+          <span>
+            <kbd>A</kbd>–<kbd>D</kbd> answer
+          </span>
+        ) : null}
         {hasTune && !revealed ? (
           <span>
             <kbd>R</kbd> hear it again
@@ -888,11 +954,17 @@ export function QuestionScreen({
               // contradicting itself at exactly the moment the room is waiting and
               // wondering whether something has broken.
               'Time’s up'
+            ) : called ? (
+              // A call is final, including a wrong one. The lecterns stay shut
+              // for this player when the options arrive.
+              'Called — you can’t change it'
             ) : myAnswer ? (
               // Not "Locked in" any more, and worth saying rather than leaving to
               // be discovered: every other quiz app takes the first answer and
               // keeps it, so nobody will try a second lectern unless told they can.
               'You can still change it'
+            ) : calling ? (
+              'Call it, or wait'
             ) : (
               'Pick an answer'
             )}

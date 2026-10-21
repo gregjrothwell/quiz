@@ -59,9 +59,12 @@ import {
 import { createQ1Tracer, deviceFrom, type Q1Tracer } from '../engine/q1Trace';
 import { networkType, recordQ1Trace, refusalCode } from './q1Trace';
 import { planJoin, planSeatSquad } from '../engine/join';
+import { isCall, optionsAtMs } from '../engine/optionsHold';
+import { questionPack } from '../engine/randomRound';
 import { reapAbsent } from '../engine/presence';
 import {
   createRoom,
+  currentQuestion,
   isWagerQuestion,
   questionDurationMs,
   type Phase,
@@ -977,6 +980,18 @@ export function useRoom(): UseRoom {
       // to be swallowed here in silence — the player would watch their bet do
       // nothing and find out at the reveal.
       const held = room.answers[uid];
+
+      // A call landed before the options. It is final: a later tap, or a stake
+      // moved afterwards, must not overwrite it. "Before the options" is
+      // `elapsedMs < optionsAtMs`, which is already on the document — no new
+      // field. The rules still allow an update; this client is what refuses.
+      const atMs = optionsAtMs(
+        questionPack(room.packId, currentQuestion(room)),
+        room.index,
+        questionDurationMs(room),
+      );
+      if (held && isCall(held.elapsedMs, atMs)) return;
+
       if (held?.optionIndex === optionIndex && held.wager === staked.wager) return;
 
       // The earliest touch this device knows about, from **both** sources.

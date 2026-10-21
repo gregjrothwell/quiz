@@ -2,7 +2,8 @@
 
 > **Owner: Greg Rothwell. Last updated: 21 October 2026. Budget: 250 lines.**
 
-**Status: investigated, nothing built. A decision for Greg.** He asked on
+**Status: built 21 October 2026, not live.** Greg decided the same day — see
+[Decided](#decided-21-october-2026). He asked on
 21 October for typed answers on Catchphrase "and other appropriate rounds". This
 was turned down twice before: on 2 October ([`catchphrase.md`](catchphrase.md),
 when he picked the hold) and on 5 October
@@ -153,6 +154,34 @@ made-up options, never a blind pack's.
 
 | Decision | Owner |
 |---|---|
-| B (call it, Catchphrase) first, A (typed round) first, or neither | Greg |
-| Under B: rank race only, or a call bonus on top | Greg |
-| Keep what was typed (rules change) or only the matched index | Greg |
+| B (call it, Catchphrase) first, A (typed round) first, or neither | Greg — **B**, 21 Oct |
+| Under B: rank race only, or a call bonus on top | Greg — **rank race only**, 21 Oct |
+| Keep what was typed (rules change) or only the matched index | Greg — **index only**, 21 Oct |
+
+## Decided, 21 October 2026
+
+**B. Catchphrase only. Rank race only. The typed text is not kept.**
+
+A text box sits in the existing hold. Submitting before the options appear
+writes `optionIndex` from `matchTypedAnswer` and `elapsedMs` from the device
+clock. That is a call: this client will not replace it, a wrong one (including
+no match) scores nothing, and the earlier `elapsedMs` beats every tap in the
+rank race that already exists. There is no call bonus. Bonus Catchphrase has
+no hold, so no box. Everyone else still gets the options at half time.
+
+No match is index **4**. Every question in `public/packs/` has four options
+(counted 21 Oct, numbers only), and the answer rules already allow 0–9. Nothing
+new is stored, so there is no rules or vault change. The reducer still refuses
+an index past the lecterns; live answers are written by `useRoom`, not the
+reducer.
+
+`contrarian` skips index 4 and above, so a no-match cannot earn "boldly wrong".
+
+Not in a `release-<date>` branch. Finals history is a separate change in
+flight, and the two ship together only when Greg folds them. Merging deploys.
+
+**The phone, measured in `#/preview` at 375px.** The box sits under the prompt.
+On a 667px-tall screen it ends above a keyboard covering the bottom 40%, and
+that keyboard then covers the picture, which is fully on screen until the
+keyboard opens. On 812px the top of the picture stays clear of the same
+keyboard. The sticky desk does not cover the picture at either height.

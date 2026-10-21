@@ -47,3 +47,15 @@ export function optionsAtMs(packId: PackId | null, index: number, durationMs: nu
 export function optionsDue(elapsedMs: number, atMs: number): boolean {
   return elapsedMs >= atMs;
 }
+
+/**
+ * A typed answer that landed while the picture was still playing alone.
+ *
+ * Final, and already ahead of every tap: a tap cannot be made until the
+ * options are due, so its `elapsedMs` is at least {@link optionsAtMs}. There
+ * is no separate bonus. A hold of zero (every pack but an ordinary
+ * Catchphrase, including a Bonus Catchphrase) is never a call.
+ */
+export function isCall(elapsedMs: number, atMs: number): boolean {
+  return atMs > 0 && elapsedMs < atMs;
+}

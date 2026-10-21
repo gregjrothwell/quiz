@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 17 October 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 21 October 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -34,6 +34,7 @@ Built to replace Polly in Teams.
 | **the CI deploy, the secret check, Playwright, the emulator**; anything that adds reads or writes | [`ci-deploy.md`](decisions/ci-deploy.md) · [`rules-from-ci.md`](decisions/rules-from-ci.md) · [`emulators.md`](decisions/emulators.md) · [`cost.md`](decisions/cost.md) · [`audit-backlog.md`](decisions/audit-backlog.md) |
 | — before assuming a style choice, a bug, or a claim in here | [`gotchas.md`](decisions/gotchas.md) · [`known-limits.md`](decisions/known-limits.md) · [`state-of-play.md`](decisions/state-of-play.md) |
 | what a question is worth, and why it is not a speed curve | [`decisions/scoring.md`](decisions/scoring.md) |
+| **calling a Catchphrase** before the options | [`typed-answers.md`](decisions/typed-answers.md) |
 | the shareable result card, and how it gets to the player | [`decisions/final-card.md`](decisions/final-card.md) |
 | what to build next, what each idea costs, what was turned down | [`what-to-build-next.md`](decisions/what-to-build-next.md) · [`picking-up.md`](decisions/picking-up.md) · [`ideas-review.md`](decisions/ideas-review.md) · [`scope.md`](decisions/scope.md) |
 | picture, music, jigsaw or steal rounds, **negative points**, why melody played badly; **a random round** | [`round-types.md`](decisions/round-types.md) · [`melody-round.md`](decisions/melody-round.md) · [`random-round.md`](decisions/random-round.md) |
@@ -41,7 +42,6 @@ Built to replace Polly in Teams.
 | whether an answer can change and the spam exploit; `firstMs` and the snap guess | [`answer-spam.md`](decisions/answer-spam.md) · [`first-touch.md`](decisions/first-touch.md) |
 | what a finished round left behind, and reading it back | [`decisions/game-record.md`](decisions/game-record.md) |
 | upgrading `package.json`; the studio set and lighting cues; **the game-show moments** (reveal, podium, wipe — branch `premium-motion`, 21 Oct, not live) | [`dependencies.md`](decisions/dependencies.md) · [`lighting.md`](decisions/lighting.md) · [`game-show-moments.md`](decisions/game-show-moments.md) |
-
 ## State as of 14 October 2026
 
 > **READ FIRST — the Friday 9 October game of 30 did not happen.**

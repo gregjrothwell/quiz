@@ -24,6 +24,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-21 — Built, not live: call it on Catchphrase
+
+Greg, the same day: option B, Catchphrase only, the rank race only, and don't keep what was typed. A text box during the hold. A call before the options is final and beats every tap; a wrong call loses the question. The device matches the four options (`matchTypedAnswer`) and writes `optionIndex` — 4 when nothing matches, which the rules already allow. The contrarian rosette skips that index. No rules or vault change. Not folded into a release branch: finals history is a separate change in flight. [`typed-answers.md`](decisions/typed-answers.md).
+
 ## 2026-10-21 — Built, not live: the game-show moments (branch `premium-motion`)
 
 Greg asked for a design scan ("share/shaft could have a cool animation"), then "do everything". Share or Shaft now acts its reveal out — seats meet on a share, the shafter shatters the other seat, both shafting blacks the house out for third place — with a hero pot, green/red buttons, stamps and the arc clock. The podium holds third, second, a drum roll, then the winner with fanfare and confetti. A light wipe between screens (not on the question or reveal), standings arrows and "New leader", your points over your lectern and "N in a row", the lobby's drop-in and a quizmaster-only ping, Android haptics. 1,651 tests, e2e 18/18. **The browser pane was hidden at first, so animations only advanced per screenshot and the pictures lagged the DOM.** Detail and gaps: [`game-show-moments.md`](decisions/game-show-moments.md).

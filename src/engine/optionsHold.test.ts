@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { OPTIONS_HOLD_SHARE, optionsAtMs, optionsDue } from './optionsHold';
+import { isCall, OPTIONS_HOLD_SHARE, optionsAtMs, optionsDue } from './optionsHold';
 
 describe('when a question shows its options', () => {
   test('a Catchphrase picture plays alone for half the clock', () => {
@@ -27,5 +27,11 @@ describe('when a question shows its options', () => {
     expect(optionsDue(4_999, 5_000)).toBe(false);
     expect(optionsDue(5_000, 5_000)).toBe(true);
     expect(optionsDue(0, 0)).toBe(true);
+  });
+
+  test('a call is an answer that landed strictly before the options', () => {
+    expect(isCall(4_999, 5_000)).toBe(true);
+    expect(isCall(5_000, 5_000)).toBe(false);
+    expect(isCall(1_000, 0)).toBe(false);
   });
 });
