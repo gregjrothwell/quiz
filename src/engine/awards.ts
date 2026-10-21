@@ -1,5 +1,6 @@
 import { standings } from './scoring';
 import type { Answer } from './state';
+import { isUnmatched } from './typedAnswer';
 
 /**
  * One question as it finished.
@@ -96,6 +97,11 @@ function contrarian(log: QuestionRecord[]): Award | null {
     const entries = Object.entries(record.answers);
     for (const [uid, answer] of entries) {
       if (answer.optionIndex === record.correctIndex) continue;
+      // A typed answer that matched nothing shares one index past the lecterns.
+      // It is not a pick. Counting it would hand this rosette to one person who
+      // typed a wrong phrase, and two people who typed different wrong phrases
+      // would look like they had chosen the same option. See typed-answers.md.
+      if (isUnmatched(answer.optionIndex)) continue;
       const shared = entries.some(
         ([other, otherAnswer]) => other !== uid && otherAnswer.optionIndex === answer.optionIndex,
       );

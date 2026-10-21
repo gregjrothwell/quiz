@@ -101,8 +101,38 @@ describe('a Catchphrase picture before halfway', () => {
   });
 
   test('says when the options are coming', () => {
-    const { container } = render(screen(at(1_000)));
+    const { container, getByLabelText } = render(screen(at(1_000)));
     expect(container.textContent).toMatch(/options arrive at halfway/i);
+    expect(getByLabelText('Call it')).toBeInstanceOf(HTMLInputElement);
+  });
+
+  test('a typed call writes the matched lectern and keeps the options hidden', () => {
+    const onAnswer = vi.fn();
+    const { container, getByLabelText, getByRole } = render(screen(at(2_000), { onAnswer }));
+
+    fireEvent.change(getByLabelText('Call it'), { target: { value: 'Option one' } });
+    fireEvent.click(getByRole('button', { name: 'Call it' }));
+
+    expect(onAnswer).toHaveBeenCalledTimes(1);
+    expect(onAnswer).toHaveBeenCalledWith(0, undefined);
+    for (const option of PUZZLE.options) expect(container.textContent).not.toContain(option);
+  });
+
+  test('a typed answer that matches nothing is the index past the options', () => {
+    const onAnswer = vi.fn();
+    const { getByLabelText, getByRole } = render(screen(at(2_000), { onAnswer }));
+
+    fireEvent.change(getByLabelText('Call it'), { target: { value: 'not a phrase' } });
+    fireEvent.click(getByRole('button', { name: 'Call it' }));
+
+    expect(onAnswer).toHaveBeenCalledWith(4, undefined);
+  });
+
+  test('an empty box does not call', () => {
+    const onAnswer = vi.fn();
+    const { getByRole } = render(screen(at(2_000), { onAnswer }));
+    fireEvent.submit(getByRole('button', { name: 'Call it' }).closest('form')!);
+    expect(onAnswer).not.toHaveBeenCalled();
   });
 
   test('ignores the answer keys', () => {
@@ -120,6 +150,11 @@ describe('a Catchphrase picture before halfway', () => {
 });
 
 describe('a Bonus Catchphrase', () => {
+  test('has no text box — its options are already there', () => {
+    const { queryByLabelText } = render(screen(at(500), { index: 4 }));
+    expect(queryByLabelText('Call it')).toBeNull();
+  });
+
   test('shows its options from the first frame and takes an answer', () => {
     // #given the fifth question, 0.5s in, with every square still down
     const onAnswer = vi.fn();
@@ -151,6 +186,34 @@ describe('a Catchphrase picture from halfway', () => {
     for (const option of PUZZLE.options) expect(container.textContent).toContain(option);
     expect(tiles(container).some((tile) => tile.disabled)).toBe(false);
     expect(container.textContent).not.toMatch(/options arrive at halfway/i);
+  });
+
+  test('a call is final once the options arrive', () => {
+    const onAnswer = vi.fn();
+    const room = roomWith('catchphrase');
+    room.answers = { greg: { optionIndex: 1, elapsedMs: 2_000 } };
+    const { container, queryByLabelText } = render(
+      <QuestionScreen
+        room={room}
+        youUid="greg"
+        isQuizmaster={false}
+        clock={at(6_000)}
+        revealed={false}
+        onAnswer={onAnswer}
+        onReveal={noop}
+        onNext={noop}
+        onVote={noop}
+      />,
+    );
+
+    expect(queryByLabelText('Call it')).toBeNull();
+    expect(container.textContent).toMatch(/can’t change it/);
+    expect(tiles(container).every((tile) => tile.disabled)).toBe(true);
+
+    fireEvent.keyDown(window, { key: 'a' });
+    const first = tiles(container)[0];
+    if (first) fireEvent.click(first);
+    expect(onAnswer).not.toHaveBeenCalled();
   });
 
   test('answers from a key and from a tap', () => {

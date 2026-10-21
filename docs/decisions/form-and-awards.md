@@ -1,6 +1,6 @@
 # Form and the awards
 
-> **Owner: Greg Rothwell. Last updated: 20 August 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 21 October 2026. Budget: 250 lines.**
 
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
@@ -137,5 +137,11 @@ Two rules the tests pin down, both about not lying:
 crowd is a bad question; being wrong alone is a decision. Note this needs three
 or more players to mean anything — with two, every wrong answer is also a lonely
 one.
+
+**21 October 2026.** A typed call that matches nothing is stored as
+`optionIndex` 4, one index shared by every no-match. `contrarian` skips that
+index (and anything past it). One person typing a wrong phrase does not earn
+the rosette, and two people who typed different wrong phrases are not treated
+as having picked the same option. [`typed-answers.md`](typed-answers.md).
 
 ---
