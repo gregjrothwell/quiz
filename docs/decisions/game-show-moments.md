@@ -29,6 +29,33 @@ New cues, all synthesised like the rest (`sound.ts`): `shatter`, `chime`,
 `heartbeat`, `roll`, `join`. None louder than the loudest existing voice, and
 `join` the quietest thing in the house — `sound.test.ts`.
 
+## Second pass, 21 October 2026
+
+Greg asked what else had come up while building; these four were fixes to the
+first pass rather than new moments, and went on the same PR.
+
+- **The heartbeat was sub-bass only** (72→48Hz sines), with a comment claiming
+  it would be "felt more than heard" on laptop speakers — which carry little
+  under about 100Hz, and nobody had listened. Each beat now has a muffled
+  triangle above 120Hz (`sound.test.ts` holds it there), and it plays on the
+  two finalists' devices only: on every screen it was a dozen heartbeats a few
+  hundred milliseconds apart down one call.
+- **The quizmaster's Space skipped the reveal.** One press mid-shatter took
+  the whole room to the final results. Now the first press jumps this screen to
+  the result (dropping the blackout and the heir), and the second moves on.
+  Beats only move forward, so a pending timer cannot drag it back.
+  `ShareOrShaft.reveal.test.tsx` — fails on the old screen, passes on the new.
+- **The podium could not be skipped.** A tap or Space jumps to the result.
+  While it builds, the invisible content underneath takes no clicks
+  (`data-held`), so a tap meant to skip can never press "Another round".
+- **"Turning them over…" was dead air**, up to five seconds at the tensest
+  point. It now has the podium's drum roll and both seats bracing in step
+  (motion-welcome only: an endless loop is what the blanket reduced-motion
+  rule turns into churn). New gallery fixture: "turning them over".
+
+**Left for Greg:** the line under the title changed from "Playing for 5,550"
+to "The top two, for both their scores" in the first pass, without asking.
+
 ## The rules it kept
 
 These were in `global.css` before this work, and each one shaped it.
@@ -106,9 +133,8 @@ shows the result.
 - **Haptics were not felt** — no Android phone in the loop.
 - **Sound balance by ear**, on laptop speakers over a call, is untested; the
   test only bounds the gains.
-- **The 4s hold on the final screen** keeps "Another round" invisible (not
-  disabled) for that long. If the quizmaster finds that slow, `LANDED_AT` is
-  the number.
+- **The 4s hold on the final screen** can be skipped with a tap or Space; if
+  it still feels slow, `LANDED_AT` is the number.
 - **`405fd9c` carries CSS that belongs to `97d9bfd`** (the standings arrows,
   the pop, the streak stamp): the whole stylesheet was staged for the wipe.
   Reverting the wipe alone means keeping those rules.
