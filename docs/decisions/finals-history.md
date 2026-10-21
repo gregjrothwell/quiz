@@ -2,9 +2,10 @@
 
 > **Owner: Greg Rothwell. Last updated: 21 October 2026. Budget: 250 lines.**
 
-**Status: BUILT 21 October 2026. Not merged, not live.** Greg approved the story
-and all ten acceptance criteria, and the backfill (by uid). Merging deploys;
-he merges after "go live". The old `finals-history` branch holds unrelated #100
+**Status: LIVE 21 October 2026** (#104, merge `627d5f9`, gh-pages `860e6a5`;
+`check-rules` 129/129). Was: built, not merged. Greg approved the story and all
+ten acceptance criteria, and the backfill (by uid). Backfill dry run after the
+deploy: 12 rows, 0 refused, 0 skipped; **`--go` waits on Greg**. The old `finals-history` branch holds unrelated #100
 docs and is not this work.
 
 Each Share or Shaft finalist's record goes on their seat, e.g. *"7 finals · shared 5

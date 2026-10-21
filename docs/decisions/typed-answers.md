@@ -2,7 +2,7 @@
 
 > **Owner: Greg Rothwell. Last updated: 21 October 2026. Budget: 250 lines.**
 
-**Status: built 21 October 2026, not live.** Greg decided the same day — see
+**Status: LIVE 21 October 2026** (#104, gh-pages `860e6a5`). Was: built, not live. Greg decided the same day — see
 [Decided](#decided-21-october-2026). He asked on
 21 October for typed answers on Catchphrase "and other appropriate rounds". This
 was turned down twice before: on 2 October ([`catchphrase.md`](catchphrase.md),

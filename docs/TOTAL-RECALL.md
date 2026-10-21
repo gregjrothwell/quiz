@@ -24,6 +24,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-21 — Live: #104 (gh-pages `860e6a5`): finals history and call it
+
+Greg: "Go live." `release-2026-10-21`, one merge commit per Cursor Agent PR: #102 finals history (`9ba3464`), #103 call it (`bb835b0`); conflicts were docs only. Reviewed first: every pack has four options, so no-match index 4 is never a lectern, and `games/` sits inside season-2. **The new client writes the four finals fields on every bank, finalist or not**: an emulator probe of the real `bankGame` transaction had master's rules refuse all five banks and the release rules allow all five, counts right, a repeat game a no-op. So the site must never go out ahead of the rules. Merged `627d5f9` 19:25Z; the push started its own run this time: rules 19:29:50Z, gh-pages 19:30:33Z, Pages built 19:31:21Z, no hang. Live `index-DnncXodV.js` and `index-DuPfh185.css` byte-identical to a local build. `check-rules` 129 PASS / 0 FAIL, the finals allow case among them. `backfill-finals` dry run: 12 rows, 0 refused, 0 skipped, 38 seats over 19 finals. `--go` waits on Greg. Not yet played live. [`finals-history.md`](decisions/finals-history.md) · [`typed-answers.md`](decisions/typed-answers.md).
+
 ## 2026-10-21 — Built, not live: call it on Catchphrase
 
 Greg, the same day: option B, Catchphrase only, the rank race only, and don't keep what was typed. A text box during the hold. A call before the options is final and beats every tap; a wrong call loses the question. The device matches the four options (`matchTypedAnswer`) and writes `optionIndex` — 4 when nothing matches, which the rules already allow. The contrarian rosette skips that index. No rules or vault change. Not folded into a release branch: finals history is a separate change in flight. [`typed-answers.md`](decisions/typed-answers.md).
@@ -146,31 +150,17 @@ relax later", then "actually — 2". Client-side, no paste ([`lobby-vote.md`](de
 question-vote data: ~1 verdict per 100 answers, 49/54 bad, and the one over the line is a prompt cut off at a colon —
 88 such ([`question-votes.md`](decisions/question-votes.md)). One PR with #74; Greg merged. Live `index-DV3kGh-I`, byte-identical.
 
-## 2026-10-12 — Live: #73 + #58 (gh-pages `ed0bac5`): the lobby vote, dead code out
-
-`lobby-vote` (local-only since 8 Oct) merged with `live-after-72`; no paste (room `update` has no key whitelist; `check-rules` live 91/91).
-#58 would have broken typecheck: master's `catchphrase-draw.ts` imports `readCovers`; kept it (`fd725c0`). Greg merged both 33s
-apart: two deploys, #58 alone live 09:07–09:09 UTC. Hence AGENTS.md: one PR per release. Live `index-D-g9FXdU`, byte-identical.
-
-## 2026-10-12 — Live: #72 (gh-pages `70535a6`): Catchphrase 178, Random Round, Name the Artist
-
-Greg: "we have multiple changes to go live with". He chose all five branches, merged into one
-`release-12-oct`: Catchphrase batches 4+5 (88 in, 2 dropped), Cursor's Random Round and Name the
-Artist (259), and two docs branches. The two features clashed only on adding a pack id; kept both.
-Artist answers rebuilt here (`artists.json` byte-identical), seeded 259, read back 259/259.
-Played live from a local build: a Random Round of 15, all revealed, bonus squares on Q15; one Artist
-reveal. Not seen live: the Catchphrase hold inside Random. Local e2e has no Java; CI ran it.
-Greg merged `d4ab6dc` 05:37; live `index-NiEMPDcb` 05:41, byte-identical to a local build.
-
 ## 2026-10-08 — Lobby vote built on `lobby-vote`, not deployed, held past Friday's 30
 
 Every player sees the packs and votes; the quizmaster still picks. No ruleset paste; e2e proves a
 second browser's vote counts, and red when the write is refused. [`lobby-vote.md`](decisions/lobby-vote.md).
 
-## 2026-10-02 to 2026-10-07 — archived, one line each
+## 2026-10-02 to 2026-10-12 — archived, one line each
 
-Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's; #68 and Blankety Blank built the same night, at 309 with the W3 release entry; the first office rounds of #67 and #68 the same night again, at 304 with the go-live; The Price Was Right built on 17 October, at 302 with #91's go-live; #70 and #69 on 20 October, at 296, with the Random Round, lobby and Price is Right entry; the two 7 October entries on 21 October, at 302 with #98's go-live.
+Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's; #68 and Blankety Blank built the same night, at 309 with the W3 release entry; the first office rounds of #67 and #68 the same night again, at 304 with the go-live; The Price Was Right built on 17 October, at 302 with #91's go-live; #70 and #69 on 20 October, at 296, with the Random Round, lobby and Price is Right entry; the two 7 October entries on 21 October, at 302 with #98's go-live; the two 12 October go-lives on 21 October, at 306 with #104's go-live.
 
+- **2026-10-12** — [Live: #73 + #58 (gh-pages `ed0bac5`): the lobby vote, dead code out](recall/2026-10.md#2026-10-12--live-73--58-gh-pages-ed0bac5-the-lobby-vote-dead-code-out)
+- **2026-10-12** — [Live: #72 (gh-pages `70535a6`): Catchphrase 178, Random Round, Name the Artist](recall/2026-10.md#2026-10-12--live-72-gh-pages-70535a6-catchphrase-178-random-round-name-the-artist)
 - **2026-10-07** — [Live: #71 (gh-pages `f89a603`): Lite reveal, podium ties, price decoys](recall/2026-10.md#2026-10-07--live-71-gh-pages-f89a603-lite-reveal-podium-ties-price-decoys)
 - **2026-10-07** — [Office feedback from `XRUE`: Price Was Right options rebuilt, four planned](recall/2026-10.md#2026-10-07--office-feedback-from-xrue-price-was-right-options-rebuilt-four-planned)
 - **2026-10-06** — [Live: #70 (gh-pages `d3266ae`): the vault stops at the hit](recall/2026-10.md#2026-10-06--live-70-gh-pages-d3266ae-the-vault-stops-at-the-hit)
