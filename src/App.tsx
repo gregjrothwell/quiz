@@ -5,6 +5,7 @@ import { arrivalFor, walkedIn, NO_ARRIVAL, type Arrival } from './engine/arrival
 import { shouldAutoJoin } from './engine/autoJoin';
 import type { Verdict } from './engine/questionVote';
 import { honoursFor, sawWholeGame, NO_HONOURS } from './engine/awards';
+import { finalFor } from './engine/finals';
 import { formFor } from './engine/form';
 import { foldGameRecord, type RevealTiming } from './engine/gameRecord';
 import { msUntilRevealGate, REVEAL_TIMEOUT_MS, revealBackoffMs } from './engine/revealGate';
@@ -30,6 +31,7 @@ import {
   rememberedPlayingWith,
   rememberedSquad,
 } from './lib/rememberedSquad';
+import { useFinalistRecords } from './lib/useFinalistRecords';
 import { useFinalSnapshot } from './lib/useFinalSnapshot';
 import { useGameLog } from './lib/useGameLog';
 import { NO_HISTORY, type AskedHistory } from './engine/askedHistory';
@@ -323,6 +325,7 @@ function Game() {
   // moves from talk to pick to the settle. Idle — no listener, no clock — in
   // every other phase. See `lib/useStandoff.ts`.
   const standoffView = useStandoff({ code, uid, room, isQuizmaster, dispatch, onError: report });
+  const finalistRecords = useFinalistRecords(room);
 
   const handleCreate = useCallback(
     (name: string, squad: string, playingWith: string) => {
@@ -911,6 +914,9 @@ function Game() {
     const rows = roomStandings(players, scores);
     const leadScore = rows[0]?.score ?? 0;
     const mine = rows.find((entry) => entry.uid === uid);
+    // Still on the room at `finished`. `reset` is what clears it. Absent for
+    // anyone who was not one of the two, so their tallies are carried, not bumped.
+    const countedFinal = finalFor(room.standoff, uid);
 
     recordGame({
       playerId: playerIdFor(uid),
@@ -931,6 +937,7 @@ function Game() {
       honours: sawWholeGame(gameLog, room.questions.length)
         ? honoursFor(gameLog, Object.keys(players), uid)
         : NO_HONOURS,
+      ...(countedFinal ? { final: countedFinal } : {}),
     })
       .then((written) => setBanked({ ...written, gameId }))
       .catch((cause: unknown) => {
@@ -1105,6 +1112,7 @@ function Game() {
             youUid={uid}
             isQuizmaster={isQuizmaster}
             view={standoffView}
+            records={finalistRecords}
             onOpenPicks={() => void dispatch({ type: 'openPicks' }).catch(report)}
             onNext={() => void dispatch({ type: 'next', at: Date.now() }).catch(report)}
           />

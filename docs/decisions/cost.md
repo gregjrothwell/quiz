@@ -1,6 +1,6 @@
 # What it costs
 
-> **Owner: Greg Rothwell. Last updated: 2 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 21 October 2026. Budget: 250 lines.**
 
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
@@ -97,6 +97,9 @@ console.
 | The opening titles | ~12 — six for the digest, six for the fan-out |
 | Everyone opening the season board | ~300 — 50 rows each |
 | **A full night** | **~1,812** |
+
+A Share or Shaft final adds two season-row reads on every device, once — 12 in
+this night, on top of the 1,812 ([`finals-history.md`](finals-history.md)).
 
 **About 27 full nights a day against a 50,000-read free tier, for a weekly
 quiz.** Writes are nowhere near the limit: a game is well under 200 against

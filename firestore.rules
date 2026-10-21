@@ -1043,12 +1043,36 @@ service cloud.firestore {
             && request.resource.data.form <= maxBest() * 4);
       }
 
+      // Share or Shaft, counted the way the room saw it. A no-pick is not a
+      // share, and gotShafted is the opponent's counted shaft, both-shaft
+      // included. Optional, same as the rosettes: absent is zero, so a row
+      // from before this and a client one deploy behind still bank. The new
+      // client writes all four on every bank, and hasOnly refuses that write
+      // until this block is published. CI publishes the rules before the site.
+      // docs/decisions/finals-history.md.
+      function finalsCountOk(field) {
+        return request.resource.data.get(field, 0) is int
+          && request.resource.data.get(field, 0) >= 0;
+      }
+
+      function finalsOk() {
+        return finalsCountOk('finals')
+          && finalsCountOk('shared')
+          && finalsCountOk('shafted')
+          && finalsCountOk('gotShafted')
+          && request.resource.data.get('finals', 0) <= request.resource.data.played
+          && request.resource.data.get('shared', 0) + request.resource.data.get('shafted', 0)
+               <= request.resource.data.get('finals', 0)
+          && request.resource.data.get('gotShafted', 0) <= request.resource.data.get('finals', 0);
+      }
+
       allow create, update: if signedIn()
         && ownsPlayer(playerId)
         && request.resource.data.keys().hasOnly(
              ['name', 'played', 'wins', 'points', 'best', 'lastGame', 'lastPlayed',
               'fastest', 'comeback', 'loneWolf', 'contrarian', 'team',
-              'recent', 'form'])
+              'recent', 'form',
+              'finals', 'shared', 'shafted', 'gotShafted'])
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0
         && request.resource.data.name.size() <= 40
@@ -1092,7 +1116,8 @@ service cloud.firestore {
         && request.resource.data.get('team', '') is string
         && request.resource.data.get('team', '').size() <= 40
         && recentOk()
-        && formOk();
+        && formOk()
+        && finalsOk();
 
       // Removing your own row is the only way anybody can take a display name
       // back off a shared board without console access. Someone else's row still

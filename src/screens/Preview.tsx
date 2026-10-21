@@ -1743,6 +1743,87 @@ export function Preview() {
         />
       ),
     },
+    // ── Finals on the seats ────────────────────────────────────────────────
+    // Appended so every `#/preview/N` index above keeps pointing where it did.
+    // 59 talk with two records, 60 a first final, 61 settled with tonight
+    // added, 62 a no-pick. The records passed in are the ones coming into
+    // tonight; the settled fixtures add tonight themselves.
+    {
+      title: 'Share or Shaft · the record on the seats',
+      node: (
+        <ShareOrShaft
+          room={finalRoom({})}
+          youUid="priya"
+          isQuizmaster
+          view={finalView()}
+          records={{
+            sam: { finals: 7, shared: 5, shafted: 2, gotShafted: 2 },
+            greg: { finals: 4, shared: 2, shafted: 2, gotShafted: 1 },
+          }}
+          onOpenPicks={noop}
+          onNext={noop}
+        />
+      ),
+    },
+    {
+      title: 'Share or Shaft · a first final',
+      node: (
+        <ShareOrShaft
+          room={finalRoom({})}
+          youUid="greg"
+          isQuizmaster={false}
+          view={finalView()}
+          records={{
+            sam: { finals: 7, shared: 5, shafted: 2, gotShafted: 2 },
+            greg: { finals: 0, shared: 0, shafted: 0, gotShafted: 0 },
+          }}
+          onOpenPicks={noop}
+          onNext={noop}
+        />
+      ),
+    },
+    {
+      title: 'Share or Shaft · settled, with tonight added',
+      node: (
+        <ShareOrShaft
+          room={finalRoom(
+            { stage: 'revealed', sealed: ['sam', 'greg'], picks: { sam: 'shaft', greg: 'share' } },
+            { scores: { ...FINAL_SCORES, sam: 5_550, greg: 0 }, lastDeltas: { sam: 2_450, greg: -2_450 } },
+          )}
+          youUid="greg"
+          isQuizmaster
+          view={finalView()}
+          settledReveal
+          records={{
+            sam: { finals: 7, shared: 5, shafted: 2, gotShafted: 2 },
+            greg: { finals: 4, shared: 2, shafted: 2, gotShafted: 1 },
+          }}
+          onOpenPicks={noop}
+          onNext={noop}
+        />
+      ),
+    },
+    {
+      title: 'Share or Shaft · a no-pick',
+      node: (
+        <ShareOrShaft
+          room={finalRoom(
+            { stage: 'revealed', sealed: ['sam'], picks: { sam: 'shaft', greg: null } },
+            { scores: { ...FINAL_SCORES, sam: 5_550, greg: 0 }, lastDeltas: { sam: 2_450, greg: -2_450 } },
+          )}
+          youUid="greg"
+          isQuizmaster={false}
+          view={finalView()}
+          settledReveal
+          records={{
+            sam: { finals: 7, shared: 5, shafted: 2, gotShafted: 2 },
+            greg: { finals: 3, shared: 2, shafted: 1, gotShafted: 0 },
+          }}
+          onOpenPicks={noop}
+          onNext={noop}
+        />
+      ),
+    },
   ];
 
   const shown = only === null ? screens : screens.filter((_, index) => index === only);

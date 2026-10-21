@@ -888,6 +888,101 @@ function buildChecks(probes: Probes): Check[] {
         }),
     },
     {
+      // The allow case FAILS against the published ruleset until CI publishes
+      // this one — `hasOnly` does not yet list the four tallies. That FAIL is
+      // the proof. It PASSes once the rules job has run. The fields are
+      // optional, so `write your own season row` (no tallies) keeps passing.
+      label: 'Firestore   · bank a season row carrying finals',
+      expect: 'allow',
+      hint: 'firestore.rules has not taken finals/shared/shafted/gotShafted into '
+        + 'the season row hasOnly list — a finalist banking from this bundle is '
+        + 'refused, so their night does not land. This FAILs until CI publishes '
+        + 'the rules and PASSes after. Do not deploy the site ahead of that.',
+      run: () =>
+        setDoc(ownSeasonRow, {
+          ...validSeasonRow,
+          played: 8,
+          wins: 2,
+          finals: 7,
+          shared: 5,
+          shafted: 2,
+          gotShafted: 2,
+        }),
+    },
+    {
+      label: 'Firestore   · bank a finals tally that is negative',
+      expect: 'deny',
+      hint: 'firestore.rules is missing the ≥ 0 bound on the finals tallies',
+      run: () =>
+        setDoc(ownSeasonRow, {
+          ...validSeasonRow,
+          played: 4,
+          finals: -1,
+          shared: 0,
+          shafted: 0,
+          gotShafted: 0,
+        }),
+    },
+    {
+      label: 'Firestore   · bank a finals tally that is not a whole number',
+      expect: 'deny',
+      hint: 'firestore.rules is missing the is int check on the finals tallies',
+      run: () =>
+        setDoc(ownSeasonRow, {
+          ...validSeasonRow,
+          played: 4,
+          finals: 1.5,
+          shared: 0,
+          shafted: 0,
+          gotShafted: 0,
+        }),
+    },
+    {
+      label: 'Firestore   · bank more finals than rounds played',
+      expect: 'deny',
+      hint: 'firestore.rules is missing finals ≤ played',
+      run: () =>
+        setDoc(ownSeasonRow, {
+          ...validSeasonRow,
+          played: 2,
+          wins: 1,
+          finals: 3,
+          shared: 1,
+          shafted: 1,
+          gotShafted: 0,
+        }),
+    },
+    {
+      label: 'Firestore   · bank more shares and shafts than finals',
+      expect: 'deny',
+      hint: 'firestore.rules is missing shared + shafted ≤ finals',
+      run: () =>
+        setDoc(ownSeasonRow, {
+          ...validSeasonRow,
+          played: 5,
+          wins: 1,
+          finals: 2,
+          shared: 2,
+          shafted: 1,
+          gotShafted: 0,
+        }),
+    },
+    {
+      label: 'Firestore   · bank got-shafted more times than finals',
+      expect: 'deny',
+      hint: 'firestore.rules is missing gotShafted ≤ finals',
+      run: () =>
+        setDoc(ownSeasonRow, {
+          ...validSeasonRow,
+          played: 5,
+          wins: 1,
+          finals: 2,
+          shared: 1,
+          shafted: 1,
+          gotShafted: 3,
+        }),
+    },
+    {
       // The whole identity mechanism in one check. `recovery` documents are
       // create-only and only for an identity the writer already holds, which is
       // what stops somebody reading a playerId off the season table — they are
