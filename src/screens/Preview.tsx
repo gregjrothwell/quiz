@@ -371,9 +371,9 @@ const PACKS: PackSummary[] = [
 ];
 
 /**
- * Every pack the live index lists, at its published size (20 October 2026), so
- * the lobby's shelves can be judged at the length the office actually sees —
- * {@link PACKS} is ten and hides the wall of twenty-one. Level counts are a
+ * Every pack the live index lists, at its published size (20 October 2026; The
+ * Price is Right added 21 October), so the lobby's shelves can be judged at the
+ * length the office actually sees — {@link PACKS} is ten and hides the wall. Level counts are a
  * rough third each; nothing here reads them.
  */
 const EVERY_PACK: PackSummary[] = (
@@ -383,6 +383,7 @@ const EVERY_PACK: PackSummary[] = (
     ['uk-leaning', 1500], ['video-games', 1400], ['melody', 70], ['picture', 49],
     ['flags', 76], ['tunes', 424], ['sleeves', 212], ['screens', 445],
     ['catchphrase', 233], ['blanks', 148], ['prices', 154], ['artists', 259], ['random', 294],
+    ['tags', 81],
   ] as const
 ).map(([id, count]) => ({
   id,

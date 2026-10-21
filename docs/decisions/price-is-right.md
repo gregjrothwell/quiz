@@ -133,8 +133,9 @@ server): start → vault in **149 ms** → reveal; 0 payload lines and 0 warning
 landing page and on the room link did not; most likely the refused-candidate 403s
 `office-feedback-7-oct.md` documents for Lite, **not proven**. Only question 1 is revealed per run.
 
-**Before it ships: `tags` into `SHOW_ROUNDS` once the lobby shelves (#94) are
-on `master`. Then one PR and Greg's "go live". No engine or rules change.
+**Before it ships:** `tags` is on the show shelf after The Price Was Right (`SHOW_ROUNDS`, 21 Oct,
+with #94 merged in; a 13th unit leaves Classical centred on its own row, as the shelf CSS
+intends). One PR, and Greg's "go live". No engine or rules change.
 
 **Not covered:** whether the drawings read as the thing named, and whether a median is a fair
 answer for an item that varies as much as a handbag or a sofa does. The first office round is the
