@@ -24,6 +24,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-21 — Live: #100 (gh-pages `821e754`): the game-show moments
+
+Greg: "go live with these changes." PR CI green at `4139e33`; merged `1412867` 15:13Z — **the push started no CI run, the third merge today to do that**, so `ci.yml` was dispatched on master (run 39624023405): verify, e2e, rules 15:21Z, gh-pages 15:22Z. **Then GitHub Pages hung**: its build of `821e754` sat at "building" from 15:24:52Z with no update for 13 minutes, the site reporting `status=errored`, while the earlier builds today took about a minute. `POST /pages/builds` queued a fresh one, built in 46s at 15:38:50Z. Live `index-DYv-seCH.js` and `index-DLNe_1_v.css` byte-identical to a local build of master; the live gallery plays the shafted reveal. Rules unchanged by #100, so no `check-rules`. Nothing played in a live room yet.
+
 ## 2026-10-21 — Built, not live: the game-show moments (branch `premium-motion`)
 
 Greg asked for a design scan ("share/shaft could have a cool animation"), then "do everything". Share or Shaft now acts its reveal out — seats meet on a share, the shafter shatters the other seat, both shafting blacks the house out for third place — with a hero pot, green/red buttons, stamps and the arc clock. The podium holds third, second, a drum roll, then the winner with fanfare and confetti. A light wipe between screens (not on the question or reveal), standings arrows and "New leader", your points over your lectern and "N in a row", the lobby's drop-in and a quizmaster-only ping, Android haptics. 1,651 tests, e2e 18/18. **The browser pane was hidden at first, so animations only advanced per screenshot and the pictures lagged the DOM.** Detail and gaps: [`game-show-moments.md`](decisions/game-show-moments.md).

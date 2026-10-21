@@ -233,6 +233,6 @@ votes off, Bin or Win, then Split or Steal
 ([Wikipedia](https://en.wikipedia.org/wiki/Golden_Balls)). Both finals pay the
 same: both share, half each; one takes, all of it; both take, nothing.
 
-**The reveal, acted out — 21 October 2026, branch `premium-motion`, not live.**
+**The reveal, acted out — live 21 October 2026 with #100.**
 Seats meet on a share, shatter on a shaft, black out for third place; the pot
 between them, green and red buttons. [`game-show-moments.md`](game-show-moments.md).

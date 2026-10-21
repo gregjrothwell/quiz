@@ -7,7 +7,8 @@ podium, the screen changing, a player's own points. Built on branch
 `premium-motion`, 21 October 2026, from a design scan Greg asked for that
 afternoon ("share/shaft could have a cool animation … if people share (comes
 together) or shaft (shafter destroys the other person)"), then "do everything".
-**Not merged, not live.**
+**Live 21 October 2026 with #100** — merge `1412867`, gh-pages `821e754`, live
+bundle `index-DYv-seCH.js` byte-identical to a local build of master.
 
 ## What changed, and where
 
