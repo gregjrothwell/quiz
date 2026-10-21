@@ -24,6 +24,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-21 — Live: #98 (gh-pages `18adffe`): the question-one trace
+
+Greg: "Go live with #98." PR CI green, merged `3bbc936` 14:37 BST — **and the push started no CI run at all** (none for that sha five minutes on, GitHub status green), so the same chain was run by `workflow_dispatch` on `master`: build, e2e, rules 14:47, gh-pages 14:48, Pages built 14:52. Live `index-CtpLNOuh` byte-identical to a local build. `check-rules` 123 PASS, 0 FAIL, including the trace allow. One real Q1 on the live site (room XSQW, built-in browser, tab closed before `finished`) filed its trace: seen late 0.5s, write 0.1s, counted. **Seen in passing, not caused by this:** that browser's first load got App Check 403 → "Cannot reach the server" and a one-day SDK throttle; a reload passed. App Check code and site key are unchanged from the morning's bundle.
+
 ## 2026-10-21 — The question-one trace: built, PR open, not live
 
 Greg: "Build the Q1 trace for every device … Don't go live." Every device files one `q1Traces/{gameId}_{uid}` per round over Lite: how late it saw Q1 in server time, how long its answer write took, tap, reveal, counted. Rules create-only; e2e allow fails on the old rules and passes on the new. Local e2e runs now (Homebrew `openjdk@21`, not on PATH). Readings and the fix each points at: [`cass-q1.md`](decisions/cass-q1.md#the-trace--greg-21-oct-build-it--dont-go-live).
@@ -147,30 +151,12 @@ Greg merged `d4ab6dc` 05:37; live `index-NiEMPDcb` 05:41, byte-identical to a lo
 Every player sees the packs and votes; the quizmaster still picks. No ruleset paste; e2e proves a
 second browser's vote counts, and red when the write is refused. [`lobby-vote.md`](decisions/lobby-vote.md).
 
-## 2026-10-07 — Live: #71 (gh-pages `f89a603`): Lite reveal, podium ties, price decoys
+## 2026-10-02 to 2026-10-07 — archived, one line each
 
-Greg: "build everything and we can go live to have a demo tomorrow." The first price fix made any
-option over today's price mean "it got cheaper", so 8 rising questions now carry a decoy over it
-(`c3ec3c6`, 0 answers changed). Podium: one riser per person, height by place (`71fcfac`).
-`draw-overnight` (`dd04bbd`). Reveal over Firestore Lite, all four at once (`0d6e964`): median 71ms
-v #70's 167ms, interleaved in a browser; both directions 6/6. `gh pr merge` was refused by the
-session's permission check, so Greg merged `8bba4fd`; CI green, live `index-DxSLpmmr` 11:25 BST,
-markers checked in the served bundle. Depth: [`decisions/office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md).
+Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's; #68 and Blankety Blank built the same night, at 309 with the W3 release entry; the first office rounds of #67 and #68 the same night again, at 304 with the go-live; The Price Was Right built on 17 October, at 302 with #91's go-live; #70 and #69 on 20 October, at 296, with the Random Round, lobby and Price is Right entry; the two 7 October entries on 21 October, at 302 with #98's go-live.
 
-## 2026-10-07 — Office feedback from `XRUE`: Price Was Right options rebuilt, four planned
-
-Greg, after `XRUE`: some Price Was Right questions had one option under today's price, and it was
-the answer. Measured: 6 of 95 like that, 46 of 95 with an option at or above today's. Rebuilt
-(`17946ce`, local): every option under today's when the price rose; 87 of 95 now all-under, the 8
-that fell or held straddle it; 0 answers changed, no reseed. Levels now 24/28/43. Planned, with
-Greg's calls: podium ties (riser per person, height by place), overnight drawing, reveal over
-Firestore Lite **after Friday** (worst `XRUE` reveal 3.2s, two refusals). Greg has a Claude Design
-system this session cannot see. Depth: [`decisions/office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md).
-
-## 2026-10-02 to 2026-10-06 — archived, one line each
-
-Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's; #68 and Blankety Blank built the same night, at 309 with the W3 release entry; the first office rounds of #67 and #68 the same night again, at 304 with the go-live; The Price Was Right built on 17 October, at 302 with #91's go-live; #70 and #69 on 20 October, at 296, with the Random Round, lobby and Price is Right entry.
-
+- **2026-10-07** — [Live: #71 (gh-pages `f89a603`): Lite reveal, podium ties, price decoys](recall/2026-10.md#2026-10-07--live-71-gh-pages-f89a603-lite-reveal-podium-ties-price-decoys)
+- **2026-10-07** — [Office feedback from `XRUE`: Price Was Right options rebuilt, four planned](recall/2026-10.md#2026-10-07--office-feedback-from-xrue-price-was-right-options-rebuilt-four-planned)
 - **2026-10-06** — [Live: #70 (gh-pages `d3266ae`): the vault stops at the hit](recall/2026-10.md#2026-10-06--live-70-gh-pages-d3266ae-the-vault-stops-at-the-hit)
 - **2026-10-06** — [Live: #69 (gh-pages `51a30de`): The Price Was Right, British Blankety Blank, 19 packs](recall/2026-10.md#2026-10-06--live-69-gh-pages-51a30de-the-price-was-right-british-blankety-blank-19-packs)
 - **2026-10-06** — [The Price Was Right built; "nothing American" written down (`office-feedback-6-oct`)](recall/2026-10.md#2026-10-06--the-price-was-right-built-nothing-american-written-down-office-feedback-6-oct)

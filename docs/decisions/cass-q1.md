@@ -93,8 +93,8 @@ reloaded in between, which a phone does. Only her device can say which.
 - **Now, free:** play 15s rounds. Zero of 22 lost. Changes the feel of the game.
 - **To find the cause:** a question-one trace from **every** device, not Cass alone — Q1 costs
   everybody, and her uid (`ieDRJ5…`) is stable across 46 rounds, so a script filters to her.
-  Needs a rules change, so it ships through CI on `master` — going live. **Built 21 Oct, PR open,
-  not live** — below.
+  Needs a rules change, so it ships through CI on `master` — going live. **Live 21 Oct (#98)** —
+  below.
 
 ## The trace — Greg, 21 Oct: "build it … don't go live"
 
@@ -139,6 +139,11 @@ files `writes 1, counted true` with every timing present (the emulator serves
 `.info/serverTimeOffset`); the host, who never answered, files `writes 0, counted false`.
 **Not covered until it is live:** the published ruleset (`check-rules` after the merge), a
 real phone, and whether App Check passes the Lite write from every device.
+
+**Live, 21 Oct (#98, gh-pages `18adffe`, 14:52 BST):** `check-rules` 123 PASS, 0 FAIL, the trace
+allow among them. One real question one on the live site (room `XSQW`, a desktop browser, tab
+closed before `finished` so no season row) filed `mac · 4g · seen late 0.5s · write 0.1s ·
+counted → neither`. **Still not covered:** a phone, and Cass. The first office round is the check.
 
 **After the go-live**, the next office rounds: `npm run read-traces -- --name cass`. What the
 readings would mean:

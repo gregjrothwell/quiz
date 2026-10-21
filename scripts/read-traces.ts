@@ -74,7 +74,7 @@ async function main(): Promise<void> {
   const db = getAdminFirestore(initAdmin({ credential: cert(key) }, 'read-traces-admin'));
 
   const snapshots = (await db.collection('q1Traces').orderBy('at', 'desc').limit(options.last).get()).docs;
-  console.log(`Reading the last ${options.last} question-one traces from ${key.projectId ?? 'the project'}.\n`);
+  console.log(`Reading the last ${options.last} question-one traces from ${required('VITE_FIREBASE_PROJECT_ID')}.\n`);
 
   const names = new Map<string, Record<string, string>>();
   async function nameOf(gameId: string, uid: string): Promise<string> {
