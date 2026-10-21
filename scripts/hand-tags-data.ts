@@ -62,6 +62,7 @@ function tag(n: number, key: string, name: string, kind: TagKind, picture: strin
  */
 const TAG_PICKS: Record<string, number> = {
   'tag-001': 1,
+  'tag-002': 2,
   'tag-003': 2,
   'tag-004': 2,
   'tag-005': 1,
@@ -82,6 +83,7 @@ const TAG_PICKS: Record<string, number> = {
   'tag-020': 1,
   'tag-021': 1,
   'tag-022': 2,
+  'tag-023': 1,
   'tag-024': 1,
   'tag-025': 1,
   'tag-026': 1,
@@ -97,6 +99,7 @@ const TAG_PICKS: Record<string, number> = {
   'tag-036': 1,
   'tag-037': 1,
   'tag-038': 2,
+  'tag-039': 1,
   'tag-040': 1,
   'tag-041': 1,
   'tag-042': 2,

@@ -1,6 +1,6 @@
 # The Price is Right — today's price, from a picture
 
-> **Owner: Greg Rothwell. Last updated: 20 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 21 October 2026. Budget: 250 lines.**
 
 An office suggestion, brought by Greg 20 October 2026: a "normal" Price is Right round, where you
 are shown something and guess what it costs. The sister of [The Price Was Right](price-was-right.md),
@@ -102,10 +102,31 @@ furniture-sized. None is an ONS item; none ships. ~1.5 minutes a drawing on the 
 prize podium, 20 October.** The shed on a podium came out as a low round stage, so furniture
 fits it.
 
-**Before it ships:** Greg's pick → `TAGS_STYLE`; `npm run tags-draw` (162 drawings, about four
-hours, on the charger, lid open); Claude picks a version per spec from the sheets; `write-tags-pack`
-in the checkout that seeds; `seed-vault -- --pack tags` and a read-back; one `host-room` reveal;
-`tags` added to `SHOW_ROUNDS` once the lobby shelves are on `master`. No engine or rules change.
+## Drawn and written — 20–21 October 2026
+
+**Drawn on the MacBook**, 21:25 to 01:57: 162 of 162, none failed, about 3.2 minutes an item. A
+power cut mid-run did not stop it (no pause in the log; the battery check is between items).
+
+**Vision is not the gate on its own.** It flagged 22 drawings; close-ups found legible print or a
+brand cue it missed on **a dozen more**: a perfume label, jeans and handbag tags, decals on both
+bikes, trainer and boot stripes, a high-chair sticker, lettering on the headphones, a brand script
+on an air fryer. Some drawings were the wrong thing: a DSLR for the dashcam, pull bars for door
+handles, a gas hob on the electric cooker, an executive pen for a ballpoint, a real-looking car
+for the toy, a child in the car seat. **30 items were reworded and redrawn**, three of them twice;
+every pick was looked at in close-up, not only on the sheet.
+
+| Written (`write-tags-pack`, 21 Oct) | |
+|---|---|
+| Questions | **81**, one per spec, in order |
+| Answer's place 1–4 | **21 / 20 / 20 / 20** |
+| Levels | **27 / 27 / 27** |
+| Against the vault cache | 0 changed, **81 not yet seeded** |
+| Pictures | 81 at 1200×900, 9.7 MB; served by the dev server and decoded at their stated size, 81/81 |
+| Tests | `tags-pack.test.ts` on the published file (order, pictures, ladders, levels, spread — ids and counts only); the seal test's pack count 20 → 21; 1,583/1,583 |
+
+**Before it ships:** `seed-vault -- --pack tags` and a read-back, then one `host-room` reveal —
+both live writes, so both wait for Greg. `tags` into `SHOW_ROUNDS` once the lobby shelves (#94) are
+on `master`. Then one PR and Greg's "go live". No engine or rules change.
 
 **Not covered:** whether the drawings read as the thing named, and whether a median is a fair
 answer for an item that varies as much as a handbag or a sofa does. The first office round is the

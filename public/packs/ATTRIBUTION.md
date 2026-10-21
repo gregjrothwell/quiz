@@ -118,3 +118,13 @@ Pictures drawn for this quiz by [Z-Image-Turbo](https://huggingface.co/Tongyi-MA
 on a Mac, from prompts that describe each scene and never its phrase. Generated,
 not drawn by a person, and none of them is the television programme's. The
 phrases are common sayings and programme titles.
+
+## The Price is Right
+
+Prices: Office for National Statistics, consumer price inflation item indices and price
+quotes, August 2026 — the median of each item's valid shop quotes that month. Contains public
+sector information licensed under the [Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/).
+
+Pictures drawn for this quiz by [Z-Image-Turbo](https://huggingface.co/Tongyi-MAI/Z-Image-Turbo)
+(Tongyi-MAI, Apache 2.0) through [mflux](https://github.com/mflux-community/mflux), on a Mac.
+Generic objects, not any shop's product.
