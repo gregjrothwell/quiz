@@ -46,6 +46,10 @@
  *
  *   npm run host-room -- 10 --pack prices --last
  *
+ * `--pack tags` is The Price is Right, also blind: a picture and four prices.
+ *
+ *   npm run host-room -- 10 --pack tags
+ *
  * Safe for blind packs: Lite logs every refused reveal candidate with its
  * payload (the option text), and four candidates means three refusals a
  * question. Its log level is turned down to errors below, so the options never
@@ -160,7 +164,7 @@ function sleeveQuestions(): QuizQuestion[] {
 const LAST = process.argv.includes('--last');
 
 /** Two questions of a published pack — the first two, or the last two with `--last`. */
-function twoOf(file: 'catchphrase.json' | 'blanks.json' | 'prices.json'): QuizQuestion[] {
+function twoOf(file: 'catchphrase.json' | 'blanks.json' | 'prices.json' | 'tags.json'): QuizQuestion[] {
   const pack = JSON.parse(
     readFileSync(join(import.meta.dirname, '..', 'public', 'packs', file), 'utf8'),
   ) as { questions: SealedQuestion[] };
@@ -177,11 +181,12 @@ if (
   && PACK !== 'catchphrase'
   && PACK !== 'blanks'
   && PACK !== 'prices'
+  && PACK !== 'tags'
 ) {
-  throw new Error(`--pack takes sleeves, catchphrase, blanks or prices, not ${PACK}`);
+  throw new Error(`--pack takes sleeves, catchphrase, blanks, prices or tags, not ${PACK}`);
 }
 if (LAST && (PACK === undefined || PACK === 'sleeves')) {
-  throw new Error('--last needs --pack catchphrase, blanks or prices');
+  throw new Error('--last needs --pack catchphrase, blanks, prices or tags');
 }
 const ROUND =
   PACK === 'sleeves'
@@ -192,7 +197,9 @@ const ROUND =
         ? { packId: 'blanks' as const, packTitle: 'Blankety Blank', questions: twoOf('blanks.json') }
         : PACK === 'prices'
           ? { packId: 'prices' as const, packTitle: 'The Price Was Right', questions: twoOf('prices.json') }
-          : { packId: 'general-knowledge' as const, packTitle: 'GK', questions: QUESTIONS };
+          : PACK === 'tags'
+            ? { packId: 'tags' as const, packTitle: 'The Price is Right', questions: twoOf('tags.json') }
+            : { packId: 'general-knowledge' as const, packTitle: 'GK', questions: QUESTIONS };
 
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 const stamp = (): string => new Date().toISOString().slice(11, 23);

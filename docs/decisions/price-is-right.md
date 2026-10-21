@@ -124,8 +124,16 @@ every pick was looked at in close-up, not only on the sheet.
 | Pictures | 81 at 1200×900, 9.7 MB; served by the dev server and decoded at their stated size, 81/81 |
 | Tests | `tags-pack.test.ts` on the published file (order, pictures, ladders, levels, spread — ids and counts only); the seal test's pack count 20 → 21; 1,583/1,583 |
 
-**Before it ships:** `seed-vault -- --pack tags` and a read-back, then one `host-room` reveal —
-both live writes, so both wait for Greg. `tags` into `SHOW_ROUNDS` once the lobby shelves (#94) are
+**Seeded 21 October, on Greg's word** ("run seed-vault for the tags pack, read it back, and do
+one host-room reveal"): `seed-vault -- --pack tags` — 81 added, 0 changed; run again, **81 of 81
+already correct**. `host-room -- 10 --pack tags` (room `53MJ`, a player joined from the dev
+server): start → vault in **149 ms** → reveal; 0 payload lines and 0 warnings in its log, because
+#93's quiet Lite logging is merged into this branch. The joined browser drew the picture at
+1200×900 (sizes read, no screenshot — blind). Its console had 403 lines that a fresh tab on the
+landing page and on the room link did not; most likely the refused-candidate 403s
+`office-feedback-7-oct.md` documents for Lite, **not proven**. Only question 1 is revealed per run.
+
+**Before it ships: `tags` into `SHOW_ROUNDS` once the lobby shelves (#94) are
 on `master`. Then one PR and Greg's "go live". No engine or rules change.
 
 **Not covered:** whether the drawings read as the thing named, and whether a median is a fair
