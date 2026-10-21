@@ -18,13 +18,19 @@ interface ScoreTickerProps {
    * ever ran for players whose row happened to survive a re-render.
    */
   from?: number;
+  /**
+   * How long to hold `from` before counting, for a number on something that
+   * arrives late — a podium riser waiting its turn would otherwise finish
+   * counting before anybody could see it.
+   */
+  delayMs?: number;
 }
 
 /**
  * Counts up to `value` rather than snapping to it — the small piece of theatre
  * that makes a score reveal feel like a score reveal.
  */
-export function ScoreTicker({ value, from }: ScoreTickerProps) {
+export function ScoreTicker({ value, from, delayMs = 0 }: ScoreTickerProps) {
   const [shown, setShown] = useState(from ?? value);
   const fromRef = useRef(from ?? value);
   const frameRef = useRef<number>(0);
@@ -33,10 +39,10 @@ export function ScoreTicker({ value, from }: ScoreTickerProps) {
     const from = fromRef.current;
     if (from === value) return;
 
-    const startedAt = performance.now();
+    const startedAt = performance.now() + delayMs;
 
     const step = (now: number): void => {
-      const progress = Math.min(1, (now - startedAt) / DURATION_MS);
+      const progress = Math.min(1, Math.max(0, now - startedAt) / DURATION_MS);
       setShown(Math.round(from + (value - from) * easeOut(progress)));
 
       if (progress < 1) {
@@ -48,7 +54,7 @@ export function ScoreTicker({ value, from }: ScoreTickerProps) {
 
     frameRef.current = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frameRef.current);
-  }, [value]);
+  }, [value, delayMs]);
 
   return <>{shown.toLocaleString('en-GB')}</>;
 }

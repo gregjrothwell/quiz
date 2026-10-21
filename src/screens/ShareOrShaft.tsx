@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { ArcTimer } from '../components/ArcTimer';
+import { Confetti } from '../components/Confetti';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { Standings } from '../components/Standings';
 import { roomStandings } from '../engine/scoring';
@@ -356,6 +357,8 @@ export function ShareOrShaft({
       {/* The light in the room as it lands: green for a share, red for a shaft,
           and the house going dark when both of them throw it away. */}
       {acting ? <div className="standoff__wash" data-outcome={outcome.kind} aria-hidden="true" /> : null}
+      {/* Joint winners get what any winner gets. */}
+      <Confetti fire={outcome?.kind === 'shared' && reached('impact') && !reducedMotion} />
 
       {stage === 'talk' ? (
         <div className="stack standoff__stage">

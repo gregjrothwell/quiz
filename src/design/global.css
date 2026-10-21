@@ -2786,8 +2786,10 @@ select.input option {
   border-radius: 8px 8px 0 0;
   background: linear-gradient(180deg, var(--panel-hi), var(--panel) 60%, #020a13);
   text-align: center;
-  /* `backwards` for the same reason as `.tile` — see the note there. */
-  animation: rise 520ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  /* `backwards` for the same reason as `.tile` — see the note there. `--at` is
+     set per riser by `Final`, which holds the timeline: third, second, a drum
+     roll, then the winner. */
+  animation: rise 520ms cubic-bezier(0.2, 0.8, 0.2, 1) var(--at, 0ms) backwards;
 }
 
 .riser::after {
@@ -2801,17 +2803,14 @@ select.input option {
 
 /* Third, then second, then the winner — the reveal builds to the middle. */
 .riser--third {
-  animation-delay: 60ms;
   min-height: 8.5rem;
 }
 
 .riser--second {
-  animation-delay: 260ms;
   min-height: 10.5rem;
 }
 
 .riser--first {
-  animation-delay: 460ms;
   min-height: 14rem;
   border-color: var(--amber);
   background: linear-gradient(180deg, #3d2c07, #1a1204 60%, #080500);
@@ -2861,7 +2860,7 @@ select.input option {
   background-size: 300% 100%;
   background-repeat: no-repeat;
   background-position: 0 0;
-  animation: glint 1100ms cubic-bezier(0.3, 0.7, 0.3, 1) 900ms 1 backwards;
+  animation: glint 1100ms cubic-bezier(0.3, 0.7, 0.3, 1) calc(var(--at, 0ms) + 440ms) 1 backwards;
 }
 
 /*
@@ -2913,6 +2912,33 @@ select.input option {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-soft);
+}
+
+/* The winner's name, held until the winner's riser lands (`Final`). */
+.finale__title {
+  animation: lift 460ms cubic-bezier(0.2, 0.8, 0.2, 1) var(--at, 0ms) backwards;
+}
+
+/*
+  Everything under the podium, held with it — the table has the winner at the
+  top. A column of its own that keeps the stage's spacing, so wrapping it moved
+  nothing.
+*/
+.finale__after {
+  display: flex;
+  flex-direction: column;
+  gap: inherit;
+  animation: lift 520ms cubic-bezier(0.2, 0.8, 0.2, 1) var(--at, 0ms) backwards;
+}
+
+/* Over the whole stage, never in the way: see `Confetti`. */
+.confetti {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 7;
+  pointer-events: none;
 }
 
 /* ── The chair ──────────────────────────────────────────────────────────────
@@ -3009,7 +3035,7 @@ select.input option {
     across it. The chair is the full stop, and a punchline delivered over the
     top of the applause is not one.
   */
-  animation: roll 620ms cubic-bezier(0.2, 0.8, 0.2, 1) 1400ms backwards;
+  animation: roll 620ms cubic-bezier(0.2, 0.8, 0.2, 1) var(--chair-at, 1400ms) backwards;
 }
 
 /* Arriving from off to the right, because a chair on castors does not hop. */
