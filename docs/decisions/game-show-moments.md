@@ -139,3 +139,6 @@ shows the result.
   the pop, the streak stamp): the whole stylesheet was staged for the wipe.
   Reverting the wipe alone means keeping those rules.
 - **`27864c8` did not typecheck**; `ee506ac` fixes it. Every other commit does.
+- **`0594731` (podium skip) carries the bracing CSS for `91f1711`** (the
+  closed-stage pulse): a partial-staging patch failed and the next commit in
+  the same command took the whole stylesheet. Revert the two together.
