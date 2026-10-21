@@ -40,7 +40,7 @@ Built to replace Polly in Teams.
 | **Name that Tune** clips that give it away; **the volume slider and the two autoplay gates**; **the lobby sound check**; **the Apple Music badge and Apple's terms**; **Name the Artist** | [`tunes-round.md`](decisions/tunes-round.md) · [`tunes-title-gate.md`](decisions/tunes-title-gate.md) · [`audio-stack.md`](decisions/audio-stack.md) · [`sound-check.md`](decisions/sound-check.md) · [`known-limits.md`](decisions/known-limits.md) · [`name-the-artist.md`](decisions/name-the-artist.md) |
 | whether an answer can change and the spam exploit; `firstMs` and the snap guess | [`answer-spam.md`](decisions/answer-spam.md) · [`first-touch.md`](decisions/first-touch.md) |
 | what a finished round left behind, and reading it back | [`decisions/game-record.md`](decisions/game-record.md) |
-| upgrading `package.json`; the studio set and lighting cues; **the game-show moments** (reveal, podium, wipe — branch `premium-motion`, 21 Oct, not live) | [`dependencies.md`](decisions/dependencies.md) · [`lighting.md`](decisions/lighting.md) · [`game-show-moments.md`](decisions/game-show-moments.md) |
+| upgrading `package.json`; the studio set and lighting cues; **the game-show moments** (reveal, podium, wipe — live 21 Oct, #100) | [`dependencies.md`](decisions/dependencies.md) · [`lighting.md`](decisions/lighting.md) · [`game-show-moments.md`](decisions/game-show-moments.md) |
 
 ## State as of 14 October 2026
 
