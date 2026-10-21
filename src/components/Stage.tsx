@@ -1,5 +1,15 @@
 import type { ReactNode } from 'react';
 import type { Phase } from '../engine/state';
+
+/**
+ * The phases that are a new screen rather than a new state of the same one.
+ *
+ * Not `question`: the clock starts the moment it opens, so a band of light
+ * crossing the prompt would cost somebody the first look at it. Not `reveal`
+ * either: the reveal opens on the drum roll with the set deliberately dark, and
+ * a sweep of light is the opposite of that.
+ */
+const WIPED: ReadonlySet<Phase> = new Set(['lobby', 'scoreboard', 'standoff', 'finished']);
 import { SoundToggle } from './SoundToggle';
 
 /**
@@ -26,6 +36,10 @@ export function Stage({ children, mood }: { children: ReactNode; mood?: Phase })
         <i />
         <i />
       </div>
+      {/* Keyed on the phase, so each new screen remounts it and it crosses once —
+          the television stinger between segments. Never in the way: it is
+          `pointer-events: none` and off the edge of the stage when it stops. */}
+      {mood && WIPED.has(mood) ? <i className="stage__wipe" key={mood} aria-hidden="true" /> : null}
       <SoundToggle />
       <div className="stage__inner">{children}</div>
     </div>
