@@ -13,6 +13,7 @@ import { optionsAtMs, optionsDue } from '../engine/optionsHold';
 import { questionPack } from '../engine/randomRound';
 import type { Verdict } from '../engine/questionVote';
 import { stakeFor, verdictFor, WAGER_SHARES } from '../engine/scoring';
+import { STREAK_SHOWN_FROM } from '../engine/streak';
 import { songClueAtMs, songClueDue } from '../engine/songClue';
 import {
   currentQuestion,
@@ -34,6 +35,7 @@ import {
 } from '../lib/sound';
 import type { QuestionClock } from '../lib/useQuestionClock';
 import { useReducedMotion } from '../lib/useReducedMotion';
+import { BUZZ_CORRECT, BUZZ_WRONG, useBuzz } from '../lib/haptics';
 
 /**
  * The beat between the clock stopping and the verdict landing, when there is no
@@ -81,6 +83,12 @@ interface QuestionScreenProps {
    * reveal that has genuinely failed still puts the button back.
    */
   revealing?: boolean;
+  /**
+   * How many in a row this player has now got right, from the game log
+   * (`streakOf`). Said beside the verdict from three up. Optional because a
+   * device with no log — a gallery fixture, a test — simply has no run to tell.
+   */
+  streak?: number;
   onAnswer: (optionIndex: number, wager?: number) => void;
   onReveal: () => void;
   onNext: () => void;
@@ -129,6 +137,7 @@ export function QuestionScreen({
   onReveal,
   onNext,
   onVote,
+  streak = 0,
 }: QuestionScreenProps) {
   const question = currentQuestion(room);
   const optionCount = question?.options.length ?? 0;
@@ -265,6 +274,13 @@ export function QuestionScreen({
 
   useCue('gong', room.index, revealed);
   useCue(gotItRight ? 'correct' : 'wrong', room.index, revealed && settled);
+  // Only for an answer that was given and scored: nothing buzzes for sitting
+  // one out, and "your answer didn't reach the room" is not yours to feel.
+  useBuzz(
+    gotItRight ? BUZZ_CORRECT : BUZZ_WRONG,
+    room.index,
+    revealed && settled && (verdict === 'correct' || verdict === 'wrong'),
+  );
 
   /**
    * The clock leans on you audibly as well as visually for the closing seconds.
@@ -531,6 +547,9 @@ export function QuestionScreen({
       disabled={!optionsOut || revealed || clock.expired}
       onPick={(picked: number) => onAnswer(picked, wagering ? stake : undefined)}
       order={index}
+      // Your points, popped over your own lectern as the verdict lands. Only
+      // yours and only on this screen: everybody else's are the standings' job.
+      pop={settled && gotItRight && myDelta > 0 && myAnswer?.optionIndex === index ? myDelta : null}
     />
   ));
 
@@ -857,6 +876,9 @@ export function QuestionScreen({
                     {myDelta < 0 ? ' · −' : ' · +'}
                     <ScoreTicker value={settled ? Math.abs(myDelta) : 0} />
                   </>
+                ) : null}
+                {settled && gotItRight && streak >= STREAK_SHOWN_FROM ? (
+                  <span className="streak">{streak} in a row</span>
                 ) : null}
               </span>
             ) : clock.expired ? (

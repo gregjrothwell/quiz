@@ -1053,6 +1053,34 @@ export function Preview() {
       ),
     },
     {
+      // Priya's fourth right in a row: the points over her lectern, and the run
+      // stamped beside the verdict. Only ever seen by the one who earned it.
+      title: 'Reveal · right, and on a run',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'reveal',
+            answers: {
+              sam: { optionIndex: 2, elapsedMs: 2_300 },
+              greg: { optionIndex: 2, elapsedMs: 4_100 },
+              alex: { optionIndex: 3, elapsedMs: 5_200 },
+              priya: { optionIndex: 0, elapsedMs: 3_900 },
+            },
+            lastDeltas: { sam: 0, greg: 0, alex: 0, priya: 1_000 },
+          })}
+          youUid="priya"
+          isQuizmaster={false}
+          clock={CLOCK}
+          revealed
+          streak={4}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
       /*
         Robbed. Greg was leading, never answered, and Priya got there first — so
         he is 500 down on a question he did not play, and the only thing that can
