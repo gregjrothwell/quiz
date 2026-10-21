@@ -52,6 +52,7 @@
     "asked-probe": "tsx --env-file=.env.local scripts/asked-probe.ts",
     "freshness": "tsx --env-file=.env.local scripts/freshness.ts",
     "backfill-form": "tsx --env-file=.env.local scripts/backfill-form.ts",
+    "backfill-finals": "tsx --env-file=.env.local scripts/backfill-finals.ts",
     "blanks-check": "tsx scripts/blanks-check.ts",
     "write-blanks-pack": "tsx scripts/write-blanks-pack.ts",
     "prices-fetch": "tsx scripts/prices-fetch.ts",

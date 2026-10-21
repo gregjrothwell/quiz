@@ -237,6 +237,15 @@ describe('the season row agrees with the security rules', () => {
     expect(block).toMatch(/form is int/);
   });
 
+  test('finals tallies are optional whole numbers inside the bounds', () => {
+    expect(block).toMatch(/get\('finals', 0\)/);
+    expect(block).toMatch(/get\('finals', 0\) <= request\.resource\.data\.played/);
+    expect(block).toContain("get('shared', 0) + request.resource.data.get('shafted', 0)");
+    expect(block).toMatch(/get\('gotShafted', 0\) <= request\.resource\.data\.get\('finals', 0\)/);
+    expect(block).toMatch(/finalsCountOk\('finals'\)/);
+    expect(block).toMatch(/finalsCountOk\('gotShafted'\)/);
+  });
+
   test('a recent entry hasOnly the three fields the client writes', () => {
     const entryHasOnly = /recentEntryOk[\s\S]*?hasOnly\(\[([^\]]*)\]\)/.exec(block)?.[1];
     expect(quotedNames(entryHasOnly)).toEqual([...RECENT_ROUND_KEYS].sort());

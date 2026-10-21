@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { finalsBoundsOk } from './finals';
 import { bankGame, foldRecords, type GameOutcome, type PlayerRecord } from './records';
 
 function record(overrides: Partial<PlayerRecord> = {}): PlayerRecord {
@@ -285,5 +286,114 @@ describe('foldRecords and the fields it does not own', () => {
     // #then the key is absent rather than explicitly undefined, which Firestore
     // rejects outright
     expect('team' in merged).toBe(false);
+  });
+});
+
+describe('bankGame and a final', () => {
+  test('counts a share, a shaft, and being shafted', () => {
+    // #given a record with one final already on it
+    const existing = record({ played: 3, finals: 1, shared: 1, shafted: 0, gotShafted: 0 });
+
+    // #when tonight's counted pick is shaft, and the opponent shared
+    const banked = bankGame(existing, outcome({
+      final: { pick: 'shaft', opponent: 'share' },
+    }));
+
+    // #then the final is counted, and being shafted is not — the opponent shared
+    expect(banked.finals).toBe(2);
+    expect(banked.shafted).toBe(1);
+    expect(banked.shared).toBe(1);
+    expect(banked.gotShafted).toBe(0);
+    expect(finalsBoundsOk(banked.played, {
+      finals: banked.finals ?? 0,
+      shared: banked.shared ?? 0,
+      shafted: banked.shafted ?? 0,
+      gotShafted: banked.gotShafted ?? 0,
+    })).toBe(true);
+  });
+
+  test('a no-pick is not a share, and the opponent shafting still counts', () => {
+    // #given a first final that this player never picked, against a shaft
+    const banked = bankGame(null, outcome({
+      final: { pick: null, opponent: 'shaft' },
+    }));
+
+    // #then the room saw "No pick", so shared stays zero, and they were shafted
+    expect(banked.finals).toBe(1);
+    expect(banked.shared).toBe(0);
+    expect(banked.shafted).toBe(0);
+    expect(banked.gotShafted).toBe(1);
+  });
+
+  test('both shafting counts as got shafted for the one banking', () => {
+    const banked = bankGame(null, outcome({
+      final: { pick: 'shaft', opponent: 'shaft' },
+    }));
+
+    expect(banked.shafted).toBe(1);
+    expect(banked.gotShafted).toBe(1);
+    expect(banked.shared).toBe(0);
+  });
+
+  test('a player who was not in the final keeps the tallies they had', () => {
+    // #given a record, and a round that was not their final
+    const existing = record({ played: 4, finals: 7, shared: 5, shafted: 2, gotShafted: 2 });
+
+    // #when it is banked with no final on the outcome
+    const banked = bankGame(existing, outcome());
+
+    // #then the counts are unchanged. Dropping the fields would erase them,
+    // because the bank is a whole-document write
+    expect(banked.played).toBe(5);
+    expect(banked.finals).toBe(7);
+    expect(banked.shared).toBe(5);
+    expect(banked.shafted).toBe(2);
+    expect(banked.gotShafted).toBe(2);
+  });
+
+  test('a repeat of the same game does not count the final twice', () => {
+    // #given a final already banked under this game id
+    const existing = record({
+      lastGame: 'game-2',
+      played: 2,
+      finals: 1,
+      shared: 1,
+      shafted: 0,
+      gotShafted: 0,
+    });
+
+    // #when the same game is banked again
+    const banked = bankGame(existing, outcome({
+      gameId: 'game-2',
+      final: { pick: 'share', opponent: 'shaft' },
+    }));
+
+    // #then the record is the one already stored
+    expect(banked).toBe(existing);
+    expect(banked.finals).toBe(1);
+    expect(banked.gotShafted).toBe(0);
+  });
+});
+
+describe('foldRecords and a final', () => {
+  test('adds the tallies, treating an absent count as zero', () => {
+    // #given a record from before finals existed, and one with a history
+    const source = record({ played: 2, finals: 2, shared: 1, shafted: 0, gotShafted: 1 });
+    const target = record({ played: 5 });
+
+    // #when they are folded together
+    const merged = foldRecords(source, target);
+
+    // #then claiming does not wipe the history
+    expect(merged.finals).toBe(2);
+    expect(merged.shared).toBe(1);
+    expect(merged.shafted).toBe(0);
+    expect(merged.gotShafted).toBe(1);
+    expect(finalsBoundsOk(merged.played, {
+      finals: merged.finals ?? 0,
+      shared: merged.shared ?? 0,
+      shafted: merged.shafted ?? 0,
+      gotShafted: merged.gotShafted ?? 0,
+    })).toBe(true);
   });
 });

@@ -15,6 +15,7 @@ import {
   type AskedHistory,
 } from '../engine/askedHistory';
 import type { Honours } from '../engine/awards';
+import { tallyOf, type FinalsTally } from '../engine/finals';
 import type { FormRecord } from '../engine/form';
 import { bankGame, foldRecords, type GameOutcome, type PlayerRecord } from '../engine/records';
 import { cleanSquad } from '../engine/squad';
@@ -400,6 +401,31 @@ export async function loadForm(players: { uid: string; playerId: string }[]): Pr
         + (data?.contrarian ?? 0),
     };
   });
+}
+
+/**
+ * The two finalists' season rows, for the line on their seats.
+ *
+ * One `getDoc` each, once, from every device — the final is the only screen
+ * that needs them, and writing them into the room would be a rules change to
+ * save about eighteen reads. A player with no row yet comes back as zeroes,
+ * which the seat reads as a first final. A thrown error is the caller's to
+ * swallow: the final must not wait on it.
+ */
+export async function loadFinalistRecords(
+  finalists: readonly { uid: string; playerId: string }[],
+): Promise<Record<string, FinalsTally>> {
+  const snapshots = await Promise.all(
+    finalists.map((finalist) => getDoc(playerDoc(finalist.playerId))),
+  );
+
+  const records: Record<string, FinalsTally> = {};
+  finalists.forEach((finalist, index) => {
+    const snapshot = snapshots[index];
+    const data = snapshot?.exists() ? snapshot.data() : undefined;
+    records[finalist.uid] = tallyOf(data);
+  });
+  return records;
 }
 
 /**
