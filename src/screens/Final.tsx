@@ -1,19 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { Awards } from '../components/Awards';
+import { Confetti } from '../components/Confetti';
 import { WeekBoard } from '../components/WeekBoard';
 import { Chair } from '../components/Chair';
 import { Review } from '../components/Review';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { Standings } from '../components/Standings';
 import { awardsFor, reviewFor, sawWholeGame, type QuestionRecord } from '../engine/awards';
-import { podiumFor, roomStandings, seatedLast } from '../engine/scoring';
+import { podiumFor, roomStandings, seatedLast, type RiserHeight } from '../engine/scoring';
 import type { RoomState } from '../engine/state';
 // Type-only, so the drawing module itself stays out of this chunk.
 import type * as DrawCard from '../lib/drawCard';
 import type { Delivery } from '../lib/drawCard';
 import type { Banked } from '../lib/season';
 import type { FinalSnapshot } from '../lib/useFinalSnapshot';
-import { useCue } from '../lib/sound';
+import { ROLL_SECONDS, useCue } from '../lib/sound';
+import { useReducedMotion } from '../lib/useReducedMotion';
 
 interface FinalProps {
   room: RoomState;
@@ -65,6 +67,35 @@ function loadDrawer(): Promise<typeof DrawCard> {
   drawer ??= import('../lib/drawCard');
   return drawer;
 }
+
+/**
+ * The podium, held the way a show holds it: third, a beat, second, a drum roll,
+ * and only then the winner — with the fanfare and the confetti on the landing.
+ * It used to stand all three up 200ms apart, which put the biggest moment of
+ * the round over in half a second.
+ *
+ * The winner's name in the heading waits for the riser too, and so does
+ * everything under the podium: a table with the winner at the top of it,
+ * visible while the drum is still rolling, would be the spoiler.
+ */
+const RISER_AT: Record<RiserHeight, number> = {
+  third: 300,
+  second: 1_500,
+  first: 2_300 + Math.round(ROLL_SECONDS * 1000),
+};
+const ROLL_AT = 2_300;
+/** The winner's riser has finished arriving (`rise` is 520ms). */
+const LANDED_AT = RISER_AT.first + 520;
+
+/**
+ * Games whose podium this page has already built, so coming back from the
+ * season table shows the result rather than staging it all again. Module scope
+ * for the reason `drawer` is: one per page, and nothing for a render to own.
+ */
+const builtPodiums = new Set<string>();
+
+/** A start time for a CSS entrance, as the `--at` its rule reads. */
+const at = (ms: number): CSSProperties => ({ '--at': `${ms}ms` }) as CSSProperties;
 
 /** What the share button is doing, so it can say so rather than sit there. */
 type CardState = 'idle' | 'working' | 'failed' | Delivery;
@@ -149,9 +180,62 @@ export function Final({
   // Off the first, which is safe by construction: everyone seated is level.
   const seatedScore = seated[0] ? (scores[seated[0]] ?? 0) : 0;
 
+  const podiumKey = room.gameId ?? 'no-game';
+  const reducedMotion = useReducedMotion();
+  const [firstSight] = useState(() => !builtPodiums.has(podiumKey));
+  const staging = hasPodium && firstSight && !reducedMotion;
+
+  useEffect(() => {
+    builtPodiums.add(podiumKey);
+  }, [podiumKey]);
+
+  const [beat, setBeat] = useState<'build' | 'roll' | 'landed'>('build');
+  useEffect(() => {
+    if (!staging) return;
+    const timers = [
+      window.setTimeout(() => setBeat('roll'), ROLL_AT),
+      window.setTimeout(() => setBeat('landed'), LANDED_AT),
+    ];
+    return () => {
+      for (const timer of timers) window.clearTimeout(timer);
+    };
+  }, [staging]);
+  /*
+    A tap or Space jumps to the result. The build holds "Another round" back
+    for about four seconds, which is a long time for a quizmaster who has seen
+    a podium before. The cut moves every held entrance's start to now — their
+    animations are already running, so a start in the past simply finishes
+    them — and fires the landing straight away.
+
+    While the build runs, everything under the podium is invisible but would
+    still take a click, so it takes none (`data-held`): a tap meant to skip must
+    never land on a button nobody can see.
+  */
+  const [cut, setCut] = useState(false);
+  const landed = !staging || beat === 'landed' || cut;
+  const holding = staging && !cut;
+
+  useEffect(() => {
+    if (landed) return;
+    const skip = (): void => setCut(true);
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.key !== ' ' && event.key !== 'Enter') return;
+      event.preventDefault();
+      skip();
+    };
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('pointerdown', skip);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('pointerdown', skip);
+    };
+  }, [landed]);
+
   // Keyed on the game so a second round in the same room gets its own fanfare,
-  // and a re-render on the final screen does not.
-  useCue('fanfare', room.gameId ?? 'no-game', hasPodium);
+  // and a re-render on the final screen does not. Not again on coming back to
+  // a podium this page has already built.
+  useCue('roll', podiumKey, holding && beat === 'roll');
+  useCue('fanfare', podiumKey, hasPodium && firstSight && landed);
 
   const [cardState, setCardState] = useState<CardState>('idle');
 
@@ -197,9 +281,11 @@ export function Final({
 
   return (
     <>
+      <Confetti fire={staging && landed} />
+
       <header>
         <p className="eyebrow">{room.packTitle ?? 'That’s the round'}</p>
-        <h1 className="display display--hero">
+        <h1 className="display display--hero finale__title" style={at(holding ? LANDED_AT - 200 : 0)}>
           {winnerName
             ? leaders.length > 1
               ? `${winnerName} — dead heat`
@@ -217,17 +303,25 @@ export function Final({
           ]
             .filter(Boolean)
             .join(' ')}
+          style={{ '--chair-at': `${holding ? LANDED_AT + 500 : 600}ms` } as CSSProperties}
         >
           {slots.map((riser, slot) => {
             const player = riser ? players[riser.uid] : undefined;
             if (!riser || !player) return <div key={`empty-${slot}`} />;
 
             return (
-              <div key={riser.uid} className={`riser riser--${riser.height}`}>
+              <div
+                key={riser.uid}
+                className={`riser riser--${riser.height}`}
+                style={at(holding ? RISER_AT[riser.height] : 0)}
+              >
                 <span className="riser__pos">{riser.position}</span>
                 <span className="riser__name">{player.name}</span>
                 <span className="riser__score">
-                  <ScoreTicker value={riser.score} from={0} />
+                  {/* Counts as the riser arrives, not while it is still waiting
+                      off stage — a number that finished before anyone could
+                      see it is no count at all. */}
+                  <ScoreTicker value={riser.score} from={0} delayMs={holding ? RISER_AT[riser.height] : 0} />
                 </span>
                 {riser.more > 0 ? <span className="riser__more">+{riser.more} level</span> : null}
               </div>
@@ -238,59 +332,65 @@ export function Final({
         </div>
       ) : null}
 
-      <Standings players={players} scores={scores} youUid={youUid} />
+      <div
+        className="finale__after"
+        style={at(holding ? LANDED_AT + 300 : 0)}
+        data-held={landed ? undefined : ''}
+      >
+        <Standings players={players} scores={scores} youUid={youUid} />
 
-      <Awards awards={awards} players={players} youUid={youUid} />
+        <Awards awards={awards} players={players} youUid={youUid} />
 
-      <Review review={review} questions={room.questions} />
+        <Review review={review} questions={room.questions} />
 
-      {/* The week the round just went into, filtered to the squad it was played
-          for — a Lurker's pick where they made one, and their own squad
-          otherwise. Renders nothing until this device's own row has landed. */}
-      {banked ? (
-        <WeekBoard
-          bucket={banked.week}
-          squad={banked.squad}
-          ready
-          youPlayerId={youPlayerId}
-        />
-      ) : null}
-
-      <div className="btn-row">
-        {isQuizmaster ? (
-          <button type="button" className="btn btn--primary" onClick={onPlayAgain}>
-            Another round
-          </button>
-        ) : (
-          <p className="muted">Waiting to see if the quizmaster starts another…</p>
-        )}
-        {/* Everybody, not just the quizmaster: whoever is in the Teams channel
-            is the person who will paste it there. */}
-        {hasPodium ? (
-          <button
-            type="button"
-            className="btn btn--ghost"
-            onClick={handleShareCard}
-            disabled={cardState === 'working'}
-          >
-            {CARD_LABELS[cardState]}
-          </button>
+        {/* The week the round just went into, filtered to the squad it was played
+            for — a Lurker's pick where they made one, and their own squad
+            otherwise. Renders nothing until this device's own row has landed. */}
+        {banked ? (
+          <WeekBoard
+            bucket={banked.week}
+            squad={banked.squad}
+            ready
+            youPlayerId={youPlayerId}
+          />
         ) : null}
-        <button type="button" className="btn btn--ghost" onClick={onSeason}>
-          Season table
-        </button>
-        <button type="button" className="btn btn--ghost" onClick={onLeave}>
-          Leave
-        </button>
-      </div>
 
-      {/* Said once, here, because this is the moment there is a record worth
-          keeping — and the season table is where the code lives. Not a prompt or
-          a dialog: nobody has ever thanked a quiz for interrupting the podium. */}
-      <p className="muted hint hint--apart">
-        That’s gone onto the season table, which is tied to this browser. Grab a recovery code
-        there if you ever play from anywhere else.
-      </p>
+        <div className="btn-row">
+          {isQuizmaster ? (
+            <button type="button" className="btn btn--primary" onClick={onPlayAgain}>
+              Another round
+            </button>
+          ) : (
+            <p className="muted">Waiting to see if the quizmaster starts another…</p>
+          )}
+          {/* Everybody, not just the quizmaster: whoever is in the Teams channel
+              is the person who will paste it there. */}
+          {hasPodium ? (
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={handleShareCard}
+              disabled={cardState === 'working'}
+            >
+              {CARD_LABELS[cardState]}
+            </button>
+          ) : null}
+          <button type="button" className="btn btn--ghost" onClick={onSeason}>
+            Season table
+          </button>
+          <button type="button" className="btn btn--ghost" onClick={onLeave}>
+            Leave
+          </button>
+        </div>
+
+        {/* Said once, here, because this is the moment there is a record worth
+            keeping — and the season table is where the code lives. Not a prompt or
+            a dialog: nobody has ever thanked a quiz for interrupting the podium. */}
+        <p className="muted hint hint--apart">
+          That’s gone onto the season table, which is tied to this browser. Grab a recovery code
+          there if you ever play from anywhere else.
+        </p>
+      </div>
     </>
   );
 }

@@ -43,6 +43,8 @@ interface PodiumTileProps {
    * while the clock is running.
    */
   arrivals?: TileArrival[];
+  /** Points to pop over this lectern, or null. Decided by the screen. */
+  pop?: number | null;
 }
 
 /**
@@ -98,6 +100,7 @@ export function PodiumTile({
   onPick,
   order,
   arrivals = [],
+  pop = null,
 }: PodiumTileProps) {
   const letter = LETTERS[index] ?? '?';
   // Named for the screen reader, since the chips themselves are aria-hidden and
@@ -156,6 +159,14 @@ export function PodiumTile({
               +{crowd.hidden}
             </span>
           ) : null}
+        </span>
+      ) : null}
+
+      {/* Hidden from a screen reader: the verdict beside the desk says the
+          same number, once, and this one only exists to be seen land. */}
+      {pop !== null ? (
+        <span className="tile__pop" aria-hidden="true">
+          +{pop.toLocaleString('en-GB')}
         </span>
       ) : null}
 

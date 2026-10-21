@@ -38,6 +38,7 @@ import { rememberPick, rememberedPick, type RememberedPick } from './rememberedP
 
 interface StageClock {
   elapsedMs: number;
+  remainingMs: number;
   secondsLeft: number;
   expired: boolean;
 }
@@ -68,6 +69,7 @@ function useStageClock(key: string | null, durationMs: number): StageClock {
   const remainingMs = Math.max(0, durationMs - elapsedMs);
   return {
     elapsedMs,
+    remainingMs,
     secondsLeft: Math.ceil(remainingMs / 1000),
     expired: key !== null && remainingMs === 0,
   };
@@ -80,6 +82,8 @@ export interface StandoffView {
   myPick: StandoffPick | null;
   /** Whole seconds left on the talk or the pick, as this screen counts them. */
   secondsLeft: number;
+  /** The same, unrounded, for the sweep around the clock. */
+  remainingMs: number;
   pick: (choice: StandoffPick) => void;
 }
 
@@ -288,6 +292,7 @@ export function useStandoff({
     lockedIn,
     myPick: rememberedChoice,
     secondsLeft: stage === 'pick' ? picking.secondsLeft : talk.secondsLeft,
+    remainingMs: stage === 'pick' ? picking.remainingMs : talk.remainingMs,
     pick,
   };
 }

@@ -437,7 +437,15 @@ function finalRoom(standoff: Partial<Standoff>, overrides: Partial<RoomState> = 
 }
 
 function finalView(overrides: Partial<StandoffView> = {}): StandoffView {
-  return { lockedIn: { sam: false, greg: false }, myPick: null, secondsLeft: 42, pick: () => undefined, ...overrides };
+  const secondsLeft = overrides.secondsLeft ?? 42;
+  return {
+    lockedIn: { sam: false, greg: false },
+    myPick: null,
+    secondsLeft,
+    remainingMs: secondsLeft * 1000,
+    pick: () => undefined,
+    ...overrides,
+  };
 }
 
 /**
@@ -1045,6 +1053,34 @@ export function Preview() {
       ),
     },
     {
+      // Priya's fourth right in a row: the points over her lectern, and the run
+      // stamped beside the verdict. Only ever seen by the one who earned it.
+      title: 'Reveal · right, and on a run',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'reveal',
+            answers: {
+              sam: { optionIndex: 2, elapsedMs: 2_300 },
+              greg: { optionIndex: 2, elapsedMs: 4_100 },
+              alex: { optionIndex: 3, elapsedMs: 5_200 },
+              priya: { optionIndex: 0, elapsedMs: 3_900 },
+            },
+            lastDeltas: { sam: 0, greg: 0, alex: 0, priya: 1_000 },
+          })}
+          youUid="priya"
+          isQuizmaster={false}
+          clock={CLOCK}
+          revealed
+          streak={4}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
       /*
         Robbed. Greg was leading, never answered, and Priya got there first — so
         he is 500 down on a question he did not play, and the only thing that can
@@ -1161,6 +1197,21 @@ export function Preview() {
       ),
     },
     {
+      // The wait between the whistle and the reveal: the drum roll and both
+      // seats bracing. It had no fixture, so it was never looked at.
+      title: 'Share or Shaft · turning them over',
+      node: (
+        <ShareOrShaft
+          room={finalRoom({ stage: 'closed', sealed: ['sam', 'greg'] })}
+          youUid="priya"
+          isQuizmaster={false}
+          view={finalView({ lockedIn: { sam: true, greg: true }, secondsLeft: 0 })}
+          onOpenPicks={noop}
+          onNext={noop}
+        />
+      ),
+    },
+    {
       title: 'Share or Shaft · shafted, told to the one who lost it',
       node: (
         <ShareOrShaft
@@ -1169,6 +1220,22 @@ export function Preview() {
             { scores: { ...FINAL_SCORES, sam: 5_550, greg: 0 }, lastDeltas: { sam: 2_450, greg: -2_450 } },
           )}
           youUid="greg"
+          isQuizmaster
+          view={finalView()}
+          onOpenPicks={noop}
+          onNext={noop}
+        />
+      ),
+    },
+    {
+      title: 'Share or Shaft · both shared, and the seats come together',
+      node: (
+        <ShareOrShaft
+          room={finalRoom(
+            { stage: 'revealed', sealed: ['sam', 'greg'], picks: { sam: 'share', greg: 'share' } },
+            { scores: { ...FINAL_SCORES, sam: 2_775, greg: 2_775 }, lastDeltas: { sam: -325, greg: 325 } },
+          )}
+          youUid="sam"
           isQuizmaster
           view={finalView()}
           onOpenPicks={noop}

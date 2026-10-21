@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { QrCode } from '../components/QrCode';
 import { RoomLink } from '../components/RoomLink';
 import { SoundCheck } from '../components/SoundCheck';
@@ -15,7 +15,7 @@ import { STEAL_SHARE } from '../engine/scoring';
 import { resolveHost } from '../engine/host';
 import { SQUADS } from '../engine/squad';
 import { rememberSquad, rememberedSquad } from '../lib/rememberedSquad';
-import { useSound } from '../lib/sound';
+import { play, useSound } from '../lib/sound';
 import {
   DEFAULT_DURATION_SECS,
   DURATION_CHOICES,
@@ -184,6 +184,24 @@ export function Lobby({
   const playerEntries = Object.entries(room.players).sort(
     ([, a], [, b]) => a.joinedAt - b.joinedAt,
   );
+
+  /*
+    Somebody walked in: a soft two-note ping, on the quizmaster's device only.
+    Every screen in the room on a call playing it at once would be ten pings
+    down the line for one arrival, and the person who wants to know the room
+    is filling up is the one about to press start. Everyone else sees the
+    plate drop in.
+
+    Counted from what this lobby has already shown, so opening it on a full
+    room is not an arrival, and somebody leaving is not one either.
+  */
+  const roomSize = playerEntries.length;
+  const shownSizeRef = useRef(roomSize);
+  useEffect(() => {
+    if (isQuizmaster && roomSize > shownSizeRef.current) play('join');
+    shownSizeRef.current = roomSize;
+  }, [roomSize, isQuizmaster]);
+
   const selected = packs.find((pack) => pack.id === packId);
   const available = selected ? availableFor(selected, level, jigsaw) : 0;
   const effectiveCount = Math.min(count, available);

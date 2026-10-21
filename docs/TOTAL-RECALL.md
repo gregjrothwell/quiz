@@ -24,6 +24,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-21 — Built, not live: the game-show moments (branch `premium-motion`)
+
+Greg asked for a design scan ("share/shaft could have a cool animation"), then "do everything". Share or Shaft now acts its reveal out — seats meet on a share, the shafter shatters the other seat, both shafting blacks the house out for third place — with a hero pot, green/red buttons, stamps and the arc clock. The podium holds third, second, a drum roll, then the winner with fanfare and confetti. A light wipe between screens (not on the question or reveal), standings arrows and "New leader", your points over your lectern and "N in a row", the lobby's drop-in and a quizmaster-only ping, Android haptics. 1,651 tests, e2e 18/18. **The browser pane was hidden at first, so animations only advanced per screenshot and the pictures lagged the DOM.** Detail and gaps: [`game-show-moments.md`](decisions/game-show-moments.md).
+
 ## 2026-10-21 — Live: #98 (gh-pages `18adffe`): the question-one trace
 
 Greg: "Go live with #98." PR CI green, merged `3bbc936` 14:37 BST — **and the push started no CI run at all** (none for that sha five minutes on, GitHub status green), so the same chain was run by `workflow_dispatch` on `master`: build, e2e, rules 14:47, gh-pages 14:48, Pages built 14:52. Live `index-CtpLNOuh` byte-identical to a local build. `check-rules` 123 PASS, 0 FAIL, including the trace allow. One real Q1 on the live site (room XSQW, built-in browser, tab closed before `finished`) filed its trace: seen late 0.5s, write 0.1s, counted. **Seen in passing, not caused by this:** that browser's first load got App Check 403 → "Cannot reach the server" and a one-day SDK throttle; a reload passed. App Check code and site key are unchanged from the morning's bundle.

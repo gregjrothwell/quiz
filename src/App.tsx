@@ -9,6 +9,7 @@ import { formFor } from './engine/form';
 import { foldGameRecord, type RevealTiming } from './engine/gameRecord';
 import { msUntilRevealGate, REVEAL_TIMEOUT_MS, revealBackoffMs } from './engine/revealGate';
 import { roomStandings } from './engine/scoring';
+import { skippedIndices, streakOf } from './engine/streak';
 import { codeFromHash } from './engine/roomCode';
 import {
   DEFAULT_QUESTION_DURATION_MS,
@@ -19,6 +20,7 @@ import {
 } from './engine/state';
 import { firestore, isFirebaseConfigured, vaultFirestore } from './firebase';
 import { keepGameRecord } from './lib/gameRecords';
+import { BUZZ_LOCK, buzz } from './lib/haptics';
 import { playerIdFor } from './lib/identity';
 import { recordVote } from './lib/questionVotes';
 import { rememberedName } from './lib/rememberedName';
@@ -615,6 +617,7 @@ function Game() {
       // sound is to confirm the press, and a round-trip to Firestore is long
       // enough for the delay to read as a missed input.
       play('lock');
+      buzz(BUZZ_LOCK);
       // Somebody who walked in on this question is timed from the end of the
       // window rather than from their own arrival: they still score the answer,
       // they are just ranked from a clock that says nothing about how fast they
@@ -1085,6 +1088,7 @@ function Game() {
             onReveal={() => void handleReveal().catch(report)}
             onNext={() => void dispatch({ type: 'next', at: Date.now() }).catch(report)}
             onVote={handleVote}
+            streak={uid ? streakOf(gameLog, uid, skippedIndices(room)) : 0}
           />
         )) ||
         (room.phase === 'scoreboard' && (

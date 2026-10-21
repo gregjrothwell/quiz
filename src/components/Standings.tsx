@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react';
+import { boardMoves, NO_MOVES } from '../engine/movement';
 import { roomStandings } from '../engine/scoring';
 import type { Player } from '../engine/state';
 import { ScoreTicker } from './ScoreTicker';
@@ -17,6 +18,9 @@ interface StandingsProps {
 export function Standings({ players, scores, deltas, youUid }: StandingsProps) {
   const rows = roomStandings(players, scores);
   const leadScore = rows[0]?.score ?? 0;
+  // Only with a question behind the board: the final screen's table has no
+  // deltas, and a final table that announced moves would be announcing nothing.
+  const { moves, newLeader } = deltas ? boardMoves(players, scores, deltas) : NO_MOVES;
 
   if (rows.length === 0) {
     return <p className="muted">No scores on the board yet.</p>;
@@ -30,6 +34,7 @@ export function Standings({ players, scores, deltas, youUid }: StandingsProps) {
           if (!player) return null;
 
           const delta = deltas?.[entry.uid] ?? 0;
+          const move = moves[entry.uid] ?? 0;
           const width = leadScore > 0 ? `${(entry.score / leadScore) * 100}%` : '0%';
           const classes = [
             'standing',
@@ -53,8 +58,22 @@ export function Standings({ players, scores, deltas, youUid }: StandingsProps) {
               <span className="standing__bar" style={{ width }} aria-hidden="true" />
               <span className="standing__pos">{entry.position}</span>
               <span className="standing__name">
-                {player.name}
-                {entry.uid === youUid ? <span className="plate__role"> you</span> : null}
+                {move !== 0 ? (
+                  <span className="standing__move" data-dir={move > 0 ? 'up' : 'down'}>
+                    <span aria-hidden="true">
+                      {move > 0 ? '▲' : '▼'}
+                      {Math.abs(move)}
+                    </span>
+                    <span className="sr-only">
+                      {move > 0 ? 'up' : 'down'} {Math.abs(move)}
+                    </span>
+                  </span>
+                ) : null}
+                <span className="standing__who">
+                  {player.name}
+                  {entry.uid === youUid ? <span className="plate__role"> you</span> : null}
+                </span>
+                {entry.uid === newLeader ? <span className="standing__tag">New leader</span> : null}
               </span>
               <span className="standing__score">
                 {/*

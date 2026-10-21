@@ -220,6 +220,28 @@ export function outcomeOf(standoff: Standoff): StandoffOutcome | null {
   return { kind: 'shared', each: Math.floor(pot / 2) };
 }
 
+/**
+ * What one finalist walks away with from the pot, for their seat to count to at
+ * the reveal. Null until the final is settled.
+ *
+ * The pot's share and not the score: a negative score never went into the pot
+ * and stays with its owner, so a seat counting to the score would count to a
+ * number that has nothing to do with what was just decided.
+ */
+export function takeFor(standoff: Standoff, uid: string): number | null {
+  const outcome = outcomeOf(standoff);
+  if (!outcome) return null;
+
+  switch (outcome.kind) {
+    case 'shared':
+      return outcome.each;
+    case 'shafted':
+      return outcome.by === uid ? outcome.pot : 0;
+    case 'bothShafted':
+      return 0;
+  }
+}
+
 export function isFinalist(standoff: Standoff | null, uid: string | null): boolean {
   return Boolean(standoff && uid && standoff.finalists.includes(uid));
 }
