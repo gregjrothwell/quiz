@@ -5,8 +5,12 @@ import { Stage } from './Stage';
 
 afterEach(cleanup);
 
+// Omitted rather than passed as undefined: `mood` is optional, and the project
+// compiles with `exactOptionalPropertyTypes`.
 const wipeOn = (mood?: Phase): boolean =>
-  render(<Stage mood={mood}>content</Stage>).container.querySelector('.stage__wipe') !== null;
+  render(mood ? <Stage mood={mood}>content</Stage> : <Stage>content</Stage>).container.querySelector(
+    '.stage__wipe',
+  ) !== null;
 
 describe('the wipe between screens', () => {
   test('crosses each screen that is a new screen', () => {
