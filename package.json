@@ -54,6 +54,8 @@
     "blanks-check": "tsx scripts/blanks-check.ts",
     "write-blanks-pack": "tsx scripts/write-blanks-pack.ts",
     "prices-fetch": "tsx scripts/prices-fetch.ts",
+    "tags-draw": "tsx scripts/tags-draw.ts",
+    "write-tags-pack": "tsx scripts/write-tags-pack.ts",
     "write-prices-pack": "tsx scripts/write-prices-pack.ts"
   },
   "dependencies": {

@@ -25,6 +25,7 @@ export const SHOW_ROUNDS: readonly PackId[] = [
   'artists',
   'blanks',
   'prices',
+  'tags',
   'picture',
   'flags',
   'melody',

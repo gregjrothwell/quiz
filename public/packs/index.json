@@ -219,5 +219,16 @@
       "medium": 98,
       "hard": 30
     }
+  },
+  {
+    "id": "tags",
+    "title": "The Price is Right",
+    "blurb": "Here it is. What does it cost in the shops today?",
+    "count": 81,
+    "counts": {
+      "easy": 27,
+      "medium": 27,
+      "hard": 27
+    }
   }
 ]
