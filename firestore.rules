@@ -806,6 +806,73 @@ service cloud.firestore {
       allow delete: if request.auth != null && request.auth.uid == uid;
     }
 
+    // ── What each device saw of question one ─────────────────────────────────
+    //
+    // One document per player per round, written by that player's device once
+    // it has seen question one revealed, read by nobody but `npm run
+    // read-traces`. Built for Cass, who loses question one on 10-second rounds
+    // with her answers landing seconds behind her own clock; the kept rounds
+    // cannot say whether her device saw the question late or wrote slowly, and
+    // this can. docs/decisions/cass-q1.md; the shape is `src/engine/q1Trace.ts`.
+    //
+    // Global rather than in the room for the votes' reasons: no listener, no
+    // reads, and it outlives `prune-rooms`. **No answer content** — no option
+    // index, written after the reveal.
+    //
+    // Create only, as yourself, under `{gameId}_{uid}`, so one device files one
+    // trace a round and cannot file anybody else's. `update` is refused: the
+    // client never sends one, so a second write is a bug and should fail.
+    // `delete` is your own, so `check-rules` leaves no litter (the vote block's
+    // lesson). Every number is bounded, and the client clamps to the same
+    // bounds so a strange reading is kept rather than refusing the trace.
+    match /q1Traces/{traceId} {
+      function trace() {
+        return request.resource.data;
+      }
+
+      // An optional whole number inside [low, high].
+      function intIn(key, low, high) {
+        return !(key in trace().keys())
+          || (trace()[key] is int && trace()[key] >= low && trace()[key] <= high);
+      }
+
+      function textUpTo(key, size) {
+        return !(key in trace().keys()) || (trace()[key] is string && trace()[key].size() <= size);
+      }
+
+      allow read, update: if false;
+
+      allow create: if request.auth != null
+        && trace().keys().hasAll(['gameId', 'roomCode', 'uid', 'durationMs', 'correctionMs', 'priorSamples', 'writes', 'device', 'at'])
+        && trace().keys().hasOnly(['gameId', 'roomCode', 'uid', 'durationMs', 'correctionMs', 'priorSamples', 'writes', 'device', 'network', 'seenAfterOpenMs', 'serverOffsetMs', 'visibleForMs', 'tapMs', 'tapElapsedMs', 'ackMs', 'refused', 'dropped', 'revealMs', 'counted', 'at'])
+        && trace().uid == request.auth.uid
+        && trace().gameId is string
+        && trace().gameId.size() > 0
+        && trace().gameId.size() <= 64
+        && traceId == trace().gameId + '_' + request.auth.uid
+        && trace().roomCode is string
+        && trace().roomCode.size() <= 8
+        && trace().at == request.time
+        && trace().device in ['ios', 'android', 'mac', 'windows', 'linux', 'other']
+        && trace().durationMs is int && trace().durationMs >= 0 && trace().durationMs <= 600000
+        && trace().correctionMs is int && trace().correctionMs >= 0 && trace().correctionMs <= 600000
+        && trace().priorSamples is int && trace().priorSamples >= 0 && trace().priorSamples <= 1000
+        && trace().writes is int && trace().writes >= 0 && trace().writes <= 1000
+        && intIn('seenAfterOpenMs', -86400000, 86400000)
+        && intIn('serverOffsetMs', -86400000, 86400000)
+        && intIn('visibleForMs', 0, 86400000)
+        && intIn('tapMs', 0, 600000)
+        && intIn('tapElapsedMs', 0, 600000)
+        && intIn('ackMs', 0, 600000)
+        && intIn('revealMs', 0, 600000)
+        && textUpTo('network', 16)
+        && textUpTo('refused', 40)
+        && (!('dropped' in trace().keys()) || trace().dropped in ['phase', 'window'])
+        && (!('counted' in trace().keys()) || trace().counted is bool);
+
+      allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
+    }
+
     // ── The round, kept ──────────────────────────────────────────────────────
     //
     // One document per finished game, written by the quizmaster's device when

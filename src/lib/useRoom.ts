@@ -56,6 +56,8 @@ import {
   rememberDelta,
   type ClockDeltas,
 } from '../engine/roomClock';
+import { createQ1Tracer, deviceFrom, type Q1Tracer } from '../engine/q1Trace';
+import { networkType, recordQ1Trace, refusalCode } from './q1Trace';
 import { planJoin, planSeatSquad } from '../engine/join';
 import { reapAbsent } from '../engine/presence';
 import {
@@ -303,6 +305,25 @@ export function useRoom(): UseRoom {
   /** Guards against stacking rejoin writes while one is already in flight. */
   const rejoiningRef = useRef(false);
 
+  /*
+    The question-one trace (docs/decisions/cass-q1.md). Made once, stable, and
+    fed from the room listener and `submitAnswer`. The refs beside it are what
+    those two need and cannot take as dependencies: the listener is scoped to
+    the room code alone.
+  */
+  const [tracer] = useState<Q1Tracer>(() =>
+    createQ1Tracer({
+      now: Date.now,
+      write: (trace) => void recordQ1Trace(vaultFirestore(), trace),
+    }),
+  );
+  const uidRef = useRef<string | null>(null);
+  const clockDeltasRef = useRef<ClockDeltas>({});
+  /** The RTDB's `.info/serverTimeOffset`: local + this = server. */
+  const serverOffsetRef = useRef<number | null>(null);
+  /** When the page last became visible; null while it is hidden. */
+  const visibleSinceRef = useRef<number | null>(null);
+
   // Anonymous auth gives every browser a durable uid with no sign-up, which is
   // also what makes an accountless cross-session leaderboard possible later.
   useEffect(() => {
@@ -318,6 +339,37 @@ export function useRoom(): UseRoom {
       });
     });
   }, []);
+
+  // What the trace reads from the room listener, kept current.
+  useEffect(() => {
+    uidRef.current = uid;
+  }, [uid]);
+  useEffect(() => {
+    clockDeltasRef.current = clockDeltas;
+  }, [clockDeltas]);
+
+  // Visibility, for the trace: a phone woken as the question opens is one of
+  // the stories the trace has to tell apart.
+  useEffect(() => {
+    const note = (): void => {
+      visibleSinceRef.current = document.visibilityState === 'visible' ? Date.now() : null;
+    };
+    note();
+    document.addEventListener('visibilitychange', note);
+    return () => document.removeEventListener('visibilitychange', note);
+  }, []);
+
+  // The server's clock, independently of `openedAt`, so the trace can take
+  // the skew out of "how late did this device see question one". A local
+  // `.info` path: no reads, no rules. Only while in a room, so the landing page
+  // still opens no Realtime Database connection.
+  useEffect(() => {
+    if (!code) return;
+    return onValue(rtdbRef(realtimeDb(), '.info/serverTimeOffset'), (snapshot) => {
+      const offset: unknown = snapshot.val();
+      serverOffsetRef.current = typeof offset === 'number' ? offset : null;
+    });
+  }, [code]);
 
   // Room document: one listener per client, updated only on phase transitions.
   useEffect(() => {
@@ -351,6 +403,18 @@ export function useRoom(): UseRoom {
         const data = snapshot.data() as PersistedRoom;
         setPersisted(data);
 
+        // The trace notes where the room has got to on every snapshot, pending
+        // or not: the quizmaster's own reveal reaches its screen as a local
+        // snapshot first, and that is when its device saw it.
+        if (data) {
+          tracer.sawRoom({
+            gameId: data.gameId ?? null,
+            phase: data.phase,
+            index: data.index,
+            scoredUids: Object.keys(data.lastDeltas ?? {}),
+          });
+        }
+
         // Recorded per question, and only from a snapshot the server has
         // acknowledged. `??=` inside the guard keeps the *first* such moment
         // rather than the latest, since a later update to the same question
@@ -361,6 +425,26 @@ export function useRoom(): UseRoom {
         // into a measurement whose whole job is to be a millisecond reading.
         const at = Date.now();
         const openedAtMs = openedAtMillis(snapshot.data());
+
+        // Before this question's own reading is folded in: the trace works out
+        // the clock's correction itself, from the readings held until now.
+        const traceUid = uidRef.current;
+        if (traceUid) {
+          tracer.sawQuestion({
+            gameId: data.gameId ?? null,
+            roomCode: code,
+            uid: traceUid,
+            index: data.index,
+            durationMs: questionDurationMs(data),
+            openedAtMs,
+            arrivedAt: at,
+            serverOffsetMs: serverOffsetRef.current,
+            priorDeltas: clockDeltasRef.current,
+            visibleSince: visibleSinceRef.current,
+            device: deviceFrom(navigator.userAgent),
+            network: networkType(),
+          });
+        }
 
         setQuestionConfirmed((current) =>
           current.key === key ? current : { key, at, openedAtMs },
@@ -378,7 +462,7 @@ export function useRoom(): UseRoom {
         setError(cause.message);
       },
     );
-  }, [code]);
+  }, [code, tracer]);
 
   /*
     Who this device is in the room, read straight off the document so the
@@ -806,6 +890,9 @@ export function useRoom(): UseRoom {
         ? successorOnLeave(leavingRoom.players, leavingUid)
         : null;
 
+    // A question-one trace still open goes now, with what is known.
+    tracer.leave();
+
     // Drop out locally first, so leaving always works.
     //
     // `forgetRoom` before anything else, and it is the whole risk in restoring a
@@ -825,7 +912,7 @@ export function useRoom(): UseRoom {
       [`players.${leavingUid}`]: deleteField(),
       ...(handover ? { hostUid: handover } : {}),
     }).catch(() => undefined);
-  }, [code, uid]);
+  }, [code, uid, tracer]);
 
   /**
    * Writes this device's pick, overwriting any earlier one for the same
@@ -856,8 +943,16 @@ export function useRoom(): UseRoom {
   const submitAnswer = useCallback(
     async (optionIndex: number, elapsedMs: number, wager?: number): Promise<void> => {
       if (!code || !uid || !room) return;
-      if (room.phase !== 'question') return;
-      if (elapsedMs > questionDurationMs(room)) return;
+      // The two silent returns a tap can meet. Each is told to the trace,
+      // because "I pressed it and nothing happened" ends here.
+      if (room.phase !== 'question') {
+        tracer.dropped({ gameId: room.gameId, index: room.index, reason: 'phase' });
+        return;
+      }
+      if (elapsedMs > questionDurationMs(room)) {
+        tracer.dropped({ gameId: room.gameId, index: room.index, reason: 'window' });
+        return;
+      }
 
       // Only the question the room agreed to play for stakes carries one, so a
       // stake left over in the screen's state cannot ride along on any other.
@@ -922,6 +1017,15 @@ export function useRoom(): UseRoom {
         ...answer,
         at: serverTimestamp(),
       });
+      // Timed from here to the server's answer, on a branch of its own so the
+      // await below still hands a refusal to the caller.
+      const token = tracer.tapped({ gameId: room.gameId, index: room.index, elapsedMs });
+      if (token !== null) {
+        written.then(
+          () => tracer.settled(token),
+          (cause: unknown) => tracer.settled(token, refusalCode(cause)),
+        );
+      }
       // The lamp, beside it (W3). Best-effort: a lamp that fails to light costs
       // the room a dot, never the answer.
       void rtdbSet(
@@ -930,7 +1034,7 @@ export function useRoom(): UseRoom {
       ).catch(() => undefined);
       await written;
     },
-    [code, uid, room],
+    [code, uid, room, tracer],
   );
 
   // Reap players whose presence has been gone longer than the grace window. Only

@@ -53,6 +53,7 @@ import {
   type DocumentReference,
 } from 'firebase/firestore';
 import { planJoin } from '../src/engine/join';
+import type { Q1TraceDoc } from '../src/engine/q1Trace';
 import { reduce, type Action } from '../src/engine/reducer';
 import { createRoom, type QuizQuestion, type RoomState } from '../src/engine/state';
 import { toPersisted, toRoomState, toUpdate } from '../src/lib/roomDoc';
@@ -209,6 +210,35 @@ async function openProbeQuestion(
     durationSecs,
     openedAt: serverTimestamp(),
   });
+}
+
+/**
+ * A question-one trace with every field the tracer can write, the way a
+ * counted answer files it (`Q1TraceDoc`, src/engine/q1Trace.ts), less the
+ * server's `at`. A literal for `probeGame`'s reason below.
+ */
+function probeTrace(uid: string): Q1TraceDoc {
+  return {
+    gameId: 'rules-check-trace',
+    roomCode: 'RCHK',
+    uid,
+    durationMs: 10_000,
+    correctionMs: 0,
+    priorSamples: 0,
+    writes: 1,
+    device: 'mac',
+    network: '4g',
+    seenAfterOpenMs: 400,
+    serverOffsetMs: -150,
+    visibleForMs: 60_000,
+    tapMs: 4_000,
+    tapElapsedMs: 4_000,
+    ackMs: 250,
+    refused: 'permission-denied',
+    dropped: 'window',
+    revealMs: 10_300,
+    counted: true,
+  };
 }
 
 /**
@@ -1281,6 +1311,52 @@ function buildChecks(probes: Probes): Check[] {
       hint: 'firestore.rules grants list on questionVotes — see above',
       run: () =>
         getDocs(query(collection(db, 'questionVotes', 'rules-check-question', 'votes'), limit(1))),
+    },
+    {
+      /*
+        The question-one trace (docs/decisions/cass-q1.md). The client swallows
+        a refusal on purpose, so with the block unpublished every trace is lost
+        in silence and only this case says so. The denies after it mean
+        something only once it passes.
+      */
+      label: 'Firestore   · file your own question-one trace',
+      expect: 'allow',
+      hint: 'firestore.rules is missing the q1Traces block — every device\'s trace '
+        + 'is refused silently and `read-traces` will never have anything to say',
+      run: async () => {
+        const reference = doc(db, 'q1Traces', `rules-check-trace_${uid}`);
+        await setDoc(reference, { ...probeTrace(uid), at: serverTimestamp() });
+        // Swept, so the preflight leaves nothing behind.
+        return deleteDoc(reference);
+      },
+    },
+    {
+      label: 'Firestore   · file a trace as somebody else',
+      expect: 'deny',
+      hint: 'firestore.rules lets one uid file another uid\'s trace — the evidence '
+        + 'for one player could be written by anybody',
+      run: () =>
+        setDoc(doc(db, 'q1Traces', `rules-check-trace_${uidB}`), {
+          ...probeTrace(uidB),
+          at: serverTimestamp(),
+        }),
+    },
+    {
+      label: 'Firestore   · attach an option index to a trace',
+      expect: 'deny',
+      hint: 'firestore.rules does not hasOnly q1Traces — an answer could ride along',
+      run: () =>
+        setDoc(doc(db, 'q1Traces', `rules-check-trace_${uid}`), {
+          ...probeTrace(uid),
+          optionIndex: 2,
+          at: serverTimestamp(),
+        }),
+    },
+    {
+      label: 'Firestore   · read a trace',
+      expect: 'deny',
+      hint: 'firestore.rules grants read on q1Traces — they are for the Admin SDK only',
+      run: () => getDoc(doc(db, 'q1Traces', `rules-check-trace_${uid}`)),
     },
     {
       /*

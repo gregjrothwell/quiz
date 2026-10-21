@@ -93,10 +93,64 @@ reloaded in between, which a phone does. Only her device can say which.
 - **Now, free:** play 15s rounds. Zero of 22 lost. Changes the feel of the game.
 - **To find the cause:** a question-one trace from **every** device, not Cass alone — Q1 costs
   everybody, and her uid (`ieDRJ5…`) is stable across 46 rounds, so a script filters to her.
-  One write per player per round to a write-only collection: arrival − `openedAt`, an
-  independent skew reading, tap, write acknowledged or refused (with the code), reveal seen,
-  whether the clock was corrected, connection type. Needs a rules change, so it ships through
-  CI on `master` — going live. **Not built.**
+  Needs a rules change, so it ships through CI on `master` — going live. **Built 21 Oct, PR open,
+  not live** — below.
+
+## The trace — Greg, 21 Oct: "build it … don't go live"
+
+> As the person running the quiz, I want every device to say what happened to it on question
+> one, so that "I answered in time" can be checked rather than believed.
+
+Acceptance criteria:
+
+1. Every device in a round writes **at most one** trace, for question one, to
+   `q1Traces/{gameId}_{uid}`. Nothing for later questions.
+2. Written whether or not the player answered — a tap the client dropped says why (`phase`,
+   `window`), and a write the rules refused carries its code.
+3. It holds the two numbers that separate the candidates above: **how late this device saw
+   question one, in server time** (`seenAfterOpenMs + serverOffsetMs`, the offset from the RTDB's
+   `.info/serverTimeOffset`, which Firebase documents as *local + offset = server*, good for
+   discrepancies over a second — read 21 Oct) and **how long its last answer write took to be
+   acknowledged** (`ackMs`). Context: tap, reveal seen, counted, the clock correction applied,
+   clock samples held before question one (0 = a fresh tab), how long the page had been
+   visible, device class, network type.
+4. Written once this device has seen the reveal and its answer write has settled. If either
+   never comes, written when the room moves past question one, with what is known.
+5. **It can never cost an answer.** Written over Firestore Lite, so a refusal cannot close the
+   main SDK's write stream under the next answer (the beat's reason); failures are swallowed;
+   nothing on screen.
+6. No answer content: no option index, written after the reveal.
+7. Rules: create only, as yourself, id `{gameId}_{uid}`, bounded shape, `at == request.time`; no
+   read, no update; delete your own (so `check-rules` leaves no litter). Allow and deny cases in
+   `e2e/` (emulator, CI) and in `check-rules` (live, after the merge).
+8. `npm run read-traces [-- --name cass]` prints each with a reading: late delivery, slow write,
+   both, or neither.
+9. Cost: one write per player per round; no client reads.
+
+**Where it lives:** `src/engine/q1Trace.ts` (the tracer, pure, 26 tests — including one that
+fails if the rules' key list and the document drift), `src/lib/q1Trace.ts` (the Lite write),
+`useRoom` (fed from the room listener and `submitAnswer`), the `q1Traces` block in
+`firestore.rules`, `e2e/q1-trace.spec.ts`, four cases in `check-rules`, `scripts/read-traces.ts`.
+
+**Verified before the PR, 21 Oct:** the e2e rules cases against the emulator — the allow case
+fails on the old rules ("No matching allow statements") and passes on the new; eight denies, each
+one change from that allowed write. The browser case plays a real question one: Ann taps and
+files `writes 1, counted true` with every timing present (the emulator serves
+`.info/serverTimeOffset`); the host, who never answered, files `writes 0, counted false`.
+**Not covered until it is live:** the published ruleset (`check-rules` after the merge), a
+real phone, and whether App Check passes the Lite write from every device.
+
+**After the go-live**, the next office rounds: `npm run read-traces -- --name cass`. What the
+readings would mean:
+
+| Reading on her lost Q1s | Means | The fix it points at |
+|---|---|---|
+| `late delivery` | Her device sees question one seconds late | A skew estimate before Q1 (`.info/serverTimeOffset` is already there) |
+| `slow write` | On time, but the first answer write takes seconds | Wake the write path at round start, or hold the fold for a lit lamp |
+| `neither`, `counted` | It did not happen that round | Keep reading |
+
+A tab that reloaded or walked in mid-question also reads `late delivery`, honestly: it did see
+the question late. `priorSamples 0` with a short `visibleForMs` is that case, not the network.
 
 ## How it was measured
 

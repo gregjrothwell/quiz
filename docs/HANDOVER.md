@@ -103,8 +103,8 @@ scoring 500 + rank 500/400/300/200/100.
     so the only test is whether his behaviour changes next round:
     [`first-touch.md`](decisions/first-touch.md).
 12. **Cass loses question 1 on 10s rounds** (8/24 missed; 0/22 on 15s, 21 Oct): her Q1 answers land
-    ~2–5.5s behind her own clock, no later one does, and a 10s fold leaves no room. Why the lag is
-    unknown. **Greg to decide:** 15s rounds, or a Q1 trace from every device ([`cass-q1.md`](decisions/cass-q1.md)).
+    ~2–5.5s behind her own clock, no later one does, and a 10s fold leaves no room. Why is unknown:
+    **a Q1 trace from every device is built, PR open, not live** — then `read-traces` ([`cass-q1.md`](decisions/cass-q1.md)).
 13. **Reveal over Firestore Lite, live 7 Oct (#71)**: all four at once, median vault step 71ms v #70's 167ms in a
     browser; **the next office round's `read-games` is the live check** ([`office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md#4-the-slow-reveal)).
 14. **Loose ends from 26–27 September**: five new tunes transcribed to nothing
