@@ -24,6 +24,14 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-21 — Built, not live: call it on Catchphrase
+
+Greg, the same day: option B, Catchphrase only, the rank race only, and don't keep what was typed. A text box during the hold. A call before the options is final and beats every tap; a wrong call loses the question. The device matches the four options (`matchTypedAnswer`) and writes `optionIndex` — 4 when nothing matches, which the rules already allow. The contrarian rosette skips that index. No rules or vault change. Not folded into a release branch: finals history is a separate change in flight. [`typed-answers.md`](decisions/typed-answers.md).
+
+## 2026-10-21 — Built, not live: finals history on the seats
+
+Greg approved the story, all ten acceptance criteria, and the backfill by uid. A finalist's season row gains `finals`, `shared`, `shafted` and `gotShafted` in the same bank as the round, idempotent on `gameId`; claiming sums them. The seat shows the line from the talk through the whistle, hides it while the seats clash and shatter, and shows it again once they settle, with tonight added. Each device reads the two rows once; a failed read shows nothing and does not block the final. `npm run backfill-finals` is a dry run until `--go`, season-2 only, and was not run. Anything else going live the same day ships with it through one `release-<date>` branch. [`finals-history.md`](decisions/finals-history.md).
+
 ## 2026-10-21 — Live: #100 (gh-pages `821e754`): the game-show moments
 
 Greg: "go live with these changes." PR CI green at `4139e33`; merged `1412867` 15:13Z — **the push started no CI run, the third merge today to do that**, so `ci.yml` was dispatched on master (run 39624023405): verify, e2e, rules 15:21Z, gh-pages 15:22Z. **Then GitHub Pages hung**: its build of `821e754` sat at "building" from 15:24:52Z with no update for 13 minutes, the site reporting `status=errored`, while the earlier builds today took about a minute. `POST /pages/builds` queued a fresh one, built in 46s at 15:38:50Z. Live `index-DYv-seCH.js` and `index-DLNe_1_v.css` byte-identical to a local build of master; the live gallery plays the shafted reveal. Rules unchanged by #100, so no `check-rules`. Nothing played in a live room yet.

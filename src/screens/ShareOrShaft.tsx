@@ -4,6 +4,7 @@ import { Confetti } from '../components/Confetti';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { Standings } from '../components/Standings';
 import { roomStandings } from '../engine/scoring';
+import { finalFor, finalsLine, withTonight, type FinalsTally } from '../engine/finals';
 import {
   outcomeOf,
   PICK_MS,
@@ -25,6 +26,17 @@ interface ShareOrShaftProps {
   youUid: string | null;
   isQuizmaster: boolean;
   view: StandoffView;
+  /**
+   * The two finalists' records coming into tonight, keyed by uid. Null until
+   * the read returns, and null when it failed — either way the seat has no
+   * line, and the final does not wait.
+   */
+  records?: Record<string, FinalsTally> | null;
+  /**
+   * Gallery only. Opens a revealed final already settled, so the fixture shows
+   * the line with tonight added instead of the clash that hides it.
+   */
+  settledReveal?: boolean;
   /** Ends the talking early. The quizmaster's device ends it anyway when the clock runs out. */
   onOpenPicks: () => void;
   /** From the reveal to the results. */
@@ -115,10 +127,12 @@ interface SeatProps {
   role: SeatRole | null;
   /** Whether this seat has taken its hit yet. */
   broken: boolean;
+  /** The finals line, or null while it should not be on the seat. */
+  record: string | null;
   lockKey: string;
 }
 
-function Seat({ uid, side, name, isYou, stake, take, label, state, role, broken, lockKey }: SeatProps) {
+function Seat({ uid, side, name, isYou, stake, take, label, state, role, broken, record, lockKey }: SeatProps) {
   // The room's only news during the pick is that somebody locked in, so it
   // lands with a thud on every screen but the one that pressed the button —
   // that one already heard its own lock.
@@ -144,6 +158,7 @@ function Seat({ uid, side, name, isYou, stake, take, label, state, role, broken,
         {name}
         {isYou ? <span className="standoff__you"> (you)</span> : null}
       </p>
+      {record ? <p className="standoff__record">{record}</p> : null}
       <p className="standoff__stake">
         {take === null ? (
           <>{points(stake)} in the pot</>
@@ -191,6 +206,8 @@ export function ShareOrShaft({
   youUid,
   isQuizmaster,
   view,
+  records = null,
+  settledReveal = false,
   onOpenPicks,
   onNext,
 }: ShareOrShaftProps) {
@@ -226,17 +243,19 @@ export function ShareOrShaft({
     });
   }, []);
 
+  const forceSettled = settledReveal && revealKey !== null;
+
   useEffect(() => {
-    if (revealKey === null || reducedMotion) return;
+    if (revealKey === null || reducedMotion || forceSettled) return;
     const at = (beat: Beat, ms: number): number => window.setTimeout(() => advance(revealKey, beat), ms);
     const timers = [at('clash', CLASH_MS), at('impact', IMPACT_MS), at('settled', settleMs)];
     return () => {
       for (const timer of timers) window.clearTimeout(timer);
     };
-  }, [revealKey, reducedMotion, settleMs, advance]);
+  }, [revealKey, reducedMotion, forceSettled, settleMs, advance]);
 
   const beat: Beat | null =
-    revealKey === null ? null : reducedMotion ? 'settled' : beatAt.key === revealKey ? beatAt.beat : 'flip';
+    revealKey === null ? null : reducedMotion || forceSettled ? 'settled' : beatAt.key === revealKey ? beatAt.beat : 'flip';
   const reached = (target: Beat): boolean =>
     beat !== null && BEATS.indexOf(beat) >= BEATS.indexOf(target);
   const settled = reached('settled');
@@ -353,6 +372,15 @@ export function ShareOrShaft({
         {standoff.finalists.map((uid, index) => {
           const { label, state } = seatState(uid);
           const role = acting ? roleOf(outcome, uid) : null;
+          // Coming in, from the talk through the whistle. Hidden while the
+          // seats clash and shatter, then back with tonight added once they
+          // settle — so the room sees the line change, and nothing breaks on
+          // top of it.
+          const coming = records?.[uid];
+          const showRecord = coming !== undefined && (stage !== 'revealed' || settled);
+          const record = showRecord
+            ? finalsLine(withTonight(coming, stage === 'revealed' ? finalFor(standoff, uid) : null))
+            : null;
           return (
             <Seat
               key={uid}
@@ -366,6 +394,7 @@ export function ShareOrShaft({
               state={state}
               role={role}
               broken={role === 'victim' || role === 'wrecked'}
+              record={record}
               lockKey={gameKey}
             />
           );

@@ -3371,6 +3371,50 @@ select.input option {
   color: var(--amber-bright);
 }
 
+/* The Catchphrase call box, in the hold only. One row so a 375px phone can
+   still see the picture above it. The on-screen keyboard is a separate band
+   over the bottom of that phone — measured in the gallery, see typed-answers.md. */
+.call {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  scroll-margin-bottom: 45vh;
+}
+
+.call .field__label {
+  letter-spacing: 0.14em;
+}
+
+.call__row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.call__row .input {
+  flex: 1 1 auto;
+  min-width: 0;
+  /* 16px, so a phone does not zoom the page when the box is focused. */
+  font-size: 1rem;
+  padding: 0.55rem 0.75rem;
+}
+
+.call__row .btn {
+  flex: 0 0 auto;
+  padding: 0.55rem 1rem;
+}
+
+/* A 375×667 phone: the sticky desk sits over the bottom of a full-height
+   still once the call box is above it. Cap the still only while the box is
+   there, and only on a narrow screen, so the whole picture stays above the
+   desk. Wider screens have the room. */
+@media (max-width: 40rem) {
+  .qgrid:has(.call) .still__img {
+    max-height: 26vh;
+    object-fit: contain;
+  }
+}
+
 .tally {
   /* The desk is a column now, and a paragraph's default margins are two
      unwanted lines of it on a phone. */
@@ -4090,6 +4134,19 @@ select.input option {
   font-size: 0.8rem;
   text-transform: none;
   color: var(--ink-dim);
+}
+
+/*
+  The finals line. Small, and allowed to wrap, because a 375px seat is about
+  half the screen and the line is four counts. `anywhere` so a long count
+  cannot force the page sideways; the seat already has `min-width: 0`.
+*/
+.standoff__seat .standoff__record {
+  margin-top: 0.3rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--ink-dim);
+  overflow-wrap: anywhere;
 }
 
 .standoff__stake {

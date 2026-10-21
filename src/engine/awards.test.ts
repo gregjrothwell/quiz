@@ -125,6 +125,26 @@ describe('contrarian', () => {
     // #then being alone and right is the other award, not this one
     expect(award?.uids).toEqual(['greg']);
   });
+
+  test('skips a typed answer that matched nothing', () => {
+    // #given Alex alone on a real wrong lectern, and two people who typed
+    // different wrong phrases — both stored as the same no-match index
+    const log = [
+      record(0, 0, {
+        alex: answer(2, 4_000),
+        greg: answer(4, 2_000),
+        sam: answer(4, 2_500),
+      }),
+      record(1, 0, { priya: answer(4, 1_500) }),
+    ];
+
+    // #when the awards are worked out
+    const award = find(awardsFor(log, PLAYERS), 'contrarian');
+
+    // #then only the lonely real lectern counts. A lone no-match is not a
+    // decision, and the two no-matches do not count as the same pick.
+    expect(award).toEqual({ id: 'contrarian', uids: ['alex'], count: 1 });
+  });
 });
 
 describe('comeback', () => {

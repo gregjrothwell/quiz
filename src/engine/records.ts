@@ -1,4 +1,5 @@
 import type { Honours } from './awards';
+import { addFinals, tallyOf, withTonight, type CountedFinal } from './finals';
 import { cleanSquad } from './squad';
 
 /**
@@ -71,6 +72,20 @@ export interface PlayerRecord {
    * fifty by points and silently mis-rank the tail.
    */
   form?: number;
+  /**
+   * Share or Shaft, counted the way the room saw it. Optional for the same
+   * reason as the rosettes: every live row predates them, and a client one
+   * deploy behind writes none. Absent means zero.
+   *
+   * Carried on every write below. Both writers use `set`, so a field this
+   * object does not name is erased by the next game — including a round that
+   * was not a final, which would otherwise wipe the tally overnight.
+   */
+  finals?: number;
+  shared?: number;
+  shafted?: number;
+  /** The opponent's counted pick was shaft. Both shafting counts. */
+  gotShafted?: number;
   /** The last game banked here, so the same one cannot count twice. */
   lastGame: string;
   lastPlayed: number;
@@ -95,6 +110,10 @@ export const PLAYER_RECORD_KEYS = [
   'team',
   'recent',
   'form',
+  'finals',
+  'shared',
+  'shafted',
+  'gotShafted',
   'lastGame',
   'lastPlayed',
 ] as const satisfies readonly (keyof PlayerRecord)[];
@@ -115,6 +134,11 @@ export interface GameOutcome {
   /** Empty means "keep what the record says", not "no squad". See `bankGame`. */
   squad: string;
   honours: Honours;
+  /**
+   * The counted final, when this player was in one. Absent for everyone else.
+   * A no-pick is a present final whose `pick` is null, not an absent one.
+   */
+  final?: CountedFinal;
 }
 
 /**
@@ -215,6 +239,7 @@ export function foldRecords(source: PlayerRecord, target: PlayerRecord | null): 
     comeback: (target?.comeback ?? 0) + (source.comeback ?? 0),
     loneWolf: (target?.loneWolf ?? 0) + (source.loneWolf ?? 0),
     contrarian: (target?.contrarian ?? 0) + (source.contrarian ?? 0),
+    ...addFinals(tallyOf(source), tallyOf(target)),
     recent,
     form: formOf(scoresOf(recent)),
     lastGame: newest.lastGame,
@@ -268,6 +293,7 @@ export function bankGame(existing: PlayerRecord | null, outcome: GameOutcome): P
     comeback: (existing?.comeback ?? 0) + outcome.honours.comeback,
     loneWolf: (existing?.loneWolf ?? 0) + outcome.honours.loneWolf,
     contrarian: (existing?.contrarian ?? 0) + outcome.honours.contrarian,
+    ...withTonight(tallyOf(existing), outcome.final ?? null),
     recent,
     form: formOf(scoresOf(recent)),
     lastGame: outcome.gameId,
