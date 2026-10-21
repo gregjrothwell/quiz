@@ -127,6 +127,19 @@ describe('clockVoices', () => {
     expect(last?.start ?? Infinity).toBeLessThan(ROLL_SECONDS);
   });
 
+  test('gives each heartbeat a voice a laptop speaker can play', () => {
+    // #given the two beats, the lub at 0s and the dub at 0.2s
+    const voices = cueVoices('heartbeat');
+
+    // #then each has at least one voice that starts above 120Hz — laptop
+    // speakers carry little under about 100Hz, and a heartbeat made only of
+    // sub-bass is a heartbeat most of the room never hears
+    for (const at of [0, 0.2]) {
+      const audible = voices.filter((voice) => voice.start === at && voice.from > 120);
+      expect(audible.length).toBeGreaterThan(0);
+    }
+  });
+
   test('keeps the new cues inside the house balance', () => {
     // #given the loudest single voice the house cues were balanced on (the lock)
     const loudest = 1.1;

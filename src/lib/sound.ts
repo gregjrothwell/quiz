@@ -242,11 +242,21 @@ const CUES: Record<Cue, Voice[]> = {
     { type: 'sine', from: C6, start: 0.14, duration: 1.1, gain: 0.45 },
   ],
 
-  // The last five seconds of the pick: lub-dub, low enough to be felt through
-  // laptop speakers more than heard.
+  /*
+    The last five seconds of the pick: lub-dub.
+
+    Two layers to each beat. The sine is the body, and below 80Hz it is mostly
+    lost on laptop speakers, which carry little under about 100Hz — this cue
+    was first written as the sines alone, with a comment claiming you would
+    feel it more than hear it, and nobody had listened. The muffled triangle an
+    octave and more above is the part a laptop can actually play; on anything
+    with bass, the sine sits under it.
+  */
   heartbeat: [
     { type: 'sine', from: 72, to: 48, start: 0, duration: 0.14, gain: 1.0 },
+    { type: 'triangle', from: 160, to: 110, start: 0, duration: 0.09, gain: 0.55, cutoff: 900 },
     { type: 'sine', from: 66, to: 44, start: 0.2, duration: 0.16, gain: 0.8 },
+    { type: 'triangle', from: 150, to: 100, start: 0.2, duration: 0.1, gain: 0.45, cutoff: 900 },
   ],
 
   roll: Array.from({ length: ROLL_HITS }, (_, hit): Voice => ({

@@ -205,23 +205,42 @@ export function ShareOrShaft({
 
   const reducedMotion = useReducedMotion();
   const revealKey = stage === 'revealed' ? `${gameKey}:revealed` : null;
-  const [beatAt, setBeatAt] = useState<{ key: string; beat: Beat }>({ key: '', beat: 'flip' });
+  /*
+    `cut` is the quizmaster having jumped to the end on this device. Beats only
+    ever move forward — a timer still pending after a cut must not drag the
+    screen back to `impact` — and a cut sequence drops the blackout and the
+    heir, which would otherwise land over the result it skipped to.
+  */
+  const [beatAt, setBeatAt] = useState<{ key: string; beat: Beat; cut: boolean }>({
+    key: '',
+    beat: 'flip',
+    cut: false,
+  });
   const settleMs = outcome?.kind === 'bothShafted' ? SETTLE_BOTH_MS : SETTLE_MS;
+
+  const advance = useCallback((key: string, beat: Beat, cut = false) => {
+    setBeatAt((held) => {
+      const same = held.key === key;
+      if (same && BEATS.indexOf(held.beat) >= BEATS.indexOf(beat)) return held;
+      return { key, beat, cut: cut || (same && held.cut) };
+    });
+  }, []);
 
   useEffect(() => {
     if (revealKey === null || reducedMotion) return;
-    const at = (beat: Beat, ms: number): number =>
-      window.setTimeout(() => setBeatAt({ key: revealKey, beat }), ms);
+    const at = (beat: Beat, ms: number): number => window.setTimeout(() => advance(revealKey, beat), ms);
     const timers = [at('clash', CLASH_MS), at('impact', IMPACT_MS), at('settled', settleMs)];
     return () => {
       for (const timer of timers) window.clearTimeout(timer);
     };
-  }, [revealKey, reducedMotion, settleMs]);
+  }, [revealKey, reducedMotion, settleMs, advance]);
 
   const beat: Beat | null =
     revealKey === null ? null : reducedMotion ? 'settled' : beatAt.key === revealKey ? beatAt.beat : 'flip';
   const reached = (target: Beat): boolean =>
     beat !== null && BEATS.indexOf(beat) >= BEATS.indexOf(target);
+  const settled = reached('settled');
+  const cut = !reducedMotion && beatAt.key === revealKey && beatAt.cut;
 
   const hurt =
     outcome !== null &&
@@ -229,13 +248,18 @@ export function ShareOrShaft({
     ((outcome.kind === 'shafted' && outcome.from === youUid) || (outcome.kind === 'bothShafted' && amFinalist));
 
   useCue('sting', `${gameKey}:final`, stage === 'talk');
+  // The whistle has gone and the picks are being opened: the podium's drum
+  // roll, so the wait reads as the build-up it is rather than as a stall.
+  useCue('roll', `${gameKey}:closed`, stage === 'closed');
   useCue('gong', `${gameKey}:revealed`, stage === 'revealed');
   useCue(outcome?.kind === 'shared' ? 'chime' : 'shatter', `${gameKey}:impact`, reached('impact'));
   useBuzz(hurt ? BUZZ_SHAFTED : BUZZ_CORRECT, `${gameKey}:impact`, reached('impact') && amFinalist);
 
-  // The last five seconds of the pick, on every screen: the room should feel
-  // the clock running out on two people who have not decided yet.
-  const heartbeat = stage === 'pick' && view.secondsLeft > 0 && view.secondsLeft <= 5;
+  // The last five seconds of the pick, on the two finalists' screens only. On
+  // every screen it was a dozen heartbeats a few hundred milliseconds apart
+  // down one call — each device counts its own clock from its own snapshot —
+  // which is an echo, not a pulse. The two who are deciding hear it.
+  const heartbeat = stage === 'pick' && amFinalist && view.secondsLeft > 0 && view.secondsLeft <= 5;
   useCue('heartbeat', `${gameKey}:pick:${view.secondsLeft}`, heartbeat);
 
   const choose = useCallback(
@@ -248,7 +272,9 @@ export function ShareOrShaft({
   );
 
   // The whole final is playable from the keyboard, as the round is: 1 to share,
-  // 2 to shaft, and space for the quizmaster to move it on.
+  // 2 to shaft, and space for the quizmaster to move it on. During the reveal
+  // the first press only jumps this screen to the result — one press used to
+  // take the whole room to the final results in the middle of a shatter.
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
@@ -264,15 +290,16 @@ export function ShareOrShaft({
       if (stage === 'talk') {
         event.preventDefault();
         onOpenPicks();
-      } else if (stage === 'revealed') {
+      } else if (stage === 'revealed' && revealKey !== null) {
         event.preventDefault();
-        onNext();
+        if (settled) onNext();
+        else advance(revealKey, 'settled', true);
       }
     };
 
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [stage, amFinalist, myPick, isQuizmaster, choose, onOpenPicks, onNext]);
+  }, [stage, amFinalist, myPick, isQuizmaster, choose, onOpenPicks, onNext, revealKey, settled, advance]);
 
   if (!standoff) {
     return <p className="muted">Setting up the final…</p>;
@@ -318,6 +345,7 @@ export function ShareOrShaft({
       <div
         className="standoff"
         aria-live="polite"
+        data-stage={stage}
         data-outcome={acting ? outcome.kind : undefined}
         data-taker={shafterSide}
         data-shake={acting && hurt ? '' : undefined}
@@ -356,7 +384,7 @@ export function ShareOrShaft({
 
       {/* The light in the room as it lands: green for a share, red for a shaft,
           and the house going dark when both of them throw it away. */}
-      {acting ? <div className="standoff__wash" data-outcome={outcome.kind} aria-hidden="true" /> : null}
+      {acting && !cut ? <div className="standoff__wash" data-outcome={outcome.kind} aria-hidden="true" /> : null}
       {/* Joint winners get what any winner gets. */}
       <Confetti fire={outcome?.kind === 'shared' && reached('impact') && !reducedMotion} />
 
@@ -443,13 +471,13 @@ export function ShareOrShaft({
 
       {/* Third place, walking into the one light left on. Said in full by the
           headline a moment later, so it is hidden from a screen reader here. */}
-      {outcome?.kind === 'bothShafted' && acting && leaderAfter ? (
+      {outcome?.kind === 'bothShafted' && acting && !cut && leaderAfter ? (
         <p className="standoff__heir" aria-hidden="true">
           {leaderAfter === youUid ? 'You win it' : `${nameOf(leaderAfter)} wins it`}
         </p>
       ) : null}
 
-      {stage === 'revealed' && words && reached('settled') ? (
+      {stage === 'revealed' && words && settled ? (
         <div className="stack standoff__stage">
           <p className="standoff__headline">{words.headline}</p>
           {words.note ? <p className="muted hint">{words.note}</p> : null}

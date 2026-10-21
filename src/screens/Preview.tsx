@@ -1197,6 +1197,21 @@ export function Preview() {
       ),
     },
     {
+      // The wait between the whistle and the reveal: the drum roll and both
+      // seats bracing. It had no fixture, so it was never looked at.
+      title: 'Share or Shaft · turning them over',
+      node: (
+        <ShareOrShaft
+          room={finalRoom({ stage: 'closed', sealed: ['sam', 'greg'] })}
+          youUid="priya"
+          isQuizmaster={false}
+          view={finalView({ lockedIn: { sam: true, greg: true }, secondsLeft: 0 })}
+          onOpenPicks={noop}
+          onNext={noop}
+        />
+      ),
+    },
+    {
       title: 'Share or Shaft · shafted, told to the one who lost it',
       node: (
         <ShareOrShaft
