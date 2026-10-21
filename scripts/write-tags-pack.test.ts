@@ -186,7 +186,9 @@ describe('buildTagsPack', () => {
   });
 
   test('refuses a spec nobody picked, an unread drawing, and any writing', async () => {
-    const unpicked = picked.map((spec, i) => (i === 0 ? (TAG_SPECS[0] as TagSpec) : spec));
+    const first = picked[0] as TagSpec;
+    const unpickedFirst: TagSpec = { slug: first.slug, key: first.key, name: first.name, kind: first.kind, picture: first.picture };
+    const unpicked = picked.map((spec, i) => (i === 0 ? unpickedFirst : spec));
     await expect(buildTagsPack(invented(), { ...deps, specs: unpicked })).rejects.toThrow('no drawing picked');
 
     const unread = { ...clean };
