@@ -11,7 +11,30 @@ import { isItunesPreviewUrl } from './apple-media';
  * silent with nothing on screen to say why.
  */
 
-export type Cue = 'lock' | 'gong' | 'correct' | 'wrong' | 'sting' | 'fanfare';
+export type Cue =
+  | 'lock'
+  | 'gong'
+  | 'correct'
+  | 'wrong'
+  | 'sting'
+  | 'fanfare'
+  | 'shatter'
+  | 'chime'
+  | 'heartbeat'
+  | 'roll'
+  | 'join';
+
+/**
+ * The podium's drum roll: thirty hits a little under fifty milliseconds apart,
+ * swelling, so it reads as a roll rather than a rhythm. Built rather than
+ * written out because thirty near-identical lines hide the two numbers that
+ * matter — the spacing and the swell.
+ */
+const ROLL_HITS = 30;
+const ROLL_SPACING = 0.046;
+
+/** How long the drum roll runs, for the screen that has to land on its end. */
+export const ROLL_SECONDS = ROLL_HITS * ROLL_SPACING;
 
 const STORAGE_KEY = 'vibequiz.sound';
 const VOLUME_KEY = 'vibequiz.volume';
@@ -193,6 +216,55 @@ const CUES: Record<Cue, Voice[]> = {
     { type: 'triangle', from: E5, start: 0.5, duration: 0.2, gain: 0.85 },
     { type: 'triangle', from: G5, start: 0.7, duration: 0.75, gain: 0.9 },
     { type: 'sine', from: C6, start: 0.7, duration: 0.75, gain: 0.5 },
+  ],
+
+  /*
+    Shafted. A sub thump for the impact, a falling saw for the panel giving way,
+    and four short high clicks at uneven offsets for the pieces — uneven because
+    evenly spaced clicks are a rhythm, and breaking glass has none.
+  */
+  shatter: [
+    { type: 'sine', from: 90, to: 40, start: 0, duration: 0.45, gain: 0.95 },
+    { type: 'sawtooth', from: 900, to: 110, start: 0, duration: 0.42, gain: 0.45, cutoff: 2600 },
+    { type: 'square', from: 2400, to: 700, start: 0, duration: 0.05, gain: 0.3, cutoff: 6000 },
+    { type: 'square', from: 3100, start: 0.035, duration: 0.025, gain: 0.22, cutoff: 7000 },
+    { type: 'square', from: 1800, start: 0.08, duration: 0.03, gain: 0.2, cutoff: 7000 },
+    { type: 'square', from: 2700, start: 0.14, duration: 0.025, gain: 0.16, cutoff: 7000 },
+    { type: 'triangle', from: 1400, to: 650, start: 0.02, duration: 0.6, gain: 0.18 },
+  ],
+
+  // Shared. Two bells a third apart, then the fifth and the octave over them:
+  // the same C major the correct answer climbs, held instead of run up.
+  chime: [
+    { type: 'triangle', from: C5, start: 0, duration: 0.7, gain: 0.6 },
+    { type: 'triangle', from: E5, start: 0, duration: 0.7, gain: 0.55 },
+    { type: 'triangle', from: G5, start: 0.14, duration: 0.9, gain: 0.55 },
+    { type: 'sine', from: C6, start: 0.14, duration: 1.1, gain: 0.45 },
+  ],
+
+  // The last five seconds of the pick: lub-dub, low enough to be felt through
+  // laptop speakers more than heard.
+  heartbeat: [
+    { type: 'sine', from: 72, to: 48, start: 0, duration: 0.14, gain: 1.0 },
+    { type: 'sine', from: 66, to: 44, start: 0.2, duration: 0.16, gain: 0.8 },
+  ],
+
+  roll: Array.from({ length: ROLL_HITS }, (_, hit): Voice => ({
+    type: 'triangle',
+    // Alternating hands, a semitone-ish apart, is what keeps it a drum.
+    from: hit % 2 === 0 ? 196 : 182,
+    to: 110,
+    start: hit * ROLL_SPACING,
+    duration: 0.05,
+    gain: 0.25 + (0.6 * hit) / (ROLL_HITS - 1),
+    cutoff: 1400,
+  })),
+
+  // Somebody walked into the lobby. The quietest cue in the house, and only the
+  // quizmaster's device plays it — see `Lobby`.
+  join: [
+    { type: 'sine', from: G5, start: 0, duration: 0.12, gain: 0.4 },
+    { type: 'sine', from: C6, start: 0.08, duration: 0.26, gain: 0.35 },
   ],
 };
 

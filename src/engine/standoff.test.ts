@@ -7,6 +7,7 @@ import {
   potOf,
   settleStandoff,
   stakesFor,
+  takeFor,
   type Standoff,
 } from './standoff';
 import { PHASES, createRoom, type Player, type QuizQuestion, type RoomState } from './state';
@@ -216,6 +217,35 @@ describe('outcomeOf', () => {
       kind: 'bothShafted',
       pot: 49_300,
     });
+  });
+});
+
+describe('takeFor — what each seat counts to at the reveal', () => {
+  const base = standoffOf(NA9N_SCORES, ['first', 'second']);
+
+  test('is nothing until it is settled', () => {
+    expect(takeFor(base, 'first')).toBeNull();
+  });
+
+  test('a share counts both seats to half the pot', () => {
+    const shared = { ...base, picks: { first: 'share' as const, second: 'share' as const } };
+    expect([takeFor(shared, 'first'), takeFor(shared, 'second')]).toEqual([24_650, 24_650]);
+  });
+
+  test('a shaft counts the shafter to the whole pot and the other to nothing', () => {
+    const shafted = { ...base, picks: { first: 'share' as const, second: 'shaft' as const } };
+    expect([takeFor(shafted, 'first'), takeFor(shafted, 'second')]).toEqual([0, 49_300]);
+  });
+
+  test('both shafting counts both seats to nothing', () => {
+    const both = { ...base, picks: { first: 'shaft' as const, second: 'shaft' as const } };
+    expect([takeFor(both, 'first'), takeFor(both, 'second')]).toEqual([0, 0]);
+  });
+
+  test('a seat with a negative score counts to the pot, not to the score', () => {
+    const owing = standoffOf({ first: 4_000, second: -1_200 }, ['first', 'second']);
+    const shafted = { ...owing, picks: { first: 'share' as const, second: 'shaft' as const } };
+    expect(takeFor(shafted, 'second')).toBe(4_000);
   });
 });
 

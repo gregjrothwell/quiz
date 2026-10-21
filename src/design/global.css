@@ -3832,13 +3832,38 @@ select.input option {
    word to know which happened.
    ──────────────────────────────────────────────────────────────────────────── */
 
+/*
+  Two seats and the pot between them. On a phone the pot sits above, because
+  three columns of a 375px screen is no column at all.
+
+  `--meet` is how far each seat travels to touch the other: half the gap on a
+  phone, and half the pot plus the gap where the pot stands between them. The
+  reveal moves seats by it and by nothing else, so it is the one number to
+  change if the layout ever does.
+*/
 .standoff {
+  --seat-gap: clamp(0.75rem, 3vw, 1.5rem);
+  --meet: calc(var(--seat-gap) / 2);
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: clamp(0.75rem, 3vw, 1.5rem);
+  grid-template-areas:
+    'pot pot'
+    'left right';
+  gap: var(--seat-gap);
+}
+
+@media (min-width: 44rem) {
+  .standoff {
+    --pot-col: 12rem;
+    --meet: calc(var(--pot-col) / 2 + var(--seat-gap));
+    grid-template-columns: 1fr var(--pot-col) 1fr;
+    grid-template-areas: 'left pot right';
+    align-items: center;
+  }
 }
 
 .standoff__seat {
+  position: relative;
   text-align: center;
   padding: clamp(1rem, 3vw, 1.6rem) 0.75rem;
   border: 1px solid var(--edge);
@@ -3847,11 +3872,22 @@ select.input option {
   min-width: 0;
 }
 
+.standoff__seat[data-side='left'] {
+  grid-area: left;
+  --toward: 1;
+}
+
+.standoff__seat[data-side='right'] {
+  grid-area: right;
+  --toward: -1;
+}
+
 .standoff__seat--you {
   border-color: var(--cyan-dim);
 }
 
 .standoff__seat p {
+  position: relative;
   margin: 0;
 }
 
@@ -3876,6 +3912,7 @@ select.input option {
   font-size: 0.85rem;
   color: var(--ink-soft);
   letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Two classes, so it outranks the seat's own `p` reset without `!important`. */
@@ -3891,8 +3928,34 @@ select.input option {
   color: var(--ink-dim);
 }
 
+/*
+  Locked in lands as a stamp rather than a change of words. It is the only news
+  the rest of the room gets during the pick, so it should arrive as an event —
+  and an inline box, so the border hugs the words and not the seat.
+*/
 .standoff__state[data-state='locked'] {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border: 2px solid var(--amber);
+  border-radius: var(--radius-sm);
   color: var(--amber);
+  transform: rotate(-4deg);
+  animation: stamp 420ms cubic-bezier(0.3, 1.4, 0.5, 1) backwards;
+}
+
+@keyframes stamp {
+  0% {
+    opacity: 0;
+    transform: scale(1.9) rotate(-9deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.94) rotate(-4deg);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(-4deg);
+  }
 }
 
 .standoff__state[data-state='share'],
@@ -3912,6 +3975,396 @@ select.input option {
   color: var(--wrong);
 }
 
+/* Both picks turn over together, the way the balls open on the show. */
+.standoff__state[data-state='share'],
+.standoff__state[data-state='shaft'],
+.standoff__state[data-state='none'] {
+  animation: turn-over 480ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+@keyframes turn-over {
+  from {
+    opacity: 0;
+    transform: perspective(40rem) rotateX(-90deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── The pot ── */
+
+.standoff__pot {
+  grid-area: pot;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.standoff__pot p {
+  margin: 0;
+}
+
+.standoff__pot-label {
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+/* The biggest number on the screen, because it is the whole question. */
+.standoff__pot-sum {
+  font-family: var(--shout);
+  font-size: clamp(2.6rem, 10vw, 4.2rem);
+  line-height: 1;
+  color: var(--amber);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 24px rgb(255 178 38 / 0.55);
+}
+
+/* ── The reveal, acted out ──────────────────────────────────────────────────
+   `data-outcome` arrives on `.standoff` at the `clash` beat (`ShareOrShaft`).
+   Transform and opacity only, as everywhere in this file. Where a seat has to
+   *stay* moved — the share — the fill is `forwards`, which is safe here for the
+   reason it was not on `.tile`: nothing later wants to move that seat again.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+/* A share: the pot goes, and the two seats slide into one desk. */
+.standoff[data-outcome='shared'] .standoff__pot {
+  animation: pot-out 480ms ease forwards;
+}
+
+.standoff[data-outcome='shared'] .standoff__seat {
+  border-color: var(--correct);
+  animation: meet 720ms cubic-bezier(0.2, 0.8, 0.2, 1) 160ms forwards;
+}
+
+@keyframes meet {
+  to {
+    transform: translateX(calc(var(--meet) * var(--toward)));
+  }
+}
+
+@keyframes pot-out {
+  to {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+/* A shaft: the pot is carried off to the side that took it. */
+.standoff[data-taker='left'] {
+  --take: -1;
+}
+
+.standoff[data-taker='right'] {
+  --take: 1;
+}
+
+.standoff[data-outcome='shafted'] .standoff__pot {
+  animation: pot-taken 620ms cubic-bezier(0.5, 0, 0.7, 0.4) 200ms forwards;
+}
+
+@keyframes pot-taken {
+  to {
+    opacity: 0;
+    transform: translateX(calc(var(--take) * 9rem)) scale(0.5);
+  }
+}
+
+.standoff[data-outcome='bothShafted'] .standoff__pot {
+  animation: pot-gone 600ms ease 200ms forwards;
+}
+
+@keyframes pot-gone {
+  to {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+}
+
+/* The shafter goes all the way across — twice `--meet` is the other seat's edge. */
+.standoff__seat[data-role='shafter'] {
+  z-index: 1;
+  animation: lunge 520ms cubic-bezier(0.3, 0.7, 0.3, 1);
+}
+
+@keyframes lunge {
+  45% {
+    transform: translateX(calc(var(--meet) * 2 * var(--toward))) scale(1.05);
+  }
+}
+
+/* Both shafting: they meet in the middle, hard, and bounce off. */
+.standoff__seat[data-role='wrecked'] {
+  animation: collide 620ms cubic-bezier(0.3, 0.7, 0.3, 1);
+}
+
+@keyframes collide {
+  37% {
+    transform: translateX(calc(var(--meet) * var(--toward))) scale(1.04);
+  }
+  60% {
+    transform: translateX(calc(var(--meet) * -0.25 * var(--toward))) rotate(calc(var(--toward) * -3deg));
+  }
+}
+
+/*
+  Broken. The seat underneath stays readable — the name and the pick are still
+  facts somebody may need — and the pieces fly off a copy laid over it. The
+  border turns at the moment of impact rather than when the lunge sets off.
+*/
+.standoff__seat[data-broken] {
+  border-color: var(--wrong);
+  transition: border-color 0s 230ms;
+}
+
+.standoff__seat[data-broken] .standoff__name,
+.standoff__seat[data-broken] .standoff__stake {
+  opacity: 0.72;
+}
+
+.standoff__crack {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  fill: none;
+  stroke: rgb(255 46 77 / 0.6);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+  animation: lift 1ms linear 230ms backwards;
+}
+
+.standoff__crack polyline + polyline {
+  stroke-width: 1;
+}
+
+.standoff__shards {
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+}
+
+/*
+  Invisible at rest, so nothing covers the seat before the hit; the animation
+  starts them solid at impact and throws them. `forwards` keeps them gone.
+*/
+.standoff__shards i {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, var(--panel-hi), var(--panel));
+  opacity: 0;
+  animation: shard 1100ms cubic-bezier(0.3, 0.1, 0.7, 1) calc(230ms + var(--lag, 0ms)) forwards;
+}
+
+@keyframes shard {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) rotate(var(--spin));
+  }
+}
+
+/* Only on the screen of somebody who just lost everything. */
+.standoff[data-shake] {
+  animation: shake 380ms ease 230ms;
+}
+
+@keyframes shake {
+  20% {
+    transform: translate(-7px, 2px);
+  }
+  40% {
+    transform: translate(6px, -2px);
+  }
+  60% {
+    transform: translate(-4px, 1px);
+  }
+  80% {
+    transform: translate(2px, 0);
+  }
+}
+
+/*
+  The light in the room as it lands. Fixed over the whole stage and behind the
+  content's own layer, painted once, and only its opacity moves — the same deal
+  as the blaze on the rig. Ends at zero, so it never sits over anything that
+  has to be read.
+*/
+.standoff__wash {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.standoff__wash[data-outcome='shared'] {
+  background: radial-gradient(90% 60% at 50% 35%, rgb(31 221 138 / 0.28), transparent 70%);
+  animation: wash 1600ms ease-out 300ms;
+}
+
+.standoff__wash[data-outcome='shafted'] {
+  background: radial-gradient(90% 60% at 50% 35%, rgb(255 46 77 / 0.38), transparent 70%);
+  animation: wash 1400ms ease-out 230ms;
+}
+
+/* Both shafting: the house goes dark, and one light finds third place. */
+.standoff__wash[data-outcome='bothShafted'] {
+  background: rgb(1 6 16 / 0.92);
+  animation: blackout 3000ms ease 500ms;
+}
+
+@keyframes wash {
+  20% {
+    opacity: 1;
+  }
+}
+
+@keyframes blackout {
+  12%,
+  72% {
+    opacity: 1;
+  }
+}
+
+.standoff__heir {
+  position: relative;
+  z-index: 6;
+  margin: 0;
+  text-align: center;
+  font-family: var(--shout);
+  font-size: clamp(2rem, 8vw, 3.4rem);
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--amber);
+  text-shadow: 0 0 30px rgb(255 178 38 / 0.8);
+  animation: rise 700ms cubic-bezier(0.2, 0.8, 0.2, 1) 1100ms backwards;
+}
+
+/* ── The two buttons ────────────────────────────────────────────────────────
+   The two most charged buttons in the game, so they are the biggest, and they
+   wear the reveal's own colours before anybody has revealed anything.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.picker--standoff {
+  gap: var(--seat-gap, clamp(0.75rem, 3vw, 1.5rem));
+  flex-wrap: nowrap;
+}
+
+.picker--standoff .pick {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: clamp(8rem, 22vw, 11rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+}
+
+.picker--standoff .pick b {
+  font-size: clamp(2.2rem, 9vw, 3.6rem);
+  line-height: 1;
+}
+
+.picker--standoff .pick span {
+  color: var(--ink-soft);
+}
+
+/* A keyboard hint on a phone is a hint to press a key that is not there. */
+.picker--standoff .pick__key {
+  display: none;
+}
+
+@media (min-width: 64rem) {
+  .picker--standoff .pick__key {
+    display: block;
+  }
+}
+
+.pick--share,
+.pick--share[aria-pressed='true'] {
+  border-color: rgb(31 221 138 / 0.55);
+  background: linear-gradient(180deg, #0b3a2a, #04170f);
+}
+
+.pick--share b {
+  color: var(--correct);
+}
+
+.pick--share::after,
+.pick--share[aria-pressed='true']::after {
+  background: linear-gradient(90deg, transparent, var(--correct), transparent);
+  box-shadow: 0 0 18px 2px rgb(31 221 138 / 0.7);
+}
+
+.pick--share:hover:not(:disabled) {
+  border-color: var(--correct);
+}
+
+.pick--shaft,
+.pick--shaft[aria-pressed='true'] {
+  border-color: rgb(255 46 77 / 0.55);
+  background: linear-gradient(180deg, #3d0a14, #17040a);
+}
+
+.pick--shaft b {
+  color: var(--wrong);
+}
+
+.pick--shaft::after,
+.pick--shaft[aria-pressed='true']::after {
+  background: linear-gradient(90deg, transparent, var(--wrong), transparent);
+  box-shadow: 0 0 18px 2px rgb(255 46 77 / 0.7);
+}
+
+.pick--shaft:hover:not(:disabled) {
+  border-color: var(--wrong);
+}
+
+/* Both buttons lock once a pick is made, but the one chosen stays lit rather
+   than fading with the other — the finalist should see what they locked in. */
+.standoff__stage .pick[aria-pressed='true']:disabled {
+  opacity: 1;
+}
+
+/* Stamped across the foot of the one you chose — over the small print, never
+   over the word, which is the thing the finalist needs to see they locked in. */
+.pick__seal {
+  position: absolute;
+  inset: auto 0 0.8rem;
+  margin: 0 auto;
+  width: max-content;
+  height: max-content;
+  padding: 0.2rem 0.8rem;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius-sm);
+  background: rgb(4 16 31 / 0.72);
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ink);
+  transform: rotate(-4deg);
+  animation: stamp 420ms cubic-bezier(0.3, 1.4, 0.5, 1) backwards;
+}
+
+/* ── Around them ── */
+
 .standoff__stage {
   align-items: center;
   text-align: center;
@@ -3926,26 +4379,11 @@ select.input option {
   text-align: left;
 }
 
-/* Both buttons lock once a pick is made, but the one chosen stays lit rather
-   than fading with the other — the finalist should see what they locked in. */
-.standoff__stage .pick[aria-pressed='true']:disabled {
-  opacity: 1;
-}
-
-.standoff__clock {
-  margin: 0;
-  font-family: var(--tech);
-  font-weight: 700;
-  font-size: clamp(2rem, 7vw, 3rem);
-  line-height: 1;
-  color: var(--cyan);
-  font-variant-numeric: tabular-nums;
-}
-
 .standoff__headline {
   margin: 0;
   font-family: var(--shout);
   font-size: clamp(1.5rem, 5vw, 2.4rem);
   text-transform: uppercase;
   line-height: 1.1;
+  animation: lift 420ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
 }

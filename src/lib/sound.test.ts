@@ -13,6 +13,7 @@ import {
   VOLUME_RANGE_DB,
   volumeForPosition,
   playSequence,
+  ROLL_SECONDS,
   setVolume,
   startClock,
   stopPreview,
@@ -108,6 +109,36 @@ describe('clockVoices', () => {
     for (const ratio of ratios) {
       expect(Math.abs(ratio - Math.round(ratio))).toBeGreaterThan(0.05);
     }
+  });
+
+  test('swells the drum roll, and ends it when the podium is told it ends', () => {
+    // #given the roll, hit by hit
+    const hits = cueVoices('roll');
+    const gains = hits.map((voice) => voice.gain);
+
+    // #then every hit is louder than the one before, so it builds rather than drones
+    for (let hit = 1; hit < gains.length; hit += 1) {
+      expect(gains[hit]).toBeGreaterThan(gains[hit - 1] ?? 0);
+    }
+
+    // #and the last hit starts inside ROLL_SECONDS, which the final screen times
+    // the winner's riser against
+    const last = hits[hits.length - 1];
+    expect(last?.start ?? Infinity).toBeLessThan(ROLL_SECONDS);
+  });
+
+  test('keeps the new cues inside the house balance', () => {
+    // #given the loudest single voice the house cues were balanced on (the lock)
+    const loudest = 1.1;
+
+    // #then nothing added for the final, the podium or the lobby goes past it
+    for (const cue of ['shatter', 'chime', 'heartbeat', 'roll', 'join'] as const) {
+      for (const voice of cueVoices(cue)) expect(voice.gain).toBeLessThanOrEqual(loudest);
+    }
+
+    // #and the lobby's arrival is the quietest thing in the house
+    const joinPeak = Math.max(...cueVoices('join').map((voice) => voice.gain));
+    expect(joinPeak).toBeLessThan(Math.max(...cueVoices('correct').map((voice) => voice.gain)));
   });
 
   test('schedules nothing once the clock has run out', () => {

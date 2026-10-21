@@ -437,7 +437,15 @@ function finalRoom(standoff: Partial<Standoff>, overrides: Partial<RoomState> = 
 }
 
 function finalView(overrides: Partial<StandoffView> = {}): StandoffView {
-  return { lockedIn: { sam: false, greg: false }, myPick: null, secondsLeft: 42, pick: () => undefined, ...overrides };
+  const secondsLeft = overrides.secondsLeft ?? 42;
+  return {
+    lockedIn: { sam: false, greg: false },
+    myPick: null,
+    secondsLeft,
+    remainingMs: secondsLeft * 1000,
+    pick: () => undefined,
+    ...overrides,
+  };
 }
 
 /**
@@ -1169,6 +1177,22 @@ export function Preview() {
             { scores: { ...FINAL_SCORES, sam: 5_550, greg: 0 }, lastDeltas: { sam: 2_450, greg: -2_450 } },
           )}
           youUid="greg"
+          isQuizmaster
+          view={finalView()}
+          onOpenPicks={noop}
+          onNext={noop}
+        />
+      ),
+    },
+    {
+      title: 'Share or Shaft · both shared, and the seats come together',
+      node: (
+        <ShareOrShaft
+          room={finalRoom(
+            { stage: 'revealed', sealed: ['sam', 'greg'], picks: { sam: 'share', greg: 'share' } },
+            { scores: { ...FINAL_SCORES, sam: 2_775, greg: 2_775 }, lastDeltas: { sam: -325, greg: 325 } },
+          )}
+          youUid="sam"
           isQuizmaster
           view={finalView()}
           onOpenPicks={noop}
