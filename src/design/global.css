@@ -3086,6 +3086,11 @@ select.input option {
   animation: lift 520ms cubic-bezier(0.2, 0.8, 0.2, 1) var(--at, 0ms) backwards;
 }
 
+/* Invisible while the podium builds, so it must not take a click either. */
+.finale__after[data-held] {
+  pointer-events: none;
+}
+
 /* Over the whole stage, never in the way: see `Confetti`. */
 .confetti {
   position: fixed;
@@ -4171,6 +4176,24 @@ select.input option {
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+/*
+  The whistle has gone and the picks are being opened. Both seats brace, in
+  step, under the drum roll — the screen's one sign that this wait is the
+  build-up and not a stall. Only where motion is welcome: an endless loop is
+  the one kind of animation the blanket reduced-motion rule turns into churn.
+*/
+@media (prefers-reduced-motion: no-preference) {
+  .standoff[data-stage='closed'] .standoff__seat {
+    animation: brace 520ms ease-in-out infinite alternate;
+  }
+}
+
+@keyframes brace {
+  to {
+    transform: scale(1.025);
   }
 }
 

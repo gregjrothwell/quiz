@@ -200,12 +200,41 @@ export function Final({
       for (const timer of timers) window.clearTimeout(timer);
     };
   }, [staging]);
-  const landed = !staging || beat === 'landed';
+  /*
+    A tap or Space jumps to the result. The build holds "Another round" back
+    for about four seconds, which is a long time for a quizmaster who has seen
+    a podium before. The cut moves every held entrance's start to now — their
+    animations are already running, so a start in the past simply finishes
+    them — and fires the landing straight away.
+
+    While the build runs, everything under the podium is invisible but would
+    still take a click, so it takes none (`data-held`): a tap meant to skip must
+    never land on a button nobody can see.
+  */
+  const [cut, setCut] = useState(false);
+  const landed = !staging || beat === 'landed' || cut;
+  const holding = staging && !cut;
+
+  useEffect(() => {
+    if (landed) return;
+    const skip = (): void => setCut(true);
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.key !== ' ' && event.key !== 'Enter') return;
+      event.preventDefault();
+      skip();
+    };
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('pointerdown', skip);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('pointerdown', skip);
+    };
+  }, [landed]);
 
   // Keyed on the game so a second round in the same room gets its own fanfare,
   // and a re-render on the final screen does not. Not again on coming back to
   // a podium this page has already built.
-  useCue('roll', podiumKey, staging && beat === 'roll');
+  useCue('roll', podiumKey, holding && beat === 'roll');
   useCue('fanfare', podiumKey, hasPodium && firstSight && landed);
 
   const [cardState, setCardState] = useState<CardState>('idle');
@@ -256,7 +285,7 @@ export function Final({
 
       <header>
         <p className="eyebrow">{room.packTitle ?? 'That’s the round'}</p>
-        <h1 className="display display--hero finale__title" style={at(staging ? LANDED_AT - 200 : 0)}>
+        <h1 className="display display--hero finale__title" style={at(holding ? LANDED_AT - 200 : 0)}>
           {winnerName
             ? leaders.length > 1
               ? `${winnerName} — dead heat`
@@ -274,7 +303,7 @@ export function Final({
           ]
             .filter(Boolean)
             .join(' ')}
-          style={{ '--chair-at': `${staging ? LANDED_AT + 500 : 600}ms` } as CSSProperties}
+          style={{ '--chair-at': `${holding ? LANDED_AT + 500 : 600}ms` } as CSSProperties}
         >
           {slots.map((riser, slot) => {
             const player = riser ? players[riser.uid] : undefined;
@@ -284,7 +313,7 @@ export function Final({
               <div
                 key={riser.uid}
                 className={`riser riser--${riser.height}`}
-                style={at(staging ? RISER_AT[riser.height] : 0)}
+                style={at(holding ? RISER_AT[riser.height] : 0)}
               >
                 <span className="riser__pos">{riser.position}</span>
                 <span className="riser__name">{player.name}</span>
@@ -292,7 +321,7 @@ export function Final({
                   {/* Counts as the riser arrives, not while it is still waiting
                       off stage — a number that finished before anyone could
                       see it is no count at all. */}
-                  <ScoreTicker value={riser.score} from={0} delayMs={staging ? RISER_AT[riser.height] : 0} />
+                  <ScoreTicker value={riser.score} from={0} delayMs={holding ? RISER_AT[riser.height] : 0} />
                 </span>
                 {riser.more > 0 ? <span className="riser__more">+{riser.more} level</span> : null}
               </div>
@@ -303,7 +332,11 @@ export function Final({
         </div>
       ) : null}
 
-      <div className="finale__after" style={at(staging ? LANDED_AT + 300 : 0)}>
+      <div
+        className="finale__after"
+        style={at(holding ? LANDED_AT + 300 : 0)}
+        data-held={landed ? undefined : ''}
+      >
         <Standings players={players} scores={scores} youUid={youUid} />
 
         <Awards awards={awards} players={players} youUid={youUid} />
