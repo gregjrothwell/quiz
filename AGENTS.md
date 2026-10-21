@@ -29,6 +29,7 @@ React 18, TypeScript, Vite, Vitest. Firebase client SDK. Deploy is `gh-pages` fr
 | `npm run seed-vault` | Admin SDK; needs `GOOGLE_APPLICATION_CREDENTIALS` under `.secrets/` |
 | `npm run fold-votes [-- --go]` | What the office voted out. Dry run by default; `--go` writes the blocklist |
 | `npm run read-games` / `audit-players` | Kept rounds, then per-player timings. Admin SDK; the client cannot |
+| `npm run read-traces [-- --name cass]` | What each device saw of question one: seen late, or wrote slowly ([`cass-q1.md`](docs/decisions/cass-q1.md)) |
 | `npm run deploy` | `build` then `gh-pages` |
 
 `scripts/` that touch the live project stay out of `npm test` on purpose.

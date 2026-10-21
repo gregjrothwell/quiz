@@ -203,8 +203,9 @@ let vault: LiteFirestore | null = null;
  * Lite sends every write as its own request, so the three refusals a reveal
  * expects cost a request each rather than a reopen of the main SDK's write
  * stream — see `resolveAnswer`. Same app, so the same signed-in user and the
- * same App Check token. Made on first use, which is the quizmaster's first
- * reveal; nobody else ever needs it.
+ * same App Check token. Made on first use: the quizmaster's first reveal, and
+ * since 21 October 2026 every device's question-one trace (`lib/q1Trace.ts`),
+ * which goes over Lite for the same reason.
  */
 export function vaultFirestore(): LiteFirestore {
   if (!vault) {

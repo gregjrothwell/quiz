@@ -1,6 +1,6 @@
 # Office feedback — 9 October 2026
 
-> **Owner: Greg Rothwell. Last updated: 9 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 21 October 2026. Budget: 250 lines.**
 
 Two rounds in `XFJX` this morning (Name that Tune 20 Qs, then Catchphrase 10 Qs, 5 seats,
 10s), on the day of the 30-player game. Read with `read-games` and a one-off Admin script over
@@ -46,6 +46,10 @@ or #67/#69 (6 Oct), would be the next thing to check.
 sent) or *didn't reach the room in time* (sent, late). Same open question as 6 October. Ask her.
 
 Not done: no code changed; nothing replayed; no browser repro of a lagged Q1.
+
+> **Correction, 21 October 2026.** Superseded by [`cass-q1.md`](cass-q1.md): every miss is a 10s
+> round (8 of 24; 0 of 22 at 15s), and her Q1 answers land 2–5.5s behind her clock. "None in the
+> 10 before" held for that window only — WAM6, 16 September, was a miss too.
 
 ## 2. Is the big game off limits after two rounds this morning?
 

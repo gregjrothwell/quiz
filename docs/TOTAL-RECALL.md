@@ -24,6 +24,14 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-21 — The question-one trace: built, PR open, not live
+
+Greg: "Build the Q1 trace for every device … Don't go live." Every device files one `q1Traces/{gameId}_{uid}` per round over Lite: how late it saw Q1 in server time, how long its answer write took, tap, reveal, counted. Rules create-only; e2e allow fails on the old rules and passes on the new. Local e2e runs now (Homebrew `openjdk@21`, not on PATH). Readings and the fix each points at: [`cass-q1.md`](decisions/cass-q1.md#the-trace--greg-21-oct-build-it--dont-go-live).
+
+## 2026-10-21 — Cass's question one is the 10-second window; #94 and #96 checked live
+
+Read off `games/` back to 9 Sep. Cass misses Q1 on **8 of 24 10s rounds and 0 of 22 15s rounds**; her Q1 answers land 2–5.5s behind her own clock (`at − elapsedMs`, 4.6s again in 79YX today), her later ones 0.1s. That supersedes the 9 Oct shared-clock hypothesis, and "none before 6 Oct" was wrong (WAM6, 16 Sep). The lag's cause is open; options in [`cass-q1.md`](decisions/cass-q1.md). Today's three rounds she scored Q1. Live checks: The Price is Right played (3U48, 8/8 answered all ten); Random Round 79YX ended on a tune.
+
 ## 2026-10-21 — Live: #96 (gh-pages `dbe92b1`): The Price is Right, 81, blind
 
 Greg: "Go live with #96." PR CI green (Playwright against emulators), merged `8117b23` 09:04 BST → build, e2e, rules, gh-pages green 09:10. Live `index-BAaZqtS-` byte-identical to a local build; `tags.json` served byte-identical with no answer field; 81/81 pictures 200; on the show shelf. Seeded earlier the same morning (81/81). #93 marked merged with it. Live check: the first office round, `read-games --pack tags`. [`price-is-right.md`](decisions/price-is-right.md).

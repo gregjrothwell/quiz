@@ -102,9 +102,9 @@ scoring 500 + rank 500/400/300/200/100.
 11. **`firstMs` and the pack picker are live and unplayed.** It is a deterrent,
     so the only test is whether his behaviour changes next round:
     [`first-touch.md`](decisions/first-touch.md).
-12. **Cass loses question 1**: no Q1 answer in 4 of her 10 rounds since 6 Oct, none before;
-    later fine. She saw **neither** verdict message, just no points; shared-clock theory may be
-    wrong ([`office-feedback-9-oct.md`](decisions/office-feedback-9-oct.md)). She is watching for it.
+12. **Cass loses question 1 on 10s rounds** (8/24 missed; 0/22 on 15s, 21 Oct): her Q1 answers land
+    ~2–5.5s behind her own clock, no later one does, and a 10s fold leaves no room. Why is unknown:
+    **a Q1 trace from every device is built, PR open, not live** — then `read-traces` ([`cass-q1.md`](decisions/cass-q1.md)).
 13. **Reveal over Firestore Lite, live 7 Oct (#71)**: all four at once, median vault step 71ms v #70's 167ms in a
     browser; **the next office round's `read-games` is the live check** ([`office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md#4-the-slow-reveal)).
 14. **Loose ends from 26–27 September**: five new tunes transcribed to nothing
@@ -118,7 +118,7 @@ scoring 500 + rank 500/400/300/200/100.
     two more from 6 Oct, and six Vite servers from 4–9 Sep (5173–5175, 5277, 5288).
 16. **#67 live 6 Oct 08:15:** Catchphrase 60→90 (blind), Sleeves 168→212, On the box 296→445, Tunes 268→424; seeded 378, read back 1,171/1,171. **The first rounds played are the live check** (the harder Catchphrase batches, step 9 of [`go-live-oct-2026.md`](decisions/go-live-oct-2026.md)). Plan for Greg's feedback: [`pack-growth-plan.md`](decisions/pack-growth-plan.md). Freshness weekdays 08:12.
 17. **#69 live 6 Oct 13:05 BST** (after `RRGM`): Blankety Blank 148 (21 American out, 29 British in); **The Price Was Right**, 95 ONS prices, blind ([`price-was-right.md`](decisions/price-was-right.md)), `ordered` options; the chair seats a tie touching the podium; Bonus Catchphrase options from frame one. Seeded 124, read back 243/243; `host-room --pack prices` (`P3E9`) revealed from the vault in 0.28s. **Played `XRUE` 7 Oct (47%); 6 of 95 gave the answer away. #71 live 7 Oct: all options under today's price, 8 decoys over it, no reseed; podium ties; `npm run draw-overnight` (Greg runs it, never opens the sheets) — [`office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md).** `AGENTS.md`: world-famous American is fine, needing American knowledge is not.
-18. **#94 live 21 Oct:** the lobby's two card grids shelved, show rounds first ([`lobby-shelves.md`](decisions/lobby-shelves.md), was "the category page"); Random Round never ends on a sleeve or a price ([`random-round.md`](decisions/random-round.md#20-october-2026--the-last-question-is-never-a-sleeve-or-a-price)). **#96 live 21 Oct: The Price is Right** (`tags`, blind, a picture and today's price; seeded 81/81, `host-room` revealed) — [`price-is-right.md`](decisions/price-is-right.md). Not in Random Round until Greg says, once played. Lint is red locally only from stale `.claude/worktrees`; `eslint . --ignore-pattern '.claude/**'` is clean.
+18. **#94 live 21 Oct:** the lobby's two card grids shelved, show rounds first ([`lobby-shelves.md`](decisions/lobby-shelves.md), was "the category page"); Random Round never ends on a sleeve or a price ([`random-round.md`](decisions/random-round.md#20-october-2026--the-last-question-is-never-a-sleeve-or-a-price)). **#96 live 21 Oct: The Price is Right** (`tags`, blind, a picture and today's price; seeded 81/81, `host-room` revealed) — [`price-is-right.md`](decisions/price-is-right.md). **Both checked live 21 Oct:** 3U48 played The Price is Right, 8/8 answering all ten, reveals ≤0.6s, no retries; 79YX's Random Round ended on a tune. Not in Random Round until Greg says. Lint is red locally only from stale `.claude/worktrees`; `eslint . --ignore-pattern '.claude/**'` is clean.
 
 ## Where things are
 

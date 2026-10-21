@@ -415,7 +415,7 @@ export function currentQuestion(state: RoomState): QuizQuestion | null {
 }
 
 /** This room's answer window in milliseconds, which is what everything measures in. */
-export function questionDurationMs(state: RoomState): number {
+export function questionDurationMs(state: Pick<RoomState, 'durationSecs'>): number {
   return state.durationSecs * 1000;
 }
 
