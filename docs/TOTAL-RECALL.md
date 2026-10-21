@@ -24,6 +24,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-21 — Live: #96 (gh-pages `dbe92b1`): The Price is Right, 81, blind
+
+Greg: "Go live with #96." PR CI green (Playwright against emulators), merged `8117b23` 09:04 BST → build, e2e, rules, gh-pages green 09:10. Live `index-BAaZqtS-` byte-identical to a local build; `tags.json` served byte-identical with no answer field; 81/81 pictures 200; on the show shelf. Seeded earlier the same morning (81/81). #93 marked merged with it. Live check: the first office round, `read-games --pack tags`. [`price-is-right.md`](decisions/price-is-right.md).
+
 ## 2026-10-21 — Live: #94 (gh-pages `3b00a0e`): Random Round's last question, the lobby shelves; The Price is Right seeded
 
 Greg: "Go live with #94." CI green on the PR head (Playwright against emulators), merged `565d20e` 08:41 BST → build, e2e, rules, gh-pages green 08:47. Live `index-DLJOhSAP` is byte-identical to a local build of `565d20e`; the finale list and the shelves are in it, and the live gallery shows both shelves. Live check: the next office Random Rounds. Before it, on Greg's word: The Price is Right seeded (81 added, read back 81/81) and `host-room --pack tags` revealed in 149 ms with no payload logged; not deployed (`decisions/price-is-right.md` lands with its PR).
