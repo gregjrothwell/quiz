@@ -3,6 +3,7 @@ import { isBonusCatchphrase } from './catchphraseBonus';
 import { optionsAtMs } from './optionsHold';
 import {
   dealRandomRound,
+  FINALE_SOURCES,
   questionPack,
   quotasFor,
   randomPackSummary,
@@ -63,6 +64,18 @@ function pools(): RandomPools {
         difficulty: index % 3 === 0 ? 'easy' : index % 3 === 1 ? 'medium' : 'hard',
       }),
     ),
+  };
+}
+
+/** Deep enough for a round of 25, with every level in every source. */
+function bigPools(): RandomPools {
+  return {
+    screens: pool('screens', 30),
+    sleeves: pool('sleeves', 30),
+    tunes: pool('tunes', 30),
+    catchphrase: pool('catchphrase', 30),
+    blanks: pool('blanks', 30),
+    prices: pool('prices', 30, { ordered: true }),
   };
 }
 
@@ -205,6 +218,65 @@ describe('dealRandomRound', () => {
     expect(new Set(dealt.map((question) => question.sourcePack))).toEqual(new Set(RANDOM_SOURCES));
     const ranks = dealt.map((question) => DIFFICULTY_RANK[question.difficulty]);
     expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
+  });
+
+  test('never ends on a sleeve or a price, at any level or length', () => {
+    for (const level of ['mixed', 'medium', 'ramp'] as const) {
+      for (const count of [10, 15, 20, 25]) {
+        for (let seed = 1; seed <= 40; seed += 1) {
+          const dealt = dealRandomRound(bigPools(), asked(), count, level, seededRng(seed));
+          const last = dealt[dealt.length - 1]?.sourcePack;
+          expect(last === undefined ? false : FINALE_SOURCES.includes(last as RandomSource)).toBe(true);
+          expect(last).not.toBe('sleeves');
+          expect(last).not.toBe('prices');
+        }
+      }
+    }
+  });
+
+  test('sleeves and prices are still dealt, earlier in the round', () => {
+    for (let seed = 1; seed <= 40; seed += 1) {
+      const dealt = dealRandomRound(bigPools(), asked(), 10, 'ramp', seededRng(seed));
+      const sources = dealt.map((question) => question.sourcePack);
+      expect(sources).toContain('sleeves');
+      expect(sources).toContain('prices');
+    }
+  });
+
+  test('the last question counts against its source, so every share holds', () => {
+    for (let seed = 1; seed <= 40; seed += 1) {
+      const dealt = dealRandomRound(bigPools(), asked(), 15, 'ramp', seededRng(seed));
+      expect(dealt).toHaveLength(15);
+      expect(new Set(dealt.map((question) => question.id)).size).toBe(15);
+      const shares = RANDOM_SOURCES.map(
+        (source) => dealt.filter((question) => question.sourcePack === source).length,
+      );
+      expect(shares).toEqual(quotasFor(15, RANDOM_SOURCES.length));
+    }
+  });
+
+  test('The Ladder ends on a hard question when a fair source has one fresh', () => {
+    for (let seed = 1; seed <= 40; seed += 1) {
+      const dealt = dealRandomRound(bigPools(), asked(), 20, 'ramp', seededRng(seed));
+      const ranks = dealt.map((question) => DIFFICULTY_RANK[question.difficulty]);
+      expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
+      expect(dealt[dealt.length - 1]?.difficulty).toBe('hard');
+    }
+  });
+
+  test('a fair source whose hard questions are all served is passed over on The Ladder', () => {
+    const served: RandomAsked = {
+      ...asked(),
+      screens: new Set(bigPools().screens.filter((q) => q.difficulty === 'hard').map((q) => q.id)),
+      tunes: new Set(bigPools().tunes.filter((q) => q.difficulty === 'hard').map((q) => q.id)),
+      blanks: new Set(bigPools().blanks.filter((q) => q.difficulty === 'hard').map((q) => q.id)),
+    };
+    for (let seed = 1; seed <= 20; seed += 1) {
+      const dealt = dealRandomRound(bigPools(), served, 10, 'ramp', seededRng(seed));
+      const last = dealt[dealt.length - 1];
+      expect(last?.sourcePack).toBe('catchphrase');
+      expect(last?.difficulty).toBe('hard');
+    }
   });
 
   test('prefers a question the season has not served', () => {

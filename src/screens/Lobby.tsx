@@ -23,6 +23,7 @@ import {
   type Level,
   type RoomState,
 } from '../engine/state';
+import { FEATURED_PACK, shelvePacks } from '../questions/shelves';
 import { fixedDurationFor, packNeedsSound, type PackId, type PackSummary } from '../questions/types';
 
 const ROUND_LENGTHS = [10, 15, 20, 25] as const;
@@ -321,23 +322,28 @@ export function Lobby({
         <section className="stack stack--loose">
           <div className="stack">
             <p className="eyebrow">Choose a set</p>
-            <div className="packs">
-              {packs.map((pack) => (
-                <button
-                  type="button"
-                  key={pack.id}
-                  className={packClass(pack.id, leading, null)}
-                  aria-pressed={pack.id === packId}
-                  onClick={() => {
-                    setPackId(pack.id);
-                    if (pack.id !== 'picture') setJigsaw(false);
-                    onBrowse?.(pack.id);
-                  }}
-                >
-                  <PackFace pack={pack} tally={tally} leading={leading} browsing={null} />
-                </button>
-              ))}
-            </div>
+            {shelvePacks(packs).map((shelf) => (
+              <div className="shelf" key={shelf.id}>
+                <p className="shelf__label">{shelf.label}</p>
+                <div className="packs">
+                  {shelf.packs.map((pack) => (
+                    <button
+                      type="button"
+                      key={pack.id}
+                      className={packClass(pack.id, leading, null)}
+                      aria-pressed={pack.id === packId}
+                      onClick={() => {
+                        setPackId(pack.id);
+                        if (pack.id !== 'picture') setJigsaw(false);
+                        onBrowse?.(pack.id);
+                      }}
+                    >
+                      <PackFace pack={pack} tally={tally} leading={leading} browsing={null} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
 
           <div className="stack">
@@ -589,24 +595,29 @@ export function Lobby({
             <p className="muted hint" aria-live="polite">
               {voteHint(voteTaps, votesLeft, yourVote !== undefined, quizmasterName)}
             </p>
-            <div className="packs">
-              {packs.map((pack) => (
-                <button
-                  type="button"
-                  key={pack.id}
-                  className={packClass(pack.id, leading, room.browsing)}
-                  aria-pressed={pack.id === yourVote}
-                  disabled={!onVote || votesLeft === 0}
-                  onClick={() => {
-                    if (votesLeft === 0) return;
-                    setTapsHere((used) => used + 1);
-                    onVote?.(nextVote(yourVote, pack.id));
-                  }}
-                >
-                  <PackFace pack={pack} tally={tally} leading={leading} browsing={room.browsing} />
-                </button>
-              ))}
-            </div>
+            {shelvePacks(packs).map((shelf) => (
+              <div className="shelf" key={shelf.id}>
+                <p className="shelf__label">{shelf.label}</p>
+                <div className="packs">
+                  {shelf.packs.map((pack) => (
+                    <button
+                      type="button"
+                      key={pack.id}
+                      className={packClass(pack.id, leading, room.browsing)}
+                      aria-pressed={pack.id === yourVote}
+                      disabled={!onVote || votesLeft === 0}
+                      onClick={() => {
+                        if (votesLeft === 0) return;
+                        setTapsHere((used) => used + 1);
+                        onVote?.(nextVote(yourVote, pack.id));
+                      }}
+                    >
+                      <PackFace pack={pack} tally={tally} leading={leading} browsing={room.browsing} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
           <p className="lede centre">
             Waiting for {quizmasterName ?? 'the quizmaster'} to choose a set and start the round.
@@ -638,6 +649,7 @@ function voteHint(
 function packClass(id: PackId, leading: PackId[], browsing: PackId | null): string {
   return [
     'pack',
+    id === FEATURED_PACK ? 'pack--feature' : null,
     leading.includes(id) ? 'pack--leading' : null,
     browsing === id ? 'pack--browsing' : null,
   ]
@@ -665,6 +677,16 @@ function PackFace({
   return (
     <>
       {browsing === pack.id ? <span className="pack__tag">Quizmaster&rsquo;s looking</span> : null}
+      {packNeedsSound(pack.id) ? (
+        <span className="pack__sound" title="Plays sound">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M4 9.5h3.5L12 5.5v13L7.5 14.5H4z" />
+            <path d="M15.5 9a4.5 4.5 0 0 1 0 6" />
+            <path d="M18 6.5a8 8 0 0 1 0 11" />
+          </svg>
+          <span className="sr-only">Plays sound.</span>
+        </span>
+      ) : null}
       <span className="pack__title">{pack.title}</span>
       <span className="pack__blurb">{pack.blurb}</span>
       <span className="pack__count">
