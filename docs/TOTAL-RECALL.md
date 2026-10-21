@@ -24,6 +24,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-21 — Finals backfill written: 12 season-2 rows
+
+Greg: "Run backfill-finals -- --go." This corrects the entry below, which says `--go` waits on him. 12 rows were written; a dry run straight after found all 12 holding those counts and nothing to write. Re-run the dry run in a few days: a phone still on the old bundle erases its own tallies at its next bank. [`finals-history.md`](decisions/finals-history.md).
+
 ## 2026-10-21 — Live: #104 (gh-pages `860e6a5`): finals history and call it
 
 Greg: "Go live." `release-2026-10-21`, one merge commit per Cursor Agent PR: #102 finals history (`9ba3464`), #103 call it (`bb835b0`); conflicts were docs only. Reviewed first: every pack has four options, so no-match index 4 is never a lectern, and `games/` sits inside season-2. **The new client writes the four finals fields on every bank, finalist or not**: an emulator probe of the real `bankGame` transaction had master's rules refuse all five banks and the release rules allow all five, counts right, a repeat game a no-op. So the site must never go out ahead of the rules. Merged `627d5f9` 19:25Z; the push started its own run this time: rules 19:29:50Z, gh-pages 19:30:33Z, Pages built 19:31:21Z, no hang. Live `index-DnncXodV.js` and `index-DuPfh185.css` byte-identical to a local build. `check-rules` 129 PASS / 0 FAIL, the finals allow case among them. `backfill-finals` dry run: 12 rows, 0 refused, 0 skipped, 38 seats over 19 finals. `--go` waits on Greg. Not yet played live. [`finals-history.md`](decisions/finals-history.md) · [`typed-answers.md`](decisions/typed-answers.md).
