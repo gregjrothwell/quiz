@@ -1,11 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { QuestionRecord } from '../engine/awards';
-import { currentQuestion, type Answer, type RoomState } from '../engine/state';
-
-interface Log {
-  gameId: string | null;
-  records: QuestionRecord[];
-}
+import type { Answer, RoomState } from '../engine/state';
+import { logged, type GameLog as Log } from '../host/gameLog';
 
 const NO_RECORDS: QuestionRecord[] = [];
 const EMPTY: Log = { gameId: null, records: NO_RECORDS };
@@ -153,28 +149,10 @@ function storeLog(log: Log): void {
 export function useGameLog(room: RoomState | null): QuestionRecord[] {
   const [log, setLog] = useState<Log>(storedLog);
 
-  const question = room ? currentQuestion(room) : null;
-  const correctIndex = question?.correctIndex ?? null;
-
-  if (room && room.phase === 'reveal' && correctIndex !== null) {
-    const fresh = log.gameId !== room.gameId;
-    const seen = !fresh && log.records.some((entry) => entry.index === room.index);
-
-    if (!seen) {
-      const record: QuestionRecord = {
-        index: room.index,
-        correctIndex,
-        answers: room.answers,
-        deltas: room.lastDeltas,
-        // Survey Says: a tell has no right answer, and a tied guess has several.
-        ...(question?.survey?.part === 'tell' ? { tell: true } : {}),
-        ...(question?.survey?.top ? { top: question.survey.top } : {}),
-      };
-      setLog({
-        gameId: room.gameId,
-        records: fresh ? [record] : [...log.records, record],
-      });
-    }
+  // What a reveal adds is `src/host/gameLog.ts`'s, shared with the Node host.
+  if (room) {
+    const next = logged(log, room);
+    if (next !== log) setLog(next);
   }
 
   useEffect(() => {

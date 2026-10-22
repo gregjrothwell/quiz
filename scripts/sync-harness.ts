@@ -15,7 +15,8 @@
 import { initializeApp, deleteApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { attachDebugAppCheck } from './appCheck';
-import { startBeat } from './hostBeat';
+import { getFirestore as getLiteFirestore } from 'firebase/firestore/lite';
+import { startNodeHost } from './nodeHost';
 import {
   doc,
   getDoc,
@@ -202,7 +203,16 @@ async function main(): Promise<void> {
     hostUid: host.uid,
     expiresAt: Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1_000),
   });
-  const stopBeat = await startBeat(host.db, code);
+  // The beat only: the app's own (`src/host/`), so a browser in the room cannot
+  // claim the chair. Every other duty is this script's to do by hand.
+  const beating = startNodeHost({
+    db: host.db,
+    lite: getLiteFirestore(host.app),
+    code,
+    uid: host.uid,
+    only: ['beat'],
+  });
+  await beating.until(() => true);
   console.log(`Room ${code} created by ${host.name}, who hosts it`);
 
   for (const client of clients) watch(client, code);
@@ -259,7 +269,7 @@ async function main(): Promise<void> {
   console.log(`\nPlayers left in the room after start: ${finalPlayers}/${count}`);
   console.log(`Clients that never saw the question: ${missed}/${count}`);
 
-  stopBeat();
+  beating.stop();
   for (const client of clients) {
     client.stop();
     await deleteApp(client.app);

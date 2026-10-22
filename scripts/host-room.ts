@@ -61,36 +61,24 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { attachDebugAppCheck } from './appCheck';
-import { startBeat } from './hostBeat';
-import {
-  collection,
-  doc,
-  getFirestore,
-  onSnapshot,
-  serverTimestamp,
-  Timestamp,
-  setDoc,
-  updateDoc,
-  type DocumentData,
-} from 'firebase/firestore';
+import { startNodeHost } from './nodeHost';
+import { collection, doc, getFirestore, onSnapshot, Timestamp, setDoc } from 'firebase/firestore';
 // The vault's candidates go over Lite, as the app sends them — see `resolveAnswer`.
 import { getFirestore as getLiteFirestore, setLogLevel as setLiteLogLevel } from 'firebase/firestore/lite';
-import { reduce, type Action } from '../src/engine/reducer';
+import { reduce } from '../src/engine/reducer';
 import { liveAnswers, type AnswerDoc } from '../src/engine/answers';
 import {
   DEFAULT_DURATION_SECS,
   buildQuizQuestions,
   createRoom,
-  currentQuestion,
   isDurationAllowed,
   type QuizQuestion,
-  type RoomState,
 } from '../src/engine/state';
 import { randomRoomCode } from '../src/engine/roomCode';
 import type { SealedQuestion } from '../src/questions/types';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { resolveAnswer } from '../src/lib/vault';
+import { toPersisted, type PersistedRoom } from '../src/lib/roomDoc';
 
 /** Reads a required value from .env.local, so a missing one fails with a name. */
 function required(name: string): string {
@@ -107,34 +95,18 @@ const config = {
   databaseURL: required('VITE_FIREBASE_DATABASE_URL'),
 };
 
-type PersistedRoom = Omit<RoomState, 'answers'>;
-
-function toPersisted(state: RoomState): PersistedRoom {
-  const persisted: Record<string, unknown> = { ...state };
-  delete persisted.answers;
-  return persisted as unknown as PersistedRoom;
-}
-
 const DURATION_SECS = Number(process.argv[2] ?? DEFAULT_DURATION_SECS);
 if (!isDurationAllowed(DURATION_SECS)) {
   throw new Error(`${process.argv[2]} is not a window the rules will accept`);
 }
 
-/**
- * The vault opens strictly *after* the window, and the server measures it from
- * its own clock rather than this one. A second of slack covers the difference.
- *
- * > **Correction, 20 August 2026.** This used to add: *"which is the same margin
- * > the browser gets for free by starting its countdown only once it has seen the
- * > write land."* The browser never got it for free. Latency compensation hands
- * > the quizmaster's device a local snapshot of its own write before the server
- * > has seen it, so its countdown started a hop early and its reveal cleared the
- * > gate by single-digit milliseconds — when it cleared it at all. This script
- * > adding slack while the app did not is what hid the bug: the harness always
- * > passed. The app now waits for the server-confirmed snapshot instead
- * > (`src/engine/revealGate.ts`), which needs no slack to be correct.
- */
-const GATE_SLACK_MS = 1_000;
+/*
+  No gate slack here any more. This script used to sleep out the window plus a
+  second and reveal by hand, and that second is what hid the browser's gate bug
+  until 20 August 2026: the harness always passed. Since step 3 of
+  host-loop.md the reveal is the app's own (`src/host/`, run by `nodeHost.ts`),
+  which waits for the server-confirmed question like the browser does.
+*/
 
 const QUESTIONS: QuizQuestion[] = Array.from({ length: 3 }, (_, i) => ({
   id: `hq${i}`,
@@ -234,7 +206,15 @@ async function main(): Promise<void> {
     hostUid: uid,
     expiresAt: Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1_000),
   });
-  const stopBeat = await startBeat(db, code);
+  // The host's duties — beat, reveal on the clock — are the app's own, from
+  // `src/host/`. This script only presses what a person in the chair presses.
+  const host = startNodeHost({
+    db,
+    lite: getLiteFirestore(app),
+    code,
+    uid,
+    log: (line) => console.log(`${stamp()}  ${line}`),
+  });
 
   onSnapshot(reference, (snapshot) => {
     if (!snapshot.exists()) return;
@@ -264,35 +244,6 @@ async function main(): Promise<void> {
   console.log(`  JOIN THIS ROOM:  ${code}`);
   console.log(`=======================================\n`);
 
-  /**
-   * The room as the engine wants it, with the answers the app would count.
-   *
-   * One helper for both callers, because the reveal and the dispatch have to
-   * agree about what is in the room — the reveal reads the question and the
-   * dispatch scores it, and those disagreeing is how a round scores nothing.
-   */
-  const stateNow = (): RoomState | null => {
-    const latest = view.latest;
-    if (!latest) return null;
-    return { ...latest, code, answers: liveAnswers(latest.players, latest.index, answers.live) };
-  };
-
-  const dispatch = async (actions: Action[]): Promise<RoomState | null> => {
-    const current = stateNow();
-    if (!current) return null;
-    const next = actions.reduce(reduce, current);
-    const update: Record<string, unknown> = { ...toPersisted(next) };
-    // The vault's time gate is measured from the server's own record of when a
-    // question went live, and the rules insist this field *is* that record.
-    if (next.phase === 'question' && current.index !== next.index) {
-      update.openedAt = serverTimestamp();
-    } else if (next.phase === 'question' && current.phase !== 'question') {
-      update.openedAt = serverTimestamp();
-    }
-    await updateDoc(reference, update as Partial<DocumentData>);
-    return next;
-  };
-
   // Wait for a browser to join.
   for (let waited = 0; waited < 120_000; waited += 1000) {
     if (view.latest && Object.keys(view.latest.players).length > 1) break;
@@ -308,40 +259,34 @@ async function main(): Promise<void> {
   await sleep(3000);
 
   console.log(`${stamp()}  >>> WRITING start`);
-  await dispatch([
+  await host.dispatch([
     { type: 'selectPack', ...ROUND, wagerEnabled: false, stealEnabled: false },
     { type: 'start', at: Date.now(), gameId: `host-${Date.now()}`, durationSecs: DURATION_SECS },
   ]);
 
-  // Past this room's own gate, so the vault will answer.
-  await sleep(DURATION_SECS * 1000 + GATE_SLACK_MS);
-  console.log(`${stamp()}  >>> ASKING the vault`);
-  const open = stateNow();
-  const asked = open ? currentQuestion(open) : null;
-  if (!asked) throw new Error('No open question to reveal');
-  const correctIndex = await resolveAnswer(getLiteFirestore(db.app), code, asked);
-  console.log(`${stamp()}  >>> WRITING reveal (answer ${correctIndex})`);
-  const revealed = await dispatch([{ type: 'reveal', correctIndex, questionId: asked.id }]);
+  // The host reveals once the clock and the vault's gate allow.
+  const revealed = await host.until((room) => room.phase === 'reveal', DURATION_SECS * 1_000 + 30_000);
 
   // What the reveal actually did, which is the thing this harness could never
   // report. Read off the state the reveal produced rather than off the next
   // snapshot, which has not necessarily landed yet. A zero here now means
   // nobody answered, rather than meaning nothing was read.
-  const named = Object.entries(revealed?.lastDeltas ?? {})
-    .map(([uid, delta]) => `${revealed?.players[uid]?.name ?? uid} +${delta}`)
+  const named = Object.entries(revealed.lastDeltas)
+    .map(([player, delta]) => `${revealed.players[player]?.name ?? player} +${delta}`)
     .join(', ');
   console.log(`${stamp()}      scored: ${named || 'nobody'}`);
 
   await sleep(8000);
   console.log(`${stamp()}  >>> WRITING next (to standings)`);
-  await dispatch([{ type: 'next', at: Date.now() }]);
+  await host.dispatch([{ type: 'next', at: Date.now() }]);
 
   await sleep(8000);
   console.log(`${stamp()}  >>> WRITING next (to question 2)`);
-  await dispatch([{ type: 'next', at: Date.now() }]);
+  await host.dispatch([{ type: 'next', at: Date.now() }]);
 
   await sleep(15_000);
-  stopBeat();
+  host.stop();
+  for (const failure of host.failures()) console.log(`  host: ${failure}`);
   console.log('Done.');
 }
 
