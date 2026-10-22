@@ -48,6 +48,7 @@ import { initializeApp, deleteApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { attachDebugAppCheck } from './appCheck';
 import { startBeat } from './hostBeat';
+import { lightLamp, litLamps } from './lamp';
 import {
   collection,
   doc,
@@ -320,6 +321,7 @@ async function main(): Promise<void> {
     );
     if (!joined) {
       console.log('Nobody joined in the browser — giving up rather than proving half of it.');
+      stopBeat();
       stopRoom();
       stopAnswers();
       for (const client of [host, ...players]) await deleteApp(client.app);
@@ -333,6 +335,7 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n${stamp()}  >>> WRITING start (${DURATION_SECS}s window)`);
+  const gameId = `rank-${Date.now()}`;
   await dispatch([
     // Both off deliberately. This harness measures the rank ladder, and a
     // stake or a steal would move the very numbers it exists to check.
@@ -344,12 +347,13 @@ async function main(): Promise<void> {
       wagerEnabled: false,
       stealEnabled: false,
     },
-    { type: 'start', at: Date.now(), gameId: `rank-${Date.now()}`, durationSecs: DURATION_SECS },
+    { type: 'start', at: Date.now(), gameId, durationSecs: DURATION_SECS },
   ]);
 
   // Every seat answers at once, each stating its own time. The document is
   // exactly what `submitAnswer` writes: option, elapsed, and the question index
-  // that stops a stale answer scoring twice.
+  // that stops a stale answer scoring twice. The lamp goes beside it, as the
+  // app lights it, or a browser in the room counts only itself answered.
   console.log(`${stamp()}  Seven lecterns go down…`);
   await Promise.all(
     players.map((client, i) => {
@@ -360,13 +364,27 @@ async function main(): Promise<void> {
         elapsedMs: seat.elapsedMs,
         questionIndex: 0,
       };
-      return setDoc(doc(collection(client.db, 'rooms', code, 'answers'), client.uid), answer);
+      return Promise.all([
+        setDoc(doc(collection(client.db, 'rooms', code, 'answers'), client.uid), answer),
+        lightLamp(client.app, code, gameId, 0, client.uid),
+      ]);
     }),
   );
   for (const seat of CAST) {
     const lectern = seat.option === CORRECT_OPTION ? 'correct' : 'wrong  ';
     console.log(`    ${seat.name.padEnd(4)} ${lectern}  at ${String(seat.elapsedMs).padStart(5)}ms`);
   }
+
+  // What a browser counts "N answered" from: the lamps, read by a player who
+  // may not read anybody's answer. Every seat must be lit.
+  const lampReader = players[players.length - 1];
+  if (!lampReader) throw new Error('no lamp reader');
+  const lit = new Set(await litLamps(lampReader.app, code, gameId, 0));
+  const unlit = players.filter((client) => !lit.has(client.uid)).map((client) => client.name);
+  console.log(
+    `${stamp()}  ${lampReader.name} sees ${lit.size} lamps lit` +
+      (unlit.length === 0 ? ', every seat ✓' : `; unlit: ${unlit.join(', ')} ✗`),
+  );
 
   // Past this room's own gate, so the vault will answer.
   await sleep(DURATION_SECS * 1_000 + GATE_SLACK_MS);
@@ -405,6 +423,7 @@ async function main(): Promise<void> {
   console.log(`  ${'─'.repeat(51)}`);
 
   const failures: string[] = [];
+  if (unlit.length > 0) failures.push(`lamps not lit for ${unlit.join(', ')}: a browser would not count them answered`);
 
   for (const [uid, seat] of byUid) {
     if (!seat) continue;
@@ -552,6 +571,7 @@ async function main(): Promise<void> {
   }
 
   if (failures.length > 0) {
+    stopBeat();
     stopRoom();
     stopAnswers();
     for (const client of [host, ...players]) await deleteApp(client.app);
@@ -601,7 +621,12 @@ async function main(): Promise<void> {
   );
 }
 
-main().catch((error: unknown) => {
-  console.error('\nrank-harness failed:', error instanceof Error ? error.message : error);
-  process.exitCode = 1;
-});
+main()
+  .catch((error: unknown) => {
+    console.error('\nrank-harness failed:', error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  })
+  // The lamps' Realtime Database connection outlives `deleteApp` and holds the
+  // event loop open, `goOffline` or not (measured 15 Oct 2026), so the run
+  // ends here, with its exit code, as `check-rules` does.
+  .finally(() => process.exit());

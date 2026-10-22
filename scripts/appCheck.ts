@@ -111,13 +111,29 @@ async function exchangeDebugToken(
   );
 
   if (!response.ok) {
-    throw new Error(
-      `exchangeDebugToken returned ${response.status}. The likely cause is that this token is `
-        + 'not safelisted: Firebase console -> App Check -> Apps -> ⋮ -> Manage debug tokens.',
-    );
+    throw new Error(`exchangeDebugToken returned ${response.status}. ${exchangeAdvice(response.status)}`);
   }
 
   const { token, ttl } = (await response.json()) as { token: string; ttl: string };
   // `ttl` arrives as a protobuf duration — '3600s'.
   return { token, expireTimeMillis: Date.now() + Number.parseFloat(ttl) * 1_000 };
+}
+
+/**
+ * What a refused exchange most likely means, by status.
+ *
+ * Every non-200 used to say "not safelisted", which sent a rate limit to the
+ * console to re-register a token that was fine. A burst of exchanges, such as
+ * `host-room` straight after `sync-harness 30` (one per client), comes back 429.
+ */
+export function exchangeAdvice(status: number): string {
+  if (status === 429) {
+    return 'That is a rate limit: too many debug-token exchanges in a short time, as when one '
+      + 'harness follows a big one. The token is fine. Wait a minute and retry.';
+  }
+  if (status === 403) {
+    return 'The likely cause is that this token is not safelisted: Firebase console -> App Check '
+      + '-> Apps -> ⋮ -> Manage debug tokens.';
+  }
+  return 'Neither a rate limit (429) nor a refused token (403).';
 }
