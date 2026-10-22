@@ -125,7 +125,7 @@ AC10 is not measurable here: Cloud Monitoring needs billing. [`host-authority.md
 the words; the master run was cancelled before rules or Pages, so `master` sits ahead of live. Then W3: the AC8
 stall found and fixed (a joiner listed answers before the room was read, was refused, and the same query never
 confirmed when the chair passed to it); AC12 and the final's allow cases added; `check-rules` 28 W3 cases;
-three harnesses make hosted rooms that beat. e2e 15/15. [`host-authority.md`](decisions/host-authority.md#15-october-evening-the-ac8-stall-and-the-gaps-closed).
+three harnesses make hosted rooms that beat. e2e 15/15. [`host-authority.md`](decisions/host-authority-ac8-stall.md#15-october-evening-the-ac8-stall-and-the-gaps-closed).
 
 ## 2026-10-15 — Branch `w3-host-authority` (PR #86): W3, host authority, built and not live
 

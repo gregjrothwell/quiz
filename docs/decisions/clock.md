@@ -134,7 +134,7 @@ gets a dead timer and no explanation.
 > before the server stamped `openedAt`, leaving about 7ms of margin — so a room
 > sitting at zero was usually the gate being missed by a whisker rather than
 > genuinely waiting. Fixed, and the retries are now 300/600/1200/1500 rather than
-> a flat 1500. See [the vault](vault.md#the-gate-had-no-margin-and-the-host-was-the-one-who-paid).
+> a flat 1500. See [the vault](vault-gate-margin.md#the-gate-had-no-margin-and-the-host-was-the-one-who-paid).
 >
 > The cheap half below is done too: an expired clock now says **Time's up** to
 > everybody, and the quizmaster's button says **Revealing…** while an attempt is
