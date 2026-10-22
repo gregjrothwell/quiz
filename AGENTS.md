@@ -62,7 +62,7 @@ docs/recall/          Archived spine entries, by month. Verbatim, no budget
 - Answers live in a subcollection. `elapsedMs` is measured on the answering device, not a wall-clock timestamp.
 - A phase transition never writes the `players` map. Membership changes are `players.{uid}` only.
 - **Published packs are sealed: no file in `public/packs/` may contain an answer** — anyone with the URL can read them. `src/questions/seal.test.ts` enforces it both ways. (`correctIndex` under `src/` is fine: the runtime field, set once the vault resolves.)
-- **Whatever goes live together ships as one PR.** Merge each feature branch into a `release-<date>` branch with its own merge commit (so one can be reverted alone), then one PR, one deploy, one live check — as #72 did. On 12 Oct 2026, #58 and #73 were merged 33s apart: two CI runs and two deploys for one release. An urgent fix still ships alone. Greg's rule, 12 Oct 2026.
+- **Whatever goes live together ships as one PR.** Two or more feature branches: merge each into a `release-<date>` branch with its own merge commit (so one can be reverted alone), then one PR, one deploy, one live check — as #72 did. On 12 Oct 2026, #58 and #73 were merged 33s apart: two CI runs and two deploys for one release. **One feature goes live from its own PR, with no release branch** — on 22 Oct a one-PR release re-ran CI that had already passed ([`lead-time.md`](docs/decisions/lead-time.md)). An urgent fix still ships alone. Greg's rule, 12 Oct 2026; the one-feature exception, 22 Oct 2026. **A PR players will notice carries its What's new line** (`src/lib/updates.ts`); CI fails it otherwise, and `What's new: none — <why>` waives it.
 
 ## What bites
 
