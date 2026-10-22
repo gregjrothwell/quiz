@@ -141,6 +141,14 @@ async function answer(as: Player, code: string, optionIndex: number): Promise<vo
   });
 }
 
+/** `writeOwnVote`: the vote and the tap, one field path each, in one write. */
+function vote(as: Player, code: string, packId: string | null): Promise<void> {
+  return updateDoc(roomRef(as.db, code), {
+    [`packVotes.${as.uid}`]: packId ?? deleteField(),
+    [`voteTaps.${as.uid}`]: increment(1),
+  });
+}
+
 /** The beat, aged on the server by the Admin SDK so a claim does not wait 75 s. */
 async function ageBeat(code: string, ageMs: number): Promise<void> {
   await admin()
@@ -418,4 +426,52 @@ test('AC11: a room made before the deploy plays on under the member rule', async
   // Any member may still move the game on and read every answer.
   await updateDoc(roomRef(ann.db, code), { phase: 'reveal' });
   expect((await getDocs(collection(ann.db, 'rooms', code, 'answers'))).size).toBe(1);
+});
+
+// ── S2, what goes in a lobby vote (22 October 2026) ───────────────────────
+// `onlyMine` bounds whose key a member writes, not what goes under it. The
+// allow case is `writeOwnVote` as the client sends it — cast, take back, move —
+// by a member and by the host, whose writes take the other branch of the
+// update rule; it fails if the bound refuses the game.
+// docs/decisions/security-sweep-oct-2026.md.
+
+test('S2 allow: a member and the host vote, take it back and move it, as writeOwnVote does', async () => {
+  const code = await hostedRoom(host);
+  await join(ann, code, 'Ann');
+
+  // The longest pack id there is, then taken back: absent is allowed.
+  await vote(ann, code, 'general-knowledge');
+  await vote(ann, code, null);
+  await vote(host, code, 'sleeves');
+  await vote(host, code, 'flags');
+
+  const voted = (await admin().doc(`rooms/${code}`).get()).data();
+  expect(voted?.packVotes).toEqual({ [host.uid]: 'flags' });
+  expect(voted?.voteTaps).toEqual({ [ann.uid]: 2, [host.uid]: 2 });
+
+  // The host's other writes still land with their own vote on the room.
+  await updateDoc(roomRef(host.db, code), { browsing: 'tunes' });
+  await start(host, code, 60);
+});
+
+test('S2 deny: an oversized vote, or a tap count that is not a whole number under the ceiling', async () => {
+  const code = await hostedRoom(host);
+  await join(ann, code, 'Ann');
+  const as = roomRef(ann.db, code);
+  // One 900 kB write only: a second would be refused for the document's size
+  // or the rules engine's memory, whatever the rule says, and prove nothing.
+  const bloat = 'x'.repeat(900_000);
+
+  expect.soft(await denied(updateDoc(as, { [`packVotes.${ann.uid}`]: 'x'.repeat(65) })), 'a 65-character vote').toBe(true);
+  expect.soft(await denied(updateDoc(as, { [`packVotes.${ann.uid}`]: bloat })), 'a 900 kB vote').toBe(true);
+  expect.soft(await denied(updateDoc(as, { [`voteTaps.${ann.uid}`]: 'two' })), 'a string tap count').toBe(true);
+  expect.soft(await denied(updateDoc(as, { [`voteTaps.${ann.uid}`]: 1.5 })), 'a fractional tap count').toBe(true);
+  expect.soft(await denied(updateDoc(as, { [`voteTaps.${ann.uid}`]: 1001 })), 'a tap count past 1000').toBe(true);
+  expect.soft(
+    await denied(updateDoc(roomRef(host.db, code), { [`packVotes.${host.uid}`]: 'x'.repeat(65) })),
+    'the host, through the other branch',
+  ).toBe(true);
+
+  // The allow beside them, on the same room: the real vote still lands.
+  await vote(ann, code, 'sleeves');
 });

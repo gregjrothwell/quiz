@@ -43,6 +43,7 @@ import {
   getDoc,
   getDocs,
   getFirestore,
+  increment,
   limit,
   query,
   serverTimestamp,
@@ -1704,6 +1705,38 @@ function buildHostChecks(probes: HostProbes): Check[] {
           ...(score === null ? {} : { [`scores.${uidB}`]: score }),
         });
       },
+    },
+    // S2, 22 October 2026: what goes under a member's own key in the lobby
+    // vote. The allow cases are `writeOwnVote`'s write, by a member and by the
+    // host, who reach the rule by different branches. The denies use 65
+    // characters, not the 900 kB the emulator twin writes: run before the
+    // rule is published, this script would leave that on a live room.
+    {
+      label: 'S2: a member votes, then takes it back (`writeOwnVote`)',
+      expect: 'allow',
+      hint: 'firestore.rules `ownVoteOk` refuses the lobby vote the client writes',
+      run: async () => {
+        await updateDoc(room(dbB), { [`packVotes.${uidB}`]: 'general-knowledge', [`voteTaps.${uidB}`]: increment(1) });
+        await updateDoc(room(dbB), { [`packVotes.${uidB}`]: deleteField(), [`voteTaps.${uidB}`]: increment(1) });
+      },
+    },
+    {
+      label: 'S2: the host votes (`writeOwnVote`)',
+      expect: 'allow',
+      hint: "firestore.rules `ownVoteOk` refuses the host's own vote",
+      run: () => updateDoc(room(db), { [`packVotes.${uid}`]: 'sleeves', [`voteTaps.${uid}`]: increment(1) }),
+    },
+    {
+      label: 'S2: a member cannot vote with a 65-character string',
+      expect: 'deny',
+      hint: 'firestore.rules does not bound `packVotes` values (`ownVoteOk`) — a member can bloat the room',
+      run: () => updateDoc(room(dbB), { [`packVotes.${uidB}`]: 'x'.repeat(65) }),
+    },
+    {
+      label: 'S2: a member cannot write a tap count that is not a whole number',
+      expect: 'deny',
+      hint: 'firestore.rules does not hold `voteTaps` values to `is int` (`ownVoteOk`)',
+      run: () => updateDoc(room(dbB), { [`voteTaps.${uidB}`]: 'two' }),
     },
     {
       label: 'W3: the host opens a question (selectPack, start)',
