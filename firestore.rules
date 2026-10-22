@@ -94,6 +94,10 @@ service cloud.firestore {
       // only consulted when a claim is made. So deleting stops the code being
       // used again and leaves everyone who already used it exactly where they
       // are, which is precisely what revoking should mean.
+      // **Correction, 22 October 2026:** so it evicts nobody either. Whoever
+      // claimed a leaked code before it was deleted keeps writing the row,
+      // through their own `claims` document, until that is deleted with the
+      // Admin SDK. docs/decisions/identity.md.
       allow delete: if ownsPlayer(resource.data.playerId);
     }
 

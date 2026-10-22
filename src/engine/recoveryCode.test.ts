@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import {
   RECOVERY_CODE_LENGTH,
   formatRecoveryCode,
@@ -9,6 +9,10 @@ import {
 import { ALPHABET } from './roomCode';
 
 describe('randomRecoveryCode', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   test('draws only from the unambiguous alphabet', () => {
     // #given a hundred generated codes
     const codes = Array.from({ length: 100 }, () => randomRecoveryCode());
@@ -18,6 +22,39 @@ describe('randomRecoveryCode', () => {
 
     // #then none of them can be misread as another character
     expect(stray).toEqual([]);
+  });
+
+  test('draws from the platform CSPRNG, never Math.random', () => {
+    // #given both sources watched
+    const secure = vi.spyOn(crypto, 'getRandomValues');
+    const weak = vi.spyOn(Math, 'random');
+
+    // #when a code is minted the way `ensureRecoveryCode` mints one
+    randomRecoveryCode();
+
+    // #then every character came from getRandomValues, because Math.random's
+    // output can be worked out from a handful of its earlier draws
+    expect(secure).toHaveBeenCalledTimes(RECOVERY_CODE_LENGTH);
+    expect(weak).not.toHaveBeenCalled();
+  });
+
+  test('spans the whole alphabet from the lowest word to the highest, and no further', () => {
+    // #given a CSPRNG pinned to one word
+    const pinned = (word: number) =>
+      vi.spyOn(crypto, 'getRandomValues').mockImplementation(<T extends ArrayBufferView | null>(array: T): T => {
+        if (array instanceof Uint32Array) array.fill(word);
+        return array;
+      });
+
+    // #when it is pinned to zero, then to 2^32 - 1
+    pinned(0);
+    const lowest = randomRecoveryCode();
+    pinned(0xffffffff);
+    const highest = randomRecoveryCode();
+
+    // #then the ends are the alphabet's first and last symbols, never past it
+    expect(lowest).toBe(ALPHABET[0]!.repeat(RECOVERY_CODE_LENGTH));
+    expect(highest).toBe(ALPHABET[ALPHABET.length - 1]!.repeat(RECOVERY_CODE_LENGTH));
   });
 
   test('is long enough to be worth guarding', () => {
