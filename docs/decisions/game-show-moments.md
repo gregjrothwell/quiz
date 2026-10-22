@@ -57,24 +57,34 @@ first pass rather than new moments, and went on the same PR.
 **Left for Greg:** the line under the title changed from "Playing for 5,550"
 to "The top two, for both their scores" in the first pass, without asking.
 
-## The drum roll came out — 22 October 2026
+## The drum roll, rebuilt — 22 October 2026
 
-Greg, hearing it in a test run: *"I think it's what you refer to as a drum roll.
-It sounds like nothing of the sort - this was what I thought was the stuck
-sound."* He had heard it at the podium twice that day and reported it as "a
-single sound clipping many times per second before the actual tone played".
+Greg had heard "a single sound clipping many times per second before the
+actual tone played" at the podium twice that day. In a test run: *"I think it's
+what you refer to as a drum roll. It sounds like nothing of the sort - this was
+what I thought was the stuck sound."* It came out of the PR first; then Greg:
+*"drum roll is fine but it has to sound like a real one."*
 
-The cause is the heartbeat's, above, again: thirty triangle hits at 196→110Hz,
-46 ms apart. Laptop speakers carry little under about 100Hz and not much under
-200, so what reached the room was each hit's 6 ms attack — a click train at
-about twenty a second, then the fanfare. Nobody had listened to it on a laptop.
+The cause was the heartbeat's, above, again. The roll was thirty triangle hits
+at 196→110Hz and no noise at all. Rendered through `sound.ts` offline (below),
+16% of its energy was above 300Hz and 1% above 1kHz — a laptop played only each
+hit's attack, about twenty clicks a second, ending 11 dB under the fanfare.
 
-- Neither the podium (`Final.tsx`) nor the final's picks being opened
-  (`ShareOrShaft.tsx`) cue it now. The podium's hold keeps its length, silent;
-  the fanfare still lands with the winner. `Final.test.tsx` and
-  `ShareOrShaft.roll.test.tsx` fail with the roll cued and pass without it.
-- The cue stays in `sound.ts`, played by nothing, because `ROLL_SECONDS` sets
-  the hold. A replacement is a sound Greg has heard on a laptop first.
+**Rebuilt as a snare.** Each of the thirty strokes is now band-passed noise
+around 3.1–3.6kHz (the wires, alternating hands) ringing past the next stroke so
+the roll sustains, over a short 340→210Hz knock (the head); 1.5 ms attacks, a
+few milliseconds of drift between strokes, the same swell, a longer last
+stroke. 90% of it is above 300Hz and 77% above 1kHz, ending about 4 dB under
+the fanfare. `ROLL_SECONDS` is unchanged, so the podium's timing is too.
+`sound.ts` gained a `noise` voice type for it. `sound.test.ts`: the swell per
+layer, and "a snare a laptop can play" — both FAIL on the old roll.
+
+**How it was heard before shipping:** `play()` driven in headless Chromium with
+`AudioContext` swapped for an `OfflineAudioContext`, each cue rendered alone and
+mixed at the podium's offsets into WAVs for Greg's ear. Mixing in Node, not
+`OfflineAudioContext.suspend()`: a fanfare scheduled from a suspend landed at
+2.31 s and 2.06 s in two renders that asked for 1.9 s — the instrument lied
+until each cue was rendered on its own.
 
 ## The rules it kept
 

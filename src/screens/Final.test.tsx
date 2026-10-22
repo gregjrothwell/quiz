@@ -101,16 +101,17 @@ describe('the podium caption', () => {
 });
 
 describe('the podium build', () => {
-  test('plays the fanfare on the landing and no drum roll before it', () => {
+  test('rolls the drum under the hold, then plays the fanfare on the landing', () => {
     // #given a podium seen for the first time
     render(podium('build', { ann: ANN, bob: BOB }));
 
     // #when it builds and lands
     landed();
 
-    // #then the fanfare plays, and the roll — a stutter on laptop speakers —
-    // does not
+    // #then both play, the roll first
+    expect(played('roll')).toBe(true);
     expect(played('fanfare')).toBe(true);
-    expect(played('roll')).toBe(false);
+    const first = (cue: string): number => useCue.mock.calls.findIndex(([name, , enabled]) => name === cue && enabled === true);
+    expect(first('roll')).toBeLessThan(first('fanfare'));
   });
 });

@@ -114,19 +114,43 @@ describe('clockVoices', () => {
   });
 
   test('swells the drum roll, and ends it when the podium is told it ends', () => {
-    // #given the roll, hit by hit
-    const hits = cueVoices('roll');
-    const gains = hits.map((voice) => voice.gain);
+    // #given the roll, stroke by stroke: the wires, and the head under them
+    const voices = cueVoices('roll');
+    for (const layer of ['noise', 'triangle'] as const) {
+      const gains = voices.filter((voice) => voice.type === layer).map((voice) => voice.gain);
 
-    // #then every hit is louder than the one before, so it builds rather than drones
-    for (let hit = 1; hit < gains.length; hit += 1) {
-      expect(gains[hit]).toBeGreaterThan(gains[hit - 1] ?? 0);
+      // #then every stroke is louder than the one before, so it builds rather than drones
+      expect(gains.length).toBeGreaterThan(20);
+      for (let hit = 1; hit < gains.length; hit += 1) {
+        expect(gains[hit]).toBeGreaterThan(gains[hit - 1] ?? 0);
+      }
     }
 
-    // #and the last hit starts inside ROLL_SECONDS, which the final screen times
-    // the winner's riser against
-    const last = hits[hits.length - 1];
-    expect(last?.start ?? Infinity).toBeLessThan(ROLL_SECONDS);
+    // #and the last stroke starts inside ROLL_SECONDS, which the final screen
+    // times the winner's riser against
+    const last = Math.max(...voices.map((voice) => voice.start));
+    expect(last).toBeLessThan(ROLL_SECONDS);
+  });
+
+  test('makes the drum roll a snare a laptop speaker can play', () => {
+    // #given the roll
+    const voices = cueVoices('roll');
+    const starts = [...new Set(voices.map((voice) => voice.start))];
+
+    // #then every stroke has its wires — noise, a few kilohertz up, which is
+    // what a snare mostly is. The first roll was triangle blips at 110–196Hz
+    // and no noise; laptops barely carry that, so the room heard only each
+    // blip's attack, twenty a second (Greg, 22 October 2026)
+    for (const at of starts) {
+      const wires = voices.filter((voice) => voice.start === at && voice.type === 'noise');
+      expect(wires.length).toBe(1);
+      expect(wires[0]?.from).toBeGreaterThanOrEqual(2_000);
+    }
+
+    // #and nothing in it is pitched below 200Hz, where a laptop is silent
+    for (const voice of voices) {
+      expect(Math.min(voice.from, voice.to ?? voice.from)).toBeGreaterThanOrEqual(200);
+    }
   });
 
   test('gives each heartbeat a voice a laptop speaker can play', () => {

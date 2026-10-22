@@ -6,9 +6,8 @@ import type { StandoffView } from '../lib/useStandoff';
 import { ShareOrShaft } from './ShareOrShaft';
 
 /**
- * What the final plays between its stages. The drum roll that covered the
- * picks being opened came out on 22 October 2026: on laptop speakers it was a
- * stutter, not a roll.
+ * What the final plays between its stages: the sting as it opens, and the
+ * podium's drum roll while the sealed picks are opened.
  */
 
 const useCue = vi.hoisted(() => vi.fn());
@@ -76,11 +75,11 @@ describe('the final’s cues', () => {
     expect(played('sting')).toBe(true);
   });
 
-  test('plays no drum roll while the picks are opened', () => {
+  test('rolls the drum while the picks are opened', () => {
     // #given the whistle has gone and the picks are being opened
     show(final('closed'));
 
-    // #then nothing rolls
-    expect(played('roll')).toBe(false);
+    // #then the roll covers the wait
+    expect(played('roll')).toBe(true);
   });
 });

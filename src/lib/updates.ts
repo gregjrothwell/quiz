@@ -21,7 +21,7 @@ export const UPDATES: readonly Update[] = [
     date: '2026-10-22',
     lines: [
       'The commentator’s lines stay on screen but aren’t read out any more, until it has a better voice.',
-      'No more drum roll before the winner, or before a final’s picks open — on laptop speakers it stuttered rather than rolled.',
+      'The drum roll before the winner, and while a final’s picks open, sounds like a snare now rather than a stutter.',
       'Play against Mr Fries: the whole office on one side, against the house, who gets each question right about as often as you do.',
       'The quiz commentates: a line at the reveal, the standings and the podium — a lone right answer, a new leader, a first win — read out from the quizmaster’s screen.',
       'A new show round, Survey Says: tell us what you think, then guess what most of the office said.',

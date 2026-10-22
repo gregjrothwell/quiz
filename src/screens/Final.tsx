@@ -71,9 +71,8 @@ function loadDrawer(): Promise<typeof DrawCard> {
 }
 
 /**
- * The podium, held the way a show holds it: third, a beat, second, a hold
- * (silent since the drum roll came out, 22 October 2026), and only then the
- * winner — with the fanfare and the confetti on the landing.
+ * The podium, held the way a show holds it: third, a beat, second, a drum roll,
+ * and only then the winner — with the fanfare and the confetti on the landing.
  * It used to stand all three up 200ms apart, which put the biggest moment of
  * the round over in half a second.
  *
@@ -237,9 +236,7 @@ export function Final({
   // Keyed on the game so a second round in the same room gets its own fanfare,
   // and a re-render on the final screen does not. Not again on coming back to
   // a podium this page has already built.
-  //
-  // No drum roll under the hold since 22 October 2026: on laptop speakers its
-  // thirty low hits were a stutter, not a roll (Greg). The hold keeps its length.
+  useCue('roll', podiumKey, holding && beat === 'roll');
   useCue('fanfare', podiumKey, hasPodium && firstSight && landed);
 
   const [cardState, setCardState] = useState<CardState>('idle');
