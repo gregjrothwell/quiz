@@ -986,6 +986,32 @@ select.input option {
      */
     align-items: start;
   }
+
+  /*
+   * The landing's two links sit under "Run the show", beside the Join panel,
+   * rather than in a row after both. Join is the taller panel, so a row after
+   * the grid started below it: 130px under "Run the show" on a 14" MacBook and
+   * wholly below the fold at 1280×720 (Greg, 22 October 2026). Join spans both
+   * rows; the `1fr` row takes whatever of its height the links do not need.
+   */
+  .split--landing {
+    grid-template-areas:
+      'run join'
+      'links join';
+    grid-template-rows: auto 1fr;
+  }
+
+  .landing__run {
+    grid-area: run;
+  }
+
+  .landing__join {
+    grid-area: join;
+  }
+
+  .landing__links {
+    grid-area: links;
+  }
 }
 
 /* ── Room code ──────────────────────────────────────────────────────────── */
