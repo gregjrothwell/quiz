@@ -24,6 +24,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-22 — #138 live: the Commentator's voice off, the drum roll rebuilt, the podium caption on the frozen table
+
+Greg: "Go live with #138 once its CI is green". Merged `a410e22` 21:47:22Z, 12 s after green; rules 21:48:11Z (unchanged); gh-pages `4ef3623`, Pages built 21:49:36Z; `index-gzyAYqlA` and 15 assets byte-identical; `check-rules` 136/0. The "staccato" sound was the podium's drum roll: rendered offline through `sound.ts`, 1% of it was above 1kHz. Four versions by ear the same night; the fourth is "ok for now" ([`game-show-moments.md`](decisions/game-show-moments.md#the-drum-roll-rebuilt--22-october-2026)). The review of #131 and #136 found only the caption. Full e2e 32/32. Greg prefers a recorded roll: a card, not built.
+
 ## 2026-10-22 — Release #136 live: the host in `src/host/`, rig check, Beat the Chaser, the Commentator, Quiz Wrapped
 
 Greg: "Go live with #136 once its CI is green". Merged `d8771be` 20:00:33Z on green; rules 20:01:34Z; gh-pages `79633da`, Pages built 20:03:59Z; `index-BK-1i2u1` and 12 files byte-identical. `check-rules` 136/0; the new `rig/` RTDB rules proved live (2 allow, 3 deny); `rank-harness` K859 on the shipped host. Measured first: `games/` (65 rounds, 934 questions, 6 repeats) can't rate what is served next, so Mr Fries plays to pack × difficulty and the fold does not fix the Ladder (HANDOVER item 8 corrected). A merge-resolution slip dropped three CSS braces; the first full e2e ran on a stale `dist/` and caught it. Open: the rig's Friday phone run; Greg to cut the Commentator lines; Wrapped opens 5 Dec. Depth: [`host-loop.md`](decisions/host-loop.md), [`beat-the-chaser.md`](decisions/beat-the-chaser.md), [`rig-in-your-hand.md`](decisions/rig-in-your-hand.md).
@@ -147,17 +151,11 @@ over; a 15 s beat and a claim at 75 s of silence cover the host whose tab closes
 without `hostUid` keep the member rule. **No rule published** — W2 is not live. Harnesses and `check-rules` not yet
 moved to hosted rooms; AC10 unmeasured. [`host-authority.md`](decisions/host-authority.md#what-was-built-15-october-2026).
 
-## 2026-10-15 — Branch `rules-from-ci`: W2, CI publishes both rulesets, keyless
-
-A `rules` job after e2e and before the site, master only, through one impersonated service account (no key). The
-third role, Service Usage Consumer, was found by a 403 in a dry run, not in any doc. Live rules equal the repo, so the
-first publish is a no-op. Probe PRs #82/#83: a broken file of either kind turns e2e red. Not live: Greg's Cloud Shell step, then W1, then "go live".
-[`rules-from-ci.md`](decisions/rules-from-ci.md).
-
 ## 2026-10-02 to 2026-10-15 — archived, one line each
 
-Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's; #68 and Blankety Blank built the same night, at 309 with the W3 release entry; the first office rounds of #67 and #68 the same night again, at 304 with the go-live; The Price Was Right built on 17 October, at 302 with #91's go-live; #70 and #69 on 20 October, at 296, with the Random Round, lobby and Price is Right entry; the two 7 October entries on 21 October, at 302 with #98's go-live; the two 12 October go-lives on 21 October, at 306 with #104's go-live; the 8 and 14 October lobby-vote entries on 22 October, at 302 with #107's go-live; the two 15 October vote-taps entries the same day, at 301 with #110's go-live; the two 15 October reveal-name entries the same day, at 301 with #113's go-live; W1's TMDB branch and the productionisation plan, both 15 October, the same day, at 300 with release 2026-10-22-3's go-live.
+Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's; #68 and Blankety Blank built the same night, at 309 with the W3 release entry; the first office rounds of #67 and #68 the same night again, at 304 with the go-live; The Price Was Right built on 17 October, at 302 with #91's go-live; #70 and #69 on 20 October, at 296, with the Random Round, lobby and Price is Right entry; the two 7 October entries on 21 October, at 302 with #98's go-live; the two 12 October go-lives on 21 October, at 306 with #104's go-live; the 8 and 14 October lobby-vote entries on 22 October, at 302 with #107's go-live; the two 15 October vote-taps entries the same day, at 301 with #110's go-live; the two 15 October reveal-name entries the same day, at 301 with #113's go-live; W1's TMDB branch and the productionisation plan, both 15 October, the same day, at 300 with release 2026-10-22-3's go-live; W2's `rules-from-ci` branch, 15 October, the same night, at 297 with #138's go-live.
 
+- **2026-10-15** — [Branch `rules-from-ci`: W2, CI publishes both rulesets, keyless](recall/2026-10.md#2026-10-15--branch-rules-from-ci-w2-ci-publishes-both-rulesets-keyless)
 - **2026-10-15** — [Branch `tmdb-credit`: W1, TMDB's logo and notice; D6 added](recall/2026-10.md#2026-10-15--branch-tmdb-credit-w1-tmdbs-logo-and-notice-d6-added)
 - **2026-10-15** — [Productionisation plan: five work items, five decisions for Greg, a TMDB gap](recall/2026-10.md#2026-10-15--productionisation-plan-five-work-items-five-decisions-for-greg-a-tmdb-gap)
 - **2026-10-15** — [Live: #79 (gh-pages `54fb8d8`): long names cut on the reveal chips](recall/2026-10.md#2026-10-15--live-79-gh-pages-54fb8d8-long-names-cut-on-the-reveal-chips)
