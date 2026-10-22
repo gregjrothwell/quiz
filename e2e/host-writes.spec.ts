@@ -24,6 +24,10 @@ import { admin, seedVault, until } from './nodeClient';
  * so the rank ladder pays the same every run. Which questions are dealt is
  * random, so their text and categories are not compared — the count is.
  *
+ * The players are Hal, Ivy and Jo, not the Host, Ann and Bob other specs use:
+ * this round banks season rows, and `survey-says` counts rows by those names.
+ * In CI the files run one after another, and it found six.
+ *
  * `RECORD_HOST_WRITES=1 npm run e2e -- host-writes` writes the recording afresh.
  * Only do that on code whose host is known good, and say so in the commit.
  */
@@ -87,12 +91,12 @@ function questionsShape(questions: unknown): unknown {
 test('the host makes the same writes, start to podium, through a Share or Shaft final', async ({ browser }) => {
   test.setTimeout(420_000);
 
-  const host = await seat(browser, 'Host');
+  const host = await seat(browser, 'Hal');
   await host.getByRole('button', { name: 'Start a new room' }).click();
   const code = ((await host.getByLabel(/Room code [A-Z0-9]{4}/).getAttribute('aria-label')) ?? '').replace('Room code ', '');
   expect(code).toMatch(/^[A-Z0-9]{4}$/);
-  const ann = await seat(browser, 'Ann');
-  const bob = await seat(browser, 'Bob');
+  const ann = await seat(browser, 'Ivy');
+  const bob = await seat(browser, 'Jo');
   for (const page of [ann, bob]) {
     await page.getByPlaceholder('––––').fill(code);
     await page.getByRole('button', { name: 'Join the round' }).click();
@@ -104,9 +108,9 @@ test('the host makes the same writes, start to podium, through a Share or Shaft 
   const players = seated.get('players') as Record<string, { name: string }>;
   const names = new Map(Object.entries(players).map(([uid, player]) => [uid, `<${player.name}>`]));
   const pages = new Map<string, Page>([
-    ['<Host>', host],
-    ['<Ann>', ann],
-    ['<Bob>', bob],
+    ['<Hal>', host],
+    ['<Ivy>', ann],
+    ['<Jo>', bob],
   ]);
 
   // The recorder: every change the Admin SDK sees, from here to the podium.
