@@ -43,6 +43,20 @@ can read today. **No new data, no new reads beyond loading the board once.**
   of the board — the same names the board already shows.
 - **W6.** Screenshots at 1280 and 375 wide; e2e opens it for a seeded row.
 
+## Built 22 October 2026, branch `quiz-wrapped`
+
+- `src/engine/wrapped.ts`: the cards' facts and `wrappedOpen` (local date ≥
+  `WRAPPED_FROM`, 2026-12-05); 6 tests incl. a one-round, no-win player.
+- **Squad card, as built:** squads ranked by average season points per member
+  of the board (the board's own `team` field). **Finals card:** one read of the
+  player's own row (`loadFinalistRecords`), as the final's seats already do.
+- `lib/drawWrapped.ts`: the final card's canvas, palette and faces; lazy-loaded.
+  `components/Wrapped.tsx`: one card at a time, shown as the PNG it saves;
+  "Your Quiz Wrapped" on the season board, for this device's own row only.
+- e2e `quiz-wrapped.spec.ts`: on 23 Oct the button is absent (W4); on 6 Dec
+  all five cards, in order, with the right words, at 1280 and 375 (W6).
+- **No What's new line yet**: nothing shows until 5 December. Add one then.
+
 ## Not in this story — needs Greg first
 
 **"A Christmas finale."** The idea says Wrapped comes with one; what it is was

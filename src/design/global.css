@@ -4750,4 +4750,12 @@ select.input option {
   font-family: var(--body);
   font-style: italic;
   color: var(--ink-soft);
+
+/* Quiz Wrapped (docs/decisions/quiz-wrapped.md): the card is the PNG it saves. */
+.wrapped__card {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--edge);
 }
