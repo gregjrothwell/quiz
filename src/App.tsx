@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { ColdOpen } from './components/ColdOpen';
+import { RigCheck } from './components/RigCheck';
 import { Stage } from './components/Stage';
 import { arrivalFor, walkedIn, NO_ARRIVAL, type Arrival } from './engine/arrival';
 import { shouldAutoJoin } from './engine/autoJoin';
@@ -753,6 +754,7 @@ function Game() {
         />
       )) ||
         (room.phase === 'lobby' && (
+        <>
         <Lobby
           room={room}
           youUid={uid}
@@ -770,6 +772,8 @@ function Game() {
           onStart={handleStart}
           onLeave={handleLeave}
         />
+        {uid ? <RigCheck code={room.code} uid={uid} isHost={isQuizmaster} /> : null}
+        </>
       )) ||
         ((room.phase === 'question' || room.phase === 'reveal') && (
           <QuestionScreen
