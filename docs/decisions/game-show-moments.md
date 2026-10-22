@@ -74,16 +74,19 @@ hit's attack, about twenty clicks a second, ending 11 dB under the fanfare.
 3.1–3.6kHz (the wires) over a short knock — 77% above 1kHz. Greg: *"drum now
 sounds better but clashes with the synth. Also more of a snare than a drum."*
 
-**Then as a timpani, in the fanfare's key** (`ROLL_PARTIALS`): each of the thirty
-strokes is a head tuned to G — sines on G3, D4, G4 and B4, sagging 1.5% as they
-ring past the next stroke — and a 25 ms tick of noise at 1.3kHz for the stick.
-The fanfare is in C, so the roll is its dominant and resolves into it; the last
-stroke rings on to the landing. Every partial from D4 up is where a laptop
-plays, and nothing sinks under 180Hz. Above 300Hz it builds from −39.6 to −32.1
-dB and the fanfare lands at −29.4 (the old roll ended at −40.4). `ROLL_SECONDS`
-is unchanged, so the podium's timing is too. `sound.ts` gained a `noise` voice
-and an `attack`. `sound.test.ts`: the swell per layer, and "a drum, in the
-fanfare's key, that a laptop can play" — FAIL on the old roll and on the snare.
+Then as a timpani tuned to G — sines on G3, D4, G4, B4 and a stick tick. Greg:
+*"nah"*.
+
+**Version 4, the one offered to ship:** the snare's realism, warmer, over a body
+in the fanfare's key. Each of the thirty strokes is band-passed noise at
+1.65–1.9kHz (a rattle, not a hiss; 70 ms) over triangles on G3 and G4 sagging 5%
+(`ROLL_PARTIALS`). The fanfare is in C, so the roll leads into it; the last
+stroke rings on toward the landing. Nothing sinks under 180Hz. Above 300Hz it
+builds from −40.9 to −34.4 dB; the fanfare lands at −29.4 (the old roll ended at
+−40.4). `ROLL_SECONDS` is unchanged, so the podium's timing is too. `sound.ts`
+gained a `noise` voice and an `attack`. `sound.test.ts`: the swell per layer,
+and "a drum, in the fanfare's key, that a laptop can play" — FAIL on the 21
+October roll and on the first snare.
 
 **How it was heard before shipping:** `play()` driven in headless Chromium with
 `AudioContext` swapped for an `OfflineAudioContext`, each cue rendered alone and

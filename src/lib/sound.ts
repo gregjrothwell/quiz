@@ -35,24 +35,22 @@ export type Cue =
  * heard only each blip's attack — "a single sound clipping many times per
  * second" (Greg, 22 October 2026). Rendered through this module offline, 1% of
  * it was above 1kHz. A snare's hiss fixed the hearing but was "more of a snare
- * than a drum" and "clashes with the synth" (Greg, same night). So each stroke
- * is a tuned head ({@link ROLL_PARTIALS}) and a tick of the stick.
+ * than a drum" and "clashes with the synth" (Greg, same night); a timpani on
+ * its own was "nah". So each stroke is a rattle low enough to be a drum's, over
+ * a body tuned to the fanfare ({@link ROLL_PARTIALS}).
  */
 const ROLL_HITS = 30;
 const ROLL_SPACING = 0.046;
 /** A hand is never metronomic. Seconds, repeating; none on the first or last stroke. */
 const ROLL_DRIFT = [0, 0.004, -0.002, 0.003, -0.003, 0.002];
 /**
- * A timpani's head, tuned to G: the fundamental, then near-harmonic partials on
- * D, G and B, each with its weight. The fanfare it rolls into is in C, so the
- * roll is its dominant and resolves into it rather than clashing with it — and
- * every partial from the fifth up is pitched where a laptop can play it.
+ * The drum's body, tuned to G, with each partial's weight: the fanfare it rolls
+ * into is in C, so the roll leads into it rather than clashing with it. The
+ * octave is the part a laptop plays.
  */
 const ROLL_PARTIALS: readonly (readonly [number, number])[] = [
   [196.0, 1],
-  [294.0, 0.6],
-  [392.0, 0.55],
-  [490.0, 0.3],
+  [392.0, 0.45],
 ];
 
 /** How long the drum roll runs, for the screen that has to land on its end. */
@@ -294,20 +292,28 @@ const CUES: Record<Cue, Voice[]> = {
     const start = hit * ROLL_SPACING + drift;
     const last = hit === ROLL_HITS - 1;
     return [
-      // The head, ringing past the next stroke so the roll sustains; the last
-      // rings on to the winner's landing.
-      ...ROLL_PARTIALS.map(([pitch, weight]): Voice => ({
-        type: 'sine',
-        from: pitch,
-        // A struck head sags a little as it rings.
-        to: pitch * 0.985,
+      {
+        // The wires, lower and shorter than a snare's alone, so it is a drum
+        // with a rattle rather than a hiss; alternate hands a little apart.
+        type: 'noise',
+        from: hit % 2 === 0 ? 1_900 : 1_650,
         start,
-        duration: last ? 0.6 : 0.13,
-        gain: weight * (0.16 + 0.36 * swell + (last ? 0.05 : 0)),
-        attack: 0.003,
+        duration: last ? 0.22 : 0.07,
+        gain: 0.35 + 0.6 * swell + (last ? 0.08 : 0),
+        attack: 0.0015,
+      },
+      // The head, tuned to G: the fanfare that follows is in C, so the roll
+      // leads into it instead of clashing.
+      ...ROLL_PARTIALS.map(([pitch, weight]): Voice => ({
+        type: 'triangle',
+        from: pitch,
+        to: pitch * 0.95,
+        start,
+        duration: last ? 0.25 : 0.06,
+        gain: weight * (0.25 + 0.5 * swell + (last ? 0.08 : 0)),
+        attack: 0.0015,
+        cutoff: 2_400,
       })),
-      // The stick on the skin, so each stroke reads as struck rather than held.
-      { type: 'noise', from: 1_300, start, duration: 0.025, gain: 0.1 + 0.2 * swell, attack: 0.001 },
     ];
   }).flat(),
 

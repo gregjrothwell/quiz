@@ -160,13 +160,15 @@ describe('clockVoices', () => {
     // swept to 110Hz and the room heard only its clicks
     for (const voice of pitched) expect(Math.min(voice.from, voice.to ?? voice.from)).toBeGreaterThanOrEqual(180);
 
-    // #and every stroke has a partial a laptop plays, and one tick of the stick
+    // #and every stroke has a partial a laptop plays, and its rattle: one noise
+    // voice, centred where a laptop speaker is at its best
     for (const at of new Set(voices.map((voice) => voice.start))) {
       const stroke = voices.filter((voice) => voice.start === at);
       expect(stroke.some((voice) => voice.type !== 'noise' && voice.from >= 290)).toBe(true);
-      const ticks = stroke.filter((voice) => voice.type === 'noise');
-      expect(ticks).toHaveLength(1);
-      expect(ticks[0]?.duration).toBeLessThanOrEqual(0.04);
+      const rattle = stroke.filter((voice) => voice.type === 'noise');
+      expect(rattle).toHaveLength(1);
+      expect(rattle[0]?.from).toBeGreaterThanOrEqual(1_000);
+      expect(rattle[0]?.from).toBeLessThanOrEqual(4_000);
     }
   });
 
