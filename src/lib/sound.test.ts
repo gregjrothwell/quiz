@@ -8,12 +8,14 @@ import {
   isPreviewBlocked,
   masterGainFor,
   playPreview,
+  playingPreviewUrl,
   positionForVolume,
   primePreview,
   VOLUME_RANGE_DB,
   volumeForPosition,
   playSequence,
   ROLL_SECONDS,
+  setMuted,
   setVolume,
   startClock,
   stopPreview,
@@ -560,6 +562,74 @@ describe('playPreview’s cut', () => {
       expect(made).toHaveLength(0);
     });
   });
+
+  /*
+    What is playing, published so a button can say "Stop" while its clip runs
+    and go back to "Play" by itself when the clip ends — the lobby's sound
+    check, Greg's ask of 22 October 2026. Every way a clip can stop has to
+    clear it, or the button is left offering to stop silence.
+  */
+  test('names the clip from the press, and nothing once it is stopped', () => {
+    withFakeAudio(() => {
+      expect(playingPreviewUrl()).toBeNull();
+
+      playPreview(CLIP, 0, 10);
+      expect(playingPreviewUrl()).toBe(CLIP);
+
+      stopPreview();
+      expect(playingPreviewUrl()).toBeNull();
+    });
+  });
+
+  test('the cut clears it, so nothing is left offering to stop silence', () => {
+    withFakeAudio((made) => {
+      // #given the sound check's ten seconds
+      playPreview(CLIP, 0, 10);
+
+      // #when the clip reaches the cut
+      made[0]?.tick(10.2);
+
+      // #then nothing is playing
+      expect(playingPreviewUrl()).toBeNull();
+    });
+  });
+
+  test('a clip that runs out on its own clears it', () => {
+    withFakeAudio((made) => {
+      playPreview(CLIP);
+      made[0]?.fire('ended');
+      expect(playingPreviewUrl()).toBeNull();
+    });
+  });
+
+  test('a clip that fails to load clears it', () => {
+    withFakeAudio((made) => {
+      playPreview(CLIP);
+      made[0]?.fire('error');
+      expect(playingPreviewUrl()).toBeNull();
+    });
+  });
+
+  test('muting clears it', () => {
+    withFakeAudio(() => {
+      try {
+        playPreview(CLIP);
+        setMuted(true);
+        expect(playingPreviewUrl()).toBeNull();
+      } finally {
+        setMuted(false);
+      }
+    });
+  });
+
+  test('an ended clip from before does not clear the one playing now', () => {
+    withFakeAudio((made) => {
+      playPreview(CLIP);
+      playPreview('https://audio-ssl.itunes.apple.com/other.m4a');
+      made[0]?.fire('ended');
+      expect(playingPreviewUrl()).toBe('https://audio-ssl.itunes.apple.com/other.m4a');
+    });
+  });
 });
 
 describe('Happy Birthday', () => {
@@ -639,6 +709,15 @@ describe('a preview the browser refuses to start', () => {
 
       // #then the player is told there is something to press
       expect(isPreviewBlocked()).toBe(true);
+    });
+  });
+
+  test('a refused clip is not playing, so a Stop button does not stay up', async () => {
+    await withRefusingAudio({ name: 'NotAllowedError' }, async () => {
+      playPreview('https://audio-ssl.itunes.apple.com/clip.m4a');
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(playingPreviewUrl()).toBeNull();
     });
   });
 

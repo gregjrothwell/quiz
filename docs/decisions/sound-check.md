@@ -1,6 +1,6 @@
 # Sound check in the lobby
 
-> **Owner: Greg Rothwell. Last updated: 30 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 22 October 2026. Budget: 250 lines.**
 
 **Status: option A chosen by Greg, 30 September 2026. Built on
 `music-rounds-start-at-once`; not merged, not deployed.**
@@ -33,7 +33,9 @@ Greg chose A.
    round plays at, and the press is the gesture that unlocks media elements for
    the page — the gate a link auto-join never opens (`audio-stack.md`).
 3. **Ten seconds**, the length of a Name that Tune question, then it stops.
-   Pressing again restarts it rather than stacking a second copy.
+   ~~Pressing again restarts it rather than stacking a second copy.~~
+   **Superseded 22 October 2026 (Greg):** pressing again *stops* it, and while
+   it plays the same button reads "Stop the sound check". See below.
 4. **A muted player who presses it is unmuted first.** A button that does
    nothing is worse than no button — the replay's rule.
 5. **A volume slider sits beside it**, the same control as the one in the
@@ -74,6 +76,26 @@ the call over it."
   - The clip stopped at 9.999s of its own time.
   - The panel shows in both gallery lobbies, quizmaster and link-joiner. At
     375px it wraps under the button with no horizontal scroll.
+
+## A second press stops it — 22 October 2026
+
+Greg: *"It can be the same button — it just needs to stop playing on a second
+click and text should change to stop the sound check."* Ten seconds nobody can
+cut short is a long ten seconds in a quiet office.
+
+- `sound.ts` now publishes which preview is playing (`playingPreviewUrl`,
+  `usePreviewPlaying`), set from the press and cleared by every way a clip ends:
+  the cut, a stop, a mute, `ended`, `error`, and a refused `play()`. Miss one and
+  the button offers to stop silence.
+- `SoundCheck` reads it: "Stop the sound check" calls `stopPreview()`, "Play the
+  sound check" plays. The cut puts the label back by itself.
+- The AC 3 test ("a second press … restarts") was **rewritten to the new
+  requirement**, not deleted.
+
+**Evidence, 22 October 2026** (dev build, `#/preview` lobby, real clicks): press →
+playing at 1.92 s, label "Stop"; second press → paused, `src` released, no new
+`play()` call, label "Play"; a third press left alone → label "Stop" at 4.88 s,
+"Play" again 12 s later at the cut. No console errors. `npm test` 1,720 green.
 
 ## Not covered
 
