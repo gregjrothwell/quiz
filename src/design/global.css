@@ -4710,3 +4710,12 @@ select.input option {
   letter-spacing: 0.04em;
   opacity: 0.85;
 }
+
+/* Quiz Wrapped (docs/decisions/quiz-wrapped.md): the card is the PNG it saves. */
+.wrapped__card {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--edge);
+}
