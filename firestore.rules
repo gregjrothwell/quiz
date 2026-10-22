@@ -1023,10 +1023,9 @@ service cloud.firestore {
       // were rounds to win it in. Defaulted rather than required: a row written
       // before honours existed carries none, and a client one deploy behind
       // writes none, and neither should be locked out of its own row.
-      function honourOk(field) {
-        return request.resource.data.get(field, 0) is int
-          && request.resource.data.get(field, 0) >= 0
-          && request.resource.data.get(field, 0) <= request.resource.data.played;
+      function honourOk(d, field) {
+        let count = d.get(field, 0);
+        return count is int && count >= 0 && count <= d.played;
       }
 
       // Best four of the last six. Optional: every live row predates the
@@ -1036,41 +1035,45 @@ service cloud.firestore {
       // live. CI publishes rules before the site in one run, which keeps that
       // order; check-rules after. Same order as firstMs and keep-the-round. Rules cannot walk a list, so the six slots are
       // unrolled; an entry past size() is skipped, not read.
-      function recentEntryOk(entry) {
+      //
+      // The list and the bound are passed in rather than re-read per slot: six
+      // slots multiply every lookup here by six, and this rule runs close to
+      // the 1,000-expression ceiling (see `finalsOk`).
+      function recentEntryOk(entry, best) {
         return entry is map
           && entry.keys().hasOnly(['gameId', 'score', 'at'])
           && entry.gameId is string
           && entry.gameId.size() > 0
           && entry.gameId.size() <= 64
           && entry.score is int
-          && entry.score >= (0 - maxBest())
-          && entry.score <= maxBest()
+          && entry.score >= 0 - best
+          && entry.score <= best
           && entry.at is number;
       }
 
-      function recentSlotOk(i) {
-        return request.resource.data.recent.size() <= i
-          || recentEntryOk(request.resource.data.recent[i]);
+      function recentSlotOk(recent, i, best) {
+        return recent.size() <= i || recentEntryOk(recent[i], best);
       }
 
-      function recentOk() {
-        return !('recent' in request.resource.data.keys())
-          || (request.resource.data.recent is list
-            && request.resource.data.recent.size() <= 6
-            && request.resource.data.recent.size() <= request.resource.data.played
-            && recentSlotOk(0)
-            && recentSlotOk(1)
-            && recentSlotOk(2)
-            && recentSlotOk(3)
-            && recentSlotOk(4)
-            && recentSlotOk(5));
+      function recentOk(d) {
+        let recent = d.get('recent', []);
+        let best = maxBest();
+        return recent is list
+          && recent.size() <= 6
+          && recent.size() <= d.played
+          && recentSlotOk(recent, 0, best)
+          && recentSlotOk(recent, 1, best)
+          && recentSlotOk(recent, 2, best)
+          && recentSlotOk(recent, 3, best)
+          && recentSlotOk(recent, 4, best)
+          && recentSlotOk(recent, 5, best);
       }
 
-      function formOk() {
-        return !('form' in request.resource.data.keys())
-          || (request.resource.data.form is int
-            && request.resource.data.form >= (0 - maxBest() * 4)
-            && request.resource.data.form <= maxBest() * 4);
+      function formOk(d) {
+        return !('form' in d.keys())
+          || (d.form is int
+            && d.form >= (0 - maxBest() * 4)
+            && d.form <= maxBest() * 4);
       }
 
       // Share or Shaft, counted the way the room saw it. A no-pick is not a
@@ -1080,58 +1083,63 @@ service cloud.firestore {
       // client writes all four on every bank, and hasOnly refuses that write
       // until this block is published. CI publishes the rules before the site.
       // docs/decisions/finals-history.md.
-      function finalsCountOk(field) {
-        return request.resource.data.get(field, 0) is int
-          && request.resource.data.get(field, 0) >= 0;
+      //
+      // **Each field is read once, into a `let`.** Written as fourteen
+      // `get(field, 0)` calls, this took a regular's row past the documented
+      // 1,000 expressions per request: six `recent` entries plus this was
+      // refused, so on 22 October 2026 nobody's round banked and every device
+      // showed "Missing or insufficient permissions" over the podium. A fresh
+      // row passed, which is why every check did.
+      // docs/decisions/finals-history.md.
+      function finalsOk(d) {
+        let finals = d.get('finals', 0);
+        let shared = d.get('shared', 0);
+        let shafted = d.get('shafted', 0);
+        let gotShafted = d.get('gotShafted', 0);
+        return finals is int && finals >= 0
+          && shared is int && shared >= 0
+          && shafted is int && shafted >= 0
+          && gotShafted is int && gotShafted >= 0
+          && finals <= d.played
+          && shared + shafted <= finals
+          && gotShafted <= finals;
       }
 
-      function finalsOk() {
-        return finalsCountOk('finals')
-          && finalsCountOk('shared')
-          && finalsCountOk('shafted')
-          && finalsCountOk('gotShafted')
-          && request.resource.data.get('finals', 0) <= request.resource.data.played
-          && request.resource.data.get('shared', 0) + request.resource.data.get('shafted', 0)
-               <= request.resource.data.get('finals', 0)
-          && request.resource.data.get('gotShafted', 0) <= request.resource.data.get('finals', 0);
-      }
-
-      allow create, update: if signedIn()
-        && ownsPlayer(playerId)
-        && request.resource.data.keys().hasOnly(
+      function rowOk(d) {
+        return d.keys().hasOnly(
              ['name', 'played', 'wins', 'points', 'best', 'lastGame', 'lastPlayed',
               'fastest', 'comeback', 'loneWolf', 'contrarian', 'team',
               'recent', 'form',
               'finals', 'shared', 'shafted', 'gotShafted'])
-        && request.resource.data.name is string
-        && request.resource.data.name.size() > 0
-        && request.resource.data.name.size() <= 40
-        && request.resource.data.played is int
-        && request.resource.data.played >= 0
-        && request.resource.data.played <= maxPlayed()
-        && request.resource.data.wins is int
-        && request.resource.data.wins >= 0
+        && d.name is string
+        && d.name.size() > 0
+        && d.name.size() <= 40
+        && d.played is int
+        && d.played >= 0
+        && d.played <= maxPlayed()
+        && d.wins is int
+        && d.wins >= 0
         // You cannot have won more rounds than you played. `best <= points`
         // went on 4 September: a lost minimum stake can put the total below
         // a personal best, and `best` stays a maximum against a zero floor.
-        && request.resource.data.wins <= request.resource.data.played
-        && request.resource.data.points is int
+        && d.wins <= d.played
+        && d.points is int
         // Binary minus, not unary: the console compiler rejects `-maxPoints()`
         // with Unexpected EOF still expecting an operator.
-        && request.resource.data.points >= (0 - maxPoints())
-        && request.resource.data.points <= maxPoints()
-        && request.resource.data.best is int
-        && request.resource.data.best >= 0
-        && request.resource.data.best <= maxBest()
-        && request.resource.data.lastGame is string
-        && request.resource.data.lastGame.size() <= 64
-        && request.resource.data.lastPlayed is number
+        && d.points >= (0 - maxPoints())
+        && d.points <= maxPoints()
+        && d.best is int
+        && d.best >= 0
+        && d.best <= maxBest()
+        && d.lastGame is string
+        && d.lastGame.size() <= 64
+        && d.lastPlayed is number
         // After `played` has been checked, because that is what they are bounded
         // against and rules evaluate left to right.
-        && honourOk('fastest')
-        && honourOk('comeback')
-        && honourOk('loneWolf')
-        && honourOk('contrarian')
+        && honourOk(d, 'fastest')
+        && honourOk(d, 'comeback')
+        && honourOk(d, 'loneWolf')
+        && honourOk(d, 'contrarian')
         // `team` was bounded here ahead of its client, because the season row is
         // validated with `hasOnly` and *any* new field on it costs a rules
         // republish — and a hand-pasted ruleset has broken the game twice. It
@@ -1143,11 +1151,20 @@ service cloud.firestore {
         // next game anybody plays. Anything else bounded here ahead of its
         // feature has to be carried through `PlayerRecord` on the same day, or
         // it will appear to work and quietly clear itself overnight.
-        && request.resource.data.get('team', '') is string
-        && request.resource.data.get('team', '').size() <= 40
-        && recentOk()
-        && formOk()
-        && finalsOk();
+        && d.get('team', '') is string
+        && d.get('team', '').size() <= 40
+        && recentOk(d)
+        && formOk(d)
+        && finalsOk(d);
+      }
+
+      // The row goes in once, as `d`: written against `request.resource.data`
+      // at every use, this rule ran out of its 1,000-expression budget on a
+      // regular's row (see `finalsOk`).
+      allow create, update: if signedIn()
+        && ownsPlayer(playerId)
+        && rowOk(request.resource.data);
+
 
       // Removing your own row is the only way anybody can take a display name
       // back off a shared board without console access. Someone else's row still
