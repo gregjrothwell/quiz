@@ -1,4 +1,5 @@
 import type { QuestionRecord } from './awards';
+import type { SurveyRef } from './survey';
 import type { Difficulty, PackId } from '../questions/types';
 import type { Answer, Player, QuizQuestion, RoomState } from './state';
 import type { Standoff, StandoffPick } from './standoff';
@@ -69,6 +70,7 @@ export interface RecordedQuestion {
   deltas: Record<string, number>;
   /** Absent when this device did not reveal the question, or it was skipped. */
   reveal?: RevealTiming;
+  survey?: SurveyRef;
 }
 
 export interface RecordedPlayer {
@@ -283,6 +285,9 @@ export function foldGameRecord(
       // Firestore refuses an `undefined`, and "this client did not reveal it"
       // and "it revealed instantly" must not look the same in the data.
       ...(wasSkipped ? {} : timingFor(timings, question.id)),
+      // Both halves of a Survey Says prompt, so `read-games` can show how the
+      // room split and what it guessed (R2).
+      ...(question.survey ? { survey: question.survey } : {}),
     });
   }
 

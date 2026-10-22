@@ -24,6 +24,18 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-22 — Release 2026-10-22-3 live: rounds bank again, Survey Says, four audit fixes
+
+Greg: "yeah let's go live". #131 carried #121, #123–#127 and #130, each on its own merge commit; merged `8ca1cba` 15:32:33Z, 17 s after green. Rules published 15:33:24Z; gh-pages `f3c478b`, Pages built 15:34:39Z; `index-CgiLmoB3` and 12 assets byte-identical to a local build. `check-rules` **136/0** — the season full-row allow and both `asked` denies FAILed before and PASS now. B498's two lost rounds were rebanked earlier from `games/`. The built-in browser cannot pass App Check on live; Greg confirmed a real one loads. Live checks still open: the first office Survey Says round, and the first rounds banking on regulars' rows.
+
+## 2026-10-22 — Survey Says built, not live
+
+Family Fortunes with the office as the survey: five prompts told, then guessed. No vault — the host tallies part one from its own game log. Two changes after Greg approved, both flagged: part one shows no split (it would give part two away), and the results go on the lecterns, because bars below them sat under the desk on a phone. No rules change, proved by a whole round in the emulator. All 40 draft prompts kept by Greg ([`survey-says.md`](decisions/survey-says.md)).
+
+## 2026-10-22 — No round banked today: the season rule hit 1,000 expressions
+
+B498's two rounds banked nothing, and showed "Missing or insufficient permissions" over a juddering podium. #104's `finalsOk()` took a regular's row (six `recent` entries) over Firestore's per-request expression limit; every check wrote a light row, so all passed. Fixed by reading the row once; a full-row allow case added to e2e and `check-rules` ([`finals-history.md`](decisions/finals-history.md#22-october-2026-nobodys-round-banked)).
+
 ## 2026-10-22 — #113 live: master ran in 1m21s on the PR's own build
 
 Greg: "Go live with #113 as soon as it's green." Merged `1f5fb8a` one second after green. Master's Plan found PR run 39743341274 (same tree, `3eb7911e`), skipped verify and e2e, published rules and deployed its `dist` with the job's own token: 07:55:00 → 07:56:21, against ~6 min before. gh-pages made no commit, the bytes being what was already live (`index-CYR8cluB`). The What's new gate and the one-feature rule are live with it ([`lead-time.md`](decisions/lead-time.md)).
@@ -121,7 +133,7 @@ AC10 is not measurable here: Cloud Monitoring needs billing. [`host-authority.md
 the words; the master run was cancelled before rules or Pages, so `master` sits ahead of live. Then W3: the AC8
 stall found and fixed (a joiner listed answers before the room was read, was refused, and the same query never
 confirmed when the chair passed to it); AC12 and the final's allow cases added; `check-rules` 28 W3 cases;
-three harnesses make hosted rooms that beat. e2e 15/15. [`host-authority.md`](decisions/host-authority.md#15-october-evening-the-ac8-stall-and-the-gaps-closed).
+three harnesses make hosted rooms that beat. e2e 15/15. [`host-authority.md`](decisions/host-authority-ac8-stall.md#15-october-evening-the-ac8-stall-and-the-gaps-closed).
 
 ## 2026-10-15 — Branch `w3-host-authority` (PR #86): W3, host authority, built and not live
 
@@ -138,23 +150,12 @@ third role, Service Usage Consumer, was found by a 403 in a dry run, not in any 
 first publish is a no-op. Probe PRs #82/#83: a broken file of either kind turns e2e red. Not live: Greg's Cloud Shell step, then W1, then "go live".
 [`rules-from-ci.md`](decisions/rules-from-ci.md).
 
-## 2026-10-15 — Branch `tmdb-credit`: W1, TMDB's logo and notice; D6 added
-
-Greg took the plan's five decisions as recommended, then added D6: league owners sign in (Google, linked to their
-anonymous account), players stay anonymous; W4 is now 3–5 sessions. W1: TMDB's own logo (its sha256 is its filename)
-under every On the box still, Random Round included, and logo plus notice in the lobby. Not live. Found for W5: a rebuild
-re-fetches no still (`existingBySlug`). [`public-scale.md`](decisions/public-scale.md#the-plan-15-october-2026).
-
-## 2026-10-15 — Productionisation plan: five work items, five decisions for Greg, a TMDB gap
-
-Nothing on the public-scale list had moved since 2 Oct. Sequenced it: TMDB credit → rules from CI → host authority →
-tenancy → a TMDB still refresh before 9 Mar 2027; rules from CI now goes *before* host authority. TMDB's terms (fetched
-today) need a logo and notice in the app for every user, and the live site has neither. [`public-scale.md`](decisions/public-scale.md#the-plan-15-october-2026).
-
 ## 2026-10-02 to 2026-10-15 — archived, one line each
 
-Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's; #68 and Blankety Blank built the same night, at 309 with the W3 release entry; the first office rounds of #67 and #68 the same night again, at 304 with the go-live; The Price Was Right built on 17 October, at 302 with #91's go-live; #70 and #69 on 20 October, at 296, with the Random Round, lobby and Price is Right entry; the two 7 October entries on 21 October, at 302 with #98's go-live; the two 12 October go-lives on 21 October, at 306 with #104's go-live; the 8 and 14 October lobby-vote entries on 22 October, at 302 with #107's go-live; the two 15 October vote-taps entries the same day, at 301 with #110's go-live; the two 15 October reveal-name entries the same day, at 301 with #113's go-live.
+Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's; #68 and Blankety Blank built the same night, at 309 with the W3 release entry; the first office rounds of #67 and #68 the same night again, at 304 with the go-live; The Price Was Right built on 17 October, at 302 with #91's go-live; #70 and #69 on 20 October, at 296, with the Random Round, lobby and Price is Right entry; the two 7 October entries on 21 October, at 302 with #98's go-live; the two 12 October go-lives on 21 October, at 306 with #104's go-live; the 8 and 14 October lobby-vote entries on 22 October, at 302 with #107's go-live; the two 15 October vote-taps entries the same day, at 301 with #110's go-live; the two 15 October reveal-name entries the same day, at 301 with #113's go-live; W1's TMDB branch and the productionisation plan, both 15 October, the same day, at 300 with release 2026-10-22-3's go-live.
 
+- **2026-10-15** — [Branch `tmdb-credit`: W1, TMDB's logo and notice; D6 added](recall/2026-10.md#2026-10-15--branch-tmdb-credit-w1-tmdbs-logo-and-notice-d6-added)
+- **2026-10-15** — [Productionisation plan: five work items, five decisions for Greg, a TMDB gap](recall/2026-10.md#2026-10-15--productionisation-plan-five-work-items-five-decisions-for-greg-a-tmdb-gap)
 - **2026-10-15** — [Live: #79 (gh-pages `54fb8d8`): long names cut on the reveal chips](recall/2026-10.md#2026-10-15--live-79-gh-pages-54fb8d8-long-names-cut-on-the-reveal-chips)
 - **2026-10-15** — [Branch `reveal-name-truncate`: long names cut on the reveal chips](recall/2026-10.md#2026-10-15--branch-reveal-name-truncate-long-names-cut-on-the-reveal-chips)
 - **2026-10-15** — [Live: #77 (gh-pages `3b63b5a`): a reload no longer resets the vote lock](recall/2026-10.md#2026-10-15--live-77-gh-pages-3b63b5a-a-reload-no-longer-resets-the-vote-lock)

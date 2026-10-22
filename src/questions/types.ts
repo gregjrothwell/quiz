@@ -48,6 +48,8 @@ export const PACK_IDS = [
   'artists',
   'random',
   'tags',
+  // No answers anywhere: the room is the answer. docs/decisions/survey-says.md.
+  'survey',
 ] as const;
 
 /**
@@ -337,5 +339,8 @@ export const PACK_META: Record<PackId, { title: string; blurb: string }> = {
   tags: {
     title: 'The Price is Right',
     blurb: 'Here it is. What does it cost in the shops today?',
+  },  survey: {
+    title: 'Survey Says',
+    blurb: 'We asked the office. Tell us first, then guess what the room said.',
   },
 };

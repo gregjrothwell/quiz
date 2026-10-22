@@ -19,6 +19,7 @@ import {
   questionDurationMs,
   type Level,
 } from './engine/state';
+import { dealSurveyRound, guessReveal } from './engine/survey';
 import { firestore, isFirebaseConfigured, vaultFirestore } from './firebase';
 import { keepGameRecord } from './lib/gameRecords';
 import { BUZZ_LOCK, buzz } from './lib/haptics';
@@ -179,6 +180,7 @@ function Game() {
     code,
     connection,
     error,
+    answersError,
     isQuizmaster,
     lamps,
     answersReady,
@@ -477,6 +479,27 @@ function Game() {
    * history is read and, when the read succeeded, written back — a `random`
    * history would not stop On the box serving the same still next round.
    */
+  /**
+   * Survey Says: five prompts, told then guessed. The count and level the lobby
+   * offers mean nothing here — a survey round is always ten questions, five
+   * prompts twice. Season history works as for any pack, on the prompt ids.
+   */
+  async function prepareSurvey(): Promise<{
+    questions: Awaited<ReturnType<typeof buildQuizQuestions>>;
+    remember: () => Promise<void>;
+  }> {
+    const pool = await loadPackQuestions('survey');
+    const asked = await loadAsked('survey').catch(() => NO_HISTORY);
+    const questions = dealSurveyRound(pool, Math.random, asked.ids);
+    const promptIds = [...new Set(questions.flatMap((question) => question.survey?.promptId ?? []))];
+    return {
+      questions,
+      remember: async () => {
+        await recordAsked('survey', promptIds, asked).catch(() => undefined);
+      },
+    };
+  }
+
   async function prepareRandomRound(
     count: number,
     level: Level,
@@ -549,7 +572,9 @@ function Game() {
       const prepared =
         packId === 'random'
           ? prepareRandomRound(count, level)
-          : prepareSinglePack(packId, count, level, jigsawEnabled);
+          : packId === 'survey'
+            ? prepareSurvey()
+            : prepareSinglePack(packId, count, level, jigsawEnabled);
       prepared
         .then(async ({ questions, remember }) => {
           const pack = packs.find((entry) => entry.id === packId);
@@ -730,6 +755,35 @@ function Game() {
       // cancelling the write is safe here.
       await withTimeout(
         (async () => {
+          /*
+            Survey Says has no vault: the room is the answer. A tell has none,
+            so it reveals on option 0 and the reducer scores nobody. A guess
+            reads the room's top answer off this host's own record of the
+            telling, and is skipped when there is none to read — the chair
+            changed hands, or too few answered (G2a, G3).
+          */
+          if (question.survey) {
+            const startedDispatch = Date.now();
+            if (question.survey.part === 'tell') {
+              await dispatch({ type: 'reveal', correctIndex: 0, questionId: question.id });
+            } else {
+              const guessed = guessReveal(room.questions, room.index, gameLog);
+              await dispatch(
+                guessed
+                  ? {
+                      type: 'reveal',
+                      correctIndex: guessed.correctIndex,
+                      top: guessed.top,
+                      counts: guessed.counts,
+                      questionId: question.id,
+                    }
+                  : { type: 'skip' },
+              );
+            }
+            timing.dispatchMs = Date.now() - startedDispatch;
+            return;
+          }
+
           // The answer is not in the room, the pack or this bundle. It comes
           // back from the vault, and only once the server agrees the clock has
           // run out.
@@ -754,7 +808,7 @@ function Game() {
       revealingRef.current = null;
       throw cause;
     }
-  }, [room, dispatch, answersReady]);
+  }, [room, dispatch, answersReady, gameLog]);
 
   const form = room?.form ?? null;
   const showTitles = room?.phase === 'lobby' && form !== null;
@@ -768,9 +822,10 @@ function Game() {
    * and the beginning is the one moment a quizmaster actually wants to hold,
    * while the room reads the card and somebody finds their drink.
    *
-   * The room cannot get stuck behind a quizmaster who wandered off, because the
-   * role is derived from who has been present longest: if they go, somebody else
-   * inherits this button within a second.
+   * The room cannot get stuck behind a quizmaster who wandered off. A host who
+   * presses Leave hands the chair over in the same write; one who vanishes is
+   * replaced once they have been gone from presence for 50 seconds and their beat
+   * has been silent for 75 (`planClaim` and `CLAIM_AFTER_SILENT_MS`, host.ts).
    */
   const handleBeginRound = useCallback(() => {
     if (!form) return;
@@ -1006,7 +1061,11 @@ function Game() {
     );
   }
 
-  const problem = (actionError?.step === roomStep ? actionError.message : null) ?? packsError;
+  const problem =
+    (actionError?.step === roomStep ? actionError.message : null)
+    ?? packsError
+    // A closed listener does not reopen on its own; a reload resubscribes.
+    ?? (answersError ? `Answers stopped reaching this device (${answersError}). Reload the page to reconnect.` : null);
 
   if (showSeason) {
     return (

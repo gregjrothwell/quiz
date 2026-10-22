@@ -223,6 +223,25 @@ describe('the steal through the reducer', () => {
     expect(total(state) - total(before)).toBe(1_000);
   });
 
+  test('a leader who has left is not robbed', () => {
+    /*
+      #given Ann leads and closes her tab: `leave` drops her seat but keeps
+      her score, so the raw map still puts her top
+
+      #then Bo's first right answer steals nothing — the leader among those
+      still seated is Bo himself — and Ann's score is untouched. It used to
+      take 50 off a player who was not in the room (audit item 1).
+    */
+    const state = apply(
+      roundWithSteal(true),
+      { type: 'leave', uid: 'ann' },
+      { type: 'answer', uid: 'bo', optionIndex: 0, elapsedMs: 900 },
+      { type: 'reveal', correctIndex: 0, questionId: 'q1' },
+    );
+    expect(state.lastSteal).toBeNull();
+    expect(state.scores.ann).toBe(1_000);
+  });
+
   test('the leader answering first takes nothing off themselves', () => {
     const state = apply(
       roundWithSteal(true),

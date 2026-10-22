@@ -38,6 +38,7 @@ export function streakOf(log: readonly QuestionRecord[], uid: string, skipped: R
       correctIndex: record.correctIndex,
       deltas: record.deltas,
       uid,
+      ...(record.top ? { top: record.top } : {}),
     });
     if (verdict !== 'correct') break;
 

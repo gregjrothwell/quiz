@@ -2,7 +2,9 @@
 
 > **Owner: Greg Rothwell. Last updated: 22 October 2026. Budget: 250 lines.**
 
-**Status: DRAFT for Greg's approval. Nothing built.** Item 5 of the sequence in
+**Status: APPROVED 22 October 2026, all three steps.** Greg: *"Approve the host
+clean-up as recommended: all three steps including the test scripts and the CI
+whole-round test; saving scores stays on each player's phone. Start step 1."* Item 5 of the sequence in
 [`direction-oct-2026.md`](direction-oct-2026.md#2-architecture), weakness 1:
 *"The de facto server is two untested React files."* Every claim about the
 code below was read on `74fd345`, 22 October 2026.
@@ -115,10 +117,10 @@ one: it changes the code that runs every round.
 - **Size.** About three sessions. Step 2 should not share a release with
   anything else.
 
-## Open — Greg to decide
+## Decided — Greg, 22 October 2026
 
-| Decision | Owner |
+| Decision | Outcome |
 |---|---|
-| Approve the story, the cut (host duties only, no behaviour change, not a server) and the three-step order | Greg |
-| Whether `recordGame` (every device banks its own row) joins this or stays with the member side, as drafted | Greg |
-| Whether C (harnesses) is needed now, or waits for W4 | Greg |
+| Story, cut and three-step order | Approved as drafted |
+| `recordGame` | Stays with the member side: each device banks its own row. Moving it would change behaviour, and season rows are owner-only, so the host could not write them without a rules change |
+| C (harnesses) | Now, as step 3 — it is the step that makes CI test the real host |

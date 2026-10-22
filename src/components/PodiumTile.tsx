@@ -45,6 +45,12 @@ interface PodiumTileProps {
   arrivals?: TileArrival[];
   /** Points to pop over this lectern, or null. Decided by the screen. */
   pop?: number | null;
+  /**
+   * A line under the option, e.g. Survey Says' "2 said this". On the lectern
+   * itself so it costs no height: anything stacked below the lecterns sits
+   * under the desk on a phone.
+   */
+  note?: string | null;
 }
 
 /**
@@ -101,6 +107,7 @@ export function PodiumTile({
   order,
   arrivals = [],
   pop = null,
+  note = null,
 }: PodiumTileProps) {
   const letter = LETTERS[index] ?? '?';
   // Named for the screen reader, since the chips themselves are aria-hidden and
@@ -120,7 +127,10 @@ export function PodiumTile({
       <span className="tile__letter" aria-hidden="true">
         {letter}
       </span>
-      <span className="tile__text">{text}</span>
+      <span className="tile__text">
+        {text}
+        {note ? <span className="tile__note">{note}</span> : null}
+      </span>
 
       {arrivals.length > 0 ? (
         <span className="tile__crowd">
