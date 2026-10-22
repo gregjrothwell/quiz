@@ -64,6 +64,7 @@ import { ShareOrShaft } from './screens/ShareOrShaft';
 */
 const Preview = lazy(() => import('./screens/Preview').then((m) => ({ default: m.Preview })));
 const Season = lazy(() => import('./screens/Season').then((m) => ({ default: m.Season })));
+const Updates = lazy(() => import('./screens/Updates').then((m) => ({ default: m.Updates })));
 
 /**
  * What shows while one of those chunks is in flight.
@@ -213,6 +214,7 @@ function Game() {
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<ActionError | null>(null);
   const [showSeason, setShowSeason] = useState(false);
+  const [showUpdates, setShowUpdates] = useState(false);
 
 
   // What this device banked, and where. Held rather than re-derived so the week
@@ -1016,6 +1018,16 @@ function Game() {
     );
   }
 
+  if (showUpdates) {
+    return (
+      <Stage>
+        <Suspense fallback={<Loading what="what's new" />}>
+          <Updates onBack={() => setShowUpdates(false)} />
+        </Suspense>
+      </Stage>
+    );
+  }
+
   if (!room) {
     return (
       <Stage>
@@ -1026,6 +1038,7 @@ function Game() {
           onCreate={handleCreate}
           onJoin={handleJoin}
           onSeason={() => setShowSeason(true)}
+          onUpdates={() => setShowUpdates(true)}
         />
       </Stage>
     );

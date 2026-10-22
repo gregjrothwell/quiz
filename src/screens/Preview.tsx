@@ -17,6 +17,7 @@ import { Lobby } from './Lobby';
 import { QuestionScreen } from './QuestionScreen';
 import { Scoreboard } from './Scoreboard';
 import { ShareOrShaft } from './ShareOrShaft';
+import { Updates } from './Updates';
 
 /**
  * A design gallery of every screen with fixed data.
@@ -552,7 +553,7 @@ export function Preview() {
   const screens: { title: string; node: ReactNode }[] = [
     {
       title: 'Landing',
-      node: <Landing busy={false} error={null} onCreate={noop} onJoin={noop} onSeason={noop} />,
+      node: <Landing busy={false} error={null} onCreate={noop} onJoin={noop} onSeason={noop} onUpdates={noop} />,
     },
     {
       title: 'Lobby · quizmaster',
@@ -1823,6 +1824,10 @@ export function Preview() {
           onNext={noop}
         />
       ),
+    },
+    {
+      title: 'Updates · what’s new',
+      node: <Updates onBack={noop} />,
     },
   ];
 
