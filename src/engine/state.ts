@@ -2,6 +2,7 @@ import type { FormFact } from './form';
 import type { Steal } from './scoring';
 import type { Standoff } from './standoff';
 import type { PackVotes, VoteTaps } from './packVote';
+import type { SurveyRef } from './survey';
 import {
   DIFFICULTIES,
   type Difficulty,
@@ -212,6 +213,11 @@ export interface QuizQuestion {
    * question keys, so this needs no paste. See docs/decisions/random-round.md.
    */
   sourcePack?: PackId;
+  /**
+   * Which half of a Survey Says prompt this is, and on a revealed guess, every
+   * option tied for top. Absent on every other round. See `survey.ts`.
+   */
+  survey?: SurveyRef;
 }
 
 export interface RoomState {

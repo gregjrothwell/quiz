@@ -205,15 +205,22 @@ export function tallyQuestion(params: {
    * neither is about this question.
    */
   multiplier?: number;
+  /**
+   * A Survey Says guess with the room's top answer tied: every option in it
+   * is right. Absent everywhere else, where `correctIndex` alone decides.
+   */
+  top?: readonly number[];
 }): Record<string, number> {
-  const { correctIndex, answers, scores, steal, multiplier = 1 } = params;
+  const { correctIndex, answers, scores, steal, multiplier = 1, top } = params;
+  const right = (answer: Answer): boolean =>
+    (top ? top.includes(answer.optionIndex) : answer.optionIndex === correctIndex);
   const deltas: Record<string, number> = {};
 
   const stake = (uid: string, answer: Answer): number =>
     (scores ? stakeFor(scores[uid] ?? 0, answer.wager) : 0);
 
   const correct = Object.entries(answers)
-    .filter(([, answer]) => answer.optionIndex === correctIndex)
+    .filter(([, answer]) => right(answer))
     .sort(([aUid, a], [bUid, b]) => (a.elapsedMs - b.elapsedMs) || aUid.localeCompare(bUid));
 
   let position = 0;
@@ -232,7 +239,7 @@ export function tallyQuestion(params: {
     // `wrong` from `lost` by whether the key is here at all, so a losing stake
     // has to be a number in the map rather than an absence — and a stake of
     // nothing has to stay `0` rather than becoming `-0`.
-    if (answer.optionIndex !== correctIndex) {
+    if (!right(answer)) {
       const lost = stake(uid, answer);
       deltas[uid] = lost > 0 ? -lost : 0;
     }

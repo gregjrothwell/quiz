@@ -61,11 +61,16 @@ function parseRecord(value: unknown): QuestionRecord | null {
   const { index, correctIndex } = value;
   if (typeof index !== 'number' || typeof correctIndex !== 'number') return null;
 
+  const top = Array.isArray(value.top) && value.top.every((option) => typeof option === 'number')
+    ? (value.top as number[])
+    : null;
   return {
     index,
     correctIndex,
     answers: parseAnswers(value.answers),
     deltas: parseDeltas(value.deltas),
+    ...(top ? { top } : {}),
+    ...(value.tell === true ? { tell: true } : {}),
   };
 }
 
@@ -161,6 +166,9 @@ export function useGameLog(room: RoomState | null): QuestionRecord[] {
         correctIndex,
         answers: room.answers,
         deltas: room.lastDeltas,
+        // Survey Says: a tell has no right answer, and a tied guess has several.
+        ...(question?.survey?.part === 'tell' ? { tell: true } : {}),
+        ...(question?.survey?.top ? { top: question.survey.top } : {}),
       };
       setLog({
         gameId: room.gameId,

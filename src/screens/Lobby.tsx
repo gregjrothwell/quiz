@@ -203,6 +203,8 @@ export function Lobby({
   }, [roomSize, isQuizmaster]);
 
   const selected = packs.find((pack) => pack.id === packId);
+  // Survey Says deals its own ten and plays without stakes or steals (v1).
+  const survey = packId === 'survey';
   const available = selected ? availableFor(selected, level, jigsaw) : 0;
   const effectiveCount = Math.min(count, available);
   // A pack that fixes its own window overrides the picker without forgetting
@@ -364,37 +366,41 @@ export function Lobby({
             ))}
           </div>
 
-          <div className="stack">
-            <p className="eyebrow">Set the level</p>
-            <div className="picker">
-              {LEVELS.map((option) => {
-                const supply = selected ? availableFor(selected, option, jigsaw) : null;
-                const meta = LEVEL_META[option];
-                return (
-                  <button
-                    type="button"
-                    key={option}
-                    className="pick"
-                    aria-pressed={option === level}
-                    disabled={supply === 0}
-                    onClick={() => setLevel(option)}
-                  >
-                    <b>{meta.title}</b>
-                    <span>{meta.blurb}</span>
-                    {supply === null ? null : (
-                      <i>
-                        {supply < count
-                          ? `${supply} — short of ${count}`
-                          : supply < count * THIN_SUPPLY_MULTIPLE
-                            ? `${supply} — expect repeats`
-                            : `${supply.toLocaleString('en-GB')} available`}
-                      </i>
-                    )}
-                  </button>
-                );
-              })}
+          {survey ? null : (
+            <>
+            <div className="stack">
+              <p className="eyebrow">Set the level</p>
+              <div className="picker">
+                {LEVELS.map((option) => {
+                  const supply = selected ? availableFor(selected, option, jigsaw) : null;
+                  const meta = LEVEL_META[option];
+                  return (
+                    <button
+                      type="button"
+                      key={option}
+                      className="pick"
+                      aria-pressed={option === level}
+                      disabled={supply === 0}
+                      onClick={() => setLevel(option)}
+                    >
+                      <b>{meta.title}</b>
+                      <span>{meta.blurb}</span>
+                      {supply === null ? null : (
+                        <i>
+                          {supply < count
+                            ? `${supply} — short of ${count}`
+                            : supply < count * THIN_SUPPLY_MULTIPLE
+                              ? `${supply} — expect repeats`
+                              : `${supply.toLocaleString('en-GB')} available`}
+                        </i>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+            </>
+          )}
 
           <div className="stack">
             <p className="eyebrow">Time to answer</p>
@@ -432,89 +438,98 @@ export function Lobby({
             </p>
           </div>
 
-          <div className="stack">
-            <p className="eyebrow">Questions this round</p>
-            <div className="btn-row">
-              {ROUND_LENGTHS.map((option) => (
+          {survey ? (
+            <p className="muted hint">
+              Survey Says is always ten questions: five about the room, then the same five
+              again — what did most of you say? No stakes and no steals on this one.
+            </p>
+          ) : (
+            <>
+            <div className="stack">
+              <p className="eyebrow">Questions this round</p>
+              <div className="btn-row">
+                {ROUND_LENGTHS.map((option) => (
+                  <button
+                    type="button"
+                    key={option}
+                    className={option === count ? 'btn' : 'btn btn--ghost'}
+                    onClick={() => setCount(option)}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+              {selected && available < count ? (
+                <p className="muted hint">
+                  {selected.title} has {available} at this level, so the round will be{' '}
+                  {effectiveCount}.
+                </p>
+              ) : null}
+            </div>
+
+            <div className="stack">
+              <p className="eyebrow">The last question</p>
+              <div className="picker">
                 <button
                   type="button"
-                  key={option}
-                  className={option === count ? 'btn' : 'btn btn--ghost'}
-                  onClick={() => setCount(option)}
+                  className="pick"
+                  aria-pressed={!wager}
+                  onClick={() => setWager(false)}
                 >
-                  {option}
+                  <b>Played straight</b>
+                  <span>Every question worth the same</span>
                 </button>
-              ))}
+                <button
+                  type="button"
+                  className="pick"
+                  aria-pressed={wager}
+                  onClick={() => setWager(true)}
+                >
+                  <b>Played for stakes</b>
+                  <span>Bet your points on the last one</span>
+                </button>
+              </div>
+              {wager ? (
+                <p className="muted hint">
+                  Everyone picks how much of their own score to stake before they answer. Get it
+                  right and you win it; get it wrong and you lose it. A player on nothing who
+                  stakes still puts 500 on the line.
+                </p>
+              ) : null}
             </div>
-            {selected && available < count ? (
-              <p className="muted hint">
-                {selected.title} has {available} at this level, so the round will be{' '}
-                {effectiveCount}.
-              </p>
-            ) : null}
-          </div>
 
-          <div className="stack">
-            <p className="eyebrow">The last question</p>
-            <div className="picker">
-              <button
-                type="button"
-                className="pick"
-                aria-pressed={!wager}
-                onClick={() => setWager(false)}
-              >
-                <b>Played straight</b>
-                <span>Every question worth the same</span>
-              </button>
-              <button
-                type="button"
-                className="pick"
-                aria-pressed={wager}
-                onClick={() => setWager(true)}
-              >
-                <b>Played for stakes</b>
-                <span>Bet your points on the last one</span>
-              </button>
+            <div className="stack">
+              <p className="eyebrow">Chasing the leader</p>
+              <div className="picker">
+                <button
+                  type="button"
+                  className="pick"
+                  aria-pressed={!steal}
+                  onClick={() => setSteal(false)}
+                >
+                  <b>Nobody loses points</b>
+                  <span>You only ever score your own</span>
+                </button>
+                <button
+                  type="button"
+                  className="pick"
+                  aria-pressed={steal}
+                  onClick={() => setSteal(true)}
+                >
+                  <b>First right answer steals</b>
+                  <span>Take {STEAL_SHARE}% off whoever is top</span>
+                </button>
+              </div>
+              {steal ? (
+                <p className="muted hint">
+                  Every question, whoever gets it right first takes {STEAL_SHARE}% of the leader’s
+                  score off them. The leader cannot steal from themselves, so staying in front is
+                  its own risk. Nothing is created or destroyed — the points just change hands.
+                </p>
+              ) : null}
             </div>
-            {wager ? (
-              <p className="muted hint">
-                Everyone picks how much of their own score to stake before they answer. Get it
-                right and you win it; get it wrong and you lose it. A player on nothing who
-                stakes still puts 500 on the line.
-              </p>
-            ) : null}
-          </div>
-
-          <div className="stack">
-            <p className="eyebrow">Chasing the leader</p>
-            <div className="picker">
-              <button
-                type="button"
-                className="pick"
-                aria-pressed={!steal}
-                onClick={() => setSteal(false)}
-              >
-                <b>Nobody loses points</b>
-                <span>You only ever score your own</span>
-              </button>
-              <button
-                type="button"
-                className="pick"
-                aria-pressed={steal}
-                onClick={() => setSteal(true)}
-              >
-                <b>First right answer steals</b>
-                <span>Take {STEAL_SHARE}% off whoever is top</span>
-              </button>
-            </div>
-            {steal ? (
-              <p className="muted hint">
-                Every question, whoever gets it right first takes {STEAL_SHARE}% of the leader’s
-                score off them. The leader cannot steal from themselves, so staying in front is
-                its own risk. Nothing is created or destroyed — the points just change hands.
-              </p>
-            ) : null}
-          </div>
+            </>
+          )}
 
           <div className="stack">
             <p className="eyebrow">How it ends</p>
@@ -591,7 +606,16 @@ export function Lobby({
             }
             onClick={() =>
               packId &&
-              onStart(packId, effectiveCount, level, effectiveDuration, wager, steal, jigsaw, standoff)
+              onStart(
+                packId,
+                effectiveCount,
+                level,
+                effectiveDuration,
+                wager && !survey,
+                steal && !survey,
+                jigsaw,
+                standoff,
+              )
             }
           >
             {busy
