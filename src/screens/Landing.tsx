@@ -3,6 +3,7 @@ import { isValidRoomCode, normaliseRoomCode, ROOM_CODE_LENGTH } from '../engine/
 import { SQUADS } from '../engine/squad';
 import { MAX_NAME_LENGTH, rememberedName } from '../lib/rememberedName';
 import { rememberedPlayingWith, rememberedSquad } from '../lib/rememberedSquad';
+import { hasUnseen, updatesSeen, UPDATES } from '../lib/updates';
 
 interface LandingProps {
   busy: boolean;
@@ -12,6 +13,7 @@ interface LandingProps {
   onCreate: (name: string, squad: string, playingWith: string) => void;
   onJoin: (code: string, name: string, squad: string, playingWith: string) => void;
   onSeason: () => void;
+  onUpdates: () => void;
 }
 
 export function Landing({
@@ -21,6 +23,7 @@ export function Landing({
   onCreate,
   onJoin,
   onSeason,
+  onUpdates,
 }: LandingProps) {
   // Read once, on mount. The box stays editable and the stored name is only ever
   // where it starts, so `remembered` is kept separately: it is what this browser
@@ -30,6 +33,7 @@ export function Landing({
   const [squad, setSquad] = useState<string>(rememberedSquad);
   const [playingWith, setPlayingWith] = useState<string>(rememberedPlayingWith);
   const [code, setCode] = useState(initialCode);
+  const [unseen] = useState(() => hasUnseen(UPDATES, updatesSeen()));
 
   // Only a Lurker is asked, because only a Lurker has a side to choose. For
   // anybody else the answer is their own squad and the question is noise.
@@ -228,6 +232,15 @@ export function Landing({
       <div className="btn-row">
         <button type="button" className="btn btn--ghost" onClick={onSeason}>
           Season table
+        </button>
+        <button type="button" className="btn btn--ghost" onClick={onUpdates}>
+          What&rsquo;s new
+          {unseen ? (
+            <>
+              <span className="new-dot" aria-hidden="true" />
+              <span className="sr-only"> (new)</span>
+            </>
+          ) : null}
         </button>
       </div>
 
