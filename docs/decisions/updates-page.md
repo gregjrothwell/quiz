@@ -33,8 +33,11 @@ Asked for 21 Oct ("note down an updates page so users can see"); Greg said build
 
 ## Process
 
-**The release PR adds its entry.** One release, one PR (AGENTS.md), so the page
-cannot drift from what went live. Behind-the-scenes releases (scripts, docs,
+**Every PR that changes what players see adds its entry, and CI enforces it**
+(22 Oct, [`lead-time.md`](lead-time.md)). Written as a rule, it was missed the
+same day: #110 went live without its lines, and #114 added them. A PR touching
+`src/` or `public/` without `src/lib/updates.ts` fails verify unless a line in
+its description or a commit message starts `What's new: none — <why>`. Behind-the-scenes releases (scripts, docs,
 traces) add nothing. Wording for call it: a right call beats any tap, a wrong one
 scores nothing — **there is no call bonus** ([`typed-answers.md`](typed-answers.md)).
 

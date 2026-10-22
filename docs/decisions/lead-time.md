@@ -40,7 +40,19 @@ Then the docs-only record PR (#112) cost a second full CI and deploy, about
    (7 days).
 3. **AGENTS.md:** a release branch only when two or more features go live
    together. One feature goes live from its own PR.
-4. **Greg's settings:** *Allow auto-merge* is on (22 Oct). A rule on `master`
+4. **A What's new gate.** #110 went live without its What's new line, even
+   though [`updates-page.md`](updates-page.md) said the release PR adds it.
+   Greg caught it: *"this needs building into the go live workflow"*.
+   - Plan marks a PR `whats_new=missing` when it changes `src/` or `public/`
+     (not tests, not `Preview.tsx`) without touching `src/lib/updates.ts`.
+   - Verify then fails, and verify is a required check, so the PR cannot merge.
+   - Waiver, for changes players can't notice: `What's new: none — <why>` at
+     the start of a line in the PR description or any commit message.
+   - Dry run on 22 Oct: #109 and #110 → `missing` (the two that shipped
+     without); #114 → `ok`; #112 → `n/a` (docs); #113 → `n/a` (CI only);
+     #111 → `missing`, rightly, since it would need a waiver.
+   - The pattern was checked against six sample texts.
+5. **Greg's settings:** *Allow auto-merge* is on (22 Oct). A rule on `master`
    requiring the checks is still to do (below).
 
 ## Why it is built this way
