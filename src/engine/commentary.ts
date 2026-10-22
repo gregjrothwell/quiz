@@ -19,7 +19,7 @@ import { roomStandings } from './scoring';
 export type Moment = 'reveal' | 'scoreboard' | 'podium';
 
 export interface Line {
-  /** Which fact, for tests and so the host speaks each line once. */
+  /** Which fact, so tests can tell the lines apart. */
   fact: string;
   text: string;
 }

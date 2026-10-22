@@ -25,13 +25,33 @@ export type Cue =
   | 'join';
 
 /**
- * The podium's drum roll: thirty hits a little under fifty milliseconds apart,
- * swelling, so it reads as a roll rather than a rhythm. Built rather than
- * written out because thirty near-identical lines hide the two numbers that
- * matter — the spacing and the swell.
+ * The podium's drum roll: thirty strokes a little under fifty milliseconds
+ * apart, swelling, so it reads as a roll rather than a rhythm. Built rather
+ * than written out because thirty near-identical lines hide the numbers that
+ * matter — the spacing, the swell and the band.
+ *
+ * **A timpani roll, in the fanfare's key.** The first roll (21 October) was
+ * triangle blips at 110–196Hz; laptop speakers barely carry that, so the room
+ * heard only each blip's attack — "a single sound clipping many times per
+ * second" (Greg, 22 October 2026). Rendered through this module offline, 1% of
+ * it was above 1kHz. A snare's hiss fixed the hearing but was "more of a snare
+ * than a drum" and "clashes with the synth" (Greg, same night); a timpani on
+ * its own was "nah". So each stroke is a rattle low enough to be a drum's, over
+ * a body tuned to the fanfare ({@link ROLL_PARTIALS}).
  */
 const ROLL_HITS = 30;
 const ROLL_SPACING = 0.046;
+/** A hand is never metronomic. Seconds, repeating; none on the first or last stroke. */
+const ROLL_DRIFT = [0, 0.004, -0.002, 0.003, -0.003, 0.002];
+/**
+ * The drum's body, tuned to G, with each partial's weight: the fanfare it rolls
+ * into is in C, so the roll leads into it rather than clashing with it. The
+ * octave is the part a laptop plays.
+ */
+const ROLL_PARTIALS: readonly (readonly [number, number])[] = [
+  [196.0, 1],
+  [392.0, 0.45],
+];
 
 /** How long the drum roll runs, for the screen that has to land on its end. */
 export const ROLL_SECONDS = ROLL_HITS * ROLL_SPACING;
@@ -124,9 +144,14 @@ export function positionForVolume(level: number): number {
 /**
  * One oscillator's worth of a cue. `to` bends the pitch across the note, which
  * is most of the difference between a buzzer and a beep.
+ *
+ * `noise` is the one voice that is not an oscillator: white noise, band-passed
+ * around `from`. It is what a drum's snare wires are, and nothing pitched can
+ * stand in for it — see the roll.
  */
 export interface Voice {
-  type: OscillatorType;
+  type: OscillatorType | 'noise';
+  /** The pitch, or for `noise` the centre of the band it is filtered to. */
   from: number;
   to?: number;
   /** Seconds after the cue starts. */
@@ -136,6 +161,8 @@ export interface Voice {
   gain: number;
   /** Low-pass corner. Absent leaves the oscillator unfiltered. */
   cutoff?: number;
+  /** Seconds to full gain. 6 ms when absent; a stick on a drum is faster. */
+  attack?: number;
 }
 
 const A2 = 110.0;
@@ -259,16 +286,36 @@ const CUES: Record<Cue, Voice[]> = {
     { type: 'triangle', from: 150, to: 100, start: 0.2, duration: 0.1, gain: 0.45, cutoff: 900 },
   ],
 
-  roll: Array.from({ length: ROLL_HITS }, (_, hit): Voice => ({
-    type: 'triangle',
-    // Alternating hands, a semitone-ish apart, is what keeps it a drum.
-    from: hit % 2 === 0 ? 196 : 182,
-    to: 110,
-    start: hit * ROLL_SPACING,
-    duration: 0.05,
-    gain: 0.25 + (0.6 * hit) / (ROLL_HITS - 1),
-    cutoff: 1400,
-  })),
+  roll: Array.from({ length: ROLL_HITS }, (_, hit): Voice[] => {
+    const swell = hit / (ROLL_HITS - 1);
+    const drift = hit === 0 || hit === ROLL_HITS - 1 ? 0 : (ROLL_DRIFT[hit % ROLL_DRIFT.length] ?? 0);
+    const start = hit * ROLL_SPACING + drift;
+    const last = hit === ROLL_HITS - 1;
+    return [
+      {
+        // The wires, lower and shorter than a snare's alone, so it is a drum
+        // with a rattle rather than a hiss; alternate hands a little apart.
+        type: 'noise',
+        from: hit % 2 === 0 ? 1_900 : 1_650,
+        start,
+        duration: last ? 0.22 : 0.07,
+        gain: 0.35 + 0.6 * swell + (last ? 0.08 : 0),
+        attack: 0.0015,
+      },
+      // The head, tuned to G: the fanfare that follows is in C, so the roll
+      // leads into it instead of clashing.
+      ...ROLL_PARTIALS.map(([pitch, weight]): Voice => ({
+        type: 'triangle',
+        from: pitch,
+        to: pitch * 0.95,
+        start,
+        duration: last ? 0.25 : 0.06,
+        gain: weight * (0.25 + 0.5 * swell + (last ? 0.08 : 0)),
+        attack: 0.0015,
+        cutoff: 2_400,
+      })),
+    ];
+  }).flat(),
 
   // Somebody walked into the lobby. The quietest cue in the house, and only the
   // quizmaster's device plays it — see `Lobby`.
@@ -609,40 +656,76 @@ function audio(): { ctx: AudioContext; out: GainNode } | null {
   return { ctx: context, out: master };
 }
 
-function strike(ctx: AudioContext, out: GainNode, voice: Voice, at: number): OscillatorNode {
-  const oscillator = ctx.createOscillator();
-  const envelope = ctx.createGain();
+/** A second of white noise per context, which every noise voice reads a slice of. */
+const noiseBuffers = new WeakMap<BaseAudioContext, AudioBuffer>();
 
-  oscillator.type = voice.type;
+function noiseFor(ctx: BaseAudioContext): AudioBuffer {
+  const held = noiseBuffers.get(ctx);
+  if (held) return held;
+  const buffer = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+  const samples = buffer.getChannelData(0);
+  for (let i = 0; i < samples.length; i += 1) samples[i] = Math.random() * 2 - 1;
+  noiseBuffers.set(ctx, buffer);
+  return buffer;
+}
+
+/** How wide a noise voice's band is. Under 1 is broad, as a snare's hiss is. */
+const NOISE_Q = 0.8;
+
+function strike(ctx: AudioContext, out: GainNode, voice: Voice, at: number): AudioScheduledSourceNode {
+  const envelope = ctx.createGain();
   const startAt = at + voice.start;
   const endAt = startAt + voice.duration;
 
-  oscillator.frequency.setValueAtTime(voice.from, startAt);
-  if (voice.to !== undefined) {
-    oscillator.frequency.exponentialRampToValueAtTime(voice.to, endAt);
+  let source: AudioScheduledSourceNode;
+  let shaped: AudioNode;
+  let begin: () => void;
+  if (voice.type === 'noise') {
+    const noise = ctx.createBufferSource();
+    noise.buffer = noiseFor(ctx);
+    const band = ctx.createBiquadFilter();
+    band.type = 'bandpass';
+    band.frequency.value = voice.from;
+    band.Q.value = NOISE_Q;
+    noise.connect(band);
+    source = noise;
+    shaped = band;
+    // A different slice of the second for each stroke, so no two hiss alike.
+    begin = () => noise.start(startAt, (voice.start * 0.618) % 0.5);
+  } else {
+    const oscillator = ctx.createOscillator();
+    oscillator.type = voice.type;
+    oscillator.frequency.setValueAtTime(voice.from, startAt);
+    if (voice.to !== undefined) {
+      oscillator.frequency.exponentialRampToValueAtTime(voice.to, endAt);
+    }
+    source = oscillator;
+    shaped = oscillator;
+    begin = () => oscillator.start(startAt);
   }
 
   // A 6 ms attack rather than an instant one: a square wave that starts at full
-  // amplitude clicks on every device, which reads as a blown speaker.
+  // amplitude clicks on every device, which reads as a blown speaker. A drum's
+  // stroke asks for less, and says so with `attack`.
   envelope.gain.setValueAtTime(0.0001, startAt);
-  envelope.gain.exponentialRampToValueAtTime(voice.gain, startAt + 0.006);
+  envelope.gain.exponentialRampToValueAtTime(voice.gain, startAt + (voice.attack ?? 0.006));
   envelope.gain.exponentialRampToValueAtTime(0.0001, endAt);
 
   if (voice.cutoff === undefined) {
-    oscillator.connect(envelope);
+    shaped.connect(envelope);
   } else {
     const filter = ctx.createBiquadFilter();
     filter.type = 'lowpass';
     filter.frequency.value = voice.cutoff;
-    oscillator.connect(filter);
+    shaped.connect(filter);
     filter.connect(envelope);
   }
 
   envelope.connect(out);
-  oscillator.start(startAt);
-  oscillator.stop(endAt + 0.02);
+  begin();
+  source.stop(endAt + 0.02);
 
-  return oscillator;
+  return source;
 }
 
 export function play(cue: Cue): void {
@@ -658,8 +741,8 @@ export function play(cue: Cue): void {
   for (const voice of CUES[cue]) strike(ctx, out, voice, at);
 }
 
-let clockNodes: { gain: GainNode; sources: OscillatorNode[] } | null = null;
-let sequenceNodes: { gain: GainNode; sources: OscillatorNode[] } | null = null;
+let clockNodes: { gain: GainNode; sources: AudioScheduledSourceNode[] } | null = null;
+let sequenceNodes: { gain: GainNode; sources: AudioScheduledSourceNode[] } | null = null;
 let previewEl: HTMLAudioElement | null = null;
 /** A song fetched ahead of being played. See {@link primePreview}. */
 let primed: { url: string; el: HTMLAudioElement } | null = null;
@@ -1057,22 +1140,4 @@ export function usePreviewPlaying(url: string): boolean {
     () => previewPlaying === url,
     () => false,
   );
-}
-
-/**
- * Says a line aloud with the browser's own speech, for the Commentator
- * (docs/decisions/commentator.md, M5). Only the host's device calls it, so the
- * room hears one voice. Silent when muted or where speech is not available; a
- * British English voice where the device has one.
- */
-export function speak(text: string): void {
-  if (muted || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-  const synth = window.speechSynthesis;
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = 'en-GB';
-  const british = synth.getVoices().find((voice) => voice.lang === 'en-GB');
-  if (british) utterance.voice = british;
-  utterance.volume = Math.min(1, Math.max(0.2, volume * 4));
-  synth.cancel();
-  synth.speak(utterance);
 }

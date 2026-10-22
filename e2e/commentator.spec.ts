@@ -4,8 +4,9 @@ import { setEmulatorFlag } from './emulators';
 import { admin, seedVault, until } from './nodeClient';
 
 /**
- * The Commentator through the app (docs/decisions/commentator.md, M3–M5):
- * the same caption on every screen, spoken from the host's device only.
+ * The Commentator through the app (docs/decisions/commentator.md, M3–M4):
+ * the same caption on every screen, and no voice anywhere — speech came out on
+ * 22 October 2026.
  *
  * Speech is recorded rather than heard: each tab's `speechSynthesis.speak` is
  * replaced before the app loads, and what it was asked to say is kept on the
@@ -45,7 +46,7 @@ async function seat(browser: Browser, name: string): Promise<Page> {
 const spokenOn = (page: Page): Promise<string[]> =>
   page.evaluate(() => (window as unknown as { __spoken: string[] }).__spoken);
 
-test('the Commentator: one caption on every screen, one voice in the room', async ({ browser }) => {
+test('the Commentator: one caption on every screen, and no voice', async ({ browser }) => {
   test.setTimeout(420_000);
 
   const host = await seat(browser, 'Fen');
@@ -109,8 +110,9 @@ test('the Commentator: one caption on every screen, one voice in the room', asyn
   // The podium: three newcomers, so the winner's is a debut.
   await expect(gil.locator('.commentary')).toHaveText(/First round, first win|one round played, one round won/, { timeout: 20_000 });
 
-  // M5: one voice — the host's device spoke, nobody else's did.
-  expect((await spokenOn(host)).length).toBeGreaterThan(3);
+  // No voice: captions only since 22 October, so no tab spoke, the host's
+  // included.
+  expect(await spokenOn(host)).toEqual([]);
   expect(await spokenOn(gil)).toEqual([]);
   expect(await spokenOn(hux)).toEqual([]);
 });

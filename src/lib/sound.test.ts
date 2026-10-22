@@ -19,6 +19,7 @@ import {
   setVolume,
   startClock,
   stopPreview,
+  type Voice,
 } from './sound';
 import { HAPPY_BIRTHDAY } from '../questions/melody-voices';
 
@@ -114,19 +115,61 @@ describe('clockVoices', () => {
   });
 
   test('swells the drum roll, and ends it when the podium is told it ends', () => {
-    // #given the roll, hit by hit
-    const hits = cueVoices('roll');
-    const gains = hits.map((voice) => voice.gain);
+    // #given the roll, stroke by stroke, one layer at a time: each partial of
+    // the head, and the stick
+    const voices = cueVoices('roll');
+    const layers = new Map<string, Voice[]>();
+    for (const voice of voices) {
+      const key = `${voice.type}:${String(voice.from)}`;
+      layers.set(key, [...(layers.get(key) ?? []), voice]);
+    }
+    expect(layers.size).toBeGreaterThan(1);
 
-    // #then every hit is louder than the one before, so it builds rather than drones
-    for (let hit = 1; hit < gains.length; hit += 1) {
-      expect(gains[hit]).toBeGreaterThan(gains[hit - 1] ?? 0);
+    // #then in every layer each stroke is louder than the one before, so it
+    // builds rather than drones
+    for (const layer of layers.values()) {
+      expect(layer.length).toBeGreaterThan(1);
+      for (let hit = 1; hit < layer.length; hit += 1) {
+        expect(layer[hit]?.gain).toBeGreaterThan(layer[hit - 1]?.gain ?? 0);
+      }
     }
 
-    // #and the last hit starts inside ROLL_SECONDS, which the final screen times
-    // the winner's riser against
-    const last = hits[hits.length - 1];
-    expect(last?.start ?? Infinity).toBeLessThan(ROLL_SECONDS);
+    // #and the last stroke starts inside ROLL_SECONDS, which the final screen
+    // times the winner's riser against
+    const last = Math.max(...voices.map((voice) => voice.start));
+    expect(last).toBeLessThan(ROLL_SECONDS);
+  });
+
+  test('makes the drum roll a drum, in the fanfare’s key, that a laptop can play', () => {
+    // #given the roll, and the notes of G major's chord — the fanfare that
+    // follows is in C, so a roll on G leads into it rather than clashing
+    // ("clashes with the synth", Greg, 22 October 2026)
+    const voices = cueVoices('roll');
+    const pitched = voices.filter((voice) => voice.type !== 'noise');
+    const chordOfG = [196.0, 246.94, 293.66];
+    const onChord = (hz: number): boolean =>
+      chordOfG.some((note) => {
+        const octaves = Math.log2(hz / note);
+        return Math.abs(octaves - Math.round(octaves)) < 0.015;
+      });
+
+    // #then every pitched voice starts on G, B or D
+    for (const voice of pitched) expect(onChord(voice.from)).toBe(true);
+
+    // #and nothing sinks below 180Hz, where a laptop is silent: the first roll
+    // swept to 110Hz and the room heard only its clicks
+    for (const voice of pitched) expect(Math.min(voice.from, voice.to ?? voice.from)).toBeGreaterThanOrEqual(180);
+
+    // #and every stroke has a partial a laptop plays, and its rattle: one noise
+    // voice, centred where a laptop speaker is at its best
+    for (const at of new Set(voices.map((voice) => voice.start))) {
+      const stroke = voices.filter((voice) => voice.start === at);
+      expect(stroke.some((voice) => voice.type !== 'noise' && voice.from >= 290)).toBe(true);
+      const rattle = stroke.filter((voice) => voice.type === 'noise');
+      expect(rattle).toHaveLength(1);
+      expect(rattle[0]?.from).toBeGreaterThanOrEqual(1_000);
+      expect(rattle[0]?.from).toBeLessThanOrEqual(4_000);
+    }
   });
 
   test('gives each heartbeat a voice a laptop speaker can play', () => {

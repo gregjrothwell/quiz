@@ -64,7 +64,7 @@ export function Scoreboard({ room, youUid, isQuizmaster, onNext }: ScoreboardPro
           Standings
         </h2>
         {room.chaserEnabled ? <p className="chaser-line">{chaserTally(chaserScore(room.questions))} 🍟</p> : null}
-        <Commentary room={room} moment="scoreboard" speakHere={isQuizmaster} />
+        <Commentary room={room} moment="scoreboard" />
       </header>
 
       {skippedLast ? (

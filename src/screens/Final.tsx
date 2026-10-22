@@ -298,7 +298,9 @@ export function Final({
         {room.chaserEnabled ? (
           <p className="chaser-line chaser-line--result">{chaserResult(chaserScore(room.questions))} 🍟</p>
         ) : null}
-        <Commentary room={room} moment="podium" speakHere={isQuizmaster} show={landed} />
+        {/* The frozen table, as everything else here: the winner pressing Leave
+            must not take the line with them. */}
+        <Commentary room={{ ...room, players, scores }} moment="podium" show={landed} />
       </header>
 
       {hasPodium ? (

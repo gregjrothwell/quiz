@@ -1,6 +1,6 @@
 # Game-show moments
 
-> **Owner: Greg Rothwell. Last updated: 21 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 22 October 2026. Budget: 250 lines.**
 
 The moments a TV quiz holds and this one used to rush: the final's reveal, the
 podium, the screen changing, a player's own points. Built on branch
@@ -56,6 +56,44 @@ first pass rather than new moments, and went on the same PR.
 
 **Left for Greg:** the line under the title changed from "Playing for 5,550"
 to "The top two, for both their scores" in the first pass, without asking.
+
+## The drum roll, rebuilt — 22 October 2026
+
+Greg had heard "a single sound clipping many times per second before the
+actual tone played" at the podium twice that day. In a test run: *"I think it's
+what you refer to as a drum roll. It sounds like nothing of the sort - this was
+what I thought was the stuck sound."* It came out of the PR first; then Greg:
+*"drum roll is fine but it has to sound like a real one."*
+
+The cause was the heartbeat's, above, again. The roll was thirty triangle hits
+at 196→110Hz and no noise at all. Rendered through `sound.ts` offline (below),
+16% of its energy was above 300Hz and 1% above 1kHz — a laptop played only each
+hit's attack, about twenty clicks a second, ending 11 dB under the fanfare.
+
+**Rebuilt twice the same night.** First as a snare: band-passed noise at
+3.1–3.6kHz (the wires) over a short knock — 77% above 1kHz. Greg: *"drum now
+sounds better but clashes with the synth. Also more of a snare than a drum."*
+
+Then as a timpani tuned to G — sines on G3, D4, G4, B4 and a stick tick. Greg:
+*"nah"*.
+
+**Version 4, the one offered to ship:** the snare's realism, warmer, over a body
+in the fanfare's key. Each of the thirty strokes is band-passed noise at
+1.65–1.9kHz (a rattle, not a hiss; 70 ms) over triangles on G3 and G4 sagging 5%
+(`ROLL_PARTIALS`). The fanfare is in C, so the roll leads into it; the last
+stroke rings on toward the landing. Nothing sinks under 180Hz. Above 300Hz it
+builds from −40.9 to −34.4 dB; the fanfare lands at −29.4 (the old roll ended at
+−40.4). `ROLL_SECONDS` is unchanged, so the podium's timing is too. `sound.ts`
+gained a `noise` voice and an `attack`. `sound.test.ts`: the swell per layer,
+and "a drum, in the fanfare's key, that a laptop can play" — FAIL on the 21
+October roll and on the first snare.
+
+**How it was heard before shipping:** `play()` driven in headless Chromium with
+`AudioContext` swapped for an `OfflineAudioContext`, each cue rendered alone and
+mixed at the podium's offsets into WAVs for Greg's ear. Mixing in Node, not
+`OfflineAudioContext.suspend()`: a fanfare scheduled from a suspend landed at
+2.31 s and 2.06 s in two renders that asked for 1.9 s — the instrument lied
+until each cue was rendered on its own.
 
 ## The rules it kept
 
