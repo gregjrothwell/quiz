@@ -2,7 +2,7 @@
 
 > **Owner: Greg Rothwell. Last updated: 22 October 2026. Budget: 250 lines.**
 
-**Status: APPROVED 22 October 2026, as recommended.** Greg: *"Approve all four stories as recommended: Mr Fries on pack×difficulty rates, room wins on more than half right, 🍟 until there's art, fix HANDOVER item 8; rig probe now and rig only on a pass; Commentator without Gemini, spoken from the host only, you draft ~30 lines; Wrapped's five cards opening 5 D[ec, Christmas finale left out for now]"* (the message was cut at 300 characters; the bracket is the rest of the button he pressed). Wow item 3 of
+**Status: APPROVED 22 October 2026, as recommended. Live with #136; captions only since the voice came out the same evening (below).** Greg: *"Approve all four stories as recommended: Mr Fries on pack×difficulty rates, room wins on more than half right, 🍟 until there's art, fix HANDOVER item 8; rig probe now and rig only on a pass; Commentator without Gemini, spoken from the host only, you draft ~30 lines; Wrapped's five cards opening 5 D[ec, Christmas finale left out for now]"* (the message was cut at 300 characters; the bracket is the rest of the button he pressed). Wow item 3 of
 [`direction-oct-2026.md`](direction-oct-2026.md#5-wow--all-five-accepted).
 
 ## What changed since the idea was written
@@ -71,6 +71,24 @@ Every fact is one the app already holds on this device. No new reads.
   scoreboard and podium; `speak()` in `lib/sound.ts`, British voice where there
   is one, silent when muted, called on the host's device only (M5).
 - No new listeners or reads (M7): it reads the room every screen already has.
+
+## The voice came out — 22 October 2026, evening
+
+Greg, after the live check round (`5SVU`, his Chrome, release #136): *"the
+voice is terrible - remove it for now and we can re-introduce and reiterate."*
+He also heard the standings' line spoken, then **the same audio again during
+the podium animation**. That repeat's cause was not found before the voice came
+out; find it before speech comes back.
+
+- `speak()` is gone from `lib/sound.ts`, and with it `Commentary`'s
+  `speakHere` and its spoken-once ref. Captions are unchanged (M4). **M5 is
+  withdrawn**; M7's "off with sound off" now holds trivially.
+- `e2e/commentator.spec.ts` expects **no** speech on any tab. Before, it
+  required the host's tab to speak more than three lines, and passed in CI on
+  #136 — so the new assertion fails on that code.
+- Not flagged when the story was approved: these were the game's **first
+  spoken words**. A voice returns only with a story of its own — which voice,
+  when it talks, and how it sits over a tune.
 
 ## Cut from v1
 

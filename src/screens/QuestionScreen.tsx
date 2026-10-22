@@ -944,7 +944,7 @@ export function QuestionScreen({
             {chaserTally(chaserScore(room.questions))}
           </p>
         ) : null}
-        <Commentary room={room} moment="reveal" speakHere={isQuizmaster} show={revealed && settled} />
+        <Commentary room={room} moment="reveal" show={revealed && settled} />
         <div className="row row--between">
           {/*
           Mounted for the whole reveal rather than swapped in when the verdict

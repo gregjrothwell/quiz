@@ -298,7 +298,7 @@ export function Final({
         {room.chaserEnabled ? (
           <p className="chaser-line chaser-line--result">{chaserResult(chaserScore(room.questions))} 🍟</p>
         ) : null}
-        <Commentary room={room} moment="podium" speakHere={isQuizmaster} show={landed} />
+        <Commentary room={room} moment="podium" show={landed} />
       </header>
 
       {hasPodium ? (
