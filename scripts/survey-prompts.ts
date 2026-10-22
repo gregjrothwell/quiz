@@ -1,9 +1,10 @@
 /**
  * Survey Says prompts. No answers: the room is the answer.
  *
- * **Provisional: all 40 of Claude's draft, 22 October 2026, until Greg cuts
- * them** (docs/decisions/survey-prompts-draft.md). The number is the draft's,
- * kept in the id so a cut never renumbers what the season has already served.
+ * All 40 of Claude's draft, kept whole by Greg on 22 October 2026 ("it's fine
+ * go ahead"; docs/decisions/survey-prompts-draft.md). The number is the
+ * draft's, kept in the id so a later cut never renumbers what the season has
+ * already served.
  *
  * `npm run write-survey-pack` writes public/packs/survey.json and its index
  * entry from this file.

@@ -5,8 +5,9 @@
 **Status: BUILT, not live, 22 October 2026** (branch `survey-says`). Approved by
 Greg the same day with the host-peek trade-off as drafted. Two corrections made
 after approval and flagged to him: T3 (part one shows no split) and G5 (counts on
-the lecterns, not bars below). **The pack is provisional** — all 40 draft
-prompts ([`survey-prompts-draft.md`](survey-prompts-draft.md)) until Greg's cut. The first Wow item in
+the lecterns, not bars below). **The pack is all 40 draft prompts**
+([`survey-prompts-draft.md`](survey-prompts-draft.md)); Greg kept them whole the
+same day. The first Wow item in
 [`direction-oct-2026.md`](direction-oct-2026.md#5-wow--all-five-accepted).
 Ships as an ordinary pack, the way every round type has — not behind a Lab,
 which Greg shelved on 22 October 2026 as complexity we don't need.

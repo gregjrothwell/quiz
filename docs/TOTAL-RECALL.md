@@ -27,7 +27,7 @@ notes, not chronology; every entry they described is still listed below by date.
 
 ## 2026-10-22 — Survey Says built, not live
 
-Family Fortunes with the office as the survey: five prompts told, then guessed. No vault — the host tallies part one from its own game log. Two changes after Greg approved, both flagged: part one shows no split (it would give part two away), and the results go on the lecterns, because bars below them sat under the desk on a phone. No rules change, proved by a whole round in the emulator. Prompts provisional until Greg cuts them ([`survey-says.md`](decisions/survey-says.md)).
+Family Fortunes with the office as the survey: five prompts told, then guessed. No vault — the host tallies part one from its own game log. Two changes after Greg approved, both flagged: part one shows no split (it would give part two away), and the results go on the lecterns, because bars below them sat under the desk on a phone. No rules change, proved by a whole round in the emulator. All 40 draft prompts kept by Greg ([`survey-says.md`](decisions/survey-says.md)).
 ## 2026-10-22 — #113 live: master ran in 1m21s on the PR's own build
 
 Greg: "Go live with #113 as soon as it's green." Merged `1f5fb8a` one second after green. Master's Plan found PR run 39743341274 (same tree, `3eb7911e`), skipped verify and e2e, published rules and deployed its `dist` with the job's own token: 07:55:00 → 07:56:21, against ~6 min before. gh-pages made no commit, the bytes being what was already live (`index-CYR8cluB`). The What's new gate and the one-feature rule are live with it ([`lead-time.md`](decisions/lead-time.md)).

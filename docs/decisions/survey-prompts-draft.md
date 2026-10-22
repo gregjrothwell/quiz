@@ -2,8 +2,9 @@
 
 > **Owner: Greg Rothwell. Last updated: 22 October 2026. Budget: 250 lines.**
 
-**Status: DRAFT, 40 prompts, written by Claude for Greg to cut.** Nothing here is
-in a pack yet. Story: [`survey-says.md`](survey-says.md).
+**Status: KEPT WHOLE by Greg, 22 October 2026** ("it's fine go ahead"). All 40 are
+the Survey Says pack, via `scripts/survey-prompts.ts`. Cut any later by deleting
+from that file; ids keep their numbers. Story: [`survey-says.md`](survey-says.md).
 
 What a good one does: **splits the room**, so the top answer isn't obvious; is
 ordinary British office life; fits on a phone; hurts nobody's feelings. Cut
