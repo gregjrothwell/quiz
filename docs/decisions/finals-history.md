@@ -1,6 +1,6 @@
 # Finals history on the seats
 
-> **Owner: Greg Rothwell. Last updated: 21 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 22 October 2026. Budget: 250 lines.**
 
 **Status: LIVE 21 October 2026** (#104, merge `627d5f9`, gh-pages `860e6a5`;
 `check-rules` 129/129). Was: built, not merged. Greg approved the story and all
@@ -132,6 +132,40 @@ because a malformed row would get that player's next bank refused. That is the
 postmortem's failure mode, and it would land on one person. Dry run by default;
 `-- --go` writes. It was not run from this build — no credentials, and a dry
 run is still a live read.
+
+## 22 October 2026: nobody's round banked
+
+**What happened.** The office played two rounds in B498 (08:52Z, 08:58Z), the
+first since #104 went live. No device banked either one: `season-2` and
+`week-2026-W43` have no row written since the backfill at 19:43Z on the 21st
+(read with the Admin SDK, 22 Oct). Every device showed "Missing or insufficient
+permissions" over the podium, and the podium juddered.
+
+**Why.** Firestore allows 1,000 expressions per request (documented limit,
+checked 22 Oct). `finalsOk()` called `get(field, 0)` fourteen times. On a
+regular's row — six `recent` entries, all checked slot by slot — that took the
+rule over the limit, and an over-limit rule is a refusal. Proved in the
+emulator against the published rule: `recent` of 1–5 passed, 6 was refused,
+with or without the finals fields. Removing `finalsOk()` let 6 through.
+
+**Why every check passed.** `check-rules` and the e2e write light rows. The 21
+Oct allow case wrote finals onto a row with no `recent`. Nothing wrote a row as
+heavy as a regular's.
+
+**The judder.** `recordGame` failing calls `report`, which puts a `.notice`
+above the stage — in flow, so the podium was shoved down mid-build. The failed
+bank clears `bankedRef`, so it retried on room updates.
+
+**The fix.** Same checks, cheaper: the row goes in once as `d`, each optional
+field is read once into a `let`, and the six `recent` slots take the list and
+bound as arguments. Headroom on the heaviest row, measured by padding the rule
+with `d.played >= 0` conditions: before, it was over; a minimal `let`-only
+`finalsOk` passed with 5–9 spare; this version passes with 20–29 spare.
+**That is not much.** The next field added to this row must be paid for, and
+`e2e/season-bank.spec.ts` plus `check-rules`' full-row case are there to say so.
+
+**Not done:** today's two rounds are not on the table. Whether to bank them from
+`games/` is Greg's call.
 
 ## Open
 

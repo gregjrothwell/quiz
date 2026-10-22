@@ -20,6 +20,7 @@ export const UPDATES: readonly Update[] = [
   {
     date: '2026-10-22',
     lines: [
+      'Rounds land on the season table again. This morning’s two didn’t, which is what put a permissions warning over the podium.',
       'This page. Whenever the quiz changes, it says so here.',
       'Season table and What’s new sit beside Join a room, so a laptop shows them without scrolling.',
       'Press the sound check again to stop it.',
