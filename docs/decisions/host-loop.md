@@ -132,6 +132,26 @@ Step 2 must pick each on purpose, not by accident:
 
 The reaper is still run on each presence reading, not on a timer, as today.
 
+## Step 2 — built 22 October 2026, branch `host-loop-2`
+
+`src/lib/useHost.ts` runs `src/host/` in the browser: it asks `dueNow` when
+anything it reads changes and when a wake comes round, performs the moves, and
+reports how each went. `App.tsx` lost the reveal, its retry ladder and timings,
+the `games/` keep and the three deal functions; `useRoom.ts` the reaper and the
+beat; `useStandoff.ts` its three moves, keeping the picks and the clocks.
+
+**B4 missed for `useRoom.ts`, on measurement.** `App.tsx` 1,235 → 859 (−376).
+`useRoom.ts` 1,193 → 1,131 (−62): it only ever held three host duties. The rest
+is the member side — joining, answering, the claim, presence — which the story
+cut out. Reaching −250 would mean moving that, so the number was wrong, not the
+work. (−250 was this file's own guess, made before counting.)
+
+**The three accidental behaviours (step 1) now do the deliberate thing**: the
+backoff is waited out, eight timed retries is the end (the Reveal button
+stays), and question one keeps its gate time. One visible difference: the room
+stopped saying "Revealing…" as the ninth attempt *started*; it now stops when it
+*fails*. All four only occur when the vault refuses.
+
 ## Risks
 
 - **Hidden ordering.** Some effects depend on React render order — e.g. the

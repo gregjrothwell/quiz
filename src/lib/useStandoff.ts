@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { collection, doc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
 import { firestore } from '../firebase';
-import type { Action } from '../engine/reducer';
 import {
   commitmentDoc,
   freshNonce,
@@ -12,7 +11,6 @@ import {
   type SealedPickDoc,
 } from '../engine/sealedPick';
 import {
-  PICK_GRACE_MS,
   PICK_MS,
   REVEAL_GRACE_MS,
   TALK_MS,
@@ -87,12 +85,19 @@ export interface StandoffView {
   pick: (choice: StandoffPick) => void;
 }
 
+/** The screen's view, plus what `useHost` needs to move the final on. */
+export interface StandoffState extends StandoffView {
+  /** Finalists with a commitment for this game, in finalist order. */
+  committed: readonly string[];
+  /** The sealed picks, opened; null while checking, and always on a device that is not the host. */
+  opened: Readonly<Record<string, StandoffPick | null>> | null;
+}
+
 interface Options {
   code: string | null;
   uid: string | null;
   room: RoomState | null;
   isQuizmaster: boolean;
-  dispatch: (action: Action | Action[]) => Promise<void>;
   onError: (cause: unknown) => void;
 }
 
@@ -104,9 +109,8 @@ export function useStandoff({
   uid,
   room,
   isQuizmaster,
-  dispatch,
   onError,
-}: Options): StandoffView {
+}: Options): StandoffState {
   const standoff = room?.phase === 'standoff' ? room.standoff : null;
   const stage = standoff?.stage ?? null;
   const gameId = room?.gameId ?? '';
@@ -207,51 +211,19 @@ export function useStandoff({
     });
   }, [code, uid, stage, sealedIn, myRevealed, rememberedChoice, rememberedNonce, gameId, closeTick]);
 
-  // ── The quizmaster's moves ──────────────────────────────────────────────
+  // ── What the host needs to move the final on ────────────────────────────
+  //
+  // The moves themselves — end the talk, blow the whistle, settle — are
+  // `src/host/due.ts`'s, run by `useHost`. This hands it what only this hook can
+  // see: who has committed, and the sealed picks opened against their commitments.
 
-  /**
-   * Each stage is moved on from once. A failed write clears the mark, and the
-   * effects below re-run on every second of their clock, so it is retried
-   * without a timer of its own.
-   */
-  const movedRef = useRef<string | null>(null);
-  const move = useCallback(
-    (key: string, action: Action) => {
-      if (movedRef.current === key) return;
-      movedRef.current = key;
-      dispatch(action).catch((cause: unknown) => {
-        movedRef.current = null;
-        onErrorRef.current(cause);
-      });
-    },
-    [dispatch],
-  );
+  // `sealed` at the whistle is who had committed by then, as this device saw it —
+  // the engine counts nobody else's pick.
+  const committedKey = finalists.filter((finalist) => hasCommitted(docs[finalist], gameId)).join(',');
+  const committed = useMemo(() => (committedKey ? committedKey.split(',') : NO_ONE), [committedKey]);
 
-  const talkTick = Math.floor(talk.elapsedMs / 1000);
-  useEffect(() => {
-    if (!isQuizmaster || stage !== 'talk' || !talk.expired) return;
-    move(`${gameId}:talk`, { type: 'openPicks' });
-  }, [isQuizmaster, stage, talk.expired, gameId, move, talkTick]);
-
-  // The whistle: as soon as both have committed, or once the pick clock and its
-  // grace have run out. `sealed` is who had committed by then, as this device
-  // saw it — the engine counts nobody else's pick.
-  const committed = finalists.filter((finalist) => hasCommitted(docs[finalist], gameId));
-  const committedKey = committed.join(',');
-  const pickOver = picking.elapsedMs >= PICK_MS + PICK_GRACE_MS;
-  const pickTick = Math.floor(picking.elapsedMs / 1000);
-  const everyoneIn = finalists.length > 0 && committed.length === finalists.length;
-
-  useEffect(() => {
-    if (!isQuizmaster || stage !== 'pick' || !(everyoneIn || pickOver)) return;
-    move(`${gameId}:pick`, {
-      type: 'closePicks',
-      sealed: committedKey ? committedKey.split(',') : [],
-    });
-  }, [isQuizmaster, stage, everyoneIn, pickOver, committedKey, gameId, move, pickTick]);
-
-  // The settle: once every sealed pick opens against its commitment, or once
-  // the reveal grace runs out — a pick that never opens counts as share.
+  // Opening a pick is a hash, so it is async; null until the check has run for
+  // these documents.
   const [opened, setOpened] = useState<{
     from: Record<string, SealedPickDoc>;
     gameId: string;
@@ -272,14 +244,6 @@ export function useStandoff({
   }, [isQuizmaster, stage, sealed, docs, gameId]);
 
   const verified = opened !== null && opened.from === docs && opened.gameId === gameId ? opened.picks : null;
-  const allOpened = verified !== null && sealed.every((finalist) => verified[finalist] != null);
-  const revealOver = closing.expired;
-
-  useEffect(() => {
-    if (!isQuizmaster || stage !== 'closed' || verified === null) return;
-    if (!allOpened && !revealOver) return;
-    move(`${gameId}:closed`, { type: 'settle', picks: verified });
-  }, [isQuizmaster, stage, verified, allOpened, revealOver, gameId, move, closeTick]);
 
   const lockedIn = Object.fromEntries(
     finalists.map((finalist) => [
@@ -294,5 +258,7 @@ export function useStandoff({
     secondsLeft: stage === 'pick' ? picking.secondsLeft : talk.secondsLeft,
     remainingMs: stage === 'pick' ? picking.remainingMs : talk.remainingMs,
     pick,
+    committed,
+    opened: verified,
   };
 }

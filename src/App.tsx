@@ -7,21 +7,16 @@ import type { Verdict } from './engine/questionVote';
 import { honoursFor, sawWholeGame, NO_HONOURS } from './engine/awards';
 import { finalFor } from './engine/finals';
 import { formFor } from './engine/form';
-import { foldGameRecord, type RevealTiming } from './engine/gameRecord';
-import { msUntilRevealGate, REVEAL_TIMEOUT_MS, revealBackoffMs } from './engine/revealGate';
 import { roomStandings } from './engine/scoring';
 import { skippedIndices, streakOf } from './engine/streak';
 import { codeFromHash } from './engine/roomCode';
 import {
   DEFAULT_QUESTION_DURATION_MS,
-  buildQuizQuestions,
   currentQuestion,
   questionDurationMs,
   type Level,
 } from './engine/state';
-import { dealSurveyRound, guessReveal } from './engine/survey';
-import { firestore, isFirebaseConfigured, vaultFirestore } from './firebase';
-import { keepGameRecord } from './lib/gameRecords';
+import { firestore, isFirebaseConfigured } from './firebase';
 import { BUZZ_LOCK, buzz } from './lib/haptics';
 import { playerIdFor } from './lib/identity';
 import { recordVote } from './lib/questionVotes';
@@ -35,17 +30,16 @@ import {
 import { useFinalistRecords } from './lib/useFinalistRecords';
 import { useFinalSnapshot } from './lib/useFinalSnapshot';
 import { useGameLog } from './lib/useGameLog';
-import { NO_HISTORY, type AskedHistory } from './engine/askedHistory';
-import { dealRandomRound, RANDOM_SOURCES, type RandomSource } from './engine/randomRound';
 import { loadAsked, loadForm, recordAsked, recordGame, type Banked } from './lib/season';
+import { dealRound } from './host/prepare';
+import type { PackPorts } from './host/ports';
 import { play } from './lib/sound';
 import { useStillPreload } from './lib/stills';
 import { loadPackQuestions, usePackIndex } from './lib/usePacks';
+import { useHost } from './lib/useHost';
 import { useQuestionClock } from './lib/useQuestionClock';
 import { useRoom } from './lib/useRoom';
 import { useStandoff } from './lib/useStandoff';
-import { resolveAnswer } from './lib/vault';
-import { withTimeout } from './lib/withTimeout';
 import type { PackId } from './questions/types';
 import { Final } from './screens/Final';
 import { Landing } from './screens/Landing';
@@ -78,17 +72,8 @@ function Loading({ what }: { what: string }) {
   return <p className="muted">Loading {what}…</p>;
 }
 
-/**
- * How many times to ask the vault before leaving it to the quizmaster's button.
- *
- * The wait between attempts is no longer flat — see `revealBackoffMs`. It was
- * 1500ms, chosen when a refusal was thought to mean the server disagreed by a
- * second or so. Measured on the live project on 20 August 2026 it disagrees by
- * one network hop, so the first retry is now 300ms and the cap is unchanged: the
- * same number of writes against the same read budget, recovering five times
- * faster in the case that actually happens.
- */
-const MAX_REVEAL_RETRIES = 8;
+/** The packs and the season's question history, for dealing a round (`src/host/prepare.ts`). */
+const PACK_PORTS: PackPorts = { loadPack: loadPackQuestions, loadAsked, recordAsked };
 
 interface ActionError {
   message: string;
@@ -236,11 +221,6 @@ function Game() {
   // races a write which actually landed is a no-op rather than a double count.
   const bankedRef = useRef<string | null>(null);
 
-  // The same guard for the round's own record, kept apart from `bankedRef`
-  // because the two writes fail independently and neither should stop the
-  // other retrying.
-  const keptRef = useRef<string | null>(null);
-
   // Built as the game runs, because nothing else keeps a record of it — see
   // useGameLog. Held here rather than in Final so it survives that screen
   // mounting, which happens after the last question has already gone.
@@ -287,7 +267,7 @@ function Game() {
    * The rules for it are in `engine/arrival.ts`, where they can be tested against
    * a whole round rather than only watched in a live room.
    *
-   * Adjusted during render, like the retry counter below: React re-renders before
+   * Adjusted during render: React re-renders before
    * committing, so no frame is painted from the previous room's arrival.
    */
   const [arrival, setArrival] = useState<Arrival>(NO_ARRIVAL);
@@ -328,7 +308,27 @@ function Game() {
   // The final, when the room chose one: the sealed picks, and the quizmaster's
   // moves from talk to pick to the settle. Idle — no listener, no clock — in
   // every other phase. See `lib/useStandoff.ts`.
-  const standoffView = useStandoff({ code, uid, room, isQuizmaster, dispatch, onError: report });
+  const standoffView = useStandoff({ code, uid, room, isQuizmaster, onError: report });
+
+  // Everything the host's device does for the room — reveal on the clock, beat,
+  // move the final on, keep the round, reap the lobby — decided in
+  // `src/host/due.ts` and run by `lib/useHost.ts`. Idle on every other device.
+  const host = useHost({
+    code,
+    uid,
+    room,
+    isHost: isQuizmaster,
+    answersReady,
+    clockExpired: clock.expired,
+    confirmedAt: questionConfirmedAt,
+    durationMs,
+    gameLog,
+    finalTable: finalSnapshot,
+    committed: standoffView.committed,
+    opened: standoffView.opened,
+    dispatch,
+    report,
+  });
   const finalistRecords = useFinalistRecords(room);
 
   const handleCreate = useCallback(
@@ -439,123 +439,6 @@ function Game() {
     void leave().catch(report);
   }, [leave, report]);
 
-  /**
-   * One pack, as every round before the mix did.
-   *
-   * A history this round cannot read is a round that repeats a question, which
-   * is a far smaller problem than a round that will not start — so that failure
-   * is swallowed rather than reported.
-   *
-   * `NO_HISTORY` rather than an empty set, and the distinction is not cosmetic:
-   * `recordAsked` writes the document whole, so a failure that arrives here
-   * looking like "this pack has never been played" gets written back as exactly
-   * that, wiping the real history. It says "we do not know", and the write
-   * below declines to guess.
-   */
-  async function prepareSinglePack(
-    packId: PackId,
-    count: number,
-    level: Level,
-    jigsawEnabled: boolean,
-  ): Promise<{ questions: Awaited<ReturnType<typeof buildQuizQuestions>>; remember: () => Promise<void> }> {
-    const pool = await loadPackQuestions(packId);
-    const asked = await loadAsked(packId).catch(() => NO_HISTORY);
-    const playable = jigsawEnabled ? pool.filter((question) => question.jigsaw === true) : pool;
-    const questions = buildQuizQuestions(playable, count, level, Math.random, asked.ids);
-    return {
-      questions,
-      remember: async () => {
-        await recordAsked(
-          packId,
-          questions.map((question) => question.id),
-          asked,
-        ).catch(() => undefined);
-      },
-    };
-  }
-
-  /**
-   * Samples the six source packs and writes one list. Each source's season
-   * history is read and, when the read succeeded, written back — a `random`
-   * history would not stop On the box serving the same still next round.
-   */
-  /**
-   * Survey Says: five prompts, told then guessed. The count and level the lobby
-   * offers mean nothing here — a survey round is always ten questions, five
-   * prompts twice. Season history works as for any pack, on the prompt ids.
-   */
-  async function prepareSurvey(): Promise<{
-    questions: Awaited<ReturnType<typeof buildQuizQuestions>>;
-    remember: () => Promise<void>;
-  }> {
-    const pool = await loadPackQuestions('survey');
-    const asked = await loadAsked('survey').catch(() => NO_HISTORY);
-    const questions = dealSurveyRound(pool, Math.random, asked.ids);
-    const promptIds = [...new Set(questions.flatMap((question) => question.survey?.promptId ?? []))];
-    return {
-      questions,
-      remember: async () => {
-        await recordAsked('survey', promptIds, asked).catch(() => undefined);
-      },
-    };
-  }
-
-  async function prepareRandomRound(
-    count: number,
-    level: Level,
-  ): Promise<{ questions: Awaited<ReturnType<typeof buildQuizQuestions>>; remember: () => Promise<void> }> {
-    const loaded = await Promise.all(
-      RANDOM_SOURCES.map(async (source) => {
-        const [pool, history] = await Promise.all([
-          loadPackQuestions(source),
-          loadAsked(source).catch(() => NO_HISTORY),
-        ]);
-        return { source, pool, history };
-      }),
-    );
-    const bySource = new Map(loaded.map((row) => [row.source, row]));
-    const take = (source: RandomSource): { pool: Awaited<ReturnType<typeof loadPackQuestions>>; history: AskedHistory } => {
-      const row = bySource.get(source);
-      if (!row) throw new Error(`Could not load the ${source} pack`);
-      return row;
-    };
-    const questions = dealRandomRound(
-      {
-        screens: take('screens').pool,
-        sleeves: take('sleeves').pool,
-        tunes: take('tunes').pool,
-        catchphrase: take('catchphrase').pool,
-        blanks: take('blanks').pool,
-        prices: take('prices').pool,
-      },
-      {
-        screens: take('screens').history.ids,
-        sleeves: take('sleeves').history.ids,
-        tunes: take('tunes').history.ids,
-        catchphrase: take('catchphrase').history.ids,
-        blanks: take('blanks').history.ids,
-        prices: take('prices').history.ids,
-      },
-      count,
-      level,
-      Math.random,
-    );
-    return {
-      questions,
-      remember: async () => {
-        await Promise.all(
-          RANDOM_SOURCES.map((source) => {
-            const history = take(source).history;
-            const ids = questions
-              .filter((question) => question.sourcePack === source)
-              .map((question) => question.id);
-            return recordAsked(source, ids, history).catch(() => undefined);
-          }),
-        );
-      },
-    };
-  }
-
   const handleStart = useCallback(
     (
       packId: PackId,
@@ -569,13 +452,8 @@ function Game() {
     ) => {
       setBusy(true);
       setActionError(null);
-      const prepared =
-        packId === 'random'
-          ? prepareRandomRound(count, level)
-          : packId === 'survey'
-            ? prepareSurvey()
-            : prepareSinglePack(packId, count, level, jigsawEnabled);
-      prepared
+      // Dealing, and remembering what was dealt, is `src/host/prepare.ts`.
+      dealRound({ packId, count, level, jigsawEnabled }, PACK_PORTS)
         .then(async ({ questions, remember }) => {
           const pack = packs.find((entry) => entry.id === packId);
 
@@ -688,128 +566,6 @@ function Game() {
     [uid, room],
   );
 
-  /**
-   * Which question this device is already revealing, so the expiry effect and
-   * the button cannot both fire the same reveal. Cleared on failure, because a
-   * reveal that errored is exactly the one worth pressing again.
-   */
-  const revealingRef = useRef<string | null>(null);
-
-  /**
-   * What each reveal cost, so the next slow round can be read back instead of
-   * guessed at.
-   *
-   * Kept on the quizmaster's device, which is both the only one that reveals and
-   * the only one that writes the game record — so nothing has to travel. Held in
-   * a ref rather than state because nothing renders it: a `setState` per reveal
-   * would re-run the reveal effect for no reason at the worst possible moment.
-   *
-   * Keyed by question id and emptied when the game id changes, so a second round
-   * in the same tab cannot inherit the first one's numbers for a question it
-   * skipped. See `RevealTiming` in `src/engine/gameRecord.ts`.
-   */
-  const revealTimingsRef = useRef(new Map<string, RevealTiming & { expiredAt: number }>());
-  const timingsGameRef = useRef<string | null>(null);
-
-  const handleReveal = useCallback(async (): Promise<void> => {
-    if (!room || room.phase !== 'question') return;
-    // A host who has only just taken the chair mid-question has not yet heard
-    // from the answers listener, and a reveal now would score an empty room.
-    // The effect below re-runs when it has. See `answersReady` in useRoom.
-    if (!answersReady) return;
-
-    const question = currentQuestion(room);
-    if (!question) return;
-
-    const key = `${room.gameId ?? ''}:${room.index}`;
-    if (revealingRef.current === key) return;
-    revealingRef.current = key;
-
-    const gameId = room.gameId ?? '';
-    if (timingsGameRef.current !== gameId) {
-      revealTimingsRef.current = new Map();
-      timingsGameRef.current = gameId;
-    }
-
-    // `expiredAt` is only meaningful on the first attempt at a question: it is
-    // set by the effect below when the local clock runs out. A reveal fired from
-    // the button before then has nothing to measure the gate against, so it
-    // measures zero rather than a negative.
-    const timing = revealTimingsRef.current.get(question.id) ?? {
-      expiredAt: Date.now(),
-      gateMs: 0,
-      resolveMs: 0,
-      dispatchMs: 0,
-      attempts: 0,
-    };
-    timing.attempts += 1;
-    if (timing.attempts === 1) timing.gateMs = Math.max(0, Date.now() - timing.expiredAt);
-    revealTimingsRef.current.set(question.id, timing);
-
-    try {
-      // Both halves are Firestore writes, and neither rejects when the line
-      // stalls — they queue and stay pending, which is what let a blip hold the
-      // whole room on "Revealing…". The deadline is what turns that back into a
-      // failure the ladder below and the Reveal button can both act on.
-      // `REVEAL_TIMEOUT_MS` has the argument; `withTimeout` has why not
-      // cancelling the write is safe here.
-      await withTimeout(
-        (async () => {
-          /*
-            Survey Says has no vault: the room is the answer. A tell has none,
-            so it reveals on option 0 and the reducer scores nobody. A guess
-            reads the room's top answer off this host's own record of the
-            telling, and is skipped when there is none to read — the chair
-            changed hands, or too few answered (G2a, G3).
-          */
-          if (question.survey) {
-            const startedDispatch = Date.now();
-            if (question.survey.part === 'tell') {
-              await dispatch({ type: 'reveal', correctIndex: 0, questionId: question.id });
-            } else {
-              const guessed = guessReveal(room.questions, room.index, gameLog);
-              await dispatch(
-                guessed
-                  ? {
-                      type: 'reveal',
-                      correctIndex: guessed.correctIndex,
-                      top: guessed.top,
-                      counts: guessed.counts,
-                      questionId: question.id,
-                    }
-                  : { type: 'skip' },
-              );
-            }
-            timing.dispatchMs = Date.now() - startedDispatch;
-            return;
-          }
-
-          // The answer is not in the room, the pack or this bundle. It comes
-          // back from the vault, and only once the server agrees the clock has
-          // run out.
-          const startedResolve = Date.now();
-          const correctIndex = await resolveAnswer(vaultFirestore(), room.code, question);
-          timing.resolveMs = Date.now() - startedResolve;
-          // Named rather than assumed: `dispatch` folds over the room as it is
-          // when this returns, so that an answer landing during the round trip
-          // still counts — and the reducer refuses to score this answer against
-          // anything but the question it was asked about.
-          const startedDispatch = Date.now();
-          await dispatch({ type: 'reveal', correctIndex, questionId: question.id });
-          timing.dispatchMs = Date.now() - startedDispatch;
-        })(),
-        REVEAL_TIMEOUT_MS,
-        'The reveal',
-      );
-    } catch (cause) {
-      // Rethrown rather than reported here so the caller owns the error, which
-      // keeps this callback free of state updates and the expiry effect below
-      // free of a synchronous setState.
-      revealingRef.current = null;
-      throw cause;
-    }
-  }, [room, dispatch, answersReady, gameLog]);
-
   const form = room?.form ?? null;
   const showTitles = room?.phase === 'lobby' && form !== null;
 
@@ -843,99 +599,6 @@ function Game() {
     void dispatch({ type: 'clearTitles' }).catch(report);
   }, [dispatch, report]);
 
-
-  // The quizmaster's device closes the question when the clock runs out, so a
-  // round keeps moving even if nobody remembers to press Reveal.
-  //
-  // A refused reveal used to stall the round outright. The vault turns one down
-  // until the server agrees the answer window has passed, which is routine and
-  // self-correcting — but nothing here retried it. This effect only re-fires
-  // when `handleReveal` changes identity, and that needs a room update; in a
-  // room where everybody has already answered, nothing is writing, so nothing
-  // ever arrived to trigger it. Seen live on 13 August 2026: question one sat on
-  // "the vault would not confirm an answer" for minutes until Reveal was pressed
-  // by hand.
-  //
-  // **`clock.expired` is not enough on its own, and this is the device where
-  // that bites.** The quizmaster wrote the question open, so latency
-  // compensation gave them a local snapshot of it a round trip before the server
-  // stamped `openedAt` — their countdown expires marginally before the vault
-  // will answer, and the two writes' latencies then cancel, leaving a margin of
-  // single-digit milliseconds decided by jitter. Measured at about 7ms on 20
-  // August 2026 (`npm run reveal-probe`), with 100ms early refused. So the gate
-  // is asked separately, from a moment that is provably after the server's:
-  // `revealGate.ts` has the argument.
-  //
-  // Capped rather than open-ended. A vault that genuinely lacks the answer would
-  // otherwise be asked forever, and every attempt is a write against a read
-  // budget this game has already exhausted once. After the cap the quizmaster's
-  // own Reveal button is still there, which is how it was rescued before.
-  const revealKey = `${room?.gameId ?? ''}:${room?.index ?? -1}`;
-  const [retry, setRetry] = useState({ key: revealKey, n: 0 });
-
-  // Adjusted during render so a new question starts with its full allowance
-  // rather than inheriting the last one's exhausted count.
-  if (retry.key !== revealKey) setRetry({ key: revealKey, n: 0 });
-
-  useEffect(() => {
-    if (!isQuizmaster || phase !== 'question' || !clock.expired) return;
-
-    // The moment the gate wait is measured from. Stamped here rather than in
-    // `handleReveal` because by the time that runs the wait is already over —
-    // this effect is the only place that sees the local clock run out.
-    const openId = room ? (currentQuestion(room)?.id ?? null) : null;
-    if (openId !== null && !revealTimingsRef.current.has(openId)) {
-      revealTimingsRef.current.set(openId, {
-        expiredAt: Date.now(),
-        gateMs: 0,
-        resolveMs: 0,
-        dispatchMs: 0,
-        attempts: 0,
-      });
-    }
-
-    const gate = { confirmedAt: questionConfirmedAt, durationMs, now: Date.now() };
-    const wait = msUntilRevealGate(gate);
-
-    // Nothing to count from yet: the server has not acknowledged the question.
-    // The effect re-runs when it does, because `questionConfirmedAt` changes.
-    if (wait === null) return;
-
-    let timer = 0;
-    if (wait > 0) {
-      // Woken rather than polled. Between the local clock expiring and the gate
-      // opening there is nothing else to re-run this effect — in a room where
-      // everybody has already answered, nothing is writing at all.
-      // A fresh object, not the same one: `retry` is in the dependency list
-      // below precisely so this wakes the effect. React re-renders on any
-      // `setState`, but it only re-runs an effect whose dependencies changed —
-      // so mutating nothing and returning `current` would schedule a timer that
-      // fired into silence.
-      timer = window.setTimeout(() => setRetry((current) => ({ ...current })), wait);
-      return () => window.clearTimeout(timer);
-    }
-
-    void handleReveal().catch((cause: unknown) => {
-      report(cause);
-      if (retry.n >= MAX_REVEAL_RETRIES) return;
-      timer = window.setTimeout(
-        () => setRetry((current) => ({ ...current, n: current.n + 1 })),
-        revealBackoffMs(retry.n),
-      );
-    });
-
-    return () => window.clearTimeout(timer);
-  }, [
-    isQuizmaster,
-    phase,
-    clock.expired,
-    questionConfirmedAt,
-    durationMs,
-    handleReveal,
-    report,
-    retry,
-    room,
-  ]);
 
   // Each device banks its own season row. Doing it per-client rather than having
   // the quizmaster write everybody's is what lets the rules restrict the write
@@ -1007,45 +670,6 @@ function Game() {
       });
   }, [room, uid, gameLog, finalSnapshot, report]);
 
-  // The round itself, kept — one document per game at `games/{gameId}`, so
-  // that "how did that actually play?" can be answered later from what people
-  // did rather than from what they remember. What goes in it, and why a round
-  // with a skipped question still counts, is `engine/gameRecord.ts`.
-  //
-  // The quizmaster's device and no other. The rules allow `create` and refuse
-  // `update`, so every extra device would be a refused write per game for
-  // nothing. Banking is per-client because each row belongs to its owner; this
-  // document belongs to the round, and one writer is enough.
-  //
-  // Nobody is told when it fails. A refusal is final until the rules change,
-  // so it is not retried — a ruleset that has not been pasted yet would
-  // otherwise be one refused write per room update, forever. Anything else is
-  // retried the way the season write is: on the next room update, not a timer.
-  useEffect(() => {
-    if (!room || !uid || !isQuizmaster || room.phase !== 'finished') return;
-
-    const { gameId } = room;
-    if (!gameId || keptRef.current === gameId) return;
-
-    // The frozen table, for the reason the season write uses it: a player who
-    // presses Leave on the final screen before this lands would otherwise
-    // vanish from the record of a round they played.
-    const players = finalSnapshot?.players ?? room.players;
-    const scores = finalSnapshot?.scores ?? room.scores;
-
-    const record = foldGameRecord(
-      { ...room, players, scores },
-      gameLog,
-      uid,
-      revealTimingsRef.current,
-    );
-    if (!record) return;
-
-    keptRef.current = gameId;
-    void keepGameRecord(firestore(), gameId, record).then((outcome) => {
-      if (outcome === 'failed') keptRef.current = null;
-    });
-  }, [room, uid, isQuizmaster, gameLog, finalSnapshot]);
 
   if (connection === 'error') {
     return (
@@ -1162,9 +786,9 @@ function Game() {
             // refusal to come back. Holding it as state would mean a setState
             // inside the expiry effect, which is the thing that effect is
             // deliberately built to avoid.
-            revealing={clock.expired && retry.n < MAX_REVEAL_RETRIES}
+            revealing={host.revealing}
             onAnswer={handleAnswer}
-            onReveal={() => void handleReveal().catch(report)}
+            onReveal={() => void host.reveal().catch(report)}
             onNext={() => void dispatch({ type: 'next', at: Date.now() }).catch(report)}
             onVote={handleVote}
             streak={uid ? streakOf(gameLog, uid, skippedIndices(room)) : 0}
