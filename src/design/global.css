@@ -4699,3 +4699,67 @@ select.input option {
   gap: 0.5rem;
   line-height: 1.5;
 }
+
+/* ── Survey Says: how the room split ─────────────────────────────────────────
+   Shown under the lecterns at part two's reveal. The top answer (or every tied
+   one) takes the amber the winner's riser uses; the rest stay cyan. */
+.survey-bars {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+}
+
+.survey-bars__row {
+  display: grid;
+  grid-template-columns: minmax(0, 9rem) 1fr 2ch;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--ink-soft);
+}
+
+.survey-bars__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.survey-bars__track {
+  height: 0.7rem;
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.survey-bars__fill {
+  display: block;
+  height: 100%;
+  background: var(--cyan-dim);
+  animation: survey-grow 600ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  transform-origin: left;
+}
+
+.survey-bars__count {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.survey-bars__row--top {
+  color: var(--amber-bright);
+}
+
+.survey-bars__row--top .survey-bars__fill {
+  background: var(--amber);
+}
+
+@keyframes survey-grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .survey-bars__fill {
+    animation: none;
+  }
+}

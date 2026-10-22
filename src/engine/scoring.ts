@@ -280,6 +280,8 @@ export interface VerdictInput {
   /** `lastDeltas` from the reveal — every player the question was scored for. */
   deltas: Record<string, number>;
   uid: string | null;
+  /** A Survey Says guess whose top tied: any of these is right. */
+  top?: readonly number[];
 }
 
 /**
@@ -301,10 +303,11 @@ export interface VerdictInput {
  * Call it only once the question is revealed. Before that the deltas belong to
  * the previous question and every answer looks lost.
  */
-export function verdictFor({ answer, correctIndex, deltas, uid }: VerdictInput): Verdict {
+export function verdictFor({ answer, correctIndex, deltas, uid, top }: VerdictInput): Verdict {
   if (!uid || !answer) return 'silent';
   if (!Object.hasOwn(deltas, uid)) return 'lost';
-  return answer.optionIndex === correctIndex ? 'correct' : 'wrong';
+  const right = top ? top.includes(answer.optionIndex) : answer.optionIndex === correctIndex;
+  return right ? 'correct' : 'wrong';
 }
 
 export interface Standing {

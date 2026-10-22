@@ -769,7 +769,13 @@ function Game() {
               const guessed = guessReveal(room.questions, room.index, gameLog);
               await dispatch(
                 guessed
-                  ? { type: 'reveal', correctIndex: guessed.correctIndex, top: guessed.top, questionId: question.id }
+                  ? {
+                      type: 'reveal',
+                      correctIndex: guessed.correctIndex,
+                      top: guessed.top,
+                      counts: guessed.counts,
+                      questionId: question.id,
+                    }
                   : { type: 'skip' },
               );
             }

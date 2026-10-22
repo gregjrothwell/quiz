@@ -14,6 +14,8 @@ import { isUnmatched, matchTypedAnswer } from '../engine/typedAnswer';
 import { questionPack } from '../engine/randomRound';
 import type { Verdict } from '../engine/questionVote';
 import { stakeFor, verdictFor, WAGER_SHARES } from '../engine/scoring';
+import { isPickCorrect } from '../engine/survey';
+import { SurveyBars } from '../components/SurveyBars';
 import { STREAK_SHOWN_FROM } from '../engine/streak';
 import { songClueAtMs, songClueDue } from '../engine/songClue';
 import {
@@ -175,7 +177,11 @@ export function QuestionScreen({
     correctIndex: question?.correctIndex ?? null,
     deltas: room.lastDeltas,
     uid: youUid,
+    ...(question?.survey?.top ? { top: question.survey.top } : {}),
   });
+  // Survey Says part one: there is no right answer, so no verdict, no sound and
+  // nothing to light. Part two reads the room's top answer like any other.
+  const telling = question?.survey?.part === 'tell';
   const gotItRight = verdict === 'correct';
 
   /*
@@ -196,8 +202,9 @@ export function QuestionScreen({
           ? `You took ${steal.points.toLocaleString('en-GB')} off ${room.players[steal.from]?.name ?? 'the leader'}.`
           : null
       : null;
-  const verdictLabel =
-    verdict === 'correct'
+  const verdictLabel = telling
+    ? 'Noted — we’ll come back to that'
+    : verdict === 'correct'
       ? 'Correct'
       : verdict === 'wrong'
         ? myAnswer && isUnmatched(myAnswer.optionIndex)
@@ -244,7 +251,7 @@ export function QuestionScreen({
 
   // Adjusted during render rather than in an effect: React re-renders before
   // committing, so no frame is ever painted from the stale timeline.
-  if (revealed && frozen.key !== replayKey && Object.keys(room.answers).length > 0) {
+  if (revealed && !telling && frozen.key !== replayKey && Object.keys(room.answers).length > 0) {
     setFrozen({ key: replayKey, arrivals: replayTimeline(room.answers) });
   }
 
@@ -282,13 +289,13 @@ export function QuestionScreen({
   }, [revealed, reducedMotion, room.index, arrivals, heldMs]);
 
   useCue('gong', room.index, revealed);
-  useCue(gotItRight ? 'correct' : 'wrong', room.index, revealed && settled);
+  useCue(gotItRight ? 'correct' : 'wrong', room.index, revealed && settled && !telling);
   // Only for an answer that was given and scored: nothing buzzes for sitting
   // one out, and "your answer didn't reach the room" is not yours to feel.
   useBuzz(
     gotItRight ? BUZZ_CORRECT : BUZZ_WRONG,
     room.index,
-    revealed && settled && (verdict === 'correct' || verdict === 'wrong'),
+    revealed && settled && !telling && (verdict === 'correct' || verdict === 'wrong'),
   );
 
   /**
@@ -524,7 +531,8 @@ export function QuestionScreen({
         // goes dark and your own pick is the only thing still lit.
         return myAnswer?.optionIndex === index ? 'picked' : 'hushed';
       }
-      if (index === question.correctIndex) return 'correct';
+      if (telling) return myAnswer?.optionIndex === index ? 'picked' : 'gone';
+      if (isPickCorrect(question, index)) return 'correct';
       if (myAnswer?.optionIndex === index) return 'wrong';
       return 'gone';
     }
@@ -634,6 +642,11 @@ export function QuestionScreen({
       >
         <div className="stack">
           {/* Keyed on the question so the CSS entrance replays for each new one. */}
+          {question.survey ? (
+            <p className="eyebrow">
+              {telling ? 'Tell us — there’s no right answer' : 'We asked the office…'}
+            </p>
+          ) : null}
           <h1 key={question.id} className="prompt">
             {bonus ? BONUS_PROMPT : question.prompt}
           </h1>
@@ -865,6 +878,16 @@ export function QuestionScreen({
             ) : null}
 
             <div className="podium">{tiles}</div>
+
+            {/* What the room said in part one, once part two is revealed (G5).
+                Counts only: the names never left the host's device. */}
+            {revealed && settled && question.survey?.counts ? (
+              <SurveyBars
+                options={question.options}
+                counts={question.survey.counts}
+                top={question.survey.top ?? []}
+              />
+            ) : null}
             </div>
           </div>
         </div>
@@ -927,7 +950,7 @@ export function QuestionScreen({
         */}
           <p className="tally">
             {revealed ? (
-              <span className={settled ? 'verdict verdict--in' : 'verdict'} data-tone={verdict}>
+              <span className={settled ? 'verdict verdict--in' : 'verdict'} data-tone={telling ? 'silent' : verdict}>
                 {verdictLabel}
                 {/*
                   A lost stake has to show its number too. The `+` used to be

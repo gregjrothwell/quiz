@@ -63,7 +63,15 @@ export function Scoreboard({ room, youUid, isQuizmaster, onNext }: ScoreboardPro
         </h2>
       </header>
 
-      {skippedLast ? <p className="notice">That question was thrown out — no points awarded.</p> : null}
+      {skippedLast ? (
+        <p className="notice">
+          {room.questions[room.index]?.survey
+            ? // G2a, G3: too few answered part one, or the chair changed hands
+              // and the new host never saw it.
+              'Not enough of the room’s answers to count on that one — no points awarded.'
+            : 'That question was thrown out — no points awarded.'}
+        </p>
+      ) : null}
 
       <Standings
         players={room.players}

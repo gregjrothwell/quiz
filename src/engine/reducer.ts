@@ -68,7 +68,7 @@ export type Action =
    * `top` only on a Survey Says guess: every option tied for the room's most
    * popular, all of them right. `correctIndex` is then the lowest of them.
    */
-  | { type: 'reveal'; correctIndex: number; questionId: string; top?: number[] }
+  | { type: 'reveal'; correctIndex: number; questionId: string; top?: number[]; counts?: number[] }
   | { type: 'skip' }
   | { type: 'next'; at: number }
   /** The quizmaster ends the talking, by button or when the talk clock runs out. */
@@ -119,7 +119,7 @@ export function reduce(state: RoomState, action: Action): RoomState {
     case 'answer':
       return answer(state, action.uid, action.optionIndex, action.elapsedMs, action.wager);
     case 'reveal':
-      return reveal(state, action.correctIndex, action.questionId, action.top);
+      return reveal(state, action.correctIndex, action.questionId, action.top, action.counts);
     case 'skip':
       return skip(state);
     case 'next':
@@ -312,7 +312,13 @@ function answer(
   };
 }
 
-function reveal(state: RoomState, correctIndex: number, questionId: string, top?: number[]): RoomState {
+function reveal(
+  state: RoomState,
+  correctIndex: number,
+  questionId: string,
+  top?: number[],
+  counts?: number[],
+): RoomState {
   if (state.phase !== 'question') return state;
 
   const question = currentQuestion(state);
@@ -331,6 +337,9 @@ function reveal(state: RoomState, correctIndex: number, questionId: string, top?
   // the question stays open instead.
   if (correctIndex < 0 || correctIndex >= question.options.length) return state;
   if (top && !(top.includes(correctIndex) && top.every((option) => option >= 0 && option < question.options.length))) {
+    return state;
+  }
+  if (counts && !(counts.length === question.options.length && counts.every((count) => Number.isInteger(count) && count >= 0))) {
     return state;
   }
 
@@ -403,7 +412,13 @@ function reveal(state: RoomState, correctIndex: number, questionId: string, top?
   // its own read of the vault's reveal document.
   const questions = state.questions.map((entry, index) =>
     index === state.index
-      ? { ...entry, correctIndex, ...(top && entry.survey ? { survey: { ...entry.survey, top } } : {}) }
+      ? {
+          ...entry,
+          correctIndex,
+          ...(top && entry.survey
+            ? { survey: { ...entry.survey, top, ...(counts ? { counts } : {}) } }
+            : {}),
+        }
       : entry,
   );
 

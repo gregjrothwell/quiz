@@ -23,6 +23,11 @@ export interface SurveyRef {
    * until then, and always absent on a tell.
    */
   top?: number[];
+  /**
+   * How many picked each option in part one, published on the guess at its
+   * reveal so every device can draw the bars (G5). Numbers only, never names.
+   */
+  counts?: number[];
 }
 
 export const SURVEY_PROMPTS_PER_ROUND = 5;
@@ -132,7 +137,7 @@ export function guessReveal(
   questions: readonly QuizQuestion[],
   index: number,
   log: readonly { index: number; answers: Record<string, Answer> }[],
-): { correctIndex: number; top: number[] } | null {
+): { correctIndex: number; top: number[]; counts: number[] } | null {
   const guess = questions[index];
   if (guess?.survey?.part !== 'guess') return null;
 
@@ -143,7 +148,8 @@ export function guessReveal(
   const telling = log.find((record) => record.index === tellIndex);
   if (!telling) return null;
 
-  const top = topOf(tallyTell(telling.answers, guess.options.length));
+  const counts = tallyTell(telling.answers, guess.options.length);
+  const top = topOf(counts);
   if (!top || top[0] === undefined) return null;
-  return { correctIndex: top[0], top };
+  return { correctIndex: top[0], top, counts };
 }

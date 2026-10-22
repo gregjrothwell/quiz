@@ -130,12 +130,12 @@ describe('guessReveal', () => {
 
   test('reads the room’s top answer off the told question in the log', () => {
     const log = [{ index: tellIndex, answers: picks(2, 2, 1, 2) }];
-    expect(guessReveal(round, guessIndex, log)).toEqual({ correctIndex: 2, top: [2] });
+    expect(guessReveal(round, guessIndex, log)).toEqual({ correctIndex: 2, top: [2], counts: [0, 1, 3, 0] });
   });
 
   test('a tie reveals every tied option, the lowest as correctIndex', () => {
     const log = [{ index: tellIndex, answers: picks(3, 1, 3, 1) }];
-    expect(guessReveal(round, guessIndex, log)).toEqual({ correctIndex: 1, top: [1, 3] });
+    expect(guessReveal(round, guessIndex, log)).toEqual({ correctIndex: 1, top: [1, 3], counts: [0, 2, 0, 2] });
   });
 
   test('no record of the telling — a host who took over mid-round — reveals nothing', () => {
@@ -195,13 +195,14 @@ describe('a survey round through the reducer', () => {
       { type: 'answer', uid: 'ann', optionIndex: 1, elapsedMs: 900 },
       { type: 'answer', uid: 'bo', optionIndex: 3, elapsedMs: 800 },
       { type: 'answer', uid: 'cy', optionIndex: 2, elapsedMs: 700 },
-      { type: 'reveal', correctIndex: 1, questionId: guess?.id ?? '', top: [1, 3] },
+      { type: 'reveal', correctIndex: 1, questionId: guess?.id ?? '', top: [1, 3], counts: [0, 1, 1, 1] },
     ].reduce<RoomState>((s, action) => reduce(s, action as Action), state);
 
     expect(state.lastDeltas['ann']).toBeGreaterThan(0);
     expect(state.lastDeltas['bo']).toBeGreaterThan(0);
     expect(state.lastDeltas['cy']).toBe(0);
     expect(currentQuestion(state)?.survey?.top).toEqual([1, 3]);
+    expect(currentQuestion(state)?.survey?.counts).toEqual([0, 1, 1, 1]);
   });
 
   test('a top naming an option that does not exist is refused', () => {
