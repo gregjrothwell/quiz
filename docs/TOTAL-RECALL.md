@@ -24,6 +24,11 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-22 — Landing links beside Join; the sound check stops on a second press
+
+Greg: Season table / What's new sat "too low" on his MacBook. Measured: at 1280×720 the row was wholly below the fold, because it followed the taller Join panel. Now it sits in the grid under "Run the show" (`split--landing`); a phone still stacks it last. Sound check: one button, play then stop, label follows `sound.ts` ([`sound-check.md`](decisions/sound-check.md#a-second-press-stops-it--22-october-2026)). Branch `landing-links-sound-stop`, not live.
+Same day, the direction review — security sweep (CI install scripts with the rules key; vote fields unbounded), the Lab for beta tests, five wow ideas all accepted: [`direction-oct-2026.md`](decisions/direction-oct-2026.md).
+
 ## 2026-10-22 — #107 live: What's new page + #90 (W3 scripts)
 
 Greg: "Go live with #107 once CI is green." Merge `9bab66d`; master run 39731837799 published rules and gh-pages `08594c7`; Pages built 06:12Z, no hang. Live `index-Blr7sNEQ` byte-identical to local; `check-rules` 129/0. This corrects "not live" in the entry below.
