@@ -1,0 +1,252 @@
+{
+  "overall": {
+    "hits": 3746,
+    "tries": 5958
+  },
+  "byDifficulty": {
+    "easy": {
+      "hits": 1207,
+      "tries": 1575
+    },
+    "hard": {
+      "hits": 948,
+      "tries": 1880
+    },
+    "medium": {
+      "hits": 1591,
+      "tries": 2503
+    }
+  },
+  "byPack": {
+    "blanks": {
+      "easy": {
+        "hits": 128,
+        "tries": 139
+      },
+      "hard": {
+        "hits": 46,
+        "tries": 109
+      },
+      "medium": {
+        "hits": 97,
+        "tries": 134
+      }
+    },
+    "catchphrase": {
+      "easy": {
+        "hits": 36,
+        "tries": 37
+      },
+      "hard": {
+        "hits": 246,
+        "tries": 314
+      },
+      "medium": {
+        "hits": 280,
+        "tries": 317
+      }
+    },
+    "flags": {
+      "easy": {
+        "hits": 18,
+        "tries": 34
+      },
+      "hard": {
+        "hits": 10,
+        "tries": 35
+      },
+      "medium": {
+        "hits": 20,
+        "tries": 35
+      }
+    },
+    "general-knowledge": {
+      "easy": {
+        "hits": 72,
+        "tries": 114
+      },
+      "hard": {
+        "hits": 21,
+        "tries": 81
+      },
+      "medium": {
+        "hits": 54,
+        "tries": 146
+      }
+    },
+    "geography": {
+      "easy": {
+        "hits": 19,
+        "tries": 32
+      },
+      "hard": {
+        "hits": 11,
+        "tries": 33
+      },
+      "medium": {
+        "hits": 11,
+        "tries": 31
+      }
+    },
+    "history": {
+      "easy": {
+        "hits": 10,
+        "tries": 24
+      },
+      "hard": {
+        "hits": 5,
+        "tries": 24
+      },
+      "medium": {
+        "hits": 11,
+        "tries": 32
+      }
+    },
+    "mixed-bag": {
+      "easy": {
+        "hits": 17,
+        "tries": 38
+      },
+      "hard": {
+        "hits": 12,
+        "tries": 38
+      },
+      "medium": {
+        "hits": 11,
+        "tries": 38
+      }
+    },
+    "picture": {
+      "easy": {
+        "hits": 34,
+        "tries": 55
+      },
+      "medium": {
+        "hits": 26,
+        "tries": 35
+      }
+    },
+    "prices": {
+      "easy": {
+        "hits": 44,
+        "tries": 74
+      },
+      "hard": {
+        "hits": 48,
+        "tries": 152
+      },
+      "medium": {
+        "hits": 28,
+        "tries": 92
+      }
+    },
+    "science": {
+      "easy": {
+        "hits": 27,
+        "tries": 44
+      },
+      "hard": {
+        "hits": 18,
+        "tries": 44
+      },
+      "medium": {
+        "hits": 19,
+        "tries": 41
+      }
+    },
+    "screens": {
+      "easy": {
+        "hits": 406,
+        "tries": 443
+      },
+      "hard": {
+        "hits": 144,
+        "tries": 192
+      },
+      "medium": {
+        "hits": 416,
+        "tries": 498
+      }
+    },
+    "sleeves": {
+      "easy": {
+        "hits": 55,
+        "tries": 89
+      },
+      "hard": {
+        "hits": 166,
+        "tries": 401
+      },
+      "medium": {
+        "hits": 179,
+        "tries": 405
+      }
+    },
+    "tags": {
+      "easy": {
+        "hits": 7,
+        "tries": 24
+      },
+      "hard": {
+        "hits": 8,
+        "tries": 24
+      },
+      "medium": {
+        "hits": 8,
+        "tries": 32
+      }
+    },
+    "tunes": {
+      "easy": {
+        "hits": 304,
+        "tries": 351
+      },
+      "hard": {
+        "hits": 173,
+        "tries": 257
+      },
+      "medium": {
+        "hits": 276,
+        "tries": 375
+      }
+    },
+    "tv-and-film": {
+      "easy": {
+        "hits": 19,
+        "tries": 34
+      },
+      "hard": {
+        "hits": 8,
+        "tries": 35
+      },
+      "medium": {
+        "hits": 21,
+        "tries": 34
+      }
+    },
+    "uk-leaning": {
+      "hard": {
+        "hits": 25,
+        "tries": 92
+      },
+      "medium": {
+        "hits": 117,
+        "tries": 202
+      }
+    },
+    "video-games": {
+      "easy": {
+        "hits": 11,
+        "tries": 43
+      },
+      "hard": {
+        "hits": 7,
+        "tries": 49
+      },
+      "medium": {
+        "hits": 17,
+        "tries": 56
+      }
+    }
+  }
+}

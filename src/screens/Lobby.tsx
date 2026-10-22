@@ -109,6 +109,7 @@ interface LobbyProps {
     stealEnabled: boolean,
     jigsawEnabled: boolean,
     standoffEnabled: boolean,
+    chaserEnabled: boolean,
   ) => void;
   onLeave: () => void;
 }
@@ -153,6 +154,8 @@ export function Lobby({
     all. See docs/decisions/share-or-shaft.md.
   */
   const [standoff, setStandoff] = useState(false);
+  // Beat the Chaser: the room against Mr Fries. Not on Survey Says (v1).
+  const [chaser, setChaser] = useState(false);
   const [jigsaw, setJigsaw] = useState(false);
   const [durationSecs, setDurationSecs] = useState<number>(DEFAULT_DURATION_SECS);
   /*
@@ -528,6 +531,37 @@ export function Lobby({
                 </p>
               ) : null}
             </div>
+
+            <div className="stack">
+              <p className="eyebrow">Against the house</p>
+              <div className="picker">
+                <button
+                  type="button"
+                  className="pick"
+                  aria-pressed={!chaser}
+                  onClick={() => setChaser(false)}
+                >
+                  <b>Just us</b>
+                  <span>The usual round</span>
+                </button>
+                <button
+                  type="button"
+                  className="pick"
+                  aria-pressed={chaser}
+                  onClick={() => setChaser(true)}
+                >
+                  <b>Against Mr Fries 🍟</b>
+                  <span>The office versus the house</span>
+                </button>
+              </div>
+              {chaser ? (
+                <p className="muted hint">
+                  Mr Fries answers every question too, and gets it right about as often as this
+                  office does on one like it. The room takes a question when more than half of
+                  you get it right. Your own scores carry on as normal.
+                </p>
+              ) : null}
+            </div>
             </>
           )}
 
@@ -615,6 +649,7 @@ export function Lobby({
                 steal && !survey,
                 jigsaw,
                 standoff,
+                chaser && !survey,
               )
             }
           >

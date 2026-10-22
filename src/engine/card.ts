@@ -1,3 +1,4 @@
+import { chaserResult, type ChaserScore } from './chaser';
 import type { Award } from './awards';
 import { podiumFor, seatedLast, type RiserHeight, type Standing } from './scoring';
 import type { Player } from './state';
@@ -61,6 +62,8 @@ export interface CardModel {
    * reasoning that already withholds the awards on screen.
    */
   rosettes: CardRosette[] | null;
+  /** Beat the Chaser's result line, or null on a round without Mr Fries. */
+  chaser: string | null;
   questionCount: number;
   /** When the card was made, for whatever draws it to date. */
   at: number;
@@ -76,6 +79,8 @@ export interface CardInput {
   /** Already gated by the caller, exactly as the awards panel is. */
   awards: readonly Award[];
   sawWholeGame: boolean;
+  /** Mr Fries's final score, when the room played him. Optional: older callers omit it. */
+  chaser?: ChaserScore | null;
   questionCount: number;
   at: number;
 }
@@ -113,6 +118,7 @@ export function cardModel(input: CardInput): CardModel {
     rosettes: sawWholeGame
       ? awards.map((award) => ({ id: award.id, names: namesOf(players, award.uids) }))
       : null,
+    chaser: input.chaser ? chaserResult(input.chaser) : null,
     questionCount,
     at,
   };

@@ -35,7 +35,7 @@ import { dealRound } from './host/prepare';
 import type { PackPorts } from './host/ports';
 import { play } from './lib/sound';
 import { useStillPreload } from './lib/stills';
-import { loadPackQuestions, usePackIndex } from './lib/usePacks';
+import { loadPackQuestions, loadRates, usePackIndex } from './lib/usePacks';
 import { useHost } from './lib/useHost';
 import { useQuestionClock } from './lib/useQuestionClock';
 import { useRoom } from './lib/useRoom';
@@ -73,7 +73,7 @@ function Loading({ what }: { what: string }) {
 }
 
 /** The packs and the season's question history, for dealing a round (`src/host/prepare.ts`). */
-const PACK_PORTS: PackPorts = { loadPack: loadPackQuestions, loadAsked, recordAsked };
+const PACK_PORTS: PackPorts = { loadPack: loadPackQuestions, loadAsked, recordAsked, loadRates };
 
 interface ActionError {
   message: string;
@@ -449,11 +449,12 @@ function Game() {
       stealEnabled: boolean,
       jigsawEnabled: boolean,
       standoffEnabled: boolean,
+      chaserEnabled: boolean,
     ) => {
       setBusy(true);
       setActionError(null);
       // Dealing, and remembering what was dealt, is `src/host/prepare.ts`.
-      dealRound({ packId, count, level, jigsawEnabled }, PACK_PORTS)
+      dealRound({ packId, count, level, jigsawEnabled, chaserEnabled }, PACK_PORTS)
         .then(async ({ questions, remember }) => {
           const pack = packs.find((entry) => entry.id === packId);
 
@@ -497,6 +498,7 @@ function Game() {
               stealEnabled,
               jigsawEnabled,
               standoffEnabled,
+              chaserEnabled,
             },
             ...(facts.length > 0
               ? [{ type: 'titles' as const, at: Date.now(), facts, durationSecs }]

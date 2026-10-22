@@ -1,0 +1,109 @@
+import { expect, test, type Browser, type Page } from '@playwright/test';
+
+import { chaserResult, chaserScore, friesPick } from '../src/engine/chaser';
+import type { QuizQuestion } from '../src/engine/state';
+import { setEmulatorFlag } from './emulators';
+import { admin, seedVault, until } from './nodeClient';
+
+/**
+ * Beat the Chaser through the app (docs/decisions/beat-the-chaser.md, C6–C7):
+ * a whole round against Mr Fries, under the repo's own rules. Two of three
+ * answer A, which the seeded vault calls right, so the room takes every
+ * question; Mr Fries's every pick must match a recomputation from the game,
+ * the question and the rate dealt with it.
+ *
+ * Off (C5) is `host-writes.spec.ts`: its recording must still match.
+ * Players are Cora, Dev and Eli, names no other spec banks.
+ */
+
+interface RoomDoc {
+  phase: string;
+  index: number;
+  gameId: string;
+  chaserEnabled: boolean;
+  players: Record<string, { name: string }>;
+  questions: QuizQuestion[];
+}
+
+async function readRoom(code: string): Promise<RoomDoc> {
+  return (await admin().doc(`rooms/${code}`).get()).data() as RoomDoc;
+}
+
+async function seat(browser: Browser, name: string): Promise<Page> {
+  const page = await (await browser.newContext()).newPage();
+  page.on('console', (message) => {
+    if (message.type() === 'error' && !message.text().includes('403')) console.log(`[${name}] ${message.text()}`);
+  });
+  await setEmulatorFlag(page);
+  await page.goto('./');
+  await page.getByPlaceholder('e.g. Greg').fill(name);
+  return page;
+}
+
+test('a round against Mr Fries: his picks recompute, the room takes what it should', async ({ browser }) => {
+  test.setTimeout(420_000);
+
+  const host = await seat(browser, 'Cora');
+  await host.getByRole('button', { name: 'Start a new room' }).click();
+  const code = ((await host.getByLabel(/Room code [A-Z0-9]{4}/).getAttribute('aria-label')) ?? '').replace('Room code ', '');
+  const dev = await seat(browser, 'Dev');
+  const eli = await seat(browser, 'Eli');
+  for (const page of [dev, eli]) {
+    await page.getByPlaceholder('––––').fill(code);
+    await page.getByRole('button', { name: 'Join the round' }).click();
+  }
+  await until(() => readRoom(code), (room) => Object.keys(room.players).length === 3);
+
+  await host.locator('button.pack', { has: host.locator('.pack__title', { hasText: 'General Knowledge' }) }).click();
+  await host.getByRole('button', { name: '10', exact: true }).click();
+  await host.locator('button.pick', { hasText: '10 seconds' }).click();
+  await host.locator('button.pick', { hasText: 'Against Mr Fries' }).click();
+  await host.getByRole('button', { name: 'Start the show' }).click();
+  await host.getByRole('button', { name: 'Start the round' }).click();
+  const started = await until(() => readRoom(code), (room) => room.phase === 'question');
+  expect(started.chaserEnabled).toBe(true);
+  expect(started.questions.every((question) => typeof question.chaserRate === 'number')).toBe(true);
+  await seedVault(code);
+
+  let answered = '';
+  let sawLine = false;
+  for (let tick = 0; tick < 900; tick += 1) {
+    const room = await readRoom(code);
+    if (room.phase === 'finished') break;
+    const key = `${room.gameId}:${String(room.index)}`;
+    if (room.phase === 'question' && answered !== key) {
+      for (const [page, letter] of [[host, 'a'], [dev, 'a'], [eli, 'b']] as const) {
+        await expect(page.locator('.podium')).toBeVisible();
+        await page.keyboard.press(letter);
+      }
+      answered = key;
+    }
+    if (room.phase === 'reveal' && !sawLine) {
+      sawLine = await eli.getByText(/^Mr Fries 🍟 said/).waitFor({ timeout: 8_000 }).then(() => true, () => false);
+    }
+    const next = host.getByRole('button', { name: /Next question|Standings|Final results/ });
+    if ((room.phase === 'reveal' || room.phase === 'scoreboard') && (await next.count()) > 0) {
+      await next.first().click().catch(() => undefined);
+    }
+    await host.waitForTimeout(400);
+  }
+
+  const ended = await until(() => readRoom(code), (room) => room.phase === 'finished', 30_000);
+
+  // C1: every pick is the one the game, the question and its rate make.
+  const revealed = ended.questions.filter((question) => question.correctIndex !== null);
+  expect(revealed).toHaveLength(10);
+  for (const question of revealed) {
+    expect(question.chaser?.pick).toBe(
+      friesPick(ended.gameId, question.id, question.chaserRate ?? -1, question.correctIndex ?? -1, question.options.length),
+    );
+    // C3: two of three right is more than half.
+    expect(question.chaser?.roomTook).toBe(true);
+  }
+
+  // C4: on the reveal, and the result on the podium.
+  expect(sawLine).toBe(true);
+  const score = chaserScore(ended.questions);
+  expect(score.room).toBe(10);
+  await expect(host.getByText(`${chaserResult(score)} 🍟`)).toBeVisible({ timeout: 20_000 });
+});

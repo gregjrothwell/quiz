@@ -333,6 +333,14 @@ export async function drawCard(card: CardModel): Promise<Blob> {
   const eyebrow = card.pack ? card.pack.toUpperCase() : 'THE OFFICE QUIZ';
   ctx.fillText(eyebrow, 56, 74);
 
+  // Beat the Chaser's result, top right, in the house's amber.
+  if (card.chaser) {
+    ctx.textAlign = 'right';
+    ctx.fillStyle = AMBER;
+    ctx.fillText(`${card.chaser.toUpperCase()} 🍟`, CARD_WIDTH - 56, 74);
+    ctx.textAlign = 'left';
+  }
+
   ctx.fillStyle = INK;
   fitted(
     ctx,
