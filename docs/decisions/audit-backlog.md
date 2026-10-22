@@ -58,6 +58,10 @@ no per-element size bound. Against a 20k-writes/day free tier, and nothing sweep
 
 `seasons/{s}/asked/{packId}` also allows `delete: if signedIn()` — anyone can
 wipe a pack's repeat-avoidance history.
+**Fixed 22 Oct 2026** (branch `audit-2-asked-delete`): no client delete, and an
+update may not shorten `ids` — an empty-list overwrite wiped it just as well.
+The client never deleted (grep). Resetting a pack is console / Admin SDK only now.
+The unbounded-creation half above is still open.
 
 **App Check was the only thing throttling this, and it was bypassable until
 8 September** ([`debug-token-leak.md`](debug-token-leak.md)). Needs a ruleset paste.
