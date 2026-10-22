@@ -179,6 +179,7 @@ function Game() {
     code,
     connection,
     error,
+    answersError,
     isQuizmaster,
     lamps,
     answersReady,
@@ -1006,7 +1007,11 @@ function Game() {
     );
   }
 
-  const problem = (actionError?.step === roomStep ? actionError.message : null) ?? packsError;
+  const problem =
+    (actionError?.step === roomStep ? actionError.message : null)
+    ?? packsError
+    // A closed listener does not reopen on its own; a reload resubscribes.
+    ?? (answersError ? `Answers stopped reaching this device (${answersError}). Reload the page to reconnect.` : null);
 
   if (showSeason) {
     return (
