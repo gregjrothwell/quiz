@@ -19,7 +19,11 @@ export interface Update {
 export const UPDATES: readonly Update[] = [
   {
     date: '2026-10-22',
-    lines: ['This page. Whenever the quiz changes, it says so here.'],
+    lines: [
+      'This page. Whenever the quiz changes, it says so here.',
+      'Season table and What’s new sit beside Join a room, so a laptop shows them without scrolling.',
+      'Press the sound check again to stop it.',
+    ],
   },
   {
     date: '2026-10-21',
