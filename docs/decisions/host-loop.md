@@ -185,8 +185,10 @@ and a zero, Fastest finger read off the host's own log, `games/` kept.
 closePicks on both committed, settle; Ada 1,900, Bo 0, Host 0 from the server;
 all three cheats refused. The first run exited before the `games/` write
 reported — `nodeHost.idle()` now waits for in-flight moves, and DHQ5's
-`games/` landed. Not run live: `host-room` (needs a browser to join),
-`sync-harness`, `reveal-gate-probe`.
+`games/` landed. Then `sync-harness 10` (347T: 10/10 saw the question within
+115 ms, none dropped) and `reveal-probe` (DBX8: vault accepted; resolve 97 ms,
+room update 68 ms), both on the beat-only host. Not run live: `host-room`,
+which waits for a browser to join.
 
 ## Risks
 
