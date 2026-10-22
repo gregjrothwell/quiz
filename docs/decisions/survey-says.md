@@ -2,9 +2,11 @@
 
 > **Owner: Greg Rothwell. Last updated: 22 October 2026. Budget: 250 lines.**
 
-**Status: APPROVED by Greg, 22 October 2026, with one correction below.** He
-accepted the host-peek trade-off as drafted and asked for 40 draft prompts to
-cut ([`survey-prompts-draft.md`](survey-prompts-draft.md)). Nothing built. The first Wow item in
+**Status: BUILT, not live, 22 October 2026** (branch `survey-says`). Approved by
+Greg the same day with the host-peek trade-off as drafted. Two corrections made
+after approval and flagged to him: T3 (part one shows no split) and G5 (counts on
+the lecterns, not bars below). **The pack is provisional** — all 40 draft
+prompts ([`survey-prompts-draft.md`](survey-prompts-draft.md)) until Greg's cut. The first Wow item in
 [`direction-oct-2026.md`](direction-oct-2026.md#5-wow--all-five-accepted).
 Ships as an ordinary pack, the way every round type has — not behind a Lab,
 which Greg shelved on 22 October 2026 as complexity we don't need.
@@ -95,7 +97,11 @@ Why it is worth building:
 - **G3.** If fewer than 3 people answered a prompt in part one, its part-two
   question is skipped, with a line saying why. Two answers is not a survey.
 - **G4.** Scoring, speed bonus, standings and the podium are unchanged.
-- **G5.** The reveal shows the bars from part one again, the top answer lit.
+- **G5.** The reveal shows what the room said in part one, the top answer lit.
+  **Changed in the build, 22 October:** as *"2 said this"* on each lectern, not
+  bars under the four. Measured at 375 px, the bars sat under the sticky desk —
+  the one place on a phone nothing else goes, because it is covered — so part
+  two's payoff needed a scroll to see. On the lectern it costs no height.
 
 ### Rules and records
 
@@ -114,6 +120,30 @@ Why it is worth building:
 - **V2.** An emulator test plays a whole Survey Says round with three players
   through the app, to the podium, and banks the season rows.
 - **V3.** One real round in the office before it is called done.
+
+## What was built, 22 October 2026
+
+- `src/engine/survey.ts`: the deal (five told, then guessed in another order;
+  options in written order so a tally means the same option), tally, ties,
+  the under-3 skip, `isPickCorrect`, `guessReveal` from the host's game log.
+- Reducer: a tell scores nobody and publishes no picks (`lastPicks` empty); a
+  guess takes `top` and `counts`, pays every tied option, refuses a `top` or
+  `counts` that doesn't fit the options.
+- Awards, streaks, verdicts and the game log know a tell has no answer and a
+  tied guess has several. Each device's awards ignore tells, because a member
+  holds only their own tell pick and the host holds all of them.
+- The host reveals survey questions with no vault. A guess with nothing to read
+  is skipped, and the scoreboard says why.
+- Lobby: Survey Says hides level, count, stakes and steals; Share or Shaft stays.
+- Pack: `scripts/survey-prompts.ts` → `npm run write-survey-pack`.
+
+**Evidence:** 22 engine cases (tally, ties, skip, reducer, awards); 1,754 unit
+tests; `e2e/survey-says.spec.ts` plays the whole round with three players in the
+emulator — every guess revealed `top [0]`, counts `[2,1,0,0]`, no picks
+published on a tell, right guessers scored, the wrong one didn't, the member saw
+the counts, all three banked — which also proves **R1: no rules change** (the
+host's reveal is its ordinary room write). Full e2e 21/21. Screenshots checked at
+1280 and 375 px. **Not done: V3**, a real office round.
 
 ## Open — Greg to decide
 

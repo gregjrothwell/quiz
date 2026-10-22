@@ -15,7 +15,6 @@ import { questionPack } from '../engine/randomRound';
 import type { Verdict } from '../engine/questionVote';
 import { stakeFor, verdictFor, WAGER_SHARES } from '../engine/scoring';
 import { isPickCorrect } from '../engine/survey';
-import { SurveyBars } from '../components/SurveyBars';
 import { STREAK_SHOWN_FROM } from '../engine/streak';
 import { songClueAtMs, songClueDue } from '../engine/songClue';
 import {
@@ -576,6 +575,8 @@ export function QuestionScreen({
       // Your points, popped over your own lectern as the verdict lands. Only
       // yours and only on this screen: everybody else's are the standings' job.
       pop={settled && gotItRight && myDelta > 0 && myAnswer?.optionIndex === index ? myDelta : null}
+      // Survey Says part two: what the room said in part one, on each lectern (G5).
+      note={settled && question.survey?.counts ? `${question.survey.counts[index] ?? 0} said this` : null}
     />
   ));
 
@@ -879,15 +880,6 @@ export function QuestionScreen({
 
             <div className="podium">{tiles}</div>
 
-            {/* What the room said in part one, once part two is revealed (G5).
-                Counts only: the names never left the host's device. */}
-            {revealed && settled && question.survey?.counts ? (
-              <SurveyBars
-                options={question.options}
-                counts={question.survey.counts}
-                top={question.survey.top ?? []}
-              />
-            ) : null}
             </div>
           </div>
         </div>

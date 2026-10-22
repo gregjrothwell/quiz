@@ -20,6 +20,7 @@ export const UPDATES: readonly Update[] = [
   {
     date: '2026-10-22',
     lines: [
+      'A new show round, Survey Says: tell us what you think, then guess what most of the office said.',
       'This page. Whenever the quiz changes, it says so here.',
       'Season table and What’s new sit beside Join a room, so a laptop shows them without scrolling.',
       'Press the sound check again to stop it.',
