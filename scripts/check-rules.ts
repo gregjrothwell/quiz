@@ -1272,11 +1272,31 @@ function buildChecks(probes: Probes): Check[] {
       expect: 'allow',
       hint: 'firestore.rules is missing the seasons/{season}/asked block — '
         + 'rounds will stop avoiding questions the season has already served',
+      // No tidy-up delete: since 22 October nobody may delete one. The same
+      // two ids every run, so the throwaway document never grows.
+      run: () =>
+        setDoc(doc(db, 'seasons', ANY_SEASON, 'asked', 'rules-check-pack'), {
+          ids: ['a', 'b'],
+          at: Date.now(),
+        }),
+    },
+    {
+      label: 'Firestore   · shorten a pack’s question history',
+      expect: 'deny',
+      hint: 'firestore.rules lets an update shrink seasons/{season}/asked — '
+        + 'anyone can wipe a pack’s history by writing an empty list',
       run: async () => {
         const reference = doc(db, 'seasons', ANY_SEASON, 'asked', 'rules-check-pack');
         await setDoc(reference, { ids: ['a', 'b'], at: Date.now() });
-        return deleteDoc(reference);
+        return setDoc(reference, { ids: ['a'], at: Date.now() });
       },
+    },
+    {
+      label: 'Firestore   · delete a pack’s question history',
+      expect: 'deny',
+      hint: 'firestore.rules still lets any signed-in visitor delete '
+        + 'seasons/{season}/asked',
+      run: () => deleteDoc(doc(db, 'seasons', ANY_SEASON, 'asked', 'rules-check-pack')),
     },
     {
       label: 'Firestore   · write an unbounded question history',

@@ -986,17 +986,31 @@ service cloud.firestore {
 
       allow read: if signedIn();
 
-      allow create, update: if signedIn()
-        && request.resource.data.keys().hasOnly(['ids', 'at'])
-        && request.resource.data.ids is list
-        // Matches ASKED_LIMIT in src/lib/season.ts, with room to spare so a
-        // client one deploy behind is not locked out of writing its history.
-        && request.resource.data.ids.size() <= 600
-        && request.resource.data.at is number;
+      function historyOk() {
+        return request.resource.data.keys().hasOnly(['ids', 'at'])
+          && request.resource.data.ids is list
+          // Matches ASKED_LIMIT in src/lib/season.ts, with room to spare so a
+          // client one deploy behind is not locked out of writing its history.
+          && request.resource.data.ids.size() <= 600
+          && request.resource.data.at is number;
+      }
 
-      // Clearing a pack's history is the only way to start it fresh without a
-      // new season, and it costs nothing worse than some repeated questions.
-      allow delete: if signedIn();
+      allow create: if signedIn() && historyOk();
+
+      // Never shorter than what is there (audit, 22 October 2026). The client
+      // writes the stored ids plus this round's, capped at ASKED_LIMIT
+      // (`mergeAsked`), so a real write never shrinks the list. Without this,
+      // an update to `ids: []` wiped a pack's history as surely as a delete.
+      // A lost race between two rooms is now refused rather than overwriting
+      // the other room's ids; `recordAsked` already swallows a failure.
+      allow update: if signedIn() && historyOk()
+        && request.resource.data.ids.size() >= resource.data.ids.size();
+
+      // Clearing a pack's history starts it fresh without a new season. It
+      // used to be open to anyone signed in, which let any visitor wipe it; the
+      // client never deleted (grep, 22 October 2026). The console and the
+      // Admin SDK still can.
+      allow delete: if false;
     }
 
     match /seasons/{season}/players/{playerId} {
