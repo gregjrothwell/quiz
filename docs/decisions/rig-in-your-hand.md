@@ -51,6 +51,24 @@ known to spread.
   That cannot be done from here.
 - **Pass:** 90% of devices within ±50 ms on 9 of 10 cues.
 
+### Built 22 October 2026, branch `rig-probe`
+
+`src/engine/rigProbe.ts` (cue times, the report, the pass line; 9 tests),
+`src/lib/rigDevice.ts` (start, follow, watch — shared by browser and Node),
+`components/RigCheck.tsx` in the lobby (host: "Run the rig check"; everyone:
+the amber wash), RTDB rules under `rig/`, `npm run read-rig -- <code>`.
+
+**Emulator, P4:** 8 Node clients and 3 browser tabs on one Mac painted all 10
+cues; spread 25–32 ms, about 1 ms late. That is the probe's own floor — one
+machine, no Wi-Fi — so a Friday number above it is the office's.
+**Rules, P2:** own paint and a run in your own name allowed; another's paint,
+cue 12, a non-number, a run in another's name, extra fields all refused.
+One bug on the way: `.info/serverTimeOffset` can answer before `onValue`
+returns, so the offset is read with `onlyOnce`.
+
+**Still to do: P5, the real run.** 8+ phones in the office, the host presses
+the button in the lobby, then `npm run read-rig -- <code>`.
+
 ## Part 2 — the rig (only if the probe passes)
 
 > **As the room**, I want our phones to light up together at the big moments,

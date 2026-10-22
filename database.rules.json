@@ -21,6 +21,41 @@
       }
     },
 
+    "rig": {
+      "$code": {
+        ".read": "auth != null",
+
+        "run": {
+          ".write": "auth != null",
+          ".validate": "newData.hasChildren(['id', 'startAt', 'by']) && newData.child('by').val() === auth.uid",
+
+          "id": {
+            ".validate": "newData.isString() && newData.val().length <= 40"
+          },
+          "startAt": {
+            ".validate": "newData.isNumber()"
+          },
+          "by": {
+            ".validate": "newData.isString()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+
+        "paints": {
+          "$run": {
+            "$cue": {
+              "$uid": {
+                ".write": "auth != null && auth.uid === $uid && $cue.matches(/^[0-9]$/)",
+                ".validate": "newData.isNumber()"
+              }
+            }
+          }
+        }
+      }
+    },
+
     "lamps": {
       "$code": {
         "$question": {
