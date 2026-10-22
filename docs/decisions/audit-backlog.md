@@ -127,7 +127,7 @@ while `cost.md` frames it as what says a prune is due. Two lines in the
 | `src/App.tsx:786` — the `games/` retry guard closes over no game id, so a late `'failed'` from one game clears the next one's guard. Costs one refused write. |
 | A round finished offline hangs rather than resolving `'failed'`, so the documented retry never fires. |
 | `scripts/game-report.ts:145` sums `snaps` over all questions while `hitRate` uses `played`, under a header saying skipped questions are left out. |
-| `src/lib/useRoom.ts:448` is the only `onSnapshot` with no error callback — refused, answers stop silently. |
+| ~~`src/lib/useRoom.ts:448` is the only `onSnapshot` with no error callback — refused, answers stop silently.~~ **Fixed 22 Oct 2026** (branch `audit-8-answer-listener-errors`): both answer listeners report, and the room notice says to reload. Proved by fault injection in the emulator — own-answer `get` refused: the notice shows; real rules: it does not. Not committed as a test: it needs a rule no ruleset should ship. |
 | `docs/decisions/known-limits.md` bundle figures are stale: "262 kB across two chunks" is now **276 kB across four**. |
 | 33 of 49 published stills still breach `MAX_STILL_BYTES`. The generator is fixed; regenerating needs `npm run write-hand-packs`, which re-downloads from Commons and the Met. Question ids are slug-based so **no vault re-seed**. |
 
