@@ -150,9 +150,10 @@ Greg's words.
   ([`lead-time.md`](lead-time.md)).
 
 **Still to do:**
-3. ⬜ The Lab: switches, kill switch, verdict, beacons, `read-lab`, run sheet.
-4. ⬜ Wow, one at a time behind Lab, each with a story and ACs first:
-   1. Survey Says.
+3. ⏸ The Lab: switches, kill switch, verdict, beacons, `read-lab`, run sheet.
+   **Shelved by Greg, 22 Oct:** "pointless extra complexity when we don't really need it." Draft kept on branch `lab-story`.
+4. ⬜ Wow, one at a time as ordinary packs or lobby options (not behind a Lab), each with a story and ACs first:
+   1. Survey Says. Story and ACs drafted 22 Oct, waiting on Greg: [`survey-says.md`](survey-says.md).
    2. The rig probe.
    3. The per-question stats fold (it also fixes the Ladder).
    4. Beat the Chaser, then The Commentator.
