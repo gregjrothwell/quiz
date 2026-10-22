@@ -166,8 +166,8 @@ export function Landing({
 
       </section>
 
-      <div className="split split--two">
-        <section className="panel stack">
+      <div className="split split--two split--landing">
+        <section className="panel stack landing__run">
           <h2 className="display display--panel">
             Run the show
           </h2>
@@ -188,7 +188,7 @@ export function Landing({
           </button>
         </section>
 
-        <section className="panel stack">
+        <section className="panel stack landing__join">
           <h2 className="display display--panel">
             Join a room
           </h2>
@@ -227,21 +227,28 @@ export function Landing({
             Join the round
           </button>
         </section>
-      </div>
 
-      <div className="btn-row">
-        <button type="button" className="btn btn--ghost" onClick={onSeason}>
-          Season table
-        </button>
-        <button type="button" className="btn btn--ghost" onClick={onUpdates}>
-          What&rsquo;s new
-          {unseen ? (
-            <>
-              <span className="new-dot" aria-hidden="true" />
-              <span className="sr-only"> (new)</span>
-            </>
-          ) : null}
-        </button>
+        {/*
+          Inside the grid rather than after it, so on a laptop it sits under
+          "Run the show", level with the taller Join panel, instead of waiting
+          for Join to finish — which put it below the fold at 1280×720 (Greg,
+          22 October 2026). Last in the source, so a phone still stacks it last
+          and the tab order is unchanged.
+        */}
+        <div className="btn-row landing__links">
+          <button type="button" className="btn btn--ghost" onClick={onSeason}>
+            Season table
+          </button>
+          <button type="button" className="btn btn--ghost" onClick={onUpdates}>
+            What&rsquo;s new
+            {unseen ? (
+              <>
+                <span className="new-dot" aria-hidden="true" />
+                <span className="sr-only"> (new)</span>
+              </>
+            ) : null}
+          </button>
+        </div>
       </div>
 
       {error ? <p className="notice">{error}</p> : null}

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render } from '@testing-library/react';
+import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import type * as SoundModule from '../lib/sound';
 import { SOUND_CHECK, SOUND_CHECK_SECONDS } from '../lib/soundCheck';
@@ -19,14 +19,66 @@ vi.mock('../lib/sound', async (importOriginal) => {
   return { ...actual, playPreview: sound.playPreview, stopPreview: sound.stopPreview };
 });
 
-const { setMuted } = await vi.importActual<typeof SoundModule>('../lib/sound');
+const actual = await vi.importActual<typeof SoundModule>('../lib/sound');
+const { setMuted } = actual;
 
 beforeEach(() => {
-  sound.playPreview.mockClear();
-  sound.stopPreview.mockClear();
+  sound.playPreview.mockReset();
+  sound.stopPreview.mockReset();
   setMuted(false);
 });
 afterEach(cleanup);
+
+/**
+ * The real playback path under the spies, against a stand-in `<audio>` whose
+ * clock a test can move — so the label is proved against what `sound.ts`
+ * actually publishes rather than against a mock of it.
+ */
+class FakeAudio {
+  static made: FakeAudio[] = [];
+  preload = '';
+  loop = false;
+  volume = 1;
+  src = '';
+  currentTime = 0;
+  paused = true;
+  listeners: Record<string, Array<() => void>> = {};
+  constructor() {
+    FakeAudio.made.push(this);
+  }
+  addEventListener(type: string, handler: () => void): void {
+    (this.listeners[type] ??= []).push(handler);
+  }
+  load(): void {}
+  pause(): void {
+    this.paused = true;
+  }
+  removeAttribute(): void {}
+  play(): Promise<void> {
+    this.paused = false;
+    return Promise.resolve();
+  }
+  tick(to: number): void {
+    this.currentTime = to;
+    for (const handler of this.listeners.timeupdate ?? []) handler();
+  }
+}
+
+function withRealPlayback(run: () => void): void {
+  const globals = globalThis as { Audio?: unknown };
+  const original = globals.Audio;
+  FakeAudio.made = [];
+  globals.Audio = FakeAudio;
+  sound.playPreview.mockImplementation(actual.playPreview);
+  sound.stopPreview.mockImplementation(actual.stopPreview);
+  try {
+    run();
+  } finally {
+    actual.stopPreview();
+    if (original === undefined) delete globals.Audio;
+    else globals.Audio = original;
+  }
+}
 
 const button = (container: HTMLElement): HTMLButtonElement => {
   const found = [...container.querySelectorAll<HTMLButtonElement>('button')].find((b) =>
@@ -44,11 +96,57 @@ describe('the sound check', () => {
     expect(sound.playPreview).toHaveBeenCalledWith(SOUND_CHECK.previewUrl, 0, SOUND_CHECK_SECONDS);
   });
 
-  test('a second press goes through playPreview again, which restarts rather than stacks', () => {
-    const { container } = render(<SoundCheck />);
-    fireEvent.click(button(container));
-    fireEvent.click(button(container));
-    expect(sound.playPreview).toHaveBeenCalledTimes(2);
+  /*
+    Was "a second press restarts rather than stacks" until 22 October 2026, when
+    Greg asked for the same button to stop it: ten seconds of a song nobody can
+    cut short is a long ten seconds in a quiet office.
+  */
+  test('a second press stops it, and the button says so while it plays', () => {
+    withRealPlayback(() => {
+      const { container } = render(<SoundCheck />);
+      expect(button(container).textContent).toBe('Play the sound check');
+
+      // #when it is pressed
+      fireEvent.click(button(container));
+
+      // #then the clip is playing and the button offers to stop it
+      expect(FakeAudio.made[0]?.paused).toBe(false);
+      expect(button(container).textContent).toBe('Stop the sound check');
+
+      // #when it is pressed again
+      fireEvent.click(button(container));
+
+      // #then it stops, rather than starting over
+      expect(sound.playPreview).toHaveBeenCalledTimes(1);
+      expect(sound.stopPreview).toHaveBeenCalledTimes(1);
+      expect(FakeAudio.made[0]?.paused).toBe(true);
+      expect(button(container).textContent).toBe('Play the sound check');
+    });
+  });
+
+  test('goes back to Play by itself when the ten seconds are up', () => {
+    withRealPlayback(() => {
+      const { container } = render(<SoundCheck />);
+      fireEvent.click(button(container));
+      expect(button(container).textContent).toBe('Stop the sound check');
+
+      // #when the clip reaches its cut
+      act(() => FakeAudio.made[0]?.tick(SOUND_CHECK_SECONDS + 0.2));
+
+      // #then nobody is offered a stop for a clip that has already ended
+      expect(button(container).textContent).toBe('Play the sound check');
+    });
+  });
+
+  test('a third press plays it again', () => {
+    withRealPlayback(() => {
+      const { container } = render(<SoundCheck />);
+      fireEvent.click(button(container));
+      fireEvent.click(button(container));
+      fireEvent.click(button(container));
+      expect(sound.playPreview).toHaveBeenCalledTimes(2);
+      expect(button(container).textContent).toBe('Stop the sound check');
+    });
   });
 
   test('unmutes a muted player before playing', () => {

@@ -561,6 +561,29 @@ function setPreviewBlocked(next: boolean): void {
   notify();
 }
 
+/**
+ * The URL of the preview playing now, or null.
+ *
+ * For a button that plays a clip and has to offer to stop it while it runs —
+ * the lobby's sound check, Greg's ask of 22 October 2026. Set from the press,
+ * not from the first frame, so the offer to stop is there while Apple's CDN is
+ * still delivering. Cleared by every way a clip ends: the cut, a stop, a mute,
+ * running out, failing to load, and the browser refusing to start it. Miss one
+ * and the button is left offering to stop silence.
+ */
+let previewPlaying: string | null = null;
+
+function setPreviewPlaying(next: string | null): void {
+  if (previewPlaying === next) return;
+  previewPlaying = next;
+  notify();
+}
+
+/** {@link previewPlaying}, reachable without a render, as {@link isPreviewBlocked} is. */
+export function playingPreviewUrl(): string | null {
+  return previewPlaying;
+}
+
 const listeners = new Set<() => void>();
 
 function notify(): void {
@@ -691,6 +714,14 @@ export function playPreview(url: string, startSeconds = 0, seconds?: number): vo
   el.volume = volume;
   if (!ready) el.src = url;
   previewEl = el;
+  setPreviewPlaying(url);
+  // Not released here: what happens to a finished element is unchanged, and
+  // only the published state needs to know it is over.
+  const ended = (): void => {
+    if (previewEl === el) setPreviewPlaying(null);
+  };
+  el.addEventListener('ended', ended);
+  el.addEventListener('error', ended);
 
   /*
     Stopping the clip before the singer gives the answer away.
@@ -727,6 +758,7 @@ export function playPreview(url: string, startSeconds = 0, seconds?: number): vo
     void el.play().catch((cause: unknown) => {
       // A later question's clip has already taken over; this result is stale.
       if (previewEl !== el) return;
+      setPreviewPlaying(null);
       // Only the autoplay refusal is worth a line on screen, and it is the one
       // the player can actually do something about. A 404 or a decode failure is
       // ours to fix and telling the room to press a button would be a lie.
@@ -821,6 +853,7 @@ export function stopPreview(): void {
 function stopPlaying(): void {
   const el = previewEl;
   previewEl = null;
+  setPreviewPlaying(null);
   if (!el) return;
   release(el);
 }
@@ -1015,4 +1048,13 @@ export function useSound(): SoundControls {
   );
 
   return { muted: isMuted, toggle, play, volume: level, setVolume, previewBlocked: blocked };
+}
+
+/** Whether this clip is the one playing, kept current as it starts and ends. */
+export function usePreviewPlaying(url: string): boolean {
+  return useSyncExternalStore(
+    subscribe,
+    () => previewPlaying === url,
+    () => false,
+  );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { playPreview, stopPreview, useSound } from '../lib/sound';
+import { playPreview, stopPreview, usePreviewPlaying, useSound } from '../lib/sound';
 import { SOUND_CHECK, SOUND_CHECK_SECONDS } from '../lib/soundCheck';
 import { VolumeSlider } from './VolumeSlider';
 
@@ -14,6 +14,7 @@ import { VolumeSlider } from './VolumeSlider';
  */
 export function SoundCheck() {
   const { muted, toggle } = useSound();
+  const playing = usePreviewPlaying(SOUND_CHECK.previewUrl);
   const playedRef = useRef(false);
 
   // Leaving the lobby stops it, so the clip never runs into question one. Only
@@ -25,7 +26,14 @@ export function SoundCheck() {
     [],
   );
 
-  const play = (): void => {
+  // One button, both ways: a second press stops it (Greg, 22 October 2026).
+  // `playing` comes from `sound.ts`, so the cut and a mute put the label back
+  // by themselves.
+  const press = (): void => {
+    if (playing) {
+      stopPreview();
+      return;
+    }
     // Unmuted first, as the replay does: a button that plays nothing is worse
     // than no button. `toggle` also wakes the audio context on the way.
     if (muted) toggle();
@@ -41,8 +49,8 @@ export function SoundCheck() {
         call over it.
       </p>
       <div className="sound-check__row">
-        <button type="button" className="btn btn--ghost" onClick={play}>
-          Play the sound check
+        <button type="button" className="btn btn--ghost" onClick={press}>
+          {playing ? 'Stop the sound check' : 'Play the sound check'}
         </button>
         <VolumeSlider />
       </div>
