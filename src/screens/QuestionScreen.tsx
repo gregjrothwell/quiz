@@ -1,3 +1,5 @@
+import { chaserScore, chaserTally } from '../engine/chaser';
+import { Commentary } from '../components/Commentary';
 import { useEffect, useRef, useState } from 'react';
 import { PicturePrompt } from '../components/PicturePrompt';
 import { StoreBadge } from '../components/StoreBadge';
@@ -933,6 +935,16 @@ export function QuestionScreen({
           />
         )}
 
+        {revealed && settled && question?.chaser && question.correctIndex !== null ? (
+          <p className="chaser-line" aria-live="polite">
+            Mr Fries 🍟 said “{question.options[question.chaser.pick] ?? '?'}”
+            {question.chaser.pick === question.correctIndex ? ' — right' : ' — wrong'}
+            {question.chaser.roomTook ? ', and the room took it' : ', and the room didn’t'}
+            {' · '}
+            {chaserTally(chaserScore(room.questions))}
+          </p>
+        ) : null}
+        <Commentary room={room} moment="reveal" speakHere={isQuizmaster} show={revealed && settled} />
         <div className="row row--between">
           {/*
           Mounted for the whole reveal rather than swapped in when the verdict

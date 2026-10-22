@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ratesFrom, type Rates } from '../engine/chaser';
 import { withRandomPack } from '../engine/randomRound';
 import type {
   DifficultyCounts,
@@ -71,4 +72,14 @@ export async function loadPackQuestions(id: PackId): Promise<SealedQuestion[]> {
   if (!response.ok) throw new Error(`Could not load the ${id} pack (${response.status})`);
   const pack = (await response.json()) as { questions: SealedQuestion[] };
   return pack.questions;
+}
+
+/**
+ * The office's hit rates, for Beat the Chaser (`engine/chaser.ts`). Null when
+ * the file is missing or not one: Mr Fries then plays to the office average.
+ */
+export async function loadRates(): Promise<Rates | null> {
+  const response = await fetch(packUrl('rates.json'));
+  if (!response.ok) return null;
+  return ratesFrom(await response.json());
 }

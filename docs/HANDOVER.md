@@ -92,9 +92,9 @@ scoring 500 + rank 500/400/300/200/100.
    handover, two squads on one board. **Not the rank bonus or the wager** —
    [`round-types.md`](decisions/round-types.md#the-prose-was-wrong-and-that-is-a-finding).
 8. **The Ladder stops climbing** once a pack's thin `easy`/`hard` bucket is
-   spent — it substitutes medium. The fix is a fold of `games/` into real
-   difficulty, **a query now rather than a build**, and `games/` now holds
-   eleven rounds rather than three, so it is no longer gated on playing.
+   spent — it substitutes medium. **Corrected 22 Oct:** a fold of `games/` does
+   not fix it — it rates only questions already played, which never come back
+   (65 rounds, 934 questions, 6 repeats; [`beat-the-chaser.md`](decisions/beat-the-chaser.md)). No fix chosen.
 9. **Rules are published by hand until W2 is live; then by CI on `master`** ([`rules-from-ci.md`](decisions/rules-from-ci.md)). Live = repo, read 15 Oct.
    `check-rules` **91/91 both ways, 27 September**; run it after any rules merge. Read [`security.md`](decisions/security.md) first.
 10. **Seed before any new ids ship** — `seed-vault -- --pack <id>`; unseeded breaks at reveal. **All seeded 17 Oct**, with

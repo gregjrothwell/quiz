@@ -218,6 +218,13 @@ export interface QuizQuestion {
    * option tied for top. Absent on every other round. See `survey.ts`.
    */
   survey?: SurveyRef;
+  /**
+   * Beat the Chaser: the office's hit rate for a question like this one, set
+   * when the round is dealt, and once revealed, Mr Fries's lectern and whether
+   * the room took it. Absent unless the room plays against him. `chaser.ts`.
+   */
+  chaserRate?: number;
+  chaser?: { pick: number; roomTook: boolean };
 }
 
 export interface RoomState {
@@ -317,6 +324,20 @@ export interface RoomState {
    * for the reason `wagerEnabled` gives; the `standoff` phase it leads to does.
    */
   standoffEnabled: boolean;
+  /**
+   * Whether the room plays against Mr Fries (docs/decisions/beat-the-chaser.md).
+   * Chosen in the lobby, fixed for the round; a second scoreboard on top, so it
+   * changes nobody's points. No rules change, for the reason `wagerEnabled` gives.
+   */
+  chaserEnabled: boolean;
+  /**
+   * What the opening titles loaded about each player — rounds played, wins, best
+   * round — kept for the round so the Commentator can say "first win" on every
+   * screen alike (docs/decisions/commentator.md). Empty when the season has
+   * nothing on anybody, or the read failed. No rules change: `wellFormed()` does
+   * not `hasOnly` the room's keys.
+   */
+  history: Record<string, { played: number; wins: number; best: number }>;
   /** The final in play, or the one just played. Null in every other round. */
   standoff: Standoff | null;
   /**
@@ -407,6 +428,8 @@ export function createRoom(code: string): RoomState {
     stealEnabled: false,
     jigsawEnabled: false,
     standoffEnabled: false,
+    chaserEnabled: false,
+    history: {},
     standoff: null,
     packVotes: {},
     voteTaps: {},

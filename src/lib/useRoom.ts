@@ -20,24 +20,23 @@ import {
   updateDoc,
   type DocumentData,
 } from 'firebase/firestore';
-// The beat and the claim go over Lite, as the vault's candidates do: a write the
+// The claim goes over Lite, as the vault's candidates do: a write the
 // rules refuse is a 403 on its own request there, and does not close the main
 // SDK's write stream under the answers. See `resolveAnswer` in vault.ts.
 import {
   doc as liteDoc,
   serverTimestamp as liteServerTimestamp,
-  setDoc as liteSetDoc,
   writeBatch as liteWriteBatch,
 } from 'firebase/firestore/lite';
 import { firebaseAuth, firestore, realtimeDb, vaultFirestore } from '../firebase';
 import {
-  BEAT_EVERY_MS,
   CLAIM_RETRY_MS,
   planClaim,
   resolveHost,
   successorOnLeave,
 } from '../engine/host';
 import { reduce, type Action } from '../engine/reducer';
+import { foldActions } from '../host/moves';
 import { carryFirstMs, firstTouchOf, liveAnswers, type AnswerDoc } from '../engine/answers';
 import {
   answerDocFrom,
@@ -62,14 +61,11 @@ import { networkType, recordQ1Trace, refusalCode } from './q1Trace';
 import { planJoin, planSeatSquad } from '../engine/join';
 import { isCall, optionsAtMs } from '../engine/optionsHold';
 import { questionPack } from '../engine/randomRound';
-import { reapAbsent } from '../engine/presence';
 import {
   createRoom,
   currentQuestion,
   isWagerQuestion,
   questionDurationMs,
-  type Phase,
-  type Player,
   type RoomState,
 } from '../engine/state';
 import { randomRoomCode } from '../engine/roomCode';
@@ -275,9 +271,6 @@ export function useRoom(): UseRoom {
     found.
   */
   const nameRef = useRef<string>(rememberedName());
-  const absentSinceRef = useRef<Record<string, number>>({});
-  const playersRef = useRef<Record<string, Player>>({});
-  const phaseRef = useRef<Phase>('lobby');
 
   /**
    * The newest room this client has seen, for `dispatch` to fold over.
@@ -600,14 +593,10 @@ export function useRoom(): UseRoom {
     return new Set([...fromRtdb, ...Object.keys(room.answers)]);
   }, [room, lampsFeed]);
 
-  // Read by the reaper's Realtime Database callback, which must not have `room`
-  // in its dependencies — see the reaper effect below, and by `dispatch`, which
-  // must fold over the room as it is *now* rather than as it was when the
-  // callback was made.
+  // Read by `dispatch`, which must fold over the room as it is *now* rather than
+  // as it was when the callback was made, and by the claim's timer.
   useEffect(() => {
     roomRef.current = room;
-    playersRef.current = room?.players ?? {};
-    phaseRef.current = room?.phase ?? 'lobby';
 
     // Remember our place in the queue every time we see ourselves in the room,
     // rather than only when we write ourselves in. Creating a room never goes
@@ -654,9 +643,8 @@ export function useRoom(): UseRoom {
       // instead would run the second against a stale room, so e.g. `start` would
       // not see the questions `selectPack` just added and would silently do
       // nothing.
-      const actions = Array.isArray(action) ? action : [action];
-      const next = actions.reduce(reduce, current);
-      if (next === current) return;
+      const next = foldActions(current, action);
+      if (!next) return;
 
       await updateDoc(roomDoc(code), toUpdate(next, current) as Partial<DocumentData>);
     },
@@ -780,7 +768,7 @@ export function useRoom(): UseRoom {
           squad: sideFor(rememberedSquad(), rememberedPlayingWith()),
         });
         // W3: the creator is the host, named on the room rather than derived.
-        // The beat starts from the effect below once this lands.
+        // The beat starts from `useHost` once this lands.
         const fresh = { ...joined, hostUid: uid };
         // `expiresAt` is storage only — it is not on RoomState and nothing in
         // the app reads it. It exists so a Firestore TTL policy on `rooms` has
@@ -1062,56 +1050,6 @@ export function useRoom(): UseRoom {
     },
     [code, uid, room, tracer],
   );
-
-  // Reap players whose presence has been gone longer than the grace window. Only
-  // the quizmaster does this, so several clients cannot race the same removal.
-  //
-  // `playersRef` and `phaseRef` rather than `room` in the dependency list:
-  // `room` is a fresh object on every snapshot, so depending on it tore down and
-  // re-established this Realtime Database listener on every phase change and
-  // every answer.
-  useEffect(() => {
-    if (!code || !isQuizmaster) return;
-
-    const presence = rtdbRef(realtimeDb(), `presence/${code}`);
-
-    return onValue(presence, (snapshot) => {
-      // The lobby-only policy lives in `reapAbsent`, with the rest of the
-      // reaping rules and its tests, rather than here.
-      const { remove, absentSince } = reapAbsent({
-        players: playersRef.current,
-        present: new Set(Object.keys((snapshot.val() as Record<string, unknown>) ?? {})),
-        absentSince: absentSinceRef.current,
-        now: Date.now(),
-        phase: phaseRef.current,
-      });
-
-      absentSinceRef.current = absentSince;
-
-      for (const playerUid of remove) {
-        void updateDoc(roomDoc(code), { [`players.${playerUid}`]: deleteField() });
-      }
-    });
-  }, [code, isQuizmaster]);
-
-  /*
-    The heartbeat (W3, D2 b): while this device holds the chair of a room with
-    a host, it writes `rooms/{code}/host/beat` every 15 s. Nobody listens; the
-    claim rule reads it. Writes only, about 240 an hour per open room.
-  */
-  const beating = Boolean(code && uid && hostUid === uid);
-  useEffect(() => {
-    if (!code || !beating) return;
-    const beat = (): void => {
-      const db = vaultFirestore();
-      void liteSetDoc(liteDoc(db, 'rooms', code, 'host', 'beat'), { at: liteServerTimestamp() }).catch(
-        () => undefined,
-      );
-    };
-    beat();
-    const timer = window.setInterval(beat, BEAT_EVERY_MS);
-    return () => window.clearInterval(timer);
-  }, [code, beating]);
 
   /*
     The claim (W3, AC8): every other device in a room with a host watches

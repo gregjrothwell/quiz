@@ -24,13 +24,17 @@
  * them from the function under test would only prove the engine agrees with
  * itself.
  *
- * **Since W3 the room is hosted** (`hostUid`, and a beat every 15 s), so every
- * dispatch here is the host's, under the host-only rule: this is the live allow
- * case for the final's `openPicks`, `closePicks` and `settle`, as `check-rules`
- * is for the probe room. docs/decisions/host-authority.md.
+ * **The host is the app's own** (`src/host/`, run by `nodeHost.ts`; host-loop.md
+ * step 3): it beats, reveals on the clock, and moves the final on — ends the
+ * talk after its minute, blows the whistle once both have committed, opens the
+ * picks and settles. This script presses only Start and Next, and plays the two
+ * finalists. So this is the live allow case for the host's real `openPicks`,
+ * `closePicks` and `settle`, under the host-only rule. It takes a minute longer
+ * than it did when it ended the talk itself.
  *
  * Not part of the build or the test suite: it talks to the live project. It
- * never calls `recordGame`, so nothing lands on the season board.
+ * never calls `recordGame`, so nothing lands on the season board. The host keeps
+ * the round in `games/`, as the app's does — one document per run.
  */
 
 import { initializeApp, deleteApp, type FirebaseApp } from 'firebase/app';
@@ -40,36 +44,32 @@ import {
   deleteDoc,
   doc,
   getDocFromServer,
-  getDocsFromServer,
   getFirestore,
   onSnapshot,
-  serverTimestamp,
   setDoc,
   Timestamp,
   updateDoc,
-  type DocumentData,
   type Firestore,
 } from 'firebase/firestore';
 // The vault's candidates go over Lite, as the app sends them — see `resolveAnswer`.
 import { getFirestore as getLiteFirestore } from 'firebase/firestore/lite';
 import { attachDebugAppCheck } from './appCheck';
-import { startBeat } from './hostBeat';
+import { startNodeHost } from './nodeHost';
 import { lightLamp } from './lamp';
-import { liveAnswers, type AnswerDoc } from '../src/engine/answers';
-import { reduce, type Action } from '../src/engine/reducer';
+import type { AnswerDoc } from '../src/engine/answers';
+import { reduce } from '../src/engine/reducer';
 import { randomRoomCode } from '../src/engine/roomCode';
 import {
   commitmentDoc,
   freshNonce,
   hasCommitted,
-  openedPick,
   revealDoc,
   sealedPickDocFrom,
   type SealedPickDoc,
 } from '../src/engine/sealedPick';
 import type { StandoffPick } from '../src/engine/standoff';
-import { createRoom, currentQuestion, type QuizQuestion, type RoomState } from '../src/engine/state';
-import { resolveAnswer } from '../src/lib/vault';
+import { createRoom, type QuizQuestion } from '../src/engine/state';
+import { toPersisted, type PersistedRoom } from '../src/lib/roomDoc';
 
 function required(name: string): string {
   const value = process.env[name];
@@ -86,7 +86,6 @@ const config = {
 };
 
 const DURATION_SECS = 10;
-const GATE_SLACK_MS = 1_000;
 
 /** Seeded by `seed-vault` with 'The first one', as `rank-harness` uses it. */
 const QUESTION: QuizQuestion = {
@@ -105,19 +104,6 @@ const QUESTION: QuizQuestion = {
  */
 const ADA = { name: 'Ada', elapsedMs: 1_200, pick: 'shaft' as StandoffPick, before: 1_000, after: 1_900 };
 const BO = { name: 'Bo', elapsedMs: 2_400, pick: 'share' as StandoffPick, before: 900, after: 0 };
-
-type PersistedRoom = Omit<RoomState, 'answers'>;
-
-/** Mirrors `useRoom.toUpdate`: never the whole `players` map, `scores` per field. */
-function toUpdate(state: RoomState): Record<string, unknown> {
-  const update: Record<string, unknown> = { ...state };
-  delete update.answers;
-  delete update.players;
-  delete update.scores;
-  for (const [uid, score] of Object.entries(state.scores)) update[`scores.${uid}`] = score;
-  if (state.phase === 'question') update.openedAt = serverTimestamp();
-  return update;
-}
 
 interface Client {
   name: string;
@@ -151,24 +137,24 @@ async function main(): Promise<void> {
   const code = randomRoomCode();
   const reference = doc(host.db, 'rooms', code);
   const fresh = reduce(createRoom(code), { type: 'join', uid: host.uid, name: host.name, at: Date.now() });
-  const persisted: Record<string, unknown> = { ...fresh };
-  delete persisted.answers;
-  // Hosted, as the app makes a room since W3: the creator is host and beats.
+  // Hosted, as the app makes a room since W3: the creator is host.
   await setDoc(reference, {
-    ...persisted,
+    ...toPersisted(fresh),
     hostUid: host.uid,
     expiresAt: Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1_000),
   });
-  const stopBeat = await startBeat(host.db, code);
+  const running = startNodeHost({
+    db: host.db,
+    lite: getLiteFirestore(host.app),
+    code,
+    uid: host.uid,
+    log: (line) => console.log(`${stamp()}  ${line}`),
+  });
   console.log(`${stamp()}  Room ${code} created by Host, who hosts it`);
 
   const view: { latest: PersistedRoom | null } = { latest: null };
   const stopRoom = onSnapshot(reference, (snapshot) => {
     if (snapshot.exists()) view.latest = snapshot.data() as PersistedRoom;
-  });
-  const answers: { live: Record<string, AnswerDoc> } = { live: {} };
-  const stopAnswers = onSnapshot(collection(host.db, 'rooms', code, 'answers'), (snapshot) => {
-    answers.live = Object.fromEntries(snapshot.docs.map((d) => [d.id, d.data() as AnswerDoc]));
   });
   const picks: { live: Record<string, SealedPickDoc> } = { live: {} };
   const stopPicks = onSnapshot(collection(host.db, 'rooms', code, 'standoff'), (snapshot) => {
@@ -181,28 +167,17 @@ async function main(): Promise<void> {
   });
 
   const teardown = async (): Promise<void> => {
-    stopBeat();
+    // The host may still be keeping the round; let it finish before stopping.
+    await running.idle();
+    running.stop();
+    for (const failure of running.failures()) console.log(`  host: ${failure}`);
     stopRoom();
-    stopAnswers();
     stopPicks();
     for (const client of clients) await deleteApp(client.app);
   };
 
-  const dispatch = async (actions: Action[]): Promise<RoomState> => {
-    const latest = view.latest;
-    if (!latest) throw new Error('no room to fold over');
-    const current: RoomState = {
-      ...latest,
-      code,
-      answers: liveAnswers(latest.players, latest.index, answers.live),
-    };
-    const next = actions.reduce(reduce, current);
-    await updateDoc(reference, toUpdate(next) as Partial<DocumentData>);
-    return next;
-  };
-
-  const waitFor = async (what: string, ready: () => boolean): Promise<void> => {
-    for (let waited = 0; waited < 15_000; waited += 200) {
+  const waitFor = async (what: string, ready: () => boolean, ms = 15_000): Promise<void> => {
+    for (let waited = 0; waited < ms; waited += 200) {
       if (ready()) return;
       await sleep(200);
     }
@@ -222,7 +197,7 @@ async function main(): Promise<void> {
   console.log(`${stamp()}  Ada and Bo are in`);
 
   const gameId = `final-${Date.now()}`;
-  await dispatch([
+  await running.dispatch([
     {
       type: 'selectPack',
       packId: 'general-knowledge',
@@ -250,18 +225,14 @@ async function main(): Promise<void> {
       ]);
     }),
   );
-  await sleep(DURATION_SECS * 1_000 + GATE_SLACK_MS);
-
-  const open = view.latest ? currentQuestion({ ...view.latest, code, answers: {} }) : null;
-  if (!open) throw new Error('no open question to reveal');
-  const correctIndex = await resolveAnswer(getLiteFirestore(host.db.app), code, open);
-  await dispatch([{ type: 'reveal', correctIndex, questionId: open.id }]);
-  await dispatch([{ type: 'next', at: Date.now() }]);
+  // The host reveals on its own once the clock and the vault's gate allow.
+  await running.until((room) => room.phase === 'reveal', DURATION_SECS * 1_000 + 30_000);
+  await running.dispatch([{ type: 'next', at: Date.now() }]);
   await waitFor('the last scoreboard', () => view.latest?.phase === 'scoreboard');
 
   console.log(`${stamp()}  >>> WRITING next — into the final`);
   try {
-    await dispatch([{ type: 'next', at: Date.now() }]);
+    await running.dispatch([{ type: 'next', at: Date.now() }]);
   } catch (error) {
     await teardown();
     if (isPermissionDenied(error)) {
@@ -285,8 +256,8 @@ async function main(): Promise<void> {
   }
   console.log(`${stamp()}  Final open: Ada ${opened.stakes[ada.uid]} v Bo ${opened.stakes[bo.uid]}, host third`);
 
-  await dispatch([{ type: 'openPicks' }]);
-  await waitFor('the pick stage', () => view.latest?.standoff?.stage === 'pick');
+  // The host ends the talk once its minute is up.
+  await waitFor('the host to open the picks', () => view.latest?.standoff?.stage === 'pick', 90_000);
 
   // Each finalist commits exactly as `useStandoff.pick` does.
   const nonces = new Map([
@@ -310,10 +281,15 @@ async function main(): Promise<void> {
     console.log(`    ${uid === ada.uid ? 'Ada' : 'Bo '} ${JSON.stringify(held)}`);
   }
 
-  await dispatch([{ type: 'closePicks', sealed: expectedPair }]);
+  // The host blows the whistle once both have committed.
   await waitFor('the whistle', () => view.latest?.standoff?.stage === 'closed');
+  const sealed = view.latest?.standoff?.sealed ?? [];
+  if (sealed.join() !== expectedPair.join()) failures.push(`the whistle sealed ${sealed.join(', ')}, not Ada then Bo`);
 
   // Ada opens first. Bo can now read it — which is the moment a re-commit pays.
+  // The host settles five seconds after the whistle whether or not Bo has
+  // opened (`REVEAL_GRACE_MS`), so the three attempts below must fit inside
+  // that. They are three writes; if the settle beats Bo, the run says so below.
   await updateDoc(doc(ada.db, 'rooms', code, 'standoff', ada.uid), revealDoc(ADA.pick, nonces.get(ada.uid) ?? ''));
   await waitFor("Ada's reveal", () => picks.live[ada.uid]?.pick !== undefined);
   console.log(`${stamp()}  Ada has revealed. Bo tries to change his mind:`);
@@ -339,16 +315,9 @@ async function main(): Promise<void> {
   await updateDoc(doc(bo.db, 'rooms', code, 'standoff', bo.uid), revealDoc(BO.pick, nonces.get(bo.uid) ?? ''));
   await waitFor("Bo's reveal", () => picks.live[bo.uid]?.pick !== undefined);
 
-  // The quizmaster's device opens both against their commitments.
-  const server = await getDocsFromServer(collection(host.db, 'rooms', code, 'standoff'));
-  const onServer = Object.fromEntries(server.docs.map((d) => [d.id, sealedPickDocFrom(d.data()) ?? undefined]));
-  const verified: Record<string, StandoffPick | null> = {};
-  for (const uid of expectedPair) verified[uid] = await openedPick(onServer[uid], gameId, uid);
-  console.log(`${stamp()}  Opened: Ada ${verified[ada.uid] ?? 'nothing'}, Bo ${verified[bo.uid] ?? 'nothing'}`);
-
-  await dispatch([{ type: 'settle', picks: verified }]);
-  await waitFor('the reveal', () => view.latest?.standoff?.stage === 'revealed');
-  await dispatch([{ type: 'next', at: Date.now() }]);
+  // The host opens both against their commitments and settles.
+  await waitFor('the settle', () => view.latest?.standoff?.stage === 'revealed');
+  await running.dispatch([{ type: 'next', at: Date.now() }]);
   await waitFor('finished', () => view.latest?.phase === 'finished');
 
   // From the server, past the cache: the cache holds this process's own writes.

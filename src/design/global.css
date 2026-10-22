@@ -4710,3 +4710,55 @@ select.input option {
   letter-spacing: 0.04em;
   opacity: 0.85;
 }
+
+/* The rig check (docs/decisions/rig-in-your-hand.md): the whole screen washes
+   amber on a cue. A 400 ms fade, cues two seconds apart — never a flash. */
+.rig-wash {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  background: var(--amber);
+  opacity: 0;
+  transition: opacity 400ms ease-in-out;
+}
+
+.rig-wash--on {
+  opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rig-wash {
+    transition: opacity 1200ms linear;
+  }
+}
+
+/* Beat the Chaser (docs/decisions/beat-the-chaser.md): the room against Mr Fries. */
+.chaser-line {
+  margin: 0;
+  color: var(--amber-bright);
+  font-family: var(--tech);
+  letter-spacing: 0.02em;
+}
+
+.chaser-line--result {
+  font-size: 1.25rem;
+  color: var(--amber);
+}
+
+/* The Commentator (docs/decisions/commentator.md): one line, under the moment. */
+.commentary {
+  margin: 0;
+  font-family: var(--body);
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+/* Quiz Wrapped (docs/decisions/quiz-wrapped.md): the card is the PNG it saves. */
+.wrapped__card {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--edge);
+}

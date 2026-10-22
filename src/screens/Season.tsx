@@ -1,3 +1,5 @@
+import { Wrapped } from '../components/Wrapped';
+import { wrappedOpen } from '../engine/wrapped';
 import { useCallback, useEffect, useState } from 'react';
 import { LeagueBoard } from '../components/LeagueBoard';
 import { WeekBoard } from '../components/WeekBoard';
@@ -29,6 +31,8 @@ export function Season({ youUid, onBack }: SeasonProps) {
     minute-long cache covers switching back.
   */
   const [showing, setShowing] = useState<'season' | 'week'>('season');
+  // Quiz Wrapped: opened from here, only on or after its date (W2, W4).
+  const [wrapping, setWrapping] = useState(false);
 
   /*
     Which row is yours is a question about the identity, not the browser. They
@@ -114,6 +118,16 @@ export function Season({ youUid, onBack }: SeasonProps) {
         <p className="lede">
           Nothing on the board yet. Season standings start filling up once a round finishes.
         </p>
+      ) : null}
+
+      {showing === 'season' && load.state === 'ready' && youRow && wrappedOpen(new Date()) ? (
+        wrapping ? (
+          <Wrapped row={youRow} board={load.rows} onClose={() => setWrapping(false)} />
+        ) : (
+          <button type="button" className="btn" onClick={() => setWrapping(true)}>
+            Your Quiz Wrapped
+          </button>
+        )
       ) : null}
 
       {showing === 'season' && load.state === 'ready' && load.rows.length > 0 ? (

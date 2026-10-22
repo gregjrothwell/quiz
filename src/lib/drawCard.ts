@@ -16,18 +16,18 @@ export const CARD_WIDTH = 1200;
 export const CARD_HEIGHT = 630;
 
 /** Straight off `src/design/global.css`. Duplicated because canvas cannot read CSS. */
-const INK = '#eef6ff';
-const INK_SOFT = '#9fb8cf';
+export const INK = '#eef6ff';
+export const INK_SOFT = '#9fb8cf';
 const INK_DIM = '#5d7794';
-const NIGHT = '#010610';
+export const NIGHT = '#010610';
 const PANEL = '#071a2e';
-const EDGE = '#12405f';
-const CYAN = '#29d6ff';
-const AMBER = '#ffb226';
+export const EDGE = '#12405f';
+export const CYAN = '#29d6ff';
+export const AMBER = '#ffb226';
 
-const SHOUT = 'Anton';
-const TECH = '"Chakra Petch"';
-const BODY = 'Archivo';
+export const SHOUT = 'Anton';
+export const TECH = '"Chakra Petch"';
+export const BODY = 'Archivo';
 
 /**
  * The faces the card draws with, at a weight and size the browser will actually
@@ -39,7 +39,7 @@ const BODY = 'Archivo';
  * `font-display: swap`, which means the document renders long before they are
  * ready, so "the screen looks right" is not evidence that the canvas will.
  */
-const FACES = [`400 96px ${SHOUT}`, `600 32px ${TECH}`, `700 32px ${TECH}`, `400 24px ${BODY}`];
+export const FACES = [`400 96px ${SHOUT}`, `600 32px ${TECH}`, `700 32px ${TECH}`, `400 24px ${BODY}`];
 
 /**
  * The sentence over the podium.
@@ -56,14 +56,14 @@ function headline(winners: readonly string[]): string {
 }
 
 /** Matches `describe()` in `Awards.tsx`, minus the sentence underneath. */
-const ROSETTE_TITLES: Record<CardRosette['id'], string> = {
+export const ROSETTE_TITLES: Record<CardRosette['id'], string> = {
   fastest: 'Fastest finger',
   comeback: 'Comeback of the night',
   'lone-wolf': 'The only one who knew',
   contrarian: 'Boldly wrong',
 };
 
-function fitted(
+export function fitted(
   ctx: CanvasRenderingContext2D,
   text: string,
   font: (size: number) => string,
@@ -332,6 +332,14 @@ export async function drawCard(card: CardModel): Promise<Blob> {
   ctx.font = `600 22px ${TECH}, monospace`;
   const eyebrow = card.pack ? card.pack.toUpperCase() : 'THE OFFICE QUIZ';
   ctx.fillText(eyebrow, 56, 74);
+
+  // Beat the Chaser's result, top right, in the house's amber.
+  if (card.chaser) {
+    ctx.textAlign = 'right';
+    ctx.fillStyle = AMBER;
+    ctx.fillText(`${card.chaser.toUpperCase()} 🍟`, CARD_WIDTH - 56, 74);
+    ctx.textAlign = 'left';
+  }
 
   ctx.fillStyle = INK;
   fitted(

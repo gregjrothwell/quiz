@@ -4,6 +4,7 @@ import { carryFirstMs, firstTouchOf } from './answers';
 import { BONUS_MULTIPLIER, isBonusCatchphrase } from './catchphraseBonus';
 import { questionPack } from './randomRound';
 import { stealFor, tallyQuestion } from './scoring';
+import { friesPick, roomTakes } from './chaser';
 import { finalistsFor, settleStandoff, stakesFor, type StandoffPick } from './standoff';
 import { isTell } from './survey';
 import {
@@ -44,6 +45,9 @@ export type Action =
       jigsawEnabled?: boolean;
       /** Optional for the reason `jigsawEnabled` is: every caller before it omits it. */
       standoffEnabled?: boolean;
+      chaserEnabled?: boolean;
+      /** What the season says about each player, for the Commentator. */
+      history?: RoomState['history'];
     }
   /**
    * `durationSecs` is settled here and nowhere else. The security rules pin it
@@ -113,6 +117,8 @@ export function reduce(state: RoomState, action: Action): RoomState {
         action.stealEnabled,
         action.jigsawEnabled ?? false,
         action.standoffEnabled ?? false,
+        action.chaserEnabled ?? false,
+        action.history ?? {},
       );
     case 'start':
       return start(state, action.at, action.gameId, action.durationSecs);
@@ -194,6 +200,8 @@ function selectPack(
   stealEnabled: boolean,
   jigsawEnabled: boolean,
   standoffEnabled: boolean,
+  chaserEnabled: boolean,
+  history: RoomState['history'],
 ): RoomState {
   if (state.phase !== 'lobby') return state;
   return {
@@ -205,6 +213,8 @@ function selectPack(
     stealEnabled,
     jigsawEnabled,
     standoffEnabled,
+    chaserEnabled,
+    history,
   };
 }
 
@@ -416,6 +426,16 @@ function reveal(
   // Written back into the question so every other client learns the answer from
   // the room update they are already listening to, rather than each paying for
   // its own read of the vault's reveal document.
+  // Beat the Chaser: Mr Fries's lectern and whether the room took it, decided
+  // here so every device's reducer reaches the same verdict (`chaser.ts`).
+  const chaser =
+    state.chaserEnabled && !entryIsSurvey(question) && question.chaserRate !== undefined
+      ? {
+          pick: friesPick(state.gameId ?? '', question.id, question.chaserRate, correctIndex, question.options.length),
+          roomTook: roomTakes(eligible, correctIndex),
+        }
+      : null;
+
   const questions = state.questions.map((entry, index) =>
     index === state.index
       ? {
@@ -424,6 +444,7 @@ function reveal(
           ...(top && entry.survey
             ? { survey: { ...entry.survey, top, ...(counts ? { counts } : {}) } }
             : {}),
+          ...(chaser ? { chaser } : {}),
         }
       : entry,
   );
@@ -448,6 +469,10 @@ function reveal(
  * else, and no key whose value is undefined, which Firestore refuses outright.
  * An answer document also carries `questionIndex`, which the room does not need.
  */
+function entryIsSurvey(question: QuizQuestion): boolean {
+  return question.survey !== undefined;
+}
+
 function publishedPicks(answers: Record<string, Answer>): Record<string, Answer> {
   return Object.fromEntries(
     Object.entries(answers).map(([uid, { optionIndex, elapsedMs, firstMs, wager, at }]) => [

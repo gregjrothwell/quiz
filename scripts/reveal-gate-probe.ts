@@ -41,7 +41,7 @@ import {
 // The vault's candidates go over Lite, as the app sends them — see `resolveAnswer`.
 import { getFirestore as getLiteFirestore } from 'firebase/firestore/lite';
 import { attachDebugAppCheck } from './appCheck';
-import { startBeat } from './hostBeat';
+import { startNodeHost } from './nodeHost';
 import { reduce, type Action } from '../src/engine/reducer';
 import {
   DEFAULT_DURATION_SECS,
@@ -168,7 +168,16 @@ async function main(): Promise<void> {
     hostUid: uid,
     expiresAt: Timestamp.fromMillis(Date.now() + 60 * 60 * 1_000),
   });
-  const stopBeat = await startBeat(db, code);
+  // The beat only: the app's own (`src/host/`), so a browser in the room cannot
+  // claim the chair. Every other duty is this script's to do by hand.
+  const beating = startNodeHost({
+    db: db,
+    lite: getLiteFirestore(app),
+    code,
+    uid: uid,
+    only: ['beat'],
+  });
+  await beating.until(() => true);
 
   const marks: Marks = { issuedAt: 0, localAt: null, confirmedAt: null, openedAt: null };
 
@@ -271,7 +280,7 @@ async function main(): Promise<void> {
   const afterControl = Date.now();
 
   stop();
-  stopBeat();
+  beating.stop();
 
   const t = marks.issuedAt;
   console.log('  Measured from the moment the open write was issued:\n');

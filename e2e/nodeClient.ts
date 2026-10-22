@@ -2,6 +2,11 @@ import { deleteApp, initializeApp, type FirebaseApp } from 'firebase/app';
 import { connectAuthEmulator, getAuth, signInAnonymously } from 'firebase/auth';
 import { connectDatabaseEmulator, getDatabase, type Database } from 'firebase/database';
 import { connectFirestoreEmulator, getFirestore, type Firestore } from 'firebase/firestore';
+import {
+  connectFirestoreEmulator as connectLiteEmulator,
+  getFirestore as getLiteFirestore,
+  type Firestore as LiteFirestore,
+} from 'firebase/firestore/lite';
 import { initializeApp as initializeAdmin, getApps as getAdminApps } from 'firebase-admin/app';
 import { getFirestore as getAdminFirestore, type Firestore as AdminFirestore } from 'firebase-admin/firestore';
 
@@ -25,6 +30,8 @@ const DATABASE_URL = `https://${PROJECT_ID}-default-rtdb.europe-west1.firebaseda
 export interface Player {
   uid: string;
   db: Firestore;
+  /** Lite on the same app, pointed at the same emulator — never the live project. */
+  lite: LiteFirestore;
   rtdb: Database;
   app: FirebaseApp;
   close: () => Promise<void>;
@@ -42,10 +49,12 @@ export async function player(): Promise<Player> {
   connectAuthEmulator(auth, authEmulatorUrl(), { disableWarnings: true });
   const db = getFirestore(app);
   connectFirestoreEmulator(db, EMULATOR_HOST, EMULATOR_PORTS.firestore);
+  const lite = getLiteFirestore(app);
+  connectLiteEmulator(lite, EMULATOR_HOST, EMULATOR_PORTS.firestore);
   const rtdb = getDatabase(app);
   connectDatabaseEmulator(rtdb, EMULATOR_HOST, EMULATOR_PORTS.database);
   const { user } = await signInAnonymously(auth);
-  return { uid: user.uid, db, rtdb, app, close: () => deleteApp(app) };
+  return { uid: user.uid, db, lite, rtdb, app, close: () => deleteApp(app) };
 }
 
 /**
