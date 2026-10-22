@@ -24,6 +24,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-22 — #107 live: What's new page + #90 (W3 scripts)
+
+Greg: "Go live with #107 once CI is green." Merge `9bab66d`; master run 39731837799 published rules and gh-pages `08594c7`; Pages built 06:12Z, no hang. Live `index-Blr7sNEQ` byte-identical to local; `check-rules` 129/0. This corrects "not live" in the entry below.
+
 ## 2026-10-22 — Release: What's new page + #90 (W3 scripts), not live
 
 `release-2026-10-22`: #90 merged onto today's master (`useRoom.ts` had moved +129; clean), then `final-harness` (5TRQ) and `rank-harness` (JY4V, 7 lamps lit) green live. What's new: a dated list on the landing, bundled, dot until opened; four open choices taken without Greg — [`updates-page.md`](decisions/updates-page.md). **Each release PR now adds its entry.**

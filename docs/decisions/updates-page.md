@@ -2,7 +2,7 @@
 
 > **Owner: Greg Rothwell. Last updated: 22 October 2026. Budget: 250 lines.**
 
-**Status: built 22 October 2026 on `updates-page`, shipping in `release-2026-10-22`. Not live.**
+**Status: LIVE 22 October 2026** (#107, merge `9bab66d`, gh-pages `08594c7`, live `Updates-xf0SqJkg.js` byte-identical to a local build).
 Asked for 21 Oct ("note down an updates page so users can see"); Greg said build it 22 Oct.
 
 ## Story
