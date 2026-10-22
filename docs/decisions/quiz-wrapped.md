@@ -2,7 +2,7 @@
 
 > **Owner: Greg Rothwell. Last updated: 22 October 2026. Budget: 250 lines.**
 
-**Status: DRAFT for Greg's approval. Nothing built.** Wow item 5 of
+**Status: APPROVED 22 October 2026, as recommended.** Greg: *"Approve all four stories as recommended: Mr Fries on pack×difficulty rates, room wins on more than half right, 🍟 until there's art, fix HANDOVER item 8; rig probe now and rig only on a pass; Commentator without Gemini, spoken from the host only, you draft ~30 lines; Wrapped's five cards opening 5 D[ec, Christmas finale left out for now]"* (the message was cut at 300 characters; the bracket is the rest of the button he pressed). Wow item 5 of
 [`direction-oct-2026.md`](direction-oct-2026.md#5-wow--all-five-accepted).
 **Due by about 5 December 2026.**
 
@@ -52,10 +52,10 @@ never written down. Three readings:
 - (b) the season's top players in a Share or Shaft for the title;
 - (c) Wrapped shown to the room on the big screen at the last quiz.
 
-## Open — Greg to decide
+## Decided — Greg, 22 October 2026, as recommended
 
 | Decision | Recommendation |
 |---|---|
 | Approve the five cards from data the app already has | Yes |
 | The date it opens (`WRAPPED_FROM`) | Friday 5 December 2026 |
-| What the Christmas finale is | Your call — (a), (b), (c), or none for now |
+| What the Christmas finale is | **None for now**; left out until Greg defines it |

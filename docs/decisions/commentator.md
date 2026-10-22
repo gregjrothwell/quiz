@@ -2,7 +2,7 @@
 
 > **Owner: Greg Rothwell. Last updated: 22 October 2026. Budget: 250 lines.**
 
-**Status: DRAFT for Greg's approval. Nothing built.** Wow item 3 of
+**Status: APPROVED 22 October 2026, as recommended.** Greg: *"Approve all four stories as recommended: Mr Fries on pack×difficulty rates, room wins on more than half right, 🍟 until there's art, fix HANDOVER item 8; rig probe now and rig only on a pass; Commentator without Gemini, spoken from the host only, you draft ~30 lines; Wrapped's five cards opening 5 D[ec, Christmas finale left out for now]"* (the message was cut at 300 characters; the bracket is the rest of the button he pressed). Wow item 3 of
 [`direction-oct-2026.md`](direction-oct-2026.md#5-wow--all-five-accepted).
 
 ## What changed since the idea was written
@@ -59,7 +59,7 @@ Every fact is one the app already holds on this device. No new reads.
 
 Gemini or any AI rewording. Lines about questions' history. A choice of voice.
 
-## Open — Greg to decide
+## Decided — Greg, 22 October 2026, as recommended
 
 | Decision | Recommendation |
 |---|---|
