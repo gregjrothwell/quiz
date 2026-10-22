@@ -24,6 +24,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-22 — Survey Says built, not live
+
+Family Fortunes with the office as the survey: five prompts told, then guessed. No vault — the host tallies part one from its own game log. Two changes after Greg approved, both flagged: part one shows no split (it would give part two away), and the results go on the lecterns, because bars below them sat under the desk on a phone. No rules change, proved by a whole round in the emulator. All 40 draft prompts kept by Greg ([`survey-says.md`](decisions/survey-says.md)).
+
 ## 2026-10-22 — No round banked today: the season rule hit 1,000 expressions
 
 B498's two rounds banked nothing, and showed "Missing or insufficient permissions" over a juddering podium. #104's `finalsOk()` took a regular's row (six `recent` entries) over Firestore's per-request expression limit; every check wrote a light row, so all passed. Fixed by reading the row once; a full-row allow case added to e2e and `check-rules` ([`finals-history.md`](decisions/finals-history.md#22-october-2026-nobodys-round-banked)).

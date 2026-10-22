@@ -5,6 +5,7 @@ import { BONUS_MULTIPLIER, isBonusCatchphrase } from './catchphraseBonus';
 import { questionPack } from './randomRound';
 import { stealFor, tallyQuestion } from './scoring';
 import { finalistsFor, settleStandoff, stakesFor, type StandoffPick } from './standoff';
+import { isTell } from './survey';
 import {
   currentQuestion,
   isDurationAllowed,
@@ -63,7 +64,11 @@ export type Action =
    * to a question the room has since moved on to — which would mark everybody
    * wrong on a question nobody got a chance to get wrong.
    */
-  | { type: 'reveal'; correctIndex: number; questionId: string }
+  /**
+   * `top` only on a Survey Says guess: every option tied for the room's most
+   * popular, all of them right. `correctIndex` is then the lowest of them.
+   */
+  | { type: 'reveal'; correctIndex: number; questionId: string; top?: number[]; counts?: number[] }
   | { type: 'skip' }
   | { type: 'next'; at: number }
   /** The quizmaster ends the talking, by button or when the talk clock runs out. */
@@ -114,7 +119,7 @@ export function reduce(state: RoomState, action: Action): RoomState {
     case 'answer':
       return answer(state, action.uid, action.optionIndex, action.elapsedMs, action.wager);
     case 'reveal':
-      return reveal(state, action.correctIndex, action.questionId);
+      return reveal(state, action.correctIndex, action.questionId, action.top, action.counts);
     case 'skip':
       return skip(state);
     case 'next':
@@ -307,7 +312,13 @@ function answer(
   };
 }
 
-function reveal(state: RoomState, correctIndex: number, questionId: string): RoomState {
+function reveal(
+  state: RoomState,
+  correctIndex: number,
+  questionId: string,
+  top?: number[],
+  counts?: number[],
+): RoomState {
   if (state.phase !== 'question') return state;
 
   const question = currentQuestion(state);
@@ -325,6 +336,12 @@ function reveal(state: RoomState, correctIndex: number, questionId: string): Roo
   // that basis would mark the whole room wrong, so the reveal is refused and
   // the question stays open instead.
   if (correctIndex < 0 || correctIndex >= question.options.length) return state;
+  if (top && !(top.includes(correctIndex) && top.every((option) => option >= 0 && option < question.options.length))) {
+    return state;
+  }
+  if (counts && !(counts.length === question.options.length && counts.every((count) => Number.isInteger(count) && count >= 0))) {
+    return state;
+  }
 
   // Only people who are actually in the room score.
   //
@@ -363,9 +380,13 @@ function reveal(state: RoomState, correctIndex: number, questionId: string): Roo
     screen can call it again to say who lost what without any of it being
     written down. Null on every question of a round nobody opted into.
   */
+  // A Survey Says tell has no right answer: nobody scores, and nobody's pick is
+  // published, because the room's split is what part two asks about (T2, T3).
+  const telling = isTell(question);
+
   // Scores filtered to the room the same way `eligible` is: `leave` drops a seat
   // and keeps the score, so the raw map can name a leader who has gone home.
-  const steal = isStealQuestion(state)
+  const steal = !telling && isStealQuestion(state)
     ? stealFor({
         correctIndex,
         answers: eligible,
@@ -373,8 +394,9 @@ function reveal(state: RoomState, correctIndex: number, questionId: string): Roo
       })
     : null;
 
-  const deltas = tallyQuestion({
+  const deltas = telling ? {} : tallyQuestion({
     correctIndex,
+    ...(top ? { top } : {}),
     answers: eligible,
     ...(isWagerQuestion(state) ? { scores: state.scores } : {}),
     steal,
@@ -395,7 +417,15 @@ function reveal(state: RoomState, correctIndex: number, questionId: string): Roo
   // the room update they are already listening to, rather than each paying for
   // its own read of the vault's reveal document.
   const questions = state.questions.map((entry, index) =>
-    index === state.index ? { ...entry, correctIndex } : entry,
+    index === state.index
+      ? {
+          ...entry,
+          correctIndex,
+          ...(top && entry.survey
+            ? { survey: { ...entry.survey, top, ...(counts ? { counts } : {}) } }
+            : {}),
+        }
+      : entry,
   );
 
   return {
@@ -408,7 +438,7 @@ function reveal(state: RoomState, correctIndex: number, questionId: string): Roo
     // Every counted pick, on the room. Since W3 only the host reads the answers
     // subcollection, so this is how every other device gets the reveal chips,
     // the replay and its game log — from the update it is already receiving.
-    lastPicks: publishedPicks(eligible),
+    lastPicks: telling ? {} : publishedPicks(eligible),
     scores,
   };
 }
