@@ -2,7 +2,7 @@
 
 > **Owner: Greg Rothwell. Last updated: 22 October 2026. Budget: 250 lines.**
 
-**Status: reviewed with Greg 22 October 2026. "All of the ideas look good."**
+**Status: reviewed with Greg 22 October 2026. "All of the ideas look good."** Items 1–2 and the lead-time work are live; progress is under *Sequence*.
 Sequence below; nothing in §3–§5 is built yet. Greg's request was a step back:
 direction, more from the office as beta testers, a security sweep, architecture,
 unused Firebase, and something with real wow.
@@ -133,23 +133,47 @@ None repeats a turned-down idea; [`ideas-review.md`](ideas-review.md) and
 5. **Quiz Wrapped.** A personal season recap and a Christmas finale, on the
    final-card pipeline. Due by about 5 December.
 
-## Sequence
+## Sequence — progress at 22 October 2026, 09:10 BST
 
-Each item is its own branch and goes into a `release-<date>` branch. The security
-PR is the exception and ships alone. Going live always needs Greg's words.
+Each item gets its own branch. A release branch is used only when two or more
+features go live together (AGENTS.md, from 22 Oct). Going live always needs
+Greg's words.
 
-1. Landing links and the sound-check stop (`landing-links-sound-stop`, 22 Oct).
-2. The security PR.
-3. The Lab: switches, kill switch, verdict, beacons, `read-lab`, run sheet.
-4. Wow, one at a time behind Lab, each with a story and ACs first:
+**Done, live 22 Oct:**
+1. ✅ Landing links beside Join and the sound-check stop: #110, plus its What's
+   new lines in #114.
+2. ✅ The security PR, #111: S1, S2, S6, S7. S3–S5 are recorded as known in
+   [`security-sweep-oct-2026.md`](security-sweep-oct-2026.md).
+- ✅ *Added on the day:* go-live lead time, #113. A Plan job skips docs-only
+  changes, master reuses the PR's tested build, and a What's new gate blocks
+  player-facing PRs without their line. Master now runs in ~1½ min
+  ([`lead-time.md`](lead-time.md)).
+
+**Still to do:**
+3. ⬜ The Lab: switches, kill switch, verdict, beacons, `read-lab`, run sheet.
+4. ⬜ Wow, one at a time behind Lab, each with a story and ACs first:
    1. Survey Says.
    2. The rig probe.
    3. The per-question stats fold (it also fixes the Ladder).
    4. Beat the Chaser, then The Commentator.
    5. The rig, if the probe holds.
-   6. Quiz Wrapped.
-5. Extract `hostLoop`; firebase 13, alone; W3's contract half after 14 Nov.
-6. Fix the four drifted docs.
+   6. Quiz Wrapped, due ~5 Dec.
+5. ⬜ Architecture:
+   - Extract `hostLoop`.
+   - firebase 13, alone.
+   - W3's contract half after 14 Nov.
+   - Audit items #1, #2, #7 and #8 (§2).
+6. ⬜ Fix the four drifted docs (§2).
+
+**Waiting on Greg, or deferred:**
+- A ruleset on `master` requiring **Verify and build** and **Playwright against
+  emulators**. Auto-merge is on but unused until the rule exists.
+- The CI live check plus the `github-pages` environment. Deferred, "we will do
+  it soon"; the pick-up brief is in the 22 Oct log.
+- Dependabot #115–#118, dev-tool bumps. Each merge deploys, so each needs the
+  words.
+- S8: update local Node from 24.13.0 to the latest 24.x.
+- The `/quiz/beta/` build. It needs a standing rule from Greg.
 
 ## Sources, checked 22 October 2026
 
