@@ -115,8 +115,14 @@ deploys nothing.
 | PR #112 | `code=false` | Yes |
 | `workflow_dispatch` | `code=true`, no reuse | Yes |
 
-The positive reuse case is proved against this PR's own run below, once its
-verify job has uploaded a marker.
+**Reuse, proved against #113's own runs (07:31 UTC).** Run 39739446963 (head
+`a39cec1`) uploaded `tree-29880f32…`, which is exactly `a39cec1^{tree}`: a PR run
+builds its head's tree.
+- A local, never-pushed commit carrying that tree, with `origin/master` as its
+  parent, gave `reuse_run=39739446963`.
+- The same thing with the tree of a run still in progress gave no reuse.
+- `gh run download 39739446963 -n dist` returned `index.html`, `assets/` and
+  `packs/`.
 
 ## Not covered
 
