@@ -59,6 +59,15 @@
 # clean `npm ci --ignore-scripts` on 22 October 2026
 # (docs/decisions/security-sweep-oct-2026.md). verify and e2e still run them —
 # they build and drive a browser, and hold nothing that writes.
+#
+# **Plan comes first, and decides how much of the rest runs** (22 October 2026,
+# docs/decisions/ci-deploy.md, "Lead time"). A change that touches only
+# documentation builds, tests and deploys nothing. A push to master whose tree
+# a pull-request run has already built and passed publishes that run's `dist`
+# instead of building and testing the same bytes again. Both were most of a
+# 16-minute go-live. The logic is in .github/scripts/ci-plan.sh, runnable
+# against real history. If Plan fails, everything runs: a skipped job counts as
+# a passed required check, so nothing here may skip on a plan it did not get.
 
 name: CI
 
@@ -72,8 +81,40 @@ permissions:
   contents: read
 
 jobs:
+  plan:
+    name: Plan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # The runs and artefacts APIs, to find a passed PR build to reuse.
+      actions: read
+      # The pulls API, for a pull request's changed files.
+      pull-requests: read
+    outputs:
+      code: ${{ steps.plan.outputs.code }}
+      reuse_run: ${{ steps.plan.outputs.reuse_run }}
+    steps:
+      # Depth 2: a push compares the commit with its first parent.
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: .github/scripts/ci-plan.sh | tee -a "$GITHUB_OUTPUT"
+
   verify:
     name: Verify and build
+    needs: plan
+    # Runs unless Plan succeeded *and* said there is nothing to build: docs
+    # only, or a passed PR build to publish. A failed Plan runs this in full.
+    if: >-
+      ${{ !cancelled() && !(needs.plan.result == 'success'
+      && (needs.plan.outputs.code != 'true' || needs.plan.outputs.reuse_run != '')) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
@@ -123,6 +164,26 @@ jobs:
           retention-days: 7
           if-no-files-found: error
 
+      # Names the exact tree this run built. When master later has the same
+      # tree, its run finds this marker and publishes this run's `dist` rather
+      # than building it again (ci-plan.sh). Pull requests only: master's own
+      # builds are never reused. Kept as long as `dist`.
+      - name: Record the tree this run built
+        id: tree
+        if: github.event_name == 'pull_request'
+        run: |
+          mkdir -p "$RUNNER_TEMP/tree"
+          git rev-parse 'HEAD^{tree}' | tee "$RUNNER_TEMP/tree/tree"
+          echo "hash=$(git rev-parse 'HEAD^{tree}')" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        if: github.event_name == 'pull_request'
+        with:
+          name: tree-${{ steps.tree.outputs.hash }}
+          path: ${{ runner.temp }}/tree/
+          retention-days: 7
+          if-no-files-found: error
+
   # Talks to the Firebase emulator, never the live project. Must never name the
   # App Check debug-token environment variable — `check-bundle` refuses a build
   # if this file does. Give the runner the emulator, not a token.
@@ -130,6 +191,9 @@ jobs:
   e2e:
     name: Playwright against emulators
     needs: verify
+    # `!cancelled()` rather than the default: when Plan fails, verify still
+    # runs, and so must this, or a skipped e2e would pass as a required check.
+    if: ${{ !cancelled() && needs.verify.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -189,10 +253,16 @@ jobs:
   # expand-then-contract (public-scale.md, W3).
   rules:
     name: Publish rules to Firebase
-    needs: [verify, e2e]
+    needs: [plan, verify, e2e]
+    # Either this run built and tested the code, or Plan found a passed PR run
+    # that built this exact tree. Docs only: neither, so nothing is published.
     if: >-
-      github.ref == 'refs/heads/master'
+      ${{ !cancelled()
+      && github.ref == 'refs/heads/master'
       && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+      && ((needs.verify.result == 'success' && needs.e2e.result == 'success')
+          || (needs.plan.result == 'success' && needs.plan.outputs.code == 'true'
+              && needs.plan.outputs.reuse_run != '')) }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -238,15 +308,19 @@ jobs:
     # this, a manual run included. Until W2 a workflow_dispatch from any other
     # branch could publish that branch's site, which is the drift this file
     # exists to stop.
-    needs: [verify, e2e, rules]
+    needs: [plan, verify, e2e, rules]
     if: >-
-      github.ref == 'refs/heads/master'
+      ${{ !cancelled()
+      && github.ref == 'refs/heads/master'
       && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+      && needs.rules.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       # The repository default is read-only, so this is not decoration: without
       # it the push to `gh-pages` is rejected.
       contents: write
+      # Downloading a passed PR run's `dist`, when Plan chose to reuse one.
+      actions: read
     # Never two deploys writing the branch at once. Not cancel-in-progress: an
     # interrupted push can leave `gh-pages` half-written, and a queued deploy is
     # cheaper than a broken site.
@@ -271,10 +345,23 @@ jobs:
       # No install scripts: see the head of this file.
       - run: npm ci --ignore-scripts
 
+      # This run's build, when it made one.
       - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        if: needs.verify.result == 'success'
         with:
           name: dist
           path: dist
+
+      # Otherwise the pull-request run Plan chose: same tree, already through
+      # verify and e2e. The secret check below still runs on these bytes.
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        if: needs.verify.result != 'success'
+        with:
+          name: dist
+          path: dist
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ needs.plan.outputs.reuse_run }}
 
       - name: Check the artefact carries no secret
         # The API key is public and is inlined by the same mechanism as the
