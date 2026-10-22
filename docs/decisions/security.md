@@ -1,6 +1,6 @@
 # Security
 
-> **Owner: Greg Rothwell. Last updated: 21 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 22 October 2026. Budget: 250 lines.**
 
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
@@ -223,6 +223,18 @@ and `check-rules` confirmed the semantics, which between them cover it.
    setting to auto-purge unused anonymous accounts after 30 days; it is off.
    Turning it on would also quietly reset anybody's season row, which is the
    trade-off — see the iOS Safari note under Known limits.
+
+## The 22 October 2026 sweep — S1 to S7
+
+Fixed in one PR: install scripts off where CI holds a credential, actions
+SHA-pinned (S1); the lobby vote's values bounded (S2); recovery codes from a
+CSPRNG (S6); vite, vitest and firebase-tools bumped (S7). **Known and open,
+recorded that day:** S3, `presence/$code` readable for any code, so live codes
+can be walked; S4, RTDB nodes unbounded and Spark's 100-connection cap; S5,
+`games/` forgeable and `q1Traces` unbounded. **Correction:** *Verified clean*
+above says `npm audit` is 0; on 22 October it was 24 dev, 4 production.
+Evidence and depth: [`security-sweep-oct-2026.md`](security-sweep-oct-2026.md);
+ranked in [`audit-backlog.md`](audit-backlog.md).
 
 `npm run check-rules` must pass after any rules change. It covers the paths the
 app needs *and* the denials the review added, so extend both halves if the rules
