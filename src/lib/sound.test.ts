@@ -19,6 +19,7 @@ import {
   setVolume,
   startClock,
   stopPreview,
+  type Voice,
 } from './sound';
 import { HAPPY_BIRTHDAY } from '../questions/melody-voices';
 
@@ -114,15 +115,22 @@ describe('clockVoices', () => {
   });
 
   test('swells the drum roll, and ends it when the podium is told it ends', () => {
-    // #given the roll, stroke by stroke: the wires, and the head under them
+    // #given the roll, stroke by stroke, one layer at a time: each partial of
+    // the head, and the stick
     const voices = cueVoices('roll');
-    for (const layer of ['noise', 'triangle'] as const) {
-      const gains = voices.filter((voice) => voice.type === layer).map((voice) => voice.gain);
+    const layers = new Map<string, Voice[]>();
+    for (const voice of voices) {
+      const key = `${voice.type}:${String(voice.from)}`;
+      layers.set(key, [...(layers.get(key) ?? []), voice]);
+    }
+    expect(layers.size).toBeGreaterThan(1);
 
-      // #then every stroke is louder than the one before, so it builds rather than drones
-      expect(gains.length).toBeGreaterThan(20);
-      for (let hit = 1; hit < gains.length; hit += 1) {
-        expect(gains[hit]).toBeGreaterThan(gains[hit - 1] ?? 0);
+    // #then in every layer each stroke is louder than the one before, so it
+    // builds rather than drones
+    for (const layer of layers.values()) {
+      expect(layer.length).toBeGreaterThan(1);
+      for (let hit = 1; hit < layer.length; hit += 1) {
+        expect(layer[hit]?.gain).toBeGreaterThan(layer[hit - 1]?.gain ?? 0);
       }
     }
 
@@ -132,24 +140,33 @@ describe('clockVoices', () => {
     expect(last).toBeLessThan(ROLL_SECONDS);
   });
 
-  test('makes the drum roll a snare a laptop speaker can play', () => {
-    // #given the roll
+  test('makes the drum roll a drum, in the fanfare’s key, that a laptop can play', () => {
+    // #given the roll, and the notes of G major's chord — the fanfare that
+    // follows is in C, so a roll on G leads into it rather than clashing
+    // ("clashes with the synth", Greg, 22 October 2026)
     const voices = cueVoices('roll');
-    const starts = [...new Set(voices.map((voice) => voice.start))];
+    const pitched = voices.filter((voice) => voice.type !== 'noise');
+    const chordOfG = [196.0, 246.94, 293.66];
+    const onChord = (hz: number): boolean =>
+      chordOfG.some((note) => {
+        const octaves = Math.log2(hz / note);
+        return Math.abs(octaves - Math.round(octaves)) < 0.015;
+      });
 
-    // #then every stroke has its wires — noise, a few kilohertz up, which is
-    // what a snare mostly is. The first roll was triangle blips at 110–196Hz
-    // and no noise; laptops barely carry that, so the room heard only each
-    // blip's attack, twenty a second (Greg, 22 October 2026)
-    for (const at of starts) {
-      const wires = voices.filter((voice) => voice.start === at && voice.type === 'noise');
-      expect(wires.length).toBe(1);
-      expect(wires[0]?.from).toBeGreaterThanOrEqual(2_000);
-    }
+    // #then every pitched voice starts on G, B or D
+    for (const voice of pitched) expect(onChord(voice.from)).toBe(true);
 
-    // #and nothing in it is pitched below 200Hz, where a laptop is silent
-    for (const voice of voices) {
-      expect(Math.min(voice.from, voice.to ?? voice.from)).toBeGreaterThanOrEqual(200);
+    // #and nothing sinks below 180Hz, where a laptop is silent: the first roll
+    // swept to 110Hz and the room heard only its clicks
+    for (const voice of pitched) expect(Math.min(voice.from, voice.to ?? voice.from)).toBeGreaterThanOrEqual(180);
+
+    // #and every stroke has a partial a laptop plays, and one tick of the stick
+    for (const at of new Set(voices.map((voice) => voice.start))) {
+      const stroke = voices.filter((voice) => voice.start === at);
+      expect(stroke.some((voice) => voice.type !== 'noise' && voice.from >= 290)).toBe(true);
+      const ticks = stroke.filter((voice) => voice.type === 'noise');
+      expect(ticks).toHaveLength(1);
+      expect(ticks[0]?.duration).toBeLessThanOrEqual(0.04);
     }
   });
 

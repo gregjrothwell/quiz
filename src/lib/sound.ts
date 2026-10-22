@@ -30,17 +30,30 @@ export type Cue =
  * than written out because thirty near-identical lines hide the numbers that
  * matter — the spacing, the swell and the band.
  *
- * **A snare is mostly its wires**, a hiss a few kilohertz up, and that is what
- * each stroke is here: noise, with a short knock of the head under it. The
- * first roll (21 October) was triangle blips at 110–196Hz and no noise at all;
- * laptop speakers barely carry that, so the room heard only each blip's
- * attack — "a single sound clipping many times per second" (Greg, 22 October
- * 2026). Rendered through this module offline, 1% of it was above 1kHz.
+ * **A timpani roll, in the fanfare's key.** The first roll (21 October) was
+ * triangle blips at 110–196Hz; laptop speakers barely carry that, so the room
+ * heard only each blip's attack — "a single sound clipping many times per
+ * second" (Greg, 22 October 2026). Rendered through this module offline, 1% of
+ * it was above 1kHz. A snare's hiss fixed the hearing but was "more of a snare
+ * than a drum" and "clashes with the synth" (Greg, same night). So each stroke
+ * is a tuned head ({@link ROLL_PARTIALS}) and a tick of the stick.
  */
 const ROLL_HITS = 30;
 const ROLL_SPACING = 0.046;
 /** A hand is never metronomic. Seconds, repeating; none on the first or last stroke. */
 const ROLL_DRIFT = [0, 0.004, -0.002, 0.003, -0.003, 0.002];
+/**
+ * A timpani's head, tuned to G: the fundamental, then near-harmonic partials on
+ * D, G and B, each with its weight. The fanfare it rolls into is in C, so the
+ * roll is its dominant and resolves into it rather than clashing with it — and
+ * every partial from the fifth up is pitched where a laptop can play it.
+ */
+const ROLL_PARTIALS: readonly (readonly [number, number])[] = [
+  [196.0, 1],
+  [294.0, 0.6],
+  [392.0, 0.55],
+  [490.0, 0.3],
+];
 
 /** How long the drum roll runs, for the screen that has to land on its end. */
 export const ROLL_SECONDS = ROLL_HITS * ROLL_SPACING;
@@ -281,27 +294,20 @@ const CUES: Record<Cue, Voice[]> = {
     const start = hit * ROLL_SPACING + drift;
     const last = hit === ROLL_HITS - 1;
     return [
-      {
-        // The wires. Each rings past the next stroke, so the roll sustains;
-        // alternate hands sit a little apart in the band, as two sticks do.
-        type: 'noise',
-        from: hit % 2 === 0 ? 3_600 : 3_100,
+      // The head, ringing past the next stroke so the roll sustains; the last
+      // rings on to the winner's landing.
+      ...ROLL_PARTIALS.map(([pitch, weight]): Voice => ({
+        type: 'sine',
+        from: pitch,
+        // A struck head sags a little as it rings.
+        to: pitch * 0.985,
         start,
-        duration: last ? 0.32 : 0.11,
-        gain: 0.35 + 0.65 * swell + (last ? 0.08 : 0),
-        attack: 0.0015,
-      },
-      {
-        // The head: a short knock, pitched where a laptop can still play it.
-        type: 'triangle',
-        from: 340,
-        to: 210,
-        start,
-        duration: last ? 0.09 : 0.035,
-        gain: 0.12 + 0.28 * swell + (last ? 0.1 : 0),
-        attack: 0.0015,
-        cutoff: 2_400,
-      },
+        duration: last ? 0.6 : 0.13,
+        gain: weight * (0.16 + 0.36 * swell + (last ? 0.05 : 0)),
+        attack: 0.003,
+      })),
+      // The stick on the skin, so each stroke reads as struck rather than held.
+      { type: 'noise', from: 1_300, start, duration: 0.025, gain: 0.1 + 0.2 * swell, attack: 0.001 },
     ];
   }).flat(),
 

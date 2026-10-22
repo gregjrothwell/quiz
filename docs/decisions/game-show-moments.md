@@ -70,14 +70,20 @@ at 196→110Hz and no noise at all. Rendered through `sound.ts` offline (below),
 16% of its energy was above 300Hz and 1% above 1kHz — a laptop played only each
 hit's attack, about twenty clicks a second, ending 11 dB under the fanfare.
 
-**Rebuilt as a snare.** Each of the thirty strokes is now band-passed noise
-around 3.1–3.6kHz (the wires, alternating hands) ringing past the next stroke so
-the roll sustains, over a short 340→210Hz knock (the head); 1.5 ms attacks, a
-few milliseconds of drift between strokes, the same swell, a longer last
-stroke. 90% of it is above 300Hz and 77% above 1kHz, ending about 4 dB under
-the fanfare. `ROLL_SECONDS` is unchanged, so the podium's timing is too.
-`sound.ts` gained a `noise` voice type for it. `sound.test.ts`: the swell per
-layer, and "a snare a laptop can play" — both FAIL on the old roll.
+**Rebuilt twice the same night.** First as a snare: band-passed noise at
+3.1–3.6kHz (the wires) over a short knock — 77% above 1kHz. Greg: *"drum now
+sounds better but clashes with the synth. Also more of a snare than a drum."*
+
+**Then as a timpani, in the fanfare's key** (`ROLL_PARTIALS`): each of the thirty
+strokes is a head tuned to G — sines on G3, D4, G4 and B4, sagging 1.5% as they
+ring past the next stroke — and a 25 ms tick of noise at 1.3kHz for the stick.
+The fanfare is in C, so the roll is its dominant and resolves into it; the last
+stroke rings on to the landing. Every partial from D4 up is where a laptop
+plays, and nothing sinks under 180Hz. Above 300Hz it builds from −39.6 to −32.1
+dB and the fanfare lands at −29.4 (the old roll ended at −40.4). `ROLL_SECONDS`
+is unchanged, so the podium's timing is too. `sound.ts` gained a `noise` voice
+and an `attack`. `sound.test.ts`: the swell per layer, and "a drum, in the
+fanfare's key, that a laptop can play" — FAIL on the old roll and on the snare.
 
 **How it was heard before shipping:** `play()` driven in headless Chromium with
 `AudioContext` swapped for an `OfflineAudioContext`, each cue rendered alone and
