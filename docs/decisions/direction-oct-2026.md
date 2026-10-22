@@ -151,6 +151,7 @@ Greg's words.
 
 **Still to do:**
 3. ⬜ The Lab: switches, kill switch, verdict, beacons, `read-lab`, run sheet.
+   Story and ACs drafted 22 Oct, waiting on Greg: [`lab.md`](lab.md). Error beacon first.
 4. ⬜ Wow, one at a time behind Lab, each with a story and ACs first:
    1. Survey Says.
    2. The rig probe.
