@@ -46,6 +46,8 @@ export type Action =
       /** Optional for the reason `jigsawEnabled` is: every caller before it omits it. */
       standoffEnabled?: boolean;
       chaserEnabled?: boolean;
+      /** What the season says about each player, for the Commentator. */
+      history?: RoomState['history'];
     }
   /**
    * `durationSecs` is settled here and nowhere else. The security rules pin it
@@ -116,6 +118,7 @@ export function reduce(state: RoomState, action: Action): RoomState {
         action.jigsawEnabled ?? false,
         action.standoffEnabled ?? false,
         action.chaserEnabled ?? false,
+        action.history ?? {},
       );
     case 'start':
       return start(state, action.at, action.gameId, action.durationSecs);
@@ -198,6 +201,7 @@ function selectPack(
   jigsawEnabled: boolean,
   standoffEnabled: boolean,
   chaserEnabled: boolean,
+  history: RoomState['history'],
 ): RoomState {
   if (state.phase !== 'lobby') return state;
   return {
@@ -210,6 +214,7 @@ function selectPack(
     jigsawEnabled,
     standoffEnabled,
     chaserEnabled,
+    history,
   };
 }
 

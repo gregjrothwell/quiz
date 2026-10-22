@@ -22,6 +22,7 @@ export const UPDATES: readonly Update[] = [
     date: '2026-10-23',
     lines: [
       'Play against Mr Fries: the whole office on one side, against the house, who gets each question right about as often as you do.',
+      'The quiz commentates: a line at the reveal, the standings and the podium — a lone right answer, a new leader, a first win — read out from the quizmaster’s screen.',
     ],
   },
   {

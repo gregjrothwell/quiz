@@ -55,6 +55,23 @@ Every fact is one the app already holds on this device. No new reads.
 - **M8.** British office tone, as the question packs (`CLAUDE.md`): about thirty
   lines, written for Greg to cut, like the Survey Says prompts.
 
+## Built 22 October 2026, branch `commentator`
+
+- `src/engine/commentary.ts`: twelve facts, 30 draft lines
+  ([`commentator-lines-draft.md`](commentator-lines-draft.md), for Greg to cut).
+- **Read off the room only**, so every screen says the same (M3). The season
+  facts the opening titles load ride on the room as `history` from the deal.
+  So there are **no streak lines**: past picks are not on the room, and a
+  device's own game log differs for a late joiner. The screen already says
+  "N in a row" to the player concerned.
+- **M2 as built:** a fact rotates through its lines by question, so the same
+  fact twice is two different lines — until it has used all of them. Never the
+  same line on consecutive questions; not "never twice in a round".
+- `components/Commentary.tsx`: the caption on reveal (after the verdict),
+  scoreboard and podium; `speak()` in `lib/sound.ts`, British voice where there
+  is one, silent when muted, called on the host's device only (M5).
+- No new listeners or reads (M7): it reads the room every screen already has.
+
 ## Cut from v1
 
 Gemini or any AI rewording. Lines about questions' history. A choice of voice.

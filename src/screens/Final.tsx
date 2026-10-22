@@ -1,4 +1,5 @@
 import { chaserResult, chaserScore } from '../engine/chaser';
+import { Commentary } from '../components/Commentary';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Awards } from '../components/Awards';
 import { Confetti } from '../components/Confetti';
@@ -297,6 +298,7 @@ export function Final({
         {room.chaserEnabled ? (
           <p className="chaser-line chaser-line--result">{chaserResult(chaserScore(room.questions))} 🍟</p>
         ) : null}
+        <Commentary room={room} moment="podium" speakHere={isQuizmaster} show={landed} />
       </header>
 
       {hasPodium ? (

@@ -4743,4 +4743,11 @@ select.input option {
 .chaser-line--result {
   font-size: 1.25rem;
   color: var(--amber);
+
+/* The Commentator (docs/decisions/commentator.md): one line, under the moment. */
+.commentary {
+  margin: 0;
+  font-family: var(--body);
+  font-style: italic;
+  color: var(--ink-soft);
 }

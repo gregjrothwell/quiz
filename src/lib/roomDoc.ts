@@ -103,6 +103,7 @@ export function toRoomState(code: string, data: DocumentData, answers: Record<st
     // the wager's flag is.
     standoffEnabled: persisted.standoffEnabled ?? false,
     chaserEnabled: persisted.chaserEnabled ?? false,
+    history: persisted.history ?? {},
     standoff: persisted.standoff ?? null,
     // Absent in every room from before the vote, and writable by any member,
     // so read through the guards rather than trusted.
@@ -167,6 +168,7 @@ export function toPersisted(state: RoomState): PersistedRoom {
     lastSteal: state.lastSteal,
     standoffEnabled: state.standoffEnabled,
     chaserEnabled: state.chaserEnabled,
+    history: state.history,
     standoff: state.standoff,
     packVotes: state.packVotes,
     voteTaps: state.voteTaps,

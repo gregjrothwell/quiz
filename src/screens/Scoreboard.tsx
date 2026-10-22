@@ -1,4 +1,5 @@
 import { chaserScore, chaserTally } from '../engine/chaser';
+import { Commentary } from '../components/Commentary';
 import { SquadScore } from '../components/SquadScore';
 import { Standings } from '../components/Standings';
 import type { RoomState } from '../engine/state';
@@ -63,6 +64,7 @@ export function Scoreboard({ room, youUid, isQuizmaster, onNext }: ScoreboardPro
           Standings
         </h2>
         {room.chaserEnabled ? <p className="chaser-line">{chaserTally(chaserScore(room.questions))} 🍟</p> : null}
+        <Commentary room={room} moment="scoreboard" speakHere={isQuizmaster} />
       </header>
 
       {skippedLast ? (
