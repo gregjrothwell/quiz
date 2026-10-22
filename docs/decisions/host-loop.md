@@ -108,6 +108,30 @@ the reducer and write start / reveal / next (and the final's moves) themselves �
 Each step is its own PR with `What's new: none — <why>`. Step 2 is the risky
 one: it changes the code that runs every round.
 
+## Step 1 — built 22 October 2026, branch `host-loop-1`
+
+`src/host/`: `due.ts` (what is due, pure; memory is a value), `moves.ts` (doing
+it through ports; failures reject), `prepare.ts` (dealing a round and
+`recordAsked`), `ports.ts`. Not imported by the app. `imports.test.ts` fails if
+anything under it reaches `src/firebase.ts`, or React at runtime — proved by
+adding each import and watching it fail. B2's recording:
+`e2e/host-writes.spec.ts` and `host-writes.golden.json`, taken on this code.
+
+**Three places the old code did something nobody chose, found reading it.**
+Step 2 must pick each on purpose, not by accident:
+
+1. *A room update during a reveal's backoff retries at once.* The retry timer
+   lives in an effect that re-runs on every room change, and its cleanup cancels
+   the timer, so the next render retries immediately without spending one of the
+   eight. `due.ts` waits out the backoff. Only reachable when the vault refuses.
+2. *After the eighth refusal, any room update tries once more.* Same cause. The
+   cap only stops the timer. `due.ts` stops, and leaves the Reveal button.
+3. *A second game in the same tab loses question one's gate time.* The expiry
+   effect stamps it into the last game's map, which `handleReveal` then empties.
+   `due.ts` changes map first. It only affects `gateMs` in `games/`.
+
+The reaper is still run on each presence reading, not on a timer, as today.
+
 ## Risks
 
 - **Hidden ordering.** Some effects depend on React render order — e.g. the

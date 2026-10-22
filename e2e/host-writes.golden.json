@@ -1,0 +1,734 @@
+{
+  "writes": [
+    {
+      "phase": "question",
+      "index": 0,
+      "stage": null,
+      "changed": {
+        "browsing": "<deleted>",
+        "form": "<deleted>",
+        "gameId": "<game>",
+        "openedAt": "<time>",
+        "phase": "question",
+        "questionOpenedAt": "<time>"
+      }
+    },
+    {
+      "phase": "reveal",
+      "index": 0,
+      "stage": null,
+      "changed": {
+        "lastDeltas": {
+          "<Bob>": 800,
+          "<Ann>": 900,
+          "<Host>": 1000
+        },
+        "lastPicks": {
+          "<Bob>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          },
+          "<Ann>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          },
+          "<Host>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          }
+        },
+        "phase": "reveal",
+        "questionOpenedAt": "<deleted>",
+        "questions": {
+          "count": 10,
+          "revealed": 1
+        },
+        "scores": {
+          "<Bob>": 800,
+          "<Ann>": 900,
+          "<Host>": 1000
+        }
+      }
+    },
+    {
+      "phase": "scoreboard",
+      "index": 0,
+      "stage": null,
+      "changed": {
+        "phase": "scoreboard"
+      }
+    },
+    {
+      "phase": "question",
+      "index": 1,
+      "stage": null,
+      "changed": {
+        "index": 1,
+        "lastDeltas": {},
+        "lastPicks": {},
+        "phase": "question",
+        "questionOpenedAt": "<time>"
+      }
+    },
+    {
+      "phase": "reveal",
+      "index": 1,
+      "stage": null,
+      "changed": {
+        "lastDeltas": {
+          "<Bob>": 800,
+          "<Ann>": 900,
+          "<Host>": 1000
+        },
+        "lastPicks": {
+          "<Bob>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          },
+          "<Ann>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          },
+          "<Host>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          }
+        },
+        "phase": "reveal",
+        "questionOpenedAt": "<deleted>",
+        "questions": {
+          "count": 10,
+          "revealed": 2
+        },
+        "scores": {
+          "<Bob>": 1600,
+          "<Ann>": 1800,
+          "<Host>": 2000
+        }
+      }
+    },
+    {
+      "phase": "scoreboard",
+      "index": 1,
+      "stage": null,
+      "changed": {
+        "phase": "scoreboard"
+      }
+    },
+    {
+      "phase": "question",
+      "index": 2,
+      "stage": null,
+      "changed": {
+        "index": 2,
+        "lastDeltas": {},
+        "lastPicks": {},
+        "phase": "question",
+        "questionOpenedAt": "<time>"
+      }
+    },
+    {
+      "phase": "reveal",
+      "index": 2,
+      "stage": null,
+      "changed": {
+        "lastDeltas": {
+          "<Bob>": 800,
+          "<Ann>": 900,
+          "<Host>": 1000
+        },
+        "lastPicks": {
+          "<Bob>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          },
+          "<Ann>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          },
+          "<Host>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          }
+        },
+        "phase": "reveal",
+        "questionOpenedAt": "<deleted>",
+        "questions": {
+          "count": 10,
+          "revealed": 3
+        },
+        "scores": {
+          "<Bob>": 2400,
+          "<Ann>": 2700,
+          "<Host>": 3000
+        }
+      }
+    },
+    {
+      "phase": "scoreboard",
+      "index": 2,
+      "stage": null,
+      "changed": {
+        "phase": "scoreboard"
+      }
+    },
+    {
+      "phase": "question",
+      "index": 3,
+      "stage": null,
+      "changed": {
+        "index": 3,
+        "lastDeltas": {},
+        "lastPicks": {},
+        "phase": "question",
+        "questionOpenedAt": "<time>"
+      }
+    },
+    {
+      "phase": "reveal",
+      "index": 3,
+      "stage": null,
+      "changed": {
+        "lastDeltas": {
+          "<Bob>": 800,
+          "<Ann>": 900,
+          "<Host>": 1000
+        },
+        "lastPicks": {
+          "<Bob>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          },
+          "<Ann>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          },
+          "<Host>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          }
+        },
+        "phase": "reveal",
+        "questionOpenedAt": "<deleted>",
+        "questions": {
+          "count": 10,
+          "revealed": 4
+        },
+        "scores": {
+          "<Bob>": 3200,
+          "<Ann>": 3600,
+          "<Host>": 4000
+        }
+      }
+    },
+    {
+      "phase": "scoreboard",
+      "index": 3,
+      "stage": null,
+      "changed": {
+        "phase": "scoreboard"
+      }
+    },
+    {
+      "phase": "question",
+      "index": 4,
+      "stage": null,
+      "changed": {
+        "index": 4,
+        "lastDeltas": {},
+        "lastPicks": {},
+        "phase": "question",
+        "questionOpenedAt": "<time>"
+      }
+    },
+    {
+      "phase": "reveal",
+      "index": 4,
+      "stage": null,
+      "changed": {
+        "lastDeltas": {
+          "<Bob>": 800,
+          "<Ann>": 900,
+          "<Host>": 1000
+        },
+        "lastPicks": {
+          "<Bob>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          },
+          "<Ann>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          },
+          "<Host>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          }
+        },
+        "phase": "reveal",
+        "questionOpenedAt": "<deleted>",
+        "questions": {
+          "count": 10,
+          "revealed": 5
+        },
+        "scores": {
+          "<Bob>": 4000,
+          "<Ann>": 4500,
+          "<Host>": 5000
+        }
+      }
+    },
+    {
+      "phase": "scoreboard",
+      "index": 4,
+      "stage": null,
+      "changed": {
+        "phase": "scoreboard"
+      }
+    },
+    {
+      "phase": "question",
+      "index": 5,
+      "stage": null,
+      "changed": {
+        "index": 5,
+        "lastDeltas": {},
+        "lastPicks": {},
+        "phase": "question",
+        "questionOpenedAt": "<time>"
+      }
+    },
+    {
+      "phase": "reveal",
+      "index": 5,
+      "stage": null,
+      "changed": {
+        "lastDeltas": {
+          "<Bob>": 800,
+          "<Ann>": 900,
+          "<Host>": 1000
+        },
+        "lastPicks": {
+          "<Bob>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          },
+          "<Ann>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          },
+          "<Host>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          }
+        },
+        "phase": "reveal",
+        "questionOpenedAt": "<deleted>",
+        "questions": {
+          "count": 10,
+          "revealed": 6
+        },
+        "scores": {
+          "<Bob>": 4800,
+          "<Ann>": 5400,
+          "<Host>": 6000
+        }
+      }
+    },
+    {
+      "phase": "scoreboard",
+      "index": 5,
+      "stage": null,
+      "changed": {
+        "phase": "scoreboard"
+      }
+    },
+    {
+      "phase": "question",
+      "index": 6,
+      "stage": null,
+      "changed": {
+        "index": 6,
+        "lastDeltas": {},
+        "lastPicks": {},
+        "phase": "question",
+        "questionOpenedAt": "<time>"
+      }
+    },
+    {
+      "phase": "reveal",
+      "index": 6,
+      "stage": null,
+      "changed": {
+        "lastDeltas": {
+          "<Bob>": 800,
+          "<Ann>": 900,
+          "<Host>": 1000
+        },
+        "lastPicks": {
+          "<Bob>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          },
+          "<Ann>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          },
+          "<Host>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          }
+        },
+        "phase": "reveal",
+        "questionOpenedAt": "<deleted>",
+        "questions": {
+          "count": 10,
+          "revealed": 7
+        },
+        "scores": {
+          "<Bob>": 5600,
+          "<Ann>": 6300,
+          "<Host>": 7000
+        }
+      }
+    },
+    {
+      "phase": "scoreboard",
+      "index": 6,
+      "stage": null,
+      "changed": {
+        "phase": "scoreboard"
+      }
+    },
+    {
+      "phase": "question",
+      "index": 7,
+      "stage": null,
+      "changed": {
+        "index": 7,
+        "lastDeltas": {},
+        "lastPicks": {},
+        "phase": "question",
+        "questionOpenedAt": "<time>"
+      }
+    },
+    {
+      "phase": "reveal",
+      "index": 7,
+      "stage": null,
+      "changed": {
+        "lastDeltas": {
+          "<Bob>": 800,
+          "<Ann>": 900,
+          "<Host>": 1000
+        },
+        "lastPicks": {
+          "<Bob>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          },
+          "<Ann>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          },
+          "<Host>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          }
+        },
+        "phase": "reveal",
+        "questionOpenedAt": "<deleted>",
+        "questions": {
+          "count": 10,
+          "revealed": 8
+        },
+        "scores": {
+          "<Bob>": 6400,
+          "<Ann>": 7200,
+          "<Host>": 8000
+        }
+      }
+    },
+    {
+      "phase": "scoreboard",
+      "index": 7,
+      "stage": null,
+      "changed": {
+        "phase": "scoreboard"
+      }
+    },
+    {
+      "phase": "question",
+      "index": 8,
+      "stage": null,
+      "changed": {
+        "index": 8,
+        "lastDeltas": {},
+        "lastPicks": {},
+        "phase": "question",
+        "questionOpenedAt": "<time>"
+      }
+    },
+    {
+      "phase": "reveal",
+      "index": 8,
+      "stage": null,
+      "changed": {
+        "lastDeltas": {
+          "<Bob>": 800,
+          "<Ann>": 900,
+          "<Host>": 1000
+        },
+        "lastPicks": {
+          "<Bob>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          },
+          "<Ann>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          },
+          "<Host>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          }
+        },
+        "phase": "reveal",
+        "questionOpenedAt": "<deleted>",
+        "questions": {
+          "count": 10,
+          "revealed": 9
+        },
+        "scores": {
+          "<Bob>": 7200,
+          "<Ann>": 8100,
+          "<Host>": 9000
+        }
+      }
+    },
+    {
+      "phase": "scoreboard",
+      "index": 8,
+      "stage": null,
+      "changed": {
+        "phase": "scoreboard"
+      }
+    },
+    {
+      "phase": "question",
+      "index": 9,
+      "stage": null,
+      "changed": {
+        "index": 9,
+        "lastDeltas": {},
+        "lastPicks": {},
+        "phase": "question",
+        "questionOpenedAt": "<time>"
+      }
+    },
+    {
+      "phase": "reveal",
+      "index": 9,
+      "stage": null,
+      "changed": {
+        "lastDeltas": {
+          "<Bob>": 800,
+          "<Ann>": 900,
+          "<Host>": 1000
+        },
+        "lastPicks": {
+          "<Bob>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          },
+          "<Ann>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          },
+          "<Host>": {
+            "at": "<time>",
+            "elapsedMs": "<ms>",
+            "optionIndex": 0
+          }
+        },
+        "phase": "reveal",
+        "questionOpenedAt": "<deleted>",
+        "questions": {
+          "count": 10,
+          "revealed": 10
+        },
+        "scores": {
+          "<Bob>": 8000,
+          "<Ann>": 9000,
+          "<Host>": 10000
+        }
+      }
+    },
+    {
+      "phase": "scoreboard",
+      "index": 9,
+      "stage": null,
+      "changed": {
+        "phase": "scoreboard"
+      }
+    },
+    {
+      "phase": "standoff",
+      "index": 9,
+      "stage": "talk",
+      "changed": {
+        "lastDeltas": {},
+        "lastPicks": {},
+        "phase": "standoff",
+        "standoff": {
+          "finalists": [
+            "<Host>",
+            "<Ann>"
+          ],
+          "picks": null,
+          "sealed": null,
+          "stage": "talk",
+          "stakes": {
+            "<Ann>": 9000,
+            "<Host>": 10000
+          }
+        }
+      }
+    },
+    {
+      "phase": "standoff",
+      "index": 9,
+      "stage": "pick",
+      "changed": {
+        "standoff": {
+          "finalists": [
+            "<Host>",
+            "<Ann>"
+          ],
+          "picks": null,
+          "sealed": null,
+          "stage": "pick",
+          "stakes": {
+            "<Ann>": 9000,
+            "<Host>": 10000
+          }
+        }
+      }
+    },
+    {
+      "phase": "standoff",
+      "index": 9,
+      "stage": "closed",
+      "changed": {
+        "standoff": {
+          "finalists": [
+            "<Host>",
+            "<Ann>"
+          ],
+          "picks": null,
+          "sealed": [
+            "<Host>",
+            "<Ann>"
+          ],
+          "stage": "closed",
+          "stakes": {
+            "<Ann>": 9000,
+            "<Host>": 10000
+          }
+        }
+      }
+    },
+    {
+      "phase": "standoff",
+      "index": 9,
+      "stage": "revealed",
+      "changed": {
+        "lastDeltas": {
+          "<Ann>": 500,
+          "<Host>": -500
+        },
+        "scores": {
+          "<Bob>": 8000,
+          "<Ann>": 9500,
+          "<Host>": 9500
+        },
+        "standoff": {
+          "finalists": [
+            "<Host>",
+            "<Ann>"
+          ],
+          "picks": {
+            "<Ann>": "share",
+            "<Host>": "share"
+          },
+          "sealed": [
+            "<Host>",
+            "<Ann>"
+          ],
+          "stage": "revealed",
+          "stakes": {
+            "<Ann>": 9000,
+            "<Host>": 10000
+          }
+        }
+      }
+    },
+    {
+      "phase": "finished",
+      "index": 9,
+      "stage": "revealed",
+      "changed": {
+        "lastDeltas": {},
+        "phase": "finished"
+      }
+    }
+  ],
+  "game": {
+    "keys": [
+      "durationSecs",
+      "finishedAt",
+      "jigsawEnabled",
+      "packId",
+      "packTitle",
+      "players",
+      "questions",
+      "roomCode",
+      "scores",
+      "stealEnabled",
+      "wagerEnabled",
+      "writtenBy"
+    ],
+    "questions": 10,
+    "finished": true
+  },
+  "beat": true
+}
