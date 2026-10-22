@@ -768,9 +768,10 @@ function Game() {
    * and the beginning is the one moment a quizmaster actually wants to hold,
    * while the room reads the card and somebody finds their drink.
    *
-   * The room cannot get stuck behind a quizmaster who wandered off, because the
-   * role is derived from who has been present longest: if they go, somebody else
-   * inherits this button within a second.
+   * The room cannot get stuck behind a quizmaster who wandered off. A host who
+   * presses Leave hands the chair over in the same write; one who vanishes is
+   * replaced once they have been gone from presence for 50 seconds and their beat
+   * has been silent for 75 (`planClaim` and `CLAIM_AFTER_SILENT_MS`, host.ts).
    */
   const handleBeginRound = useCallback(() => {
     if (!form) return;

@@ -163,7 +163,7 @@ Greg's words.
    - firebase 13, alone.
    - W3's contract half after 14 Nov.
    - Audit items #1, #2, #7 and #8 (§2).
-6. ⬜ Fix the four drifted docs (§2).
+6. ✅ Fix the four drifted docs (§2): branch `drift-docs`, 22 Oct. All four checked against the code first.
 
 **Waiting on Greg, or deferred:**
 - A ruleset on `master` requiring **Verify and build** and **Playwright against

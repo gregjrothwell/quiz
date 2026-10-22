@@ -1,6 +1,6 @@
 # The answer vault
 
-> **Owner: Greg Rothwell. Last updated: 6 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 22 October 2026. Budget: 250 lines.**
 
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
@@ -127,6 +127,10 @@ the room, pinned while a question is open and floored at five seconds; see
 
 `src/lib/vault.ts` fired all four candidates at once, "so the reveal costs one round trip".
 **Corrected 6 Oct 2026:** it never did; it now stops at the hit ([`reveal-stop-at-hit.md`](reveal-stop-at-hit.md)).
+**Corrected again 22 Oct 2026:** it no longer stops at the hit. `0d6e964` (7 Oct)
+went back to all four at once, over Firestore Lite, where a refusal is one
+request's 403 rather than a stream reopen — `resolveAnswer` in `src/lib/vault.ts`
+is a `Promise.any`. Why is in [`reveal-stop-at-hit.md`](reveal-stop-at-hit.md).
 
 ### What it costs
 

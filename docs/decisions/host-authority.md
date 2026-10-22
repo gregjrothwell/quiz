@@ -1,6 +1,6 @@
 # Host authority — W3's story
 
-> **Owner: Greg Rothwell. Last updated: 15 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 22 October 2026. Budget: 250 lines.**
 
 **Status: LIVE, expand half, 15 October 2026 21:40 BST** (#88, gh-pages
 `7d42c0e`; rules published by CI). e2e 15/15; live `check-rules` 119/119. The
@@ -126,6 +126,11 @@ So the client is already host-authoritative. Only the rules do not enforce it.
 `questionVotes` are still writable by anyone signed in. The quizmaster's device
 writes the first three for everybody. Owning those is W4's job (a league, and
 D6's signed-in owner). Recorded so W3 is not mistaken for closing them.
+**Corrected 22 October 2026:** not `seasons/…/players`. That rule has required
+`ownsPlayer(playerId)` since identities shipped, and each device banks its own
+row (`recordGame`, `App.tsx`); the quizmaster's device writes `games/` and
+`asked`, not season rows. `asked` and `questionVotes` are still open to anyone
+signed in.
 
 ## Acceptance criteria
 
