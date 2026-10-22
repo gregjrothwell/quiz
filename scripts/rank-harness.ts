@@ -47,7 +47,7 @@
 import { initializeApp, deleteApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { attachDebugAppCheck } from './appCheck';
-import { startBeat } from './hostBeat';
+import { startNodeHost } from './nodeHost';
 import { lightLamp, litLamps } from './lamp';
 import {
   collection,
@@ -56,22 +56,20 @@ import {
   getDocsFromServer,
   getFirestore,
   onSnapshot,
-  serverTimestamp,
   setDoc,
   Timestamp,
   updateDoc,
-  type DocumentData,
   type Firestore,
 } from 'firebase/firestore';
 // The vault's candidates go over Lite, as the app sends them — see `resolveAnswer`.
 import { getFirestore as getLiteFirestore } from 'firebase/firestore/lite';
-import { reduce, type Action } from '../src/engine/reducer';
-import { liveAnswers, type AnswerDoc } from '../src/engine/answers';
-import { awardsFor, type QuestionRecord } from '../src/engine/awards';
+import { reduce } from '../src/engine/reducer';
+import type { AnswerDoc } from '../src/engine/answers';
+import { awardsFor } from '../src/engine/awards';
 import { tallyQuestion } from '../src/engine/scoring';
 import { createRoom, currentQuestion, type QuizQuestion, type RoomState } from '../src/engine/state';
+import { toPersisted, type PersistedRoom } from '../src/lib/roomDoc';
 import { joinLink, randomRoomCode } from '../src/engine/roomCode';
-import { resolveAnswer } from '../src/lib/vault';
 
 /** Reads a required value from .env.local, so a missing one fails with a name. */
 function required(name: string): string {
@@ -111,20 +109,14 @@ const WAIT_FOR_BROWSER = process.argv.includes('--browser');
 const DURATION_SECS = WAIT_FOR_BROWSER ? 30 : 10;
 
 /**
- * The vault opens strictly *after* the window, measured on the server's clock
- * rather than this one. The same second of slack `host-room` uses.
- */
-const GATE_SLACK_MS = 1_000;
-
-/**
  * The question. Id and options match `scripts/host-room.ts`, because the vault
  * is seeded against exactly those strings — `HARNESS_ANSWERS` in
  * `scripts/seed-vault.ts` maps `hq0` to `'The first one'`.
  *
  * So **lectern 0 is the correct one, by construction**, and this file can state
  * the right answer up front without reading a vault it is not allowed to read.
- * The reveal still goes through `resolveAnswer` like any other client, and the
- * run fails if the vault comes back with anything but 0.
+ * The reveal is the host's own (`src/host/`, run by `nodeHost.ts`), through the
+ * vault like any other, and the run fails if it reveals anything but 0.
  */
 const QUESTION: QuizQuestion = {
   id: 'hq0',
@@ -172,32 +164,6 @@ const CAST: Seat[] = [
   { name: 'Gus', option: CORRECT_OPTION, elapsedMs: 7_500, expected: 600, proves: 'the next distinct time resumes at the count awarded — sixth, so the floor' },
 ];
 
-type PersistedRoom = Omit<RoomState, 'answers'>;
-
-function toPersisted(state: RoomState): PersistedRoom {
-  const persisted: Record<string, unknown> = { ...state };
-  delete persisted.answers;
-  return persisted as unknown as PersistedRoom;
-}
-
-/**
- * Mirrors `useRoom.toUpdate`, and `sync-harness` before it: never write the
- * whole `players` map, merge `scores` per player, and let the server stamp
- * `openedAt` when a question opens. The first of those is a rule of this
- * project rather than a rule of Firestore — a phase transition that wrote the
- * map back is the race that dropped players mid-start.
- */
-function toUpdate(state: RoomState): Record<string, unknown> {
-  const update: Record<string, unknown> = { ...toPersisted(state) };
-  delete update.players;
-  delete update.scores;
-  for (const [uid, score] of Object.entries(state.scores)) {
-    update[`scores.${uid}`] = score;
-  }
-  if (state.phase === 'question') update.openedAt = serverTimestamp();
-  return update;
-}
-
 interface Client {
   name: string;
   uid: string;
@@ -239,7 +205,15 @@ async function main(): Promise<void> {
     hostUid: host.uid,
     expiresAt: Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1_000),
   });
-  const stopBeat = await startBeat(host.db, code);
+  // The host's duties are the app's own: it beats, reveals on the clock, keeps
+  // the round. This script presses only Start and Next.
+  const running = startNodeHost({
+    db: host.db,
+    lite: getLiteFirestore(host.app),
+    code,
+    uid: host.uid,
+    log: (line) => console.log(`${stamp()}  ${line}`),
+  });
   console.log(`${stamp()}  Room ${code} created by Host, who hosts it`);
 
   // The host's own view, kept current the way the app keeps it — the dispatch
@@ -266,28 +240,6 @@ async function main(): Promise<void> {
   */
   /** The browser player, when there is one. Filled in once they join. */
   const browser: { uid: string | null; name: string } = { uid: null, name: '' };
-
-  const answers: { live: Record<string, AnswerDoc> } = { live: {} };
-  const stopAnswers = onSnapshot(collection(host.db, 'rooms', code, 'answers'), (snapshot) => {
-    const next: Record<string, AnswerDoc> = {};
-    for (const document of snapshot.docs) next[document.id] = document.data() as AnswerDoc;
-    answers.live = next;
-  });
-
-  const dispatch = async (actions: Action[]): Promise<RoomState | null> => {
-    const latest = view.latest;
-    if (!latest) return null;
-    // `liveAnswers` rather than the raw documents, so this harness cannot score
-    // a round differently from the browsers watching it.
-    const current: RoomState = {
-      ...latest,
-      code,
-      answers: liveAnswers(latest.players, latest.index, answers.live),
-    };
-    const next = actions.reduce(reduce, current);
-    await updateDoc(reference, toUpdate(next) as Partial<DocumentData>);
-    return next;
-  };
 
   await sleep(800);
 
@@ -321,9 +273,8 @@ async function main(): Promise<void> {
     );
     if (!joined) {
       console.log('Nobody joined in the browser — giving up rather than proving half of it.');
-      stopBeat();
+      running.stop();
       stopRoom();
-      stopAnswers();
       for (const client of [host, ...players]) await deleteApp(client.app);
       process.exitCode = 1;
       return;
@@ -336,7 +287,7 @@ async function main(): Promise<void> {
 
   console.log(`\n${stamp()}  >>> WRITING start (${DURATION_SECS}s window)`);
   const gameId = `rank-${Date.now()}`;
-  await dispatch([
+  await running.dispatch([
     // Both off deliberately. This harness measures the rank ladder, and a
     // stake or a steal would move the very numbers it exists to check.
     {
@@ -386,18 +337,13 @@ async function main(): Promise<void> {
       (unlit.length === 0 ? ', every seat ✓' : `; unlit: ${unlit.join(', ')} ✗`),
   );
 
-  // Past this room's own gate, so the vault will answer.
-  await sleep(DURATION_SECS * 1_000 + GATE_SLACK_MS);
-
-  const open = view.latest ? currentQuestion({ ...view.latest, code, answers: {} }) : null;
-  if (!open) throw new Error('no open question to reveal');
-
-  console.log(`\n${stamp()}  >>> ASKING the vault`);
-  const correctIndex = await resolveAnswer(getLiteFirestore(host.db.app), code, open);
-  console.log(`${stamp()}      the vault says ${correctIndex} — "${open.options[correctIndex]}"`);
-
-  console.log(`${stamp()}  >>> WRITING reveal`);
-  await dispatch([{ type: 'reveal', correctIndex, questionId: open.id }]);
+  // The host reveals once the clock and the vault's gate allow.
+  console.log(`\n${stamp()}  Waiting for the host to reveal…`);
+  const revealed = await running.until((current) => current.phase === 'reveal', DURATION_SECS * 1_000 + 30_000);
+  const open = currentQuestion(revealed);
+  const correctIndex = open?.correctIndex ?? null;
+  if (!open || correctIndex === null) throw new Error('the host revealed no answer');
+  console.log(`${stamp()}      the vault said ${correctIndex} — "${open.options[correctIndex]}"`);
 
   /*
     Everything from here reads from the *server*, not from the local snapshot
@@ -422,7 +368,8 @@ async function main(): Promise<void> {
   console.log(`\n  ${'Seat'.padEnd(5)}${'lectern'.padEnd(9)}${'elapsed'.padStart(8)}${'expected'.padStart(10)}${'paid'.padStart(7)}${'score'.padStart(7)}`);
   console.log(`  ${'─'.repeat(51)}`);
 
-  const failures: string[] = [];
+  const failures: string[] = [...running.failures().map((failure) => `the host: ${failure}`)];
+  if (correctIndex !== CORRECT_OPTION) failures.push(`the host revealed ${correctIndex}, not ${CORRECT_OPTION}`);
   if (unlit.length > 0) failures.push(`lamps not lit for ${unlit.join(', ')}: a browser would not count them answered`);
 
   for (const [uid, seat] of byUid) {
@@ -546,14 +493,9 @@ async function main(): Promise<void> {
   const ada = players[adaIndex];
   if (!ada) throw new Error('Ada is missing from the cast');
 
-  const log: QuestionRecord[] = [
-    {
-      index: 0,
-      correctIndex,
-      answers: picks,
-      deltas,
-    },
-  ];
+  // The host's own log of the round, as the browser keeps it — not one built
+  // here from the answers, which would only prove this file agrees with itself.
+  const log = [...running.gameLog()];
   const awards = awardsFor(log, Object.keys(room.players));
   const finger = awards.find((award) => award.id === 'fastest');
   const namedAda =
@@ -571,9 +513,8 @@ async function main(): Promise<void> {
   }
 
   if (failures.length > 0) {
-    stopBeat();
+    running.stop();
     stopRoom();
-    stopAnswers();
     for (const client of [host, ...players]) await deleteApp(client.app);
     console.log('\nTHE LADDER DOES NOT HOLD:');
     for (const failure of failures) console.log(`  ✗ ${failure}`);
@@ -590,11 +531,11 @@ async function main(): Promise<void> {
   };
 
   console.log(`\n${stamp()}  >>> WRITING next (to standings)`);
-  await dispatch([{ type: 'next', at: Date.now() }]);
+  await running.dispatch([{ type: 'next', at: Date.now() }]);
   await waitForPhase('scoreboard');
 
   console.log(`${stamp()}  >>> WRITING next (to finished)`);
-  await dispatch([{ type: 'next', at: Date.now() }]);
+  await running.dispatch([{ type: 'next', at: Date.now() }]);
   await waitForPhase('finished');
 
   const ended = await getDocFromServer(reference);
@@ -609,9 +550,11 @@ async function main(): Promise<void> {
     await sleep(45_000);
   }
 
-  stopBeat();
+  // The host keeps the round in `games/` once it is finished, as the app's does.
+  await sleep(1_500);
+  running.stop();
+  for (const failure of running.failures()) console.log(`  host: ${failure}`);
   stopRoom();
-  stopAnswers();
   for (const client of [host, ...players]) await deleteApp(client.app);
 
   console.log(

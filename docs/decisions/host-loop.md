@@ -152,6 +152,32 @@ stays), and question one keeps its gate time. One visible difference: the room
 stopped saying "Revealing…" as the ninth attempt *started*; it now stops when it
 *fails*. All four only occur when the vault refuses.
 
+## Step 3 — built 22 October 2026, branch `host-loop-3`
+
+`scripts/nodeHost.ts` runs `src/host/` from Node: it listens as `useRoom` does
+and writes through the app's own `toUpdate`. `host-room`, `final-harness` and
+`rank-harness` press only Start and Next; the host beats, reveals, moves the
+final on and keeps the round. `sync-harness` and `reveal-gate-probe` use it
+for the beat alone (the probe must reveal by hand to measure the gate).
+`hostBeat.ts` is gone, and so are three hand-rolled `toUpdate`s. The game log's
+rule moved to `src/host/gameLog.ts`, shared by `useGameLog` and Node.
+`e2e/node-round.spec.ts` (C2): a 3-question round and a final, no browser, ~2 min.
+
+**Found on the way.**
+- *A Lite instance made from an emulator-pointed app is not on the emulator.*
+  The first C2 run sent 48 beat and vault writes to the live project's
+  endpoint with a dummy key; live refused every one, nothing landed.
+  `startNodeHost` now takes `lite` from its caller; `nodeClient` hands one
+  pointed at the emulator. The second run sent none.
+- *The emulator refuses some vault candidates with "Transaction lock timeout".*
+  The retry ladder recovers them (3, 2, 3 attempts in one run); C2 allows
+  those and fails on anything else.
+
+**Changed for whoever runs them.** `final-harness` now waits out the real
+60 s talk, and the host settles 5 s after the whistle whether or not the second
+finalist has opened. The harnesses that reach `finished` now write `games/`,
+as the app does. **None was run against the live project for this change.**
+
 ## Risks
 
 - **Hidden ordering.** Some effects depend on React render order — e.g. the
