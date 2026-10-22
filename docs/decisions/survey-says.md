@@ -2,7 +2,9 @@
 
 > **Owner: Greg Rothwell. Last updated: 22 October 2026. Budget: 250 lines.**
 
-**Status: DRAFT for Greg's approval. Nothing built.** The first Wow item in
+**Status: APPROVED by Greg, 22 October 2026, with one correction below.** He
+accepted the host-peek trade-off as drafted and asked for 40 draft prompts to
+cut ([`survey-prompts-draft.md`](survey-prompts-draft.md)). Nothing built. The first Wow item in
 [`direction-oct-2026.md`](direction-oct-2026.md#5-wow--all-five-accepted).
 Ships as an ordinary pack, the way every round type has — not behind a Lab,
 which Greg shelved on 22 October 2026 as complexity we don't need.
@@ -30,7 +32,7 @@ Why it is worth building:
 1. The quizmaster picks **Survey Says** like any pack, with the usual window.
 2. **Part one, "Tell us".** Each prompt shows with its four options and the
    clock. Everyone taps their own honest answer. No score, no right or wrong;
-   the reveal shows how the room split, as bars, with no names.
+   the reveal says *"Noted — we'll come back to that"* and shows nothing else.
 3. **Part two, "We asked the office".** The same prompts, in a new order. Now
    the question is *which answer was most popular here*. The top answer is
    right; speed counts as usual.
@@ -70,8 +72,11 @@ Why it is worth building:
   before the clock ends is allowed, as on any question.
 - **T2.** It scores nothing for anyone, and the reveal says so rather than
   showing right or wrong.
-- **T3.** The reveal shows the split as four bars with counts, and **no
-  names**. Nobody's own answer is exposed to the room.
+- **T3.** The reveal shows **no split**: just that the answer was noted.
+  **Corrected 22 October, after approval:** the draft showed the bars here,
+  which would have handed the room part two's answers a minute before it
+  asked for them. On the show the survey stays hidden until it is played.
+  The bars appear once, at part two's reveal (G5), with no names.
 
 ### Part two — we asked the office
 
@@ -79,7 +84,14 @@ Why it is worth building:
   A tie for top makes every tied option correct.
 - **G2.** Worked out by the host from part one's answers, which since W3 only
   the host can read. Every device then reads it off the room update, as a
-  normal reveal does.
+  normal reveal does. **Where part one survives:** each player has one answer
+  document, overwritten every question (`answers/{uid}`), so by part two only
+  the host's game log still holds part one (`useGameLog`, session storage — it
+  survives the host reloading the tab).
+- **G2a.** If the chair changes hands mid-round, the new host has no part one.
+  Its part-two questions are skipped with a line saying why, rather than
+  guessed. (Accepted for v1; the alternative is a host-only store and a rules
+  change.)
 - **G3.** If fewer than 3 people answered a prompt in part one, its part-two
   question is skipped, with a line saying why. Two answers is not a survey.
 - **G4.** Scoring, speed bonus, standings and the podium are unchanged.
