@@ -93,6 +93,7 @@ jobs:
     outputs:
       code: ${{ steps.plan.outputs.code }}
       reuse_run: ${{ steps.plan.outputs.reuse_run }}
+      whats_new: ${{ steps.plan.outputs.whats_new }}
     steps:
       # Depth 2: a push compares the commit with its first parent.
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
@@ -117,6 +118,15 @@ jobs:
       && (needs.plan.outputs.code != 'true' || needs.plan.outputs.reuse_run != '')) }}
     runs-on: ubuntu-latest
     steps:
+      # A change players can see goes live with its line on the What's new page
+      # (Greg, 22 October 2026: #110 shipped without one). Plan decides from the
+      # changed files; this fails the required check so the PR cannot merge.
+      - name: What's new carries this change
+        if: needs.plan.outputs.whats_new == 'missing'
+        run: |
+          echo "::error title=What's new::This PR changes what players see (src/ or public/) but not src/lib/updates.ts. Add a line in player words, or write \"What's new: none — <why>\" in the PR description or a commit message. An empty commit re-runs CI."
+          exit 1
+
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0

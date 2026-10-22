@@ -5,6 +5,9 @@
 #                     run builds, tests and deploys nothing
 #   reuse_run=<id>|   on a push to master, the pull-request run whose tested
 #                     `dist` can be published as it is
+#   whats_new=ok|waived|missing|n/a
+#                     on a pull request that changes what players see, whether
+#                     it carries its line on the What's new page
 #
 # Why: go-live took ~16 minutes on 22 October 2026, and about 8 of them were
 # CI re-running verify and e2e on a tree byte-identical to the one the PR had
@@ -36,6 +39,18 @@ docs_only() {
     esac
   done
   [ "$any" = 1 ]
+}
+
+# What players see: the app and the packs. Not tests, not the design gallery.
+player_facing() {
+  local path
+  while IFS= read -r path; do
+    case "$path" in
+      *.test.ts | *.test.tsx | src/test/* | src/screens/Preview.tsx) ;;
+      src/* | public/*) return 0 ;;
+    esac
+  done
+  return 1
 }
 
 case "$EVENT" in
@@ -82,5 +97,23 @@ if [ "$EVENT" = push ] && [ "$code" = true ]; then
   done
 fi
 
+# A change players can see goes live with its What's new line. #110 shipped
+# without one on 22 October 2026, though updates-page.md said the release PR
+# adds it; Greg caught it, and a rule nobody runs is a rule that gets missed.
+# The waiver is for changes players cannot notice: "What's new: none — why" in
+# the PR description or any commit message. ci.yml's verify job fails on
+# `missing`, and verify is a required check.
+whats_new=n/a
+if [ "$EVENT" = pull_request ] && [ "$code" = true ]; then
+  if grep -qx 'src/lib/updates.ts' <<<"$changed"; then
+    whats_new=ok
+  elif player_facing <<<"$changed"; then
+    said=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.body // ""'
+      gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/commits" --paginate --jq '.[].commit.message')
+    if grep -qiE "^what(’|')?s new: none" <<<"$said"; then whats_new=waived; else whats_new=missing; fi
+  fi
+fi
+
 echo "code=$code"
 echo "reuse_run=$reuse"
+echo "whats_new=$whats_new"
