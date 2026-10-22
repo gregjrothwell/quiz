@@ -155,22 +155,12 @@ Office-lobby check still to come ([`lobby-vote.md`](decisions/lobby-vote.md)).
 Somebody refreshed past #75's two taps — the gap it had accepted. The count moves to the room (`voteTaps.{uid}`,
 `increment(1)` in the vote's own write): no extra write or read, no paste. Not live ([`lobby-vote.md`](decisions/lobby-vote.md)).
 
-## 2026-10-14 — Live: #75 (gh-pages `21ccbd5`): the lobby vote locks after two taps
+## 2026-10-02 to 2026-10-14 — archived, one line each
 
-Players were clicking round the vote cards for fun. Built at three taps; Greg: "1 vote per player — we can
-relax later", then "actually — 2". Client-side, no paste ([`lobby-vote.md`](decisions/lobby-vote.md)). First real
-question-vote data: ~1 verdict per 100 answers, 49/54 bad, and the one over the line is a prompt cut off at a colon —
-88 such ([`question-votes.md`](decisions/question-votes.md)). One PR with #74; Greg merged. Live `index-DV3kGh-I`, byte-identical.
+Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's; #68 and Blankety Blank built the same night, at 309 with the W3 release entry; the first office rounds of #67 and #68 the same night again, at 304 with the go-live; The Price Was Right built on 17 October, at 302 with #91's go-live; #70 and #69 on 20 October, at 296, with the Random Round, lobby and Price is Right entry; the two 7 October entries on 21 October, at 302 with #98's go-live; the two 12 October go-lives on 21 October, at 306 with #104's go-live; the 8 and 14 October lobby-vote entries on 22 October, at 302 with #107's go-live.
 
-## 2026-10-08 — Lobby vote built on `lobby-vote`, not deployed, held past Friday's 30
-
-Every player sees the packs and votes; the quizmaster still picks. No ruleset paste; e2e proves a
-second browser's vote counts, and red when the write is refused. [`lobby-vote.md`](decisions/lobby-vote.md).
-
-## 2026-10-02 to 2026-10-12 — archived, one line each
-
-Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's; #68 and Blankety Blank built the same night, at 309 with the W3 release entry; the first office rounds of #67 and #68 the same night again, at 304 with the go-live; The Price Was Right built on 17 October, at 302 with #91's go-live; #70 and #69 on 20 October, at 296, with the Random Round, lobby and Price is Right entry; the two 7 October entries on 21 October, at 302 with #98's go-live; the two 12 October go-lives on 21 October, at 306 with #104's go-live.
-
+- **2026-10-14** — [Live: #75 (gh-pages `21ccbd5`): the lobby vote locks after two taps](recall/2026-10.md#2026-10-14--live-75-gh-pages-21ccbd5-the-lobby-vote-locks-after-two-taps)
+- **2026-10-08** — [Lobby vote built on `lobby-vote`, not deployed, held past Friday's 30](recall/2026-10.md#2026-10-08--lobby-vote-built-on-lobby-vote-not-deployed-held-past-fridays-30)
 - **2026-10-12** — [Live: #73 + #58 (gh-pages `ed0bac5`): the lobby vote, dead code out](recall/2026-10.md#2026-10-12--live-73--58-gh-pages-ed0bac5-the-lobby-vote-dead-code-out)
 - **2026-10-12** — [Live: #72 (gh-pages `70535a6`): Catchphrase 178, Random Round, Name the Artist](recall/2026-10.md#2026-10-12--live-72-gh-pages-70535a6-catchphrase-178-random-round-name-the-artist)
 - **2026-10-07** — [Live: #71 (gh-pages `f89a603`): Lite reveal, podium ties, price decoys](recall/2026-10.md#2026-10-07--live-71-gh-pages-f89a603-lite-reveal-podium-ties-price-decoys)
