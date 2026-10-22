@@ -911,6 +911,39 @@ function buildChecks(probes: Probes): Check[] {
         }),
     },
     {
+      // Every allow case above writes a light row. A regular's row is the
+      // heaviest the rule sees — six `recent` entries, every optional field —
+      // and on 22 October 2026 that alone ran the rule past 1,000 expressions,
+      // so nobody's round banked while every case here passed.
+      label: "Firestore   · bank a regular's full row (six recent, every field)",
+      expect: 'allow',
+      hint: 'the season rule runs out of its 1,000-expression budget on a full '
+        + 'row — no regular can bank a round. docs/decisions/finals-history.md',
+      run: () =>
+        setDoc(ownSeasonRow, {
+          ...validSeasonRow,
+          team: 'Rules check',
+          played: 39,
+          wins: 1,
+          points: 283600,
+          best: 28800,
+          fastest: 4,
+          comeback: 4,
+          loneWolf: 6,
+          contrarian: 9,
+          recent: Array.from({ length: 6 }, (_, i) => ({
+            gameId: `rules-check-${i}`,
+            score: 8000 + i,
+            at: Date.now() - i,
+          })),
+          form: 32018,
+          finals: 7,
+          shared: 5,
+          shafted: 2,
+          gotShafted: 2,
+        }),
+    },
+    {
       label: 'Firestore   · bank a finals tally that is negative',
       expect: 'deny',
       hint: 'firestore.rules is missing the ≥ 0 bound on the finals tallies',

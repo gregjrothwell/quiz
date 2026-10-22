@@ -222,13 +222,16 @@ describe('the season row agrees with the security rules', () => {
   });
 
   test('the hasOnly list is exactly the document the client writes', () => {
-    const hasOnly = /request\.resource\.data\.keys\(\)\.hasOnly\(\s*\[([\s\S]*?)\]\)/.exec(block)?.[1];
+    const hasOnly = /d\.keys\(\)\.hasOnly\(\s*\[([\s\S]*?)\]\)/.exec(block)?.[1];
     expect(quotedNames(hasOnly)).toEqual([...PLAYER_RECORD_KEYS].sort());
   });
 
   test('recent and form are optional, so an old bundle still banks', () => {
-    expect(block).toMatch(/!\('recent' in request\.resource\.data\.keys\(\)\)/);
-    expect(block).toMatch(/!\('form' in request\.resource\.data\.keys\(\)\)/);
+    // The row is checked as `d` (`rowOk(request.resource.data)`), read once:
+    // the 1,000-expression limit, 22 October 2026.
+    expect(block).toMatch(/rowOk\(request\.resource\.data\)/);
+    expect(block).toMatch(/let recent = d\.get\('recent', \[\]\)/);
+    expect(block).toMatch(/!\('form' in d\.keys\(\)\)/);
   });
 
   test('the window is bounded at six and each score is an int', () => {
@@ -238,12 +241,13 @@ describe('the season row agrees with the security rules', () => {
   });
 
   test('finals tallies are optional whole numbers inside the bounds', () => {
-    expect(block).toMatch(/get\('finals', 0\)/);
-    expect(block).toMatch(/get\('finals', 0\) <= request\.resource\.data\.played/);
-    expect(block).toContain("get('shared', 0) + request.resource.data.get('shafted', 0)");
-    expect(block).toMatch(/get\('gotShafted', 0\) <= request\.resource\.data\.get\('finals', 0\)/);
-    expect(block).toMatch(/finalsCountOk\('finals'\)/);
-    expect(block).toMatch(/finalsCountOk\('gotShafted'\)/);
+    for (const field of ['finals', 'shared', 'shafted', 'gotShafted']) {
+      expect(block).toContain(`let ${field} = d.get('${field}', 0);`);
+      expect(block).toContain(`${field} is int && ${field} >= 0`);
+    }
+    expect(block).toContain('finals <= d.played');
+    expect(block).toContain('shared + shafted <= finals');
+    expect(block).toContain('gotShafted <= finals');
   });
 
   test('a recent entry hasOnly the three fields the client writes', () => {
