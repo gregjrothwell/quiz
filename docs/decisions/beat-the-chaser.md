@@ -81,6 +81,23 @@ and difficulty** — the number Mr Fries plays to.
 - **C7.** A whole round in e2e: four answers per question, Mr Fries's picks
   matching a recomputation, the final score right.
 
+## Built 22 October 2026, branch `beat-the-chaser`
+
+- `scripts/rates.ts` + `fold-rates.ts` → `public/packs/rates.json` (69 rounds,
+  overall 63%, easy 77 / medium 64 / hard 50, 17 packs). A second `--go` wrote
+  it unchanged (S3). `seal.test.ts` checks it holds counts only; a planted
+  question id and an "answer" key each failed it (S2).
+- `src/engine/chaser.ts`: rates, Mr Fries's pick, the room's side, the score.
+  10,000 simulated questions at 64% land inside ±1.5 points (C2).
+- The rate is stamped on each question when the round is dealt
+  (`chaserRate`); the reducer stamps `chaser: {pick, roomTook}` at the reveal,
+  so every device reaches the same verdict and the room carries it.
+- Lobby: "Against the house". Reveal line, scoreboard score, podium result,
+  final card top right. `games/` is unchanged (its rules `hasOnly` the keys).
+- e2e `beat-the-chaser.spec.ts`: 10 questions, every pick recomputed, room took
+  all 10, result on the podium (C1, C3, C4, C6, C7). `host-writes` still
+  matches its recording with him off (C5).
+
 ## Cut from v1
 
 Mr Fries as a drawn character (`mr-fries.md` is research only); he appears as a

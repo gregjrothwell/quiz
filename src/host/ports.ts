@@ -1,4 +1,5 @@
 import type { AskedHistory } from '../engine/askedHistory';
+import type { Rates } from '../engine/chaser';
 import type { GameRecord } from '../engine/gameRecord';
 import type { Action } from '../engine/reducer';
 import type { QuizQuestion } from '../engine/state';
@@ -34,4 +35,6 @@ export interface PackPorts {
   loadPack: (packId: PackId) => Promise<SealedQuestion[]>;
   loadAsked: (packId: string) => Promise<AskedHistory>;
   recordAsked: (packId: string, ids: readonly string[], history: AskedHistory) => Promise<void>;
+  /** The office's hit rates, for Mr Fries. Null when there are none to read. */
+  loadRates?: () => Promise<Rates | null>;
 }

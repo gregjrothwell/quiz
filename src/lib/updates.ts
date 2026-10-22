@@ -18,6 +18,13 @@ export interface Update {
 
 export const UPDATES: readonly Update[] = [
   {
+    // Re-dated at go-live, with the rest of the release's lines.
+    date: '2026-10-23',
+    lines: [
+      'Play against Mr Fries: the whole office on one side, against the house, who gets each question right about as often as you do.',
+    ],
+  },
+  {
     date: '2026-10-22',
     lines: [
       'A new show round, Survey Says: tell us what you think, then guess what most of the office said.',

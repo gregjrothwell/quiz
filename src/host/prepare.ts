@@ -1,6 +1,7 @@
 import { NO_HISTORY, type AskedHistory } from '../engine/askedHistory';
 import { dealRandomRound, RANDOM_SOURCES, type RandomSource } from '../engine/randomRound';
 import { buildQuizQuestions, type Level, type QuizQuestion, type Rng } from '../engine/state';
+import { rateFor } from '../engine/chaser';
 import { dealSurveyRound } from '../engine/survey';
 import type { PackId, SealedQuestion } from '../questions/types';
 import type { PackPorts } from './ports';
@@ -28,12 +29,28 @@ export interface DealRequest {
   count: number;
   level: Level;
   jigsawEnabled: boolean;
+  /** Beat the Chaser: stamp each question with the office's rate for one like it. */
+  chaserEnabled?: boolean;
 }
 
-export function dealRound(request: DealRequest, ports: PackPorts, rng: Rng = Math.random): Promise<Dealt> {
-  if (request.packId === 'random') return dealRandom(request.count, request.level, ports, rng);
-  if (request.packId === 'survey') return dealSurvey(ports, rng);
-  return dealSinglePack(request, ports, rng);
+export async function dealRound(request: DealRequest, ports: PackPorts, rng: Rng = Math.random): Promise<Dealt> {
+  const dealt =
+    request.packId === 'random'
+      ? await dealRandom(request.count, request.level, ports, rng)
+      : request.packId === 'survey'
+        ? await dealSurvey(ports, rng)
+        : await dealSinglePack(request, ports, rng);
+  if (!request.chaserEnabled || request.packId === 'survey') return dealt;
+
+  // A rates file that cannot be read is the office average, not a round that will not start.
+  const rates = ports.loadRates ? await ports.loadRates().catch(() => null) : null;
+  return {
+    ...dealt,
+    questions: dealt.questions.map((question) => ({
+      ...question,
+      chaserRate: rateFor(rates, question.sourcePack ?? request.packId, question.difficulty),
+    })),
+  };
 }
 
 /** One pack, as every round before the mix did. */

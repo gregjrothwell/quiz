@@ -1,3 +1,4 @@
+import { chaserResult, chaserScore } from '../engine/chaser';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Awards } from '../components/Awards';
 import { Confetti } from '../components/Confetti';
@@ -270,6 +271,7 @@ export function Final({
             rows,
             awards,
             sawWholeGame: sawItAll,
+            chaser: room.chaserEnabled ? chaserScore(room.questions) : null,
             questionCount: room.questions.length,
           },
           `vibe-quiz-${room.code}.png`,
@@ -292,6 +294,9 @@ export function Final({
               : `${winnerName} takes it`
             : 'That’s a wrap'}
         </h1>
+        {room.chaserEnabled ? (
+          <p className="chaser-line chaser-line--result">{chaserResult(chaserScore(room.questions))} 🍟</p>
+        ) : null}
       </header>
 
       {hasPodium ? (

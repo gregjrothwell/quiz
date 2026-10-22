@@ -59,9 +59,56 @@ export function sealBreaches(value: unknown, path = ''): string[] {
   return found;
 }
 
+/** Not packs: the index, and Beat the Chaser's hit rates (checked on its own below). */
+const NOT_PACKS = new Set(['index.json', 'rates.json']);
+
 const packFiles = readdirSync(PACKS)
-  .filter((name) => name.endsWith('.json') && name !== 'index.json')
+  .filter((name) => name.endsWith('.json') && !NOT_PACKS.has(name))
   .sort();
+
+/*
+  The office's hit rates ship beside the packs for Mr Fries
+  (docs/decisions/beat-the-chaser.md, S2). Counts only: no question id, no
+  answer, no name — every leaf is a whole number under `hits` or `tries`.
+*/
+describe('the hit rates are counts and nothing else', () => {
+  const rates: unknown = JSON.parse(readFileSync(join(PACKS, 'rates.json'), 'utf8'));
+
+  test('ships no answer', () => {
+    expect(sealBreaches(rates)).toEqual([]);
+  });
+
+  test('every leaf is a count under hits or tries', () => {
+    const leaves: string[] = [];
+    const walk = (value: unknown, path: string): void => {
+      if (typeof value === 'object' && value !== null) {
+        for (const [key, child] of Object.entries(value)) walk(child, `${path}.${key}`);
+      } else if (!(/\.(hits|tries)$/.test(path) && Number.isInteger(value))) {
+        leaves.push(path);
+      }
+    };
+    walk(rates, '');
+    expect(leaves).toEqual([]);
+  });
+
+  test('names no question: no key is a published question id', () => {
+    const ids = new Set(
+      packFiles.flatMap((name) =>
+        (JSON.parse(readFileSync(join(PACKS, name), 'utf8')) as { questions: { id: string }[] }).questions.map((q) => q.id),
+      ),
+    );
+    const keys: string[] = [];
+    const walk = (value: unknown): void => {
+      if (typeof value !== 'object' || value === null) return;
+      for (const [key, child] of Object.entries(value)) {
+        keys.push(key);
+        walk(child);
+      }
+    };
+    walk(rates);
+    expect(keys.filter((key) => ids.has(key))).toEqual([]);
+  });
+});
 
 describe('the published packs are sealed', () => {
   // Guards the guard. A glob that quietly matched nothing would make every

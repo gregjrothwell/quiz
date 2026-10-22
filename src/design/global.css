@@ -4731,4 +4731,16 @@ select.input option {
   .rig-wash {
     transition: opacity 1200ms linear;
   }
+
+/* Beat the Chaser (docs/decisions/beat-the-chaser.md): the room against Mr Fries. */
+.chaser-line {
+  margin: 0;
+  color: var(--amber-bright);
+  font-family: var(--tech);
+  letter-spacing: 0.02em;
+}
+
+.chaser-line--result {
+  font-size: 1.25rem;
+  color: var(--amber);
 }
