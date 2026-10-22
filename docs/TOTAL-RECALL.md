@@ -24,6 +24,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-22 — Release #136 live: the host in `src/host/`, rig check, Beat the Chaser, the Commentator, Quiz Wrapped
+
+Greg: "Go live with #136 once its CI is green". Merged `d8771be` 20:00:33Z on green; rules 20:01:34Z; gh-pages `79633da`, Pages built 20:03:59Z; `index-BK-1i2u1` and 12 files byte-identical. `check-rules` 136/0; the new `rig/` RTDB rules proved live (2 allow, 3 deny); `rank-harness` K859 on the shipped host. Measured first: `games/` (65 rounds, 934 questions, 6 repeats) can't rate what is served next, so Mr Fries plays to pack × difficulty and the fold does not fix the Ladder (HANDOVER item 8 corrected). A merge-resolution slip dropped three CSS braces; the first full e2e ran on a stale `dist/` and caught it. Open: the rig's Friday phone run; Greg to cut the Commentator lines; Wrapped opens 5 Dec. Depth: [`host-loop.md`](decisions/host-loop.md), [`beat-the-chaser.md`](decisions/beat-the-chaser.md), [`rig-in-your-hand.md`](decisions/rig-in-your-hand.md).
+
 ## 2026-10-22 — Release 2026-10-22-3 live: rounds bank again, Survey Says, four audit fixes
 
 Greg: "yeah let's go live". #131 carried #121, #123–#127 and #130, each on its own merge commit; merged `8ca1cba` 15:32:33Z, 17 s after green. Rules published 15:33:24Z; gh-pages `f3c478b`, Pages built 15:34:39Z; `index-CgiLmoB3` and 12 assets byte-identical to a local build. `check-rules` **136/0** — the season full-row allow and both `asked` denies FAILed before and PASS now. B498's two lost rounds were rebanked earlier from `games/`. The built-in browser cannot pass App Check on live; Greg confirmed a real one loads. Live checks still open: the first office Survey Says round, and the first rounds banking on regulars' rows.
