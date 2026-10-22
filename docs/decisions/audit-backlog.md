@@ -46,6 +46,10 @@ the screen reads *"You took 520 off the leader"* with no visible victim, and
 
 Steal is opt-in and **has never been played**, so it has not bitten. 21 tests in
 `src/engine/steal.test.ts` and none puts a departed player top.
+**Fixed 22 Oct 2026** (branch `audit-1-steal-departed`): the reducer passes
+members-only scores to `stealFor`, as it already did answers. New test: a
+leader who left is not robbed — failed with `{ from: 'ann', points: 50 }`
+before, passes after.
 
 ### 2. Unbounded document creation — HIGH (security)
 

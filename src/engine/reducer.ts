@@ -363,8 +363,14 @@ function reveal(state: RoomState, correctIndex: number, questionId: string): Roo
     screen can call it again to say who lost what without any of it being
     written down. Null on every question of a round nobody opted into.
   */
+  // Scores filtered to the room the same way `eligible` is: `leave` drops a seat
+  // and keeps the score, so the raw map can name a leader who has gone home.
   const steal = isStealQuestion(state)
-    ? stealFor({ correctIndex, answers: eligible, scores: state.scores })
+    ? stealFor({
+        correctIndex,
+        answers: eligible,
+        scores: Object.fromEntries(Object.entries(state.scores).filter(([uid]) => state.players[uid])),
+      })
     : null;
 
   const deltas = tallyQuestion({
