@@ -4731,6 +4731,7 @@ select.input option {
   .rig-wash {
     transition: opacity 1200ms linear;
   }
+}
 
 /* Beat the Chaser (docs/decisions/beat-the-chaser.md): the room against Mr Fries. */
 .chaser-line {
@@ -4743,6 +4744,7 @@ select.input option {
 .chaser-line--result {
   font-size: 1.25rem;
   color: var(--amber);
+}
 
 /* The Commentator (docs/decisions/commentator.md): one line, under the moment. */
 .commentary {
@@ -4750,6 +4752,7 @@ select.input option {
   font-family: var(--body);
   font-style: italic;
   color: var(--ink-soft);
+}
 
 /* Quiz Wrapped (docs/decisions/quiz-wrapped.md): the card is the PNG it saves. */
 .wrapped__card {
