@@ -31,6 +31,7 @@
 
 import { readFileSync } from 'node:fs';
 import { cert, initializeApp } from 'firebase-admin/app';
+import { getDatabase, type Database } from 'firebase-admin/database';
 import { getFirestore, Timestamp, type Firestore } from 'firebase-admin/firestore';
 // Pure, and stays that way — `scripts/imports.test.ts` fails if anything under
 // `scripts/` reaches `src/firebase.ts`. Shared rather than copied so this script
@@ -193,7 +194,15 @@ async function findExpired(db: Firestore, legacy: boolean): Promise<Doomed[]> {
  * nothing can find again without knowing the code — which is exactly the state
  * a TTL policy would have left behind, and the reason this script exists.
  */
-async function deleteRoom(db: Firestore, code: string): Promise<number> {
+/*
+  The room's answer lamps, on the Realtime Database at `lamps/{code}` (W3). One
+  node per player per question, never read once the room is over, and nothing
+  else removes them (audit, 22 October 2026). Presence needs no sweep: each
+  entry carries an `onDisconnect` remove.
+*/
+async function deleteRoom(db: Firestore, rtdb: Database, code: string): Promise<number> {
+  await rtdb.ref(`lamps/${code}`).remove();
+
   let documents = 0;
 
   for (const name of SUBCOLLECTIONS) {
@@ -262,7 +271,12 @@ async function main(): Promise<void> {
   const legacy = process.argv.includes('--legacy');
 
   const key: unknown = JSON.parse(readFileSync(keyPath, 'utf8'));
-  const app = initializeApp({ credential: cert(key as Parameters<typeof cert>[0]) }, 'prune-rooms');
+  const databaseURL = process.env['VITE_FIREBASE_DATABASE_URL'];
+  if (!databaseURL) throw new Error('No VITE_FIREBASE_DATABASE_URL in .env.local: the lamps live on the RTDB.');
+  const app = initializeApp(
+    { credential: cert(key as Parameters<typeof cert>[0]), databaseURL },
+    'prune-rooms',
+  );
   const db = getFirestore(app);
 
   /*
@@ -363,17 +377,24 @@ async function main(): Promise<void> {
   }
 
   if (!go) {
-    console.log('\nNothing was deleted. Re-run with --go to actually remove them.');
+    console.log('\nNothing was deleted. Re-run with --go to actually remove them, and their lamps.');
     console.log('Rooms hold players\' names; the season table is separate and untouched.\n');
     return;
   }
 
+  // Opened only to delete, and closed after: an open RTDB connection keeps the
+  // process alive, so without `goOffline` the script finishes and never exits.
+  const rtdb = getDatabase(app);
   let documents = 0;
-  for (const room of doomed) {
-    documents += await deleteRoom(db, room.code);
+  try {
+    for (const room of doomed) {
+      documents += await deleteRoom(db, rtdb, room.code);
+    }
+  } finally {
+    rtdb.goOffline();
   }
 
-  console.log(`\nDeleted ${doomed.length} room(s), ${documents} documents including subcollections.`);
+  console.log(`\nDeleted ${doomed.length} room(s), ${documents} documents including subcollections, and their lamps.`);
   console.log(doomed.length >= BATCH ? 'Hit the batch cap — run it again for the rest.\n' : '\n');
 }
 

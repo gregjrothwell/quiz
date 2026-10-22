@@ -16,6 +16,24 @@ export interface QuestionRecord {
   answers: Record<string, Answer>;
   /** Points actually awarded, as the reveal scored them. */
   deltas: Record<string, number>;
+  /** A Survey Says guess whose top answer tied: every option here was right. */
+  top?: number[];
+  /** A Survey Says tell, which has no right answer and counts for no award. */
+  tell?: boolean;
+}
+
+/** Right on this question: the one answer, or any of a tied survey top. */
+function isRight(record: QuestionRecord, answer: Answer): boolean {
+  return record.top ? record.top.includes(answer.optionIndex) : answer.optionIndex === record.correctIndex;
+}
+
+/**
+ * The questions awards are drawn from. A tell has no right answer, and since
+ * each device holds only its own pick on one, counting it would have devices
+ * disagree about who was fastest — the thing `sawWholeGame` exists to prevent.
+ */
+function scored(log: QuestionRecord[]): QuestionRecord[] {
+  return log.filter((record) => !record.tell);
 }
 
 /**
@@ -54,7 +72,7 @@ function fastest(log: QuestionRecord[]): Award | null {
 
   for (const record of log) {
     for (const [uid, answer] of Object.entries(record.answers)) {
-      if (answer.optionIndex !== record.correctIndex) continue;
+      if (!isRight(record, answer)) continue;
       if (answer.elapsedMs < best) {
         best = answer.elapsedMs;
         uids = [uid];
@@ -76,7 +94,7 @@ function loneWolf(log: QuestionRecord[]): Award | null {
 
   for (const record of log) {
     const right = Object.entries(record.answers).filter(
-      ([, answer]) => answer.optionIndex === record.correctIndex,
+      ([, answer]) => isRight(record, answer),
     );
     const only = right.length === 1 ? right[0]?.[0] : undefined;
     if (only) tally[only] = (tally[only] ?? 0) + 1;
@@ -96,7 +114,7 @@ function contrarian(log: QuestionRecord[]): Award | null {
   for (const record of log) {
     const entries = Object.entries(record.answers);
     for (const [uid, answer] of entries) {
-      if (answer.optionIndex === record.correctIndex) continue;
+      if (isRight(record, answer)) continue;
       // A typed answer that matched nothing shares one index past the lecterns.
       // It is not a pick. Counting it would hand this rosette to one person who
       // typed a wrong phrase, and two people who typed different wrong phrases
@@ -236,7 +254,7 @@ function highlight(
   const candidates = log.flatMap((record) => {
     const answers = Object.values(record.answers);
     const correct = answers.filter(
-      (answer) => answer.optionIndex === record.correctIndex,
+      (answer) => isRight(record, answer),
     ).length;
 
     if (answers.length < MIN_ATTEMPTS || !qualifies(correct, answers.length)) return [];
@@ -259,7 +277,8 @@ function highlight(
  * A highlight nothing supports is left out rather than shown empty, exactly as
  * {@link awardsFor} does.
  */
-export function reviewFor(log: QuestionRecord[]): Highlight[] {
+export function reviewFor(everything: QuestionRecord[]): Highlight[] {
+  const log = scored(everything);
   const stumper = highlight(log, (correct) => correct === 0);
   const sweep = highlight(log, (correct, attempts) => correct === attempts);
 
@@ -274,7 +293,8 @@ export function reviewFor(log: QuestionRecord[]): Highlight[] {
  * An award nothing supports is left out rather than shown empty — a podium with
  * a blank rosette on it is worse than one without.
  */
-export function awardsFor(log: QuestionRecord[], playerUids: string[]): Award[] {
+export function awardsFor(everything: QuestionRecord[], playerUids: string[]): Award[] {
+  const log = scored(everything);
   if (log.length === 0) return [];
 
   return [

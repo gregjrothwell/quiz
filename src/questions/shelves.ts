@@ -18,6 +18,7 @@ import type { PackId, PackSummary } from './types';
 
 export const SHOW_ROUNDS: readonly PackId[] = [
   'random',
+  'survey',
   'screens',
   'tunes',
   'catchphrase',

@@ -150,9 +150,10 @@ Greg's words.
   ([`lead-time.md`](lead-time.md)).
 
 **Still to do:**
-3. ⬜ The Lab: switches, kill switch, verdict, beacons, `read-lab`, run sheet.
-4. ⬜ Wow, one at a time behind Lab, each with a story and ACs first:
-   1. Survey Says.
+3. ⏸ The Lab: switches, kill switch, verdict, beacons, `read-lab`, run sheet.
+   **Shelved by Greg, 22 Oct:** "pointless extra complexity when we don't really need it." Draft kept on branch `lab-story`.
+4. ⬜ Wow, one at a time as ordinary packs or lobby options (not behind a Lab), each with a story and ACs first:
+   1. Survey Says. Story and ACs drafted 22 Oct, waiting on Greg: [`survey-says.md`](survey-says.md).
    2. The rig probe.
    3. The per-question stats fold (it also fixes the Ladder).
    4. Beat the Chaser, then The Commentator.
@@ -160,10 +161,16 @@ Greg's words.
    6. Quiz Wrapped, due ~5 Dec.
 5. ⬜ Architecture:
    - Extract `hostLoop`.
-   - firebase 13, alone.
+   - ~~firebase 13, alone.~~ **Dropped on measurement, 22 Oct.** Built with the
+     app unchanged, the Firebase chunk went 165 → 226 kB gzip on 12.19.0 and
+     → 240 kB on 13.0.0 (+45%). The 4 high production advisories stay on both:
+     13 still pulls the affected `@grpc/grpc-js`, and npm's only "fix" is a
+     downgrade to 9.14. No breaking change in either touches app, auth,
+     Firestore, RTDB or App Check (release notes, read 22 Oct). Revisit when
+     a release fixes the advisory or shrinks.
    - W3's contract half after 14 Nov.
    - Audit items #1, #2, #7 and #8 (§2).
-6. ⬜ Fix the four drifted docs (§2).
+6. ✅ Fix the four drifted docs (§2): branch `drift-docs`, 22 Oct. All four checked against the code first.
 
 **Waiting on Greg, or deferred:**
 - A ruleset on `master` requiring **Verify and build** and **Playwright against

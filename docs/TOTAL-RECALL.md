@@ -24,6 +24,14 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-22 — Survey Says built, not live
+
+Family Fortunes with the office as the survey: five prompts told, then guessed. No vault — the host tallies part one from its own game log. Two changes after Greg approved, both flagged: part one shows no split (it would give part two away), and the results go on the lecterns, because bars below them sat under the desk on a phone. No rules change, proved by a whole round in the emulator. All 40 draft prompts kept by Greg ([`survey-says.md`](decisions/survey-says.md)).
+
+## 2026-10-22 — No round banked today: the season rule hit 1,000 expressions
+
+B498's two rounds banked nothing, and showed "Missing or insufficient permissions" over a juddering podium. #104's `finalsOk()` took a regular's row (six `recent` entries) over Firestore's per-request expression limit; every check wrote a light row, so all passed. Fixed by reading the row once; a full-row allow case added to e2e and `check-rules` ([`finals-history.md`](decisions/finals-history.md#22-october-2026-nobodys-round-banked)).
+
 ## 2026-10-22 — #113 live: master ran in 1m21s on the PR's own build
 
 Greg: "Go live with #113 as soon as it's green." Merged `1f5fb8a` one second after green. Master's Plan found PR run 39743341274 (same tree, `3eb7911e`), skipped verify and e2e, published rules and deployed its `dist` with the job's own token: 07:55:00 → 07:56:21, against ~6 min before. gh-pages made no commit, the bytes being what was already live (`index-CYR8cluB`). The What's new gate and the one-feature rule are live with it ([`lead-time.md`](decisions/lead-time.md)).
@@ -121,7 +129,7 @@ AC10 is not measurable here: Cloud Monitoring needs billing. [`host-authority.md
 the words; the master run was cancelled before rules or Pages, so `master` sits ahead of live. Then W3: the AC8
 stall found and fixed (a joiner listed answers before the room was read, was refused, and the same query never
 confirmed when the chair passed to it); AC12 and the final's allow cases added; `check-rules` 28 W3 cases;
-three harnesses make hosted rooms that beat. e2e 15/15. [`host-authority.md`](decisions/host-authority.md#15-october-evening-the-ac8-stall-and-the-gaps-closed).
+three harnesses make hosted rooms that beat. e2e 15/15. [`host-authority.md`](decisions/host-authority-ac8-stall.md#15-october-evening-the-ac8-stall-and-the-gaps-closed).
 
 ## 2026-10-15 — Branch `w3-host-authority` (PR #86): W3, host authority, built and not live
 

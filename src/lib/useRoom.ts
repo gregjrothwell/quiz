@@ -108,6 +108,13 @@ export interface UseRoom {
   code: string | null;
   connection: ConnectionState;
   error: string | null;
+  /**
+   * Why the answers listener stopped, or null while it runs. A refused listener
+   * is closed by the SDK and never fires again, so before this the answers
+   * simply stopped arriving — on the host, the reveal then waits on
+   * `answersReady` with nothing on screen to say why.
+   */
+  answersError: string | null;
   isQuizmaster: boolean;
   /**
    * Who has answered the question in play, as uids: the RTDB lamps (W3), plus
@@ -241,6 +248,7 @@ export function useRoom(): UseRoom {
    */
   const [clockDeltas, setClockDeltas] = useState<ClockDeltas>({});
   const [answersFeed, setAnswersFeed] = useState<AnswersFeed>({ key: '', docs: {}, fromServer: false });
+  const [answersFailure, setAnswersFailure] = useState<{ key: string; message: string } | null>(null);
   const [lampsFeed, setLampsFeed] = useState<LampsFeed>({ key: '', lit: NO_LAMPS });
   /*
     Restored on the first render rather than in an effect, and that ordering is
@@ -498,16 +506,23 @@ export function useRoom(): UseRoom {
           if (parsed) next[document.id] = parsed;
         }
         setAnswersFeed({ key, docs: next, fromServer: !snapshot.metadata.fromCache });
-      });
+      }, (cause) => setAnswersFailure({ key, message: cause.message }));
     }
 
-    return onSnapshot(doc(answersCollection(code), uid), (snapshot) => {
-      const parsed = snapshot.exists() ? answerDocFrom(snapshot.data()) : null;
-      setAnswersFeed({ key, docs: parsed ? { [uid]: parsed } : {}, fromServer: true });
-    });
+    return onSnapshot(
+      doc(answersCollection(code), uid),
+      (snapshot) => {
+        const parsed = snapshot.exists() ? answerDocFrom(snapshot.data()) : null;
+        setAnswersFeed({ key, docs: parsed ? { [uid]: parsed } : {}, fromServer: true });
+      },
+      (cause) => setAnswersFailure({ key, message: cause.message }),
+    );
   }, [code, uid, readsAll, roomKnown]);
 
   const answers = answersFeed.key === feedKey ? answersFeed.docs : NO_ANSWERS;
+  // Keyed like the feed, so a listener that resubscribes — the chair moving,
+  // another room — is not blamed for the one before it.
+  const answersError = answersFailure?.key === feedKey ? answersFailure.message : null;
   const answersReady = !readsAll || (answersFeed.key === feedKey && answersFeed.fromServer);
 
   // Lamps (W3): who has answered the question in play, from the Realtime
@@ -1151,6 +1166,7 @@ export function useRoom(): UseRoom {
     code,
     connection,
     error,
+    answersError,
     isQuizmaster,
     lamps,
     answersReady,

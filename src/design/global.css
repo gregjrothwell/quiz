@@ -4699,3 +4699,14 @@ select.input option {
   gap: 0.5rem;
   line-height: 1.5;
 }
+
+/* Survey Says: "2 said this" under each option at part two's reveal. On the
+   lectern rather than below the four, where a phone's desk would cover it. */
+.tile__note {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+}

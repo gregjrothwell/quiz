@@ -46,6 +46,10 @@ the screen reads *"You took 520 off the leader"* with no visible victim, and
 
 Steal is opt-in and **has never been played**, so it has not bitten. 21 tests in
 `src/engine/steal.test.ts` and none puts a departed player top.
+**Fixed 22 Oct 2026** (branch `audit-1-steal-departed`): the reducer passes
+members-only scores to `stealFor`, as it already did answers. New test: a
+leader who left is not robbed — failed with `{ from: 'ann', points: 50 }`
+before, passes after.
 
 ### 2. Unbounded document creation — HIGH (security)
 
@@ -58,6 +62,10 @@ no per-element size bound. Against a 20k-writes/day free tier, and nothing sweep
 
 `seasons/{s}/asked/{packId}` also allows `delete: if signedIn()` — anyone can
 wipe a pack's repeat-avoidance history.
+**Fixed 22 Oct 2026** (branch `audit-2-asked-delete`): no client delete, and an
+update may not shorten `ids` — an empty-list overwrite wiped it just as well.
+The client never deleted (grep). Resetting a pack is console / Admin SDK only now.
+The unbounded-creation half above is still open.
 
 **App Check was the only thing throttling this, and it was bypassable until
 8 September** ([`debug-token-leak.md`](debug-token-leak.md)). Needs a ruleset paste.
@@ -127,7 +135,7 @@ while `cost.md` frames it as what says a prune is due. Two lines in the
 | `src/App.tsx:786` — the `games/` retry guard closes over no game id, so a late `'failed'` from one game clears the next one's guard. Costs one refused write. |
 | A round finished offline hangs rather than resolving `'failed'`, so the documented retry never fires. |
 | `scripts/game-report.ts:145` sums `snaps` over all questions while `hitRate` uses `played`, under a header saying skipped questions are left out. |
-| `src/lib/useRoom.ts:448` is the only `onSnapshot` with no error callback — refused, answers stop silently. |
+| ~~`src/lib/useRoom.ts:448` is the only `onSnapshot` with no error callback — refused, answers stop silently.~~ **Fixed 22 Oct 2026** (branch `audit-8-answer-listener-errors`): both answer listeners report, and the room notice says to reload. Proved by fault injection in the emulator — own-answer `get` refused: the notice shows; real rules: it does not. Not committed as a test: it needs a rule no ruleset should ship. |
 | `docs/decisions/known-limits.md` bundle figures are stale: "262 kB across two chunks" is now **276 kB across four**. |
 | 33 of 49 published stills still breach `MAX_STILL_BYTES`. The generator is fixed; regenerating needs `npm run write-hand-packs`, which re-downloads from Commons and the Met. Question ids are slug-based so **no vault re-seed**. |
 
