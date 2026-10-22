@@ -24,6 +24,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-22 — #110 live: landing links beside Join, the sound check stops (#109)
+
+Greg: "Go live with #109 once CI is green, via a release branch." `release-2026-10-22-2` (merge `87a4cc4`), PR #110 green, merged `2905df7`; master run 39736707403 published rules then gh-pages `5fdd041`; Pages built 06:59Z in 48s. Live `index-BmjDGoTc` byte-identical to local; `check-rules` 129/0 before and after; local e2e 18/18. Live checks: links 623–676 at 1280×720 (were 719–772), sound check play/stop/reset by real clicks. This corrects "not live" in the entry below.
+
 ## 2026-10-22 — Landing links beside Join; the sound check stops on a second press
 
 Greg: Season table / What's new sat "too low" on his MacBook. Measured: at 1280×720 the row was wholly below the fold, because it followed the taller Join panel. Now it sits in the grid under "Run the show" (`split--landing`); a phone still stacks it last. Sound check: one button, play then stop, label follows `sound.ts` ([`sound-check.md`](decisions/sound-check.md#a-second-press-stops-it--22-october-2026)). Branch `landing-links-sound-stop`, not live.
@@ -150,20 +154,12 @@ A long name on a reveal chip squeezed the option text on a laptop and drew over 
 at 7rem (~16 letters) or less where the lectern is tighter; the time is never cut. The option text wraps first, so
 short names stayed whole at every width measured, 320–1440. Gallery "Reveal · long names" (`#/preview/53`). Not live.
 
-## 2026-10-15 — Live: #77 (gh-pages `3b63b5a`): a reload no longer resets the vote lock
+## 2026-10-02 to 2026-10-15 — archived, one line each
 
-Greg merged #77 (it carried #76) at 10:56; live 11:01 BST. `index-BWSiBKMq`, byte-identical to a local build.
-Office-lobby check still to come ([`lobby-vote.md`](decisions/lobby-vote.md)).
+Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's; #68 and Blankety Blank built the same night, at 309 with the W3 release entry; the first office rounds of #67 and #68 the same night again, at 304 with the go-live; The Price Was Right built on 17 October, at 302 with #91's go-live; #70 and #69 on 20 October, at 296, with the Random Round, lobby and Price is Right entry; the two 7 October entries on 21 October, at 302 with #98's go-live; the two 12 October go-lives on 21 October, at 306 with #104's go-live; the 8 and 14 October lobby-vote entries on 22 October, at 302 with #107's go-live; the two 15 October vote-taps entries the same day, at 301 with #110's go-live.
 
-## 2026-10-15 — Branch `vote-taps-on-room`: a reload no longer resets the vote lock
-
-Somebody refreshed past #75's two taps — the gap it had accepted. The count moves to the room (`voteTaps.{uid}`,
-`increment(1)` in the vote's own write): no extra write or read, no paste. Not live ([`lobby-vote.md`](decisions/lobby-vote.md)).
-
-## 2026-10-02 to 2026-10-14 — archived, one line each
-
-Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's; #68 and Blankety Blank built the same night, at 309 with the W3 release entry; the first office rounds of #67 and #68 the same night again, at 304 with the go-live; The Price Was Right built on 17 October, at 302 with #91's go-live; #70 and #69 on 20 October, at 296, with the Random Round, lobby and Price is Right entry; the two 7 October entries on 21 October, at 302 with #98's go-live; the two 12 October go-lives on 21 October, at 306 with #104's go-live; the 8 and 14 October lobby-vote entries on 22 October, at 302 with #107's go-live.
-
+- **2026-10-15** — [Live: #77 (gh-pages `3b63b5a`): a reload no longer resets the vote lock](recall/2026-10.md#2026-10-15--live-77-gh-pages-3b63b5a-a-reload-no-longer-resets-the-vote-lock)
+- **2026-10-15** — [Branch `vote-taps-on-room`: a reload no longer resets the vote lock](recall/2026-10.md#2026-10-15--branch-vote-taps-on-room-a-reload-no-longer-resets-the-vote-lock)
 - **2026-10-14** — [Live: #75 (gh-pages `21ccbd5`): the lobby vote locks after two taps](recall/2026-10.md#2026-10-14--live-75-gh-pages-21ccbd5-the-lobby-vote-locks-after-two-taps)
 - **2026-10-08** — [Lobby vote built on `lobby-vote`, not deployed, held past Friday's 30](recall/2026-10.md#2026-10-08--lobby-vote-built-on-lobby-vote-not-deployed-held-past-fridays-30)
 - **2026-10-12** — [Live: #73 + #58 (gh-pages `ed0bac5`): the lobby vote, dead code out](recall/2026-10.md#2026-10-12--live-73--58-gh-pages-ed0bac5-the-lobby-vote-dead-code-out)
