@@ -28,9 +28,14 @@ import { describe, expect, test } from 'vitest';
 const ROOT = resolve(import.meta.dirname, '..');
 const SCRIPTS = resolve(ROOT, 'scripts');
 
-/** Reads a module's relative imports, resolved to absolute paths. */
-function importsOf(file: string): string[] {
-  const source = readFileSync(file, 'utf8');
+/**
+ * Reads a module's relative imports, resolved to absolute paths. With
+ * `runtimeOnly`, `import type` / `export type` lines are skipped: they are erased
+ * before anything runs, so they cannot load React into a Node process.
+ */
+function importsOf(file: string, runtimeOnly = false): string[] {
+  const text = readFileSync(file, 'utf8');
+  const source = runtimeOnly ? text.replace(/^\s*(?:import|export)\s+type\b[^;]*;/gm, '') : text;
   const found: string[] = [];
 
   // `from '...'` covers static imports and re-exports; `import('...')` covers
@@ -68,7 +73,7 @@ function importsOf(file: string): string[] {
 }
 
 /** Everything a module pulls in, however indirectly. */
-function reachableFrom(entry: string): Set<string> {
+function reachableFrom(entry: string, runtimeOnly = false): Set<string> {
   const seen = new Set<string>();
   const queue = [entry];
 
@@ -76,7 +81,7 @@ function reachableFrom(entry: string): Set<string> {
     const file = queue.pop();
     if (!file || seen.has(file)) continue;
     seen.add(file);
-    queue.push(...importsOf(file));
+    queue.push(...importsOf(file, runtimeOnly));
   }
 
   seen.delete(entry);
@@ -123,5 +128,53 @@ describe('what the scripts are allowed to import', () => {
     // #then it still imports the module it needs. Deleting the import would
     // also make the test above pass, and would be the wrong fix
     expect(reached).toContain('src/lib/vault.ts');
+  });
+});
+
+/*
+  The host module (host-loop.md, A1–A2) is driven by the app and by Node
+  harnesses alike, so it is held to the scripts' rule and one more: no React,
+  however indirectly. A hook slipped in here is the first step back to the
+  untestable host this module replaced.
+*/
+const HOST = resolve(ROOT, 'src/host');
+const hostEntries = readdirSync(HOST)
+  .filter((name) => name.endsWith('.ts') && !name.endsWith('.test.ts'))
+  .map((name) => resolve(HOST, name));
+
+describe('what the host module is allowed to import', () => {
+  test('there is a host module to check', () => {
+    expect(hostEntries.map((file) => relative(ROOT, file))).toContain('src/host/due.ts');
+  });
+
+  test.each(hostEntries.map((file) => [relative(ROOT, file), file] as const))(
+    '%s reaches neither src/firebase.ts nor react',
+    (_name, file) => {
+      // #given one host file and everything it pulls in
+      const reached = [file, ...reachableFrom(file)];
+      const loaded = [file, ...reachableFrom(file, true)];
+
+      // #then the app's Firebase singleton is not among them, even by type
+      expect(reached.map((path) => relative(ROOT, path))).not.toContain('src/firebase.ts');
+      // #and nothing that runs imports React. (`questions/types.ts` takes the
+      // `Voice` type from `lib/sound.ts`, a hook file; a type is erased.)
+      const withReact = loaded
+        .filter((path) => /\bfrom\s+['"]react(?:-dom)?(?:\/[^'"]*)?['"]/.test(readFileSync(path, 'utf8')))
+        .map((path) => relative(ROOT, path));
+      expect(withReact).toEqual([]);
+    },
+  );
+
+  test('the runtime walk still follows value imports, so it is not passing by accident', () => {
+    const loaded = [...reachableFrom(resolve(HOST, 'moves.ts'), true)].map((path) => relative(ROOT, path));
+    expect(loaded).toContain('src/engine/reducer.ts');
+    expect(loaded).toContain('src/lib/withTimeout.ts');
+  });
+
+  test('the React check can see a React import, so it is not passing by accident', () => {
+    // #given a file that does import React
+    const app = readFileSync(resolve(ROOT, 'src/App.tsx'), 'utf8');
+    // #then the pattern above finds it
+    expect(/\bfrom\s+['"]react(?:-dom)?(?:\/[^'"]*)?['"]/.test(app)).toBe(true);
   });
 });
