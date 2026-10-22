@@ -29,6 +29,11 @@ export type Cue =
  * swelling, so it reads as a roll rather than a rhythm. Built rather than
  * written out because thirty near-identical lines hide the two numbers that
  * matter — the spacing and the swell.
+ *
+ * **Nothing plays it since 22 October 2026.** Its hits sit at 110–196Hz, which
+ * laptop speakers barely carry, so what the room heard was each hit's attack:
+ * one sound clipping twenty times a second (Greg). Kept for the podium hold's
+ * length, `ROLL_SECONDS`, and for whatever replaces it — listened to first.
  */
 const ROLL_HITS = 30;
 const ROLL_SPACING = 0.046;

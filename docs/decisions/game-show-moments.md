@@ -1,6 +1,6 @@
 # Game-show moments
 
-> **Owner: Greg Rothwell. Last updated: 21 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 22 October 2026. Budget: 250 lines.**
 
 The moments a TV quiz holds and this one used to rush: the final's reveal, the
 podium, the screen changing, a player's own points. Built on branch
@@ -56,6 +56,25 @@ first pass rather than new moments, and went on the same PR.
 
 **Left for Greg:** the line under the title changed from "Playing for 5,550"
 to "The top two, for both their scores" in the first pass, without asking.
+
+## The drum roll came out — 22 October 2026
+
+Greg, hearing it in a test run: *"I think it's what you refer to as a drum roll.
+It sounds like nothing of the sort - this was what I thought was the stuck
+sound."* He had heard it at the podium twice that day and reported it as "a
+single sound clipping many times per second before the actual tone played".
+
+The cause is the heartbeat's, above, again: thirty triangle hits at 196→110Hz,
+46 ms apart. Laptop speakers carry little under about 100Hz and not much under
+200, so what reached the room was each hit's 6 ms attack — a click train at
+about twenty a second, then the fanfare. Nobody had listened to it on a laptop.
+
+- Neither the podium (`Final.tsx`) nor the final's picks being opened
+  (`ShareOrShaft.tsx`) cue it now. The podium's hold keeps its length, silent;
+  the fanfare still lands with the winner. `Final.test.tsx` and
+  `ShareOrShaft.roll.test.tsx` fail with the roll cued and pass without it.
+- The cue stays in `sound.ts`, played by nothing, because `ROLL_SECONDS` sets
+  the hold. A replacement is a sound Greg has heard on a laptop first.
 
 ## The rules it kept
 

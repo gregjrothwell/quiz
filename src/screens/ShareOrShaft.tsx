@@ -267,9 +267,8 @@ export function ShareOrShaft({
     ((outcome.kind === 'shafted' && outcome.from === youUid) || (outcome.kind === 'bothShafted' && amFinalist));
 
   useCue('sting', `${gameKey}:final`, stage === 'talk');
-  // The whistle has gone and the picks are being opened: the podium's drum
-  // roll, so the wait reads as the build-up it is rather than as a stall.
-  useCue('roll', `${gameKey}:closed`, stage === 'closed');
+  // No drum roll while the picks are opened, since 22 October 2026: on laptop
+  // speakers it was a stutter, not a roll. The seats still brace.
   useCue('gong', `${gameKey}:revealed`, stage === 'revealed');
   useCue(outcome?.kind === 'shared' ? 'chime' : 'shatter', `${gameKey}:impact`, reached('impact'));
   useBuzz(hurt ? BUZZ_SHAFTED : BUZZ_CORRECT, `${gameKey}:impact`, reached('impact') && amFinalist);

@@ -86,6 +86,10 @@ out; find it before speech comes back.
 - `e2e/commentator.spec.ts` expects **no** speech on any tab. Before, it
   required the host's tab to speak more than three lines, and passed in CI on
   #136 — so the new assertion fails on that code.
+- **The podium's caption read the live room** while everything else on that
+  screen reads the table frozen at the whistle. When the winner pressed Leave,
+  standings kept their places, nobody was first, and the line vanished. It now
+  reads the frozen table; `Final.test.tsx` failed on the old wiring.
 - Not flagged when the story was approved: these were the game's **first
   spoken words**. A voice returns only with a story of its own — which voice,
   when it talks, and how it sits over a tune.
