@@ -3,7 +3,7 @@
 > **Owner: Greg Rothwell. Last updated: 15 October 2026. Budget: 250 lines.**
 > **Status: built, 10 September 2026** — `.github/workflows/ci.yml`; outline kept,
 > what shipped in *What was built*. **Rules from CI** (W2, built 15 Oct, not live):
-> a `rules` job before `deploy`, keyless — [`rules-from-ci.md`](rules-from-ci.md).
+> a `rules` job before `deploy`, keyless — [`rules-from-ci.md`](rules-from-ci.md). **Lead time** (22 Oct): a Plan job, docs-only skip, PR build reused — [`lead-time.md`](lead-time.md).
 
 ## Why
 
