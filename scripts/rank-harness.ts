@@ -551,7 +551,9 @@ async function main(): Promise<void> {
   }
 
   // The host keeps the round in `games/` once it is finished, as the app's does.
-  await sleep(1_500);
+  // Let that write land before stopping.
+  await sleep(500);
+  await running.idle();
   running.stop();
   for (const failure of running.failures()) console.log(`  host: ${failure}`);
   stopRoom();

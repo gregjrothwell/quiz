@@ -85,6 +85,11 @@ export interface NodeHost {
   gameLog: () => readonly QuestionRecord[];
   /** Every failure a move reported, oldest first. A harness should print these. */
   failures: () => readonly string[];
+  /**
+   * Resolves once no move is in flight. Await it before {@link stop}: a script
+   * that exits on the podium otherwise cuts off the `games/` write it started.
+   */
+  idle: () => Promise<void>;
   /** Resolves with the room once `check` passes; rejects after `ms`. */
   until: (check: (room: RoomState) => boolean, ms?: number) => Promise<RoomState>;
   stop: () => void;
@@ -106,6 +111,7 @@ export function startNodeHost({ db, lite, code, uid, rtdb, only, log = () => und
   let stopped = false;
   const failures: string[] = [];
   const waiters = new Set<() => void>();
+  const inFlight = new Set<Promise<unknown>>();
 
   const room = (): RoomState | null => {
     if (!persisted) return null;
@@ -161,7 +167,7 @@ export function startNodeHost({ db, lite, code, uid, rtdb, only, log = () => und
   function run(move: HostMove, view: HostView): void {
     memory = began(memory, move, { room: view.room, now: Date.now() });
     log(`host: ${move.kind}${move.kind === 'standoff' ? ` ${move.action.type}` : ''}`);
-    perform(move, { room: view.room, gameLog: view.gameLog }, ports).then(
+    const performing = perform(move, { room: view.room, gameLog: view.gameLog }, ports).then(
       (result) => {
         if (result.kind === 'reveal' && move.kind === 'reveal') memory = revealCost(memory, move.questionId, result.cost);
         if (result.kind === 'keepGame') {
@@ -178,6 +184,8 @@ export function startNodeHost({ db, lite, code, uid, rtdb, only, log = () => und
         evaluate();
       },
     );
+    inFlight.add(performing);
+    void performing.finally(() => inFlight.delete(performing));
   }
 
   /** Asks `due.ts` what is owed, does it, and sets the next wake. */
@@ -286,6 +294,9 @@ export function startNodeHost({ db, lite, code, uid, rtdb, only, log = () => und
     dispatch: write,
     gameLog: () => gameLog.records,
     failures: () => failures,
+    idle: async () => {
+      while (inFlight.size > 0) await Promise.allSettled([...inFlight]);
+    },
     until: (check, ms = 30_000) =>
       new Promise<RoomState>((resolve, reject) => {
         const look = (): void => {

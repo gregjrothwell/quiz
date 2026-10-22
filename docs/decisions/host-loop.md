@@ -176,7 +176,17 @@ rule moved to `src/host/gameLog.ts`, shared by `useGameLog` and Node.
 **Changed for whoever runs them.** `final-harness` now waits out the real
 60 s talk, and the host settles 5 s after the whistle whether or not the second
 finalist has opened. The harnesses that reach `finished` now write `games/`,
-as the app does. **None was run against the live project for this change.**
+as the app does.
+
+**Run against live, 22 October 2026, on Greg's word.** `rank-harness` (room
+5HAT): the host revealed on its own, the ladder paid 1000/900/800/700/700/600
+and a zero, Fastest finger read off the host's own log, `games/` kept.
+`final-harness` (9DVF, then DHQ5): reveal, openPicks after the 60 s talk,
+closePicks on both committed, settle; Ada 1,900, Bo 0, Host 0 from the server;
+all three cheats refused. The first run exited before the `games/` write
+reported — `nodeHost.idle()` now waits for in-flight moves, and DHQ5's
+`games/` landed. Not run live: `host-room` (needs a browser to join),
+`sync-harness`, `reveal-gate-probe`.
 
 ## Risks
 

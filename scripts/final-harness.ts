@@ -167,6 +167,8 @@ async function main(): Promise<void> {
   });
 
   const teardown = async (): Promise<void> => {
+    // The host may still be keeping the round; let it finish before stopping.
+    await running.idle();
     running.stop();
     for (const failure of running.failures()) console.log(`  host: ${failure}`);
     stopRoom();
