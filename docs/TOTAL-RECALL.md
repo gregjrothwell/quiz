@@ -24,6 +24,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-22 — Live: #111 security sweep, #114 What's new lines (gh-pages `324a6bd`)
+
+Greg: "Go live with #111, then #114 — merge each as soon as it's green." Merged `8fe1628` and `0556d32`; rules published 07:43Z (S2), gh-pages `324a6bd` 07:45Z, Pages 07:46Z. Live `index-CYR8cluB`, 14/14 assets byte-identical; Firebase chunk now `firebase-DwYnjfYh`. `check-rules` 133/0 with S2's allow cases; `rank-harness` EBSW green; What's new shows #109's lines. Not done: a browser lobby vote on live — the quizmaster has no vote cards and the built-in browser is one identity; covered by check-rules' live member vote and #111's e2e. [`security-sweep-oct-2026.md`](decisions/security-sweep-oct-2026.md).
+
 ## 2026-10-22 — #110 live: landing links beside Join, the sound check stops (#109)
 
 Greg: "Go live with #109 once CI is green, via a release branch." `release-2026-10-22-2` (merge `87a4cc4`), PR #110 green, merged `2905df7`; master run 39736707403 published rules then gh-pages `5fdd041`; Pages built 06:59Z in 48s. Live `index-BmjDGoTc` byte-identical to local; `check-rules` 129/0 before and after; local e2e 18/18. Live checks: links 623–676 at 1280×720 (were 719–772), sound check play/stop/reset by real clicks. This corrects "not live" in the entry below.
