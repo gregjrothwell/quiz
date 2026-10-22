@@ -1058,3 +1058,21 @@ export function usePreviewPlaying(url: string): boolean {
     () => false,
   );
 }
+
+/**
+ * Says a line aloud with the browser's own speech, for the Commentator
+ * (docs/decisions/commentator.md, M5). Only the host's device calls it, so the
+ * room hears one voice. Silent when muted or where speech is not available; a
+ * British English voice where the device has one.
+ */
+export function speak(text: string): void {
+  if (muted || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+  const synth = window.speechSynthesis;
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'en-GB';
+  const british = synth.getVoices().find((voice) => voice.lang === 'en-GB');
+  if (british) utterance.voice = british;
+  utterance.volume = Math.min(1, Math.max(0.2, volume * 4));
+  synth.cancel();
+  synth.speak(utterance);
+}

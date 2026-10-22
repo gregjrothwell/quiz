@@ -18,6 +18,13 @@ export interface Update {
 
 export const UPDATES: readonly Update[] = [
   {
+    // Re-dated at go-live, with the rest of the release's lines.
+    date: '2026-10-23',
+    lines: [
+      'The quiz commentates: a line at the reveal, the standings and the podium — a lone right answer, a new leader, a first win — read out from the quizmaster’s screen.',
+    ],
+  },
+  {
     date: '2026-10-22',
     lines: [
       'A new show round, Survey Says: tell us what you think, then guess what most of the office said.',

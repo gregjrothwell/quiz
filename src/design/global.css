@@ -4710,3 +4710,11 @@ select.input option {
   letter-spacing: 0.04em;
   opacity: 0.85;
 }
+
+/* The Commentator (docs/decisions/commentator.md): one line, under the moment. */
+.commentary {
+  margin: 0;
+  font-family: var(--body);
+  font-style: italic;
+  color: var(--ink-soft);
+}

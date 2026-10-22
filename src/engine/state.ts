@@ -317,6 +317,14 @@ export interface RoomState {
    * for the reason `wagerEnabled` gives; the `standoff` phase it leads to does.
    */
   standoffEnabled: boolean;
+  /**
+   * What the opening titles loaded about each player — rounds played, wins, best
+   * round — kept for the round so the Commentator can say "first win" on every
+   * screen alike (docs/decisions/commentator.md). Empty when the season has
+   * nothing on anybody, or the read failed. No rules change: `wellFormed()` does
+   * not `hasOnly` the room's keys.
+   */
+  history: Record<string, { played: number; wins: number; best: number }>;
   /** The final in play, or the one just played. Null in every other round. */
   standoff: Standoff | null;
   /**
@@ -407,6 +415,7 @@ export function createRoom(code: string): RoomState {
     stealEnabled: false,
     jigsawEnabled: false,
     standoffEnabled: false,
+    history: {},
     standoff: null,
     packVotes: {},
     voteTaps: {},

@@ -472,7 +472,12 @@ function Game() {
             uid,
             playerId: player.playerId ?? uid,
           }));
-          const facts = await loadForm(roster).then(formFor).catch(() => []);
+          const records = await loadForm(roster).catch(() => []);
+          const facts = formFor(records);
+          // Kept on the room for the Commentator: "first win" on every screen alike.
+          const history = Object.fromEntries(
+            records.map((record) => [record.uid, { played: record.played, wins: record.wins, best: record.best }]),
+          );
 
           /*
             The titles go up and the round waits there. Starting it is a second,
@@ -497,6 +502,7 @@ function Game() {
               stealEnabled,
               jigsawEnabled,
               standoffEnabled,
+              history,
             },
             ...(facts.length > 0
               ? [{ type: 'titles' as const, at: Date.now(), facts, durationSecs }]

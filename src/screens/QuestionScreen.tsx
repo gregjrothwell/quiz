@@ -1,3 +1,4 @@
+import { Commentary } from '../components/Commentary';
 import { useEffect, useRef, useState } from 'react';
 import { PicturePrompt } from '../components/PicturePrompt';
 import { StoreBadge } from '../components/StoreBadge';
@@ -933,6 +934,7 @@ export function QuestionScreen({
           />
         )}
 
+        <Commentary room={room} moment="reveal" speakHere={isQuizmaster} show={revealed && settled} />
         <div className="row row--between">
           {/*
           Mounted for the whole reveal rather than swapped in when the verdict
