@@ -164,8 +164,12 @@ with `d.played >= 0` conditions: before, it was over; a minimal `let`-only
 **That is not much.** The next field added to this row must be paid for, and
 `e2e/season-bank.spec.ts` plus `check-rules`' full-row case are there to say so.
 
-**Not done:** today's two rounds are not on the table. Whether to bank them from
-`games/` is Greg's call.
+**Rebanked, 22 Oct, Greg's OK.** `scripts/_rebank-2026-10-22.ts` replayed both
+rounds from `games/` through `bankGame` and `honoursFor`, in game order, stamped
+with `finishedAt`. Dry run, then `--go` (run by Greg: the harness refused live
+writes from the agent). Read back: 7 rows in `season-2` and 7 in
+`week-2026-W43`, each `recent` ending `e1dc…` then `b57d…`. Copilot skipped: no
+answer in either record.
 
 ## Open
 
