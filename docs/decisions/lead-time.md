@@ -2,7 +2,7 @@
 
 > **Owner: Greg Rothwell. Last updated: 22 October 2026. Budget: 250 lines.**
 
-**Status: built on `ci-lead-time`, stacked on #111. Not live.** Greg, 22 October
+**Status: LIVE 22 October 2026** (#113, merge `1f5fb8a`). The first master run under it took **1m21s**; see *First real run* below. Greg, 22 October
 2026: *"Go live time is unacceptable"*, then *"Yes: build the CI speed-ups (reuse
 the PR's dist, docs-only skip) after #111 lands, and change the release-branch
 rule to two or more features only. I'll turn on auto-merge and the required
@@ -124,12 +124,21 @@ builds its head's tree.
 - `gh run download 39739446963 -n dist` returned `index.html`, `assets/` and
   `packs/`.
 
+## First real run — #113's own merge, 22 October 2026
+
+Run 39743884600:
+- Plan finished in 10s: `code=true`, `reuse_run=39743341274` (#113's PR run; both trees `3eb7911e`), `whats_new=n/a`.
+- Verify and e2e were skipped.
+- Rules published in 33s.
+- Deploy took 31s. It downloaded `dist` from run 39743341274 using the job's own token (`actions: read`), and `check-bundle` passed on those bytes.
+- gh-pages printed "Published" but made no commit. #113 changed no app code, so the reused build was the bytes already live. Live stayed on `index-CYR8cluB`.
+- **Push to finished: 1m21s**, against 5m49s for #110 this morning.
+
 ## Not covered
 
-- **The first real reuse on master.** In particular, the cross-run download
-  with the job's own token (`actions: read`) is proved only by the first merge
-  after this lands. If it fails, deploy fails and nothing is published. The
-  fallback is `workflow_dispatch` on master, which always runs in full.
+- ~~The first real reuse on master~~ — proved by #113's own merge (above).
+  If a later download fails, deploy fails and nothing is published; the fallback
+  is `workflow_dispatch` on master, which always runs in full.
 - **Whether the ruleset blocks the deploy push.** It shouldn't: the rule
   targets `master`, and the deploy pushes `gh-pages`.
 - **Playwright is slower than on 2 October:** 2m55s–3m01s, against 1m23s then.

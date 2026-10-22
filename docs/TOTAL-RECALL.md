@@ -24,6 +24,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-22 — #113 live: master ran in 1m21s on the PR's own build
+
+Greg: "Go live with #113 as soon as it's green." Merged `1f5fb8a` one second after green. Master's Plan found PR run 39743341274 (same tree, `3eb7911e`), skipped verify and e2e, published rules and deployed its `dist` with the job's own token: 07:55:00 → 07:56:21, against ~6 min before. gh-pages made no commit, the bytes being what was already live (`index-CYR8cluB`). The What's new gate and the one-feature rule are live with it ([`lead-time.md`](decisions/lead-time.md)).
+
 ## 2026-10-22 — Live: #111 security sweep, #114 What's new lines (gh-pages `324a6bd`)
 
 Greg: "Go live with #111, then #114 — merge each as soon as it's green." Merged `8fe1628` and `0556d32`; rules published 07:43Z (S2), gh-pages `324a6bd` 07:45Z, Pages 07:46Z. Live `index-CYR8cluB`, 14/14 assets byte-identical; Firebase chunk now `firebase-DwYnjfYh`. `check-rules` 133/0 with S2's allow cases; `rank-harness` EBSW green; What's new shows #109's lines. Not done: a browser lobby vote on live — the quizmaster has no vote cards and the built-in browser is one identity; covered by check-rules' live member vote and #111's e2e. [`security-sweep-oct-2026.md`](decisions/security-sweep-oct-2026.md).
@@ -147,21 +151,12 @@ Nothing on the public-scale list had moved since 2 Oct. Sequenced it: TMDB credi
 tenancy → a TMDB still refresh before 9 Mar 2027; rules from CI now goes *before* host authority. TMDB's terms (fetched
 today) need a logo and notice in the app for every user, and the live site has neither. [`public-scale.md`](decisions/public-scale.md#the-plan-15-october-2026).
 
-## 2026-10-15 — Live: #79 (gh-pages `54fb8d8`): long names cut on the reveal chips
-
-Greg merged #79 (it carried #78) at 16:04; live 16:11 BST. `index-BUTUL1rQ`, byte-identical to a local build; the
-live gallery's "Reveal · long names" measures as the preview did. Office check: the first round with a long name.
-
-## 2026-10-15 — Branch `reveal-name-truncate`: long names cut on the reveal chips
-
-A long name on a reveal chip squeezed the option text on a laptop and drew over it on a phone. The name now ellipsises
-at 7rem (~16 letters) or less where the lectern is tighter; the time is never cut. The option text wraps first, so
-short names stayed whole at every width measured, 320–1440. Gallery "Reveal · long names" (`#/preview/53`). Not live.
-
 ## 2026-10-02 to 2026-10-15 — archived, one line each
 
-Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's; #68 and Blankety Blank built the same night, at 309 with the W3 release entry; the first office rounds of #67 and #68 the same night again, at 304 with the go-live; The Price Was Right built on 17 October, at 302 with #91's go-live; #70 and #69 on 20 October, at 296, with the Random Round, lobby and Price is Right entry; the two 7 October entries on 21 October, at 302 with #98's go-live; the two 12 October go-lives on 21 October, at 306 with #104's go-live; the 8 and 14 October lobby-vote entries on 22 October, at 302 with #107's go-live; the two 15 October vote-taps entries the same day, at 301 with #110's go-live.
+Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's; #68 and Blankety Blank built the same night, at 309 with the W3 release entry; the first office rounds of #67 and #68 the same night again, at 304 with the go-live; The Price Was Right built on 17 October, at 302 with #91's go-live; #70 and #69 on 20 October, at 296, with the Random Round, lobby and Price is Right entry; the two 7 October entries on 21 October, at 302 with #98's go-live; the two 12 October go-lives on 21 October, at 306 with #104's go-live; the 8 and 14 October lobby-vote entries on 22 October, at 302 with #107's go-live; the two 15 October vote-taps entries the same day, at 301 with #110's go-live; the two 15 October reveal-name entries the same day, at 301 with #113's go-live.
 
+- **2026-10-15** — [Live: #79 (gh-pages `54fb8d8`): long names cut on the reveal chips](recall/2026-10.md#2026-10-15--live-79-gh-pages-54fb8d8-long-names-cut-on-the-reveal-chips)
+- **2026-10-15** — [Branch `reveal-name-truncate`: long names cut on the reveal chips](recall/2026-10.md#2026-10-15--branch-reveal-name-truncate-long-names-cut-on-the-reveal-chips)
 - **2026-10-15** — [Live: #77 (gh-pages `3b63b5a`): a reload no longer resets the vote lock](recall/2026-10.md#2026-10-15--live-77-gh-pages-3b63b5a-a-reload-no-longer-resets-the-vote-lock)
 - **2026-10-15** — [Branch `vote-taps-on-room`: a reload no longer resets the vote lock](recall/2026-10.md#2026-10-15--branch-vote-taps-on-room-a-reload-no-longer-resets-the-vote-lock)
 - **2026-10-14** — [Live: #75 (gh-pages `21ccbd5`): the lobby vote locks after two taps](recall/2026-10.md#2026-10-14--live-75-gh-pages-21ccbd5-the-lobby-vote-locks-after-two-taps)
