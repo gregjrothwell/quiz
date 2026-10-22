@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 21 October 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 22 October 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -34,7 +34,7 @@ Built to replace Polly in Teams.
 | **the CI deploy, the secret check, Playwright, the emulator**; anything that adds reads or writes | [`ci-deploy.md`](decisions/ci-deploy.md) · [`rules-from-ci.md`](decisions/rules-from-ci.md) · [`emulators.md`](decisions/emulators.md) · [`cost.md`](decisions/cost.md) · [`audit-backlog.md`](decisions/audit-backlog.md) |
 | — before assuming a style choice, a bug, or a claim in here | [`gotchas.md`](decisions/gotchas.md) · [`known-limits.md`](decisions/known-limits.md) · [`state-of-play.md`](decisions/state-of-play.md) |
 | what a question is worth, and why it is not a speed curve; **calling a Catchphrase** before the options (live 21 Oct, #104) | [`decisions/scoring.md`](decisions/scoring.md) · [`typed-answers.md`](decisions/typed-answers.md) |
-| the shareable result card, and how it gets to the player | [`decisions/final-card.md`](decisions/final-card.md) |
+| the shareable result card, and how it gets to the player; **the What's new page** (`release-2026-10-22`, not live) | [`decisions/final-card.md`](decisions/final-card.md) · [`updates-page.md`](decisions/updates-page.md) |
 | what to build next, what each idea costs, what was turned down | [`what-to-build-next.md`](decisions/what-to-build-next.md) · [`picking-up.md`](decisions/picking-up.md) · [`ideas-review.md`](decisions/ideas-review.md) · [`scope.md`](decisions/scope.md) |
 | picture, music, jigsaw or steal rounds, **negative points**, why melody played badly; **a random round** | [`round-types.md`](decisions/round-types.md) · [`melody-round.md`](decisions/melody-round.md) · [`random-round.md`](decisions/random-round.md) |
 | **Name that Tune** clips that give it away; **the volume slider and the two autoplay gates**; **the lobby sound check**; **the Apple Music badge and Apple's terms**; **Name the Artist** | [`tunes-round.md`](decisions/tunes-round.md) · [`tunes-title-gate.md`](decisions/tunes-title-gate.md) · [`audio-stack.md`](decisions/audio-stack.md) · [`sound-check.md`](decisions/sound-check.md) · [`known-limits.md`](decisions/known-limits.md) · [`name-the-artist.md`](decisions/name-the-artist.md) |
@@ -85,7 +85,7 @@ scoring 500 + rank 500/400/300/200/100.
    `npm run backfill-form` — the scores it is defined over were never stored, so
    these are invented and decay as people bank. Real ones were not overwritten
    ([`season.md`](decisions/season.md)).
-5. **A quizmaster dropping out mid-round** needs a browser and `host-room` — until W3 (PR #86, built, not live) ships: [`host-authority.md`](decisions/host-authority.md#what-was-built-15-october-2026).
+5. **A quizmaster dropping out mid-round**: W3's expand half has been live since 15 Oct; its scripts (#90) ride `release-2026-10-22`, harnesses green live 22 Oct — [`host-authority.md`](decisions/host-authority.md#what-was-built-15-october-2026).
 6. **No Content-Security-Policy.** Deliberate: a `<meta http-equiv>` CSP breaks
    the live app silently and the stale CDN makes that painful to diagnose.
 7. **Three things still want a second person**: the review panel, a quizmaster
