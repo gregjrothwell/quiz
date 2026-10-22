@@ -159,7 +159,7 @@ Greg's words.
    5. The rig, if the probe holds.
    6. Quiz Wrapped, due ~5 Dec.
 5. ⬜ Architecture:
-   - Extract `hostLoop`.
+   - Extract `hostLoop`. Story and ACs drafted 22 Oct, waiting on Greg: [`host-loop.md`](host-loop.md).
    - firebase 13, alone.
    - W3's contract half after 14 Nov.
    - Audit items #1, #2, #7 and #8 (§2).
