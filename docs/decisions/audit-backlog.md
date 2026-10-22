@@ -1,6 +1,6 @@
 # The audit backlog — what was found, what was fixed, what is left
 
-> **Owner: Greg Rothwell. Last updated: 8 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 22 October 2026. Budget: 250 lines.**
 
 A full security, optimisation and recent-changes audit ran on 8 September 2026,
 read off the live Firebase project and the deployed artefact rather than the
@@ -141,6 +141,29 @@ while `cost.md` frames it as what says a prune is due. Two lines in the
   separate rows. **0 recovery codes, 0 identity claims**, because nothing has ever
   asked anybody to save one (`ideas-review.md` §8). It is not an unused feature;
   it is corrupting the table the season is scored on.
+
+### 10. From the 22 October 2026 sweep — S3, S4, S5, known and open
+
+Found by the sweep that fixed S1, S2, S6 and S7; depth and evidence in
+[`security-sweep-oct-2026.md`](security-sweep-oct-2026.md). None is fixed.
+
+- **S3, room-code oracle — MEDIUM (security).** `database.rules.json`:
+  `presence/$code` is readable by anyone signed in, any `$code`. No names
+  since 21 September, but a non-empty read says the code is live, and a live
+  code is the capability to join. RTDB rules cannot check Firestore membership.
+- **S4, unbounded RTDB and the 100-connection cap — MEDIUM (availability).**
+  `presence/{anyCode}/{ownUid}` and `lamps/{anyCode}/{anyQuestion}/{ownUid}`
+  take any code, so nodes have no ceiling; Spark allows 100 simultaneous
+  connections (Firebase limits page, read 22 Oct). A script holding them shuts
+  the office out.
+- **S5, forgeable `games/`, unbounded `q1Traces` — MEDIUM (integrity).** Item
+  2's unbounded creation, plus: a `games/` record is checked for shape, not
+  against any room, so any scores can be filed for a round that never ran, and
+  `freshness`, `backfill-finals`, `read-games` and `player-audit` read it.
+  `q1Traces` takes any `gameId`, one trace per made-up game.
+
+All three want a server-side writer or a membership check the rules cannot
+make cheaply. On Spark there is no Cloud Function to be that writer.
 
 ## Testing — the assessment Greg asked for
 

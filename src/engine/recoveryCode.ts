@@ -14,7 +14,18 @@ import { ALPHABET } from './roomCode';
  */
 export const RECOVERY_CODE_LENGTH = 8;
 
-export function randomRecoveryCode(rng: () => number = Math.random): string {
+/**
+ * A uniform draw in [0, 1) from the platform's CSPRNG. Not `Math.random`, which
+ * is not one: a few of its outputs give away the rest, and the guess-space
+ * above only means anything if the draw cannot be predicted (22 October 2026).
+ * The bias of mapping 2³² words onto 29 symbols is below one part in 10⁸.
+ */
+function secureRandom(): number {
+  const [word = 0] = crypto.getRandomValues(new Uint32Array(1));
+  return word / 2 ** 32;
+}
+
+export function randomRecoveryCode(rng: () => number = secureRandom): string {
   let code = '';
   for (let i = 0; i < RECOVERY_CODE_LENGTH; i += 1) {
     const index = Math.floor(rng() * ALPHABET.length);

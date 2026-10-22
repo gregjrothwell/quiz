@@ -1,0 +1,36 @@
+# Security updates only: a PR when a dependency or a pinned action has a
+# published advisory, and nothing for routine version bumps.
+#
+# From GitHub's docs, read 22 October 2026, not from memory:
+# - "If you only require security updates and want to exclude version updates,
+#   you can set open-pull-requests-limit to 0" (configuring Dependabot
+#   security updates).
+# - Security PRs have "a separate, fixed limit of 10 open pull requests, which
+#   cannot be configured using open-pull-requests-limit" (options reference),
+#   so 0 here holds back version updates and nothing else.
+# - npm and github-actions both support security updates (supported
+#   ecosystems).
+#
+# **This file alone opens nothing.** Security PRs also need Dependabot alerts
+# and Dependabot security updates switched on under Settings → Advanced
+# Security. Both read off on 22 October 2026 (`gh api` vulnerability-alerts:
+# 404; automated-security-fixes: enabled false). That switch is Greg's.
+#
+# `schedule` is required by the schema even with version updates held at 0.
+
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+
+  # "The `directory` must be set to "/" to check for workflow files in
+  # .github/workflows" (keeping your actions up to date). Not stated there:
+  # how it rewrites a SHA pin and its `# vX.Y.Z` comment — read the first PR.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0

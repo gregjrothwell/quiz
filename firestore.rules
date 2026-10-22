@@ -94,6 +94,10 @@ service cloud.firestore {
       // only consulted when a claim is made. So deleting stops the code being
       // used again and leaves everyone who already used it exactly where they
       // are, which is precisely what revoking should mean.
+      // **Correction, 22 October 2026:** so it evicts nobody either. Whoever
+      // claimed a leaked code before it was deleted keeps writing the row,
+      // through their own `claims` document, until that is deleted with the
+      // Admin SDK. docs/decisions/identity.md.
       allow delete: if ownsPlayer(resource.data.playerId);
     }
 
@@ -331,7 +335,33 @@ service cloud.firestore {
           && request.resource.data.questions.size() <= maxQuestions()
           && request.resource.data.get('lastPicks', {}).size() <= maxPlayers()
           && durationOk()
-          && ownEntryOk();
+          && ownEntryOk()
+          && ownVoteOk();
+      }
+
+      // What the writer leaves under their own key in the lobby vote (S2, 22
+      // October 2026). `onlyMine` says whose key a member may move, not what
+      // goes under it, so a member could park a ~900 kB string there and leave,
+      // and every client re-reads the room on every transition.
+      //
+      // The vote is a pack id, or absent once taken back: `writeOwnVote`
+      // writes `packId ?? deleteField()` (src/lib/useRoom.ts), and the longest
+      // id is `general-knowledge`, 17 characters. The tap count is
+      // `increment(1)` from nothing, two a lobby (`VOTE_TAPS`), and `start` and
+      // `reset` clear both maps. 64 and 1000 are ceilings on size, not the
+      // game's limits, so nothing a real lobby writes comes near them. In
+      // `wellFormed` rather than `selfWrite`, so the host's own key is held to
+      // it too.
+      //
+      // Only the writer's key: rules cannot walk a map. In a hosted room
+      // nobody else may write a member's key except the host.
+      function ownVoteOk() {
+        return (!(request.auth.uid in request.resource.data.get('packVotes', {}))
+            || (request.resource.data.packVotes[request.auth.uid] is string
+                && request.resource.data.packVotes[request.auth.uid].size() <= 64))
+          && (!(request.auth.uid in request.resource.data.get('voteTaps', {}))
+            || (request.resource.data.voteTaps[request.auth.uid] is int
+                && request.resource.data.voteTaps[request.auth.uid] <= 1000));
       }
 
       // ── Host authority (W3) ─────────────────────────────────────────────

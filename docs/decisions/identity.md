@@ -1,6 +1,6 @@
 # Durable identity
 
-> **Owner: Greg Rothwell. Last updated: 20 August 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 22 October 2026. Budget: 250 lines.**
 
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
@@ -107,6 +107,15 @@ documents, call it, and write one back. Four things about it are load-bearing:
   `claims` document, and the season rules read *that*; the recovery document is
   consulted only when a claim is made. So deleting it stops the code being used
   again and leaves everyone who already used it exactly where they are.
+  **Correction, 22 October 2026: so revoking does not evict anyone.** The two
+  bullets above read as though deleting a leaked code closes the leak; it closes
+  it only to people who have not used it yet. Whoever claimed it first keeps a
+  `claims/{uid}` naming the row, `ownsPlayer` reads that, and only that uid or
+  the Admin SDK can delete it (`firestore.rules`, `match /claims/{uid}`). The
+  owner cannot see who claimed, so evicting someone means finding `claims`
+  documents with that `playerId` from the console and deleting them. Same sweep:
+  codes are now drawn from `crypto.getRandomValues`, not `Math.random`
+  ([`security-sweep-oct-2026.md`](security-sweep-oct-2026.md)).
 - **Two devices of one person in one room are two players.** They share a
   playerId, so the second banks nothing — `lastGame` is the same game id. That is
   the right answer, and it is worth knowing before somebody reports it as a bug.
