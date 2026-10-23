@@ -15,9 +15,10 @@ interface ChaserIntroProps {
  * It lives here rather than over the question, the same way the next round's
  * card lives on the standings and Share or Shaft's lives on its own screen.
  * There is no answering clock yet, so the beat costs nobody any thinking time.
- * The host opens the question a few seconds after the card goes up. This button
- * is how the quizmaster skips that wait. The card does not time itself: a timer
- * on every screen would be a second writer.
+ * The host opens the question a few seconds after the card goes up. Players
+ * are told question one is coming. This button is how the quizmaster skips
+ * that wait. The card does not time itself: a timer on every screen would be
+ * a second writer.
  */
 export function ChaserIntro({ isQuizmaster, onStart, today = todayIso() }: ChaserIntroProps) {
   useCue('sting', 'chaser-intro', true);
@@ -46,7 +47,7 @@ export function ChaserIntro({ isQuizmaster, onStart, today = todayIso() }: Chase
           </div>
         </div>
       ) : (
-        <p className="muted">Waiting for the quizmaster…</p>
+        <p className="muted">Get ready — question one is coming up</p>
       )}
     </>
   );

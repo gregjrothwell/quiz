@@ -82,7 +82,8 @@ test('a round against Mr Fries: his picks recompute, the room takes what it shou
     expect(eli.getByRole('heading', { name: /Against Mr Fries/ })).toBeVisible(),
   ]);
   await expect(eli.getByText(/whole office vs the house/i)).toBeVisible();
-  await expect(eli.getByText(/Waiting for the quizmaster/)).toBeVisible();
+  await expect(eli.getByText(/Get ready — question one is coming up/)).toBeVisible();
+  await expect(eli.getByText(/Waiting for the quizmaster/)).toHaveCount(0);
   await expect(host.getByRole('button', { name: 'Next question' })).toBeVisible();
   expect(holding.chaserEnabled).toBe(true);
   if (isNewMode('chaser', todayIso())) {

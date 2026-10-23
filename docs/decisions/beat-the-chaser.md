@@ -104,6 +104,7 @@ Before question one, on its own card, the same way the standings carry the next
 round and Share or Shaft carries its own: **Against Mr Fries 🍟**, then **The
 whole office vs the house**, on every screen including the host. The New
 sticker stays while `MODE_NEW_UNTIL` says the mode is new (through 5 Nov 2026).
+Players see **Get ready — question one is coming up** under the card.
 
 The room is still in the lobby, so the answering clock has not started. The
 host — the only device that writes the round on — opens question one three
