@@ -22,6 +22,7 @@ export const UPDATES: readonly Update[] = [
     lines: [
       'What’s new is in the lobby as well, so joining from a link doesn’t skip it.',
       'A new round or a new way to play it wears a New sticker for two weeks.',
+      'Beat the Chaser opens on a title card: the whole office against Mr Fries.',
     ],
   },
   {

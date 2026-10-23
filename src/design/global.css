@@ -4758,6 +4758,31 @@ select.input option {
   margin-top: 0.85rem;
 }
 
+/* On question one, above the prompt. Shorter than the standings card so a
+   375px phone still has the question. The ghost is letters: a colour emoji
+   ignores the faint cyan and paints a full-size fries over the title. The
+   chip is smaller than the shout, or it sits on the sound control. */
+.card--intro {
+  padding-block: 0.85rem;
+}
+
+.card--intro .card__round {
+  font-size: clamp(1.35rem, 6vw, 3rem);
+}
+
+.card--intro .card__chip {
+  font-size: 0.72em;
+}
+
+.card--intro .card__topic {
+  letter-spacing: 0.16em;
+  margin-top: 0.45rem;
+}
+
+.card--intro .new-sticker {
+  margin-top: 0.4rem;
+}
+
 .updates__entry { margin-top: 1rem; }
 
 .updates__lines {

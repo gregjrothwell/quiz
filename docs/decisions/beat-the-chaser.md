@@ -98,6 +98,15 @@ and difficulty** — the number Mr Fries plays to.
   all 10, result on the podium (C1, C3, C4, C6, C7). `host-writes` still
   matches its recording with him off (C5).
 
+## The intro, 23 October 2026
+
+Question one opens on the same title card as Share or Shaft and the standings:
+**Against Mr Fries 🍟**, then **The whole office vs the house**, on every
+screen including the host. The New sticker stays while `MODE_NEW_UNTIL` says
+the mode is new (through 5 Nov 2026). The card leaves after three seconds.
+The clock is already running, so a ten-second question has about seven seconds
+once it lifts; the score and the questions are unchanged. No rules change.
+
 ## Cut from v1
 
 Mr Fries as a drawn character (`mr-fries.md` is research only); he appears as a
