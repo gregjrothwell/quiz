@@ -61,6 +61,15 @@ describe('dealRound', () => {
     await expect(dealt.remember()).resolves.toBeUndefined();
   });
 
+  test('a ramp that cannot climb says so, and a mixed round does not', async () => {
+    const { ports: packs } = ports({ ids: new Set(), known: true });
+    // The fake pack is thirty easy questions and nothing else.
+    const ramp = await dealRound({ ...request, level: 'ramp' }, packs);
+    expect(ramp.ladderNotices).toEqual(['Out of medium and hard questions in this pack — using easy']);
+    const mixed = await dealRound(request, packs);
+    expect(mixed.ladderNotices).toEqual([]);
+  });
+
   test('a random round remembers each question against the pack it came from', async () => {
     const { ports: packs, written } = ports({ ids: new Set(), known: true });
     const dealt = await dealRound({ ...request, packId: 'random' }, packs);

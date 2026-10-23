@@ -273,6 +273,29 @@ describe('the answer window', () => {
     expect(room.jigsawEnabled).toBe(false);
   });
 
+  test('selectPack keeps a Ladder notice, and the next round drops it', () => {
+    const room = apply(
+      createRoom('ABCD'),
+      { type: 'join', uid: 'host', name: 'Greg', at: 100 },
+      {
+        type: 'selectPack',
+        packId: 'general-knowledge',
+        packTitle: 'General Knowledge',
+        questions: QUESTIONS,
+        wagerEnabled: false,
+        stealEnabled: false,
+        ladderNotices: ['Out of hard questions in this pack — using medium'],
+      },
+    );
+    expect(room.ladderNotices).toEqual(['Out of hard questions in this pack — using medium']);
+
+    // #when the round is over and the room returns to the lobby
+    const cleared = reduce(room, { type: 'reset' });
+
+    // #then the notice does not carry into the next choice of pack
+    expect(cleared.ladderNotices).toEqual([]);
+  });
+
   test('selectPack can turn the jigsaw on', () => {
     const room = apply(
       createRoom('ABCD'),

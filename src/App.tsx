@@ -456,7 +456,7 @@ function Game() {
       setActionError(null);
       // Dealing, and remembering what was dealt, is `src/host/prepare.ts`.
       dealRound({ packId, count, level, jigsawEnabled, chaserEnabled }, PACK_PORTS)
-        .then(async ({ questions, remember }) => {
+        .then(async ({ questions, ladderNotices, remember }) => {
           const pack = packs.find((entry) => entry.id === packId);
 
           /*
@@ -506,6 +506,7 @@ function Game() {
               standoffEnabled,
               chaserEnabled,
               history,
+              ladderNotices,
             },
             ...(facts.length > 0
               ? [{ type: 'titles' as const, at: Date.now(), facts, durationSecs }]

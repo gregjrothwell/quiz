@@ -48,6 +48,11 @@ export type Action =
       chaserEnabled?: boolean;
       /** What the season says about each player, for the Commentator. */
       history?: RoomState['history'];
+      /**
+       * Set when The Ladder filled a difficulty from another. Omitted by every
+       * caller that is not dealing a ramp, and stored as nothing in that case.
+       */
+      ladderNotices?: readonly string[];
     }
   /**
    * `durationSecs` is settled here and nowhere else. The security rules pin it
@@ -119,6 +124,7 @@ export function reduce(state: RoomState, action: Action): RoomState {
         action.standoffEnabled ?? false,
         action.chaserEnabled ?? false,
         action.history ?? {},
+        action.ladderNotices ?? [],
       );
     case 'start':
       return start(state, action.at, action.gameId, action.durationSecs);
@@ -202,6 +208,7 @@ function selectPack(
   standoffEnabled: boolean,
   chaserEnabled: boolean,
   history: RoomState['history'],
+  ladderNotices: readonly string[],
 ): RoomState {
   if (state.phase !== 'lobby') return state;
   return {
@@ -215,6 +222,7 @@ function selectPack(
     standoffEnabled,
     chaserEnabled,
     history,
+    ladderNotices,
   };
 }
 
@@ -635,6 +643,7 @@ function reset(state: RoomState): RoomState {
     skipped: [],
     // Cleared so the next round mints its own id and counts separately.
     gameId: null,
+    ladderNotices: [],
     standoff: null,
     packVotes: {},
     voteTaps: {},

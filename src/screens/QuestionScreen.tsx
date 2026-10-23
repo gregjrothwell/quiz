@@ -617,6 +617,17 @@ export function QuestionScreen({
       </header>
 
       {/*
+        Full width, under the header. The ladder column is 8.5rem on a laptop,
+        which cannot hold a sentence, and on a phone the rung labels are hidden,
+        so this is the line that says the climb stopped.
+      */}
+      {room.ladderNotices?.map((line) => (
+        <p className="ladder-notice" role="status" key={line}>
+          {line}
+        </p>
+      ))}
+
+      {/*
         Sealed only while the question is open.
 
         What this buys is narrow and worth stating exactly: it kills

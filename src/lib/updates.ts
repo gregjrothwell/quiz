@@ -18,6 +18,12 @@ export interface Update {
 
 export const UPDATES: readonly Update[] = [
   {
+    date: '2026-10-23',
+    lines: [
+      'The Ladder says when a pack has run out of easy or hard questions, and which level it is using instead.',
+    ],
+  },
+  {
     date: '2026-10-22',
     lines: [
       'The commentator’s lines stay on screen but aren’t read out any more, until it has a better voice.',
