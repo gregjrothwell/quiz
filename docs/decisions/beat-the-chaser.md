@@ -1,6 +1,6 @@
 # Beat the Chaser — story and acceptance criteria
 
-> **Owner: Greg Rothwell. Last updated: 22 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 23 October 2026. Budget: 250 lines.**
 
 **Status: APPROVED 22 October 2026, as recommended.** Greg: *"Approve all four stories as recommended: Mr Fries on pack×difficulty rates, room wins on more than half right, 🍟 until there's art, fix HANDOVER item 8; rig probe now and rig only on a pass; Commentator without Gemini, spoken from the host only, you draft ~30 lines; Wrapped's five cards opening 5 D[ec, Christmas finale left out for now]"* (the message was cut at 300 characters; the bracket is the rest of the button he pressed). Wow item 2 of
 [`direction-oct-2026.md`](direction-oct-2026.md#5-wow--all-five-accepted), and
@@ -106,13 +106,15 @@ whole office vs the house**, on every screen including the host. The New
 sticker stays while `MODE_NEW_UNTIL` says the mode is new (through 5 Nov 2026).
 
 The room is still in the lobby, so the answering clock has not started. The
-quizmaster taps **Next question** — players wait, as they do on the standings —
-and that tap opens question one. Nothing dismisses the card on a timer. A
-ten-second question keeps ten seconds. The score is unchanged. No rules change:
-the card is a field on the room, and `wellFormed()` does not `hasOnly` the
-room's keys. The host's reveal (`src/host/due.ts`) still measures the full
-window from the moment the question opens, including the hold that refuses a
-second reveal while one is in flight.
+host — the only device that writes the round on — opens question one three
+seconds after the card goes up (`CHASER_INTRO_MS` in `src/host/due.ts`). The
+moment is `chaserIntro.at` on the room, so a reload continues that wait. The
+quizmaster can tap **Next question** sooner. That tap and the timer are one
+open: a second `start` finds the question already open and writes nothing.
+A ten-second question keeps ten seconds, because the clock starts when the
+question opens. No rules change: the card is a field on the room, and
+`wellFormed()` does not `hasOnly` the room's keys. The host's reveal still
+measures the full window from the moment the question opens.
 
 ## Cut from v1
 

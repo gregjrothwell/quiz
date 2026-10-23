@@ -22,6 +22,9 @@ interface RoomDoc {
   index: number;
   gameId: string;
   chaserEnabled: boolean;
+  chaserIntro?: { at: number; durationSecs: number } | null;
+  /** The host's clock when it opened the question. Same clock as `chaserIntro.at`. */
+  questionOpenedAt?: number | null;
   players: Record<string, { name: string }>;
   questions: QuizQuestion[];
 }
@@ -67,6 +70,13 @@ test('a round against Mr Fries: his picks recompute, the room takes what it shou
   await host.getByRole('button', { name: 'Start the round' }).click();
 
   // The card is up for the whole room, and question one has not opened.
+  // Next question is still there, so the quizmaster can skip the wait.
+  const holding = await until(
+    () => readRoom(code),
+    (room) => room.phase === 'lobby' && typeof room.chaserIntro?.at === 'number',
+  );
+  const cardAt = holding.chaserIntro?.at;
+  if (cardAt === undefined) throw new Error('expected Mr Fries\'s card');
   await Promise.all([
     expect(host.getByRole('heading', { name: /Against Mr Fries/ })).toBeVisible(),
     expect(eli.getByRole('heading', { name: /Against Mr Fries/ })).toBeVisible(),
@@ -74,8 +84,6 @@ test('a round against Mr Fries: his picks recompute, the room takes what it shou
   await expect(eli.getByText(/whole office vs the house/i)).toBeVisible();
   await expect(eli.getByText(/Waiting for the quizmaster/)).toBeVisible();
   await expect(host.getByRole('button', { name: 'Next question' })).toBeVisible();
-  const holding = await readRoom(code);
-  expect(holding.phase).toBe('lobby');
   expect(holding.chaserEnabled).toBe(true);
   if (isNewMode('chaser', todayIso())) {
     await expect(eli.locator('.card .new-sticker')).toHaveText('New');
@@ -106,8 +114,13 @@ test('a round against Mr Fries: his picks recompute, the room takes what it shou
   expect(hostFit.topic).toBeLessThanOrEqual(1);
   await host.setViewportSize({ width: 1280, height: 720 });
 
-  await host.getByRole('button', { name: 'Next question' }).click();
-  const started = await until(() => readRoom(code), (room) => room.phase === 'question');
+  // Nobody taps. The host opens question one about three seconds after the card.
+  const started = await until(() => readRoom(code), (room) => room.phase === 'question', 8_000);
+  const openedAt = started.questionOpenedAt;
+  if (typeof openedAt !== 'number') throw new Error('expected the question to carry questionOpenedAt');
+  const waited = openedAt - cardAt;
+  expect(waited).toBeGreaterThanOrEqual(2_500);
+  expect(waited).toBeLessThan(5_000);
   expect(started.questions.every((question) => typeof question.chaserRate === 'number')).toBe(true);
   await expect(host.getByRole('heading', { name: /Against Mr Fries/ })).toHaveCount(0);
   await expect(host.getByRole('timer')).toHaveAttribute('aria-label', /^(9|10) seconds remaining$/);

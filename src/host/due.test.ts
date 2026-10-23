@@ -4,12 +4,15 @@ import { revealBackoffMs } from '../engine/revealGate';
 import { PICK_GRACE_MS, PICK_MS, REVEAL_GRACE_MS, TALK_MS, type Standoff } from '../engine/standoff';
 import { createRoom, type QuizQuestion, type RoomState } from '../engine/state';
 import {
+  CHASER_INTRO_MS,
   FRESH_MEMORY,
   MAX_REVEAL_RETRIES,
+  OPEN_AGAIN_MS,
   began,
   dueNow,
   failed,
   keepDue,
+  openQuestionMove,
   reapDue,
   revealCost,
   revealMove,
@@ -72,6 +75,7 @@ const view = baseView;
 
 const kinds = (moves: HostMove[]): string[] => moves.map((move) => move.kind);
 const reveals = (moves: HostMove[]): HostMove[] => moves.filter((move) => move.kind === 'reveal');
+const opens = (moves: HostMove[]): HostMove[] => moves.filter((move) => move.kind === 'openQuestion');
 
 /** The beat is due on every first look; take it so a case can talk about the rest. */
 function beaten(at: number): HostMemory {
@@ -140,7 +144,7 @@ describe('the reveal on the clock', () => {
     const room = questionRoom({
       phase: 'lobby',
       chaserEnabled: true,
-      chaserIntro: { durationSecs: 10 },
+      chaserIntro: { at: GATE_OPEN, durationSecs: 10 },
       questionOpenedAt: null,
     });
     expect(reveals(dueNow(view({ room, clockExpired: true }), beaten(GATE_OPEN)).moves)).toEqual([]);
@@ -395,6 +399,91 @@ describe('keeping the round', () => {
     const finalTable = { players: questionRoom().players, scores: { host: 900, ann: 100 } };
     const move = keepDue(view({ room, finalTable }), FRESH_MEMORY);
     expect(move?.kind === 'keepGame' && Object.keys(move.record.players).sort()).toEqual(['ann', 'host']);
+  });
+});
+
+describe('Mr Fries’s card', () => {
+  function cardRoom(at: number): RoomState {
+    return questionRoom({
+      phase: 'lobby',
+      gameId: null,
+      chaserEnabled: true,
+      chaserIntro: { at, durationSecs: 10 },
+      questionOpenedAt: null,
+    });
+  }
+
+  test('opens question one once three seconds have passed, and not a moment sooner', () => {
+    const at = 5_000;
+    const room = cardRoom(at);
+    const early = dueNow(view({ room, now: at + CHASER_INTRO_MS - 1, clockExpired: false }), beaten(at));
+    expect(opens(early.moves)).toEqual([]);
+    expect(early.wakeInMs).toBe(1);
+
+    const due = dueNow(view({ room, now: at + CHASER_INTRO_MS, clockExpired: false }), beaten(at));
+    expect(opens(due.moves)).toEqual([{ kind: 'openQuestion', key: String(at), durationSecs: 10 }]);
+  });
+
+  test('a tap at the same moment as the timer is the same open, sent once', () => {
+    const at = 5_000;
+    const now = at + CHASER_INTRO_MS;
+    const room = cardRoom(at);
+    const due = dueNow(view({ room, now, clockExpired: false }), beaten(now));
+    const move = opens(due.moves)[0];
+    if (!move) throw new Error('expected an open');
+    const inFlight = began(due.memory, move, { room, now });
+    const again = view({ room, now, clockExpired: false });
+    expect(opens(dueNow(again, inFlight).moves)).toEqual([]);
+    expect(openQuestionMove(again, inFlight, true)).toBeNull();
+  });
+
+  test('the quizmaster can open it before the three seconds', () => {
+    const at = 1_000;
+    const now = at + 200;
+    const room = cardRoom(at);
+    const waiting = view({ room, now, clockExpired: false });
+    expect(opens(dueNow(waiting, beaten(now)).moves)).toEqual([]);
+    expect(openQuestionMove(waiting, beaten(now), true)).toEqual({
+      kind: 'openQuestion',
+      key: String(at),
+      durationSecs: 10,
+    });
+  });
+
+  test('a reload keeps the time already spent, and does not open a question that is already open', () => {
+    const at = 1_000;
+    const now = at + 1_000;
+    const waiting = cardRoom(at);
+    const due = dueNow(view({ room: waiting, now, clockExpired: false }), FRESH_MEMORY);
+    expect(opens(due.moves)).toEqual([]);
+    expect(due.wakeInMs).toBe(CHASER_INTRO_MS - 1_000);
+
+    const opened = questionRoom({ chaserEnabled: true, chaserIntro: null });
+    expect(opens(dueNow(view({ room: opened, now: at + 9_000 }), FRESH_MEMORY).moves)).toEqual([]);
+  });
+
+  test('only the host opens it', () => {
+    const at = 1_000;
+    const room = cardRoom(at);
+    const due = dueNow(
+      view({ room, now: at + CHASER_INTRO_MS, isHost: false, clockExpired: false }),
+      FRESH_MEMORY,
+    );
+    expect(opens(due.moves)).toEqual([]);
+  });
+
+  test('a failed open waits, then is due again', () => {
+    const at = 1_000;
+    const now = at + CHASER_INTRO_MS;
+    const room = cardRoom(at);
+    const due = dueNow(view({ room, now, clockExpired: false }), beaten(now));
+    const move = opens(due.moves)[0];
+    if (!move) throw new Error('expected an open');
+    const after = failed(began(due.memory, move, { room, now }), move, now);
+    const early = dueNow(view({ room, now: now + OPEN_AGAIN_MS - 1, clockExpired: false }), after);
+    expect(opens(early.moves)).toEqual([]);
+    expect(early.wakeInMs).toBe(1);
+    expect(opens(dueNow(view({ room, now: now + OPEN_AGAIN_MS, clockExpired: false }), after).moves)).toHaveLength(1);
   });
 });
 

@@ -120,12 +120,18 @@ export function toRoomState(code: string, data: DocumentData, answers: Record<st
   };
 }
 
-/** The parked window, or null. Anything else is not a card the room can leave. */
+/**
+ * The parked window, or null. Anything else is not a card the room can leave.
+ *
+ * A card with no finite `at` is treated as already due. Dropping it would put
+ * the lobby back in front of a round that had already left it.
+ */
 function readChaserIntro(value: unknown): RoomState['chaserIntro'] {
   if (typeof value !== 'object' || value === null) return null;
   const durationSecs = (value as { durationSecs?: unknown }).durationSecs;
   if (typeof durationSecs !== 'number' || !isDurationAllowed(durationSecs)) return null;
-  return { durationSecs };
+  const at = (value as { at?: unknown }).at;
+  return { at: typeof at === 'number' && Number.isFinite(at) ? at : 0, durationSecs };
 }
 
 /**

@@ -1067,12 +1067,12 @@ describe('Mr Fries’s title card', () => {
     const lobby = chaserLobby();
 
     // #when his card goes up
-    const intro = reduce(lobby, { type: 'chaserIntro', durationSecs: 10 });
+    const intro = reduce(lobby, { type: 'chaserIntro', at: 1_000, durationSecs: 10 });
 
     // #then the question has not opened, so nothing is on the clock
     expect(intro.phase).toBe('lobby');
     expect(intro.questionOpenedAt).toBeNull();
-    expect(intro.chaserIntro).toEqual({ durationSecs: 10 });
+    expect(intro.chaserIntro).toEqual({ at: 1_000, durationSecs: 10 });
 
     // #when the quizmaster opens question one
     const opened = reduce(intro, { type: 'start', at: 5_000, gameId: 'game-1', durationSecs: 10 });
@@ -1084,6 +1084,9 @@ describe('Mr Fries’s title card', () => {
       durationSecs: opened.durationSecs,
       intro: opened.chaserIntro,
     }).toEqual({ phase: 'question', openedAt: 5_000, durationSecs: 10, intro: null });
+
+    // #and opening it again changes nothing, so a second write is not a second question
+    expect(reduce(opened, { type: 'start', at: 9_000, gameId: 'game-2', durationSecs: 10 })).toBe(opened);
   });
 
   test('comes after the opening titles, and takes the window they were holding', () => {
@@ -1096,17 +1099,17 @@ describe('Mr Fries’s title card', () => {
     });
 
     // #when the quizmaster leaves it for Mr Fries
-    const intro = reduce(titles, { type: 'chaserIntro', durationSecs: titles.form?.durationSecs ?? 0 });
+    const intro = reduce(titles, { type: 'chaserIntro', at: 1_000, durationSecs: titles.form?.durationSecs ?? 0 });
 
     // #then only his card is up, still before the question, on that same window
     expect(intro.form).toBeNull();
     expect(intro.phase).toBe('lobby');
-    expect(intro.chaserIntro).toEqual({ durationSecs: 10 });
+    expect(intro.chaserIntro).toEqual({ at: 1_000, durationSecs: 10 });
   });
 
   test('is refused once a question is open, and on a round that is not against him', () => {
     const playing = reduce(chaserLobby(), { type: 'start', at: 1_000, gameId: 'game-1', durationSecs: 10 });
-    expect(reduce(playing, { type: 'chaserIntro', durationSecs: 10 })).toBe(playing);
+    expect(reduce(playing, { type: 'chaserIntro', at: 1_000, durationSecs: 10 })).toBe(playing);
 
     const plain = apply(
       createRoom('ABCD'),
@@ -1120,15 +1123,17 @@ describe('Mr Fries’s title card', () => {
         stealEnabled: false,
       },
     );
-    expect(reduce(plain, { type: 'chaserIntro', durationSecs: 10 })).toBe(plain);
+    expect(reduce(plain, { type: 'chaserIntro', at: 1_000, durationSecs: 10 })).toBe(plain);
   });
 
   test('is refused for a window the rules would reject, and putting it up twice changes nothing', () => {
     const lobby = chaserLobby();
-    expect(reduce(lobby, { type: 'chaserIntro', durationSecs: 1 })).toBe(lobby);
+    expect(reduce(lobby, { type: 'chaserIntro', at: 1_000, durationSecs: 1 })).toBe(lobby);
+    expect(reduce(lobby, { type: 'chaserIntro', at: Number.NaN, durationSecs: 10 })).toBe(lobby);
 
-    const intro = reduce(lobby, { type: 'chaserIntro', durationSecs: 10 });
-    expect(reduce(intro, { type: 'chaserIntro', durationSecs: 10 })).toBe(intro);
+    const intro = reduce(lobby, { type: 'chaserIntro', at: 1_000, durationSecs: 10 });
+    // A later stamp must not restart the wait the host is already counting.
+    expect(reduce(intro, { type: 'chaserIntro', at: 4_000, durationSecs: 10 })).toBe(intro);
   });
 });
 

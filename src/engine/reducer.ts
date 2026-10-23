@@ -37,11 +37,13 @@ export type Action =
   /**
    * Mr Fries's title card, still in the lobby, before question one.
    *
-   * Same rule as the opening titles: the card stays until the quizmaster opens
-   * the question, and nothing here is on a timer. A card laid over question one
-   * would come straight out of the answering window.
+   * `at` is when it went up. The host opens the question three seconds later
+   * (`src/host/due.ts`); the quizmaster's tap is the same `start`, only sooner.
+   * Nothing here is on a timer. A second `start` finds the question already
+   * open and changes nothing. A card laid over question one would come straight
+   * out of the answering window.
    */
-  | { type: 'chaserIntro'; durationSecs: number }
+  | { type: 'chaserIntro'; at: number; durationSecs: number }
   | { type: 'leave'; uid: string }
   | {
       type: 'selectPack';
@@ -114,7 +116,7 @@ export function reduce(state: RoomState, action: Action): RoomState {
     case 'clearTitles':
       return state.form === null ? state : { ...state, form: null };
     case 'chaserIntro':
-      return showChaserIntro(state, action.durationSecs);
+      return showChaserIntro(state, action.at, action.durationSecs);
     case 'leave':
       return leave(state, action.uid);
     case 'selectPack':
@@ -258,14 +260,17 @@ function titles(
  * it would sit on a clock that is already running. The window is parked on the
  * card, as it is on the opening titles, because the rules will not take a new
  * `durationSecs` until a question opens.
+ *
+ * A card that is already up is left as it is, including its `at`. Putting it
+ * up again must not restart the three seconds the host is counting.
  */
-function showChaserIntro(state: RoomState, durationSecs: number): RoomState {
+function showChaserIntro(state: RoomState, at: number, durationSecs: number): RoomState {
   if (state.phase !== 'lobby') return state;
   if (!state.chaserEnabled || state.questions.length === 0) return state;
-  if (!isDurationAllowed(durationSecs)) return state;
+  if (!isDurationAllowed(durationSecs) || !Number.isFinite(at)) return state;
   if (state.form === null && state.chaserIntro?.durationSecs === durationSecs) return state;
 
-  return { ...state, form: null, chaserIntro: { durationSecs } };
+  return { ...state, form: null, chaserIntro: { at, durationSecs } };
 }
 
 function start(state: RoomState, at: number, gameId: string, durationSecs: number): RoomState {

@@ -493,8 +493,9 @@ function Game() {
             a question actually opens.
 
             A room the season knows nothing about has no titles to show. A round
-            against Mr Fries still waits on his card; any other round starts on
-            the one press it was given.
+            against Mr Fries still shows his card first; the host opens the
+            question from there. Any other round starts on the one press it was
+            given.
           */
           await dispatch([
             {
@@ -512,7 +513,7 @@ function Game() {
             ...(facts.length > 0
               ? [{ type: 'titles' as const, at: Date.now(), facts, durationSecs }]
               : chaserEnabled
-                ? [{ type: 'chaserIntro' as const, durationSecs }]
+                ? [{ type: 'chaserIntro' as const, at: Date.now(), durationSecs }]
                 : [
                     {
                       type: 'start' as const,
@@ -599,10 +600,11 @@ function Game() {
   const handleBeginRound = useCallback(() => {
     if (!form) return;
     setActionError(null);
-    // The field card first, then Mr Fries, then the question. Both cards wait
-    // for a tap: the clock starts on the tap that opens question one.
+    // The field card first, then Mr Fries, then the question. The titles wait
+    // for a tap. His card does not: the host opens question one a few seconds
+    // later, and the answering clock starts at that open.
     if (room?.chaserEnabled) {
-      void dispatch({ type: 'chaserIntro', durationSecs: form.durationSecs }).catch(report);
+      void dispatch({ type: 'chaserIntro', at: Date.now(), durationSecs: form.durationSecs }).catch(report);
       return;
     }
     void dispatch({
@@ -613,17 +615,14 @@ function Game() {
     }).catch(report);
   }, [form, room?.chaserEnabled, dispatch, report]);
 
+  const { openQuestion } = host;
   const handleStartQuestion = useCallback(() => {
-    const intro = room?.chaserIntro;
-    if (!intro) return;
+    if (!room?.chaserIntro) return;
     setActionError(null);
-    void dispatch({
-      type: 'start',
-      at: Date.now(),
-      gameId: crypto.randomUUID(),
-      durationSecs: intro.durationSecs,
-    }).catch(report);
-  }, [room?.chaserIntro, dispatch, report]);
+    // The same open the timer sends, so a tap on the same tick cannot start
+    // the question twice. `dispatch` would be a second writer.
+    void openQuestion().catch(report);
+  }, [room?.chaserIntro, openQuestion, report]);
 
   const handleCancelTitles = useCallback(() => {
     setActionError(null);
