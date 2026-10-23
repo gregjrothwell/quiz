@@ -1,6 +1,6 @@
 import { NO_HISTORY, type AskedHistory } from '../engine/askedHistory';
 import { dealRandomRound, RANDOM_SOURCES, type RandomSource } from '../engine/randomRound';
-import { buildQuizQuestions, type Level, type QuizQuestion, type Rng } from '../engine/state';
+import { buildQuizQuestions, ladderFallbackNotices, type Level, type QuizQuestion, type Rng } from '../engine/state';
 import { rateFor } from '../engine/chaser';
 import { dealSurveyRound } from '../engine/survey';
 import type { PackId, SealedQuestion } from '../questions/types';
@@ -20,6 +20,11 @@ import type { PackPorts } from './ports';
  */
 export interface Dealt {
   questions: QuizQuestion[];
+  /**
+   * Set when The Ladder filled a difficulty from another. Empty otherwise,
+   * including a ramp that climbed and every round that is not a ramp.
+   */
+  ladderNotices: readonly string[];
   /** Writes the season history. Never rejects: a failure here must not stop a round. */
   remember: () => Promise<void>;
 }
@@ -65,6 +70,7 @@ async function dealSinglePack(
   const questions = buildQuizQuestions(playable, count, level, rng, asked.ids);
   return {
     questions,
+    ladderNotices: level === 'ramp' ? ladderFallbackNotices(questions, count) : [],
     remember: async () => {
       await ports
         .recordAsked(
@@ -89,6 +95,7 @@ async function dealSurvey(ports: PackPorts, rng: Rng): Promise<Dealt> {
   const promptIds = [...new Set(questions.flatMap((question) => question.survey?.promptId ?? []))];
   return {
     questions,
+    ladderNotices: [],
     remember: async () => {
       await ports.recordAsked('survey', promptIds, asked).catch(() => undefined);
     },
@@ -139,6 +146,7 @@ async function dealRandom(count: number, level: Level, ports: PackPorts, rng: Rn
   );
   return {
     questions,
+    ladderNotices: [],
     remember: async () => {
       await Promise.all(
         RANDOM_SOURCES.map((source) => {

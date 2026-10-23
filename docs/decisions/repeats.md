@@ -1,6 +1,6 @@
 # Why the office kept seeing the same questions
 
-> **Owner: Greg Rothwell. Last updated: 26 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 23 October 2026. Budget: 250 lines.**
 
 Office feedback after the round of 1 September: too many repeats, and a suspicion
 that the squad work broke something. The suspicion was half right, and the half
@@ -94,6 +94,25 @@ one, and Best of British has no bottom rung at all.
 That cost is real and is now in the handover as an open item. It is a `stats`
 problem, not a selection one — which is the whole point of writing this down
 rather than fixing the wrong layer.
+
+## 23 October 2026 — the fallback is said out loud
+
+Selection is unchanged. A spent bucket is still filled from whichever level
+has the most left, and a repeat of the wanted difficulty is still refused
+while fresh questions of another level exist. What changed is that the room
+is told. `ladderFallbackNotices` compares the dealt ramp with the plan for
+the length that was asked for. A level over its plan is the top-up; the
+levels under theirs are what it stood in for. The question screen shows one
+or two lines, for example "Out of hard questions in this pack — using
+medium". Some of that level still in the round is "Not enough", not "Out
+of". A pack that is simply smaller than the round is not described as a
+swap. A ramp that climbed, including by repeating the difficulty it wanted,
+writes nothing — the field is left off the room document, so those rounds
+persist the same shape as before. No rules change.
+
+Re-rating the unrated pile, letting questions return after a gap, and topping
+up thin buckets are the decision in [`ladder-rerating.md`](ladder-rerating.md).
+Not chosen.
 
 ## What did change in `buildRamp`
 

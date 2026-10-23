@@ -1,6 +1,6 @@
 # What to build next, and why you cannot A/B test yet
 
-> **Owner: Greg Rothwell. Last updated: 8 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 23 October 2026. Budget: 250 lines.**
 
 Research, not a plan to approve. Greg asked for the next two or three most
 valuable things with the homework done, and raised A/B testing because several
@@ -100,6 +100,10 @@ The recorded fix is `stats/{questionId}` — real difficulty from real play rath
 than the harvester's label. **That is precisely what §1 produces**, so this stops
 being a build and becomes a query. Third rather than second only because nobody
 has complained about it, where eight people walked out of a melody round.
+
+**Corrected 23 October 2026.** A fold of questions already played cannot
+re-rate the ones that will be served next ([`beat-the-chaser.md`](beat-the-chaser.md)).
+The fallback is now announced. Whether to re-rate is [`ladder-rerating.md`](ladder-rerating.md).
 
 ## The wager tweak — answered, and do not A/B it
 

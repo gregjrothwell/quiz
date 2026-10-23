@@ -1,4 +1,4 @@
-import { serverTimestamp, Timestamp, type DocumentData } from 'firebase/firestore';
+import { deleteField, serverTimestamp, Timestamp, type DocumentData } from 'firebase/firestore';
 import type { AnswerDoc } from '../engine/answers';
 import { readBrowsing, readPackVotes, readVoteTaps, writesTheVote } from '../engine/packVote';
 import { LEGACY_DURATION_SECS, type Answer, type RoomState } from '../engine/state';
@@ -114,7 +114,21 @@ export function toRoomState(code: string, data: DocumentData, answers: Record<st
     // room keeps the derived quizmaster. See `resolveHost`.
     hostUid: typeof data['hostUid'] === 'string' ? data['hostUid'] : null,
     lastPicks: readPicks(data['lastPicks']),
+    // Absent on every room that climbed as planned, and on every room from
+    // before the notice. Anything that is not a short list of sentences is
+    // dropped: the host writes these, and a member must not be able to park
+    // a page of text on the document every client re-reads.
+    ladderNotices: readLadderNotices(data['ladderNotices']),
   };
+}
+
+const LADDER_NOTICE_MAX = 160;
+
+function readLadderNotices(value: unknown): readonly string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((line): line is string => typeof line === 'string' && line.length > 0 && line.length <= LADDER_NOTICE_MAX)
+    .slice(0, 3);
 }
 
 /**
@@ -175,6 +189,11 @@ export function toPersisted(state: RoomState): PersistedRoom {
     browsing: state.browsing,
     hostUid: state.hostUid,
     lastPicks: state.lastPicks,
+    // Omitted when empty so a Ladder that climbed, and every other round,
+    // persists the same fields it did before this existed.
+    ...(state.ladderNotices && state.ladderNotices.length > 0
+      ? { ladderNotices: state.ladderNotices }
+      : {}),
   };
 }
 
@@ -227,6 +246,12 @@ export function toUpdate(state: RoomState, previous: RoomState | null): Record<s
   // claim a question opened earlier than it did and unlock the answer early.
   // See src/lib/vault.ts.
   if (opensAQuestion(state, previous)) update.openedAt = serverTimestamp();
+
+  // A later round that climbs must not keep the previous round's notice.
+  // `updateDoc` merges, so leaving the key off would.
+  if ((!state.ladderNotices || state.ladderNotices.length === 0) && (previous?.ladderNotices?.length ?? 0) > 0) {
+    update.ladderNotices = deleteField();
+  }
 
   return update;
 }
