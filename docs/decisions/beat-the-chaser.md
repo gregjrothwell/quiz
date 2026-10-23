@@ -1,6 +1,6 @@
 # Beat the Chaser — story and acceptance criteria
 
-> **Owner: Greg Rothwell. Last updated: 22 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 23 October 2026. Budget: 250 lines.**
 
 **Status: APPROVED 22 October 2026, as recommended.** Greg: *"Approve all four stories as recommended: Mr Fries on pack×difficulty rates, room wins on more than half right, 🍟 until there's art, fix HANDOVER item 8; rig probe now and rig only on a pass; Commentator without Gemini, spoken from the host only, you draft ~30 lines; Wrapped's five cards opening 5 D[ec, Christmas finale left out for now]"* (the message was cut at 300 characters; the bracket is the rest of the button he pressed). Wow item 2 of
 [`direction-oct-2026.md`](direction-oct-2026.md#5-wow--all-five-accepted), and
@@ -97,6 +97,27 @@ and difficulty** — the number Mr Fries plays to.
 - e2e `beat-the-chaser.spec.ts`: 10 questions, every pick recomputed, room took
   all 10, result on the podium (C1, C3, C4, C6, C7). `host-writes` still
   matches its recording with him off (C5).
+
+## The intro, 23 October 2026
+
+Before question one, on its own card, the same way the standings carry the next
+round and Share or Shaft carries its own: **Against Mr Fries 🍟**, then **The
+whole office vs the house**, on every screen including the host. The New
+sticker stays while `MODE_NEW_UNTIL` says the mode is new (through 5 Nov 2026).
+Players see **Get ready — question one is coming up** under the card.
+
+The room is still in the lobby, so the answering clock has not started. The
+host — the only device that writes the round on — opens question one three
+seconds after the card goes up (`CHASER_INTRO_MS` in `src/host/due.ts`). That
+wait is not the lit-lamp reveal hold (`IN_FLIGHT_HOLD_MS`, [`cass-q1.md`](cass-q1.md)):
+the card is before the clock, the hold is after it. The moment is `chaserIntro.at`
+on the room, so a reload continues that wait. The quizmaster can tap **Next question**
+sooner. That tap and the timer are one
+open: a second `start` finds the question already open and writes nothing.
+A ten-second question keeps ten seconds, because the clock starts when the
+question opens. No rules change: the card is a field on the room, and
+`wellFormed()` does not `hasOnly` the room's keys. The host's reveal still
+measures the full window from the moment the question opens.
 
 ## Cut from v1
 

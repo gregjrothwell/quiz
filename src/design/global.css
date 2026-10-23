@@ -2538,6 +2538,16 @@ select.input option {
   margin: 0 0 0.5rem;
 }
 
+/* Why the climb stopped. Sits under the question header, full width: the
+   ladder column cannot hold a sentence, and a phone hides the rung labels. */
+.ladder-notice {
+  margin: 0.65rem 0 0;
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
 /*
  * Vertical ladder on a laptop, horizontal pip strip on a phone. Fifteen
  * full-width rows under the answers is more ladder than a phone can afford, so
@@ -4688,6 +4698,99 @@ select.input option {
   background: var(--cyan);
   box-shadow: 0 0 10px 1px rgb(41 214 255 / 0.6);
   transform: translateY(-2px);
+}
+
+/* The lobby, under the room code, while this browser has not opened the page. */
+.updates-teaser {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: rgb(255 178 38 / 0.08);
+  border: 1px solid rgb(255 178 38 / 0.45);
+  border-radius: 8px 8px 3px 3px;
+  padding: 0.65rem 0.9rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.updates-teaser:hover,
+.updates-teaser:focus-visible {
+  border-color: var(--amber);
+}
+
+.updates-teaser__kicker {
+  display: block;
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.updates-teaser__line {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+/* A round still inside its `newUntil` date. Amber, so it is not the cyan
+   "Quizmaster's looking" tag and not a difficulty chip. */
+.new-sticker {
+  display: inline-block;
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: #1a1203;
+  background: var(--amber);
+  border-radius: var(--radius-sm);
+  padding: 0.22rem 0.45rem;
+  box-shadow: 0 0 12px 1px rgb(255 178 38 / 0.45);
+}
+
+.pack__new {
+  align-self: flex-start;
+  margin-bottom: 0.45rem;
+}
+
+.pick__new {
+  display: block;
+  width: fit-content;
+  margin-bottom: 0.4rem;
+}
+
+.card .new-sticker {
+  position: relative;
+  margin-top: 0.85rem;
+}
+
+/* Before question one, on its own screen. Shorter than the standings card so
+   "Against Mr Fries" fits a 375px phone. The ghost is letters: a colour emoji
+   ignores the faint cyan and paints a full-size fries over the title. The
+   chip is smaller than the shout, or it sits on the sound control. */
+.card--intro {
+  padding-block: 0.85rem;
+}
+
+.card--intro .card__round {
+  font-size: clamp(1.35rem, 6vw, 3rem);
+}
+
+.card--intro .card__chip {
+  font-size: 0.72em;
+}
+
+.card--intro .card__topic {
+  letter-spacing: 0.16em;
+  margin-top: 0.45rem;
+}
+
+.card--intro .new-sticker {
+  margin-top: 0.4rem;
 }
 
 .updates__entry { margin-top: 1rem; }

@@ -34,6 +34,16 @@ export type Action =
   | { type: 'titles'; at: number; facts: FormFact[]; durationSecs: number }
   /** Back to the lobby controls, for a quizmaster who has changed their mind. */
   | { type: 'clearTitles' }
+  /**
+   * Mr Fries's title card, still in the lobby, before question one.
+   *
+   * `at` is when it went up. The host opens the question three seconds later
+   * (`src/host/due.ts`); the quizmaster's tap is the same `start`, only sooner.
+   * Nothing here is on a timer. A second `start` finds the question already
+   * open and changes nothing. A card laid over question one would come straight
+   * out of the answering window.
+   */
+  | { type: 'chaserIntro'; at: number; durationSecs: number }
   | { type: 'leave'; uid: string }
   | {
       type: 'selectPack';
@@ -48,6 +58,11 @@ export type Action =
       chaserEnabled?: boolean;
       /** What the season says about each player, for the Commentator. */
       history?: RoomState['history'];
+      /**
+       * Set when The Ladder filled a difficulty from another. Omitted by every
+       * caller that is not dealing a ramp, and stored as nothing in that case.
+       */
+      ladderNotices?: readonly string[];
     }
   /**
    * `durationSecs` is settled here and nowhere else. The security rules pin it
@@ -105,6 +120,8 @@ export function reduce(state: RoomState, action: Action): RoomState {
       return titles(state, action.at, action.facts, action.durationSecs);
     case 'clearTitles':
       return state.form === null ? state : { ...state, form: null };
+    case 'chaserIntro':
+      return showChaserIntro(state, action.at, action.durationSecs);
     case 'leave':
       return leave(state, action.uid);
     case 'selectPack':
@@ -119,6 +136,7 @@ export function reduce(state: RoomState, action: Action): RoomState {
         action.standoffEnabled ?? false,
         action.chaserEnabled ?? false,
         action.history ?? {},
+        action.ladderNotices ?? [],
       );
     case 'start':
       return start(state, action.at, action.gameId, action.durationSecs);
@@ -202,6 +220,7 @@ function selectPack(
   standoffEnabled: boolean,
   chaserEnabled: boolean,
   history: RoomState['history'],
+  ladderNotices: readonly string[],
 ): RoomState {
   if (state.phase !== 'lobby') return state;
   return {
@@ -215,6 +234,7 @@ function selectPack(
     standoffEnabled,
     chaserEnabled,
     history,
+    ladderNotices,
   };
 }
 
@@ -241,6 +261,26 @@ function titles(
   return { ...state, form: { at, facts, durationSecs } };
 }
 
+/**
+ * Puts Mr Fries's card up, in the lobby, before question one.
+ *
+ * Refused outside the lobby and on a round that is not against him: mid-round
+ * it would sit on a clock that is already running. The window is parked on the
+ * card, as it is on the opening titles, because the rules will not take a new
+ * `durationSecs` until a question opens.
+ *
+ * A card that is already up is left as it is, including its `at`. Putting it
+ * up again must not restart the three seconds the host is counting.
+ */
+function showChaserIntro(state: RoomState, at: number, durationSecs: number): RoomState {
+  if (state.phase !== 'lobby') return state;
+  if (!state.chaserEnabled || state.questions.length === 0) return state;
+  if (!isDurationAllowed(durationSecs) || !Number.isFinite(at)) return state;
+  if (state.form === null && state.chaserIntro?.durationSecs === durationSecs) return state;
+
+  return { ...state, form: null, chaserIntro: { at, durationSecs } };
+}
+
 function start(state: RoomState, at: number, gameId: string, durationSecs: number): RoomState {
   if (state.phase !== 'lobby') return state;
   if (state.questions.length === 0) return state;
@@ -261,8 +301,10 @@ function start(state: RoomState, at: number, gameId: string, durationSecs: numbe
     lastPicks: {},
     // The titles have done their job the moment the first question is up, and
     // leaving them on the document would put them back on screen at the end of
-    // the round, when `reset` returns the room to the lobby.
+    // the round, when `reset` returns the room to the lobby. The chaser card
+    // with them: it is the beat before this question, and the clock starts now.
     form: null,
+    chaserIntro: null,
     // The last round's final, if it had one, is over.
     standoff: null,
     // The vote has done its job once the round is chosen.
@@ -631,10 +673,12 @@ function reset(state: RoomState): RoomState {
     lastSteal: null,
     lastPicks: {},
     form: null,
+    chaserIntro: null,
     scores: Object.fromEntries(Object.keys(state.players).map((uid) => [uid, 0])),
     skipped: [],
     // Cleared so the next round mints its own id and counts separately.
     gameId: null,
+    ladderNotices: [],
     standoff: null,
     packVotes: {},
     voteTaps: {},

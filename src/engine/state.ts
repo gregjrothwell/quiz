@@ -331,6 +331,25 @@ export interface RoomState {
    */
   chaserEnabled: boolean;
   /**
+   * The Ladder saying it filled a difficulty from another. Empty on every
+   * other round, and omitted from the room document when empty so a climb
+   * writes the same shape it did before. No rules change: `wellFormed()` does
+   * not `hasOnly` the room's keys. See `ladderFallbackNotices`.
+   */
+  ladderNotices?: readonly string[];
+  /**
+   * Mr Fries's title card, up in the lobby before question one.
+   *
+   * The answering window is stamped when a question opens, so the card cannot
+   * sit on that clock — the same reason the round title lives on the standings.
+   * `at` is when the card went up, on the writer's clock. The host opens the
+   * question three seconds later, and a reload continues that wait rather than
+   * starting it again. `durationSecs` is parked on it because the rules pin the
+   * room's own window until a question actually opens. Null once the question
+   * is open. No rules change: `wellFormed()` does not `hasOnly` the room's keys.
+   */
+  chaserIntro: { at: number; durationSecs: number } | null;
+  /**
    * What the opening titles loaded about each player — rounds played, wins, best
    * round — kept for the round so the Commentator can say "first win" on every
    * screen alike (docs/decisions/commentator.md). Empty when the season has
@@ -429,6 +448,9 @@ export function createRoom(code: string): RoomState {
     jigsawEnabled: false,
     standoffEnabled: false,
     chaserEnabled: false,
+    /** Empty unless this round's Ladder had to fill a difficulty from another. */
+    ladderNotices: [],
+    chaserIntro: null,
     history: {},
     standoff: null,
     packVotes: {},
@@ -568,6 +590,46 @@ export function rampPlan(count: number): Record<Difficulty, number> {
   return { easy, hard, medium: Math.max(0, wanted - easy - hard) };
 }
 
+function joinDifficulties(levels: readonly Difficulty[]): string {
+  if (levels.length <= 1) return levels[0] ?? '';
+  if (levels.length === 2) return `${levels[0]} and ${levels[1]}`;
+  return `${levels[0]}, ${levels[1]} and ${levels[2]}`;
+}
+
+/**
+ * What The Ladder should tell the room when it could not fill a difficulty
+ * from that difficulty.
+ *
+ * Compared with the plan for the length that was *asked for*, not the length
+ * that came back. A pack smaller than the round is short at every level and
+ * says nothing — nothing was swapped in. A level over its plan is the top-up
+ * in {@link buildRamp}, and the levels under theirs are what it stood in for.
+ * Repeating a question of the wanted difficulty does not trip this: those
+ * still meet the plan.
+ *
+ * Empty for anything that is not a ramp. Callers pass a ramp's questions only.
+ */
+export function ladderFallbackNotices(
+  questions: readonly Pick<QuizQuestion, 'difficulty'>[],
+  requested: number,
+): string[] {
+  const plan = rampPlan(requested);
+  const counts: Record<Difficulty, number> = { easy: 0, medium: 0, hard: 0 };
+  for (const question of questions) counts[question.difficulty] += 1;
+
+  const extra = DIFFICULTIES.filter((level) => counts[level] > plan[level]);
+  const missing = DIFFICULTIES.filter((level) => counts[level] < plan[level]);
+  if (extra.length === 0 || missing.length === 0) return [];
+
+  const none = missing.filter((level) => counts[level] === 0);
+  const some = missing.filter((level) => counts[level] > 0);
+  const using = joinDifficulties(extra);
+  const line = (lead: 'Out of' | 'Not enough', levels: readonly Difficulty[]): string =>
+    `${lead} ${joinDifficulties(levels)} questions in this pack — using ${using}`;
+
+  return [...(none.length > 0 ? [line('Out of', none)] : []), ...(some.length > 0 ? [line('Not enough', some)] : [])];
+}
+
 /**
  * Splits a pool by level. `order` decides what the front of each bucket is:
  * a shuffle for fresh questions, and for repeats the order they arrived in —
@@ -602,6 +664,9 @@ function bucketByDifficulty(
  * On the packs the office plays that distinction is the whole game: the thin
  * `easy` and `hard` buckets are exhausted while `medium` is a thousand deep, so
  * a per-difficulty fallback would repeat a question every single round.
+ *
+ * Which questions are chosen is unchanged by the notice. {@link ladderFallbackNotices}
+ * reads the result afterwards and says which difficulty had to be filled from another.
  */
 function buildRamp(
   fresh: readonly SealedQuestion[],

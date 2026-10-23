@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 22 October 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 23 October 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -31,10 +31,10 @@ Built to replace Polly in Teams.
 | rules and App Check — Firestore and RTDB, then **auth**, then the debug token and why a deploy must not come off `master` | [`security.md`](decisions/security.md) · [`app-check-auth.md`](decisions/app-check-auth.md) · [`debug-token-leak.md`](decisions/debug-token-leak.md) |
 | **the vault oracle, `joinedAt`, the `at` stamp, presence names** | [`security-round-sept-2026.md`](decisions/security-round-sept-2026.md) |
 | **tightening any rule, gate or permission** — read this one *first*, it is why #56 broke the game | [`postmortem-the-pin-that-refused-the-reveal.md`](decisions/postmortem-the-pin-that-refused-the-reveal.md) |
-| **the CI deploy, the secret check, Playwright, the emulator**; anything that adds reads or writes | [`lead-time.md`](decisions/lead-time.md) (**go-live: Plan job, PR build reused, What's new gate**) · [`ci-deploy.md`](decisions/ci-deploy.md) · [`rules-from-ci.md`](decisions/rules-from-ci.md) · [`emulators.md`](decisions/emulators.md) · [`cost.md`](decisions/cost.md) · [`audit-backlog.md`](decisions/audit-backlog.md) |
+| **the CI deploy, the secret check, Playwright, the emulator**; anything that adds reads or writes | [`lead-time.md`](decisions/lead-time.md) (**go-live: Plan job, PR build reused, What's new gate**) · [`ci-deploy.md`](decisions/ci-deploy.md) · [`rules-from-ci.md`](decisions/rules-from-ci.md) · [`emulators.md`](decisions/emulators.md) (each e2e spec wipes first, 23 Oct, not live) · [`cost.md`](decisions/cost.md) · [`audit-backlog.md`](decisions/audit-backlog.md) |
 | — before assuming a style choice, a bug, or a claim in here | [`gotchas.md`](decisions/gotchas.md) · [`known-limits.md`](decisions/known-limits.md) · [`state-of-play.md`](decisions/state-of-play.md) |
 | what a question is worth, and why it is not a speed curve; **calling a Catchphrase** before the options (live 21 Oct, #104) | [`decisions/scoring.md`](decisions/scoring.md) · [`typed-answers.md`](decisions/typed-answers.md) |
-| the shareable result card, and how it gets to the player; **the What's new page** (live 22 Oct, #107) | [`decisions/final-card.md`](decisions/final-card.md) · [`updates-page.md`](decisions/updates-page.md) |
+| the shareable result card, and how it gets to the player; **the What's new page** (live 22 Oct, #107; lobby link, New stickers, and the Beat the Chaser intro that opens question one after a few seconds — players see “Get ready — question one is coming up”, 23 Oct, not live) | [`decisions/final-card.md`](decisions/final-card.md) · [`updates-page.md`](decisions/updates-page.md) |
 | what to build next, what each idea costs, what was turned down; **the 22 Oct direction review** (security sweep, the Lab, five wow ideas) | [`direction-oct-2026.md`](decisions/direction-oct-2026.md) · [`what-to-build-next.md`](decisions/what-to-build-next.md) · [`picking-up.md`](decisions/picking-up.md) · [`ideas-review.md`](decisions/ideas-review.md) · [`scope.md`](decisions/scope.md) |
 | picture, music, jigsaw or steal rounds, **negative points**, why melody played badly; **a random round**; **Survey Says** (live 22 Oct, #131 — [`survey-says.md`](decisions/survey-says.md)); **Beat the Chaser**, **the Commentator**, **Quiz Wrapped** (live 22 Oct, #136 — [`beat-the-chaser.md`](decisions/beat-the-chaser.md), [`commentator.md`](decisions/commentator.md), [`quiz-wrapped.md`](decisions/quiz-wrapped.md)) | [`round-types.md`](decisions/round-types.md) · [`melody-round.md`](decisions/melody-round.md) · [`random-round.md`](decisions/random-round.md) |
 | **Name that Tune** clips that give it away; **the volume slider and the two autoplay gates**; **the lobby sound check**; **the Apple Music badge and Apple's terms**; **Name the Artist** | [`tunes-round.md`](decisions/tunes-round.md) · [`tunes-title-gate.md`](decisions/tunes-title-gate.md) · [`audio-stack.md`](decisions/audio-stack.md) · [`sound-check.md`](decisions/sound-check.md) · [`known-limits.md`](decisions/known-limits.md) · [`name-the-artist.md`](decisions/name-the-artist.md) |
@@ -92,9 +92,9 @@ scoring 500 + rank 500/400/300/200/100.
    handover, two squads on one board. **Not the rank bonus or the wager** —
    [`round-types.md`](decisions/round-types.md#the-prose-was-wrong-and-that-is-a-finding).
 8. **The Ladder stops climbing** once a pack's thin `easy`/`hard` bucket is
-   spent — it substitutes medium. **Corrected 22 Oct:** a fold of `games/` does
-   not fix it — it rates only questions already played, which never come back
-   (65 rounds, 934 questions, 6 repeats; [`beat-the-chaser.md`](decisions/beat-the-chaser.md)). No fix chosen.
+   spent — it still substitutes, and says so (not live; [`repeats.md`](decisions/repeats.md)).
+   A fold of `games/` does not fix it ([`beat-the-chaser.md`](decisions/beat-the-chaser.md)).
+   Re-rating plan, not chosen: [`ladder-rerating.md`](decisions/ladder-rerating.md).
 9. **Rules are published by hand until W2 is live; then by CI on `master`** ([`rules-from-ci.md`](decisions/rules-from-ci.md)). Live = repo, read 15 Oct.
    `check-rules` **91/91 both ways, 27 September**; run it after any rules merge. Read [`security.md`](decisions/security.md) first.
 10. **Seed before any new ids ship** — `seed-vault -- --pack <id>`; unseeded breaks at reveal. **All seeded 17 Oct**, with
@@ -102,9 +102,9 @@ scoring 500 + rank 500/400/300/200/100.
 11. **`firstMs` and the pack picker are live and unplayed.** It is a deterrent,
     so the only test is whether his behaviour changes next round:
     [`first-touch.md`](decisions/first-touch.md).
-12. **Cass loses question 1 on 10s rounds** (8/24 missed; 0/22 on 15s, 21 Oct): her Q1 answers land
-    ~2–5.5s behind her own clock, no later one does, and a 10s fold leaves no room. Why is unknown:
-    **#98 live 21 Oct, a Q1 trace from every device**; next office round, `read-traces -- --name cass` ([`cass-q1.md`](decisions/cass-q1.md)).
+12. **Cass's question-one write is slow; she sees the question on time** (23 Oct, 24 traces): ack 4.8s and
+    2.4s, both counted. Same 4g room otherwise 0.1–0.3s (Rach 1.4s). The host holds the reveal up to 3s
+    for a lit lamp (Greg, 23 Oct: covers the 2.4s write; 15s rounds largely avoid it; 4.8–5.5s not covered). Not live ([`cass-q1.md`](decisions/cass-q1.md)).
 13. **Reveal over Firestore Lite, live 7 Oct (#71)**: all four at once, median vault step 71ms v #70's 167ms in a
     browser; **the next office round's `read-games` is the live check** ([`office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md#4-the-slow-reveal)).
 14. **Loose ends from 26–27 September**: five new tunes transcribed to nothing

@@ -1,7 +1,10 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 
 import { setEmulatorFlag } from './emulators';
+import { isolateFiles } from './isolate';
 import { admin } from './nodeClient';
+
+isolateFiles();
 
 /**
  * Quiz Wrapped through the app (docs/decisions/quiz-wrapped.md, W2, W4, W6):

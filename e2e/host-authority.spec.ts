@@ -1,7 +1,10 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test';
 
 import { setEmulatorFlag } from './emulators';
+import { isolateFiles } from './isolate';
 import { admin, seedVault, until } from './nodeClient';
+
+isolateFiles();
 
 /**
  * W3 through the app itself: the creator runs the round (AC12), every device

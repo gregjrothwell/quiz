@@ -1,6 +1,9 @@
 import { expect, test } from '@playwright/test';
 
 import { setEmulatorFlag } from './emulators';
+import { isolateFiles } from './isolate';
+
+isolateFiles();
 
 test.beforeEach(async ({ page }) => {
   await setEmulatorFlag(page);

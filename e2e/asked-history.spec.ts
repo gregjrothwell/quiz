@@ -2,7 +2,10 @@ import { expect, test } from '@playwright/test';
 import { deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore';
 
 import { mergeAsked } from '../src/engine/askedHistory';
+import { isolateFiles } from './isolate';
 import { player } from './nodeClient';
+
+isolateFiles();
 
 /**
  * A pack's question history, written as `recordAsked` writes it: the stored ids

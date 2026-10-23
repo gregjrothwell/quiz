@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { ChaserIntro } from './components/ChaserIntro';
 import { ColdOpen } from './components/ColdOpen';
 import { RigCheck } from './components/RigCheck';
 import { Stage } from './components/Stage';
@@ -32,6 +33,7 @@ import { useFinalistRecords } from './lib/useFinalistRecords';
 import { useFinalSnapshot } from './lib/useFinalSnapshot';
 import { useGameLog } from './lib/useGameLog';
 import { loadAsked, loadForm, recordAsked, recordGame, type Banked } from './lib/season';
+import { answerStillInFlight } from './host/due';
 import { dealRound } from './host/prepare';
 import type { PackPorts } from './host/ports';
 import { play } from './lib/sound';
@@ -321,6 +323,7 @@ function Game() {
     isHost: isQuizmaster,
     answersReady,
     clockExpired: clock.expired,
+    answerInFlight: room !== null && answerStillInFlight(room.players, room.answers, lamps),
     confirmedAt: questionConfirmedAt,
     durationMs,
     gameLog,
@@ -456,7 +459,7 @@ function Game() {
       setActionError(null);
       // Dealing, and remembering what was dealt, is `src/host/prepare.ts`.
       dealRound({ packId, count, level, jigsawEnabled, chaserEnabled }, PACK_PORTS)
-        .then(async ({ questions, remember }) => {
+        .then(async ({ questions, ladderNotices, remember }) => {
           const pack = packs.find((entry) => entry.id === packId);
 
           /*
@@ -491,8 +494,10 @@ function Game() {
             cannot go on the room's own `durationSecs`, which the rules pin until
             a question actually opens.
 
-            A room the season knows nothing about has no titles to show, and gets
-            the round it asked for on the one press it made.
+            A room the season knows nothing about has no titles to show. A round
+            against Mr Fries still shows his card first; the host opens the
+            question from there. Any other round starts on the one press it was
+            given.
           */
           await dispatch([
             {
@@ -506,17 +511,20 @@ function Game() {
               standoffEnabled,
               chaserEnabled,
               history,
+              ladderNotices,
             },
             ...(facts.length > 0
               ? [{ type: 'titles' as const, at: Date.now(), facts, durationSecs }]
-              : [
-                  {
-                    type: 'start' as const,
-                    at: Date.now(),
-                    gameId: crypto.randomUUID(),
-                    durationSecs,
-                  },
-                ]),
+              : chaserEnabled
+                ? [{ type: 'chaserIntro' as const, at: Date.now(), durationSecs }]
+                : [
+                    {
+                      type: 'start' as const,
+                      at: Date.now(),
+                      gameId: crypto.randomUUID(),
+                      durationSecs,
+                    },
+                  ]),
           ]);
 
           // After the round is safely under way, for the same reason.
@@ -595,13 +603,29 @@ function Game() {
   const handleBeginRound = useCallback(() => {
     if (!form) return;
     setActionError(null);
+    // The field card first, then Mr Fries, then the question. The titles wait
+    // for a tap. His card does not: the host opens question one a few seconds
+    // later, and the answering clock starts at that open.
+    if (room?.chaserEnabled) {
+      void dispatch({ type: 'chaserIntro', at: Date.now(), durationSecs: form.durationSecs }).catch(report);
+      return;
+    }
     void dispatch({
       type: 'start',
       at: Date.now(),
       gameId: crypto.randomUUID(),
       durationSecs: form.durationSecs,
     }).catch(report);
-  }, [form, dispatch, report]);
+  }, [form, room?.chaserEnabled, dispatch, report]);
+
+  const { openQuestion } = host;
+  const handleStartQuestion = useCallback(() => {
+    if (!room?.chaserIntro) return;
+    setActionError(null);
+    // The same open the timer sends, so a tap on the same tick cannot start
+    // the question twice. `dispatch` would be a second writer.
+    void openQuestion().catch(report);
+  }, [room?.chaserIntro, openQuestion, report]);
 
   const handleCancelTitles = useCallback(() => {
     setActionError(null);
@@ -710,6 +734,11 @@ function Game() {
     );
   }
 
+  /*
+    Same page from the landing and from the lobby. This return does not clear
+    the room, and the listener above keeps running while the page is open, so
+    Back lands a join-link player in the room they were waiting in.
+  */
   if (showUpdates) {
     return (
       <Stage>
@@ -761,6 +790,9 @@ function Game() {
           onBack={handleCancelTitles}
         />
       )) ||
+        (room.phase === 'lobby' && room.chaserIntro && (
+          <ChaserIntro isQuizmaster={isQuizmaster} onStart={handleStartQuestion} />
+        )) ||
         (room.phase === 'lobby' && (
         <>
         <Lobby
@@ -779,6 +811,7 @@ function Game() {
           onBrowse={(packId) => void writeBrowsing(packId).catch(report)}
           onStart={handleStart}
           onLeave={handleLeave}
+          onUpdates={() => setShowUpdates(true)}
         />
         {uid ? <RigCheck code={room.code} uid={uid} isHost={isQuizmaster} /> : null}
         </>

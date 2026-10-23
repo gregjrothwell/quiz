@@ -4,7 +4,10 @@ import { get, ref, set } from 'firebase/database';
 import { RIG_CUES, RIG_EVERY_MS, RIG_LEAD_MS, cueTimes, reportRig, rigRunFrom } from '../src/engine/rigProbe';
 import { followRig } from '../src/lib/rigDevice';
 import { setEmulatorFlag } from './emulators';
+import { isolateFiles } from './isolate';
 import { player, type Player } from './nodeClient';
+
+isolateFiles();
 
 /**
  * The rig probe (docs/decisions/rig-in-your-hand.md, P2 and P4).

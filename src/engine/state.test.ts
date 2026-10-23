@@ -7,6 +7,7 @@ import {
   MIN_DURATION_SECS,
   buildQuizQuestions,
   isDurationAllowed,
+  ladderFallbackNotices,
   rampPlan,
   resolveQuizmaster,
   seatBehind,
@@ -402,6 +403,128 @@ describe('rampPlan', () => {
 
     // #then the two ends are equal and the middle carries the rest
     expect(result).toEqual({ easy: 5, medium: 5, hard: 5 });
+  });
+});
+
+describe('ladderFallbackNotices', () => {
+  test('says nothing when the ramp climbed as planned', () => {
+    // #given a pack with plenty of every level
+    const pool = spread({ easy: 40, medium: 40, hard: 40 });
+
+    // #when a ramp is dealt
+    const picked = selectQuestions(pool, 15, 'ramp', seededRng(9));
+
+    // #then there is nothing to confess
+    expect(ladderFallbackNotices(picked, 15)).toEqual([]);
+  });
+
+  test('a spent hard bucket is named, and still not repeated', () => {
+    /*
+      #given the shape the office is playing: hard already served, medium
+      still deep. Same rule as the selection test above — a repeat of a hard
+      question is not what fills the gap.
+    */
+    const pool = spread({ easy: 20, medium: 100, hard: 5 });
+    const asked = new Set(
+      pool.filter((question) => question.difficulty === 'hard').map((question) => question.id),
+    );
+
+    // #when a ramp of ten is built
+    const picked = selectQuestions(pool, 10, 'ramp', seededRng(4), asked);
+
+    // #then the round is full, contains no hard question the room has seen,
+    // and says where the missing hard ones went
+    expect(picked).toHaveLength(10);
+    expect(picked.filter((question) => asked.has(question.id))).toEqual([]);
+    expect(picked.filter((question) => question.difficulty === 'hard')).toEqual([]);
+    expect(ladderFallbackNotices(picked, 10)).toEqual([
+      'Out of hard questions in this pack — using medium',
+    ]);
+  });
+
+  test('names every level that came up short, and the level that filled them', () => {
+    // #given a pack with no easy or hard questions at all
+    const pool = spread({ easy: 0, medium: 40, hard: 0 });
+
+    // #when a ramp is dealt
+    const picked = selectQuestions(pool, 15, 'ramp', seededRng(3));
+
+    // #then one line covers both ends, and names medium because that is what was used
+    expect(ladderFallbackNotices(picked, 15)).toEqual([
+      'Out of easy and hard questions in this pack — using medium',
+    ]);
+  });
+
+  test('says "not enough" when some of the wanted level were still there', () => {
+    // #given a pack with a few easy and hard questions, and a deep middle
+    const pool = spread({ easy: 2, medium: 40, hard: 1 });
+
+    // #when a fifteen-question ramp is dealt — the plan wants five of each
+    const picked = selectQuestions(pool, 15, 'ramp', seededRng(3));
+
+    // #then the line does not claim the pack had none
+    expect(ladderFallbackNotices(picked, 15)).toEqual([
+      'Not enough easy and hard questions in this pack — using medium',
+    ]);
+  });
+
+  test('a level that starts level with another is named once it is drawn too', () => {
+    // #given easy and medium equally deep, and no hard questions. The plan
+    // takes one more medium than easy, so easy leads by one, gives that one,
+    // and the rest of the gap is split.
+    const pool = spread({ easy: 20, medium: 20, hard: 0 });
+
+    // #when a ramp is dealt
+    const picked = selectQuestions(pool, 10, 'ramp', seededRng(1));
+
+    // #then the notice names both levels that actually filled the gap
+    expect(ladderFallbackNotices(picked, 10)).toEqual([
+      'Out of hard questions in this pack — using easy and medium',
+    ]);
+  });
+
+  test('repeating a question of the wanted difficulty is not a fallback', () => {
+    // #given four fresh and four already served at every level
+    const pool = spread({ easy: 8, medium: 8, hard: 8 });
+    const asked = new Set(
+      pool.filter((question) => /-[4-7]$/.test(question.id)).map((question) => question.id),
+    );
+
+    // #when a ramp of fifteen needs one repeat at each level to meet the plan
+    const picked = selectQuestions(pool, 15, 'ramp', seededRng(2), asked);
+
+    // #then it climbed, repeats and all, and says nothing
+    expect(picked.some((question) => asked.has(question.id))).toBe(true);
+    expect(ladderFallbackNotices(picked, 15)).toEqual([]);
+  });
+
+  test('a pack smaller than the round is not described as a swap', () => {
+    // #given five questions in total
+    const pool = spread({ easy: 2, medium: 2, hard: 1 });
+
+    // #when twenty were asked for
+    const picked = selectQuestions(pool, 20, 'ramp', seededRng(9));
+
+    // #then the round is just short. Nothing was substituted.
+    expect(picked).toHaveLength(5);
+    expect(ladderFallbackNotices(picked, 20)).toEqual([]);
+  });
+
+  test('Fine Art on The Ladder is out of hard questions and uses easy', () => {
+    // #given the published pack: 27 easy, 22 medium, none hard
+    const pack = JSON.parse(readFileSync(new URL('../../public/packs/picture.json', import.meta.url), 'utf8')) as {
+      questions: SealedQuestion[];
+    };
+
+    // #when the lobby's default ramp of fifteen is dealt
+    const picked = selectQuestions(pack.questions, 15, 'ramp', seededRng(1));
+
+    // #then the notice is the one the question screen will show. Easy still
+    // has more left than medium after the plan takes its share, so the top-up
+    // is easy — not medium, which is what a text pack does.
+    expect(ladderFallbackNotices(picked, 15)).toEqual([
+      'Out of hard questions in this pack — using easy',
+    ]);
   });
 });
 

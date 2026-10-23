@@ -1,7 +1,7 @@
-import { serverTimestamp, Timestamp, type DocumentData } from 'firebase/firestore';
+import { deleteField, serverTimestamp, Timestamp, type DocumentData } from 'firebase/firestore';
 import type { AnswerDoc } from '../engine/answers';
 import { readBrowsing, readPackVotes, readVoteTaps, writesTheVote } from '../engine/packVote';
-import { LEGACY_DURATION_SECS, type Answer, type RoomState } from '../engine/state';
+import { isDurationAllowed, LEGACY_DURATION_SECS, type Answer, type RoomState } from '../engine/state';
 
 /**
  * The room document and the room state, translated both ways.
@@ -103,6 +103,9 @@ export function toRoomState(code: string, data: DocumentData, answers: Record<st
     // the wager's flag is.
     standoffEnabled: persisted.standoffEnabled ?? false,
     chaserEnabled: persisted.chaserEnabled ?? false,
+    // Absent on every round that is not waiting on Mr Fries's card. `undefined`
+    // is not `null` — the lobby would treat a missing field as the card being up.
+    chaserIntro: readChaserIntro(data['chaserIntro']),
     history: persisted.history ?? {},
     standoff: persisted.standoff ?? null,
     // Absent in every room from before the vote, and writable by any member,
@@ -114,7 +117,35 @@ export function toRoomState(code: string, data: DocumentData, answers: Record<st
     // room keeps the derived quizmaster. See `resolveHost`.
     hostUid: typeof data['hostUid'] === 'string' ? data['hostUid'] : null,
     lastPicks: readPicks(data['lastPicks']),
+    // Absent on every room that climbed as planned, and on every room from
+    // before the notice. Anything that is not a short list of sentences is
+    // dropped: the host writes these, and a member must not be able to park
+    // a page of text on the document every client re-reads.
+    ladderNotices: readLadderNotices(data['ladderNotices']),
   };
+}
+
+const LADDER_NOTICE_MAX = 160;
+
+function readLadderNotices(value: unknown): readonly string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((line): line is string => typeof line === 'string' && line.length > 0 && line.length <= LADDER_NOTICE_MAX)
+    .slice(0, 3);
+}
+
+/**
+ * The parked window, or null. Anything else is not a card the room can leave.
+ *
+ * A card with no finite `at` is treated as already due. Dropping it would put
+ * the lobby back in front of a round that had already left it.
+ */
+function readChaserIntro(value: unknown): RoomState['chaserIntro'] {
+  if (typeof value !== 'object' || value === null) return null;
+  const durationSecs = (value as { durationSecs?: unknown }).durationSecs;
+  if (typeof durationSecs !== 'number' || !isDurationAllowed(durationSecs)) return null;
+  const at = (value as { at?: unknown }).at;
+  return { at: typeof at === 'number' && Number.isFinite(at) ? at : 0, durationSecs };
 }
 
 /**
@@ -168,6 +199,7 @@ export function toPersisted(state: RoomState): PersistedRoom {
     lastSteal: state.lastSteal,
     standoffEnabled: state.standoffEnabled,
     chaserEnabled: state.chaserEnabled,
+    chaserIntro: state.chaserIntro,
     history: state.history,
     standoff: state.standoff,
     packVotes: state.packVotes,
@@ -175,6 +207,11 @@ export function toPersisted(state: RoomState): PersistedRoom {
     browsing: state.browsing,
     hostUid: state.hostUid,
     lastPicks: state.lastPicks,
+    // Omitted when empty so a Ladder that climbed, and every other round,
+    // persists the same fields it did before this existed.
+    ...(state.ladderNotices && state.ladderNotices.length > 0
+      ? { ladderNotices: state.ladderNotices }
+      : {}),
   };
 }
 
@@ -209,6 +246,15 @@ export function toUpdate(state: RoomState, previous: RoomState | null): Record<s
   // back to whoever this device last saw holding it.
   delete update.hostUid;
 
+  // Absent on a round that is not waiting on the card, so a normal phase
+  // transition does not grow a field the host-writes recording has never had.
+  // Clearing one that was up has to delete it: an update that omits a key
+  // leaves the old value, and the next lobby would show the card again.
+  if (update.chaserIntro == null) {
+    delete update.chaserIntro;
+    if (previous?.chaserIntro) update.chaserIntro = deleteField();
+  }
+
   // The lobby vote travels as `packVotes.{uid}` field writes, for the reason
   // `players` does. Written whole only when crossing the lobby, to clear it.
   if (!writesTheVote(previous?.phase ?? null, state.phase)) {
@@ -227,6 +273,12 @@ export function toUpdate(state: RoomState, previous: RoomState | null): Record<s
   // claim a question opened earlier than it did and unlock the answer early.
   // See src/lib/vault.ts.
   if (opensAQuestion(state, previous)) update.openedAt = serverTimestamp();
+
+  // A later round that climbs must not keep the previous round's notice.
+  // `updateDoc` merges, so leaving the key off would.
+  if ((!state.ladderNotices || state.ladderNotices.length === 0) && (previous?.ladderNotices?.length ?? 0) > 0) {
+    update.ladderNotices = deleteField();
+  }
 
   return update;
 }

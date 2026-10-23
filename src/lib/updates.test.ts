@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hasUnseen, UPDATES, type Update } from './updates';
+import { hasUnseen, updatesNotice, UPDATES, type Update } from './updates';
 
 const two: Update[] = [
   { date: '2026-10-22', lines: ['b'] },
@@ -21,6 +21,21 @@ describe('hasUnseen', () => {
 
   it('is false with nothing to show', () => {
     expect(hasUnseen([], null)).toBe(false);
+  });
+});
+
+describe('updatesNotice', () => {
+  it('leads with the newest line until that entry has been opened', () => {
+    expect(updatesNotice(two, null)).toEqual({ unseen: true, teaser: 'b' });
+    expect(updatesNotice(two, '2026-10-21')).toEqual({ unseen: true, teaser: 'b' });
+    expect(updatesNotice(two, '2026-10-22')).toEqual({ unseen: false, teaser: null });
+  });
+
+  it('says nothing when the newest entry has no line', () => {
+    expect(updatesNotice([{ date: '2026-10-22', lines: [] }], null)).toEqual({
+      unseen: true,
+      teaser: null,
+    });
   });
 });
 
