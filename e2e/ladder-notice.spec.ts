@@ -1,6 +1,9 @@
 import { expect, test } from '@playwright/test';
 
 import { setEmulatorFlag } from './emulators';
+import { isolateFiles } from './isolate';
+
+isolateFiles();
 
 /**
  * Fine Art has no hard questions. A Ladder of fifteen still fills from easy,
