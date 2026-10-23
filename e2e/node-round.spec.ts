@@ -8,7 +8,10 @@ import type { StandoffPick } from '../src/engine/standoff';
 import { createRoom, type QuizQuestion } from '../src/engine/state';
 import { toPersisted } from '../src/lib/roomDoc';
 import { startNodeHost } from '../scripts/nodeHost';
+import { isolateFiles } from './isolate';
 import { admin, player, seedVault } from './nodeClient';
+
+isolateFiles();
 
 /**
  * The real host, with no browser (host-loop.md, C2): `src/host/` run from Node

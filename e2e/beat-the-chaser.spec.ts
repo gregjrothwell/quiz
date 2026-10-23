@@ -3,7 +3,10 @@ import { expect, test, type Browser, type Page } from '@playwright/test';
 import { chaserResult, chaserScore, friesPick } from '../src/engine/chaser';
 import type { QuizQuestion } from '../src/engine/state';
 import { setEmulatorFlag } from './emulators';
+import { isolateFiles } from './isolate';
 import { admin, seedVault, until } from './nodeClient';
+
+isolateFiles();
 
 /**
  * Beat the Chaser through the app (docs/decisions/beat-the-chaser.md, C6–C7):
@@ -13,7 +16,6 @@ import { admin, seedVault, until } from './nodeClient';
  * the question and the rate dealt with it.
  *
  * Off (C5) is `host-writes.spec.ts`: its recording must still match.
- * Players are Cora, Dev and Eli, names no other spec banks.
  */
 
 interface RoomDoc {

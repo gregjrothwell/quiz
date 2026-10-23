@@ -1,7 +1,10 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 
 import { setEmulatorFlag } from './emulators';
+import { isolateFiles } from './isolate';
 import { admin, seedVault, until } from './nodeClient';
+
+isolateFiles();
 
 /**
  * The Commentator through the app (docs/decisions/commentator.md, M3–M4):
@@ -11,8 +14,8 @@ import { admin, seedVault, until } from './nodeClient';
  * Speech is recorded rather than heard: each tab's `speechSynthesis.speak` is
  * replaced before the app loads, and what it was asked to say is kept on the
  * page. The seeded vault calls A right. Question one nobody gets; question two
- * only Fen gets; the rest everybody gets. Players are Fen, Gil and Hux, names
- * no other spec banks; none has a season row, so the winner's is a debut.
+ * only Fen gets; the rest everybody gets. Fen, Gil and Hux have no season row
+ * yet, so the winner's line is a debut.
  */
 
 interface RoomDoc {

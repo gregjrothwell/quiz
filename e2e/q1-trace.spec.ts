@@ -15,7 +15,10 @@ import { createQ1Tracer, type Q1TraceDoc } from '../src/engine/q1Trace';
 import { EMULATOR_HOST, EMULATOR_PORTS } from '../src/lib/emulators';
 import { traceRef, writeQ1Trace } from '../src/lib/q1Trace';
 import { setEmulatorFlag } from './emulators';
+import { isolateFiles } from './isolate';
 import { admin, player, seedVault, until, type Player } from './nodeClient';
+
+isolateFiles();
 
 /**
  * The question-one trace, both directions (docs/decisions/cass-q1.md, AC7), and
