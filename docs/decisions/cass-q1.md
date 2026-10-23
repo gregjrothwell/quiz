@@ -195,15 +195,15 @@ needs a main-SDK write the rules already allow without a stale room update clobb
 question. Not done.
 
 **The hold.** The clock reveal waits while a seated player's lamp is lit and their answer has
-not landed, for up to 6s after the gate (`IN_FLIGHT_HOLD_MS` in `src/host/due.ts`). The lamp
+not landed, for up to 3s after the gate (`IN_FLIGHT_HOLD_MS` in `src/host/due.ts`). The lamp
 is the RTDB write sent beside the Firestore one; presence keeps that connection open, so the
 host can see the tap before the answer document arrives. The answer landing ends the wait.
-Six seconds covers the measured worst write (5.5s, 21 Oct) from a tap at the buzzer, and
-stays inside the rules' 8s arrival grace, so a write that lands during the wait is still
-legal. A lamp that never resolves costs the room 6s and then the question is scored without
-that answer. The Reveal button does not wait. A retry of a refused reveal does not wait
-again. `scripts/nodeHost.ts` does not watch lamps, so a round driven from the terminal folds
-on the clock as before.
+Greg's call, 23 Oct: 3s covers the measured 2.4s slow write; 15s rounds largely avoid the
+issue; the 4.8–5.5s worst cases are not covered. It stays inside the rules' 8s arrival grace,
+so a write that lands during the wait is still legal. A lamp that never resolves costs the
+room 3s and then the question is scored without that answer. The Reveal button does not wait.
+A retry of a refused reveal does not wait again. `scripts/nodeHost.ts` does not watch lamps,
+so a round driven from the terminal folds on the clock as before.
 
 **Not live.** The first office round after it ships is the check: `read-traces -- --name cass`,
 and whether a 10s question one of hers is counted when she taps late. A tap in the last

@@ -103,8 +103,8 @@ scoring 500 + rank 500/400/300/200/100.
     so the only test is whether his behaviour changes next round:
     [`first-touch.md`](decisions/first-touch.md).
 12. **Cass's question-one write is slow; she sees the question on time** (23 Oct, 24 traces): ack 4.8s and
-    2.4s, both counted. Same 4g room otherwise 0.1–0.3s (Rach 1.4s). The host holds the reveal up to 6s
-    for a lit lamp with no answer yet. Not live ([`cass-q1.md`](decisions/cass-q1.md)).
+    2.4s, both counted. Same 4g room otherwise 0.1–0.3s (Rach 1.4s). The host holds the reveal up to 3s
+    for a lit lamp (Greg, 23 Oct: covers the 2.4s write; 15s rounds largely avoid it; 4.8–5.5s not covered). Not live ([`cass-q1.md`](decisions/cass-q1.md)).
 13. **Reveal over Firestore Lite, live 7 Oct (#71)**: all four at once, median vault step 71ms v #70's 167ms in a
     browser; **the next office round's `read-games` is the live check** ([`office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md#4-the-slow-reveal)).
 14. **Loose ends from 26–27 September**: five new tunes transcribed to nothing

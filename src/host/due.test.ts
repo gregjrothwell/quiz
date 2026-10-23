@@ -128,6 +128,8 @@ describe('the reveal on the clock', () => {
   });
 
   test('waits for an answer the lamp says is in flight, then reveals anyway', () => {
+    // Greg, 23 Oct: 3s covers the measured 2.4s slow write. The 4.8–5.5s cases are not.
+    expect(IN_FLIGHT_HOLD_MS).toBe(3_000);
     // #given the gate is open and somebody's lamp is lit with no answer landed
     const holding = dueNow(view({ answerInFlight: true }), beaten(GATE_OPEN));
     // #then the clock reveal waits, and asks to be woken when the wait is over

@@ -44,17 +44,18 @@ export const STAGE_RECHECK_MS = 1_000;
  * How long the clock reveal waits, after the vault's gate is open, for an
  * answer whose lamp is lit and whose document has not landed.
  *
- * Cass's question-one writes take up to about 5.5s to be acknowledged, and the
- * fold used to happen at the gate (window + 100ms). A tap on the buzzer then
- * missed the tally even though `arrivalOk` would still have accepted the write
- * — the grace is 8s. Six seconds covers that measured write from a last-moment
- * tap and stays inside the grace, so a write that lands during the wait is
- * still a legal answer. A lamp that never resolves costs the room this long
- * and no longer; the Reveal button does not wait.
+ * Cass's question-one writes are slow, and the fold used to happen at the gate
+ * (window + 100ms). A tap on the buzzer then missed the tally even though
+ * `arrivalOk` would still have accepted the write — the grace is 8s. Three
+ * seconds covers the measured 2.4s slow write and stays inside that grace, so
+ * a write that lands during the wait is still a legal answer. Greg's call,
+ * 23 Oct: 15s rounds largely avoid the issue, and the 4.8–5.5s worst cases
+ * are not covered. A lamp that never resolves costs the room this long and no
+ * longer; the Reveal button does not wait.
  *
  * See docs/decisions/cass-q1.md.
  */
-export const IN_FLIGHT_HOLD_MS = 6_000;
+export const IN_FLIGHT_HOLD_MS = 3_000;
 
 /**
  * Whether a seated player has lit their lamp and their answer is not in yet.
