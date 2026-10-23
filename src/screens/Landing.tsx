@@ -3,6 +3,7 @@ import { isValidRoomCode, normaliseRoomCode, ROOM_CODE_LENGTH } from '../engine/
 import { SQUADS } from '../engine/squad';
 import { MAX_NAME_LENGTH, rememberedName } from '../lib/rememberedName';
 import { rememberedPlayingWith, rememberedSquad } from '../lib/rememberedSquad';
+import { WhatsNewButton } from '../components/WhatsNewButton';
 import { hasUnseen, updatesSeen, UPDATES } from '../lib/updates';
 
 interface LandingProps {
@@ -239,15 +240,7 @@ export function Landing({
           <button type="button" className="btn btn--ghost" onClick={onSeason}>
             Season table
           </button>
-          <button type="button" className="btn btn--ghost" onClick={onUpdates}>
-            What&rsquo;s new
-            {unseen ? (
-              <>
-                <span className="new-dot" aria-hidden="true" />
-                <span className="sr-only"> (new)</span>
-              </>
-            ) : null}
-          </button>
+          <WhatsNewButton unseen={unseen} onClick={onUpdates} />
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 # The What's new page
 
-> **Owner: Greg Rothwell. Last updated: 22 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 23 October 2026. Budget: 250 lines.**
 
 **Status: LIVE 22 October 2026** (#107, merge `9bab66d`, gh-pages `08594c7`, live `Updates-xf0SqJkg.js` byte-identical to a local build).
 Asked for 21 Oct ("note down an updates page so users can see"); Greg said build it 22 Oct.
@@ -25,7 +25,7 @@ Asked for 21 Oct ("note down an updates page so users can see"); Greg said build
 
 | Open question (21 Oct log) | Taken | Why |
 |---|---|---|
-| Where the link sits | Landing only | Every player passes it, link or no link. The lobby is a live room; leaving it to read hides the room |
+| Where the link sits | Landing, and the lobby | A join link auto-joins and never shows the landing page. The lobby button opens the same page; Back does not leave the room |
 | Hand-written or from PR titles | Hand-written | PR titles are written for the repo, not the office |
 | How far back | 21 Oct | The four releases that day are the ones nobody has been told about |
 | Shown to the room by the quizmaster | No | Needs a shared state and a write; a link does the job for now |
@@ -52,3 +52,36 @@ scores nothing — **there is no call bonus** ([`typed-answers.md`](typed-answer
 
 **Not covered:** at 375px the Back button sits close under the sound control.
 Season uses the same header markup; not checked whether it does the same there.
+
+## Lobby, 23 October 2026
+
+A remembered name on a join link skips the landing page (`shouldAutoJoin`),
+which was the only place the button lived. The 22 Oct row above assumed every
+player passed it. They don't.
+
+The lobby header has the same button, dot included, for whoever is waiting and
+for the quizmaster. Under the room code, while the dot is showing, one line:
+**New since you last played**, then the first line of the newest entry
+(`updatesNotice`). "Last played" is this browser's `vibequiz.updatesSeen`, not
+a round they sat in — that isn't stored. Opening the page and pressing Back
+flips a flag in `App`. The room listener keeps running, so the room is the one
+they left. The lobby does remount, which clears the dot and also the
+quizmaster's unsent picker choices.
+
+## New stickers, 23 October 2026
+
+A round type wears a **New** sticker through a `newUntil` date in
+`src/questions/newRounds.ts`: fourteen days after the day it went live, last
+day included, on the London calendar. No date, no sticker.
+
+| Round | Went live | Sticker through |
+|---|---|---|
+| Random Round, Name the Artist | 12 Oct 2026 | 26 Oct 2026 |
+| The Price is Right | 21 Oct 2026 | 4 Nov 2026 |
+| Survey Says | 22 Oct 2026 | 5 Nov 2026 |
+
+It sits on the pack card (the quizmaster's picker and the lobby vote share
+`PackFace`), on question 1, and on the round title card between questions.
+Beat the Chaser is a lobby mode, not a round, so it has no sticker.
+Pull a date forward to retire one early.
+

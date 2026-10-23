@@ -18,6 +18,13 @@ export interface Update {
 
 export const UPDATES: readonly Update[] = [
   {
+    date: '2026-10-23',
+    lines: [
+      'What’s new is in the lobby as well, so joining from a link doesn’t skip it.',
+      'A new round wears a New sticker for two weeks.',
+    ],
+  },
+  {
     date: '2026-10-22',
     lines: [
       'The commentator’s lines stay on screen but aren’t read out any more, until it has a better voice.',
@@ -52,6 +59,24 @@ export function hasUnseen(updates: readonly Update[], seen: string | null): bool
   const latest = updates[0]?.date;
   if (!latest) return false;
   return seen === null || latest > seen;
+}
+
+export interface UpdatesNotice {
+  unseen: boolean;
+  /** First line of the newest entry, when this browser has not opened it. */
+  teaser: string | null;
+}
+
+/**
+ * What the lobby says before anyone opens the page.
+ *
+ * The same gate as the dot: "last played" here means "last time this browser
+ * opened What's new". There is no record of the last round this device sat in.
+ */
+export function updatesNotice(updates: readonly Update[], seen: string | null): UpdatesNotice {
+  const unseen = hasUnseen(updates, seen);
+  const line = updates[0]?.lines[0];
+  return { unseen, teaser: unseen && line ? line : null };
 }
 
 export function updatesSeen(): string | null {

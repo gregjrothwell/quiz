@@ -7,6 +7,7 @@ import { AnswerLamps } from '../components/AnswerLamps';
 import { ArcTimer } from '../components/ArcTimer';
 import { Ladder } from '../components/Ladder';
 import { PodiumTile, type TileArrival, type TileState } from '../components/PodiumTile';
+import { NewSticker } from '../components/NewSticker';
 import { QuestionVote } from '../components/QuestionVote';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { replayDurationMs, replayTimeline, type Arrival } from '../engine/replay';
@@ -40,6 +41,7 @@ import {
 import type { QuestionClock } from '../lib/useQuestionClock';
 import { useReducedMotion } from '../lib/useReducedMotion';
 import { BUZZ_CORRECT, BUZZ_WRONG, useBuzz } from '../lib/haptics';
+import { isNewRound, todayIso } from '../questions/newRounds';
 
 /**
  * The beat between the clock stopping and the verdict landing, when there is no
@@ -592,6 +594,7 @@ export function QuestionScreen({
           </p>
         </div>
         <div className="qhead__tags">
+          {room.index === 0 && isNewRound(room.packId, todayIso()) ? <NewSticker /> : null}
           <span className="chip">{question.category}</span>
           <span className={question.difficulty === 'hard' ? 'chip chip--hard' : 'chip'}>
             {question.difficulty}

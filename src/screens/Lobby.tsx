@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { NewSticker } from '../components/NewSticker';
 import { QrCode } from '../components/QrCode';
 import { RoomLink } from '../components/RoomLink';
 import { SoundCheck } from '../components/SoundCheck';
 import { TmdbNotice } from '../components/TmdbCredit';
+import { WhatsNewButton } from '../components/WhatsNewButton';
 import { joinLink } from '../engine/roomCode';
 import {
   leadingPacks,
@@ -16,6 +18,7 @@ import { resolveHost } from '../engine/host';
 import { SQUADS } from '../engine/squad';
 import { rememberSquad, rememberedSquad } from '../lib/rememberedSquad';
 import { play, useSound } from '../lib/sound';
+import { updatesNotice, updatesSeen, UPDATES, type UpdatesNotice } from '../lib/updates';
 import {
   DEFAULT_DURATION_SECS,
   DURATION_CHOICES,
@@ -23,6 +26,7 @@ import {
   type Level,
   type RoomState,
 } from '../engine/state';
+import { isNewRound, todayIso } from '../questions/newRounds';
 import { FEATURED_PACK, shelvePacks } from '../questions/shelves';
 import { fixedDurationFor, packNeedsSound, type PackId, type PackSummary } from '../questions/types';
 
@@ -112,6 +116,15 @@ interface LobbyProps {
     chaserEnabled: boolean,
   ) => void;
   onLeave: () => void;
+  /** Opens What's new. The room stays put — App only flips a flag. */
+  onUpdates?: () => void;
+  /**
+   * Gallery and tests. Absent, this browser is read once: opening the page
+   * and coming back remounts the lobby, which is when the dot clears.
+   */
+  notice?: UpdatesNotice;
+  /** Office date, `YYYY-MM-DD`. Defaults to today in London. */
+  today?: string;
 }
 
 export function Lobby({
@@ -127,7 +140,12 @@ export function Lobby({
   onBrowse,
   onStart,
   onLeave,
+  onUpdates,
+  notice,
+  today = todayIso(),
 }: LobbyProps) {
+  const [fromBrowser] = useState(() => updatesNotice(UPDATES, updatesSeen()));
+  const updates = notice ?? fromBrowser;
   const [packId, setPackId] = useState<PackId | null>(null);
   const [count, setCount] = useState<number>(15);
   const [level, setLevel] = useState<Level>('ramp');
@@ -248,12 +266,22 @@ export function Lobby({
           </div>
         </div>
 
-        <button type="button" className="btn btn--ghost" onClick={onLeave}>
-          Leave
-        </button>
+        <div className="btn-row">
+          <WhatsNewButton unseen={updates.unseen} onClick={() => onUpdates?.()} small />
+          <button type="button" className="btn btn--ghost" onClick={onLeave}>
+            Leave
+          </button>
+        </div>
       </header>
 
       <RoomLink link={link} />
+
+      {updates.teaser ? (
+        <button type="button" className="updates-teaser" onClick={() => onUpdates?.()}>
+          <span className="updates-teaser__kicker">New since you last played.</span>{' '}
+          <span className="updates-teaser__line">{updates.teaser}</span>
+        </button>
+      ) : null}
 
       <section className="stack">
         <p className="eyebrow">In the room · {playerEntries.length}</p>
@@ -361,7 +389,13 @@ export function Lobby({
                         onBrowse?.(pack.id);
                       }}
                     >
-                      <PackFace pack={pack} tally={tally} leading={leading} browsing={null} />
+                      <PackFace
+                        pack={pack}
+                        tally={tally}
+                        leading={leading}
+                        browsing={null}
+                        fresh={isNewRound(pack.id, today)}
+                      />
                     </button>
                   ))}
                 </div>
@@ -689,7 +723,13 @@ export function Lobby({
                         onVote?.(nextVote(yourVote, pack.id));
                       }}
                     >
-                      <PackFace pack={pack} tally={tally} leading={leading} browsing={room.browsing} />
+                      <PackFace
+                        pack={pack}
+                        tally={tally}
+                        leading={leading}
+                        browsing={room.browsing}
+                        fresh={isNewRound(pack.id, today)}
+                      />
                     </button>
                   ))}
                 </div>
@@ -744,15 +784,18 @@ function PackFace({
   tally,
   leading,
   browsing,
+  fresh,
 }: {
   pack: PackSummary;
   tally: PackTally;
   leading: PackId[];
   browsing: PackId | null;
+  fresh: boolean;
 }) {
   const votes = tally[pack.id] ?? 0;
   return (
     <>
+      {fresh ? <NewSticker className="pack__new" /> : null}
       {browsing === pack.id ? <span className="pack__tag">Quizmaster&rsquo;s looking</span> : null}
       {packNeedsSound(pack.id) ? (
         <span className="pack__sound" title="Plays sound">

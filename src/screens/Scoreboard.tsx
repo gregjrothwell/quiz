@@ -1,15 +1,19 @@
 import { chaserScore, chaserTally } from '../engine/chaser';
 import { Commentary } from '../components/Commentary';
+import { NewSticker } from '../components/NewSticker';
 import { SquadScore } from '../components/SquadScore';
 import { Standings } from '../components/Standings';
 import type { RoomState } from '../engine/state';
 import { useCue } from '../lib/sound';
+import { isNewRound, todayIso } from '../questions/newRounds';
 
 interface ScoreboardProps {
   room: RoomState;
   youUid: string | null;
   isQuizmaster: boolean;
   onNext: () => void;
+  /** Office date, `YYYY-MM-DD`. Defaults to today in London. */
+  today?: string;
 }
 
 const ORDINALS = [
@@ -25,7 +29,7 @@ const ORDINALS = [
   'Ten',
 ] as const;
 
-export function Scoreboard({ room, youUid, isQuizmaster, onNext }: ScoreboardProps) {
+export function Scoreboard({ room, youUid, isQuizmaster, onNext, today = todayIso() }: ScoreboardProps) {
   const isLast = room.index + 1 >= room.questions.length;
   // The reducer sends a room of one straight to the results, so this does too.
   const toFinal = isLast && room.standoffEnabled && Object.keys(room.players).length >= 2;
@@ -53,6 +57,7 @@ export function Scoreboard({ room, youUid, isQuizmaster, onNext }: ScoreboardPro
             <h1 className="display chrome card__round">Round {nextOrdinal}</h1>
           </div>
           <p className="card__topic">{room.packTitle ?? 'Next up'}</p>
+          {isNewRound(room.packId, today) ? <NewSticker /> : null}
         </div>
       )}
 

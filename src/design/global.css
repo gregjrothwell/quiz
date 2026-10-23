@@ -4690,6 +4690,68 @@ select.input option {
   transform: translateY(-2px);
 }
 
+/* The lobby, under the room code, while this browser has not opened the page. */
+.updates-teaser {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: rgb(255 178 38 / 0.08);
+  border: 1px solid rgb(255 178 38 / 0.45);
+  border-radius: 8px 8px 3px 3px;
+  padding: 0.65rem 0.9rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.updates-teaser:hover,
+.updates-teaser:focus-visible {
+  border-color: var(--amber);
+}
+
+.updates-teaser__kicker {
+  display: block;
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.updates-teaser__line {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+/* A round still inside its `newUntil` date. Amber, so it is not the cyan
+   "Quizmaster's looking" tag and not a difficulty chip. */
+.new-sticker {
+  display: inline-block;
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: #1a1203;
+  background: var(--amber);
+  border-radius: var(--radius-sm);
+  padding: 0.22rem 0.45rem;
+  box-shadow: 0 0 12px 1px rgb(255 178 38 / 0.45);
+}
+
+.pack__new {
+  align-self: flex-start;
+  margin-bottom: 0.45rem;
+}
+
+.card .new-sticker {
+  position: relative;
+  margin-top: 0.85rem;
+}
+
 .updates__entry { margin-top: 1rem; }
 
 .updates__lines {

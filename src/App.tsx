@@ -710,6 +710,11 @@ function Game() {
     );
   }
 
+  /*
+    Same page from the landing and from the lobby. This return does not clear
+    the room, and the listener above keeps running while the page is open, so
+    Back lands a join-link player in the room they were waiting in.
+  */
   if (showUpdates) {
     return (
       <Stage>
@@ -779,6 +784,7 @@ function Game() {
           onBrowse={(packId) => void writeBrowsing(packId).catch(report)}
           onStart={handleStart}
           onLeave={handleLeave}
+          onUpdates={() => setShowUpdates(true)}
         />
         {uid ? <RigCheck code={room.code} uid={uid} isHost={isQuizmaster} /> : null}
         </>
