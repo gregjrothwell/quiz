@@ -82,6 +82,25 @@ day included, on the London calendar. No date, no sticker.
 
 It sits on the pack card (the quizmaster's picker and the lobby vote share
 `PackFace`), on question 1, and on the round title card between questions.
-Beat the Chaser is a lobby mode, not a round, so it has no sticker.
 Pull a date forward to retire one early.
+
+## Mode stickers, 23 October 2026
+
+Same window, `MODE_NEW_UNTIL` in `src/questions/newRounds.ts`. A mode wears it
+on the quizmaster's picker button. Share or Shaft also wears it on its title
+card. Players vote for a pack, not a mode, so the vote has nothing to sticker.
+House defaults (As it comes, Played straight, Just us, and the rest) are not
+modes.
+
+| Mode | Went live | Sticker through |
+|---|---|---|
+| The Ladder | 1 Aug 2026 | 15 Aug 2026 |
+| Played for stakes | 2 Sep 2026 | 16 Sep 2026 |
+| First right answer steals, the 3×3 jigsaw | 4 Sep 2026 | 18 Sep 2026 |
+| Share or Shaft | 24 Sep 2026 | 8 Oct 2026 |
+| Beat the Chaser | 22 Oct 2026 | 5 Nov 2026 |
+
+Only Beat the Chaser is still inside the window. The Ladder's date is the
+commit that named it in the lobby; there is no separate deploy line. The
+office season started 3 Aug, which would end the sticker on 17 Aug.
 

@@ -20,6 +20,35 @@ export const NEW_UNTIL: Partial<Record<PackId, string>> = {
   survey: '2026-11-05',
 };
 
+/**
+ * A lobby way of playing, as distinct from a pack.
+ *
+ * House defaults (As it comes, Played straight, Just us, On the last answer,
+ * As stills) are the absence of a mode and are not in this list.
+ */
+export type LobbyMode = 'ladder' | 'stakes' | 'steal' | 'chaser' | 'standoff' | 'jigsaw';
+
+/**
+ * Last day (inclusive) a lobby mode wears a New sticker. Same window as
+ * {@link NEW_UNTIL}. A mode with no date here was never stickered.
+ */
+export const MODE_NEW_UNTIL: Partial<Record<LobbyMode, string>> = {
+  // The Ladder, named in the lobby 1 Aug 2026 (4b5a9c9). No separate deploy
+  // line; the office season started 3 Aug, and the name was already taken on
+  // screen by 20 Aug. Either reading, this window is closed.
+  ladder: '2026-08-15',
+  // Played for stakes, live 2 Sep 2026 (#19).
+  stakes: '2026-09-16',
+  // First right answer steals, live 4 Sep 2026 (index-BOq4sYDx).
+  steal: '2026-09-18',
+  // The 3×3 jigsaw, live with the picture pack the same day (index-CIOq186A).
+  jigsaw: '2026-09-18',
+  // Share or Shaft, live 24 Sep 2026 (#60).
+  standoff: '2026-10-08',
+  // Beat the Chaser, live 22 Oct 2026 (#136).
+  chaser: '2026-11-05',
+};
+
 /** Calendar day in the office's zone, `YYYY-MM-DD`. */
 export function todayIso(now: Date = new Date()): string {
   return new Intl.DateTimeFormat('en-CA', {
@@ -30,6 +59,11 @@ export function todayIso(now: Date = new Date()): string {
   }).format(now);
 }
 
+/** Whether a sticker whose last day is `end` is still on for `today`. */
+function stillNew(end: string | undefined, today: string): boolean {
+  return end !== undefined && today <= end;
+}
+
 /** Whether `id` still carries the sticker on `today`. */
 export function isNewRound(
   id: PackId | null,
@@ -37,6 +71,14 @@ export function isNewRound(
   until: Partial<Record<PackId, string>> = NEW_UNTIL,
 ): boolean {
   if (id === null) return false;
-  const end = until[id];
-  return end !== undefined && today <= end;
+  return stillNew(until[id], today);
+}
+
+/** Whether lobby mode `id` still carries the sticker on `today`. */
+export function isNewMode(
+  id: LobbyMode,
+  today: string,
+  until: Partial<Record<LobbyMode, string>> = MODE_NEW_UNTIL,
+): boolean {
+  return stillNew(until[id], today);
 }

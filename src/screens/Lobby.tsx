@@ -26,7 +26,7 @@ import {
   type Level,
   type RoomState,
 } from '../engine/state';
-import { isNewRound, todayIso } from '../questions/newRounds';
+import { isNewMode, isNewRound, todayIso, type LobbyMode } from '../questions/newRounds';
 import { FEATURED_PACK, shelvePacks } from '../questions/shelves';
 import { fixedDurationFor, packNeedsSound, type PackId, type PackSummary } from '../questions/types';
 
@@ -420,6 +420,7 @@ export function Lobby({
                       disabled={supply === 0}
                       onClick={() => setLevel(option)}
                     >
+                      {option === 'ramp' ? modeSticker('ladder', today) : null}
                       <b>{meta.title}</b>
                       <span>{meta.blurb}</span>
                       {supply === null ? null : (
@@ -522,6 +523,7 @@ export function Lobby({
                   aria-pressed={wager}
                   onClick={() => setWager(true)}
                 >
+                  {modeSticker('stakes', today)}
                   <b>Played for stakes</b>
                   <span>Bet your points on the last one</span>
                 </button>
@@ -553,6 +555,7 @@ export function Lobby({
                   aria-pressed={steal}
                   onClick={() => setSteal(true)}
                 >
+                  {modeSticker('steal', today)}
                   <b>First right answer steals</b>
                   <span>Take {STEAL_SHARE}% off whoever is top</span>
                 </button>
@@ -584,6 +587,7 @@ export function Lobby({
                   aria-pressed={chaser}
                   onClick={() => setChaser(true)}
                 >
+                  {modeSticker('chaser', today)}
                   <b>Against Mr Fries 🍟</b>
                   <span>The office versus the house</span>
                 </button>
@@ -617,6 +621,7 @@ export function Lobby({
                 aria-pressed={standoff}
                 onClick={() => setStandoff(true)}
               >
+                {modeSticker('standoff', today)}
                 <b>Share or Shaft</b>
                 <span>The top two play for everything</span>
               </button>
@@ -649,6 +654,7 @@ export function Lobby({
                   aria-pressed={jigsaw}
                   onClick={() => setJigsaw(true)}
                 >
+                  {modeSticker('jigsaw', today)}
                   <b>As a 3×3 jigsaw</b>
                   <span>Tiles settle as the clock runs</span>
                 </button>
@@ -761,6 +767,11 @@ function voteHint(
     return voted ? 'Your vote is locked in.' : 'You’ve used your taps.';
   }
   return `${left} ${left === 1 ? 'change' : 'changes'} left.`;
+}
+
+/** The New pill on a mode that is still inside its window. */
+function modeSticker(mode: LobbyMode, today: string) {
+  return isNewMode(mode, today) ? <NewSticker className="pick__new" /> : null;
 }
 
 function packClass(id: PackId, leading: PackId[], browsing: PackId | null): string {

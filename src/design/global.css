@@ -4747,6 +4747,12 @@ select.input option {
   margin-bottom: 0.45rem;
 }
 
+.pick__new {
+  display: block;
+  width: fit-content;
+  margin-bottom: 0.4rem;
+}
+
 .card .new-sticker {
   position: relative;
   margin-top: 0.85rem;
