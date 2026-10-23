@@ -32,6 +32,7 @@ import { useFinalistRecords } from './lib/useFinalistRecords';
 import { useFinalSnapshot } from './lib/useFinalSnapshot';
 import { useGameLog } from './lib/useGameLog';
 import { loadAsked, loadForm, recordAsked, recordGame, type Banked } from './lib/season';
+import { answerStillInFlight } from './host/due';
 import { dealRound } from './host/prepare';
 import type { PackPorts } from './host/ports';
 import { play } from './lib/sound';
@@ -321,6 +322,7 @@ function Game() {
     isHost: isQuizmaster,
     answersReady,
     clockExpired: clock.expired,
+    answerInFlight: room !== null && answerStillInFlight(room.players, room.answers, lamps),
     confirmedAt: questionConfirmedAt,
     durationMs,
     gameLog,

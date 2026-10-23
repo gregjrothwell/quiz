@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 22 October 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 23 October 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -102,9 +102,9 @@ scoring 500 + rank 500/400/300/200/100.
 11. **`firstMs` and the pack picker are live and unplayed.** It is a deterrent,
     so the only test is whether his behaviour changes next round:
     [`first-touch.md`](decisions/first-touch.md).
-12. **Cass loses question 1 on 10s rounds** (8/24 missed; 0/22 on 15s, 21 Oct): her Q1 answers land
-    ~2–5.5s behind her own clock, no later one does, and a 10s fold leaves no room. Why is unknown:
-    **#98 live 21 Oct, a Q1 trace from every device**; next office round, `read-traces -- --name cass` ([`cass-q1.md`](decisions/cass-q1.md)).
+12. **Cass's question-one write is slow; she sees the question on time** (23 Oct, 24 traces): ack 4.8s and
+    2.4s, both counted. Same 4g room otherwise 0.1–0.3s (Rach 1.4s). The host holds the reveal up to 6s
+    for a lit lamp with no answer yet. Not live ([`cass-q1.md`](decisions/cass-q1.md)).
 13. **Reveal over Firestore Lite, live 7 Oct (#71)**: all four at once, median vault step 71ms v #70's 167ms in a
     browser; **the next office round's `read-games` is the live check** ([`office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md#4-the-slow-reveal)).
 14. **Loose ends from 26–27 September**: five new tunes transcribed to nothing

@@ -7,6 +7,8 @@ import {
   FRESH_MEMORY,
   MAX_REVEAL_RETRIES,
   began,
+  IN_FLIGHT_HOLD_MS,
+  answerStillInFlight,
   dueNow,
   failed,
   keepDue,
@@ -57,6 +59,7 @@ function baseView(overrides: Partial<HostView> = {}): HostView {
     isHost: true,
     answersReady: true,
     clockExpired: true,
+    answerInFlight: false,
     confirmedAt: CONFIRMED_AT,
     durationMs: DURATION_MS,
     gameLog: [],
@@ -124,6 +127,49 @@ describe('the reveal on the clock', () => {
     expect(reveals(dueNow(view({ now: GATE_OPEN + 50 }), inFlight).moves)).toEqual([]);
   });
 
+  test('waits for an answer the lamp says is in flight, then reveals anyway', () => {
+    // #given the gate is open and somebody's lamp is lit with no answer landed
+    const holding = dueNow(view({ answerInFlight: true }), beaten(GATE_OPEN));
+    // #then the clock reveal waits, and asks to be woken when the wait is over
+    expect(reveals(holding.moves)).toEqual([]);
+    expect(holding.wakeInMs).toBe(IN_FLIGHT_HOLD_MS);
+
+    const still = dueNow(
+      view({ answerInFlight: true, now: GATE_OPEN + IN_FLIGHT_HOLD_MS - 1 }),
+      beaten(GATE_OPEN),
+    );
+    expect(reveals(still.moves)).toEqual([]);
+    expect(still.wakeInMs).toBe(1);
+
+    // #when the wait is up and the answer still has not landed
+    const due = dueNow(
+      view({ answerInFlight: true, now: GATE_OPEN + IN_FLIGHT_HOLD_MS }),
+      beaten(GATE_OPEN),
+    );
+    // #then the room is scored without it, rather than held open
+    expect(reveals(due.moves)).toEqual([{ kind: 'reveal', key: 'g1:0', questionId: 'q0', manual: false }]);
+  });
+
+  test('an answer landing during the wait reveals on the next look', () => {
+    const due = dueNow(view({ answerInFlight: false, now: GATE_OPEN + 500 }), beaten(GATE_OPEN));
+    expect(reveals(due.moves)).toEqual([{ kind: 'reveal', key: 'g1:0', questionId: 'q0', manual: false }]);
+  });
+
+  test('the Reveal button does not wait for an in-flight answer', () => {
+    expect(revealMove(view({ answerInFlight: true }), FRESH_MEMORY, true)).toEqual({
+      kind: 'reveal',
+      key: 'g1:0',
+      questionId: 'q0',
+      manual: true,
+    });
+  });
+
+  test('the heartbeat still goes out while an answer is in flight', () => {
+    const due = dueNow(view({ answerInFlight: true }), FRESH_MEMORY);
+    expect(kinds(due.moves)).toEqual(['beat']);
+    expect(due.wakeInMs).toBe(IN_FLIGHT_HOLD_MS);
+  });
+
   test('a new question is due afresh, whatever the last one did', () => {
     const first = dueNow(view(), beaten(GATE_OPEN));
     const move = reveals(first.moves)[0];
@@ -152,6 +198,13 @@ describe('a refused reveal', () => {
     expect(early.wakeInMs).toBe(1);
     // #and one on time finds it due again
     expect(reveals(dueNow(view({ now: GATE_OPEN + backoff }), after).moves)).toHaveLength(1);
+  });
+
+  test('a reveal already refused is not held again for an in-flight answer', () => {
+    const after = failOnce(beaten(GATE_OPEN), GATE_OPEN);
+    const backoff = revealBackoffMs(0);
+    const due = dueNow(view({ answerInFlight: true, now: GATE_OPEN + backoff }), after);
+    expect(reveals(due.moves)).toHaveLength(1);
   });
 
   test(`stops after ${String(MAX_REVEAL_RETRIES)} timed retries, and says so`, () => {
@@ -380,5 +433,20 @@ describe('the lobby reaper', () => {
     const present = new Set(['host']);
     const first = reapDue({ isHost: false, room: lobby(), now: 0 }, FRESH_MEMORY, present);
     expect(reapDue({ isHost: false, room: lobby(), now: 60_000 }, first.memory, present).remove).toEqual([]);
+  });
+});
+
+describe('an answer still in flight', () => {
+  const players = questionRoom().players;
+  const landed = { optionIndex: 0, elapsedMs: 1_000 };
+
+  test('is a seated player whose lamp is lit and whose answer has not landed', () => {
+    expect(answerStillInFlight(players, {}, new Set(['ann']))).toBe(true);
+  });
+
+  test('is not an answer that has already landed, nor a lamp for nobody seated', () => {
+    expect(answerStillInFlight(players, { ann: landed }, new Set(['ann']))).toBe(false);
+    expect(answerStillInFlight(players, {}, new Set(['stranger']))).toBe(false);
+    expect(answerStillInFlight(players, {}, new Set())).toBe(false);
   });
 });

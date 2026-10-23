@@ -49,6 +49,8 @@ export interface HostInputs {
   isHost: boolean;
   answersReady: boolean;
   clockExpired: boolean;
+  /** A lamp is lit and that player's answer has not landed. See `answerStillInFlight`. */
+  answerInFlight: boolean;
   confirmedAt: number | null;
   durationMs: number;
   gameLog: readonly QuestionRecord[];
@@ -87,6 +89,7 @@ function viewOf(inputs: HostInputs, now: number): HostView | null {
     isHost: inputs.isHost,
     answersReady: inputs.answersReady,
     clockExpired: inputs.clockExpired,
+    answerInFlight: inputs.answerInFlight,
     confirmedAt: inputs.confirmedAt,
     durationMs: inputs.durationMs,
     gameLog: inputs.gameLog,
@@ -98,7 +101,7 @@ function viewOf(inputs: HostInputs, now: number): HostView | null {
 }
 
 export function useHost(inputs: HostInputs): Host {
-  const { code, uid, room, isHost, answersReady, clockExpired, confirmedAt, durationMs } = inputs;
+  const { code, uid, room, isHost, answersReady, clockExpired, answerInFlight, confirmedAt, durationMs } = inputs;
   const { gameLog, finalTable, committed, opened, report } = inputs;
 
   const memoryRef = useRef<HostMemory>(FRESH_MEMORY);
@@ -178,6 +181,7 @@ export function useHost(inputs: HostInputs): Host {
     isHost,
     answersReady,
     clockExpired,
+    answerInFlight,
     confirmedAt,
     durationMs,
     gameLog,
