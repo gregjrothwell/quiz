@@ -1,7 +1,10 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 
 import { setEmulatorFlag } from './emulators';
+import { isolateFiles } from './isolate';
 import { admin, until } from './nodeClient';
+
+isolateFiles();
 
 /**
  * A whole Survey Says round through the app (V2), and the proof that it needs

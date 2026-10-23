@@ -4,7 +4,10 @@ import { resolve } from 'node:path';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 
 import { setEmulatorFlag } from './emulators';
+import { isolateFiles } from './isolate';
 import { admin, seedVault, until } from './nodeClient';
+
+isolateFiles();
 
 /**
  * Same writes (host-loop.md, B2): one hosted room, three players, a whole round
@@ -23,10 +26,6 @@ import { admin, seedVault, until } from './nodeClient';
  * answers A, which the seeded vault calls right, in a fixed order a beat apart,
  * so the rank ladder pays the same every run. Which questions are dealt is
  * random, so their text and categories are not compared — the count is.
- *
- * The players are Hal, Ivy and Jo, not the Host, Ann and Bob other specs use:
- * this round banks season rows, and `survey-says` counts rows by those names.
- * In CI the files run one after another, and it found six.
  *
  * `RECORD_HOST_WRITES=1 npm run e2e -- host-writes` writes the recording afresh.
  * Only do that on code whose host is known good, and say so in the commit.
