@@ -7,6 +7,7 @@ import { AnswerLamps } from '../components/AnswerLamps';
 import { ArcTimer } from '../components/ArcTimer';
 import { Ladder } from '../components/Ladder';
 import { PodiumTile, type TileArrival, type TileState } from '../components/PodiumTile';
+import { NewSticker } from '../components/NewSticker';
 import { QuestionVote } from '../components/QuestionVote';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { replayDurationMs, replayTimeline, type Arrival } from '../engine/replay';
@@ -40,6 +41,7 @@ import {
 import type { QuestionClock } from '../lib/useQuestionClock';
 import { useReducedMotion } from '../lib/useReducedMotion';
 import { BUZZ_CORRECT, BUZZ_WRONG, useBuzz } from '../lib/haptics';
+import { isNewRound, todayIso } from '../questions/newRounds';
 
 /**
  * The beat between the clock stopping and the verdict landing, when there is no
@@ -108,6 +110,8 @@ interface QuestionScreenProps {
    * omitted.
    */
   onVote: (verdict: Verdict) => void;
+  /** Office date, `YYYY-MM-DD`. Defaults to today in London. */
+  today?: string;
 }
 
 /**
@@ -142,6 +146,7 @@ export function QuestionScreen({
   onNext,
   onVote,
   streak = 0,
+  today = todayIso(),
 }: QuestionScreenProps) {
   const question = currentQuestion(room);
   const optionCount = question?.options.length ?? 0;
@@ -592,6 +597,7 @@ export function QuestionScreen({
           </p>
         </div>
         <div className="qhead__tags">
+          {room.index === 0 && isNewRound(room.packId, today) ? <NewSticker /> : null}
           <span className="chip">{question.category}</span>
           <span className={question.difficulty === 'hard' ? 'chip chip--hard' : 'chip'}>
             {question.difficulty}

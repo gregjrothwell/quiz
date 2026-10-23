@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { ArcTimer } from '../components/ArcTimer';
 import { Confetti } from '../components/Confetti';
+import { NewSticker } from '../components/NewSticker';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { Standings } from '../components/Standings';
 import { roomStandings } from '../engine/scoring';
@@ -20,6 +21,7 @@ import { BUZZ_CORRECT, BUZZ_LOCK, BUZZ_SHAFTED, buzz, useBuzz } from '../lib/hap
 import { play, useCue } from '../lib/sound';
 import type { StandoffView } from '../lib/useStandoff';
 import { useReducedMotion } from '../lib/useReducedMotion';
+import { isNewMode, todayIso } from '../questions/newRounds';
 
 interface ShareOrShaftProps {
   room: RoomState;
@@ -41,6 +43,8 @@ interface ShareOrShaftProps {
   onOpenPicks: () => void;
   /** From the reveal to the results. */
   onNext: () => void;
+  /** Office date, `YYYY-MM-DD`. Defaults to today in London. */
+  today?: string;
 }
 
 const points = (value: number): string => value.toLocaleString('en-GB');
@@ -210,6 +214,7 @@ export function ShareOrShaft({
   settledReveal = false,
   onOpenPicks,
   onNext,
+  today = todayIso(),
 }: ShareOrShaftProps) {
   const standoff = room.standoff;
   const stage = standoff?.stage ?? 'talk';
@@ -359,6 +364,7 @@ export function ShareOrShaft({
           <h1 className="display chrome card__round">Share or Shaft</h1>
         </div>
         <p className="card__topic">The top two, for both their scores</p>
+        {isNewMode('standoff', today) ? <NewSticker /> : null}
       </div>
 
       <div

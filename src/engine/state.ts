@@ -338,6 +338,18 @@ export interface RoomState {
    */
   ladderNotices?: readonly string[];
   /**
+   * Mr Fries's title card, up in the lobby before question one.
+   *
+   * The answering window is stamped when a question opens, so the card cannot
+   * sit on that clock — the same reason the round title lives on the standings.
+   * `at` is when the card went up, on the writer's clock. The host opens the
+   * question three seconds later, and a reload continues that wait rather than
+   * starting it again. `durationSecs` is parked on it because the rules pin the
+   * room's own window until a question actually opens. Null once the question
+   * is open. No rules change: `wellFormed()` does not `hasOnly` the room's keys.
+   */
+  chaserIntro: { at: number; durationSecs: number } | null;
+  /**
    * What the opening titles loaded about each player — rounds played, wins, best
    * round — kept for the round so the Commentator can say "first win" on every
    * screen alike (docs/decisions/commentator.md). Empty when the season has
@@ -438,6 +450,7 @@ export function createRoom(code: string): RoomState {
     chaserEnabled: false,
     /** Empty unless this round's Ladder had to fill a difficulty from another. */
     ladderNotices: [],
+    chaserIntro: null,
     history: {},
     standoff: null,
     packVotes: {},

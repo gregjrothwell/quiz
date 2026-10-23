@@ -92,7 +92,7 @@ export async function revealQuestion(
 export type Performed =
   | { kind: 'reveal'; cost: RevealCost }
   | { kind: 'keepGame'; outcome: 'kept' | 'refused' | 'failed' }
-  | { kind: 'beat' | 'standoff' };
+  | { kind: 'beat' | 'standoff' | 'openQuestion' };
 
 /** Performs one move. Rejects when it fails; see `failed()` for what happens next. */
 export async function perform(
@@ -109,6 +109,16 @@ export async function perform(
     case 'standoff':
       await ports.dispatch(move.action);
       return { kind: 'standoff' };
+    case 'openQuestion':
+      // `at` is this moment, not the card's. The answering clock starts here,
+      // so the three seconds on the card are not taken off the question.
+      await ports.dispatch({
+        type: 'start',
+        at: ports.now(),
+        gameId: crypto.randomUUID(),
+        durationSecs: move.durationSecs,
+      });
+      return { kind: 'openQuestion' };
     case 'keepGame':
       return { kind: 'keepGame', outcome: await ports.keepGame(move.gameId, move.record) };
   }

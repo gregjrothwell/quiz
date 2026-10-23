@@ -138,6 +138,22 @@ describe('perform', () => {
     ).resolves.toEqual({ kind: 'keepGame', outcome: 'refused' });
   });
 
+  test('opens question one on the card\'s window, timed from now', async () => {
+    const { ports, dispatched } = fake();
+    await perform(
+      { kind: 'openQuestion', key: '1000', durationSecs: 10 },
+      { room: room([]), gameLog: [] },
+      ports,
+    );
+    const action = dispatched[0];
+    if (!action || Array.isArray(action)) throw new Error('expected one start');
+    expect(action.type).toBe('start');
+    if (action.type !== 'start') return;
+    expect(action.at).toBe(10);
+    expect(action.durationSecs).toBe(10);
+    expect(action.gameId).toMatch(/^[0-9a-f-]{36}$/);
+  });
+
   test('a failed beat rejects; whether to mind is the caller\'s', async () => {
     const down = new Error('unavailable');
     const { ports } = fake({ beat: () => Promise.reject(down) });
@@ -164,6 +180,17 @@ describe('foldActions', () => {
   test('is null when nothing changed, so nothing is written', () => {
     const lobby = createRoom('ABCD');
     expect(foldActions(lobby, { type: 'openPicks' })).toBeNull();
+  });
+
+  test('a second open writes nothing once the question is already open', () => {
+    const open = {
+      ...createRoom('ABCD'),
+      phase: 'question' as const,
+      gameId: 'g1',
+      questionOpenedAt: 1_000,
+      questions: [question('q0')],
+    };
+    expect(foldActions(open, { type: 'start', at: 2_000, gameId: 'g2', durationSecs: 10 })).toBeNull();
   });
 
   test('folds several actions into one room', () => {

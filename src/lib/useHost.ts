@@ -15,6 +15,7 @@ import {
   began,
   dueNow,
   failed,
+  openQuestionMove,
   questionKey,
   reapDue,
   revealCost,
@@ -31,6 +32,8 @@ import { resolveAnswer } from './vault';
 /**
  * The host's duties, run in the browser: everything `src/host/` decides, done
  * against this device's Firestore, RTDB and vault (host-loop.md, B1).
+ * Opening question one off Mr Fries's card is one of them: one device, and
+ * the tap goes through the same in-flight lock as the timer.
  *
  * The rules live in `src/host/due.ts` and are tested there; this hook is only
  * the clock and the plumbing. It asks `dueNow` whenever something it reads
@@ -68,6 +71,12 @@ export interface Host {
   reveal: () => Promise<void>;
   /** The clock has run out and the timed retries have not given up. */
   revealing: boolean;
+  /**
+   * Skip Mr Fries's card. The same open the timer sends, so a tap on the same
+   * tick does not start the question twice. Resolves without writing when an
+   * open is already in flight or the card is gone.
+   */
+  openQuestion: () => Promise<void>;
 }
 
 function portsFor(code: string, dispatch: HostInputs['dispatch']): HostPorts {
@@ -148,6 +157,15 @@ export function useHost(inputs: HostInputs): Host {
             // Look again so the backoff's wake is scheduled.
             wake();
           }
+          if (move.kind === 'openQuestion') {
+            const current = inputsRef.current.room;
+            const waiting = current?.phase === 'lobby' && current.chaserIntro !== null;
+            // The question already opened: this write lost to the one in flight.
+            // A room that is still on the card is a real failure, tried again
+            // once `openNotBefore` says so.
+            if (!waiting) return;
+            wake();
+          }
           // A stage of the final is looked at again on the second, as before.
           throw cause;
         },
@@ -166,7 +184,7 @@ export function useHost(inputs: HostInputs): Host {
     memoryRef.current = due.memory;
     for (const move of due.moves) {
       run(move, view, ports).catch((cause: unknown) => {
-        if (move.kind === 'reveal' || move.kind === 'standoff') report(cause);
+        if (move.kind === 'reveal' || move.kind === 'standoff' || move.kind === 'openQuestion') report(cause);
       });
     }
 
@@ -220,6 +238,15 @@ export function useHost(inputs: HostInputs): Host {
     await run(move, view, portsNow(code));
   }, [code, portsNow, run]);
 
+  const openQuestion = useCallback(async (): Promise<void> => {
+    if (!code) return;
+    const view = viewOf(inputsRef.current, Date.now());
+    if (!view) return;
+    const move = openQuestionMove(view, memoryRef.current, true);
+    if (!move) return;
+    await run(move, view, portsNow(code));
+  }, [code, portsNow, run]);
+
   const revealing = clockExpired && room !== null && gaveUp !== questionKey(room);
-  return { reveal, revealing };
+  return { reveal, revealing, openQuestion };
 }

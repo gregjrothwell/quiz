@@ -1,6 +1,7 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 
 import { chaserResult, chaserScore, friesPick } from '../src/engine/chaser';
+import { isNewMode, todayIso } from '../src/questions/newRounds';
 import type { QuizQuestion } from '../src/engine/state';
 import { setEmulatorFlag } from './emulators';
 import { isolateFiles } from './isolate';
@@ -23,6 +24,9 @@ interface RoomDoc {
   index: number;
   gameId: string;
   chaserEnabled: boolean;
+  chaserIntro?: { at: number; durationSecs: number } | null;
+  /** The host's clock when it opened the question. Same clock as `chaserIntro.at`. */
+  questionOpenedAt?: number | null;
   players: Record<string, { name: string }>;
   questions: QuizQuestion[];
 }
@@ -31,8 +35,12 @@ async function readRoom(code: string): Promise<RoomDoc> {
   return (await admin().doc(`rooms/${code}`).get()).data() as RoomDoc;
 }
 
-async function seat(browser: Browser, name: string): Promise<Page> {
-  const page = await (await browser.newContext()).newPage();
+async function seat(
+  browser: Browser,
+  name: string,
+  viewport?: { width: number; height: number },
+): Promise<Page> {
+  const page = await (await browser.newContext(viewport ? { viewport } : {})).newPage();
   page.on('console', (message) => {
     if (message.type() === 'error' && !message.text().includes('403')) console.log(`[${name}] ${message.text()}`);
   });
@@ -49,7 +57,7 @@ test('a round against Mr Fries: his picks recompute, the room takes what it shou
   await host.getByRole('button', { name: 'Start a new room' }).click();
   const code = ((await host.getByLabel(/Room code [A-Z0-9]{4}/).getAttribute('aria-label')) ?? '').replace('Room code ', '');
   const dev = await seat(browser, 'Dev');
-  const eli = await seat(browser, 'Eli');
+  const eli = await seat(browser, 'Eli', { width: 375, height: 812 });
   for (const page of [dev, eli]) {
     await page.getByPlaceholder('––––').fill(code);
     await page.getByRole('button', { name: 'Join the round' }).click();
@@ -62,9 +70,64 @@ test('a round against Mr Fries: his picks recompute, the room takes what it shou
   await host.locator('button.pick', { hasText: 'Against Mr Fries' }).click();
   await host.getByRole('button', { name: 'Start the show' }).click();
   await host.getByRole('button', { name: 'Start the round' }).click();
-  const started = await until(() => readRoom(code), (room) => room.phase === 'question');
-  expect(started.chaserEnabled).toBe(true);
+
+  // The card is up for the whole room, and question one has not opened.
+  // Next question is still there, so the quizmaster can skip the wait.
+  const holding = await until(
+    () => readRoom(code),
+    (room) => room.phase === 'lobby' && typeof room.chaserIntro?.at === 'number',
+  );
+  const cardAt = holding.chaserIntro?.at;
+  if (cardAt === undefined) throw new Error('expected Mr Fries\'s card');
+  await Promise.all([
+    expect(host.getByRole('heading', { name: /Against Mr Fries/ })).toBeVisible(),
+    expect(eli.getByRole('heading', { name: /Against Mr Fries/ })).toBeVisible(),
+  ]);
+  await expect(eli.getByText(/whole office vs the house/i)).toBeVisible();
+  await expect(eli.getByText(/Get ready — question one is coming up/)).toBeVisible();
+  await expect(eli.getByText(/Waiting for the quizmaster/)).toHaveCount(0);
+  await expect(host.getByRole('button', { name: 'Next question' })).toBeVisible();
+  expect(holding.chaserEnabled).toBe(true);
+  if (isNewMode('chaser', todayIso())) {
+    await expect(eli.locator('.card .new-sticker')).toHaveText('New');
+  }
+  const fitOf = async (page: Page) =>
+    page.evaluate(() => {
+      const overflow = (selector: string): number => {
+        const el = document.querySelector(selector);
+        return el ? el.scrollWidth - el.clientWidth : 999;
+      };
+      return {
+        page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        title: overflow('.card__round'),
+        topic: overflow('.card__topic'),
+      };
+    });
+  const fit = await fitOf(eli);
+  expect(fit.page).toBeLessThanOrEqual(1);
+  expect(fit.title).toBeLessThanOrEqual(1);
+  expect(fit.topic).toBeLessThanOrEqual(1);
+
+  // The quizmaster's phone, button included. Restored afterwards so the rest
+  // of the round is the viewport this spec has always used.
+  await host.setViewportSize({ width: 375, height: 812 });
+  const hostFit = await fitOf(host);
+  expect(hostFit.page).toBeLessThanOrEqual(1);
+  expect(hostFit.title).toBeLessThanOrEqual(1);
+  expect(hostFit.topic).toBeLessThanOrEqual(1);
+  await host.setViewportSize({ width: 1280, height: 720 });
+
+  // Nobody taps. The host opens question one about three seconds after the card.
+  const started = await until(() => readRoom(code), (room) => room.phase === 'question', 8_000);
+  const openedAt = started.questionOpenedAt;
+  if (typeof openedAt !== 'number') throw new Error('expected the question to carry questionOpenedAt');
+  const waited = openedAt - cardAt;
+  expect(waited).toBeGreaterThanOrEqual(2_500);
+  expect(waited).toBeLessThan(5_000);
   expect(started.questions.every((question) => typeof question.chaserRate === 'number')).toBe(true);
+  await expect(host.getByRole('heading', { name: /Against Mr Fries/ })).toHaveCount(0);
+  await expect(host.getByRole('timer')).toHaveAttribute('aria-label', /^(9|10) seconds remaining$/);
+
   await seedVault(code);
 
   let answered = '';

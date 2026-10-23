@@ -202,7 +202,9 @@ Greg's call, 23 Oct: 3s covers the measured 2.4s slow write; 15s rounds largely 
 issue; the 4.8–5.5s worst cases are not covered. It stays inside the rules' 8s arrival grace,
 so a write that lands during the wait is still legal. A lamp that never resolves costs the
 room 3s and then the question is scored without that answer. The Reveal button does not wait.
-A retry of a refused reveal does not wait again. `scripts/nodeHost.ts` does not watch lamps,
+This 3s is the reveal, after the clock. Mr Fries's card is a different 3s, in the lobby,
+before question one opens (`CHASER_INTRO_MS`). A retry of a refused reveal does not wait
+again. `scripts/nodeHost.ts` does not watch lamps,
 so a round driven from the terminal folds on the clock as before.
 
 **Not live.** The first office round after it ships is the check: `read-traces -- --name cass`,

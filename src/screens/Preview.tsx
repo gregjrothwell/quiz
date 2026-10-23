@@ -9,6 +9,7 @@ import type { Standoff } from '../engine/standoff';
 import { createRoom, type QuizQuestion, type RoomState } from '../engine/state';
 import type { SeasonRow } from '../lib/season';
 import type { PackSummary } from '../lib/usePacks';
+import { UPDATES } from '../lib/updates';
 import { PACK_META } from '../questions/types';
 import type { StandoffView } from '../lib/useStandoff';
 import { Final } from './Final';
@@ -375,7 +376,8 @@ const PACKS: PackSummary[] = [
  * Every pack the live index lists, at its published size (20 October 2026; The
  * Price is Right added 21 October), so the lobby's shelves can be judged at the
  * length the office actually sees — {@link PACKS} is ten and hides the wall. Level counts are a
- * rough third each; nothing here reads them.
+ * rough third each; nothing here reads them. Survey Says joined the index on
+ * 22 October.
  */
 const EVERY_PACK: PackSummary[] = (
   [
@@ -384,7 +386,7 @@ const EVERY_PACK: PackSummary[] = (
     ['uk-leaning', 1500], ['video-games', 1400], ['melody', 70], ['picture', 49],
     ['flags', 76], ['tunes', 424], ['sleeves', 212], ['screens', 445],
     ['catchphrase', 233], ['blanks', 148], ['prices', 154], ['artists', 259], ['random', 294],
-    ['tags', 81],
+    ['tags', 81], ['survey', 40],
   ] as const
 ).map(([id, count]) => ({
   id,
@@ -583,6 +585,8 @@ export function Preview() {
           onVote={noop}
           onStart={noop}
           onLeave={noop}
+          onUpdates={noop}
+          notice={{ unseen: true, teaser: UPDATES[0]?.lines[0] ?? '' }}
         />
       ),
     },
@@ -1828,6 +1832,26 @@ export function Preview() {
     {
       title: 'Updates · what’s new',
       node: <Updates onBack={noop} />,
+    },
+    {
+      // Appended so every `#/preview/N` index above keeps pointing where it did.
+      // `today` is pinned so the sticker stays visible after Survey Says's
+      // fortnight is over — the live lobby uses the real date.
+      title: 'Standings · a new round',
+      node: (
+        <Scoreboard
+          room={mockRoom({
+            phase: 'scoreboard',
+            packId: 'survey',
+            packTitle: 'Survey Says',
+            lastDeltas: { sam: 1_000, greg: 0, priya: 900 },
+          })}
+          youUid="greg"
+          isQuizmaster
+          onNext={noop}
+          today="2026-10-23"
+        />
+      ),
     },
   ];
 

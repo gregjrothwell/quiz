@@ -37,6 +37,30 @@ describe('the room document and W3', () => {
   it('creates with the host named, which is what the create rule checks', () => {
     expect(toPersisted({ ...createRoom('ABCD'), hostUid: 'me' }).hostUid).toBe('me');
   });
+
+  it('leaves the chaser card off a normal write, and deletes it when the question opens', () => {
+    const lobby = createRoom('ABCD');
+    expect(toUpdate(lobby, null)).not.toHaveProperty('chaserIntro');
+
+    const waiting = { ...lobby, chaserEnabled: true, chaserIntro: { at: 1_000, durationSecs: 10 } };
+    expect(toUpdate(waiting, lobby).chaserIntro).toEqual({ at: 1_000, durationSecs: 10 });
+
+    const opened = { ...waiting, phase: 'question' as const, chaserIntro: null, questionOpenedAt: 5_000, gameId: 'g' };
+    expect(toUpdate(opened, waiting).chaserIntro).toEqual(deleteField());
+
+    const legacy = { ...toPersisted(lobby) } as Record<string, unknown>;
+    delete legacy.chaserIntro;
+    expect(toRoomState('ABCD', legacy, {}).chaserIntro).toBeNull();
+    expect(toRoomState('ABCD', { ...legacy, chaserIntro: { at: 1_000, durationSecs: 10 } }, {}).chaserIntro).toEqual({
+      at: 1_000,
+      durationSecs: 10,
+    });
+    expect(toRoomState('ABCD', { ...legacy, chaserIntro: { durationSecs: 10 } }, {}).chaserIntro).toEqual({
+      at: 0,
+      durationSecs: 10,
+    });
+    expect(toRoomState('ABCD', { ...legacy, chaserIntro: { durationSecs: 1 } }, {}).chaserIntro).toBeNull();
+  });
 });
 
 describe('the Ladder notice on the room document', () => {
