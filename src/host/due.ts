@@ -3,7 +3,7 @@ import { foldGameRecord, type GameRecord, type RevealTiming } from '../engine/ga
 import { BEAT_EVERY_MS } from '../engine/host';
 import { reapAbsent } from '../engine/presence';
 import type { Action } from '../engine/reducer';
-import { msUntilRevealGate, revealBackoffMs } from '../engine/revealGate';
+import { REVEAL_GATE_SLACK_MS, msUntilRevealGate, revealBackoffMs } from '../engine/revealGate';
 import { PICK_GRACE_MS, PICK_MS, REVEAL_GRACE_MS, TALK_MS, type StandoffPick } from '../engine/standoff';
 import { currentQuestion, type Player, type RoomState } from '../engine/state';
 
@@ -40,6 +40,42 @@ export const MAX_REVEAL_RETRIES = 8;
  */
 export const STAGE_RECHECK_MS = 1_000;
 
+/**
+ * How long the clock reveal waits, after the vault's gate is open, for an
+ * answer whose lamp is lit and whose document has not landed.
+ *
+ * Cass's question-one writes are slow, and the fold used to happen at the gate
+ * (window + 100ms). A tap on the buzzer then missed the tally even though
+ * `arrivalOk` would still have accepted the write — the grace is 8s. Three
+ * seconds covers the measured 2.4s slow write and stays inside that grace, so
+ * a write that lands during the wait is still a legal answer. Greg's call,
+ * 23 Oct: 15s rounds largely avoid the issue, and the 4.8–5.5s worst cases
+ * are not covered. A lamp that never resolves costs the room this long and no
+ * longer; the Reveal button does not wait.
+ *
+ * See docs/decisions/cass-q1.md.
+ */
+export const IN_FLIGHT_HOLD_MS = 3_000;
+
+/**
+ * Whether a seated player has lit their lamp and their answer is not in yet.
+ *
+ * The lamp is the RTDB write sent beside the Firestore one. Presence keeps
+ * that connection open, so the lamp can arrive while the answer write is still
+ * in flight. Someone who is not seated cannot be scored, and a lamp for an
+ * answer that has already landed is not in flight.
+ */
+export function answerStillInFlight(
+  players: RoomState['players'],
+  answers: RoomState['answers'],
+  lamps: ReadonlySet<string>,
+): boolean {
+  for (const uid of lamps) {
+    if (players[uid] !== undefined && answers[uid] === undefined) return true;
+  }
+  return false;
+}
+
 /** Everything this device can see that bears on what the host owes. */
 export interface HostView {
   uid: string;
@@ -54,6 +90,12 @@ export interface HostView {
   answersReady: boolean;
   /** The question clock, as this device counts it. */
   clockExpired: boolean;
+  /**
+   * A seated player's lamp is lit and their answer has not landed. The clock
+   * reveal waits for it — see {@link IN_FLIGHT_HOLD_MS}. The Reveal button
+   * does not.
+   */
+  answerInFlight: boolean;
   /** When the server acknowledged the open question, on this device's clock. Null until it has. */
   confirmedAt: number | null;
   durationMs: number;
@@ -207,6 +249,14 @@ export function revealDue(view: HostView, memory: HostMemory): OneDue {
   if (retry.exhausted) return { move: null, memory: next, wakeInMs: null };
   if (retry.notBefore !== null && now < retry.notBefore) {
     return { move: null, memory: next, wakeInMs: retry.notBefore - now };
+  }
+
+  // Only the first attempt waits. A retry is a vault that already refused, and
+  // holding it again would pile this wait onto the backoff.
+  const notStarted = retry.n === 0 && retry.notBefore === null;
+  if (notStarted && view.answerInFlight && view.confirmedAt !== null) {
+    const holdEnds = view.confirmedAt + view.durationMs + REVEAL_GATE_SLACK_MS + IN_FLIGHT_HOLD_MS;
+    if (now < holdEnds) return { move: null, memory: next, wakeInMs: holdEnds - now };
   }
 
   const move = revealMove(view, next, false);
