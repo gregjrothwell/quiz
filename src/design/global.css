@@ -4758,8 +4758,8 @@ select.input option {
   margin-top: 0.85rem;
 }
 
-/* On question one, above the prompt. Shorter than the standings card so a
-   375px phone still has the question. The ghost is letters: a colour emoji
+/* Before question one, on its own screen. Shorter than the standings card so
+   "Against Mr Fries" fits a 375px phone. The ghost is letters: a colour emoji
    ignores the faint cyan and paints a full-size fries over the title. The
    chip is smaller than the shout, or it sits on the sound control. */
 .card--intro {

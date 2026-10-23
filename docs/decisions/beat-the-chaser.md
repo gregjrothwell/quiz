@@ -100,12 +100,19 @@ and difficulty** — the number Mr Fries plays to.
 
 ## The intro, 23 October 2026
 
-Question one opens on the same title card as Share or Shaft and the standings:
-**Against Mr Fries 🍟**, then **The whole office vs the house**, on every
-screen including the host. The New sticker stays while `MODE_NEW_UNTIL` says
-the mode is new (through 5 Nov 2026). The card leaves after three seconds.
-The clock is already running, so a ten-second question has about seven seconds
-once it lifts; the score and the questions are unchanged. No rules change.
+Before question one, on its own card, the same way the standings carry the next
+round and Share or Shaft carries its own: **Against Mr Fries 🍟**, then **The
+whole office vs the house**, on every screen including the host. The New
+sticker stays while `MODE_NEW_UNTIL` says the mode is new (through 5 Nov 2026).
+
+The room is still in the lobby, so the answering clock has not started. The
+quizmaster taps **Next question** — players wait, as they do on the standings —
+and that tap opens question one. Nothing dismisses the card on a timer. A
+ten-second question keeps ten seconds. The score is unchanged. No rules change:
+the card is a field on the room, and `wellFormed()` does not `hasOnly` the
+room's keys. The host's reveal (`src/host/due.ts`) still measures the full
+window from the moment the question opens, including the hold that refuses a
+second reveal while one is in flight.
 
 ## Cut from v1
 

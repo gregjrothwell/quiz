@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { ChaserIntro } from './components/ChaserIntro';
 import { ColdOpen } from './components/ColdOpen';
 import { RigCheck } from './components/RigCheck';
 import { Stage } from './components/Stage';
@@ -491,8 +492,9 @@ function Game() {
             cannot go on the room's own `durationSecs`, which the rules pin until
             a question actually opens.
 
-            A room the season knows nothing about has no titles to show, and gets
-            the round it asked for on the one press it made.
+            A room the season knows nothing about has no titles to show. A round
+            against Mr Fries still waits on his card; any other round starts on
+            the one press it was given.
           */
           await dispatch([
             {
@@ -509,14 +511,16 @@ function Game() {
             },
             ...(facts.length > 0
               ? [{ type: 'titles' as const, at: Date.now(), facts, durationSecs }]
-              : [
-                  {
-                    type: 'start' as const,
-                    at: Date.now(),
-                    gameId: crypto.randomUUID(),
-                    durationSecs,
-                  },
-                ]),
+              : chaserEnabled
+                ? [{ type: 'chaserIntro' as const, durationSecs }]
+                : [
+                    {
+                      type: 'start' as const,
+                      at: Date.now(),
+                      gameId: crypto.randomUUID(),
+                      durationSecs,
+                    },
+                  ]),
           ]);
 
           // After the round is safely under way, for the same reason.
@@ -595,13 +599,31 @@ function Game() {
   const handleBeginRound = useCallback(() => {
     if (!form) return;
     setActionError(null);
+    // The field card first, then Mr Fries, then the question. Both cards wait
+    // for a tap: the clock starts on the tap that opens question one.
+    if (room?.chaserEnabled) {
+      void dispatch({ type: 'chaserIntro', durationSecs: form.durationSecs }).catch(report);
+      return;
+    }
     void dispatch({
       type: 'start',
       at: Date.now(),
       gameId: crypto.randomUUID(),
       durationSecs: form.durationSecs,
     }).catch(report);
-  }, [form, dispatch, report]);
+  }, [form, room?.chaserEnabled, dispatch, report]);
+
+  const handleStartQuestion = useCallback(() => {
+    const intro = room?.chaserIntro;
+    if (!intro) return;
+    setActionError(null);
+    void dispatch({
+      type: 'start',
+      at: Date.now(),
+      gameId: crypto.randomUUID(),
+      durationSecs: intro.durationSecs,
+    }).catch(report);
+  }, [room?.chaserIntro, dispatch, report]);
 
   const handleCancelTitles = useCallback(() => {
     setActionError(null);
@@ -766,6 +788,9 @@ function Game() {
           onBack={handleCancelTitles}
         />
       )) ||
+        (room.phase === 'lobby' && room.chaserIntro && (
+          <ChaserIntro isQuizmaster={isQuizmaster} onStart={handleStartQuestion} />
+        )) ||
         (room.phase === 'lobby' && (
         <>
         <Lobby

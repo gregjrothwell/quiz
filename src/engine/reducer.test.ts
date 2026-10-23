@@ -1045,6 +1045,93 @@ describe('the quizmaster keeps the start of the round', () => {
   });
 });
 
+describe('Mr Fries’s title card', () => {
+  function chaserLobby(): RoomState {
+    return apply(
+      createRoom('ABCD'),
+      { type: 'join', uid: 'host', name: 'Greg', at: 100 },
+      {
+        type: 'selectPack',
+        packId: 'geography',
+        packTitle: 'Geography',
+        questions: QUESTIONS,
+        wagerEnabled: false,
+        stealEnabled: false,
+        chaserEnabled: true,
+      },
+    );
+  }
+
+  test('holds the room in the lobby, and opening the question keeps the full window', () => {
+    // #given a round against Mr Fries that has not started
+    const lobby = chaserLobby();
+
+    // #when his card goes up
+    const intro = reduce(lobby, { type: 'chaserIntro', durationSecs: 10 });
+
+    // #then the question has not opened, so nothing is on the clock
+    expect(intro.phase).toBe('lobby');
+    expect(intro.questionOpenedAt).toBeNull();
+    expect(intro.chaserIntro).toEqual({ durationSecs: 10 });
+
+    // #when the quizmaster opens question one
+    const opened = reduce(intro, { type: 'start', at: 5_000, gameId: 'game-1', durationSecs: 10 });
+
+    // #then the clock starts now, on the whole ten seconds
+    expect({
+      phase: opened.phase,
+      openedAt: opened.questionOpenedAt,
+      durationSecs: opened.durationSecs,
+      intro: opened.chaserIntro,
+    }).toEqual({ phase: 'question', openedAt: 5_000, durationSecs: 10, intro: null });
+  });
+
+  test('comes after the opening titles, and takes the window they were holding', () => {
+    // #given the field card, holding a ten-second window
+    const titles = reduce(chaserLobby(), {
+      type: 'titles',
+      at: 1_000,
+      facts: [{ id: 'newcomers', uids: ['host'] }],
+      durationSecs: 10,
+    });
+
+    // #when the quizmaster leaves it for Mr Fries
+    const intro = reduce(titles, { type: 'chaserIntro', durationSecs: titles.form?.durationSecs ?? 0 });
+
+    // #then only his card is up, still before the question, on that same window
+    expect(intro.form).toBeNull();
+    expect(intro.phase).toBe('lobby');
+    expect(intro.chaserIntro).toEqual({ durationSecs: 10 });
+  });
+
+  test('is refused once a question is open, and on a round that is not against him', () => {
+    const playing = reduce(chaserLobby(), { type: 'start', at: 1_000, gameId: 'game-1', durationSecs: 10 });
+    expect(reduce(playing, { type: 'chaserIntro', durationSecs: 10 })).toBe(playing);
+
+    const plain = apply(
+      createRoom('ABCD'),
+      { type: 'join', uid: 'host', name: 'Greg', at: 100 },
+      {
+        type: 'selectPack',
+        packId: 'geography',
+        packTitle: 'Geography',
+        questions: QUESTIONS,
+        wagerEnabled: false,
+        stealEnabled: false,
+      },
+    );
+    expect(reduce(plain, { type: 'chaserIntro', durationSecs: 10 })).toBe(plain);
+  });
+
+  test('is refused for a window the rules would reject, and putting it up twice changes nothing', () => {
+    const lobby = chaserLobby();
+    expect(reduce(lobby, { type: 'chaserIntro', durationSecs: 1 })).toBe(lobby);
+
+    const intro = reduce(lobby, { type: 'chaserIntro', durationSecs: 10 });
+    expect(reduce(intro, { type: 'chaserIntro', durationSecs: 10 })).toBe(intro);
+  });
+});
+
 describe('the lobby vote', () => {
   /** Two players in the lobby, one vote cast and the quizmaster looking at a pack. */
   function votingLobby(): RoomState {

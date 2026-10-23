@@ -1,7 +1,7 @@
-import { serverTimestamp, Timestamp, type DocumentData } from 'firebase/firestore';
+import { deleteField, serverTimestamp, Timestamp, type DocumentData } from 'firebase/firestore';
 import type { AnswerDoc } from '../engine/answers';
 import { readBrowsing, readPackVotes, readVoteTaps, writesTheVote } from '../engine/packVote';
-import { LEGACY_DURATION_SECS, type Answer, type RoomState } from '../engine/state';
+import { isDurationAllowed, LEGACY_DURATION_SECS, type Answer, type RoomState } from '../engine/state';
 
 /**
  * The room document and the room state, translated both ways.
@@ -103,6 +103,9 @@ export function toRoomState(code: string, data: DocumentData, answers: Record<st
     // the wager's flag is.
     standoffEnabled: persisted.standoffEnabled ?? false,
     chaserEnabled: persisted.chaserEnabled ?? false,
+    // Absent on every round that is not waiting on Mr Fries's card. `undefined`
+    // is not `null` — the lobby would treat a missing field as the card being up.
+    chaserIntro: readChaserIntro(data['chaserIntro']),
     history: persisted.history ?? {},
     standoff: persisted.standoff ?? null,
     // Absent in every room from before the vote, and writable by any member,
@@ -115,6 +118,14 @@ export function toRoomState(code: string, data: DocumentData, answers: Record<st
     hostUid: typeof data['hostUid'] === 'string' ? data['hostUid'] : null,
     lastPicks: readPicks(data['lastPicks']),
   };
+}
+
+/** The parked window, or null. Anything else is not a card the room can leave. */
+function readChaserIntro(value: unknown): RoomState['chaserIntro'] {
+  if (typeof value !== 'object' || value === null) return null;
+  const durationSecs = (value as { durationSecs?: unknown }).durationSecs;
+  if (typeof durationSecs !== 'number' || !isDurationAllowed(durationSecs)) return null;
+  return { durationSecs };
 }
 
 /**
@@ -168,6 +179,7 @@ export function toPersisted(state: RoomState): PersistedRoom {
     lastSteal: state.lastSteal,
     standoffEnabled: state.standoffEnabled,
     chaserEnabled: state.chaserEnabled,
+    chaserIntro: state.chaserIntro,
     history: state.history,
     standoff: state.standoff,
     packVotes: state.packVotes,
@@ -208,6 +220,15 @@ export function toUpdate(state: RoomState, previous: RoomState | null): Record<s
   // folded over this device's snapshot, so writing it here could hand the chair
   // back to whoever this device last saw holding it.
   delete update.hostUid;
+
+  // Absent on a round that is not waiting on the card, so a normal phase
+  // transition does not grow a field the host-writes recording has never had.
+  // Clearing one that was up has to delete it: an update that omits a key
+  // leaves the old value, and the next lobby would show the card again.
+  if (update.chaserIntro == null) {
+    delete update.chaserIntro;
+    if (previous?.chaserIntro) update.chaserIntro = deleteField();
+  }
 
   // The lobby vote travels as `packVotes.{uid}` field writes, for the reason
   // `players` does. Written whole only when crossing the lobby, to clear it.

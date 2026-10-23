@@ -331,6 +331,17 @@ export interface RoomState {
    */
   chaserEnabled: boolean;
   /**
+   * Mr Fries's title card, up in the lobby before question one.
+   *
+   * The answering window is stamped when a question opens, so the card cannot
+   * sit on that clock — the same reason the round title lives on the standings.
+   * It waits here until the quizmaster moves on. `durationSecs` is parked on it
+   * because the rules pin the room's own window until a question actually opens.
+   * Null once the question is open. No rules change: `wellFormed()` does not
+   * `hasOnly` the room's keys.
+   */
+  chaserIntro: { durationSecs: number } | null;
+  /**
    * What the opening titles loaded about each player — rounds played, wins, best
    * round — kept for the round so the Commentator can say "first win" on every
    * screen alike (docs/decisions/commentator.md). Empty when the season has
@@ -429,6 +440,7 @@ export function createRoom(code: string): RoomState {
     jigsawEnabled: false,
     standoffEnabled: false,
     chaserEnabled: false,
+    chaserIntro: null,
     history: {},
     standoff: null,
     packVotes: {},

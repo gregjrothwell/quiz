@@ -88,8 +88,9 @@ Pull a date forward to retire one early.
 
 Same window, `MODE_NEW_UNTIL` in `src/questions/newRounds.ts`. A mode wears it
 on the quizmaster's picker button. Share or Shaft wears it on its title
-card. Beat the Chaser wears it on the intro the whole room sees for the first
-few seconds of question one. Players vote for a pack, not a mode, so the vote
+card. Beat the Chaser wears it on the intro the whole room sees before
+question one. The quizmaster taps Next question; the clock starts after that.
+Players vote for a pack, not a mode, so the vote
 has nothing to sticker.
 House defaults (As it comes, Played straight, Just us, and the rest) are not
 modes.

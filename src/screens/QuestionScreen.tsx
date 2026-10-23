@@ -41,7 +41,7 @@ import {
 import type { QuestionClock } from '../lib/useQuestionClock';
 import { useReducedMotion } from '../lib/useReducedMotion';
 import { BUZZ_CORRECT, BUZZ_WRONG, useBuzz } from '../lib/haptics';
-import { isNewMode, isNewRound, todayIso } from '../questions/newRounds';
+import { isNewRound, todayIso } from '../questions/newRounds';
 
 /**
  * The beat between the clock stopping and the verdict landing, when there is no
@@ -51,16 +51,6 @@ import { isNewMode, isNewRound, todayIso } from '../questions/newRounds';
 const HUSH_MS = 700;
 
 const CLOCK_LEAD_MS = CLOCK_LEAD_SECONDS * 1000;
-
-/**
- * How long Mr Fries's intro stays on question one.
- *
- * Long enough to read the line, then it gets out of the question. The round
- * title card and Share or Shaft's stay up for their own screen, where no
- * answering clock is running. This one is on that clock, so three seconds is
- * the whole of it: the window, the score and the next question are untouched.
- */
-export const CHASER_INTRO_MS = 3_000;
 
 /**
  * Shared so that "no replay" is the same array every render. A fresh `[]` would
@@ -529,17 +519,6 @@ export function QuestionScreen({
     question?.previewSeconds,
   ]);
 
-  // On the question clock, so a reload halfway through does not play it again,
-  // and a phone that was already in the room sees the same three seconds.
-  const chaserIntro =
-    Boolean(question) &&
-    room.chaserEnabled &&
-    room.index === 0 &&
-    !revealed &&
-    !joinedMidQuestion &&
-    clock.elapsedMs < CHASER_INTRO_MS;
-  useCue('sting', `${room.gameId ?? ''}:chaser-intro`, chaserIntro);
-
   // Placed after the hooks above: an early return before them would change the
   // hook order between renders.
   if (!question) return <p className="notice">This round has no question at that position.</p>;
@@ -610,21 +589,6 @@ export function QuestionScreen({
 
   return (
     <>
-      {chaserIntro ? (
-        <div className="card card--intro">
-          <span className="card__ghost" aria-hidden="true">
-            VS
-          </span>
-          <div className="chrome-wrap">
-            <h1 className="display chrome card__round">
-              Against Mr Fries <span className="card__chip">🍟</span>
-            </h1>
-          </div>
-          <p className="card__topic">The whole office vs the house</p>
-          {isNewMode('chaser', today) ? <NewSticker /> : null}
-        </div>
-      ) : null}
-
       <header className="qhead">
         <div className="qhead__meta">
           <p className="display display--inline">
@@ -633,7 +597,7 @@ export function QuestionScreen({
           </p>
         </div>
         <div className="qhead__tags">
-          {room.index === 0 && isNewRound(room.packId, todayIso()) ? <NewSticker /> : null}
+          {room.index === 0 && isNewRound(room.packId, today) ? <NewSticker /> : null}
           <span className="chip">{question.category}</span>
           <span className={question.difficulty === 'hard' ? 'chip chip--hard' : 'chip'}>
             {question.difficulty}

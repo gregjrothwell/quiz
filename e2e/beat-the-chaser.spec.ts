@@ -65,33 +65,52 @@ test('a round against Mr Fries: his picks recompute, the room takes what it shou
   await host.locator('button.pick', { hasText: 'Against Mr Fries' }).click();
   await host.getByRole('button', { name: 'Start the show' }).click();
   await host.getByRole('button', { name: 'Start the round' }).click();
-  const started = await until(() => readRoom(code), (room) => room.phase === 'question');
-  expect(started.chaserEnabled).toBe(true);
-  expect(started.questions.every((question) => typeof question.chaserRate === 'number')).toBe(true);
 
-  // The intro is on the host and on a player's phone before anyone answers.
+  // The card is up for the whole room, and question one has not opened.
   await Promise.all([
     expect(host.getByRole('heading', { name: /Against Mr Fries/ })).toBeVisible(),
     expect(eli.getByRole('heading', { name: /Against Mr Fries/ })).toBeVisible(),
   ]);
   await expect(eli.getByText(/whole office vs the house/i)).toBeVisible();
+  await expect(eli.getByText(/Waiting for the quizmaster/)).toBeVisible();
+  await expect(host.getByRole('button', { name: 'Next question' })).toBeVisible();
+  const holding = await readRoom(code);
+  expect(holding.phase).toBe('lobby');
+  expect(holding.chaserEnabled).toBe(true);
   if (isNewMode('chaser', todayIso())) {
     await expect(eli.locator('.card .new-sticker')).toHaveText('New');
   }
-  const fit = await eli.evaluate(() => {
-    const overflow = (selector: string): number => {
-      const el = document.querySelector(selector);
-      return el ? el.scrollWidth - el.clientWidth : 999;
-    };
-    return {
-      page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      title: overflow('.card__round'),
-      topic: overflow('.card__topic'),
-    };
-  });
+  const fitOf = async (page: Page) =>
+    page.evaluate(() => {
+      const overflow = (selector: string): number => {
+        const el = document.querySelector(selector);
+        return el ? el.scrollWidth - el.clientWidth : 999;
+      };
+      return {
+        page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        title: overflow('.card__round'),
+        topic: overflow('.card__topic'),
+      };
+    });
+  const fit = await fitOf(eli);
   expect(fit.page).toBeLessThanOrEqual(1);
   expect(fit.title).toBeLessThanOrEqual(1);
   expect(fit.topic).toBeLessThanOrEqual(1);
+
+  // The quizmaster's phone, button included. Restored afterwards so the rest
+  // of the round is the viewport this spec has always used.
+  await host.setViewportSize({ width: 375, height: 812 });
+  const hostFit = await fitOf(host);
+  expect(hostFit.page).toBeLessThanOrEqual(1);
+  expect(hostFit.title).toBeLessThanOrEqual(1);
+  expect(hostFit.topic).toBeLessThanOrEqual(1);
+  await host.setViewportSize({ width: 1280, height: 720 });
+
+  await host.getByRole('button', { name: 'Next question' }).click();
+  const started = await until(() => readRoom(code), (room) => room.phase === 'question');
+  expect(started.questions.every((question) => typeof question.chaserRate === 'number')).toBe(true);
+  await expect(host.getByRole('heading', { name: /Against Mr Fries/ })).toHaveCount(0);
+  await expect(host.getByRole('timer')).toHaveAttribute('aria-label', /^(9|10) seconds remaining$/);
 
   await seedVault(code);
 

@@ -113,6 +113,39 @@ describe('the reveal on the clock', () => {
     expect(reveals(dueNow(view({ isHost: false }), beaten(GATE_OPEN)).moves)).toEqual([]);
   });
 
+  test('a chaser question keeps the full window, and a reveal already in flight is not sent again', () => {
+    // The title card is before the question. Three seconds into the question —
+    // as long as that card used to cover — the reveal is not due, and it becomes
+    // due on the whole window. A second look while the first reveal is in flight
+    // still sends nothing.
+    const durationMs = 10_000;
+    const confirmedAt = 1_000;
+    const room = questionRoom({ chaserEnabled: true });
+    const early = confirmedAt + 3_000;
+    expect(
+      reveals(dueNow(view({ room, clockExpired: false, confirmedAt, durationMs, now: early }), beaten(early)).moves),
+    ).toEqual([]);
+
+    const open = confirmedAt + durationMs + 100;
+    const first = dueNow(view({ room, clockExpired: true, confirmedAt, durationMs, now: open }), beaten(open));
+    const move = reveals(first.moves)[0];
+    if (!move) throw new Error('expected a reveal on the full window');
+    const inFlight = began(first.memory, move, { room, now: open });
+    expect(
+      reveals(dueNow(view({ room, clockExpired: true, confirmedAt, durationMs, now: open + 50 }), inFlight).moves),
+    ).toEqual([]);
+  });
+
+  test('the title card is not a question, so nothing is due to reveal during it', () => {
+    const room = questionRoom({
+      phase: 'lobby',
+      chaserEnabled: true,
+      chaserIntro: { durationSecs: 10 },
+      questionOpenedAt: null,
+    });
+    expect(reveals(dueNow(view({ room, clockExpired: true }), beaten(GATE_OPEN)).moves)).toEqual([]);
+  });
+
   test('not a second time while the first is in flight', () => {
     // #given a reveal under way
     const first = dueNow(view(), beaten(GATE_OPEN));
