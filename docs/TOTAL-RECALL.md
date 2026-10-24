@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 23 October 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 24 October 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -121,44 +121,14 @@ Greg: "Go live with #94." CI green on the PR head (Playwright against emulators)
 
 Greg: Random Round always ended on an album, "almost like the last question is a random answer". Measured: 9 rounds, all The Ladder; a sleeve last in 7, 18% right; hard prices 6%. Decided: the last is never a sleeve or a price ([`random-round.md`](decisions/random-round.md#20-october-2026--the-last-question-is-never-a-sleeve-or-a-price)). Handover item 18, both lobby grids: show rounds first (45 of the last 60 rounds), Random Round two tiles wide, a sound mark ([`lobby-shelves.md`](decisions/lobby-shelves.md)). Both on `release-20-oct`, not live. **The Price is Right** (`tags`, blind): a picture, guess today's price; 81 ONS items, writer and draw script on `price-is-right`, waiting on Greg's pick of drawing style (`decisions/price-is-right.md` on that branch). Lint is red locally from five stale `.claude/worktrees`, not from the code.
 
-## 2026-10-17 — Live: #91 (gh-pages `f6268e6`): The Price Was Right 154, Catchphrase 233
-
-Ranked by runway (Random Round's six-way deal is most of the burn, and `freshness` files it under Random): Prices
-95 → 154 and Catchphrase 178 → 233, both blind, written by subagents in worktrees; drawn on the MacBook (Greg: the Mini
-would crash). "go live with #91" → seeded 60 + 55, 0 changed, read back 154/154 and 233/233 → `host-room` on two *new*
-ids each (`--pack` plays the first two, which are old) → merged `9017238` 21:27 BST → Pages by 21:34, packs and
-`index.html` byte-identical to a local build, 55 stills served. **One Prices question cut before merge**: a loose grep of
-host-room's log printed three of its options (the SDK logs refused reveals in clear). Live check: the first office round.
-
-## 2026-10-15 — Live: #88 + #87 (gh-pages `7d42c0e`): W1, W2 and W3 in one deploy
-
-Greg's "go live" on #88 → merged `72791a9` 21:34 BST → e2e → the `rules` job (WIF's first sign-in; the W3 Firestore
-ruleset uploaded and released, RTDB released) → Pages 21:40. `index-C__7fXbz` byte-identical to a local build.
-Live: `check-rules` 119/119 (91 + 28 W3), `rank-harness -- --browser` all ✓ in a hosted room, `sync-harness 30`
-30/30 within 102 ms, `host-room` reveal from `lastPicks`. Found: App Check 429s a burst of debug-token exchanges and
-`appCheck.ts` blames safelisting; the `--browser` run banked "Claude 600" on the week board (documented cost).
-AC10 is not measurable here: Cloud Monitoring needs billing. [`host-authority.md`](decisions/host-authority.md).
-
-## 2026-10-15 — W3 finished; the release with W2 and W3 built, not live
-
-#87 (W1, W2, #79 record) was merged 20:50 BST on "go live by the end of the session", which was a deadline, not
-the words; the master run was cancelled before rules or Pages, so `master` sits ahead of live. Then W3: the AC8
-stall found and fixed (a joiner listed answers before the room was read, was refused, and the same query never
-confirmed when the chair passed to it); AC12 and the final's allow cases added; `check-rules` 28 W3 cases;
-three harnesses make hosted rooms that beat. e2e 15/15. [`host-authority.md`](decisions/host-authority-ac8-stall.md#15-october-evening-the-ac8-stall-and-the-gaps-closed).
-
-## 2026-10-15 — Branch `w3-host-authority` (PR #86): W3, host authority, built and not live
-
-The room names its host (`hostUid`); only the host moves it on, members write only about themselves, answers are the
-host's and the author's, the reveal publishes the picks (`lastPicks`), lamps are on the RTDB. Leave hands the chair
-over; a 15 s beat and a claim at 75 s of silence cover the host whose tab closes (AC8, e2e). Expand half only: rooms
-without `hostUid` keep the member rule. **No rule published** — W2 is not live. Harnesses and `check-rules` not yet
-moved to hosted rooms; AC10 unmeasured. [`host-authority.md`](decisions/host-authority.md#what-was-built-15-october-2026).
-
 ## 2026-10-02 to 2026-10-15 — archived, one line each
 
-Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's; #68 and Blankety Blank built the same night, at 309 with the W3 release entry; the first office rounds of #67 and #68 the same night again, at 304 with the go-live; The Price Was Right built on 17 October, at 302 with #91's go-live; #70 and #69 on 20 October, at 296, with the Random Round, lobby and Price is Right entry; the two 7 October entries on 21 October, at 302 with #98's go-live; the two 12 October go-lives on 21 October, at 306 with #104's go-live; the 8 and 14 October lobby-vote entries on 22 October, at 302 with #107's go-live; the two 15 October vote-taps entries the same day, at 301 with #110's go-live; the two 15 October reveal-name entries the same day, at 301 with #113's go-live; W1's TMDB branch and the productionisation plan, both 15 October, the same day, at 300 with release 2026-10-22-3's go-live; W2's `rules-from-ci` branch, 15 October, the same night, at 297 with #138's go-live.
+Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's; #68 and Blankety Blank built the same night, at 309 with the W3 release entry; the first office rounds of #67 and #68 the same night again, at 304 with the go-live; The Price Was Right built on 17 October, at 302 with #91's go-live; #70 and #69 on 20 October, at 296, with the Random Round, lobby and Price is Right entry; the two 7 October entries on 21 October, at 302 with #98's go-live; the two 12 October go-lives on 21 October, at 306 with #104's go-live; the 8 and 14 October lobby-vote entries on 22 October, at 302 with #107's go-live; the two 15 October vote-taps entries the same day, at 301 with #110's go-live; the two 15 October reveal-name entries the same day, at 301 with #113's go-live; W1's TMDB branch and the productionisation plan, both 15 October, the same day, at 300 with release 2026-10-22-3's go-live; W2's `rules-from-ci` branch, 15 October, the same night, at 297 with #138's go-live; #91's go-live and the three 15 October W3 entries on 24 October, at 299, ahead of a release carrying five spine entries.
 
+- **2026-10-17** — [Live: #91 (gh-pages `f6268e6`): The Price Was Right 154, Catchphrase 233](recall/2026-10.md#2026-10-17--live-91-gh-pages-f6268e6-the-price-was-right-154-catchphrase-233)
+- **2026-10-15** — [Live: #88 + #87 (gh-pages `7d42c0e`): W1, W2 and W3 in one deploy](recall/2026-10.md#2026-10-15--live-88--87-gh-pages-7d42c0e-w1-w2-and-w3-in-one-deploy)
+- **2026-10-15** — [W3 finished; the release with W2 and W3 built, not live](recall/2026-10.md#2026-10-15--w3-finished-the-release-with-w2-and-w3-built-not-live)
+- **2026-10-15** — [Branch `w3-host-authority` (PR #86): W3, host authority, built and not live](recall/2026-10.md#2026-10-15--branch-w3-host-authority-pr-86-w3-host-authority-built-and-not-live)
 - **2026-10-15** — [Branch `rules-from-ci`: W2, CI publishes both rulesets, keyless](recall/2026-10.md#2026-10-15--branch-rules-from-ci-w2-ci-publishes-both-rulesets-keyless)
 - **2026-10-15** — [Branch `tmdb-credit`: W1, TMDB's logo and notice; D6 added](recall/2026-10.md#2026-10-15--branch-tmdb-credit-w1-tmdbs-logo-and-notice-d6-added)
 - **2026-10-15** — [Productionisation plan: five work items, five decisions for Greg, a TMDB gap](recall/2026-10.md#2026-10-15--productionisation-plan-five-work-items-five-decisions-for-greg-a-tmdb-gap)
