@@ -41,6 +41,9 @@ function show(squad: string, onStart = vi.fn()) {
   return onStart;
 }
 
+/** Where `history` sits in `onStart`'s arguments: tenth, before `doubleEnabled`. */
+const HISTORY = 9;
+
 async function start() {
   await userEvent.click(screen.getByRole('button', { name: /Sleeves/ }));
   await userEvent.click(screen.getByRole('button', { name: 'Start the show' }));
@@ -51,20 +54,20 @@ describe('whose questions', () => {
     const onStart = show('Hermes');
     expect(screen.getByRole('button', { name: /^The office/ })).toHaveAttribute('aria-pressed', 'true');
     await start();
-    expect(onStart.mock.calls[0]?.at(-1)).toBe('office');
+    expect(onStart.mock.calls[0]?.[HISTORY]).toBe('office');
   });
 
   test('a Geekend quizmaster starts on Geekend', async () => {
     const onStart = show('Geekend');
     expect(screen.getByRole('button', { name: /^Geekend/ })).toHaveAttribute('aria-pressed', 'true');
     await start();
-    expect(onStart.mock.calls[0]?.at(-1)).toBe('geekend');
+    expect(onStart.mock.calls[0]?.[HISTORY]).toBe('geekend');
   });
 
   test('either can be switched, so a Geekend quizmaster can still host the office', async () => {
     const onStart = show('Geekend');
     await userEvent.click(screen.getByRole('button', { name: /^The office/ }));
     await start();
-    expect(onStart.mock.calls[0]?.at(-1)).toBe('office');
+    expect(onStart.mock.calls[0]?.[HISTORY]).toBe('office');
   });
 });

@@ -5,6 +5,7 @@ import { BONUS_MULTIPLIER, isBonusCatchphrase } from './catchphraseBonus';
 import { questionPack } from './randomRound';
 import { stealFor, tallyQuestion } from './scoring';
 import { friesPick, roomTakes } from './chaser';
+import { isHalfTime, morningTotals } from './double';
 import { finalistsFor, settleStandoff, stakesFor, type StandoffPick } from './standoff';
 import { isTell } from './survey';
 import {
@@ -63,6 +64,8 @@ export type Action =
        * caller that is not dealing a ramp, and stored as nothing in that case.
        */
       ladderNotices?: readonly string[];
+      /** Optional for the reason `jigsawEnabled` is. Ignored in round two, which is always a double. */
+      doubleEnabled?: boolean;
     }
   /**
    * `durationSecs` is settled here and nowhere else. The security rules pin it
@@ -104,6 +107,8 @@ export type Action =
    * verified pick is simply absent, and counts as share.
    */
   | { type: 'settle'; picks: Record<string, StandoffPick | null> }
+  /** The quizmaster's Round two, at half-time of The Double. */
+  | { type: 'roundTwo' }
   | { type: 'reset' };
 
 /**
@@ -137,6 +142,7 @@ export function reduce(state: RoomState, action: Action): RoomState {
         action.chaserEnabled ?? false,
         action.history ?? {},
         action.ladderNotices ?? [],
+        action.doubleEnabled ?? false,
       );
     case 'start':
       return start(state, action.at, action.gameId, action.durationSecs);
@@ -154,6 +160,8 @@ export function reduce(state: RoomState, action: Action): RoomState {
       return closePicks(state, action.sealed);
     case 'settle':
       return settle(state, action.picks);
+    case 'roundTwo':
+      return roundTwo(state);
     case 'reset':
       return reset(state);
   }
@@ -221,6 +229,7 @@ function selectPack(
   chaserEnabled: boolean,
   history: RoomState['history'],
   ladderNotices: readonly string[],
+  doubleEnabled: boolean,
 ): RoomState {
   if (state.phase !== 'lobby') return state;
   return {
@@ -235,6 +244,9 @@ function selectPack(
     chaserEnabled,
     history,
     ladderNotices,
+    // Round two of a double is a double whatever the quizmaster's device sends:
+    // turning it off here would strand round one's scores on the room.
+    doubleEnabled: state.double !== null || doubleEnabled,
   };
 }
 
@@ -570,10 +582,15 @@ function next(state: RoomState, at: number): RoomState {
   if (state.phase === 'scoreboard') {
     const nextIndex = state.index + 1;
     if (nextIndex >= state.questions.length) {
+      // Round one of a double ends at half-time: its final, if the room chose
+      // one, is played on the whole morning at the end of round two.
+      const halfTime = state.doubleEnabled && state.double === null;
       // After the wager has been paid on the last question, so a stake that
-      // came off is what decides who reaches the final.
-      const finalists = state.standoffEnabled
-        ? finalistsFor(state.players, state.scores, state.gameId ?? '')
+      // came off is what decides who reaches the final. On the morning in
+      // round two of a double, which outside one is just the round.
+      const morning = morningTotals(state);
+      const finalists = state.standoffEnabled && !halfTime
+        ? finalistsFor(state.players, morning, state.gameId ?? '')
         : null;
       if (finalists) {
         return {
@@ -585,7 +602,7 @@ function next(state: RoomState, at: number): RoomState {
           lastPicks: {},
           standoff: {
             finalists,
-            stakes: stakesFor(state.scores, finalists),
+            stakes: stakesFor(morning, finalists),
             stage: 'talk',
             sealed: null,
             picks: null,
@@ -650,12 +667,39 @@ function settle(state: RoomState, picks: Record<string, StandoffPick | null>): R
   const counted = Object.fromEntries(
     standoff.finalists.map((uid) => [uid, sealed.includes(uid) ? (picks[uid] ?? null) : null]),
   );
-  const settled = settleStandoff(state.scores, standoff, counted);
+  const settled = settleStandoff(morningTotals(state), standoff, counted);
   return {
     ...state,
-    scores: settled.scores,
+    scores: roundScores(state, settled.scores),
     lastDeltas: settled.deltas,
     standoff: { ...standoff, stage: 'revealed', picks: settled.picks },
+  };
+}
+
+/**
+ * The settled morning back into the round's own scores. In round two of a
+ * double the final was paid on the morning, and what the round banks is the
+ * morning less what round one already banked — so the two banked rounds add
+ * up to the outcome. Outside a double the two are the same thing.
+ */
+function roundScores(state: RoomState, morning: Record<string, number>): Record<string, number> {
+  const first = state.double?.scores;
+  if (!first) return morning;
+  // `morningTotals` covers every key of `scores`, so every uid has a morning.
+  return Object.fromEntries(Object.keys(state.scores).map((uid) => [uid, (morning[uid] ?? 0) - (first[uid] ?? 0)]));
+}
+
+/**
+ * Round two of a double: back to the lobby holding round one, scores to zero
+ * for the round. Refused anywhere but half-time, which is also what stops a
+ * third — round two's end is not half-time, because round one is held.
+ */
+function roundTwo(state: RoomState): RoomState {
+  if (!isHalfTime(state) || state.gameId === null) return state;
+  return {
+    ...reset(state),
+    doubleEnabled: true,
+    double: { gameId: state.gameId, scores: { ...state.scores } },
   };
 }
 
@@ -680,6 +724,10 @@ function reset(state: RoomState): RoomState {
     gameId: null,
     ladderNotices: [],
     standoff: null,
+    // Another round after a double is an ordinary round. Round two is
+    // `roundTwo`, which puts both back.
+    doubleEnabled: false,
+    double: null,
     packVotes: {},
     voteTaps: {},
     browsing: null,

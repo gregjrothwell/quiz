@@ -122,6 +122,11 @@ export interface GameRecord {
   questions: RecordedQuestion[];
   /** The uid whose device wrote it — the only uid the rules let delete it. */
   writtenBy: string;
+  /**
+   * Round one's `gameId`, on round two of The Double only, so `read-games` can
+   * print the pair (docs/decisions/morning-double.md, rule 11).
+   */
+  doubleOf?: string;
 }
 
 /**
@@ -142,6 +147,13 @@ export const GAME_RECORD_KEYS = [
   'questions',
   'writtenBy',
 ] as const satisfies readonly (keyof GameRecord)[];
+
+/**
+ * Keys the fold writes only sometimes. In the rules' `hasOnly` but not their
+ * `hasAll`: a bundle from before one of these writes no such key, and the rule
+ * must not refuse every round a stale bundle keeps.
+ */
+export const GAME_RECORD_OPTIONAL_KEYS = ['doubleOf'] as const satisfies readonly (keyof GameRecord)[];
 
 /** What the stored document carries, which is the fold plus the server's stamp. */
 export const GAME_DOCUMENT_KEYS = [...GAME_RECORD_KEYS, 'finishedAt'] as const;
@@ -303,5 +315,7 @@ export function foldGameRecord(
     scores: { ...room.scores },
     questions,
     writtenBy,
+    // Omitted, never written empty, outside round two of a double.
+    ...(room.double ? { doubleOf: room.double.gameId } : {}),
   };
 }

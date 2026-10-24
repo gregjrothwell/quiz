@@ -3,6 +3,7 @@ import { Commentary } from '../components/Commentary';
 import { NewSticker } from '../components/NewSticker';
 import { SquadScore } from '../components/SquadScore';
 import { Standings } from '../components/Standings';
+import { morningTotals } from '../engine/double';
 import type { RoomState } from '../engine/state';
 import { useCue } from '../lib/sound';
 import { isNewRound, todayIso } from '../questions/newRounds';
@@ -82,11 +83,13 @@ export function Scoreboard({ room, youUid, isQuizmaster, onNext, today = todayIs
         </p>
       ) : null}
 
+      {/* Round two of The Double ranks the morning, with the round beside it. */}
       <Standings
         players={room.players}
-        scores={room.scores}
+        scores={morningTotals(room)}
         deltas={room.lastDeltas}
         youUid={youUid}
+        {...(room.double ? { round: room.scores } : {})}
       />
 
       {/*
@@ -94,7 +97,7 @@ export function Scoreboard({ room, youUid, isQuizmaster, onNext, today = todayIs
         somebody's game to win; the squads are the second story, and putting
         them first would say otherwise. Renders nothing at all below two squads.
       */}
-      <SquadScore players={room.players} scores={room.scores} />
+      <SquadScore players={room.players} scores={morningTotals(room)} />
 
       {/*
         In the transport, as the question screen's controls are, so it stays on

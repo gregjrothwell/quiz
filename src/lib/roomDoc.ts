@@ -122,7 +122,26 @@ export function toRoomState(code: string, data: DocumentData, answers: Record<st
     // dropped: the host writes these, and a member must not be able to park
     // a page of text on the document every client re-reads.
     ladderNotices: readLadderNotices(data['ladderNotices']),
+    // Absent in every room from before the Double, and on every write that is
+    // not part of one (`toUpdate` leaves both off).
+    doubleEnabled: data['doubleEnabled'] === true,
+    double: readFirstHalf(data['double']),
   };
+}
+
+/**
+ * Round one of a double, or null. The host writes it, but a first half that is
+ * not one would put numbers nobody scored on the morning, so it is checked
+ * here rather than trusted.
+ */
+function readFirstHalf(value: unknown): RoomState['double'] {
+  if (typeof value !== 'object' || value === null) return null;
+  const { gameId, scores } = value as { gameId?: unknown; scores?: unknown };
+  if (typeof gameId !== 'string' || gameId.length === 0) return null;
+  if (typeof scores !== 'object' || scores === null || Array.isArray(scores)) return null;
+  const entries = Object.entries(scores as Record<string, unknown>);
+  if (!entries.every(([, score]) => typeof score === 'number' && Number.isFinite(score))) return null;
+  return { gameId, scores: Object.fromEntries(entries) as Record<string, number> };
 }
 
 const LADDER_NOTICE_MAX = 160;
@@ -202,6 +221,8 @@ export function toPersisted(state: RoomState): PersistedRoom {
     chaserIntro: state.chaserIntro,
     history: state.history,
     standoff: state.standoff,
+    doubleEnabled: state.doubleEnabled,
+    double: state.double,
     packVotes: state.packVotes,
     voteTaps: state.voteTaps,
     browsing: state.browsing,
@@ -253,6 +274,18 @@ export function toUpdate(state: RoomState, previous: RoomState | null): Record<s
   if (update.chaserIntro == null) {
     delete update.chaserIntro;
     if (previous?.chaserIntro) update.chaserIntro = deleteField();
+  }
+
+  // The Double the same way: an ordinary round writes neither, and Another
+  // round after a double deletes both, or the next round would read as round
+  // two of a double that is over.
+  if (!update.doubleEnabled) {
+    delete update.doubleEnabled;
+    if (previous?.doubleEnabled) update.doubleEnabled = deleteField();
+  }
+  if (update.double == null) {
+    delete update.double;
+    if (previous?.double) update.double = deleteField();
   }
 
   // The lobby vote travels as `packVotes.{uid}` field writes, for the reason

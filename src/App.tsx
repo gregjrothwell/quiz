@@ -8,9 +8,9 @@ import type { HistoryGroup } from './engine/askedHistory';
 import { shouldAutoJoin } from './engine/autoJoin';
 import type { Verdict } from './engine/questionVote';
 import { honoursFor, sawWholeGame, NO_HONOURS } from './engine/awards';
+import { isHalfTime, seasonWin } from './engine/double';
 import { finalFor } from './engine/finals';
 import { formFor } from './engine/form';
-import { roomStandings } from './engine/scoring';
 import { skippedIndices, streakOf } from './engine/streak';
 import { codeFromHash } from './engine/roomCode';
 import {
@@ -456,6 +456,7 @@ function Game() {
       standoffEnabled: boolean,
       chaserEnabled: boolean,
       history: HistoryGroup,
+      doubleEnabled: boolean,
     ) => {
       setBusy(true);
       setActionError(null);
@@ -514,6 +515,7 @@ function Game() {
               chaserEnabled,
               history,
               ladderNotices,
+              doubleEnabled,
             },
             ...(facts.length > 0
               ? [{ type: 'titles' as const, at: Date.now(), facts, durationSecs }]
@@ -666,9 +668,6 @@ function Game() {
     const players = finalSnapshot?.players ?? room.players;
     const scores = finalSnapshot?.scores ?? room.scores;
 
-    const rows = roomStandings(players, scores);
-    const leadScore = rows[0]?.score ?? 0;
-    const mine = rows.find((entry) => entry.uid === uid);
     // Still on the room at `finished`. `reset` is what clears it. Absent for
     // anyone who was not one of the two, so their tallies are carried, not bumped.
     const countedFinal = finalFor(room.standoff, uid);
@@ -678,8 +677,9 @@ function Game() {
       name: player.name,
       gameId,
       score: scores[uid] ?? 0,
-      // A round where nobody scored is not a win for everybody.
-      won: leadScore > 0 && mine?.position === 1,
+      // A round where nobody scored is not a win for everybody. In round two of
+      // The Double, the win is the morning's (docs/decisions/morning-double.md).
+      won: seasonWin(players, scores, room.double, uid),
       // Empty means "keep whatever the record says" rather than "no squad", so
       // a regular playing from a second device cannot silently clear theirs.
       squad: rememberedSquad(),
@@ -869,7 +869,8 @@ function Game() {
             youUid={uid}
             isQuizmaster={isQuizmaster}
             log={gameLog}
-            onPlayAgain={() => void dispatch({ type: 'reset' }).catch(report)}
+            // At half-time of The Double the same button is Round two.
+            onPlayAgain={() => void dispatch({ type: isHalfTime(room) ? 'roundTwo' : 'reset' }).catch(report)}
             onLeave={handleLeave}
             onSeason={() => setShowSeason(true)}
           />
