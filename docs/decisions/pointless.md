@@ -139,5 +139,35 @@ Worked example, eight seats; A, B and C right, D the trap:
 |---|---|---|
 | P1 | When does the build start? | **After Survey Says' first office round reads clean** (`read-games --pack survey`) |
 | P2 | Is Pointless blind for Greg? | **Yes.** Counts only, everywhere |
-| P3 | Who writes the first 40 prompts | **Claude drafts; Greg does not see them.** The checks are mechanical: K1–K3's tests, the British-office classifier, and a count by topic. A person other than Greg to read them is still unnamed — Greg to name one, or accept the checks alone, before the pack ships |
+| P3 | Who writes the first 40 prompts | **Claude drafts and reads them; Greg does not see them.** Greg, 24 Oct: "you read them and match them to the tone of previous feedback you've been given — you know my style". The read is the checklist below |
 | P4 | Scoring | **1,000 split between those who picked it** (S2) |
+
+## How the prompts are read — Greg's feedback, as a checklist
+
+Each line is something Greg or the office has already said about questions,
+with where it was said. Every prompt passes all of them, or is cut. The read is
+reported as counts only (blind).
+
+1. **Ordinary British office.** Anything American famous worldwide is fine;
+   anything needing American knowledge is not, and the pack must not lean
+   American overall (AGENTS.md; Greg, 6 Oct). Blankety Blank shipped 21 of 140
+   American and the office noticed in one round ([`blankety-blank.md`](blankety-blank.md)).
+2. **No giveaways.** An option that makes the answer obvious costs the round:
+   The Price Was Right's lone low price ("obviously going to be that one",
+   [`office-feedback-7-oct.md`](office-feedback-7-oct.md)), tunes that sing their
+   title ([`tunes-title-gate.md`](tunes-title-gate.md)). Here the giveaway is a
+   **trap that is plainly wrong**: it must look as right as the other three.
+3. **Complete on its own.** 88 harvested prompts lost their quoted material at
+   a colon and drew the office's only verdicts in force
+   ([`question-votes.md`](question-votes.md#the-first-real-data--14-october-2026)).
+   Every prompt reads whole, with nothing implied off screen.
+4. **Splits the room.** The approved Survey Says drafts were kept whole on that
+   test ([`survey-prompts-draft.md`](survey-prompts-draft.md)): fits on a phone,
+   hurts nobody's feelings, and not everyone answers the same way. Here that
+   means the three right options **differ in how obvious they are** — one most
+   people reach for, one fewer, one only a few — or nobody is ever alone.
+5. **True, checkably.** Each right option and each trap carries a source in the
+   spec (not in the pack, not in a doc), because a wrong "right" answer is the
+   one mistake a blind player cannot catch.
+6. **Plain wording, no puns, no exclamation marks,** in the register of the
+   Survey Says drafts and the What's new lines Greg has approved.
