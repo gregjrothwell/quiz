@@ -19,7 +19,10 @@ export interface Update {
 export const UPDATES: readonly Update[] = [
   {
     date: '2026-10-24',
-    lines: ['A new squad to pick: Geekend.'],
+    lines: [
+      'A new squad to pick: Geekend.',
+      'Geekend get their own questions: the quizmaster picks Geekend in the lobby, and the round skips only what Geekend have already had.',
+    ],
   },
   {
     date: '2026-10-23',
