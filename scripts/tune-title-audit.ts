@@ -3,6 +3,7 @@
  *
  * Run: `npm run tune-audit [-- --window 15]`
  *      `npm run tune-audit -- --pack sleeves`
+ *      `npm run tune-audit -- --pack themes`
  *
  * Downloads every preview in `public/packs/tunes.json`, transcribes it, and
  * reports the moments the title is sung — then prints the `previewStart` /
@@ -34,6 +35,7 @@ import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { SLEEVE_SPECS } from './hand-sleeves-data';
 import { TUNE_SPECS } from './hand-tunes-data';
+import { THEME_SPECS } from './hand-themes-data';
 import { stableId } from './write-hand-packs';
 import { chooseClip, titleHits, type TranscriptWord } from './title-in-clip';
 import type { Pack } from '../src/questions/types';
@@ -43,7 +45,7 @@ const MODEL = 'medium.en';
 
 /** Which pack is being listened to, and for what. */
 interface Target {
-  pack: 'tunes' | 'sleeves';
+  pack: 'tunes' | 'sleeves' | 'themes';
   /** Each spec's slug, the title that must not be sung, and its artist. */
   specs: { slug: string; correct: string; artist: string }[];
   /** How much of a clip a player can hear, at the longest clock. */
@@ -51,11 +53,19 @@ interface Target {
   /** The shortest clip worth keeping — see `ClipOptions.minimum`. */
   minimum: number;
   paste: string;
+  /**
+   * Greg plays the pack blind, so what whisper heard is never printed — it is
+   * the answer, or near it. Slugs and timings only.
+   */
+  blind?: boolean;
 }
 
 const TARGETS: Record<Target['pack'], Target> = {
   tunes: { pack: 'tunes', specs: TUNE_SPECS, window: 20, minimum: 8, paste: 'hand-tunes-data.ts' },
   sleeves: { pack: 'sleeves', specs: SLEEVE_SPECS, window: 10, minimum: 5, paste: 'hand-sleeves-data.ts' },
+  // Locked at ten seconds like Name that Tune; fifteen leaves room for the
+  // clip starting a beat before the clock. docs/decisions/tv-themes.md.
+  themes: { pack: 'themes', specs: THEME_SPECS, window: 15, minimum: 8, paste: 'hand-themes-data.ts', blind: true },
 };
 
 // Kept apart per pack: slugs are only unique within one, and a transcript
@@ -183,14 +193,19 @@ async function main(): Promise<void> {
   */
   const packArg = process.argv.indexOf('--pack');
   const packName = packArg > 0 ? process.argv[packArg + 1] : 'tunes';
-  if (packName !== 'tunes' && packName !== 'sleeves') {
-    throw new Error(`--pack is tunes or sleeves, not ${packName ?? 'nothing'}`);
+  if (packName !== 'tunes' && packName !== 'sleeves' && packName !== 'themes') {
+    throw new Error(`--pack is tunes, sleeves or themes, not ${packName ?? 'nothing'}`);
   }
   const target = TARGETS[packName];
   if (target.pack === 'sleeves') {
     PREVIEWS = join(ROOT, '.cache', 'sleeve-song-previews');
     TRANSCRIPTS = join(ROOT, '.cache', 'sleeve-song-transcripts');
     FORCED = join(ROOT, '.cache', 'sleeve-song-transcripts-forced');
+  }
+  if (target.pack === 'themes') {
+    PREVIEWS = join(ROOT, '.cache', 'theme-previews');
+    TRANSCRIPTS = join(ROOT, '.cache', 'theme-transcripts');
+    FORCED = join(ROOT, '.cache', 'theme-transcripts-forced');
   }
   const windowArg = process.argv.indexOf('--window');
   const window = windowArg > 0 ? Number(process.argv[windowArg + 1]) : target.window;
@@ -268,7 +283,7 @@ async function main(): Promise<void> {
     if (choice.verdict === 'clean') continue;
     console.log(
       `  ${row.slug.padEnd(32)} ${choice.verdict.padEnd(12)} ${choice.note}`
-      + `  [heard: ${hits.map((hit) => hit.heard).join(' / ')}]`,
+      + (target.blind === true ? '' : `  [heard: ${hits.map((hit) => hit.heard).join(' / ')}]`),
     );
     if (choice.verdict === 'unavoidable') continue;
     const parts = [

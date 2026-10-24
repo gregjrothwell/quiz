@@ -385,7 +385,7 @@ const EVERY_PACK: PackSummary[] = (
     ['music', 1500], ['science', 1500], ['sport', 776], ['tv-and-film', 1500],
     ['uk-leaning', 1500], ['video-games', 1400], ['melody', 70], ['picture', 49],
     ['flags', 76], ['tunes', 424], ['sleeves', 212], ['screens', 445],
-    ['catchphrase', 233], ['blanks', 148], ['prices', 154], ['artists', 259], ['random', 294],
+    ['catchphrase', 233], ['blanks', 148], ['prices', 154], ['artists', 259], ['themes', 65], ['random', 294],
     ['tags', 81], ['survey', 40],
   ] as const
 ).map(([id, count]) => ({

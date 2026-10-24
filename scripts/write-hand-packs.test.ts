@@ -60,6 +60,7 @@ describe('mergeIndex', () => {
       'blanks',
       'prices',
       'artists',
+      'themes',
       'tags',
     ]);
   });
