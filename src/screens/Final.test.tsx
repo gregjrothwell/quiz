@@ -115,3 +115,80 @@ describe('the podium build', () => {
     expect(first('roll')).toBeLessThan(first('fanfare'));
   });
 });
+
+/**
+ * The Double on the final screen (docs/decisions/morning-double.md, AC3 and
+ * AC12). Round one ends at half-time; round two ends on the whole morning.
+ */
+describe('the Double', () => {
+  /** Ann topped round two; Bob tops the morning, 9,000 to 7,000. */
+  const FIRST = { ann: 2_000, bob: 6_000 };
+
+  function doubleFinal(
+    gameId: string,
+    double: RoomState['double'],
+    isQuizmaster: boolean,
+  ) {
+    const room: RoomState = {
+      ...createRoom('HKQ7'),
+      phase: 'finished',
+      gameId,
+      players: { ann: ANN, bob: BOB },
+      scores: SCORES,
+      history: { ann: NEWCOMER, bob: NEWCOMER },
+      doubleEnabled: true,
+      double,
+    };
+    const snapshot: FinalSnapshot = { gameId, players: { ann: ANN, bob: BOB }, scores: SCORES };
+    return (
+      <Final
+        room={room}
+        snapshot={snapshot}
+        banked={null}
+        youPlayerId="bob"
+        youUid="bob"
+        isQuizmaster={isQuizmaster}
+        log={[]}
+        onPlayAgain={noop}
+        onLeave={noop}
+        onSeason={noop}
+      />
+    );
+  }
+
+  test('round one ends at half-time, and the quizmaster is offered round two', () => {
+    const { container, getByRole, queryByRole } = render(doubleFinal('half-quizmaster', null, true));
+    landed();
+    expect(container).toHaveTextContent(/Half-time/);
+    expect(getByRole('button', { name: 'Round two' })).toBeInTheDocument();
+    expect(queryByRole('button', { name: 'Another round' })).toBeNull();
+  });
+
+  test('everybody else is told round two is coming', () => {
+    const { container } = render(doubleFinal('half-player', null, false));
+    landed();
+    expect(container).toHaveTextContent(/round two/i);
+  });
+
+  test('round two crowns the top of the morning, not of the round', () => {
+    const { container } = render(doubleFinal('double-end', { gameId: 'round-one', scores: FIRST }, false));
+    landed();
+    expect(container.querySelector('h1')).toHaveTextContent('Bob');
+    expect(container).toHaveTextContent(/wins The Double/);
+  });
+
+  test('shows each player’s two rounds and the morning', () => {
+    const { container } = render(doubleFinal('double-rows', { gameId: 'round-one', scores: FIRST }, false));
+    landed();
+    // Bob: 6,000 then 3,000, 9,000 on the morning. Ann: 2,000 then 5,000, 7,000.
+    for (const figure of ['6,000', '3,000', '9,000', '2,000', '5,000', '7,000']) {
+      expect(container).toHaveTextContent(figure);
+    }
+  });
+
+  test('after round two the quizmaster is offered an ordinary round again', () => {
+    const { getByRole } = render(doubleFinal('double-again', { gameId: 'round-one', scores: FIRST }, true));
+    landed();
+    expect(getByRole('button', { name: 'Another round' })).toBeInTheDocument();
+  });
+});

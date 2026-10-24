@@ -116,6 +116,7 @@ interface LobbyProps {
     standoffEnabled: boolean,
     chaserEnabled: boolean,
     history: HistoryGroup,
+    doubleEnabled: boolean,
   ) => void;
   onLeave: () => void;
   /** Opens What's new. The room stays put — App only flips a flag. */
@@ -174,6 +175,13 @@ export function Lobby({
     all. See docs/decisions/share-or-shaft.md.
   */
   const [standoff, setStandoff] = useState(false);
+  /*
+    The Double (docs/decisions/morning-double.md): a choice for round one,
+    locked on for round two, which is a double whatever is chosen here.
+  */
+  const roundTwo = room.double !== null;
+  const [doubleChoice, setDoubleChoice] = useState(false);
+  const double = roundTwo || doubleChoice;
   // Beat the Chaser: the room against Mr Fries. Not on Survey Says (v1).
   const [chaser, setChaser] = useState(false);
   const [jigsaw, setJigsaw] = useState(false);
@@ -285,6 +293,13 @@ export function Lobby({
       </header>
 
       <RoomLink link={link} />
+
+      {roundTwo ? (
+        <p className="double-note">
+          Round two of The Double. Scores start again for the round, and the boards add it to
+          round one.
+        </p>
+      ) : null}
 
       {updates.teaser ? (
         <button type="button" className="updates-teaser" onClick={() => onUpdates?.()}>
@@ -675,6 +690,39 @@ export function Lobby({
             ) : null}
           </div>
 
+          <div className="stack">
+            <p className="eyebrow">How many rounds</p>
+            <div className="picker">
+              <button
+                type="button"
+                className="pick"
+                aria-pressed={!double}
+                disabled={roundTwo}
+                onClick={() => setDoubleChoice(false)}
+              >
+                <b>One round</b>
+                <span>This round on its own</span>
+              </button>
+              <button
+                type="button"
+                className="pick"
+                aria-pressed={double}
+                disabled={roundTwo}
+                onClick={() => setDoubleChoice(true)}
+              >
+                <b>The Double</b>
+                <span>Two rounds, one total</span>
+              </button>
+            </div>
+            {double ? (
+              <p className="muted hint">
+                {roundTwo
+                  ? 'This is round two. Its scores are added to round one, and the board ranks the total.'
+                  : 'Two rounds that add up. This one ends at half-time, then round two adds to it, and Share or Shaft, if it is on, is played for the whole total at the end of round two.'}
+              </p>
+            ) : null}
+          </div>
+
           {packId === 'picture' ? (
             <div className="stack">
               <p className="eyebrow">How the pictures show</p>
@@ -731,6 +779,7 @@ export function Lobby({
                 standoff,
                 chaser && !survey,
                 history,
+                double,
               )
             }
           >

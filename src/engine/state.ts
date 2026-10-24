@@ -227,6 +227,13 @@ export interface QuizQuestion {
   chaser?: { pick: number; roomTook: boolean };
 }
 
+/** Round one of The Double, as it stood at half-time. */
+export interface FirstHalf {
+  gameId: string;
+  /** Everyone who had a score at half-time, including anyone who has since left. */
+  scores: Record<string, number>;
+}
+
 export interface RoomState {
   code: string;
   phase: Phase;
@@ -360,6 +367,21 @@ export interface RoomState {
   /** The final in play, or the one just played. Null in every other round. */
   standoff: Standoff | null;
   /**
+   * Whether this round is part of The Double: two rounds in one room adding up
+   * to one morning, with one final at the end of the second
+   * (docs/decisions/morning-double.md). Chosen in the lobby for round one and
+   * locked on for round two. No rules change, for the reason `wagerEnabled`
+   * gives.
+   */
+  doubleEnabled: boolean;
+  /**
+   * Round one of a double, kept while round two is played: null in round one
+   * and in every round that is not a double. On the room rather than in
+   * memory, so a reload or a new host keeps the morning. Written by the host
+   * alone; members may only write `players`, `scores` and the vote.
+   */
+  double: FirstHalf | null;
+  /**
    * The lobby vote: uid → the pack that player would like. Advisory — the
    * quizmaster still picks. See `packVote.ts` and docs/decisions/lobby-vote.md.
    *
@@ -453,6 +475,8 @@ export function createRoom(code: string): RoomState {
     chaserIntro: null,
     history: {},
     standoff: null,
+    doubleEnabled: false,
+    double: null,
     packVotes: {},
     voteTaps: {},
     browsing: null,

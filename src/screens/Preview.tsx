@@ -408,6 +408,15 @@ function mockRoom(overrides: Partial<RoomState> = {}): RoomState {
   };
 }
 
+/**
+ * Round one of The Double, for the round-two screens: Greg won it, so he tops
+ * the morning on 6,450 though Sam and Alex lead the round on 3,100.
+ */
+const DOUBLE_FIRST: NonNullable<RoomState['double']> = {
+  gameId: 'gallery-round-one',
+  scores: { greg: 4_000, sam: 1_200, priya: 2_600, alex: 900 },
+};
+
 /** Two for one pack, one for another — Priya's is the one the link-joiner sees pressed. */
 const LOBBY_VOTES: RoomState['packVotes'] = { sam: 'screens', alex: 'screens', priya: 'tunes' };
 
@@ -562,6 +571,20 @@ export function Preview() {
       node: (
         <Lobby
           room={mockRoom({ phase: 'lobby', packVotes: LOBBY_VOTES, browsing: 'flags' })}
+          youUid="greg"
+          isQuizmaster
+          packs={PACKS}
+          busy={false}
+          onStart={noop}
+          onLeave={noop}
+        />
+      ),
+    },
+    {
+      title: 'Lobby · round two of The Double',
+      node: (
+        <Lobby
+          room={mockRoom({ phase: 'lobby', doubleEnabled: true, double: DOUBLE_FIRST })}
           youUid="greg"
           isQuizmaster
           packs={PACKS}
@@ -1163,6 +1186,22 @@ export function Preview() {
       ),
     },
     {
+      title: 'Standings · round two of The Double',
+      node: (
+        <Scoreboard
+          room={mockRoom({
+            phase: 'scoreboard',
+            doubleEnabled: true,
+            double: DOUBLE_FIRST,
+            lastDeltas: { sam: 1_000, greg: 0, priya: 900 },
+          })}
+          youUid="greg"
+          isQuizmaster
+          onNext={noop}
+        />
+      ),
+    },
+    {
       title: 'Share or Shaft · talking it over, watching',
       node: (
         <ShareOrShaft
@@ -1261,6 +1300,46 @@ export function Preview() {
           view={finalView()}
           onOpenPicks={noop}
           onNext={noop}
+        />
+      ),
+    },
+    {
+      title: 'Final · half-time of The Double',
+      node: (
+        <Final
+          banked={null}
+          youPlayerId="greg"
+          snapshot={null}
+          room={mockRoom({ phase: 'finished', index: 1, gameId: 'gallery-half', doubleEnabled: true })}
+          youUid="greg"
+          isQuizmaster
+          log={[]}
+          onPlayAgain={noop}
+          onLeave={noop}
+          onSeason={noop}
+        />
+      ),
+    },
+    {
+      title: 'Final · The Double',
+      node: (
+        <Final
+          banked={null}
+          youPlayerId="greg"
+          snapshot={null}
+          room={mockRoom({
+            phase: 'finished',
+            index: 1,
+            gameId: 'gallery-double',
+            doubleEnabled: true,
+            double: DOUBLE_FIRST,
+          })}
+          youUid="greg"
+          isQuizmaster
+          log={[]}
+          onPlayAgain={noop}
+          onLeave={noop}
+          onSeason={noop}
         />
       ),
     },

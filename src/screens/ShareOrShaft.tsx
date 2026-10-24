@@ -4,6 +4,7 @@ import { Confetti } from '../components/Confetti';
 import { NewSticker } from '../components/NewSticker';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { Standings } from '../components/Standings';
+import { morningTotals } from '../engine/double';
 import { roomStandings } from '../engine/scoring';
 import { finalFor, finalsLine, withTonight, type FinalsTally } from '../engine/finals';
 import {
@@ -330,7 +331,8 @@ export function ShareOrShaft({
   }
 
   const nameOf = (uid: string): string => room.players[uid]?.name ?? 'Somebody who left';
-  const leaderAfter = roomStandings(room.players, room.scores)[0]?.uid ?? null;
+  // On the morning in round two of The Double, which is what the final paid out.
+  const leaderAfter = roomStandings(room.players, morningTotals(room))[0]?.uid ?? null;
   const words = standoffWords({ standoff, nameOf, youUid, leaderAfter });
   const pot = potOf(standoff);
   const acting = outcome !== null && reached('clash');
@@ -363,7 +365,9 @@ export function ShareOrShaft({
         <div className="chrome-wrap">
           <h1 className="display chrome card__round">Share or Shaft</h1>
         </div>
-        <p className="card__topic">The top two, for both their scores</p>
+        <p className="card__topic">
+          {room.double ? 'The top two, for both rounds of The Double' : 'The top two, for both their scores'}
+        </p>
         {isNewMode('standoff', today) ? <NewSticker /> : null}
       </div>
 
@@ -516,7 +520,13 @@ export function ShareOrShaft({
         <div className="stack standoff__stage">
           <p className="standoff__headline">{words.headline}</p>
           {words.note ? <p className="muted hint">{words.note}</p> : null}
-          <Standings players={room.players} scores={room.scores} deltas={room.lastDeltas} youUid={youUid} />
+          <Standings
+            players={room.players}
+            scores={morningTotals(room)}
+            deltas={room.lastDeltas}
+            youUid={youUid}
+            {...(room.double ? { round: room.scores } : {})}
+          />
           {isQuizmaster ? (
             <div className="btn-row">
               <button type="button" className="btn btn--primary" onClick={onNext}>

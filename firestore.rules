@@ -933,7 +933,7 @@ service cloud.firestore {
         return request.resource.data.keys().hasOnly([
             'roomCode', 'packId', 'packTitle', 'durationSecs', 'wagerEnabled',
             'stealEnabled', 'jigsawEnabled', 'players', 'scores', 'questions',
-            'writtenBy', 'finishedAt',
+            'writtenBy', 'finishedAt', 'doubleOf',
           ])
           && request.resource.data.keys().hasAll([
             'roomCode', 'packId', 'packTitle', 'durationSecs', 'wagerEnabled',
@@ -956,6 +956,11 @@ service cloud.firestore {
           && request.resource.data.scores.size() <= 60
           && request.resource.data.questions is list
           && request.resource.data.questions.size() <= 50
+          // Round two of The Double names round one. Optional, so a bundle from
+          // before it is not refused (docs/decisions/morning-double.md).
+          && (!('doubleOf' in request.resource.data)
+              || (request.resource.data.doubleOf is string
+                  && request.resource.data.doubleOf.size() <= 64))
           && request.resource.data.writtenBy == request.auth.uid
           && request.auth.uid in request.resource.data.players
           && request.resource.data.finishedAt == request.time;

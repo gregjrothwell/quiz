@@ -9,13 +9,18 @@ interface StandingsProps {
   scores: Record<string, number>;
   deltas?: Record<string, number>;
   youUid: string | null;
+  /**
+   * Round two of The Double: `scores` is then the morning, and this is the
+   * round's own score, shown beside each name (docs/decisions/morning-double.md).
+   */
+  round?: Record<string, number>;
 }
 
 /**
  * The running order. Rows animate between positions via a layout transition, so
  * overtaking is something you watch happen rather than something you infer.
  */
-export function Standings({ players, scores, deltas, youUid }: StandingsProps) {
+export function Standings({ players, scores, deltas, youUid, round }: StandingsProps) {
   const rows = roomStandings(players, scores);
   const leadScore = rows[0]?.score ?? 0;
   // Only with a question behind the board: the final screen's table has no
@@ -73,6 +78,11 @@ export function Standings({ players, scores, deltas, youUid }: StandingsProps) {
                   {player.name}
                   {entry.uid === youUid ? <span className="plate__role"> you</span> : null}
                 </span>
+                {round ? (
+                  <span className="standing__round">
+                    this round {(round[entry.uid] ?? 0).toLocaleString('en-GB')}
+                  </span>
+                ) : null}
                 {entry.uid === newLeader ? <span className="standing__tag">New leader</span> : null}
               </span>
               <span className="standing__score">

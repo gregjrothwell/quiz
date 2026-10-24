@@ -82,3 +82,53 @@ describe('the Ladder notice on the room document', () => {
     expect(toUpdate(after, before).ladderNotices).toEqual(deleteField());
   });
 });
+
+describe('the room document and the Double', () => {
+  const HALF = { gameId: 'round-one', scores: { ann: 6_000, bob: 3_000 } };
+
+  it('reads a room from before the Double as not one', () => {
+    const legacy = { ...toPersisted(createRoom('ABCD')) } as Record<string, unknown>;
+    delete legacy.doubleEnabled;
+    delete legacy.double;
+    const state = toRoomState('ABCD', legacy, {});
+    expect(state.doubleEnabled).toBe(false);
+    expect(state.double).toBeNull();
+  });
+
+  it('round-trips round one, so a reload or a new host keeps the morning (AC8)', () => {
+    const room = { ...createRoom('ABCD'), doubleEnabled: true, double: HALF };
+    const state = toRoomState('ABCD', { ...toPersisted(room) }, {});
+    expect(state.doubleEnabled).toBe(true);
+    expect(state.double).toEqual(HALF);
+  });
+
+  it('drops a first half that is not one, rather than trusting it', () => {
+    for (const junk of ['x', { gameId: 4, scores: {} }, { gameId: 'g', scores: { ann: 'lots' } }, { gameId: 'g' }]) {
+      const data = { ...toPersisted(createRoom('ABCD')), double: junk };
+      expect(toRoomState('ABCD', data, {}).double).toBeNull();
+    }
+  });
+
+  it('Round two writes the first half and never the players map', () => {
+    const before = { ...createRoom('ABCD'), phase: 'finished' as const, doubleEnabled: true };
+    const after = { ...before, phase: 'lobby' as const, double: HALF };
+    const update = toUpdate(after, before);
+    expect(update).toHaveProperty('double', HALF);
+    expect(update).not.toHaveProperty('players');
+  });
+
+  // As `chaserIntro` is: an ordinary round must not grow a field the
+  // host-writes recording has never had.
+  it('an ordinary transition does not write a first half', () => {
+    const before = createRoom('ABCD');
+    expect(toUpdate({ ...before, phase: 'question' }, before)).not.toHaveProperty('double');
+  });
+
+  // `updateDoc` merges, so a key left off keeps its old value — and the next
+  // round would think it was round two of a double that is over.
+  it('Another round after a double deletes the first half', () => {
+    const before = { ...createRoom('ABCD'), phase: 'finished' as const, doubleEnabled: true, double: HALF };
+    const after = { ...before, phase: 'lobby' as const, doubleEnabled: false, double: null };
+    expect(toUpdate(after, before).double).toEqual(deleteField());
+  });
+});
