@@ -28,6 +28,8 @@ export const SHOW_ROUNDS: readonly PackId[] = [
   'blanks',
   'prices',
   'tags',
+  // Higher or Lower, 25 October 2026: beside the two price rounds.
+  'higher',
   'picture',
   'flags',
   'melody',

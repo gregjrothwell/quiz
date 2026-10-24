@@ -49,6 +49,7 @@ export const PACK_IDS = [
   'themes',
   'random',
   'tags',
+  'higher',
   // No answers anywhere: the room is the answer. docs/decisions/survey-says.md.
   'survey',
 ] as const;
@@ -70,6 +71,7 @@ export const HAND_BUILT_PACK_IDS = [
   'artists',
   'themes',
   'tags',
+  'higher',
 ] as const;
 
 /**
@@ -114,9 +116,12 @@ export function packNeedsSound(packId: PackId): boolean {
  * Name the Artist does not lock. The answer is who is playing, so a sung
  * title is not the answer, and the lobby's window stands. See
  * docs/decisions/name-the-artist.md.
+ *
+ * **Higher or Lower is ten seconds** too, Greg's D2 on 24 October 2026: a
+ * two-way call needs no more. docs/decisions/higher-or-lower.md.
  */
 export function fixedDurationFor(packId: PackId): number | null {
-  return packId === 'tunes' || packId === 'themes' ? 10 : null;
+  return packId === 'tunes' || packId === 'themes' || packId === 'higher' ? 10 : null;
 }
 
 export type PackId = (typeof PACK_IDS)[number];
@@ -350,6 +355,10 @@ export const PACK_META: Record<PackId, { title: string; blurb: string }> = {
   tags: {
     title: 'The Price is Right',
     blurb: 'Here it is. What does it cost in the shops today?',
+  },
+  higher: {
+    title: 'Higher or Lower',
+    blurb: 'One price you are given, one you are not. Does it cost more or less?',
   },  survey: {
     title: 'Survey Says',
     blurb: 'We asked the office. Tell us first, then guess what the room said.',

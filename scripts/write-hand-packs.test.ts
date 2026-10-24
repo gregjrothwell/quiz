@@ -62,6 +62,7 @@ describe('mergeIndex', () => {
       'artists',
       'themes',
       'tags',
+      'higher',
     ]);
   });
 });

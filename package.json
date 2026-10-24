@@ -62,7 +62,8 @@
     "prices-fetch": "tsx scripts/prices-fetch.ts",
     "tags-draw": "tsx scripts/tags-draw.ts",
     "write-tags-pack": "tsx scripts/write-tags-pack.ts",
-    "write-prices-pack": "tsx scripts/write-prices-pack.ts"
+    "write-prices-pack": "tsx scripts/write-prices-pack.ts",
+    "write-higher-pack": "tsx scripts/write-higher-pack.ts"
   },
   "dependencies": {
     "firebase": "^11.1.0",

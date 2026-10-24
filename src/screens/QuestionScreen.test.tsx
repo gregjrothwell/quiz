@@ -238,3 +238,13 @@ describe('the Apple Music badge', () => {
     expect(show(BASE, true).container.querySelector('.store-badge')).toBeNull();
   });
 });
+
+describe('the keyboard hint', () => {
+  test('names the letters there are: A–D for four lecterns, A–B for two', () => {
+    // Higher or Lower has two lecterns, and C and D would pick nothing.
+    const hint = (question: QuizQuestion) =>
+      [...show(question).container.querySelectorAll('kbd')].map((kbd) => kbd.textContent).slice(0, 2);
+    expect(hint(BASE)).toEqual(['A', 'D']);
+    expect(hint({ ...BASE, options: ['Higher, £3.00', 'Lower, £1.30'] })).toEqual(['A', 'B']);
+  });
+});
