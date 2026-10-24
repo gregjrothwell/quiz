@@ -84,12 +84,12 @@ describe('squadKey', () => {
 describe('squadsOf', () => {
   test('offers the known squads in their own order, not alphabetically', () => {
     // #given rows in every squad, arriving in some other order
-    const rows = [{ squad: 'Lurkers' }, { squad: 'Bundae' }, { squad: 'Hermes' }];
+    const rows = [{ squad: 'Lurkers' }, { squad: 'Geekend' }, { squad: 'Bundae' }, { squad: 'Hermes' }];
 
     // #when the filters are worked out
     // #then they read as the office says them, rather than burying Lurkers
     // between two strangers
-    expect(squadsOf(rows)).toEqual(['Hermes', 'Bundae', 'Lurkers']);
+    expect(squadsOf(rows)).toEqual(['Hermes', 'Bundae', 'Geekend', 'Lurkers']);
   });
 
   test('only offers a squad somebody is actually in', () => {

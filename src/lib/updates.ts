@@ -18,6 +18,10 @@ export interface Update {
 
 export const UPDATES: readonly Update[] = [
   {
+    date: '2026-10-24',
+    lines: ['A new squad to pick: Geekend.'],
+  },
+  {
     date: '2026-10-22',
     lines: [
       'The commentator’s lines stay on screen but aren’t read out any more, until it has a better voice.',
