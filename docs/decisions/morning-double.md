@@ -2,9 +2,9 @@
 
 > **Owner: Greg Rothwell. Last updated: 24 October 2026. Budget: 250 lines.**
 
-**Status: story and acceptance criteria drafted 24 October 2026, waiting for
-Greg's approval. No code, no tests.** From the 24 October ideas list, where it
-was idea 1.
+**Status: approved by Greg, 24 October 2026, with the recommended answers to
+D1–D3** — "lobby choice, stake the whole morning, call it The Double". Tests
+next; no code yet. From the 24 October ideas list, where it was idea 1.
 
 ## Why
 
@@ -100,10 +100,13 @@ Pot 18,500.
 ## Acceptance criteria
 
 **Lobby**
-1. **Given** a fresh room, **when** the lobby shows, **then** *Make it a double*
-   is off. Only the quizmaster can change it, and everyone sees its state.
-2. **Given** round two's lobby, **then** *Double* shows on and cannot be turned
-   off. Pack, duration and the other options are free.
+1. **Given** a fresh room, **when** the lobby shows, **then** *The Double* is
+   off. Only the quizmaster sees it, as with every option; they are local to
+   the quizmaster's lobby until Start (`Lobby.tsx`, read 24 Oct). *Corrected
+   24 Oct while writing the tests: this said everyone sees its state.*
+2. **Given** round two's lobby, **then** *The Double* shows on and cannot be
+   turned off, and everyone sees "Round two of The Double". Pack, duration and
+   the other options are free.
 
 **Half-time**
 3. **Given** *Double* and Share or Shaft both on, **when** round one's last
@@ -146,12 +149,19 @@ Pot 18,500.
     - At most one new field on the room, bounded by `maxPlayers()` entries.
     - Members cannot write it: their writes are limited to `players`, `scores`,
       `packVotes` and `voteTaps` (`firestore.rules:410`).
-16. **Rules:**
-    - The expectation is no rules change: the room's top-level keys are not
-      pinned (`wellFormed`, `firestore.rules:329-339`). Confirm it on the
-      emulator before claiming it.
-    - If any rule is touched, ship one allow case on the host's own path that
-      fails before and passes after, then `npm run check-rules` both ways.
+16. **Rules: one change, to `games/`.** *Corrected 24 Oct while writing the
+    tests: this said no rules change.*
+    - The room needs none: its top-level keys are not pinned (`wellFormed`,
+      `firestore.rules:329-339`), as the wager's flag says in `state.ts`.
+    - **Rule 11's link does.** The games block `hasOnly`s its keys
+      (`firestore.rules:933`), so `doubleOf` must be listed, or round two is
+      refused silently and never kept.
+    - **Optional, not required.** It goes in `hasOnly` but not `hasAll`, as a
+      string of at most 64 characters when present. A bundle from before the
+      Double writes no such key, and requiring it would refuse every round a
+      stale bundle keeps.
+    - Proof: one allow and two denies in `check-rules`; the e2e spec writes
+      round two through the real host against the repo's rules.
 17. **Release:** a What's new line in `src/lib/updates.ts`.
 18. **Live check:** the first office double. `read-games` shows the two rounds
     paired, and the banked rounds add up to each finalist's outcome.
@@ -162,7 +172,30 @@ Pot 18,500.
   to 0.
 - One Playwright spec: a two-round double with a final, against the emulators.
 
-## Open — Greg to decide
+## The tests — written 24 October 2026, red, not committed
+
+| File | Covers | Red because |
+|---|---|---|
+| `src/engine/double.test.ts` | Rules 1–10, AC1–AC13, the worked example, `seasonWin` | `./double` does not exist (28 cases, 3 of them one `test.each`) |
+| `src/engine/gameRecord.test.ts` | Rule 11, AC14, the rules' key list | no `doubleOf`, no `GAME_RECORD_OPTIONAL_KEYS` |
+| `src/lib/roomDoc.test.ts` | AC8; old rooms; junk dropped; no `players` write; deleted on reset | no `double` on the room |
+| `src/screens/Lobby.double.test.tsx` | AC1, AC2 | no choice in the lobby |
+| `src/screens/Final.test.tsx` | AC3, AC12, AC13 | no half-time, no morning |
+| `e2e/double.spec.ts` | AC3, AC4, AC9, AC10, AC14 end to end, real host, emulators | no `roundTwo`, no `doubleEnabled` (not run yet) |
+| `scripts/check-rules.ts` | AC16, live | run after the rules merge, not before |
+
+`npm test`, 24 Oct: **18 failed, 1,966 passed**. All 18 are the Double's,
+`double.test.ts` fails to load, and every existing test still passes. 5 new
+cases pass already because they guard what must not change (only the
+quizmaster sees the choice; round one says nothing of a round two; an
+ordinary transition writes no first half; an ordinary round after a double).
+`tsc`: 39 errors, every one a missing piece of the Double. Lint clean.
+
+Not covered by an automated test: season banking at half-time (AC4's season
+half). Banking runs per device in `App.tsx`, which no test drives. `seasonWin`
+is tested, and the first office double is the live check (AC18).
+
+## Decided — Greg, 24 October 2026: the recommended column, all three
 
 | # | Question | Recommended | Alternative |
 |---|---|---|---|
