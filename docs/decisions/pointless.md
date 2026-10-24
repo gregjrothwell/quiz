@@ -144,8 +144,8 @@ Worked example, eight seats; A, B and C right, D the trap:
 
 ## How the prompts are read — Greg's feedback, as a checklist
 
-Each line is something Greg or the office has already said about questions,
-with where it was said. Every prompt passes all of them, or is cut. The read is
+Lines 1–4 are things Greg or the office have already said about questions,
+with where; 5 and 6 are marked as Claude's. Every prompt passes all of them, or is cut. The read is
 reported as counts only (blind).
 
 1. **Ordinary British office.** Anything American famous worldwide is fine;
@@ -166,8 +166,9 @@ reported as counts only (blind).
    hurts nobody's feelings, and not everyone answers the same way. Here that
    means the three right options **differ in how obvious they are** — one most
    people reach for, one fewer, one only a few — or nobody is ever alone.
-5. **True, checkably.** Each right option and each trap carries a source in the
+5. *(Claude's addition, not from feedback.)* **True, checkably.** Each right option and each trap carries a source in the
    spec (not in the pack, not in a doc), because a wrong "right" answer is the
    one mistake a blind player cannot catch.
-6. **Plain wording, no puns, no exclamation marks,** in the register of the
-   Survey Says drafts and the What's new lines Greg has approved.
+6. *(Claude's reading of Greg's style, not something he has said.)* **Plain
+   wording, no puns, no exclamation marks,** in the register of the Survey Says
+   drafts and the What's new lines Greg has approved.
