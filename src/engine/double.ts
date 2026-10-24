@@ -64,8 +64,9 @@ export function seasonWin(
   uid: string,
 ): boolean {
   if (double) return morningChampions(players, scores, double).includes(uid);
-  // As `App.tsx` banked it before the Double, unchanged. `roomStandings` ranks
-  // before it filters, so a leaver on top leaves nobody in first place.
+  // As `App.tsx` banked it before the Double. `roomStandings` ranks only those
+  // still in the room (fix-unbanked-win, 24 Oct 2026), so a leaver on top no
+  // longer leaves nobody in first place.
   const rows = roomStandings(players, scores);
   const lead = rows[0]?.score ?? 0;
   return lead > 0 && rows.find((row) => row.uid === uid)?.position === 1;

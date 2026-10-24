@@ -18,6 +18,8 @@ describe('isNewRound', () => {
       artists: '2026-10-26',
       tags: '2026-11-04',
       survey: '2026-11-05',
+      themes: '2026-11-08',
+      higher: '2026-11-08',
     });
   });
 });

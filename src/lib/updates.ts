@@ -18,9 +18,16 @@ export interface Update {
 
 export const UPDATES: readonly Update[] = [
   {
-    date: '2026-10-24',
+    date: '2026-10-25',
     lines: [
       'The Double: two rounds that add up. The first half stops at half-time, the second half adds to it, and Share or Shaft, if it is on, is played for the whole total.',
+      'A new music round, Theme Tunes: name the programme from its theme. 65 questions.',
+      'A new round, Higher or Lower: one price you are given, one you are not. Does it cost more or less? 90 questions.',
+    ],
+  },
+  {
+    date: '2026-10-24',
+    lines: [
       'A new squad to pick: Geekend.',
       'Geekend get their own questions: the quizmaster picks Geekend in the lobby, and the round skips only what Geekend have already had.',
     ],

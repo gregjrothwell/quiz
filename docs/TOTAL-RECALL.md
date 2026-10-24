@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 24 October 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 25 October 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -23,6 +23,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
+
+## 2026-10-25 — Release 25 Oct: The Double, Theme Tunes, Higher or Lower
+
+One PR, six branches, each by its own merge commit. **The Double** ([`morning-double.md`](decisions/morning-double.md)): its halves are "first half" and "second half", since the scoreboard already calls each question "Round Two" (Greg: "Fix double and ship"). **Theme Tunes 65** ([`tv-themes.md`](decisions/tv-themes.md)) and **Higher or Lower 90** ([`higher-or-lower.md`](decisions/higher-or-lower.md)), both blind; Higher or Lower puts the price in the buttons, and found that `TWIN_KEYS` leak hidden prices. `roomStandings` ranks members only. HANDOVER split; spine archived 299 → 269. Rivals caption and giant-killer bonus not built: the first needs per-opponent fields on the season row, the second a measurement first.
 
 ## 2026-10-23 — The Ladder says when it substitutes
 
