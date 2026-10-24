@@ -215,6 +215,17 @@ under the repo's rules). Seen in the gallery at desktop and 375px.
 - **Phones:** the round's score beside a name pushed the name off the row at
   375px; it now drops under the name below 640px.
 
+## Choosing the number of rounds — not now (24 October 2026)
+
+Greg raised it; the kept rounds say not yet. Of 53 room-days in `read-games
+-- --last 200`, 36 played one round, 15 two, and 2 three: one a solo test
+(`QFME`), one a real sitting of four (`T9JG`, 24 September). Four never.
+Against it as well: the morning stops at nine, a three-round pot is three
+rounds on one decision, and "Round three" already names a question.
+Waiting costs nothing: round one lives on the room, which expires, so the
+shape can change later without a migration. Greg, 24 Oct: carry on with
+other features. **Revisit if three-round sittings start to appear.**
+
 ## Decided — Greg, 24 October 2026: the recommended column, all three
 
 | # | Question | Recommended | Alternative |
