@@ -119,10 +119,10 @@ Worked example, eight seats; A, B and C right, D the trap:
 
 ## Measured, and worth knowing before building
 
-- **Room size decides the spread.** Office rounds run at 4–11 seats
-  (`read-games`, 24 Oct). At four, a right pick is often alone, so 1,000 is
-  common; at eleven, a crowded option pays ~90. That swing is the game, but a
-  four-seat round will score high.
+- **Room size decides the spread.** Kept rounds run at 3–11 seats, 45 of 67
+  at 7–9 (`read-games -- --last 200`, 24 Oct, solo tests left out). At three
+  or four a right pick is often alone, so 1,000 is common; at eleven a crowded
+  option pays ~90. That swing is the game, but a small round will score high.
 - **Survey Says has not been played yet.** It went live 22 October, and no
   kept round has used it since (the last office round was 23 October; today is
   Saturday). Pointless leans on the same counts pipeline, so building before
