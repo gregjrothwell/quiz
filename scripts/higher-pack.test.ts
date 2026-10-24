@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { HIGHER_MAX_SHOWN_USES, HIGHER_MIN_PACK, HIGHER_MIN_PER_LEVEL, HIGHER_SPECS, type HigherSpec } from './hand-higher-data';
 import { levelOfPair, mirrorDecoy } from './higher-core';
-import { PRICE_SPECS, SPOILED_KEYS } from './hand-prices-data';
+import { PRICE_SPECS, SPOILED_KEYS, TWIN_KEYS } from './hand-prices-data';
 import { TAG_SPECS } from './hand-tags-data';
 import { stepPence } from './prices-core';
 import { stableId } from './write-hand-packs';
@@ -44,6 +44,10 @@ function pence(price: string): number {
  * questions share), in either price pack, or spoiled. And specs whose shown
  * card is The Price is Right's answer, or spoiled. A Price Was Right item as
  * a shown card is fine: its August 2026 price is already in its pack.
+ *
+ * Each of those goes for an item's twins too (`TWIN_KEYS`): a pint of bitter
+ * from the shop quotes is answered by the same pint as an RPI series. Found
+ * 25 October 2026, when the name check caught two and the twins held six more.
  */
 function leaky(specs: readonly HigherSpec[]): string[] {
   const shown = new Set(specs.map((spec) => spec.shown.key));
@@ -52,15 +56,20 @@ function leaky(specs: readonly HigherSpec[]): string[] {
   const priced = new Set(PRICE_SPECS.map((spec) => spec.key));
   const tagged = new Set(TAG_SPECS.map((spec) => spec.key));
   const spoiled = new Set(SPOILED_KEYS);
+  const twins = new Map<string, string[]>();
+  for (const [key, other] of Object.entries(TWIN_KEYS)) {
+    twins.set(key, [...(twins.get(key) ?? []), other]);
+    twins.set(other, [...(twins.get(other) ?? []), key]);
+  }
+  const itAndTwins = (key: string) => [key, ...(twins.get(key) ?? [])];
   return specs
     .filter(({ shown: card, hidden }) => {
       const hiddenLeaks =
-        shown.has(hidden.key) ||
         (hiddenUses.get(hidden.key) ?? 0) > 1 ||
-        priced.has(hidden.key) ||
-        tagged.has(hidden.key) ||
-        spoiled.has(hidden.key);
-      return hiddenLeaks || tagged.has(card.key) || spoiled.has(card.key);
+        itAndTwins(hidden.key).some(
+          (key) => shown.has(key) || priced.has(key) || tagged.has(key) || spoiled.has(key),
+        );
+      return hiddenLeaks || itAndTwins(card.key).some((key) => tagged.has(key) || spoiled.has(key));
     })
     .map((spec) => spec.slug);
 }
@@ -193,6 +202,16 @@ describe('the checks on it refuse what they should', () => {
     expect(leaky([spec('higher-901', '999001', priceKey)])).toEqual(['higher-901']);
     expect(leaky([spec('higher-901', '999001', tagKey)])).toEqual(['higher-901']);
     expect(leaky([spec('higher-901', '999001', SPOILED_KEYS[0] as string)])).toEqual(['higher-901']);
+  });
+
+  test('a hidden item whose twin is priced, spoiled or shown', () => {
+    const [quote, rpi] = Object.entries(TWIN_KEYS).find(([, other]) => PRICE_SPECS.some((s) => s.key === other)) as [
+      string,
+      string,
+    ];
+    expect(leaky([spec('higher-901', '999001', quote)])).toEqual(['higher-901']);
+    expect(leaky([spec('higher-901', '999001', '310110')])).toEqual(['higher-901']);
+    expect(leaky([spec('higher-901', rpi, '999002'), spec('higher-902', '999001', quote)])).toEqual(['higher-902']);
   });
 
   test('a shown card that is The Price is Right\'s answer, or spoiled', () => {

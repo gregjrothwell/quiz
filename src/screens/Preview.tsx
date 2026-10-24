@@ -130,6 +130,20 @@ const PRICE_QUESTION: QuizQuestion = {
   difficulty: 'medium',
 };
 
+/**
+ * Higher or Lower, on two invented items at an invented price — Greg plays the
+ * real pack blind. The two options are each other's mirror about the shown
+ * price, as the pack sends them. docs/decisions/higher-or-lower.md.
+ */
+const HIGHER_QUESTION: QuizQuestion = {
+  id: 'higher-fixture',
+  prompt: 'In August 2026, an evening seat at a puppet show cost about £24.50. Does a puppet-making kit for an adult cost more or less?',
+  options: ['Higher, £40.00', 'Lower, £15.00'],
+  correctIndex: null,
+  category: 'Higher or Lower',
+  difficulty: 'medium',
+};
+
 const CATCHPHRASE_QUESTION: QuizQuestion = {
   id: 'catchphrase-1',
   prompt: 'Say what you see',
@@ -386,7 +400,7 @@ const EVERY_PACK: PackSummary[] = (
     ['uk-leaning', 1500], ['video-games', 1400], ['melody', 70], ['picture', 49],
     ['flags', 76], ['tunes', 424], ['sleeves', 212], ['screens', 445],
     ['catchphrase', 233], ['blanks', 148], ['prices', 154], ['artists', 259], ['random', 294],
-    ['tags', 81], ['survey', 40],
+    ['tags', 81], ['survey', 40], ['higher', 90],
   ] as const
 ).map(([id, count]) => ({
   id,
@@ -1853,6 +1867,36 @@ export function Preview() {
         />
       ),
     },
+    // Appended so every `#/preview/N` index above keeps pointing where it did.
+    // Higher or Lower, open and then revealed: two lecterns, not four.
+    ...([false, true] as const).map((revealed) => ({
+      title: revealed ? 'Question · Higher or Lower, revealed' : 'Question · Higher or Lower',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'question',
+            questionOpenedAt: 1_000,
+            durationSecs: 10,
+            packId: 'higher',
+            packTitle: 'Higher or Lower',
+            questions: [revealed ? { ...HIGHER_QUESTION, correctIndex: 0 } : HIGHER_QUESTION],
+            index: 0,
+          })}
+          youUid="priya"
+          isQuizmaster={false}
+          clock={
+            revealed
+              ? { elapsedMs: 10_000, remainingMs: 0, secondsLeft: 0, expired: true }
+              : { elapsedMs: 3_000, remainingMs: 7_000, secondsLeft: 7, expired: false }
+          }
+          revealed={revealed}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    })),
   ];
 
   const shown = only === null ? screens : screens.filter((_, index) => index === only);

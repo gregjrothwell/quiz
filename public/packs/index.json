@@ -241,5 +241,16 @@
       "medium": 40,
       "hard": 0
     }
+  },
+  {
+    "id": "higher",
+    "title": "Higher or Lower",
+    "blurb": "One price you are given, one you are not. Does it cost more or less?",
+    "count": 90,
+    "counts": {
+      "easy": 30,
+      "medium": 30,
+      "hard": 30
+    }
   }
 ]

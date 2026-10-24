@@ -61,6 +61,7 @@ describe('mergeIndex', () => {
       'prices',
       'artists',
       'tags',
+      'higher',
     ]);
   });
 });
