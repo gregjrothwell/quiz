@@ -84,6 +84,34 @@ describe('the question row', () => {
     expect(container.querySelector('.qsplit--split')).not.toBeNull();
   });
 
+  test('a Ladder fallback is said under the header, and a climb is not', () => {
+    // #given an ordinary question, the shape every round had before this
+    const quiet = show(BASE);
+    expect(quiet.queryByText(/Out of/)).toBeNull();
+    quiet.unmount();
+
+    // #when the room was dealt a ramp that ran out of hard questions
+    const told = render(
+      <QuestionScreen
+        room={{
+          ...roomWith(BASE),
+          ladderNotices: ['Out of hard questions in this pack — using medium'],
+        }}
+        youUid="greg"
+        isQuizmaster
+        clock={CLOCK}
+        revealed={false}
+        onAnswer={noop}
+        onReveal={noop}
+        onNext={noop}
+        onVote={noop}
+      />,
+    );
+
+    // #then the sentence is on the question, where the rung labels are not
+    expect(told.getByText('Out of hard questions in this pack — using medium')).toBeTruthy();
+  });
+
   test('a text question does not split the row', () => {
     // #given an ordinary question with nothing to show
     const { container } = show(BASE);

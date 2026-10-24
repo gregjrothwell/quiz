@@ -154,6 +154,9 @@ export function startNodeHost({ db, lite, code, uid, rtdb, only, log = () => und
       isHost: resolveHost(current) === uid,
       answersReady,
       clockExpired: asking && seen.key === key && now >= seen.at + durationMs,
+      // This process does not watch lamps, so it cannot see an answer in flight.
+      // The browser host does (`answerStillInFlight` in App.tsx) and waits.
+      answerInFlight: false,
       confirmedAt: asking && confirmed.key === key ? confirmed.at : null,
       durationMs,
       gameLog: gameLog.gameId === current.gameId ? gameLog.records : [],

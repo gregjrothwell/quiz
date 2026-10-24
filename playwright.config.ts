@@ -11,6 +11,11 @@ export default defineConfig({
   testDir: 'e2e',
   timeout: 30_000,
   expect: { timeout: 20_000 },
+  // One worker. Each spec wipes the emulators before it starts (`e2e/isolate.ts`).
+  // A second worker would wipe a file that is still playing. The default is
+  // half the cores, which ran files in parallel locally and hid the shared
+  // season rows that CI, one file after another, then tripped over.
+  workers: 1,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL: 'http://127.0.0.1:4173/quiz/',

@@ -1,6 +1,9 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 
 import { setEmulatorFlag } from './emulators';
+import { isolateFiles } from './isolate';
+
+isolateFiles();
 
 /**
  * The lobby vote, through the client's own path, against the repo's rules in

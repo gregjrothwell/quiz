@@ -1,6 +1,6 @@
 # Firebase emulators for Playwright
 
-> **Owner: Greg Rothwell. Last updated: 10 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 23 October 2026. Budget: 250 lines.**
 
 Playwright talks to the Firebase emulators, never the live project, never an App
 Check debug token. The switch is a runtime flag on `window`, not a Vite env var.
@@ -104,6 +104,16 @@ before the production bundle loads. Not a query string, not `localStorage`, not
 a `VITE_` flag. `src/lib/emulators.ts` is pure (no React, no `import.meta.env`,
 no Firebase) so the test file can import `EMULATOR_FLAG` / `EMULATOR_PORTS`
 without pulling in `src/firebase.ts`.
+
+## Each spec starts from an empty emulator — 23 October 2026
+
+The spec files share one emulator. In CI they run one after another; locally the
+default was half the cores, so files ran together. On 22 Oct, Survey Says waited
+for three season rows named Host, Ann and Bob and found six, left by an earlier
+file. `e2e/isolate.ts` wipes Auth, Firestore and the RTDB before each spec's own
+`beforeAll`. `playwright.config.ts` sets `workers: 1`, because a second worker
+would wipe a file that is still playing. Not live: this is the test runner, not
+the site.
 
 ## What this does not cover
 

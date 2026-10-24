@@ -21,7 +21,10 @@ import { reduce, type Action } from '../src/engine/reducer';
 import { randomRoomCode } from '../src/engine/roomCode';
 import { createRoom, type QuizQuestion, type RoomState } from '../src/engine/state';
 import { toPersisted, toRoomState, toUpdate } from '../src/lib/roomDoc';
+import { isolateFiles } from './isolate';
 import { admin, player, seedVault, type Player } from './nodeClient';
+
+isolateFiles();
 
 /**
  * W3, host authority: the rules, both directions, through the client SDK and

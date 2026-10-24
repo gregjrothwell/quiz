@@ -2,7 +2,10 @@ import { expect, test } from '@playwright/test';
 import { doc, runTransaction } from 'firebase/firestore';
 
 import { bankGame, type PlayerRecord } from '../src/engine/records';
+import { isolateFiles } from './isolate';
 import { admin, player } from './nodeClient';
+
+isolateFiles();
 
 /**
  * A regular's season row, banked the way `recordGame` banks it.

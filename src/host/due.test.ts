@@ -4,12 +4,17 @@ import { revealBackoffMs } from '../engine/revealGate';
 import { PICK_GRACE_MS, PICK_MS, REVEAL_GRACE_MS, TALK_MS, type Standoff } from '../engine/standoff';
 import { createRoom, type QuizQuestion, type RoomState } from '../engine/state';
 import {
+  CHASER_INTRO_MS,
   FRESH_MEMORY,
   MAX_REVEAL_RETRIES,
+  OPEN_AGAIN_MS,
   began,
+  IN_FLIGHT_HOLD_MS,
+  answerStillInFlight,
   dueNow,
   failed,
   keepDue,
+  openQuestionMove,
   reapDue,
   revealCost,
   revealMove,
@@ -57,6 +62,7 @@ function baseView(overrides: Partial<HostView> = {}): HostView {
     isHost: true,
     answersReady: true,
     clockExpired: true,
+    answerInFlight: false,
     confirmedAt: CONFIRMED_AT,
     durationMs: DURATION_MS,
     gameLog: [],
@@ -72,6 +78,7 @@ const view = baseView;
 
 const kinds = (moves: HostMove[]): string[] => moves.map((move) => move.kind);
 const reveals = (moves: HostMove[]): HostMove[] => moves.filter((move) => move.kind === 'reveal');
+const opens = (moves: HostMove[]): HostMove[] => moves.filter((move) => move.kind === 'openQuestion');
 
 /** The beat is due on every first look; take it so a case can talk about the rest. */
 function beaten(at: number): HostMemory {
@@ -113,6 +120,39 @@ describe('the reveal on the clock', () => {
     expect(reveals(dueNow(view({ isHost: false }), beaten(GATE_OPEN)).moves)).toEqual([]);
   });
 
+  test('a chaser question keeps the full window, and a reveal already in flight is not sent again', () => {
+    // The title card is before the question. Three seconds into the question —
+    // as long as that card used to cover — the reveal is not due, and it becomes
+    // due on the whole window. A second look while the first reveal is in flight
+    // still sends nothing.
+    const durationMs = 10_000;
+    const confirmedAt = 1_000;
+    const room = questionRoom({ chaserEnabled: true });
+    const early = confirmedAt + 3_000;
+    expect(
+      reveals(dueNow(view({ room, clockExpired: false, confirmedAt, durationMs, now: early }), beaten(early)).moves),
+    ).toEqual([]);
+
+    const open = confirmedAt + durationMs + 100;
+    const first = dueNow(view({ room, clockExpired: true, confirmedAt, durationMs, now: open }), beaten(open));
+    const move = reveals(first.moves)[0];
+    if (!move) throw new Error('expected a reveal on the full window');
+    const inFlight = began(first.memory, move, { room, now: open });
+    expect(
+      reveals(dueNow(view({ room, clockExpired: true, confirmedAt, durationMs, now: open + 50 }), inFlight).moves),
+    ).toEqual([]);
+  });
+
+  test('the title card is not a question, so nothing is due to reveal during it', () => {
+    const room = questionRoom({
+      phase: 'lobby',
+      chaserEnabled: true,
+      chaserIntro: { at: GATE_OPEN, durationSecs: 10 },
+      questionOpenedAt: null,
+    });
+    expect(reveals(dueNow(view({ room, clockExpired: true }), beaten(GATE_OPEN)).moves)).toEqual([]);
+  });
+
   test('not a second time while the first is in flight', () => {
     // #given a reveal under way
     const first = dueNow(view(), beaten(GATE_OPEN));
@@ -122,6 +162,51 @@ describe('the reveal on the clock', () => {
     // #when the room updates before it lands
     // #then it is not due again
     expect(reveals(dueNow(view({ now: GATE_OPEN + 50 }), inFlight).moves)).toEqual([]);
+  });
+
+  test('waits for an answer the lamp says is in flight, then reveals anyway', () => {
+    // Greg, 23 Oct: 3s covers the measured 2.4s slow write. The 4.8–5.5s cases are not.
+    expect(IN_FLIGHT_HOLD_MS).toBe(3_000);
+    // #given the gate is open and somebody's lamp is lit with no answer landed
+    const holding = dueNow(view({ answerInFlight: true }), beaten(GATE_OPEN));
+    // #then the clock reveal waits, and asks to be woken when the wait is over
+    expect(reveals(holding.moves)).toEqual([]);
+    expect(holding.wakeInMs).toBe(IN_FLIGHT_HOLD_MS);
+
+    const still = dueNow(
+      view({ answerInFlight: true, now: GATE_OPEN + IN_FLIGHT_HOLD_MS - 1 }),
+      beaten(GATE_OPEN),
+    );
+    expect(reveals(still.moves)).toEqual([]);
+    expect(still.wakeInMs).toBe(1);
+
+    // #when the wait is up and the answer still has not landed
+    const due = dueNow(
+      view({ answerInFlight: true, now: GATE_OPEN + IN_FLIGHT_HOLD_MS }),
+      beaten(GATE_OPEN),
+    );
+    // #then the room is scored without it, rather than held open
+    expect(reveals(due.moves)).toEqual([{ kind: 'reveal', key: 'g1:0', questionId: 'q0', manual: false }]);
+  });
+
+  test('an answer landing during the wait reveals on the next look', () => {
+    const due = dueNow(view({ answerInFlight: false, now: GATE_OPEN + 500 }), beaten(GATE_OPEN));
+    expect(reveals(due.moves)).toEqual([{ kind: 'reveal', key: 'g1:0', questionId: 'q0', manual: false }]);
+  });
+
+  test('the Reveal button does not wait for an in-flight answer', () => {
+    expect(revealMove(view({ answerInFlight: true }), FRESH_MEMORY, true)).toEqual({
+      kind: 'reveal',
+      key: 'g1:0',
+      questionId: 'q0',
+      manual: true,
+    });
+  });
+
+  test('the heartbeat still goes out while an answer is in flight', () => {
+    const due = dueNow(view({ answerInFlight: true }), FRESH_MEMORY);
+    expect(kinds(due.moves)).toEqual(['beat']);
+    expect(due.wakeInMs).toBe(IN_FLIGHT_HOLD_MS);
   });
 
   test('a new question is due afresh, whatever the last one did', () => {
@@ -152,6 +237,13 @@ describe('a refused reveal', () => {
     expect(early.wakeInMs).toBe(1);
     // #and one on time finds it due again
     expect(reveals(dueNow(view({ now: GATE_OPEN + backoff }), after).moves)).toHaveLength(1);
+  });
+
+  test('a reveal already refused is not held again for an in-flight answer', () => {
+    const after = failOnce(beaten(GATE_OPEN), GATE_OPEN);
+    const backoff = revealBackoffMs(0);
+    const due = dueNow(view({ answerInFlight: true, now: GATE_OPEN + backoff }), after);
+    expect(reveals(due.moves)).toHaveLength(1);
   });
 
   test(`stops after ${String(MAX_REVEAL_RETRIES)} timed retries, and says so`, () => {
@@ -365,6 +457,91 @@ describe('keeping the round', () => {
   });
 });
 
+describe('Mr Fries’s card', () => {
+  function cardRoom(at: number): RoomState {
+    return questionRoom({
+      phase: 'lobby',
+      gameId: null,
+      chaserEnabled: true,
+      chaserIntro: { at, durationSecs: 10 },
+      questionOpenedAt: null,
+    });
+  }
+
+  test('opens question one once three seconds have passed, and not a moment sooner', () => {
+    const at = 5_000;
+    const room = cardRoom(at);
+    const early = dueNow(view({ room, now: at + CHASER_INTRO_MS - 1, clockExpired: false }), beaten(at));
+    expect(opens(early.moves)).toEqual([]);
+    expect(early.wakeInMs).toBe(1);
+
+    const due = dueNow(view({ room, now: at + CHASER_INTRO_MS, clockExpired: false }), beaten(at));
+    expect(opens(due.moves)).toEqual([{ kind: 'openQuestion', key: String(at), durationSecs: 10 }]);
+  });
+
+  test('a tap at the same moment as the timer is the same open, sent once', () => {
+    const at = 5_000;
+    const now = at + CHASER_INTRO_MS;
+    const room = cardRoom(at);
+    const due = dueNow(view({ room, now, clockExpired: false }), beaten(now));
+    const move = opens(due.moves)[0];
+    if (!move) throw new Error('expected an open');
+    const inFlight = began(due.memory, move, { room, now });
+    const again = view({ room, now, clockExpired: false });
+    expect(opens(dueNow(again, inFlight).moves)).toEqual([]);
+    expect(openQuestionMove(again, inFlight, true)).toBeNull();
+  });
+
+  test('the quizmaster can open it before the three seconds', () => {
+    const at = 1_000;
+    const now = at + 200;
+    const room = cardRoom(at);
+    const waiting = view({ room, now, clockExpired: false });
+    expect(opens(dueNow(waiting, beaten(now)).moves)).toEqual([]);
+    expect(openQuestionMove(waiting, beaten(now), true)).toEqual({
+      kind: 'openQuestion',
+      key: String(at),
+      durationSecs: 10,
+    });
+  });
+
+  test('a reload keeps the time already spent, and does not open a question that is already open', () => {
+    const at = 1_000;
+    const now = at + 1_000;
+    const waiting = cardRoom(at);
+    const due = dueNow(view({ room: waiting, now, clockExpired: false }), FRESH_MEMORY);
+    expect(opens(due.moves)).toEqual([]);
+    expect(due.wakeInMs).toBe(CHASER_INTRO_MS - 1_000);
+
+    const opened = questionRoom({ chaserEnabled: true, chaserIntro: null });
+    expect(opens(dueNow(view({ room: opened, now: at + 9_000 }), FRESH_MEMORY).moves)).toEqual([]);
+  });
+
+  test('only the host opens it', () => {
+    const at = 1_000;
+    const room = cardRoom(at);
+    const due = dueNow(
+      view({ room, now: at + CHASER_INTRO_MS, isHost: false, clockExpired: false }),
+      FRESH_MEMORY,
+    );
+    expect(opens(due.moves)).toEqual([]);
+  });
+
+  test('a failed open waits, then is due again', () => {
+    const at = 1_000;
+    const now = at + CHASER_INTRO_MS;
+    const room = cardRoom(at);
+    const due = dueNow(view({ room, now, clockExpired: false }), beaten(now));
+    const move = opens(due.moves)[0];
+    if (!move) throw new Error('expected an open');
+    const after = failed(began(due.memory, move, { room, now }), move, now);
+    const early = dueNow(view({ room, now: now + OPEN_AGAIN_MS - 1, clockExpired: false }), after);
+    expect(opens(early.moves)).toEqual([]);
+    expect(early.wakeInMs).toBe(1);
+    expect(opens(dueNow(view({ room, now: now + OPEN_AGAIN_MS, clockExpired: false }), after).moves)).toHaveLength(1);
+  });
+});
+
 describe('the lobby reaper', () => {
   const lobby = (): RoomState => ({ ...createRoom('ABCD'), players: questionRoom().players, hostUid: 'host' });
 
@@ -380,5 +557,20 @@ describe('the lobby reaper', () => {
     const present = new Set(['host']);
     const first = reapDue({ isHost: false, room: lobby(), now: 0 }, FRESH_MEMORY, present);
     expect(reapDue({ isHost: false, room: lobby(), now: 60_000 }, first.memory, present).remove).toEqual([]);
+  });
+});
+
+describe('an answer still in flight', () => {
+  const players = questionRoom().players;
+  const landed = { optionIndex: 0, elapsedMs: 1_000 };
+
+  test('is a seated player whose lamp is lit and whose answer has not landed', () => {
+    expect(answerStillInFlight(players, {}, new Set(['ann']))).toBe(true);
+  });
+
+  test('is not an answer that has already landed, nor a lamp for nobody seated', () => {
+    expect(answerStillInFlight(players, { ann: landed }, new Set(['ann']))).toBe(false);
+    expect(answerStillInFlight(players, {}, new Set(['stranger']))).toBe(false);
+    expect(answerStillInFlight(players, {}, new Set())).toBe(false);
   });
 });

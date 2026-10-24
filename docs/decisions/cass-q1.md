@@ -1,6 +1,6 @@
 # Cass loses question one
 
-> **Owner: Greg Rothwell. Last updated: 21 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 23 October 2026. Budget: 250 lines.**
 
 Follows [`office-feedback-9-oct.md`](office-feedback-9-oct.md) §1 and §5, whose leading
 hypothesis this replaces. Read off live `games/` with the Admin SDK on 21 October 2026, every
@@ -163,3 +163,51 @@ the question late. `priorSamples 0` with a short `visibleForMs` is that case, no
 with no entry in that question's `answers`; skipped questions left out. Lag = `at − elapsedMs`
 less the minimum of the same over that question's answers. Window = `durationSecs`. About 500
 document reads across the session's queries.
+
+## 23 October 2026 — the traces, and the hold
+
+`npm run read-traces -- --last 100` returned **24 traces, which is all of them**. Every one
+reports `4g`. There is no wifi sample, so this cannot say whether wifi is faster. It can say
+the slow write is not "4g" and not "Windows": one room is enough.
+
+**SWNU, 23 Oct, 15s, all Windows, all 4g, all fresh tabs, page visible 84–123s:**
+
+| | write |
+|---|---|
+| Cass | **4.8s** (tap 4.8s, seen late 0.1s, counted) |
+| Rach | **1.4s** |
+| Steve, Joe | 0.3s |
+| Kelly | 0.2s |
+| Roberto, Not AI | 0.1s |
+
+**Every ack in the 24** (21 taps): Cass 4.8s, 2.4s and 0.2s; Rach 1.4s and 0.1s; Not Bret 0.5s
+and 0.1s; everyone else 0.1–0.3s. The `slow write` reading (over 1.5s) is Cass twice. Both
+were counted — the tap was early enough that the write still landed before the fold. The miss
+the kept rounds describe is that same write after a later tap. Rach's 1.4s would miss a tap
+after about 9s of a 10s question. B498's 10s round (22 Oct) is her 2.4s, tap at 5.5s, counted;
+the third trace, the round before it, is 0.2s.
+
+**The idle write stream is real and does not explain this room.** The SDK closes it after 60s
+(`IDLE_TIMEOUT_MS` in `@firebase/firestore`) and the next write fetches the auth token and the
+App Check token before opening it again. Five other fresh tabs in SWNU had been open as long
+as Cass's and acknowledged in 0.1–0.3s. A warmup at round start would be guessing, and it
+needs a main-SDK write the rules already allow without a stale room update clobbering the
+question. Not done.
+
+**The hold.** The clock reveal waits while a seated player's lamp is lit and their answer has
+not landed, for up to 3s after the gate (`IN_FLIGHT_HOLD_MS` in `src/host/due.ts`). The lamp
+is the RTDB write sent beside the Firestore one; presence keeps that connection open, so the
+host can see the tap before the answer document arrives. The answer landing ends the wait.
+Greg's call, 23 Oct: 3s covers the measured 2.4s slow write; 15s rounds largely avoid the
+issue; the 4.8–5.5s worst cases are not covered. It stays inside the rules' 8s arrival grace,
+so a write that lands during the wait is still legal. A lamp that never resolves costs the
+room 3s and then the question is scored without that answer. The Reveal button does not wait.
+This 3s is the reveal, after the clock. Mr Fries's card is a different 3s, in the lobby,
+before question one opens (`CHASER_INTRO_MS`). A retry of a refused reveal does not wait
+again. `scripts/nodeHost.ts` does not watch lamps,
+so a round driven from the terminal folds on the clock as before.
+
+**Not live.** The first office round after it ships is the check: `read-traces -- --name cass`,
+and whether a 10s question one of hers is counted when she taps late. A tap in the last
+instant can still race the fold if her lamp is slow as well — the hold only starts once the
+host has seen the lamp.

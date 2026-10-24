@@ -3,7 +3,7 @@ import { foldGameRecord, type GameRecord, type RevealTiming } from '../engine/ga
 import { BEAT_EVERY_MS } from '../engine/host';
 import { reapAbsent } from '../engine/presence';
 import type { Action } from '../engine/reducer';
-import { msUntilRevealGate, revealBackoffMs } from '../engine/revealGate';
+import { REVEAL_GATE_SLACK_MS, msUntilRevealGate, revealBackoffMs } from '../engine/revealGate';
 import { PICK_GRACE_MS, PICK_MS, REVEAL_GRACE_MS, TALK_MS, type StandoffPick } from '../engine/standoff';
 import { currentQuestion, type Player, type RoomState } from '../engine/state';
 
@@ -12,10 +12,11 @@ import { currentQuestion, type Player, type RoomState } from '../engine/state';
  * (host-loop.md, A3).
  *
  * Every duty the host's device carries — reveal on the clock, beat, the final's
- * three moves, keep the round — is a question of the form "given the room, the
- * answers, presence, the beat and the time, is anything due?". This file answers
- * it, and nothing here awaits, writes or reads a clock: `now` is an argument. So
- * each "not yet" is a unit test rather than a round in a browser.
+ * three moves, keep the round, open question one after Mr Fries's card — is a
+ * question of the form "given the room, the answers, presence, the beat and the
+ * time, is anything due?". This file answers it, and nothing here awaits, writes
+ * or reads a clock: `now` is an argument. So each "not yet" is a unit test rather
+ * than a round in a browser.
  *
  * The device's own memory — which question it is already revealing, when it last
  * beat, which stage of the final it has moved on — is {@link HostMemory}, a plain
@@ -40,6 +41,58 @@ export const MAX_REVEAL_RETRIES = 8;
  */
 export const STAGE_RECHECK_MS = 1_000;
 
+/**
+ * How long the clock reveal waits, after the vault's gate is open, for an
+ * answer whose lamp is lit and whose document has not landed.
+ *
+ * Cass's question-one writes are slow, and the fold used to happen at the gate
+ * (window + 100ms). A tap on the buzzer then missed the tally even though
+ * `arrivalOk` would still have accepted the write — the grace is 8s. Three
+ * seconds covers the measured 2.4s slow write and stays inside that grace, so
+ * a write that lands during the wait is still a legal answer. Greg's call,
+ * 23 Oct: 15s rounds largely avoid the issue, and the 4.8–5.5s worst cases
+ * are not covered. A lamp that never resolves costs the room this long and no
+ * longer; the Reveal button does not wait.
+ *
+ * This is not {@link CHASER_INTRO_MS}. That one is the lobby card before
+ * question one; this one is the reveal, after the answering clock has run out.
+ *
+ * See docs/decisions/cass-q1.md.
+ */
+export const IN_FLIGHT_HOLD_MS = 3_000;
+
+/**
+ * Whether a seated player has lit their lamp and their answer is not in yet.
+ *
+ * The lamp is the RTDB write sent beside the Firestore one. Presence keeps
+ * that connection open, so the lamp can arrive while the answer write is still
+ * in flight. Someone who is not seated cannot be scored, and a lamp for an
+ * answer that has already landed is not in flight.
+ */
+export function answerStillInFlight(
+  players: RoomState['players'],
+  answers: RoomState['answers'],
+  lamps: ReadonlySet<string>,
+): boolean {
+  for (const uid of lamps) {
+    if (players[uid] !== undefined && answers[uid] === undefined) return true;
+  }
+  return false;
+}
+
+/**
+ * How long Mr Fries's card stays up before the host opens question one.
+ * The answering clock starts at that open, so the wait is not part of it.
+ * Not {@link IN_FLIGHT_HOLD_MS}, which waits for a lit lamp after the clock.
+ */
+export const CHASER_INTRO_MS = 3_000;
+
+/**
+ * Pause after a failed open before it is sent again. Without it a refusal
+ * while the room snapshot is still the lobby would write in a loop.
+ */
+export const OPEN_AGAIN_MS = 1_000;
+
 /** Everything this device can see that bears on what the host owes. */
 export interface HostView {
   uid: string;
@@ -54,6 +107,12 @@ export interface HostView {
   answersReady: boolean;
   /** The question clock, as this device counts it. */
   clockExpired: boolean;
+  /**
+   * A seated player's lamp is lit and their answer has not landed. The clock
+   * reveal waits for it — see {@link IN_FLIGHT_HOLD_MS}. The Reveal button
+   * does not.
+   */
+  answerInFlight: boolean;
   /** When the server acknowledged the open question, on this device's clock. Null until it has. */
   confirmedAt: number | null;
   durationMs: number;
@@ -87,6 +146,13 @@ export interface HostMemory {
   kept: string | null;
   /** When each absent player was first missed, for the lobby reaper. */
   absentSince: Readonly<Record<string, number>>;
+  /**
+   * The chaser card (`at`) this device has already sent an open for.
+   * Set when the open is sent, cleared if that write fails or the card is gone.
+   */
+  opening: string | null;
+  /** Earliest moment a failed open may be sent again. Null when none is waiting. */
+  openNotBefore: number | null;
 }
 
 export const FRESH_MEMORY: HostMemory = {
@@ -98,6 +164,8 @@ export const FRESH_MEMORY: HostMemory = {
   moved: null,
   kept: null,
   absentSince: {},
+  opening: null,
+  openNotBefore: null,
 };
 
 export type HostMove =
@@ -105,7 +173,12 @@ export type HostMove =
   | { kind: 'reveal'; key: string; questionId: string; manual: boolean }
   | { kind: 'beat' }
   | { kind: 'standoff'; key: string; action: Action }
-  | { kind: 'keepGame'; gameId: string; record: GameRecord };
+  | { kind: 'keepGame'; gameId: string; record: GameRecord }
+  /**
+   * Open question one. The timer and the quizmaster's tap are the same move,
+   * so one in-flight open is all a device can have.
+   */
+  | { kind: 'openQuestion'; key: string; durationSecs: number };
 
 export interface Due {
   moves: HostMove[];
@@ -149,6 +222,11 @@ export function dueNow(view: HostView, memory: HostMemory): Due {
   next = beat.memory;
   if (beat.move) moves.push(beat.move);
   waits.push(beat.wakeInMs);
+
+  const open = openQuestionDue(view, next);
+  next = open.memory;
+  if (open.move) moves.push(open.move);
+  waits.push(open.wakeInMs);
 
   const final = standoffDue(view, next);
   next = final.memory;
@@ -209,6 +287,14 @@ export function revealDue(view: HostView, memory: HostMemory): OneDue {
     return { move: null, memory: next, wakeInMs: retry.notBefore - now };
   }
 
+  // Only the first attempt waits. A retry is a vault that already refused, and
+  // holding it again would pile this wait onto the backoff.
+  const notStarted = retry.n === 0 && retry.notBefore === null;
+  if (notStarted && view.answerInFlight && view.confirmedAt !== null) {
+    const holdEnds = view.confirmedAt + view.durationMs + REVEAL_GATE_SLACK_MS + IN_FLIGHT_HOLD_MS;
+    if (now < holdEnds) return { move: null, memory: next, wakeInMs: holdEnds - now };
+  }
+
   const move = revealMove(view, next, false);
   return { move, memory: next, wakeInMs: null };
 }
@@ -249,6 +335,48 @@ export function beatDue(view: HostView, memory: HostMemory): OneDue {
     return { move: null, memory, wakeInMs: BEAT_EVERY_MS - since };
   }
   return { move: { kind: 'beat' }, memory, wakeInMs: BEAT_EVERY_MS };
+}
+
+/** The card's identity for the in-flight lock: its own `at`, which a reload still has. */
+function chaserIntroKey(intro: { at: number }): string {
+  return String(intro.at);
+}
+
+/**
+ * Open question one off Mr Fries's card.
+ *
+ * Due once {@link CHASER_INTRO_MS} has passed since `chaserIntro.at`, or
+ * straight away when `manual` (the quizmaster's Next question). Only the host
+ * sends it. While one open is in flight the same device sends nothing else,
+ * so a tap landing on the same tick as the timer cannot start the question
+ * twice. A reload has a fresh memory: if the question is already open this
+ * returns nothing, and if the card is still up it continues the same `at`.
+ */
+export function openQuestionMove(view: HostView, memory: HostMemory, manual: boolean): HostMove | null {
+  const { room, now } = view;
+  const intro = view.isHost && room.phase === 'lobby' ? room.chaserIntro : null;
+  if (!intro) return null;
+  const key = chaserIntroKey(intro);
+  if (memory.opening === key) return null;
+  if (!manual) {
+    const dueAt = Math.max(intro.at + CHASER_INTRO_MS, memory.openNotBefore ?? 0);
+    if (now < dueAt) return null;
+  }
+  return { kind: 'openQuestion', key, durationSecs: intro.durationSecs };
+}
+
+/** The timed open, plus when to look again if it is not due yet. */
+export function openQuestionDue(view: HostView, memory: HostMemory): OneDue {
+  const intro = view.isHost && view.room.phase === 'lobby' ? view.room.chaserIntro : null;
+  if (!intro) {
+    if (memory.opening === null && memory.openNotBefore === null) return { move: null, memory, wakeInMs: null };
+    return { move: null, memory: { ...memory, opening: null, openNotBefore: null }, wakeInMs: null };
+  }
+  const move = openQuestionMove(view, memory, false);
+  if (move) return { move, memory, wakeInMs: null };
+  if (memory.opening === chaserIntroKey(intro)) return { move: null, memory, wakeInMs: null };
+  const dueAt = Math.max(intro.at + CHASER_INTRO_MS, memory.openNotBefore ?? 0);
+  return { move: null, memory, wakeInMs: Math.max(0, dueAt - view.now) };
 }
 
 /**
@@ -379,6 +507,8 @@ export function began(memory: HostMemory, move: HostMove, view: Pick<HostView, '
     }
     case 'beat':
       return { ...memory, beatAt: view.now };
+    case 'openQuestion':
+      return { ...memory, opening: move.key, openNotBefore: null };
     case 'standoff':
       return { ...memory, moved: move.key };
     case 'keepGame':
@@ -404,6 +534,12 @@ export function failed(memory: HostMemory, move: HostMove, now: number): HostMem
     case 'beat':
       // The next beat is due on the usual cadence; a missed one is not chased.
       return memory;
+    case 'openQuestion':
+      return {
+        ...memory,
+        opening: memory.opening === move.key ? null : memory.opening,
+        openNotBefore: now + OPEN_AGAIN_MS,
+      };
     case 'standoff':
       return { ...memory, moved: memory.moved === move.key ? null : memory.moved };
     case 'keepGame':
