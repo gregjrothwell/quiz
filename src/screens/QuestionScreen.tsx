@@ -449,7 +449,7 @@ export function QuestionScreen({
   }, [revealed]);
 
   // Desktop is the primary surface, so the whole round is playable from the
-  // keyboard: A–D or 1–4 to answer, space to advance, S to skip.
+  // keyboard: A–D or 1–4 to answer (as many as there are lecterns), space to advance, S to skip.
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
@@ -909,7 +909,8 @@ export function QuestionScreen({
       <p className="legend" aria-hidden="true">
         {optionsOut ? (
           <span>
-            <kbd>A</kbd>–<kbd>D</kbd> answer
+            {/* As many letters as lecterns: Higher or Lower has two. */}
+            <kbd>A</kbd>–<kbd>{String.fromCharCode(64 + optionCount)}</kbd> answer
           </span>
         ) : null}
         {hasTune && !revealed ? (
