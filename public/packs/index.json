@@ -241,5 +241,16 @@
       "medium": 40,
       "hard": 0
     }
+  },
+  {
+    "id": "themes",
+    "title": "Theme Tunes",
+    "blurb": "Name the programme from its theme.",
+    "count": 65,
+    "counts": {
+      "easy": 26,
+      "medium": 26,
+      "hard": 13
+    }
   }
 ]

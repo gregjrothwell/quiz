@@ -46,6 +46,7 @@ export const PACK_IDS = [
   'blanks',
   'prices',
   'artists',
+  'themes',
   'random',
   'tags',
   // No answers anywhere: the room is the answer. docs/decisions/survey-says.md.
@@ -67,6 +68,7 @@ export const HAND_BUILT_PACK_IDS = [
   'blanks',
   'prices',
   'artists',
+  'themes',
   'tags',
 ] as const;
 
@@ -79,7 +81,7 @@ export const HAND_BUILT_PACK_IDS = [
  * docs/decisions/sleeves-song.md.
  *
  * Name the Artist is the same preview path as Name that Tune. A muted player
- * hears nothing they can answer from.
+ * hears nothing they can answer from. Theme Tunes too.
  */
 export function packNeedsSound(packId: PackId): boolean {
   // Random deals tunes and sleeves, so the lobby mute gate applies to the
@@ -89,6 +91,7 @@ export function packNeedsSound(packId: PackId): boolean {
     packId === 'tunes' ||
     packId === 'sleeves' ||
     packId === 'artists' ||
+    packId === 'themes' ||
     packId === 'random'
   );
 }
@@ -104,12 +107,16 @@ export function packNeedsSound(packId: PackId): boolean {
  * enough that a shorter clip is the cheaper fix, and ten seconds is enough
  * music to place a song — that room's median answer was 4.0s.
  *
+ * **Theme Tunes is ten seconds as well**, Greg's call on 24 October 2026:
+ * several themes are sung, and a sung theme sings the programme's name. See
+ * docs/decisions/tv-themes.md.
+ *
  * Name the Artist does not lock. The answer is who is playing, so a sung
  * title is not the answer, and the lobby's window stands. See
  * docs/decisions/name-the-artist.md.
  */
 export function fixedDurationFor(packId: PackId): number | null {
-  return packId === 'tunes' ? 10 : null;
+  return packId === 'tunes' || packId === 'themes' ? 10 : null;
 }
 
 export type PackId = (typeof PACK_IDS)[number];
@@ -331,6 +338,10 @@ export const PACK_META: Record<PackId, { title: string; blurb: string }> = {
   artists: {
     title: 'Name the Artist',
     blurb: 'A clip from Apple Music. Name who is playing, not the song.',
+  },
+  themes: {
+    title: 'Theme Tunes',
+    blurb: 'Name the programme from its theme.',
   },
   random: {
     title: 'Random Round',

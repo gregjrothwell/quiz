@@ -21,6 +21,7 @@ export const SHOW_ROUNDS: readonly PackId[] = [
   'survey',
   'screens',
   'tunes',
+  'themes',
   'catchphrase',
   'sleeves',
   'artists',

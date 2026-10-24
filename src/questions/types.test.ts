@@ -10,6 +10,7 @@ describe('packNeedsSound', () => {
     // hears — Greg, 29 September 2026. See docs/decisions/sleeves-song.md.
     expect(packNeedsSound('sleeves')).toBe(true);
     expect(packNeedsSound('artists')).toBe(true);
+    expect(packNeedsSound('themes')).toBe(true);
     // Tunes and sleeves are dealt into it, so a muted quizmaster must not start.
     expect(packNeedsSound('random')).toBe(true);
     expect(packNeedsSound('flags')).toBe(false);
@@ -26,9 +27,14 @@ describe('fixedDurationFor', () => {
     expect(fixedDurationFor('tunes')).toBe(10);
   });
 
+  test('Theme Tunes is always played on ten seconds', () => {
+    // Greg, 24 October 2026: a sung theme sings the programme's name.
+    expect(fixedDurationFor('themes')).toBe(10);
+  });
+
   test('every other pack keeps the lobby\'s choice', () => {
     for (const id of PACK_IDS) {
-      if (id === 'tunes') continue;
+      if (id === 'tunes' || id === 'themes') continue;
       expect(fixedDurationFor(id)).toBeNull();
     }
   });
