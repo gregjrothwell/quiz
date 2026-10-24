@@ -1,12 +1,17 @@
 # Higher or Lower — two prices, one call
 
-> **Owner: Greg Rothwell. Last updated: 24 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 25 October 2026. Budget: 250 lines.**
 
-**Status: story only, 24 October 2026, branch `higher-or-lower`. Not built,
-not approved.** Idea 3 on the 24 October ideas list (chat, 18:30), picked by
+**Status: approved 24 October 2026, tests being written, branch
+`higher-or-lower`. Not built, not live.** Greg: *"Approved with D1–D4 as
+recommended: no price at reveal in v1, fixed 10s, blind, not in Random
+Round."* **D1 then changed the same night to (c)**, the price inside the
+buttons: Greg asked *"why aren't we showing price at reveal?"*, was given
+(a), (b) and (c) with (c) recommended, and answered *"ok"*, read as (c).
+Idea 3 on the 24 October ideas list (chat, 18:30), picked by
 Greg the same night: *"Build Higher or Lower next: story first."*
 
-**Treated as blind until Greg says otherwise (D3).** This file, chat, commits
+**Blind (D3).** This file, chat, commits
 and PRs give counts and slug numbers only: no item next to a price, and no
 sample question.
 
@@ -30,11 +35,18 @@ anyone can read ([`vault.md`](vault.md)), so the pack would hold every answer
 but the last. `seal.test.ts` would not notice: it looks for `correct`, not
 for a price in the next prompt.
 
-**The price behind the answer cannot be shown at the reveal either, today.**
-The vault only confirms which *option* is right: a client writes
-`{ answer: "Higher" }` and the rules match the string
-(`src/lib/vault.ts:81`). There is nowhere for "and it costs £x" to come from.
-That is D1.
+**The price cannot come out of the vault at the reveal.** The vault only
+confirms which *option* is right: a client writes `{ answer: "Higher" }` and
+the rules match the string (`src/lib/vault.ts:81`). So **the price goes in the
+option** (D1 (c)): the two lecterns read *Higher, £x* and *Lower, £y*, one of
+them the hidden item's real price, and the reveal lights it as The Price is
+Right lights its answer. No rule changes.
+
+**The decoy is the real price mirrored about the shown one**
+(shown² ÷ real, rounded on the same step). Both options are then the same
+distance from the shown price, so neither looks nearer, further or rounder:
+picking the plausible price *is* calling the direction. A cap on how far
+apart the prices may be keeps the mirror believable.
 
 **So version one is a round of separate pairs.** Each question is one shown
 price and one hidden item. The streak is out of version one too: it is a
@@ -86,22 +98,30 @@ answered by reading another pack.
    month, then names the hidden item** and asks if it costs more or less.
    Prices are ONS medians of at least 30 valid quotes, as
    `prices-core.ts` already computes.
-3. **Two options, *Higher* then *Lower*, in that order** (`ordered: true`),
-   as two full-width lecterns.
+3. **Two options, *Higher, £x* then *Lower, £y*, in that order**
+   (`ordered: true`), as two full-width lecterns. £x is over the shown price
+   and £y under it.
 4. **Sealed in the price sense, not only the `correct` sense.** A new test
    fails if any hidden item's key is a shown card anywhere in the pack, is a
    Price Was Right or Price is Right key, or is spoiled — and if any hidden
-   item's price string appears in any file under `public/packs/`.
+   item's name appears in another question of this pack or of either price
+   pack.
+4a. **No tell between the two prices**: in every question both options are
+   the same distance from the shown price (as a ratio), to within the
+   rounding step, and share its format.
 5. **No answer by habit.** *Higher* is right in 45–55% of questions, overall
    and at each level.
 6. **Difficulty from how far apart the two prices are**: the closer, the
    harder. No pair closer than a floor, so a near-tie that a different month's
    quotes could flip is not asked. Bands and floor are set at build from the
-   measured spread (placeholder: hard 1.1–1.3×, medium 1.3–2×, easy over 2×).
-7. **Variety**: no item in more than two questions; no pair asked twice
-   either way round.
-8. **The reveal lights the right lectern** as on any question. Under D1 (a)
-   no price is shown for the hidden item.
+   measured spread (placeholder: hard 1.1–1.3×, medium 1.3–2×, easy 2–4×,
+   and nothing over the 4× cap).
+7. **Variety, and a hidden item once only.** A shown card in at most two
+   questions; no pair asked twice either way round. **A hidden item is in
+   exactly one question**: hidden twice, its real price is the one value both
+   questions' options share (found writing the tests, 25 October).
+8. **The reveal lights the right lectern** as on any question, and that
+   lectern carries the hidden item's real price.
 9. **Scoring unchanged**: 500 + rank, wager and steal as on any pack.
 10. **The clock (D2)** is the pack's own: 10 seconds via `fixedDurationFor`,
     as Name that Tune does. The answer-window rule reads `durationSecs` from
@@ -118,17 +138,27 @@ answered by reading another pack.
 
 ### Tests first
 
-The seal-in-the-price-sense test (4), the 45–55% balance (5), the band and
-floor (6), the variety rule (7) and the two ordered options (3), each in a
-`higher-pack.test.ts` beside `prices-pack.test.ts`, written red before the
-writer exists. 4 gets one allow case: a Price Was Right item as a shown card
-passes.
+Written red, 25 October 2026, before any of it exists:
+
+- `scripts/higher-core.test.ts`: the band, floor and cap (6), the mirrored
+  decoy (4a), the two options (3), on invented prices.
+- `scripts/write-higher-pack.test.ts`: the builder on invented prices —
+  the answer is the real price (8), it refuses an unbalanced list (5) and a
+  hidden item under 30 quotes (2).
+- `scripts/higher-pack.test.ts`: the specs and the published pack — keys and
+  names (4), variety (7), counts (1), shape and no tell (3, 4a), with one
+  allow case: a Price Was Right item as a shown card passes.
+- `src/questions/higher.test.ts`: the pack id, its title, 10 seconds (10),
+  no sound, not in Random Round (11).
+
+5 is enforced by the builder, not read off the pack: which option is right
+is not in the published file, by design.
 
 ## Decisions for Greg
 
 | | Question | Recommended | Why |
 |---|---|---|---|
-| **D1** | Show the hidden item's price at the reveal? | **(a) Not in v1** | (b) needs a new vault field readable only after the window: a rules change, the area of [`postmortem-the-pin-that-refused-the-reveal.md`](postmortem-the-pin-that-refused-the-reveal.md). Build (b) if the first office round asks for it |
+| **D1** | Show the hidden item's price at the reveal? | **(c) In the buttons** — decided 24 Oct, replacing (a) | (a) showed no price. (b), a vault field readable after the window, is a rules change in the area of [`postmortem-the-pin-that-refused-the-reveal.md`](postmortem-the-pin-that-refused-the-reveal.md). (c) needs no rule and shows the price |
 | **D2** | Clock | **10 seconds, fixed** | The pitch said a short clock; a two-way call needs no more, and `fixedDurationFor` exists |
 | **D3** | Blind? | **Yes** | It is price data, like the two packs you play blind |
 | **D4** | In Random Round? | **Not yet** | Same as The Price is Right: after its first office round |
@@ -143,5 +173,4 @@ a scoring decision, not a data one.
 
 ## Out of version one
 
-The run of cards and the streak (seal, above), the price at the reveal (D1),
-data other than prices (chart peaks, release years) and a picture per item.
+The run of cards and the streak (seal, above), data other than prices (chart peaks, release years) and a picture per item.

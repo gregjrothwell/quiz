@@ -28,7 +28,8 @@ describe('fixedDurationFor', () => {
 
   test('every other pack keeps the lobby\'s choice', () => {
     for (const id of PACK_IDS) {
-      if (id === 'tunes') continue;
+      // Higher or Lower is ten seconds too: src/questions/higher.test.ts.
+      if (id === 'tunes' || id === 'higher') continue;
       expect(fixedDurationFor(id)).toBeNull();
     }
   });
