@@ -2,8 +2,8 @@
 
 > **Owner: Greg Rothwell. Last updated: 25 October 2026. Budget: 250 lines.**
 
-**Status: approved 24 October 2026, tests being written, branch
-`higher-or-lower`. Not built, not live.** Greg: *"Approved with D1–D4 as
+**Status: built 25 October 2026 on branch `higher-or-lower`, 90 questions,
+not seeded, not live.** Greg: *"Approved with D1–D4 as
 recommended: no price at reveal in v1, fixed 10s, blind, not in Random
 Round."* **D1 then changed the same night to (c)**, the price inside the
 buttons: Greg asked *"why aren't we showing price at reveal?"*, was given
@@ -153,6 +153,32 @@ Written red, 25 October 2026, before any of it exists:
 
 5 is enforced by the builder, not read off the pack: which option is right
 is not in the published file, by design.
+
+## Built — 25 October 2026
+
+`hand-higher-data.ts` (162 items named by hand, 90 pairs), `higher-core.ts`,
+`write-higher-pack.ts` (`npm run write-higher-pack`), `public/packs/higher.json`.
+**90 questions, 30 a level, Higher right in exactly 15 of each 30.** 84 of the
+90 pairs share an ONS division (clothes with clothes, pub with pub); 42 shown
+cards are Price Was Right items. Pairing was a scratch script that printed
+counts only.
+
+- **Twins leak too.** The name check caught two hidden items that The Price
+  Was Right asks under an RPI key. `TWIN_KEYS` held six more, under different
+  names. `leaky()` now follows twins both ways, and a twin is never hidden.
+- **The keyboard hint said A–D** over two lecterns. It now names as many
+  letters as there are (`QuestionScreen.test.tsx`).
+- **AC3, read in the preview** (`#/preview`, two invented entries): on a
+  phone the two lecterns stack full width; on a desktop they sit side by
+  side, Higher left, as the lectern grid lays any two out. Left as is.
+- Two count guards bumped: 23 pack files (`seal.test.ts`), the hand-built
+  list (`write-hand-packs.test.ts`). `tv-themes` bumps the same two: at the
+  release merge they become 24 and both ids.
+
+**Release day**, in order: a What's new line (`src/lib/updates.ts`),
+`NEW_UNTIL.higher` = go-live + 14 days, `seed-vault -- --pack higher` and read
+back 90/90, then `host-room --pack higher` on two ids. Counts and slugs only
+in chat, commits and the PR.
 
 ## Decisions for Greg
 
