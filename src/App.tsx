@@ -4,6 +4,7 @@ import { ColdOpen } from './components/ColdOpen';
 import { RigCheck } from './components/RigCheck';
 import { Stage } from './components/Stage';
 import { arrivalFor, walkedIn, NO_ARRIVAL, type Arrival } from './engine/arrival';
+import type { HistoryGroup } from './engine/askedHistory';
 import { shouldAutoJoin } from './engine/autoJoin';
 import type { Verdict } from './engine/questionVote';
 import { honoursFor, sawWholeGame, NO_HONOURS } from './engine/awards';
@@ -454,11 +455,12 @@ function Game() {
       jigsawEnabled: boolean,
       standoffEnabled: boolean,
       chaserEnabled: boolean,
+      history: HistoryGroup,
     ) => {
       setBusy(true);
       setActionError(null);
       // Dealing, and remembering what was dealt, is `src/host/prepare.ts`.
-      dealRound({ packId, count, level, jigsawEnabled, chaserEnabled }, PACK_PORTS)
+      dealRound({ packId, count, level, jigsawEnabled, chaserEnabled, history }, PACK_PORTS)
         .then(async ({ questions, ladderNotices, remember }) => {
           const pack = packs.find((entry) => entry.id === packId);
 

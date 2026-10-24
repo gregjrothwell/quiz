@@ -28,6 +28,28 @@
 export const ASKED_LIMIT = 500;
 
 /**
+ * Whose history a round reads and writes.
+ *
+ * **Geekend have their own.** They are a separate group who have never played
+ * a question, so drawing from the office's history would hand them only what
+ * the office has left — and banking their rounds into it would take questions
+ * away from the office that the office never saw. The quizmaster picks it in
+ * the lobby; nothing about the round itself changes.
+ */
+export type HistoryGroup = 'office' | 'geekend';
+
+/**
+ * The `seasons/{id}` a group's history lives under.
+ *
+ * Suffixed onto the season rather than kept under a fixed name, so a new
+ * season starts Geekend fresh as well. Needs no rules change: the rule is
+ * `match /seasons/{season}/asked/{packId}` and names no season.
+ */
+export function askedSeason(season: string, group: HistoryGroup): string {
+  return group === 'office' ? season : `${season}-${group}`;
+}
+
+/**
  * What the round knows about the questions this season has already served.
  *
  * `known` is the whole point of the type. A read that was refused and a season

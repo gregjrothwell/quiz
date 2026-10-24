@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
   ASKED_LIMIT,
+  askedSeason,
   askedToWrite,
   mergeAsked,
   NO_HISTORY,
@@ -61,5 +62,17 @@ describe('ASKED_LIMIT', () => {
     */
   test('stays inside the bound the published ruleset allows', () => {
     expect(ASKED_LIMIT).toBeLessThanOrEqual(600);
+  });
+});
+
+describe('askedSeason', () => {
+  test('keeps the office on the season it has always used', () => {
+    // A change here would start the office's history from nothing.
+    expect(askedSeason('season-2', 'office')).toBe('season-2');
+  });
+
+  test('gives Geekend a history of their own, and a fresh one each season', () => {
+    expect(askedSeason('season-2', 'geekend')).toBe('season-2-geekend');
+    expect(askedSeason('season-3', 'geekend')).toBe('season-3-geekend');
   });
 });

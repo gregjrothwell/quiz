@@ -1,4 +1,4 @@
-import { NO_HISTORY, type AskedHistory } from '../engine/askedHistory';
+import { NO_HISTORY, type AskedHistory, type HistoryGroup } from '../engine/askedHistory';
 import { dealRandomRound, RANDOM_SOURCES, type RandomSource } from '../engine/randomRound';
 import { buildQuizQuestions, ladderFallbackNotices, type Level, type QuizQuestion, type Rng } from '../engine/state';
 import { rateFor } from '../engine/chaser';
@@ -36,15 +36,18 @@ export interface DealRequest {
   jigsawEnabled: boolean;
   /** Beat the Chaser: stamp each question with the office's rate for one like it. */
   chaserEnabled?: boolean;
+  /** Whose season history to deal from and add to. The office's unless Geekend are playing. */
+  history?: HistoryGroup;
 }
 
 export async function dealRound(request: DealRequest, ports: PackPorts, rng: Rng = Math.random): Promise<Dealt> {
+  const group = request.history ?? 'office';
   const dealt =
     request.packId === 'random'
-      ? await dealRandom(request.count, request.level, ports, rng)
+      ? await dealRandom(request.count, request.level, ports, rng, group)
       : request.packId === 'survey'
-        ? await dealSurvey(ports, rng)
-        : await dealSinglePack(request, ports, rng);
+        ? await dealSurvey(ports, rng, group)
+        : await dealSinglePack(request, ports, rng, group);
   if (!request.chaserEnabled || request.packId === 'survey') return dealt;
 
   // A rates file that cannot be read is the office average, not a round that will not start.
@@ -63,9 +66,10 @@ async function dealSinglePack(
   { packId, count, level, jigsawEnabled }: DealRequest,
   ports: PackPorts,
   rng: Rng,
+  group: HistoryGroup,
 ): Promise<Dealt> {
   const pool = await ports.loadPack(packId);
-  const asked = await ports.loadAsked(packId).catch(() => NO_HISTORY);
+  const asked = await ports.loadAsked(packId, group).catch(() => NO_HISTORY);
   const playable = jigsawEnabled ? pool.filter((question) => question.jigsaw === true) : pool;
   const questions = buildQuizQuestions(playable, count, level, rng, asked.ids);
   return {
@@ -77,6 +81,7 @@ async function dealSinglePack(
           packId,
           questions.map((question) => question.id),
           asked,
+          group,
         )
         .catch(() => undefined);
     },
@@ -88,16 +93,16 @@ async function dealSinglePack(
  * offers mean nothing here — always ten questions, five prompts twice. Season
  * history works as for any pack, on the prompt ids.
  */
-async function dealSurvey(ports: PackPorts, rng: Rng): Promise<Dealt> {
+async function dealSurvey(ports: PackPorts, rng: Rng, group: HistoryGroup): Promise<Dealt> {
   const pool = await ports.loadPack('survey');
-  const asked = await ports.loadAsked('survey').catch(() => NO_HISTORY);
+  const asked = await ports.loadAsked('survey', group).catch(() => NO_HISTORY);
   const questions = dealSurveyRound(pool, rng, asked.ids);
   const promptIds = [...new Set(questions.flatMap((question) => question.survey?.promptId ?? []))];
   return {
     questions,
     ladderNotices: [],
     remember: async () => {
-      await ports.recordAsked('survey', promptIds, asked).catch(() => undefined);
+      await ports.recordAsked('survey', promptIds, asked, group).catch(() => undefined);
     },
   };
 }
@@ -107,12 +112,18 @@ async function dealSurvey(ports: PackPorts, rng: Rng): Promise<Dealt> {
  * read and, when the read succeeded, written back — a `random` history would not
  * stop On the box serving the same still next round.
  */
-async function dealRandom(count: number, level: Level, ports: PackPorts, rng: Rng): Promise<Dealt> {
+async function dealRandom(
+  count: number,
+  level: Level,
+  ports: PackPorts,
+  rng: Rng,
+  group: HistoryGroup,
+): Promise<Dealt> {
   const loaded = await Promise.all(
     RANDOM_SOURCES.map(async (source) => {
       const [pool, history] = await Promise.all([
         ports.loadPack(source),
-        ports.loadAsked(source).catch(() => NO_HISTORY),
+        ports.loadAsked(source, group).catch(() => NO_HISTORY),
       ]);
       return { source, pool, history };
     }),
@@ -151,7 +162,7 @@ async function dealRandom(count: number, level: Level, ports: PackPorts, rng: Rn
       await Promise.all(
         RANDOM_SOURCES.map((source) => {
           const ids = questions.filter((question) => question.sourcePack === source).map((question) => question.id);
-          return ports.recordAsked(source, ids, take(source).history).catch(() => undefined);
+          return ports.recordAsked(source, ids, take(source).history, group).catch(() => undefined);
         }),
       );
     },

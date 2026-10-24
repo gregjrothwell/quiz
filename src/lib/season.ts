@@ -11,8 +11,10 @@ import {
 } from 'firebase/firestore';
 import {
   askedToWrite,
+  askedSeason,
   seenHistory,
   type AskedHistory,
+  type HistoryGroup,
 } from '../engine/askedHistory';
 import type { Honours } from '../engine/awards';
 import { tallyOf, type FinalsTally } from '../engine/finals';
@@ -312,8 +314,8 @@ export async function mergeRecords(from: string, into: string): Promise<boolean>
 }
 
 
-function askedDoc(packId: string) {
-  return doc(firestore(), 'seasons', SEASON, 'asked', packId);
+function askedDoc(packId: string, group: HistoryGroup) {
+  return doc(firestore(), 'seasons', askedSeason(SEASON, group), 'asked', packId);
 }
 
 /**
@@ -330,8 +332,8 @@ function askedDoc(packId: string) {
  * caller still swallows the failure for the round; what it must not do is treat
  * it as knowledge. See {@link AskedHistory}.
  */
-export async function loadAsked(packId: string): Promise<AskedHistory> {
-  const snapshot = await getDoc(askedDoc(packId));
+export async function loadAsked(packId: string, group: HistoryGroup = 'office'): Promise<AskedHistory> {
+  const snapshot = await getDoc(askedDoc(packId, group));
   if (!snapshot.exists()) return seenHistory(new Set());
 
   const { ids } = snapshot.data() as { ids?: unknown };
@@ -361,11 +363,12 @@ export async function recordAsked(
   packId: string,
   ids: readonly string[],
   previous: AskedHistory,
+  group: HistoryGroup = 'office',
 ): Promise<void> {
   const merged = askedToWrite(ids, previous);
   if (!merged) return;
 
-  await setDoc(askedDoc(packId), { ids: merged, at: Date.now() });
+  await setDoc(askedDoc(packId, group), { ids: merged, at: Date.now() });
 }
 
 /**
