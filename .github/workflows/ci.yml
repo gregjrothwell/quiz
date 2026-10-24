@@ -205,7 +205,9 @@ jobs:
     # runs, and so must this, or a skipped e2e would pass as a required check.
     if: ${{ !cancelled() && needs.verify.result == 'success' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # 30, not 20: release-25-oct's 34 specs ran 33 green and were cut off at
+    # 20m12s (run 40142695579); PR runs were already at 19m on 24 Oct.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
