@@ -2,10 +2,15 @@
 
 > **Owner: Greg Rothwell. Last updated: 24 October 2026. Budget: 250 lines.**
 
-**Status: story drafted 24 October 2026, waiting for Greg's approval. No code.**
-Greg: "write the story and ACs for Pointless (room edition). No code for
-Pointless until I approve." Idea 2 of the 24 October ideas list. Code claims
-below were read on `43f14ee` (master), 24 October 2026.
+**Status: approved by Greg, 24 October 2026. Not started: the build waits for
+Survey Says' first office round (P1).** Greg: "Pointless is blind for me: keep
+every prompt out of chat and docs, numbers only. Approve the rest as
+recommended." Idea 2 of the 24 October ideas list. Code claims below were read
+on `43f14ee` (master), 24 October 2026.
+
+> **Blind.** Greg plays Pointless blind. No prompt, option or trap goes into
+> chat, a doc, a commit message or a PR: counts only, as for Catchphrase,
+> Blankety Blank and both Price packs.
 
 ## The idea
 
@@ -128,11 +133,11 @@ Worked example, eight seats; A, B and C right, D the trap:
   Saturday). Pointless leans on the same counts pipeline, so building before
   Survey Says' first office round would build on an untested base.
 
-## Open — Greg to decide
+## Decided — Greg, 24 October 2026
 
-| # | Question | Recommended | Alternative |
-|---|---|---|---|
-| P1 | When does the build start? | **After Survey Says' first office round reads clean**, since Pointless reuses its pipeline | Now, in parallel |
-| P2 | **Is Pointless blind for you?** | Ask before any sample prompt is shown here or in chat, as for Catchphrase and the Price packs (none shown so far) | — |
-| P3 | Who writes the first 40 prompts | Me, as a draft for you to cut — unless P2 is "blind", then a reviewer who isn't you | You |
-| P4 | Scoring | **1,000 split between those who picked it** (S2) | The show's way: lowest wins. Breaks every other pack's "higher is better" and the season table |
+| # | Question | Decided |
+|---|---|---|
+| P1 | When does the build start? | **After Survey Says' first office round reads clean** (`read-games --pack survey`) |
+| P2 | Is Pointless blind for Greg? | **Yes.** Counts only, everywhere |
+| P3 | Who writes the first 40 prompts | **Claude drafts; Greg does not see them.** The checks are mechanical: K1–K3's tests, the British-office classifier, and a count by topic. A person other than Greg to read them is still unnamed — Greg to name one, or accept the checks alone, before the pack ships |
+| P4 | Scoring | **1,000 split between those who picked it** (S2) |
