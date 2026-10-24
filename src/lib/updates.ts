@@ -20,7 +20,7 @@ export const UPDATES: readonly Update[] = [
   {
     date: '2026-10-24',
     lines: [
-      'The Double: two rounds that add up. Round one stops at half-time, round two adds to it, and Share or Shaft, if it is on, is played for the whole total.',
+      'The Double: two rounds that add up. The first half stops at half-time, the second half adds to it, and Share or Shaft, if it is on, is played for the whole total.',
       'A new squad to pick: Geekend.',
       'Geekend get their own questions: the quizmaster picks Geekend in the lobby, and the round skips only what Geekend have already had.',
     ],

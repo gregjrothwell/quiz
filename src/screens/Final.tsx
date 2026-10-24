@@ -389,12 +389,12 @@ export function Final({
         <div className="btn-row">
           {isQuizmaster ? (
             <button type="button" className="btn btn--primary" onClick={onPlayAgain}>
-              {halfTime ? 'Round two' : 'Another round'}
+              {halfTime ? 'Second half' : 'Another round'}
             </button>
           ) : (
             <p className="muted">
               {halfTime
-                ? 'Half-time. Waiting for the quizmaster to start round two…'
+                ? 'Half-time. Waiting for the quizmaster to start the second half…'
                 : 'Waiting to see if the quizmaster starts another…'}
             </p>
           )}

@@ -296,8 +296,8 @@ export function Lobby({
 
       {roundTwo ? (
         <p className="double-note">
-          Round two of The Double. Scores start again for the round, and the boards add it to
-          round one.
+          The second half of The Double. Scores start again for the half, and the boards add it
+          to the first.
         </p>
       ) : null}
 
@@ -717,8 +717,8 @@ export function Lobby({
             {double ? (
               <p className="muted hint">
                 {roundTwo
-                  ? 'This is round two. Its scores are added to round one, and the board ranks the total.'
-                  : 'Two rounds that add up. This one ends at half-time, then round two adds to it, and Share or Shaft, if it is on, is played for the whole total at the end of round two.'}
+                  ? 'This is the second half. Its scores are added to the first, and the board ranks the total.'
+                  : 'Two halves that add up. This one ends at half-time, then the second half adds to it, and Share or Shaft, if it is on, is played for the whole total at the end.'}
               </p>
             ) : null}
           </div>

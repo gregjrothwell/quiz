@@ -581,7 +581,7 @@ export function Preview() {
       ),
     },
     {
-      title: 'Lobby · round two of The Double',
+      title: 'Lobby · second half of The Double',
       node: (
         <Lobby
           room={mockRoom({ phase: 'lobby', doubleEnabled: true, double: DOUBLE_FIRST })}
@@ -1186,7 +1186,7 @@ export function Preview() {
       ),
     },
     {
-      title: 'Standings · round two of The Double',
+      title: 'Standings · second half of The Double',
       node: (
         <Scoreboard
           room={mockRoom({

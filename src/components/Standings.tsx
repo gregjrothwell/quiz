@@ -80,7 +80,7 @@ export function Standings({ players, scores, deltas, youUid, round }: StandingsP
                 </span>
                 {round ? (
                   <span className="standing__round">
-                    this round {(round[entry.uid] ?? 0).toLocaleString('en-GB')}
+                    this half {(round[entry.uid] ?? 0).toLocaleString('en-GB')}
                   </span>
                 ) : null}
                 {entry.uid === newLeader ? <span className="standing__tag">New leader</span> : null}

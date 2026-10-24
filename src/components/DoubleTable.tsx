@@ -28,8 +28,8 @@ export function DoubleTable({ players, scores, double, youUid }: DoubleTableProp
         <thead>
           <tr>
             <th scope="col">Player</th>
-            <th scope="col">Round one</th>
-            <th scope="col">Round two</th>
+            <th scope="col">First half</th>
+            <th scope="col">Second half</th>
             <th scope="col">Total</th>
           </tr>
         </thead>

@@ -160,14 +160,14 @@ describe('the Double', () => {
     const { container, getByRole, queryByRole } = render(doubleFinal('half-quizmaster', null, true));
     landed();
     expect(container).toHaveTextContent(/Half-time/);
-    expect(getByRole('button', { name: 'Round two' })).toBeInTheDocument();
+    expect(getByRole('button', { name: 'Second half' })).toBeInTheDocument();
     expect(queryByRole('button', { name: 'Another round' })).toBeNull();
   });
 
   test('everybody else is told round two is coming', () => {
     const { container } = render(doubleFinal('half-player', null, false));
     landed();
-    expect(container).toHaveTextContent(/round two/i);
+    expect(container).toHaveTextContent(/second half/i);
   });
 
   test('round two crowns the top of the morning, not of the round', () => {

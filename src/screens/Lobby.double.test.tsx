@@ -89,11 +89,11 @@ describe('the Double in the lobby', () => {
 
   test('everyone can see it is round two of the Double', () => {
     lobby(ROUND_TWO, false);
-    expect(screen.getByText(/Round two of The Double/)).toBeInTheDocument();
+    expect(screen.getByText(/second half of The Double/)).toBeInTheDocument();
   });
 
   test('round one says nothing about a round two', () => {
     lobby(ROUND_ONE, false);
-    expect(screen.queryByText(/Round two of The Double/)).toBeNull();
+    expect(screen.queryByText(/second half of The Double/)).toBeNull();
   });
 });
