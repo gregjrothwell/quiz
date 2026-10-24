@@ -33,7 +33,7 @@ export const MAX_SQUAD_LENGTH = 40;
  * the board as themselves rather than as a blank. Where they played on a given
  * week is recorded separately — see `playingWith` in `src/lib/season.ts`.
  */
-export const SQUADS = ['Hermes', 'Bundae', 'Lurkers'] as const;
+export const SQUADS = ['Hermes', 'Bundae', 'Geekend', 'Lurkers'] as const;
 
 export type Squad = (typeof SQUADS)[number];
 
@@ -76,7 +76,7 @@ export function squadKey(squad: string): string {
  * both spellings of one squad offers one filter and not two.
  *
  * The known squads come first and in their own order — a filter row that reads
- * Hermes, Bundae, Lurkers is a statement about the office, where alphabetical
+ * Hermes, Bundae, Geekend, Lurkers is a statement about the office, where alphabetical
  * order would bury Lurkers between two strangers. Anything else follows,
  * sorted.
  */
