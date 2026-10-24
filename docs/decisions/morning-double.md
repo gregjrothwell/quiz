@@ -2,9 +2,10 @@
 
 > **Owner: Greg Rothwell. Last updated: 24 October 2026. Budget: 250 lines.**
 
-**Status: approved by Greg, 24 October 2026, with the recommended answers to
-D1–D3** — "lobby choice, stake the whole morning, call it The Double". Tests
-next; no code yet. From the 24 October ideas list, where it was idea 1.
+**Status: built 24 October 2026 on branch `morning-double` (`142fa8b`), not
+live.** Approved by Greg the same day with the recommended answers to D1–D3:
+"lobby choice, stake the whole morning, call it The Double". From the 24
+October ideas list, where it was idea 1.
 
 ## Why
 
@@ -172,7 +173,7 @@ Pot 18,500.
   to 0.
 - One Playwright spec: a two-round double with a final, against the emulators.
 
-## The tests — written 24 October 2026, red, not committed
+## The tests — written red 24 October 2026, green with `142fa8b`
 
 | File | Covers | Red because |
 |---|---|---|
@@ -194,6 +195,25 @@ ordinary transition writes no first half; an ordinary round after a double).
 Not covered by an automated test: season banking at half-time (AC4's season
 half). Banking runs per device in `App.tsx`, which no test drives. `seasonWin`
 is tested, and the first office double is the live check (AC18).
+
+## Built — 24 October 2026
+
+All 2,015 offline tests green; `e2e/double.spec.ts` passed against the emulators
+in 2.2 minutes (the real Node host, both rounds, the final, both records kept
+under the repo's rules). Seen in the gallery at desktop and 375px.
+
+- **Ordinary rounds bank exactly as before.** `seasonWin` keeps the old rule
+  word for word outside a double.
+- **Found, not fixed: a win can go unbanked.** `roomStandings` ranks before
+  it filters out leavers, so when the top scorer leaves before the whistle
+  nobody else is in first place and no win banks. Pre-existing in `App.tsx`;
+  the Double's own champion ranks only who was there.
+- **Found on screen: two things called "round two".** The scoreboard's title
+  card calls each *question* a round ("Round two", "Round three"), so in round
+  two of a double "Round two" means both. For Greg: keep it, or call the
+  halves "first half" and "second half", which half-time already suggests.
+- **Phones:** the round's score beside a name pushed the name off the row at
+  375px; it now drops under the name below 640px.
 
 ## Decided — Greg, 24 October 2026: the recommended column, all three
 
