@@ -710,6 +710,7 @@ export function Lobby({
                 disabled={roundTwo}
                 onClick={() => setDoubleChoice(true)}
               >
+                {modeSticker('double', today)}
                 <b>The Double</b>
                 <span>Two rounds, one total</span>
               </button>

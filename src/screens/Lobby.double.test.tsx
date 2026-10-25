@@ -43,7 +43,7 @@ function lobby(room: RoomState, isQuizmaster: boolean, onStart = vi.fn()) {
   return onStart;
 }
 
-const doubleChoice = () => screen.queryByRole('button', { name: /^The Double/ });
+const doubleChoice = () => screen.queryByRole('button', { name: /^(New ?)?The Double/ });
 
 /** The last argument `onStart` was called with: whether the round is a double. */
 function startedAsDouble(onStart: ReturnType<typeof vi.fn>): unknown {
