@@ -9,7 +9,7 @@ import { createRoom, type QuizQuestion } from '../src/engine/state';
 import { toPersisted } from '../src/lib/roomDoc';
 import { startNodeHost } from '../scripts/nodeHost';
 import { isolateFiles } from './isolate';
-import { admin, player, seedVault, type Player } from './nodeClient';
+import { admin, player, seedVault, until, type Player } from './nodeClient';
 
 isolateFiles();
 
@@ -117,7 +117,8 @@ test('a double: half-time banks round one, and the final stakes the whole mornin
     expect((paused.scores as Record<string, number>)[bo.client.uid]).toBe(2_700);
 
     // #and round one is kept as an ordinary round, with no link
-    const keptOne = await admin().doc(`games/${one}`).get();
+    // The host keeps the round as its own move once it sees `finished`, so wait for it.
+    const keptOne = await until(() => admin().doc(`games/${one}`).get(), (kept) => kept.exists);
     expect(keptOne.exists).toBe(true);
     expect(keptOne.get('doubleOf')).toBeUndefined();
 
@@ -156,7 +157,7 @@ test('a double: half-time banks round one, and the final stakes the whole mornin
     expect(scores[host.uid]).toBe(0);
 
     // #and round two is kept naming round one, and round one is unchanged
-    const keptTwo = await admin().doc(`games/${two}`).get();
+    const keptTwo = await until(() => admin().doc(`games/${two}`).get(), (kept) => kept.exists);
     expect(keptTwo.exists).toBe(true);
     expect(keptTwo.get('doubleOf')).toBe(one);
     const oneAgain = await admin().doc(`games/${one}`).get();

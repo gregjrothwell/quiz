@@ -198,16 +198,29 @@ jobs:
   # App Check debug-token environment variable — `check-bundle` refuses a build
   # if this file does. Give the runner the emulator, not a token.
   # Java 21 is for the Firestore emulator. setup-java is v5 (node24), not v4.
-  e2e:
-    name: Playwright against emulators
+  #
+  # Four jobs at once, each on its own runner with its own emulators, so no two
+  # specs ever share one. The groups are `e2e/shards.json`, balanced by the
+  # per-file times of run 40151240593 (19.4 min of specs on one worker, 25 Oct
+  # 2026): about 4¾ minutes each, the Commentator's round alone being 4⅓.
+  # `scripts/e2e-shards.test.ts` fails if a spec is in no group or this list
+  # does not match the groups. Inside a shard it is still one worker: each spec
+  # wipes its emulators first (e2e/isolate.ts).
+  e2e-shard:
+    name: Playwright shard ${{ matrix.shard }}
     needs: verify
     # `!cancelled()` rather than the default: when Plan fails, verify still
-    # runs, and so must this, or a skipped e2e would pass as a required check.
+    # runs, and so must this.
     if: ${{ !cancelled() && needs.verify.result == 'success' }}
     runs-on: ubuntu-latest
-    # 30, not 20: release-25-oct's 34 specs ran 33 green and were cut off at
-    # 20m12s (run 40142695579); PR runs were already at 19m on 24 Oct.
-    timeout-minutes: 30
+    # The slowest shard ran ~5 min of specs when this was written; 15 leaves
+    # room for a slow runner without letting a hang hold a PR for half an hour.
+    timeout-minutes: 15
+    strategy:
+      # Every shard reports, so one red file does not hide another.
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
@@ -223,6 +236,7 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      # Verify's build, so every shard drives the bundle that is about to go live.
       - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: dist
@@ -230,14 +244,42 @@ jobs:
 
       - run: npx playwright install --with-deps chromium
 
-      - run: npm run e2e
+      # `npm run e2e` with this shard's files. Paths come from the repo's own
+      # JSON, never from the event, so nothing a PR author types reaches the shell.
+      - name: Run this shard's specs
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          files=$(jq -r --argjson i "$SHARD" '.[$i][]' e2e/shards.json | tr '\n' ' ')
+          echo "shard $SHARD: $files"
+          test -n "$files"
+          npx firebase emulators:exec --only auth,firestore,database --project quiz-d686e "npx playwright test $files"
 
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         if: failure()
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.shard }}
           path: playwright-report/
           if-no-files-found: ignore
+
+  # The required check. The ruleset names "Playwright against emulators", and a
+  # matrix job reports one check per shard under other names, so this one job
+  # stands for all of them. It runs whenever the shards were meant to, and
+  # fails unless every shard passed. Skipped when verify did not pass — exactly
+  # when the single e2e job used to skip, since a skipped required check passes.
+  # `rules` and `deploy` need this job, so they still wait on every shard.
+  e2e:
+    name: Playwright against emulators
+    needs: [verify, e2e-shard]
+    if: ${{ !cancelled() && needs.verify.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every shard passed
+        env:
+          SHARDS: ${{ needs.e2e-shard.result }}
+        run: |
+          echo "shards: $SHARDS"
+          test "$SHARDS" = success
 
   # Publishes both rulesets named in firebase.json — firestore.rules and
   # database.rules.json — once verify and e2e have passed. e2e has just run these

@@ -9,7 +9,7 @@ import { createRoom, type QuizQuestion } from '../src/engine/state';
 import { toPersisted } from '../src/lib/roomDoc';
 import { startNodeHost } from '../scripts/nodeHost';
 import { isolateFiles } from './isolate';
-import { admin, player, seedVault } from './nodeClient';
+import { admin, player, seedVault, until } from './nodeClient';
 
 isolateFiles();
 
@@ -125,7 +125,8 @@ test('the host runs a whole round from Node, final and all, with no browser', as
     expect(scores[host.uid]).toBe(0);
 
     // #and the host kept the round, every question revealed through the vault
-    const kept = await admin().doc(`games/${gameId}`).get();
+    // Its own move once the host sees `finished`, so wait for it rather than read once.
+    const kept = await until(() => admin().doc(`games/${gameId}`).get(), (record) => record.exists);
     expect(kept.exists).toBe(true);
     expect(kept.get('writtenBy')).toBe(host.uid);
     // `reveal` is only written by the device that revealed, so its presence on
