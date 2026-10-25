@@ -50,6 +50,12 @@
  *
  *   npm run host-room -- 10 --pack tags
  *
+ * `--pack themes` is Theme Tunes and `--pack higher` is Higher or Lower, both
+ * blind, both seeded 25 Oct 2026 (#147).
+ *
+ *   npm run host-room -- 10 --pack themes
+ *   npm run host-room -- 10 --pack higher
+ *
  * Safe for blind packs: Lite logs every refused reveal candidate with its
  * payload (the option text), and four candidates means three refusals a
  * question. Its log level is turned down to errors below, so the options never
@@ -136,7 +142,9 @@ function sleeveQuestions(): QuizQuestion[] {
 const LAST = process.argv.includes('--last');
 
 /** Two questions of a published pack — the first two, or the last two with `--last`. */
-function twoOf(file: 'catchphrase.json' | 'blanks.json' | 'prices.json' | 'tags.json'): QuizQuestion[] {
+function twoOf(
+  file: 'catchphrase.json' | 'blanks.json' | 'prices.json' | 'tags.json' | 'themes.json' | 'higher.json',
+): QuizQuestion[] {
   const pack = JSON.parse(
     readFileSync(join(import.meta.dirname, '..', 'public', 'packs', file), 'utf8'),
   ) as { questions: SealedQuestion[] };
@@ -154,11 +162,13 @@ if (
   && PACK !== 'blanks'
   && PACK !== 'prices'
   && PACK !== 'tags'
+  && PACK !== 'themes'
+  && PACK !== 'higher'
 ) {
-  throw new Error(`--pack takes sleeves, catchphrase, blanks, prices or tags, not ${PACK}`);
+  throw new Error(`--pack takes sleeves, catchphrase, blanks, prices, tags, themes or higher, not ${PACK}`);
 }
 if (LAST && (PACK === undefined || PACK === 'sleeves')) {
-  throw new Error('--last needs --pack catchphrase, blanks, prices or tags');
+  throw new Error('--last needs --pack catchphrase, blanks, prices, tags, themes or higher');
 }
 const ROUND =
   PACK === 'sleeves'
@@ -171,7 +181,11 @@ const ROUND =
           ? { packId: 'prices' as const, packTitle: 'The Price Was Right', questions: twoOf('prices.json') }
           : PACK === 'tags'
             ? { packId: 'tags' as const, packTitle: 'The Price is Right', questions: twoOf('tags.json') }
-            : { packId: 'general-knowledge' as const, packTitle: 'GK', questions: QUESTIONS };
+            : PACK === 'themes'
+              ? { packId: 'themes' as const, packTitle: 'Theme Tunes', questions: twoOf('themes.json') }
+              : PACK === 'higher'
+                ? { packId: 'higher' as const, packTitle: 'Higher or Lower', questions: twoOf('higher.json') }
+                : { packId: 'general-knowledge' as const, packTitle: 'GK', questions: QUESTIONS };
 
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 const stamp = (): string => new Date().toISOString().slice(11, 23);

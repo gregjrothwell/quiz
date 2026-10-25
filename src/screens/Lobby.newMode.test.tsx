@@ -75,6 +75,15 @@ describe('lobby mode stickers', () => {
     expect(screen.getByRole('button', { name: /The Ladder/ })).not.toHaveTextContent('New');
   });
 
+  test('stickers The Double through 8 Nov and not the day after', () => {
+    show('2026-11-08', true);
+    expect(screen.getByRole('button', { name: /The Double/ })).toHaveTextContent('New');
+    expect(screen.getByRole('button', { name: /One round/ })).not.toHaveTextContent('New');
+    cleanup();
+    show('2026-11-09', true);
+    expect(screen.getByRole('button', { name: /The Double/ })).not.toHaveTextContent('New');
+  });
+
   test('the vote does not list modes, so a player sees no mode sticker', () => {
     show('2026-10-23', false);
     expect(screen.queryByRole('button', { name: /Against Mr Fries/ })).toBeNull();

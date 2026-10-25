@@ -29,7 +29,14 @@ export const NEW_UNTIL: Partial<Record<PackId, string>> = {
  * House defaults (As it comes, Played straight, Just us, On the last answer,
  * As stills) are the absence of a mode and are not in this list.
  */
-export type LobbyMode = 'ladder' | 'stakes' | 'steal' | 'chaser' | 'standoff' | 'jigsaw';
+export type LobbyMode =
+  | 'ladder'
+  | 'stakes'
+  | 'steal'
+  | 'chaser'
+  | 'standoff'
+  | 'jigsaw'
+  | 'double';
 
 /**
  * Last day (inclusive) a lobby mode wears a New sticker. Same window as
@@ -50,6 +57,8 @@ export const MODE_NEW_UNTIL: Partial<Record<LobbyMode, string>> = {
   standoff: '2026-10-08',
   // Beat the Chaser, live 22 Oct 2026 (#136).
   chaser: '2026-11-05',
+  // The Double, live 25 Oct 2026 (#147).
+  double: '2026-11-08',
 };
 
 /** Calendar day in the office's zone, `YYYY-MM-DD`. */

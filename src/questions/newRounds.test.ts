@@ -44,7 +44,13 @@ describe('isNewMode', () => {
       jigsaw: '2026-09-18',
       standoff: '2026-10-08',
       chaser: '2026-11-05',
+      double: '2026-11-08',
     });
+  });
+
+  it('stickers The Double through 8 Nov and not the day after', () => {
+    expect(isNewMode('double', '2026-11-08')).toBe(true);
+    expect(isNewMode('double', '2026-11-09')).toBe(false);
   });
 
   it('only Beat the Chaser is still on as of 23 Oct 2026', () => {
