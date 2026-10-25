@@ -1,6 +1,6 @@
 # Firebase emulators for Playwright
 
-> **Owner: Greg Rothwell. Last updated: 23 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 25 October 2026. Budget: 250 lines.**
 
 Playwright talks to the Firebase emulators, never the live project, never an App
 Check debug token. The switch is a runtime flag on `window`, not a Vite env var.
@@ -114,6 +114,25 @@ file. `e2e/isolate.ts` wipes Auth, Firestore and the RTDB before each spec's own
 `beforeAll`. `playwright.config.ts` sets `workers: 1`, because a second worker
 would wipe a file that is still playing. Not live: this is the test runner, not
 the site.
+
+## Four shards in CI — 25 October 2026
+
+One worker made CI's e2e 18–21 minutes on every PR from 23 Oct (2.6–3 min on
+22 Oct morning; ~10 min that evening, as the whole-round specs landed). Run
+40151240593: 1,159s of specs, 1,178s for the step, Commentator 259s, host-writes
+199s, Beat the Chaser 134s, double 128s, Survey Says 126s.
+
+CI now runs four jobs at once (`e2e-shard`), each on its own runner with its own
+emulators, so the wipe can never hit another shard. The groups are
+`e2e/shards.json`, balanced by those times to ~290s each. Inside a shard it is
+still one worker. **"Playwright against emulators" is now a gate job** that
+fails unless every shard passed: the ruleset requires that name, and a matrix
+reports under others. `scripts/e2e-shards.test.ts` fails if a spec is in no
+group or the matrix does not list every group — a spec in no group would
+otherwise never run in CI. Add a new spec to the lightest group.
+
+Locally `npm run e2e` is unchanged: every file, one worker. In zsh, `$files`
+does not word-split; the CI step is bash.
 
 ## What this does not cover
 
