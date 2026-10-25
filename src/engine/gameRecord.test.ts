@@ -4,6 +4,7 @@ import type { QuestionRecord } from './awards';
 import {
   GAME_DOCUMENT_KEYS,
   GAME_RECORD_KEYS,
+  GAME_RECORD_OPTIONAL_KEYS,
   foldGameRecord,
   kindOf,
   type GameRecord,
@@ -133,6 +134,32 @@ describe('foldGameRecord', () => {
 
   test('the stored document is the fold plus the server stamp', () => {
     expect(GAME_DOCUMENT_KEYS).toEqual([...GAME_RECORD_KEYS, 'finishedAt']);
+  });
+
+  /*
+    The Double (docs/decisions/morning-double.md, rule 11): round two names
+    round one, so `read-games` can print the pair. Optional, never written
+    empty, because a bundle from before it has no such key and the rule
+    must not refuse every round such a bundle keeps.
+  */
+  test('round two of a double names round one', () => {
+    const room = finishedRoom({
+      doubleEnabled: true,
+      double: { gameId: 'round-one', scores: { greg: 4_000, sam: 2_000 } },
+    });
+    const record = foldGameRecord(room, WHOLE_LOG, 'greg');
+    expect(record?.doubleOf).toBe('round-one');
+    expect(Object.keys(record ?? {}).sort()).toEqual([...GAME_RECORD_KEYS, 'doubleOf'].sort());
+  });
+
+  test('round one of a double, and any ordinary round, carry no link', () => {
+    for (const room of [finishedRoom({ doubleEnabled: true, double: null }), finishedRoom()]) {
+      expect(foldGameRecord(room, WHOLE_LOG, 'greg')).not.toHaveProperty('doubleOf');
+    }
+  });
+
+  test('the only optional key is the link', () => {
+    expect(GAME_RECORD_OPTIONAL_KEYS).toEqual(['doubleOf']);
   });
 
   test('carries the round flags the room was played under', () => {
@@ -349,7 +376,13 @@ describe('the game record agrees with the security rules', () => {
 
   test('the hasOnly list is exactly the document the client writes', () => {
     const hasOnly = /hasOnly\(\[([^\]]*)\]\)/.exec(block)?.[1];
-    expect(quotedNames(hasOnly)).toEqual([...GAME_DOCUMENT_KEYS].sort());
+    expect(quotedNames(hasOnly)).toEqual([...GAME_DOCUMENT_KEYS, ...GAME_RECORD_OPTIONAL_KEYS].sort());
+  });
+
+  test('the link to round one is a short string when it is there at all', () => {
+    expect(block).toMatch(/!\('doubleOf' in request\.resource\.data\)/);
+    expect(block).toMatch(/request\.resource\.data\.doubleOf is string/);
+    expect(block).toMatch(/request\.resource\.data\.doubleOf\.size\(\) <= 64/);
   });
 
   test('every key is required, so a half-written record is refused', () => {

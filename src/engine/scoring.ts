@@ -355,7 +355,9 @@ export function roomStandings(
   players: Record<string, unknown>,
   scores: Record<string, number>,
 ): Standing[] {
-  return standings(scores).filter((entry) => players[entry.uid]);
+  // Filtered before ranking: ranked first, a leader who left held position 1
+  // and nobody still here banked the win (fixed 24 Oct 2026).
+  return standings(Object.fromEntries(Object.entries(scores).filter(([uid]) => players[uid])));
 }
 
 /** The places the podium stands: first, second and third, each as many as tie for it. */

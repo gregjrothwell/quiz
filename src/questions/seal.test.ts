@@ -114,7 +114,7 @@ describe('the published packs are sealed', () => {
   // Guards the guard. A glob that quietly matched nothing would make every
   // assertion below pass while checking not one thing.
   test('there are packs to check', () => {
-    expect(packFiles.length).toBe(22);
+    expect(packFiles.length).toBe(24);
   });
 
   test.each(packFiles)('%s ships no answer', (name) => {
@@ -215,6 +215,19 @@ describe('hand-built packs', () => {
       expect(question.storeUrl).toMatch(/^https:\/\/(music|itunes)\.apple\.com\//);
       expect(question.storeUrl).not.toMatch(/\/album\/[^/]+\/\d+/);
       expect(question.voices).toBeUndefined();
+    }
+  });
+
+  test('theme tunes stream Apple previews and never name the programme in the store URL', () => {
+    const pack = JSON.parse(readFileSync(join(PACKS, 'themes.json'), 'utf8')) as {
+      questions: { id: string; question: string; previewUrl?: string; storeUrl?: string }[];
+    };
+    expect(pack.questions.length).toBeGreaterThanOrEqual(45);
+    for (const question of pack.questions) {
+      expect(question.question).toBe('Which programme is this the theme to?');
+      expect(question.previewUrl).toMatch(/^https:\/\/audio-ssl\.itunes\.apple\.com\//);
+      expect(question.storeUrl).toMatch(/^https:\/\/(music|itunes)\.apple\.com\//);
+      expect(question.storeUrl).not.toMatch(/\/(album|song)\/[^/]+\/\d+/);
     }
   });
 

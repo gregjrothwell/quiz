@@ -60,7 +60,9 @@ describe('mergeIndex', () => {
       'blanks',
       'prices',
       'artists',
+      'themes',
       'tags',
+      'higher',
     ]);
   });
 });

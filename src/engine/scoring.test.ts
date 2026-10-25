@@ -272,24 +272,21 @@ describe('roomStandings', () => {
     expect(roomStandings(players, scores).map((entry) => entry.uid)).toEqual(['greg', 'nadia']);
   });
 
-  test('positions are inherited from the full table, not re-derived', () => {
-    // Ranking happens before the filter, so a departed leader leaves a gap: the
-    // top row of the returned table is position 2, and nobody holds position 1.
-    //
-    // Asserted rather than corrected. This is the behaviour all three call sites
-    // already had — the filter was written out three times identically — and
-    // this change only moved it. It matters because `recordGame` banks a win on
-    // `position === 1`, so in this state nobody is credited with the win rather
-    // than the wrong person being credited, which is the safer of the two.
-    //
-    // Rarely reached in practice: the final screen ranks the frozen snapshot, in
-    // which the leaver is still a member and so is not filtered out at all. See
-    // docs/decisions/season.md.
+  test('positions are ranked among the room, so a departed leader leaves nobody without first place', () => {
+    // `recordGame` banks a win on `position === 1`. Ranked before the filter,
+    // a leader who left mid-round put the top row at position 2, and nobody
+    // banked the win (left alone 20 Aug 2026, when this was only moved; fixed
+    // 24 Oct). Not reached in 72 kept rounds to 24 Oct, so insurance.
     const scores = { greg: 3000, nadia: 2000, gone: 5000 };
     const rows = roomStandings({ greg: {}, nadia: {} }, scores);
 
-    expect(rows[0]).toEqual({ uid: 'greg', score: 3000, position: 2 });
-    expect(rows.some((entry) => entry.position === 1)).toBe(false);
+    expect(rows[0]).toEqual({ uid: 'greg', score: 3000, position: 1 });
+    expect(rows[1]).toEqual({ uid: 'nadia', score: 2000, position: 2 });
+  });
+
+  test('a tie among those still there still shares first', () => {
+    const rows = roomStandings({ greg: {}, nadia: {} }, { greg: 3000, nadia: 3000, gone: 5000 });
+    expect(rows.map((entry) => entry.position)).toEqual([1, 1]);
   });
 
   test('a room with nobody in it ranks nobody', () => {

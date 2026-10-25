@@ -4865,3 +4865,62 @@ select.input option {
   border-radius: var(--radius);
   border: 1px solid var(--edge);
 }
+
+/* The Double: both rounds and the morning, per player (DoubleTable.tsx). */
+.double-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.double-table th,
+.double-table td {
+  padding: 0.4rem 0.5rem;
+  text-align: right;
+  border-bottom: 1px solid var(--edge);
+}
+.double-table th:first-child {
+  text-align: left;
+}
+.double-table thead th {
+  font-family: var(--tech);
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+.double-table td:last-child {
+  font-weight: 700;
+}
+.double-table__you th,
+.double-table__you td {
+  color: var(--cyan);
+}
+
+/* Round two of The Double: the round's own score beside the morning's. */
+.standing__round {
+  flex: none;
+  font-family: var(--tech);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Round two of The Double, in the lobby. Information, not an error or a step
+   to take, so cyan rather than `.notice` red or `.nudge` amber. */
+.double-note {
+  border-left: 2px solid var(--cyan);
+  padding-left: 0.85rem;
+  color: var(--ink);
+}
+
+/* On a phone the round's score drops under the name: beside it, it squeezed
+   the name out of the row altogether (gallery, 375px, 24 Oct). */
+@media (max-width: 640px) {
+  .standing__name:has(.standing__round) {
+    flex-wrap: wrap;
+    row-gap: 0.1rem;
+  }
+  .standing__round {
+    flex-basis: 100%;
+    order: 1;
+  }
+}

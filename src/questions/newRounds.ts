@@ -18,6 +18,9 @@ export const NEW_UNTIL: Partial<Record<PackId, string>> = {
   tags: '2026-11-04',
   // Survey Says, 22 Oct 2026 (#131).
   survey: '2026-11-05',
+  // Theme Tunes and Higher or Lower, 25 Oct 2026 (release-25-oct).
+  themes: '2026-11-08',
+  higher: '2026-11-08',
 };
 
 /**

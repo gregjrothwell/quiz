@@ -7,6 +7,7 @@ import { SCREEN_SPECS } from './hand-screens-data';
 import { SLEEVE_SPECS } from './hand-sleeves-data';
 import { artistSlug } from './artists-core';
 import { TUNE_SPECS, TUNES_MIN_PACK } from './hand-tunes-data';
+import { AMERICAN_THEMES, THEME_SPECS, THEMES_MIN_PACK } from './hand-themes-data';
 
 function assertPlayable(
   specs: { slug: string; correct: string; incorrect: string[] }[],
@@ -47,6 +48,7 @@ describe('hand-built media specs', () => {
       ...BLANK_SPECS.map((spec) => spec.slug),
       ...PRICE_SPECS.map((spec) => spec.slug),
       ...TUNE_SPECS.map((spec) => artistSlug(spec.slug)),
+      ...THEME_SPECS.map((spec) => spec.slug),
     ];
 
     // #then every one of them is its own question
@@ -58,6 +60,27 @@ describe('hand-built media specs', () => {
 
   test('tunes cover three default rounds, unique slugs, four distinct options', () => {
     assertPlayable(TUNE_SPECS, TUNES_MIN_PACK);
+  });
+
+  test('theme tunes cover three default rounds, unique slugs, four distinct options', () => {
+    assertPlayable(THEME_SPECS, THEMES_MIN_PACK);
+  });
+
+  test('theme slugs are numbers, so nothing that prints one names a programme', () => {
+    // Greg plays Theme Tunes blind (docs/decisions/tv-themes.md).
+    for (const spec of THEME_SPECS) expect(spec.slug).toMatch(/^theme-\d{3}$/);
+  });
+
+  test('every theme difficulty holds enough for one Ladder round', () => {
+    for (const level of ['easy', 'medium', 'hard'] as const) {
+      expect(THEME_SPECS.filter((spec) => spec.difficulty === level).length).toBeGreaterThanOrEqual(10);
+    }
+  });
+
+  test('theme tunes do not lean American: at most one in six', () => {
+    const slugs = new Set(THEME_SPECS.map((spec) => spec.slug));
+    for (const slug of AMERICAN_THEMES) expect(slugs.has(slug)).toBe(true);
+    expect(AMERICAN_THEMES.length * 6).toBeLessThanOrEqual(THEME_SPECS.length);
   });
 
   test('flags cover three default rounds, unique slugs, four distinct options', () => {
@@ -83,7 +106,7 @@ describe('hand-built media specs', () => {
 
   test('every tune clip window fits inside Apple’s thirty seconds', () => {
     // #given the offsets the title audit wrote into the specs
-    const clipped = TUNE_SPECS.filter(
+    const clipped = [...TUNE_SPECS, ...THEME_SPECS].filter(
       (spec) => spec.previewStart !== undefined || spec.previewSeconds !== undefined,
     );
 

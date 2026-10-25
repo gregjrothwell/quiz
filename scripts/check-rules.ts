@@ -1529,6 +1529,47 @@ function buildChecks(probes: Probes): Check[] {
       },
     },
     {
+      /*
+        The Double (docs/decisions/morning-double.md, rule 11): round two names
+        round one. Fails until the games block lists `doubleOf`, and then the
+        two deny cases below it start to mean something.
+      */
+      label: 'Firestore   · keep round two of a double, naming round one',
+      expect: 'allow',
+      hint: 'firestore.rules does not allow games.doubleOf — round two of every '
+        + 'double is refused silently and never kept',
+      run: async () => {
+        const reference = doc(db, 'games', `${probeGameId}-double`);
+        await setDoc(reference, {
+          ...probeGame(uid, { [uid]: { name: 'Rules check' } }),
+          doubleOf: probeGameId,
+        });
+        return deleteDoc(reference);
+      },
+    },
+    {
+      label: 'Firestore   · name round one with something not a game id',
+      expect: 'deny',
+      hint: 'firestore.rules does not type games.doubleOf — a kept round could '
+        + 'carry anything under the link',
+      run: () =>
+        setDoc(doc(db, 'games', `${probeGameId}-double-number`), {
+          ...probeGame(uid, { [uid]: { name: 'Rules check' } }),
+          doubleOf: 42,
+        }),
+    },
+    {
+      label: 'Firestore   · name round one with a page of text',
+      expect: 'deny',
+      hint: 'firestore.rules does not bound games.doubleOf — a game id is 36 '
+        + 'characters and the link must not hold more than 64',
+      run: () =>
+        setDoc(doc(db, 'games', `${probeGameId}-double-long`), {
+          ...probeGame(uid, { [uid]: { name: 'Rules check' } }),
+          doubleOf: 'x'.repeat(65),
+        }),
+    },
+    {
       label: 'Firestore   · file a round as somebody else',
       expect: 'deny',
       hint: 'firestore.rules does not pin games.writtenBy to the writer — a record '

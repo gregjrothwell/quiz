@@ -3,6 +3,8 @@ import { Commentary } from '../components/Commentary';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Awards } from '../components/Awards';
 import { Confetti } from '../components/Confetti';
+import { DoubleTable } from '../components/DoubleTable';
+import { isHalfTime, morningTotals } from '../engine/double';
 import { WeekBoard } from '../components/WeekBoard';
 import { Chair } from '../components/Chair';
 import { Review } from '../components/Review';
@@ -124,7 +126,16 @@ export function Final({
   onSeason,
 }: FinalProps) {
   const players = snapshot?.players ?? room.players;
-  const scores = snapshot?.scores ?? room.scores;
+  const roundScores = snapshot?.scores ?? room.scores;
+  /*
+    The Double (docs/decisions/morning-double.md). Round one ends at half-time
+    on its own scores; round two ends on the morning, round one plus round two,
+    and everything that ranks below reads it — the podium, the chair, the
+    table and the card — so the champion of the morning is the one on top.
+  */
+  const halfTime = isHalfTime(room);
+  const double = room.double;
+  const scores = double ? morningTotals({ double, scores: roundScores }) : roundScores;
 
   /*
     Still filtered on membership, but on the *frozen* membership — so it keeps
@@ -287,12 +298,21 @@ export function Final({
       <Confetti fire={staging && landed} />
 
       <header>
-        <p className="eyebrow">{room.packTitle ?? 'That’s the round'}</p>
+        <p className="eyebrow">
+          {halfTime ? 'Half-time · ' : ''}
+          {room.packTitle ?? 'That’s the round'}
+        </p>
         <h1 className="display display--hero finale__title" style={at(holding ? LANDED_AT - 200 : 0)}>
           {winnerName
-            ? leaders.length > 1
-              ? `${winnerName} — dead heat`
-              : `${winnerName} takes it`
+            ? double
+              ? leaders.length > 1
+                ? `${winnerName} share The Double`
+                : `${winnerName} wins The Double`
+              : halfTime
+                ? `${winnerName} ${leaders.length > 1 ? 'lead' : 'leads'} at half-time`
+                : leaders.length > 1
+                  ? `${winnerName} — dead heat`
+                  : `${winnerName} takes it`
             : 'That’s a wrap'}
         </h1>
         {room.chaserEnabled ? (
@@ -348,6 +368,8 @@ export function Final({
       >
         <Standings players={players} scores={scores} youUid={youUid} />
 
+        {double ? <DoubleTable players={players} scores={roundScores} double={double} youUid={youUid} /> : null}
+
         <Awards awards={awards} players={players} youUid={youUid} />
 
         <Review review={review} questions={room.questions} />
@@ -367,10 +389,14 @@ export function Final({
         <div className="btn-row">
           {isQuizmaster ? (
             <button type="button" className="btn btn--primary" onClick={onPlayAgain}>
-              Another round
+              {halfTime ? 'Second half' : 'Another round'}
             </button>
           ) : (
-            <p className="muted">Waiting to see if the quizmaster starts another…</p>
+            <p className="muted">
+              {halfTime
+                ? 'Half-time. Waiting for the quizmaster to start the second half…'
+                : 'Waiting to see if the quizmaster starts another…'}
+            </p>
           )}
           {/* Everybody, not just the quizmaster: whoever is in the Teams channel
               is the person who will paste it there. */}

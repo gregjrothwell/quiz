@@ -130,6 +130,20 @@ const PRICE_QUESTION: QuizQuestion = {
   difficulty: 'medium',
 };
 
+/**
+ * Higher or Lower, on two invented items at an invented price — Greg plays the
+ * real pack blind. The two options are each other's mirror about the shown
+ * price, as the pack sends them. docs/decisions/higher-or-lower.md.
+ */
+const HIGHER_QUESTION: QuizQuestion = {
+  id: 'higher-fixture',
+  prompt: 'In August 2026, an evening seat at a puppet show cost about £24.50. Does a puppet-making kit for an adult cost more or less?',
+  options: ['Higher, £40.00', 'Lower, £15.00'],
+  correctIndex: null,
+  category: 'Higher or Lower',
+  difficulty: 'medium',
+};
+
 const CATCHPHRASE_QUESTION: QuizQuestion = {
   id: 'catchphrase-1',
   prompt: 'Say what you see',
@@ -385,8 +399,8 @@ const EVERY_PACK: PackSummary[] = (
     ['music', 1500], ['science', 1500], ['sport', 776], ['tv-and-film', 1500],
     ['uk-leaning', 1500], ['video-games', 1400], ['melody', 70], ['picture', 49],
     ['flags', 76], ['tunes', 424], ['sleeves', 212], ['screens', 445],
-    ['catchphrase', 233], ['blanks', 148], ['prices', 154], ['artists', 259], ['random', 294],
-    ['tags', 81], ['survey', 40],
+    ['catchphrase', 233], ['blanks', 148], ['prices', 154], ['artists', 259], ['themes', 65], ['random', 294],
+    ['tags', 81], ['survey', 40], ['higher', 90],
   ] as const
 ).map(([id, count]) => ({
   id,
@@ -407,6 +421,15 @@ function mockRoom(overrides: Partial<RoomState> = {}): RoomState {
     ...overrides,
   };
 }
+
+/**
+ * Round one of The Double, for the round-two screens: Greg won it, so he tops
+ * the morning on 6,450 though Sam and Alex lead the round on 3,100.
+ */
+const DOUBLE_FIRST: NonNullable<RoomState['double']> = {
+  gameId: 'gallery-round-one',
+  scores: { greg: 4_000, sam: 1_200, priya: 2_600, alex: 900 },
+};
 
 /** Two for one pack, one for another — Priya's is the one the link-joiner sees pressed. */
 const LOBBY_VOTES: RoomState['packVotes'] = { sam: 'screens', alex: 'screens', priya: 'tunes' };
@@ -562,6 +585,20 @@ export function Preview() {
       node: (
         <Lobby
           room={mockRoom({ phase: 'lobby', packVotes: LOBBY_VOTES, browsing: 'flags' })}
+          youUid="greg"
+          isQuizmaster
+          packs={PACKS}
+          busy={false}
+          onStart={noop}
+          onLeave={noop}
+        />
+      ),
+    },
+    {
+      title: 'Lobby · second half of The Double',
+      node: (
+        <Lobby
+          room={mockRoom({ phase: 'lobby', doubleEnabled: true, double: DOUBLE_FIRST })}
           youUid="greg"
           isQuizmaster
           packs={PACKS}
@@ -1163,6 +1200,22 @@ export function Preview() {
       ),
     },
     {
+      title: 'Standings · second half of The Double',
+      node: (
+        <Scoreboard
+          room={mockRoom({
+            phase: 'scoreboard',
+            doubleEnabled: true,
+            double: DOUBLE_FIRST,
+            lastDeltas: { sam: 1_000, greg: 0, priya: 900 },
+          })}
+          youUid="greg"
+          isQuizmaster
+          onNext={noop}
+        />
+      ),
+    },
+    {
       title: 'Share or Shaft · talking it over, watching',
       node: (
         <ShareOrShaft
@@ -1261,6 +1314,46 @@ export function Preview() {
           view={finalView()}
           onOpenPicks={noop}
           onNext={noop}
+        />
+      ),
+    },
+    {
+      title: 'Final · half-time of The Double',
+      node: (
+        <Final
+          banked={null}
+          youPlayerId="greg"
+          snapshot={null}
+          room={mockRoom({ phase: 'finished', index: 1, gameId: 'gallery-half', doubleEnabled: true })}
+          youUid="greg"
+          isQuizmaster
+          log={[]}
+          onPlayAgain={noop}
+          onLeave={noop}
+          onSeason={noop}
+        />
+      ),
+    },
+    {
+      title: 'Final · The Double',
+      node: (
+        <Final
+          banked={null}
+          youPlayerId="greg"
+          snapshot={null}
+          room={mockRoom({
+            phase: 'finished',
+            index: 1,
+            gameId: 'gallery-double',
+            doubleEnabled: true,
+            double: DOUBLE_FIRST,
+          })}
+          youUid="greg"
+          isQuizmaster
+          log={[]}
+          onPlayAgain={noop}
+          onLeave={noop}
+          onSeason={noop}
         />
       ),
     },
@@ -1853,6 +1946,36 @@ export function Preview() {
         />
       ),
     },
+    // Appended so every `#/preview/N` index above keeps pointing where it did.
+    // Higher or Lower, open and then revealed: two lecterns, not four.
+    ...([false, true] as const).map((revealed) => ({
+      title: revealed ? 'Question · Higher or Lower, revealed' : 'Question · Higher or Lower',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'question',
+            questionOpenedAt: 1_000,
+            durationSecs: 10,
+            packId: 'higher',
+            packTitle: 'Higher or Lower',
+            questions: [revealed ? { ...HIGHER_QUESTION, correctIndex: 0 } : HIGHER_QUESTION],
+            index: 0,
+          })}
+          youUid="priya"
+          isQuizmaster={false}
+          clock={
+            revealed
+              ? { elapsedMs: 10_000, remainingMs: 0, secondsLeft: 0, expired: true }
+              : { elapsedMs: 3_000, remainingMs: 7_000, secondsLeft: 7, expired: false }
+          }
+          revealed={revealed}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    })),
   ];
 
   const shown = only === null ? screens : screens.filter((_, index) => index === only);
