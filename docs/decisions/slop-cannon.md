@@ -152,6 +152,52 @@ Keep or Bin at the end."*
 | New **packs** too (6 stickered today: Random, Name the Artist, The Price is Right, Survey Says, Theme Tunes, Higher or Lower)? | **Not now.** Questions already get Good/Rubbish at each reveal, and a pack verdict asked at the end of a round that *was* that pack measures the round as much as the pack. Revisit if modes produce useful verdicts |
 | Wording on Final | Rows show the lobby name only. The eyebrow becomes **"New this round · keep it?"** for every row: "Slop Cannon" over Mr Fries has E5's problem |
 
+### F. The cannon fires — DRAFT, for Greg's approval
+
+Greg, 26 Oct: *"a cannon boom and a paper burst when the Keep/Bin panel
+arrives on Final, within the flash rule."*
+
+**The clash, read in `Final.tsx`:** the panel arrives 300 ms after the winner's
+riser lands, which is when the fanfare (1.45 s) plays and the podium confetti
+fires from both bottom corners (3.6 s). A boom and a burst at that moment would
+step on the winner. So F fires **after the fanfare**, not on arrival.
+
+> **As the room**, I want the Keep / Bin panel to go off like a cannon when it
+> arrives, **so that** the verdict feels like part of the show and gets tapped,
+> not scrolled past.
+
+- **F1. When.** Once, 1.6 s after the fanfare starts (it ends at 1.45 s), and
+  only on a Final that has rows. Not on coming back from the season table
+  (the `builtPodiums` rule), and not on a Final with no podium.
+- **F2. Off-screen.** If the panel is not in the viewport at that moment
+  (a phone still on the podium), it fires the first time the panel scrolls
+  into view, at most once.
+- **F3. The boom.** A new synth cue, `cannon`: a sub thump falling to ~40 Hz,
+  a short filtered crack, ≤ 0.6 s, quieter than the fanfare. Built like
+  `shatter`, no audio file. Silent when muted, as every cue is.
+- **F4. The burst.** About 60 pieces of paper from **one** cannon at the
+  panel's left edge, up and to the right, in the house colours, cleared within
+  2.5 s. It reuses the Confetti canvas (`pointer-events: none`, fixed, never
+  over a button). What tells it apart from the podium confetti is where it
+  starts and how small it is.
+- **F5. The flash rule** ([`lighting.md`](lighting.md)). No muzzle flash:
+  nothing on the page brightens and darkens. The only "smoke" is a grey puff
+  at the cannon's mouth that **fades** over ≥ 500 ms. No full-screen change.
+- **F6. Reduced motion** fires no burst and no puff, as the podium confetti
+  already does not. The boom still plays: it is sound, not motion.
+- **F7. Evidence.** Unit: the timing (F1, F6) as a pure function; the cue
+  exists and is shorter than 0.6 s. Gallery: the `Final · Keep or Bin` entry
+  fires it, so it can be watched at `#/preview`. A screen recording of one
+  firing for Greg, since a screenshot cannot show a boom.
+
+Cost: no reads, no writes, a few kB. What's new: none needed beyond E's line.
+
+| Open — Greg to decide | Recommendation |
+|---|---|
+| Approve F1–F7 | — |
+| When: after the fanfare (F1), or **on the Keep tap**, with a Bin a fizzled dud | **After the fanfare**, as asked. The tap version is the better joke, but it fires once per person rather than once for the room |
+| Fire for shots only, or for modes too (Mr Fries)? | **Both**: the panel is one panel |
+
 ## Cost
 
 Beacon: zero writes on a healthy round. Cannon dark: zero. Loaded: one read per
