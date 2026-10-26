@@ -152,7 +152,7 @@ Keep or Bin at the end."*
 | New **packs** too (6 stickered today: Random, Name the Artist, The Price is Right, Survey Says, Theme Tunes, Higher or Lower)? | **Not now.** Questions already get Good/Rubbish at each reveal, and a pack verdict asked at the end of a round that *was* that pack measures the round as much as the pack. Revisit if modes produce useful verdicts |
 | Wording on Final | Rows show the lobby name only. The eyebrow becomes **"New this round · keep it?"** for every row: "Slop Cannon" over Mr Fries has E5's problem |
 
-### F. The cannon fires — DRAFT, for Greg's approval
+### F. The cannon fires — APPROVED and built 26 October 2026
 
 Greg, 26 Oct: *"a cannon boom and a paper burst when the Keep/Bin panel
 arrives on Final, within the flash rule."*
@@ -192,11 +192,8 @@ step on the winner. So F fires **after the fanfare**, not on arrival.
 
 Cost: no reads, no writes, a few kB. What's new: none needed beyond E's line.
 
-| Open — Greg to decide | Recommendation |
-|---|---|
-| Approve F1–F7 | — |
-| When: after the fanfare (F1), or **on the Keep tap**, with a Bin a fizzled dud | **After the fanfare**, as asked. The tap version is the better joke, but it fires once per person rather than once for the room |
-| Fire for shots only, or for modes too (Mr Fries)? | **Both**: the panel is one panel |
+**Approved 26 Oct**, Greg: *"Approve F1–F7 as recommended: after the fanfare, shots and modes both."* The Keep-tap version stays unbuilt.
+**Evidence:** `Final.test.tsx` — silent before 1.6 s after the fanfare, one boom after, none on an empty panel or a second visit, reduced motion booms with no paper or puff; `sound.test.ts` — the cue ends by 0.6 s and peaks no louder than the fanfare. A headless recording of the `#/preview` entry shows the puff and paper from the panel's left edge, gone by 2.2 s; it has no audio. **Found while recording:** the gallery's layout settles after the timer, so F2 held the shot until the panel scrolled in — working as written. Full e2e after F: see the TOTAL-RECALL entry for 26 Oct.
 
 ## Cost
 
