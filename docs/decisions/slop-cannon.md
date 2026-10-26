@@ -96,6 +96,59 @@ what changed is below.
 - **D4.** `npm run read-cannon` prints per shot: rounds loaded, Keep, Bin, and
   how many players in those rounds did not vote.
 
+### E. Keep / Bin on new lobby modes — DRAFT, for Greg's approval
+
+Added 26 October 2026. Greg: *"Extend Keep/Bin on Final to the New-stickered
+lobby modes played that round … Story and ACs first."* With nothing loaded,
+D never asks anything. The modes the office has just been given are what
+want a verdict.
+
+> **As Greg**, I want the room to Keep or Bin a new lobby mode straight after
+> playing it, **so that** each one is judged by the people who played it while
+> it is still new, not by me guessing from `read-games`.
+
+- **E1.** A mode is asked about when the round was played with it **and** it
+  wore its New sticker (`MODE_NEW_UNTIL`) on the day the round started. On
+  26 October that is **Mr Fries** (to 5 Nov) and **The Double** (to 8 Nov).
+  Once a sticker comes off, the question stops asking, with no other switch.
+- **E2.** Decided once, by the quizmaster's device, in the `selectPack` that
+  starts the round: each such mode goes into the room's `cannon` map as
+  `mode-<id>` (`mode-chaser`, `mode-double`) beside any loaded shot. Every
+  device then asks the same thing, a stale clock elsewhere cannot change it,
+  and the room rule, the kept round (B5), the verdict rule (D3) and
+  `read-cannon` (D4) need **no change**. Shots go in first, so the ≤ 8 bound
+  never drops one.
+- **E3.** What counts as played, from the room's flags: `chaserEnabled`,
+  `doubleEnabled`, `standoffEnabled`, `wagerEnabled` (stakes),
+  `stealEnabled`, `jigsawEnabled`. **Not the Ladder**: nothing persists a
+  level, and its sticker came off on 15 August.
+- **E4.** **The Double is asked once, at the end of the morning.** Round one's
+  half-time Final does not ask about it; round two's does. Other modes are
+  asked in each round that used them.
+- **E5.** On Final each one gets a row like a shot's (D1–D2): its lobby name
+  (*Against Mr Fries*, *The Double*), **Keep**, **Bin**, under the podium,
+  one tap. The standings line (B2) names **shots only**. A mode is already on
+  screen, and "Slop Cannon: Against Mr Fries" would call a finished feature
+  slop.
+- **E6.** The kill switch does not apply to modes. It cannot turn Mr Fries
+  off, so `npm run cannon -- off mode-chaser` is refused with a message
+  saying why.
+- **E7.** e2e: a round with Mr Fries on asks, and `cannon` holds
+  `mode-chaser`; one without asks nothing; the half-time Final of a double
+  does not ask about the Double, and round two's does. Unit: the date
+  boundary (5 Nov asks, 6 Nov does not).
+
+**This makes #154 player-visible.** Keep/Bin shows up on the Final of any round
+with Mr Fries or The Double from the day it ships, so #154 is no longer dark.
+It needs a What's new line, e.g. *"Played Mr Fries or The Double? Tell us
+Keep or Bin at the end."*
+
+| Open — Greg to decide | Recommendation |
+|---|---|
+| Approve E1–E7 | — |
+| New **packs** too (6 stickered today: Random, Name the Artist, The Price is Right, Survey Says, Theme Tunes, Higher or Lower)? | **Not now.** Questions already get Good/Rubbish at each reveal, and a pack verdict asked at the end of a round that *was* that pack measures the round as much as the pack. Revisit if modes produce useful verdicts |
+| Wording on Final | Rows show the lobby name only. The eyebrow becomes **"New this round · keep it?"** for every row: "Slop Cannon" over Mr Fries has E5's problem |
+
 ## Cost
 
 Beacon: zero writes on a healthy round. Cannon dark: zero. Loaded: one read per
