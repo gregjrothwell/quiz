@@ -199,10 +199,12 @@ jobs:
   # if this file does. Give the runner the emulator, not a token.
   # Java 21 is for the Firestore emulator. setup-java is v5 (node24), not v4.
   #
-  # Four jobs at once, each on its own runner with its own emulators, so no two
+  # Five jobs at once, each on its own runner with its own emulators, so no two
   # specs ever share one. The groups are `e2e/shards.json`, balanced by the
   # per-file times of run 40151240593 (19.4 min of specs on one worker, 25 Oct
-  # 2026): about 4¾ minutes each, the Commentator's round alone being 4⅓.
+  # 2026): about 4¾ minutes each, the Commentator's round alone being 4⅓. The
+  # fifth, 26 Oct, is `slop-cannon.spec.ts` alone: three browser rounds, ~6 min,
+  # which took shard 0's specs from ~300s to 677s when it shared one (#154).
   # `scripts/e2e-shards.test.ts` fails if a spec is in no group or this list
   # does not match the groups. Inside a shard it is still one worker: each spec
   # wipes its emulators first (e2e/isolate.ts).
@@ -220,7 +222,7 @@ jobs:
       # Every shard reports, so one red file does not hide another.
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3]
+        shard: [0, 1, 2, 3, 4]
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
@@ -242,7 +244,18 @@ jobs:
           name: dist
           path: dist
 
-      - run: npx playwright install --with-deps chromium
+      # The browser only, not `--with-deps`. The runner image already carries
+      # every library Chromium needs; `--with-deps` added fonts and upgrades
+      # from azure.archive.ubuntu.com, and on 26 Oct that mirror took 520–637s
+      # for 25.9 MB on 3 of 5 runs, twice past the 15-minute timeout (#154).
+      # The download itself is ~15s. If the image ever stops carrying a
+      # library, the launch check fails and only then do we go to apt.
+      - run: npx playwright install chromium
+
+      - name: Chromium launches, or fetch its system libraries
+        run: |
+          node -e "require('@playwright/test').chromium.launch().then((b) => b.close())" \
+            || npx playwright install-deps chromium
 
       # `npm run e2e` with this shard's files. Paths come from the repo's own
       # JSON, never from the event, so nothing a PR author types reaches the shell.
