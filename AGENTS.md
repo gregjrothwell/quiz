@@ -27,9 +27,9 @@ React 18, TypeScript, Vite, Vitest. Firebase client SDK. Deploy is `gh-pages` fr
 | `npm run host-room -- [secs]` | Drive a round from the terminal |
 | `npm run rank-harness [-- --browser]` | Seven answerers in one live question — the whole rank ladder, proved |
 | `npm run seed-vault` | Admin SDK; needs `GOOGLE_APPLICATION_CREDENTIALS` under `.secrets/` |
-| `npm run fold-votes [-- --go]` | What the office voted out. Dry run by default; `--go` writes the blocklist |
+| `npm run fold-votes [-- --go]` | What the office voted out. Dry run by default; `--go` writes the blocklist. `cannon -- off\|on <shot> [--go]` is the Slop Cannon's kill switch, same shape |
 | `npm run backfill-finals [-- --go]` | Finals tallies onto season-2, from `games/`, by uid. Dry run by default |
-| `npm run read-games` / `audit-players` | Kept rounds, then per-player timings. Admin SDK; the client cannot |
+| `npm run read-games` / `audit-players` / `read-errors` / `read-cannon` | Kept rounds, per-player timings, errors players saw, Slop Cannon Keep/Bin. Admin SDK; the client cannot |
 | `npm run read-traces [-- --name cass]` | What each device saw of question one: seen late, or wrote slowly ([`cass-q1.md`](docs/decisions/cass-q1.md)) |
 | `npm run deploy` | `build` then `gh-pages` |
 
