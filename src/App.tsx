@@ -22,7 +22,17 @@ import {
 import { NO_ROOM, messageOf, type ErrorContext } from './engine/clientError';
 import { firestore, isFirebaseConfigured, vaultFirestore } from './firebase';
 import { createBeacon } from './lib/clientErrors';
-import { available, loadedShots, type CannonVerdict, type KillSwitch, type Loaded } from './engine/cannon';
+import {
+  askedOnFinal,
+  available,
+  loadedShots,
+  modesToAsk,
+  withModes,
+  type CannonVerdict,
+  type KillSwitch,
+  type Loaded,
+} from './engine/cannon';
+import { isNewMode, todayIso } from './questions/newRounds';
 import { readCannonKillSwitch, recordCannonVerdict, registeredShots } from './lib/cannon';
 import { BUZZ_LOCK, buzz } from './lib/haptics';
 import { playerIdFor } from './lib/identity';
@@ -495,6 +505,29 @@ function Game() {
             opens without its titles is a much smaller problem than a round that
             will not open.
           */
+          /*
+            Keep / Bin on new lobby modes (docs/decisions/slop-cannon.md, E):
+            decided here, once, on this device's office date, and carried in
+            the room's `cannon` map beside the loaded shots — so every device
+            asks the same thing at the end. The Double only in round two (E4).
+          */
+          const roundTwo = room?.double != null;
+          const asked = withModes(
+            cannon,
+            modesToAsk(
+              {
+                wagerEnabled,
+                stealEnabled,
+                chaserEnabled,
+                standoffEnabled,
+                jigsawEnabled: jigsawEnabled && packId === 'picture',
+                doubleEnabled: doubleEnabled || roundTwo,
+                roundTwo,
+              },
+              (mode) => isNewMode(mode, todayIso()),
+            ),
+          );
+
           const roster = Object.entries(room?.players ?? {}).map(([uid, player]) => ({
             uid,
             playerId: player.playerId ?? uid,
@@ -535,7 +568,7 @@ function Game() {
               history,
               ladderNotices,
               doubleEnabled,
-              cannon,
+              cannon: asked,
             },
             ...(facts.length > 0
               ? [{ type: 'titles' as const, at: Date.now(), facts, durationSecs }]
@@ -557,7 +590,7 @@ function Game() {
         .catch(report)
         .finally(() => setBusy(false));
     },
-    [dispatch, packs, report, room?.players],
+    [dispatch, packs, report, room?.players, room?.double],
   );
 
   const handleAnswer = useCallback(
@@ -953,7 +986,7 @@ function Game() {
             youUid={uid}
             isQuizmaster={isQuizmaster}
             log={gameLog}
-            shots={loadedShots(room.cannon, SHOTS_HERE)}
+            asked={askedOnFinal(room.cannon, SHOTS_HERE)}
             onCannonVerdict={handleCannonVerdict}
             // At half-time of The Double the same button is Round two.
             onPlayAgain={() => void dispatch({ type: isHalfTime(room) ? 'roundTwo' : 'reset' }).catch(report)}

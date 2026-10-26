@@ -118,3 +118,83 @@ export type CannonVerdict = (typeof CANNON_VERDICTS)[number];
 export function verdictId(gameId: string, shot: string, uid: string): string {
   return `${gameId}_${shot}_${uid}`;
 }
+
+/**
+ * Keep / Bin on new lobby modes (docs/decisions/slop-cannon.md, E). A mode
+ * the round was played with, still wearing its New sticker on the day the
+ * round started, rides in the room's `cannon` map as `mode-<id>` — so every
+ * device asks the same thing and the rules, the kept round and `read-cannon`
+ * need nothing new.
+ *
+ * The Ladder is not here (E3): nothing persists a level, and its sticker came
+ * off on 15 August 2026.
+ */
+export const MODE_PREFIX = 'mode-';
+
+export type AskedMode = 'stakes' | 'steal' | 'chaser' | 'standoff' | 'jigsaw' | 'double';
+
+/** The lobby's own names, so a row on Final reads like the button that turned it on. */
+export const MODE_TITLES: Readonly<Record<AskedMode, string>> = {
+  stakes: 'Played for stakes',
+  steal: 'First right answer steals',
+  chaser: 'Against Mr Fries',
+  standoff: 'Share or Shaft',
+  jigsaw: 'As a 3×3 jigsaw',
+  double: 'The Double',
+};
+
+/** What the round was played with, from the room's flags (E3). */
+export interface PlayedModes {
+  wagerEnabled: boolean;
+  stealEnabled: boolean;
+  chaserEnabled: boolean;
+  standoffEnabled: boolean;
+  jigsawEnabled: boolean;
+  doubleEnabled: boolean;
+  /** Round two of a double. The Double is asked at the end of the morning only (E4). */
+  roundTwo: boolean;
+}
+
+/**
+ * The `mode-<id>` keys to ask about, given whether each mode is still New on
+ * the day the round starts (`isNew`, from `MODE_NEW_UNTIL`). In a fixed order,
+ * so every round with the same modes writes the same map.
+ */
+export function modesToAsk(played: PlayedModes, isNew: (mode: AskedMode) => boolean): string[] {
+  const on: Record<AskedMode, boolean> = {
+    stakes: played.wagerEnabled,
+    steal: played.stealEnabled,
+    chaser: played.chaserEnabled,
+    standoff: played.standoffEnabled,
+    jigsaw: played.jigsawEnabled,
+    double: played.doubleEnabled && played.roundTwo,
+  };
+  return (Object.keys(MODE_TITLES) as AskedMode[])
+    .filter((mode) => on[mode] && isNew(mode))
+    .map((mode) => `${MODE_PREFIX}${mode}`);
+}
+
+/** The room's map: loaded shots first, so the bound of 8 never drops one, then the modes (E2). */
+export function withModes(loaded: Loaded, modes: readonly string[]): Loaded {
+  return toLoaded([...Object.keys(loaded), ...modes]);
+}
+
+export function isModeKey(key: string): boolean {
+  return key.startsWith(MODE_PREFIX);
+}
+
+/** One Keep / Bin row on Final: a shot or a mode. */
+export interface Asked {
+  id: string;
+  title: string;
+}
+
+/** Every row Final asks about: the loaded shots this device knows, then the modes (E5). */
+export function askedOnFinal(loaded: Loaded, shots: readonly Shot[]): Asked[] {
+  const rows: Asked[] = loadedShots(loaded, shots).map(({ id, title }) => ({ id, title }));
+  for (const key of Object.keys(loaded)) {
+    const mode = key.slice(MODE_PREFIX.length);
+    if (isModeKey(key) && mode in MODE_TITLES) rows.push({ id: key, title: MODE_TITLES[mode as AskedMode] });
+  }
+  return rows;
+}

@@ -4,8 +4,13 @@ import {
   NOTHING_KILLED,
   SHOTS,
   TEST_SHOT,
+  askedOnFinal,
   available,
   isLoaded,
+  isModeKey,
+  modesToAsk,
+  withModes,
+  type AskedMode,
   loadedShots,
   readKillSwitch,
   readLoaded,
@@ -13,6 +18,7 @@ import {
   verdictId,
   type Shot,
 } from './cannon';
+import { isNewMode } from '../questions/newRounds';
 
 const A: Shot = { id: 'alpha', title: 'Alpha', blurb: 'a' };
 const B: Shot = { id: 'beta', title: 'Beta', blurb: 'b' };
@@ -65,5 +71,71 @@ describe('the Slop Cannon', () => {
 
   it('keys a verdict per player per shot per round (D3)', () => {
     expect(verdictId('g-1', 'alpha', 'u1')).toBe('g-1_alpha_u1');
+  });
+});
+
+describe('Keep / Bin on new lobby modes (E)', () => {
+  const none = {
+    wagerEnabled: false,
+    stealEnabled: false,
+    chaserEnabled: false,
+    standoffEnabled: false,
+    jigsawEnabled: false,
+    doubleEnabled: false,
+    roundTwo: false,
+  };
+  const realSticker = (today: string) => (mode: AskedMode) => isNewMode(mode, today);
+
+  it('asks about a mode the round used, while its sticker is on, and stops the day after (E1)', () => {
+    const chaser = { ...none, chaserEnabled: true };
+    expect(modesToAsk(chaser, realSticker('2026-11-05'))).toEqual(['mode-chaser']);
+    expect(modesToAsk(chaser, realSticker('2026-11-06'))).toEqual([]);
+  });
+
+  it('asks nothing of a round played without one, or with one whose sticker is off', () => {
+    expect(modesToAsk(none, () => true)).toEqual([]);
+    expect(modesToAsk({ ...none, wagerEnabled: true }, realSticker('2026-10-26'))).toEqual([]);
+  });
+
+  it('asks about the Double at the end of the morning, not at half-time (E4)', () => {
+    const roundOne = { ...none, doubleEnabled: true };
+    expect(modesToAsk(roundOne, () => true)).toEqual([]);
+    expect(modesToAsk({ ...roundOne, roundTwo: true }, () => true)).toEqual(['mode-double']);
+  });
+
+  it('reads every flag in E3, in a fixed order', () => {
+    const all = {
+      wagerEnabled: true,
+      stealEnabled: true,
+      chaserEnabled: true,
+      standoffEnabled: true,
+      jigsawEnabled: true,
+      doubleEnabled: true,
+      roundTwo: true,
+    };
+    expect(modesToAsk(all, () => true)).toEqual([
+      'mode-stakes', 'mode-steal', 'mode-chaser', 'mode-standoff', 'mode-jigsaw', 'mode-double',
+    ]);
+  });
+
+  it('puts shots first, so the bound of eight never drops one (E2)', () => {
+    const shots = toLoaded(['a', 'b', 'c', 'd']);
+    const modes = ['mode-stakes', 'mode-steal', 'mode-chaser', 'mode-standoff', 'mode-jigsaw', 'mode-double'];
+    const loaded = withModes(shots, modes);
+    expect(Object.keys(loaded)).toHaveLength(MAX_LOADED);
+    expect(Object.keys(loaded).slice(0, 4)).toEqual(['a', 'b', 'c', 'd']);
+  });
+
+  it('names a mode by its lobby button on Final, after the shots, and ignores a key it does not know (E5)', () => {
+    expect(askedOnFinal({ 'mode-chaser': true, alpha: true, 'mode-nope': true }, [A])).toEqual([
+      { id: 'alpha', title: 'Alpha' },
+      { id: 'mode-chaser', title: 'Against Mr Fries' },
+    ]);
+  });
+
+  it('keeps modes off the standings line, which names shots only', () => {
+    expect(loadedShots({ 'mode-chaser': true }, [A])).toEqual([]);
+    expect(isModeKey('mode-chaser')).toBe(true);
+    expect(isModeKey('alpha')).toBe(false);
   });
 });

@@ -16,7 +16,7 @@
 import { readFile } from 'node:fs/promises';
 import { cert, initializeApp as initAdmin, type ServiceAccount } from 'firebase-admin/app';
 import { getFirestore as getAdminFirestore } from 'firebase-admin/firestore';
-import { MAX_SHOT_ID } from '../src/engine/cannon';
+import { MAX_SHOT_ID, isModeKey } from '../src/engine/cannon';
 import { switched } from './cannon-report';
 
 function required(name: string): string {
@@ -42,6 +42,11 @@ async function main(): Promise<void> {
 
   if ((action !== 'off' && action !== 'on') || !id || id.length > MAX_SHOT_ID) {
     throw new Error('Usage: npm run cannon -- off|on <shot> [--go]');
+  }
+  if (isModeKey(id)) {
+    // E6: a `mode-` key is a question about a finished lobby mode, not a shot.
+    // Pulling it here would not turn Mr Fries off — that is the lobby's.
+    throw new Error(`${id} is a lobby mode, not a shot — the kill switch cannot turn it off. Its Keep / Bin stops when its New sticker does.`);
   }
   const next = switched(off, action, id);
   console.log(`After \`${action} ${id}\`: pulled ${next.length ? next.join(', ') : 'nothing'}.`);

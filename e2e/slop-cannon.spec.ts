@@ -14,6 +14,7 @@ import { errorDoc, NO_ROOM } from '../src/engine/clientError';
 import { reduce } from '../src/engine/reducer';
 import { randomRoomCode } from '../src/engine/roomCode';
 import { createRoom } from '../src/engine/state';
+import { isNewMode, todayIso } from '../src/questions/newRounds';
 import { readCannonKillSwitch, verdictRef, writeCannonVerdict } from '../src/lib/cannon';
 import { writeClientError } from '../src/lib/clientErrors';
 import { toPersisted } from '../src/lib/roomDoc';
@@ -165,6 +166,7 @@ interface RoomDoc {
   index: number;
   gameId: string;
   cannon?: Record<string, true>;
+  double?: unknown;
   players: Record<string, { name: string }>;
 }
 
@@ -180,84 +182,126 @@ async function seat(browser: Browser, name: string): Promise<Page> {
   return page;
 }
 
-test('the whole path: loaded in the lobby, named on the standings, kept, Keep / Bin on Final, and a beacon row', async ({ browser }) => {
-  test.setTimeout(420_000);
-
+/** A room with a host and one player, both in the lobby. */
+async function twoSeats(browser: Browser): Promise<{ host: Page; other: Page; code: string }> {
   const host = await seat(browser, 'Ada');
   await host.getByRole('button', { name: 'Start a new room' }).click();
   const code = ((await host.getByLabel(/Room code [A-Z0-9]{4}/).getAttribute('aria-label')) ?? '').replace('Room code ', '');
-  const bea = await seat(browser, 'Bea');
-  await bea.getByPlaceholder('––––').fill(code);
-  await bea.getByRole('button', { name: 'Join the round' }).click();
+  const other = await seat(browser, 'Bea');
+  await other.getByPlaceholder('––––').fill(code);
+  await other.getByRole('button', { name: 'Join the round' }).click();
   await until(() => readRoom(code), (room) => Object.keys(room.players).length === 2);
+  return { host, other, code };
+}
 
-  // B2: the quizmaster sees the section, the member does not.
-  await expect(host.getByText('Slop Cannon', { exact: true })).toBeVisible();
-  await expect(bea.getByText('Slop Cannon', { exact: true })).toHaveCount(0);
-
+/** General Knowledge, ten questions, ten seconds, with the picks given, started. */
+async function startRound(host: Page, code: string, picks: readonly string[]): Promise<RoomDoc> {
   await host.locator('button.pack', { has: host.locator('.pack__title', { hasText: 'General Knowledge' }) }).click();
   await host.getByRole('button', { name: '10', exact: true }).click();
   await host.locator('button.pick', { hasText: '10 seconds' }).click();
-  await host.locator('button.pick', { hasText: 'Test shot' }).click();
+  for (const pick of picks) await host.locator('button.pick', { hasText: pick }).click();
   await host.getByRole('button', { name: 'Start the show' }).click();
   const start = host.getByRole('button', { name: 'Start the round' });
   if (await start.waitFor({ timeout: 5_000 }).then(() => true, () => false)) await start.click();
-  await until(() => readRoom(code), (room) => room.phase === 'question');
-  // B3: on the room, fixed for the round.
-  expect((await readRoom(code)).cannon).toEqual({ 'test-shot': true });
+  const room = await until(() => readRoom(code), (r) => r.phase === 'question', 30_000);
   await seedVault(code);
+  return room;
+}
 
+/** Everybody presses A on every question; the host moves it on. Returns the finished room and what `watch` saw. */
+async function playToFinal(
+  host: Page,
+  pages: readonly Page[],
+  code: string,
+  watch: (room: RoomDoc) => Promise<void> = async () => undefined,
+): Promise<RoomDoc> {
   let answered = '';
-  let named = false;
   for (let tick = 0; tick < 900; tick += 1) {
     const room = await readRoom(code);
     if (room.phase === 'finished') break;
     const key = `${room.gameId}:${String(room.index)}`;
     if (room.phase === 'question' && answered !== key) {
-      for (const page of [host, bea]) {
+      for (const page of pages) {
         await expect(page.locator('.podium')).toBeVisible();
         await page.keyboard.press('a');
       }
       answered = key;
     }
-    if (room.phase === 'scoreboard' && !named) {
-      // B2: everyone sees what is loaded, on the standings.
-      named = await bea.locator('.cannon-line').textContent({ timeout: 6_000 }).then(
-        (text) => text === 'Slop Cannon: Test shot',
-        () => false,
-      );
-    }
+    await watch(room);
     const next = host.getByRole('button', { name: /Next question|Standings|Final results/ });
     if ((room.phase === 'reveal' || room.phase === 'scoreboard') && (await next.count()) > 0) {
       await next.first().click().catch(() => undefined);
     }
     await host.waitForTimeout(300);
   }
-  const finished = await until(() => readRoom(code), (room) => room.phase === 'finished', 30_000);
+  return until(() => readRoom(code), (room) => room.phase === 'finished', 30_000);
+}
+
+function uidOf(room: RoomDoc, name: string): string {
+  return Object.entries(room.players).find(([, seat]) => seat.name === name)?.[0] ?? '';
+}
+
+/*
+  E1 depends on the date: Mr Fries wears his sticker to 5 November 2026 and
+  the Double to 8 November. These cases assert what today should do, so after
+  those dates they prove the other direction — nothing asked — and the unit
+  tests in `src/engine/cannon.test.ts` hold the boundary itself.
+*/
+const today = todayIso();
+const chaserNew = isNewMode('chaser', today);
+const doubleNew = isNewMode('double', today);
+
+test('the whole path: a shot and Mr Fries, in the lobby, on the standings, kept, Keep / Bin on Final, and a beacon row', async ({ browser }) => {
+  test.setTimeout(420_000);
+
+  const { host, other: bea, code } = await twoSeats(browser);
+
+  // B2: the quizmaster sees the section, the member does not.
+  await expect(host.getByText('Slop Cannon', { exact: true })).toBeVisible();
+  await expect(bea.getByText('Slop Cannon', { exact: true })).toHaveCount(0);
+
+  await startRound(host, code, ['Against Mr Fries', 'Test shot']);
+  // B3, E2: on the room, fixed for the round — the shot, then Mr Fries while he is new.
+  const expected = { 'test-shot': true, ...(chaserNew ? { 'mode-chaser': true } : {}) };
+  expect((await readRoom(code)).cannon).toEqual(expected);
+
+  let named = false;
+  const finished = await playToFinal(host, [host, bea], code, async (room) => {
+    if (room.phase === 'scoreboard' && !named) {
+      // B2, E5: the standings name the shot, and only the shot.
+      named = await bea.locator('.cannon-line').textContent({ timeout: 6_000 }).then(
+        (text) => text === 'Slop Cannon: Test shot',
+        () => false,
+      );
+    }
+  });
   expect(named).toBe(true);
 
-  // D1–D2: one row under the podium, Keep and Bin, one tap.
+  // D1–D2, E5: one row each, under the podium, one tap.
+  await expect(bea.locator('.cannon .eyebrow')).toHaveText('New this round · keep it?', { timeout: 30_000 });
+  const titles = ['Test shot', ...(chaserNew ? ['Against Mr Fries'] : [])];
+  await expect(bea.locator('.cannon__row .lamp--label')).toHaveText(titles);
   for (const [page, choice] of [[host, 'Keep'], [bea, 'Bin']] as const) {
-    const row = page.locator('.cannon__row', { hasText: 'Test shot' });
-    await expect(row).toBeVisible({ timeout: 30_000 });
-    const podiumBottom = await page.locator('.finale').evaluate((el) => el.getBoundingClientRect().bottom);
-    const rowTop = await row.evaluate((el) => el.getBoundingClientRect().top);
-    expect(rowTop).toBeGreaterThanOrEqual(podiumBottom);
-    await row.getByRole('button', { name: choice }).click();
-    await expect(row.getByRole('button')).toHaveCount(0);
+    for (const title of titles) {
+      const row = page.locator('.cannon__row', { hasText: title });
+      await expect(row).toBeVisible({ timeout: 30_000 });
+      const podiumBottom = await page.locator('.finale').evaluate((el) => el.getBoundingClientRect().bottom);
+      const rowTop = await row.evaluate((el) => el.getBoundingClientRect().top);
+      expect(rowTop).toBeGreaterThanOrEqual(podiumBottom);
+      await row.getByRole('button', { name: choice }).click();
+      await expect(row.getByRole('button')).toHaveCount(0);
+    }
   }
-  const hostUid = Object.entries(finished.players).find(([, seat]) => seat.name === 'Ada')?.[0] ?? '';
-  const beaUid = Object.entries(finished.players).find(([, seat]) => seat.name === 'Bea')?.[0] ?? '';
-  const verdict = (uid: string) => admin().doc(`cannonVerdicts/${finished.gameId}_test-shot_${uid}`).get();
-  await until(() => verdict(hostUid), (snapshot) => snapshot.data()?.['verdict'] === 'keep');
-  await until(() => verdict(beaUid), (snapshot) => snapshot.data()?.['verdict'] === 'bin');
+  const verdict = (shot: string, uid: string) =>
+    admin().doc(`cannonVerdicts/${finished.gameId}_${shot}_${uid}`).get();
+  for (const shot of Object.keys(expected)) {
+    await until(() => verdict(shot, uidOf(finished, 'Ada')), (snapshot) => snapshot.data()?.['verdict'] === 'keep');
+    await until(() => verdict(shot, uidOf(finished, 'Bea')), (snapshot) => snapshot.data()?.['verdict'] === 'bin');
+  }
 
-  // B5: the kept round says which shots it carried.
-  const game = await until(
-    () => admin().doc(`games/${finished.gameId}`).get(),
-    (snapshot) => snapshot.exists,
-  );
-  expect(game.data()?.['cannon']).toEqual({ 'test-shot': true });
+  // B5: the kept round says what it carried.
+  const game = await until(() => admin().doc(`games/${finished.gameId}`).get(), (snapshot) => snapshot.exists);
+  expect(game.data()?.['cannon']).toEqual(expected);
 
   // A1: an uncaught error on a player's page is written down, against the room.
   await bea.evaluate(() => {
@@ -269,4 +313,31 @@ test('the whole path: loaded in the lobby, named on the standings, kept, Keep / 
   );
   expect(beaconed.docs[0]?.data()).toMatchObject({ source: 'error', room: code, phase: 'finished', gameId: finished.gameId });
   expect(String(beaconed.docs[0]?.data()['build'])).toMatch(/^index-/);
+});
+
+test('E4: a plain half-time asks nothing; the Double is asked at the end of the morning', async ({ browser }) => {
+  test.setTimeout(600_000);
+
+  const { host, other, code } = await twoSeats(browser);
+
+  // Round one: the Double and nothing else — so nothing is asked at half-time.
+  await startRound(host, code, ['The Double']);
+  expect((await readRoom(code)).cannon).toBeUndefined();
+  await playToFinal(host, [host, other], code);
+  await expect(other.locator('.finale')).toBeVisible({ timeout: 30_000 });
+  await expect(host.getByRole('button', { name: 'Second half' })).toBeVisible({ timeout: 30_000 });
+  await expect(other.locator('.cannon')).toHaveCount(0);
+
+  // Round two: the end of the morning.
+  await host.getByRole('button', { name: 'Second half' }).click();
+  await until(() => readRoom(code), (room) => room.phase === 'lobby' && room.double != null);
+  await startRound(host, code, []);
+  expect((await readRoom(code)).cannon).toEqual(doubleNew ? { 'mode-double': true } : undefined);
+  await playToFinal(host, [host, other], code);
+  if (doubleNew) {
+    await expect(other.locator('.cannon__row .lamp--label')).toHaveText(['The Double'], { timeout: 30_000 });
+  } else {
+    await expect(other.locator('.finale')).toBeVisible({ timeout: 30_000 });
+    await expect(other.locator('.cannon')).toHaveCount(0);
+  }
 });
