@@ -22,7 +22,8 @@ export type Cue =
   | 'chime'
   | 'heartbeat'
   | 'roll'
-  | 'join';
+  | 'join'
+  | 'cannon';
 
 /**
  * The podium's drum roll: thirty strokes a little under fifty milliseconds
@@ -250,6 +251,18 @@ const CUES: Record<Cue, Voice[]> = {
     and four short high clicks at uneven offsets for the pieces — uneven because
     evenly spaced clicks are a rhythm, and breaking glass has none.
   */
+  /*
+    The Slop Cannon going off over the Keep / Bin panel
+    (docs/decisions/slop-cannon.md, F3). A sub thump falling to 40Hz for the
+    charge, a filtered band of noise for the blast, and a short crack on top.
+    Under 0.6s, and fired after the fanfare has finished, never over it.
+  */
+  cannon: [
+    { type: 'sine', from: 130, to: 40, start: 0, duration: 0.5, gain: 0.8 },
+    { type: 'noise', from: 700, start: 0, duration: 0.3, gain: 0.4, attack: 0.002 },
+    { type: 'square', from: 2200, to: 500, start: 0, duration: 0.04, gain: 0.25, cutoff: 5000 },
+  ],
+
   shatter: [
     { type: 'sine', from: 90, to: 40, start: 0, duration: 0.45, gain: 0.95 },
     { type: 'sawtooth', from: 900, to: 110, start: 0, duration: 0.42, gain: 0.45, cutoff: 2600 },

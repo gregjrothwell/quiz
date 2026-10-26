@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CANNON_VERDICTS, type Asked, type CannonVerdict } from '../engine/cannon';
+import { play } from '../lib/sound';
+import { Confetti } from './Confetti';
 
 /**
  * Keep / Bin on each shot the Slop Cannon fired this round, and each new lobby
@@ -24,14 +26,63 @@ const LABELS: Record<CannonVerdict, string> = {
 interface CannonVerdictsProps {
   rows: readonly Asked[];
   onVerdict: (id: string, verdict: CannonVerdict) => void;
+  /** Final says it is time: after the fanfare, on a podium seen for the first time (F1). */
+  fire?: boolean;
+  /** The paper and the puff. False under reduced motion; the boom still plays (F6). */
+  burst?: boolean;
 }
 
-export function CannonVerdicts({ rows, onVerdict }: CannonVerdictsProps) {
+export function CannonVerdicts({ rows, onVerdict, fire = false, burst = true }: CannonVerdictsProps) {
   const [chosen, setChosen] = useState<Record<string, CannonVerdict>>({});
-  if (rows.length === 0) return null;
+  const panelRef = useRef<HTMLElement>(null);
+  /** Where the cannon went off, in viewport pixels; null until it has. */
+  const [firedFrom, setFiredFrom] = useState<{ x: number; y: number } | null>(null);
+
+  /*
+    The cannon (docs/decisions/slop-cannon.md, F1–F4). Once, and only where it
+    can be seen: if the panel is below the fold — a phone still looking at the
+    podium — it waits for the panel to scroll in (F2). This component is keyed
+    on the game, so "once" is once a round.
+  */
+  const hasRows = rows.length > 0;
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (!fire || !hasRows || !panel) return;
+    let done = false;
+    const go = (): void => {
+      if (done) return;
+      done = true;
+      play('cannon');
+      const box = panel.getBoundingClientRect();
+      setFiredFrom({ x: box.left, y: box.top + box.height / 2 });
+    };
+    if (typeof IntersectionObserver === 'undefined') {
+      const timer = window.setTimeout(go, 0);
+      return () => window.clearTimeout(timer);
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        observer.disconnect();
+        go();
+      },
+      { threshold: 0.5 },
+    );
+    observer.observe(panel);
+    return () => observer.disconnect();
+  }, [fire, hasRows]);
+
+  if (!hasRows) return null;
 
   return (
-    <section className="panel stack cannon" aria-label="New this round">
+    <section ref={panelRef} className="panel stack cannon" aria-label="New this round">
+      {firedFrom && burst ? (
+        <>
+          {/* F5: a puff that fades, never a flash. */}
+          <span className="cannon__puff" aria-hidden="true" />
+          <Confetti fire from={firedFrom} />
+        </>
+      ) : null}
       <p className="eyebrow">New this round · keep it?</p>
       {rows.map((row) => {
         const verdict = chosen[row.id];

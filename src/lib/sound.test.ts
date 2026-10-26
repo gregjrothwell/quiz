@@ -94,6 +94,14 @@ describe('clockVoices', () => {
     expect(offsets).toEqual([7.74, 6.74, 5.74, 4.74, 3.74, 2.74, 1.74, 0.74]);
   });
 
+  test('fires the Slop Cannon in under 0.6s, no louder than the fanfare (F3)', () => {
+    const cannon = cueVoices('cannon');
+    expect(cannon.length).toBeGreaterThan(0);
+    expect(Math.max(...cannon.map((voice) => voice.start + voice.duration))).toBeLessThanOrEqual(0.6);
+    const loudest = (voices: readonly Voice[]): number => Math.max(...voices.map((voice) => voice.gain));
+    expect(loudest(cannon)).toBeLessThanOrEqual(loudest(cueVoices('fanfare')));
+  });
+
   test('rings the gong on partials no octave could produce', () => {
     // #given the gong's pitched partials, lowest first
     const partials = cueVoices('gong')

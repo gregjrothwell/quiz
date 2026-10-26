@@ -3,7 +3,7 @@ import { Commentary } from '../components/Commentary';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Awards } from '../components/Awards';
 import { CannonVerdicts } from '../components/CannonVerdicts';
-import type { Asked, CannonVerdict } from '../engine/cannon';
+import { CANNON_AFTER_FANFARE_MS, cannonFires, type Asked, type CannonVerdict } from '../engine/cannon';
 import { Confetti } from '../components/Confetti';
 import { DoubleTable } from '../components/DoubleTable';
 import { isHalfTime, morningTotals } from '../engine/double';
@@ -257,6 +257,15 @@ export function Final({
   useCue('roll', podiumKey, holding && beat === 'roll');
   useCue('fanfare', podiumKey, hasPodium && firstSight && landed);
 
+  // The Slop Cannon, after the fanfare rather than over it (F1).
+  const cannonArmed = cannonFires(asked.length, hasPodium, firstSight) && landed;
+  const [cannonDue, setCannonDue] = useState(false);
+  useEffect(() => {
+    if (!cannonArmed) return;
+    const timer = window.setTimeout(() => setCannonDue(true), CANNON_AFTER_FANFARE_MS);
+    return () => window.clearTimeout(timer);
+  }, [cannonArmed]);
+
   const [cardState, setCardState] = useState<CardState>('idle');
 
   /*
@@ -375,7 +384,13 @@ export function Final({
       >
         {/* Under the podium, in the part held until it lands (D2). */}
         {onCannonVerdict ? (
-          <CannonVerdicts key={room.gameId ?? ''} rows={asked} onVerdict={onCannonVerdict} />
+          <CannonVerdicts
+            key={room.gameId ?? ''}
+            rows={asked}
+            onVerdict={onCannonVerdict}
+            fire={cannonDue}
+            burst={!reducedMotion}
+          />
         ) : null}
 
         <Standings players={players} scores={scores} youUid={youUid} />

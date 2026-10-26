@@ -183,6 +183,23 @@ export function isModeKey(key: string): boolean {
   return key.startsWith(MODE_PREFIX);
 }
 
+/**
+ * When the cannon fires over the Keep / Bin panel (F1): this long after the
+ * fanfare starts. The fanfare runs 1.45s, and the panel arrives 300ms after
+ * the winner lands — on the fanfare and the podium confetti — so firing on
+ * arrival would step on the winner.
+ */
+export const CANNON_AFTER_FANFARE_MS = 1_600;
+
+/**
+ * Whether this Final fires the cannon at all (F1): a podium seen for the first
+ * time on this page, with something on the panel. Reduced motion still fires —
+ * the boom is sound — but without the burst (F6).
+ */
+export function cannonFires(rows: number, hasPodium: boolean, firstSight: boolean): boolean {
+  return rows > 0 && hasPodium && firstSight;
+}
+
 /** One Keep / Bin row on Final: a shot or a mode. */
 export interface Asked {
   id: string;

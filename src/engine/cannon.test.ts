@@ -5,6 +5,7 @@ import {
   SHOTS,
   TEST_SHOT,
   askedOnFinal,
+  cannonFires,
   available,
   isLoaded,
   isModeKey,
@@ -137,5 +138,14 @@ describe('Keep / Bin on new lobby modes (E)', () => {
     expect(loadedShots({ 'mode-chaser': true }, [A])).toEqual([]);
     expect(isModeKey('mode-chaser')).toBe(true);
     expect(isModeKey('alpha')).toBe(false);
+  });
+});
+
+describe('the cannon fires (F1)', () => {
+  it('only on a first sight of a podium with something on the panel', () => {
+    expect(cannonFires(1, true, true)).toBe(true);
+    expect(cannonFires(0, true, true)).toBe(false);
+    expect(cannonFires(1, false, true)).toBe(false);
+    expect(cannonFires(1, true, false)).toBe(false);
   });
 });
