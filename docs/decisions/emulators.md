@@ -141,6 +141,9 @@ from azure.archive.ubuntu.com, with every Chromium library already installed.
 Now `playwright install chromium` plus a launch probe, apt only if it fails.
 First run after: install 7–10s, probe 0–1s, shards 0–3 350–373s, shard 4
 472s, ~9.6 min to green (from 12+, or a timeout).
+Then the Double test moved to its own spec and a sixth shard (`e73dbdf`):
+run 40394810789, every shard 202–367s, **7m58s from start to green** — the
+pre-session ~8 min.
 
 Locally `npm run e2e` is unchanged: every file, one worker. In zsh, `$files`
 does not word-split; the CI step is bash.
