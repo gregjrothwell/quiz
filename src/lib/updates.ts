@@ -18,6 +18,12 @@ export interface Update {
 
 export const UPDATES: readonly Update[] = [
   {
+    date: '2026-10-26',
+    lines: [
+      'Played Against Mr Fries or The Double? At the end of the round, tell us Keep or Bin.',
+    ],
+  },
+  {
     date: '2026-10-25',
     lines: [
       'The Double: two rounds that add up. The first half stops at half-time, the second half adds to it, and Share or Shaft, if it is on, is played for the whole total.',

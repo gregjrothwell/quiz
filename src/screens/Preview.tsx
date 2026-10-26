@@ -1,3 +1,4 @@
+import { TEST_SHOT, askedOnFinal } from '../engine/cannon';
 import type { ReactNode } from 'react';
 import { ColdOpen } from '../components/ColdOpen';
 import { LeagueBoard } from '../components/LeagueBoard';
@@ -589,6 +590,21 @@ export function Preview() {
           isQuizmaster
           packs={PACKS}
           busy={false}
+          onStart={noop}
+          onLeave={noop}
+        />
+      ),
+    },
+    {
+      title: 'Lobby · Slop Cannon, one shot to load',
+      node: (
+        <Lobby
+          room={mockRoom({ phase: 'lobby' })}
+          youUid="greg"
+          isQuizmaster
+          packs={PACKS}
+          busy={false}
+          shots={[TEST_SHOT]}
           onStart={noop}
           onLeave={noop}
         />
@@ -1200,6 +1216,18 @@ export function Preview() {
       ),
     },
     {
+      title: 'Standings · a Slop Cannon shot loaded',
+      node: (
+        <Scoreboard
+          room={mockRoom({ phase: 'scoreboard', lastDeltas: { sam: 1_000, greg: 0, priya: 900 } })}
+          shots={[TEST_SHOT]}
+          youUid="greg"
+          isQuizmaster
+          onNext={noop}
+        />
+      ),
+    },
+    {
       title: 'Standings · second half of The Double',
       node: (
         <Scoreboard
@@ -1314,6 +1342,25 @@ export function Preview() {
           view={finalView()}
           onOpenPicks={noop}
           onNext={noop}
+        />
+      ),
+    },
+    {
+      title: 'Final · Keep or Bin: a shot and Mr Fries',
+      node: (
+        <Final
+          banked={null}
+          youPlayerId="greg"
+          snapshot={null}
+          room={mockRoom({ phase: 'finished', index: 1, gameId: 'gallery-cannon', chaserEnabled: true })}
+          youUid="greg"
+          isQuizmaster
+          log={[]}
+          asked={askedOnFinal({ 'test-shot': true, 'mode-chaser': true }, [TEST_SHOT])}
+          onCannonVerdict={noop}
+          onPlayAgain={noop}
+          onLeave={noop}
+          onSeason={noop}
         />
       ),
     },

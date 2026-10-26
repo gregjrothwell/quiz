@@ -152,6 +152,7 @@ Greg's words.
 **Still to do:**
 3. ⏸ The Lab: switches, kill switch, verdict, beacons, `read-lab`, run sheet.
    **Shelved by Greg, 22 Oct:** "pointless extra complexity when we don't really need it." Draft kept on branch `lab-story`.
+   **Unshelved 26 Oct as the Slop Cannon** — A–D as drafted, round-health beacon and run sheet still cut: [`slop-cannon.md`](slop-cannon.md).
 4. ⬜ Wow, one at a time as ordinary packs or lobby options (not behind a Lab), each with a story and ACs first:
    1. ✅ Survey Says. Live 22 Oct in release 2026-10-22-3 (#131): [`survey-says.md`](survey-says.md).
    2. The rig probe.

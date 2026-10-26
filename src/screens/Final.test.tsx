@@ -1,5 +1,6 @@
 import { act, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { CANNON_AFTER_FANFARE_MS, type Asked } from '../engine/cannon';
 import { createRoom, type RoomState } from '../engine/state';
 import type * as Sound from '../lib/sound';
 import type { FinalSnapshot } from '../lib/useFinalSnapshot';
@@ -12,13 +13,16 @@ import { Final } from './Final';
  */
 
 const useCue = vi.hoisted(() => vi.fn());
+const play = vi.hoisted(() => vi.fn());
 vi.mock('../lib/sound', async (original) => ({
   ...(await original<typeof Sound>()),
   useCue,
+  play,
 }));
 
 beforeEach(() => {
   useCue.mockClear();
+  play.mockClear();
   vi.useFakeTimers();
 });
 afterEach(() => {
@@ -33,7 +37,7 @@ const SCORES = { ann: 5_000, bob: 3_000 };
 const NEWCOMER = { played: 0, wins: 0, best: 0 };
 
 /** Ann won and Bob came second; `live` is who is still in the room. */
-function podium(gameId: string, live: RoomState['players']) {
+function podium(gameId: string, live: RoomState['players'], asked: readonly Asked[] = []) {
   const room: RoomState = {
     ...createRoom('HKQ7'),
     phase: 'finished',
@@ -52,6 +56,8 @@ function podium(gameId: string, live: RoomState['players']) {
       youUid="bob"
       isQuizmaster={false}
       log={[]}
+      asked={asked}
+      onCannonVerdict={noop}
       onPlayAgain={noop}
       onLeave={noop}
       onSeason={noop}
@@ -190,5 +196,87 @@ describe('the Double', () => {
     const { getByRole } = render(doubleFinal('double-again', { gameId: 'round-one', scores: FIRST }, true));
     landed();
     expect(getByRole('button', { name: 'Another round' })).toBeInTheDocument();
+  });
+});
+
+describe('the Slop Cannon fires (docs/decisions/slop-cannon.md, F)', () => {
+  const ROWS: Asked[] = [{ id: 'mode-chaser', title: 'Against Mr Fries' }];
+  const step = (ms: number): void => {
+    for (let gone = 0; gone < ms; gone += 100) {
+      act(() => {
+        vi.advanceTimersByTime(100);
+      });
+    }
+  };
+  const booms = (): number => play.mock.calls.filter(([cue]) => cue === 'cannon').length;
+
+  /** From the first render to the landing: what `landed()` steps through, to the millisecond. */
+  function toTheLanding(): void {
+    for (let ms = 0; ms < 5_000; ms += 100) {
+      if (useCue.mock.calls.some(([name, , enabled]) => name === 'fanfare' && enabled === true)) return;
+      act(() => {
+        vi.advanceTimersByTime(100);
+      });
+    }
+  }
+
+  test('F1: once, after the fanfare rather than over it', () => {
+    // #given a Final with a row, built for the first time
+    const { container } = render(podium('cannon-once', { ann: ANN, bob: BOB }, ROWS));
+
+    // #when the winner lands and the fanfare starts
+    toTheLanding();
+
+    // #then nothing fires while the fanfare is still playing
+    step(CANNON_AFTER_FANFARE_MS - 200);
+    expect(booms()).toBe(0);
+
+    // #and then it fires, once, with the paper and the puff
+    step(400);
+    expect(booms()).toBe(1);
+    expect(container.querySelector('.cannon__puff')).not.toBeNull();
+    step(5_000);
+    expect(booms()).toBe(1);
+  });
+
+  test('F1: an empty panel fires nothing', () => {
+    render(podium('cannon-empty', { ann: ANN, bob: BOB }));
+    landed();
+    step(CANNON_AFTER_FANFARE_MS + 500);
+    expect(booms()).toBe(0);
+  });
+
+  test('F1: not again on coming back to a podium this page has built', () => {
+    const first = render(podium('cannon-back', { ann: ANN, bob: BOB }, ROWS));
+    landed();
+    step(CANNON_AFTER_FANFARE_MS + 500);
+    first.unmount();
+    play.mockClear();
+
+    render(podium('cannon-back', { ann: ANN, bob: BOB }, ROWS));
+    step(CANNON_AFTER_FANFARE_MS + 500);
+    expect(booms()).toBe(0);
+  });
+
+  test('F6: reduced motion still booms, with no paper and no puff', () => {
+    const media = vi.spyOn(window, 'matchMedia').mockImplementation(
+      (query: string) =>
+        ({
+          matches: query.includes('reduce'),
+          media: query,
+          onchange: null,
+          addEventListener: () => {},
+          removeEventListener: () => {},
+          addListener: () => {},
+          removeListener: () => {},
+          dispatchEvent: () => false,
+        }) as MediaQueryList,
+    );
+    const { container } = render(podium('cannon-still', { ann: ANN, bob: BOB }, ROWS));
+    step(CANNON_AFTER_FANFARE_MS + 500);
+    expect(booms()).toBe(1);
+    expect(container.querySelector('.cannon__puff')).toBeNull();
+    expect(container.querySelectorAll('canvas.confetti')).toHaveLength(1);
+    media.mockRestore();
   });
 });

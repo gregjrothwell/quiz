@@ -4849,6 +4849,63 @@ select.input option {
   color: var(--amber);
 }
 
+/* The Slop Cannon (docs/decisions/slop-cannon.md): what this round is trying. */
+.cannon-line {
+  margin: 0;
+  color: var(--cyan);
+  font-family: var(--tech);
+  letter-spacing: 0.02em;
+}
+
+/* One Keep / Bin strip per shot, under the podium. */
+.cannon__row {
+  align-items: center;
+}
+
+.cannon {
+  position: relative;
+}
+
+/*
+  The cannon's smoke (F5). A grey puff at the panel's left edge that rises once
+  and fades over 900ms — a fade, never a flash: lighting.md's WCAG 2.3.1 bound.
+  Small, once, and slow, so nothing on the page brightens and darkens twice.
+*/
+.cannon__puff {
+  position: absolute;
+  left: -18px;
+  top: 50%;
+  width: 72px;
+  height: 72px;
+  margin-top: -36px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(190 200 214 / 0.55), rgb(190 200 214 / 0) 70%);
+  pointer-events: none;
+  opacity: 0;
+  animation: cannon-puff 900ms ease-out forwards;
+}
+
+@keyframes cannon-puff {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  25% {
+    opacity: 0.6;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.7) translateY(-14px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cannon__puff {
+    display: none;
+  }
+}
+
 /* The Commentator (docs/decisions/commentator.md): one line, under the moment. */
 .commentary {
   margin: 0;

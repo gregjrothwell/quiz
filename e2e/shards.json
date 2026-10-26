@@ -22,5 +22,11 @@
     "e2e/host-authority.spec.ts",
     "e2e/quiz-wrapped.spec.ts",
     "e2e/rig-probe.spec.ts"
+  ],
+  [
+    "e2e/slop-cannon.spec.ts"
+  ],
+  [
+    "e2e/slop-cannon-double.spec.ts"
   ]
 ]

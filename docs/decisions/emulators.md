@@ -131,6 +131,20 @@ reports under others. `scripts/e2e-shards.test.ts` fails if a spec is in no
 group or the matrix does not list every group — a spec in no group would
 otherwise never run in CI. Add a new spec to the lightest group.
 
+**26 Oct: five shards, and no apt** (#154, `c1ee8a6`). `slop-cannon.spec.ts`
+went into shard 0 unmeasured: three browser rounds, ~6 min, took that shard's
+specs from ~300s to 677s, and the gate waits on the slowest. It has a shard of
+its own. **Time a new spec locally before choosing its group**; one with whole
+rounds in it may need a shard of its own. Separately, `playwright install
+--with-deps` spent 520–637s on 3 of 5 runs that day fetching 25.9 MB of fonts
+from azure.archive.ubuntu.com, with every Chromium library already installed.
+Now `playwright install chromium` plus a launch probe, apt only if it fails.
+First run after: install 7–10s, probe 0–1s, shards 0–3 350–373s, shard 4
+472s, ~9.6 min to green (from 12+, or a timeout).
+Then the Double test moved to its own spec and a sixth shard (`e73dbdf`):
+run 40394810789, every shard 202–367s, **7m58s from start to green** — the
+pre-session ~8 min.
+
 Locally `npm run e2e` is unchanged: every file, one worker. In zsh, `$files`
 does not word-split; the CI step is bash.
 

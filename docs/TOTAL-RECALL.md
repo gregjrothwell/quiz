@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 25 October 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 26 October 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -23,6 +23,11 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
+
+## 2026-10-26 — The Lab, unshelved as the Slop Cannon
+
+Greg: *"Let's build the lab - but call it slop cannon"*, then A–D as drafted. Built on `slop-cannon`: the error beacon (`clientErrors/`, `read-errors`), per-round shots on the room (`cannon`, ≤ 8 keys, all `true`), the kill switch (`config/cannon`, `npm run cannon`), Keep / Bin under the podium (`cannonVerdicts/`, create only), `read-cannon`. **Ships dark**: nothing registered, so no lobby section and no read. A test shot exists under the emulators only. Rules cannot bound a map key's length; recorded. [`slop-cannon.md`](decisions/slop-cannon.md).
+Then **E**, Keep/Bin on New-stickered lobby modes played that round (`mode-<id>` in the same map, no rules change), and **F**, the cannon fires 1.6s after the fanfare (synth boom, paper, a fading puff; no flash). After F: full e2e 41/41 locally (24.5 min), unit 2,131. **CI time to green had doubled**: the new spec put shard 0 at 677s and apt stalled 520–637s on 3 of 5 runs — fixed in `c1ee8a6`, ~9.6 min to green ([`emulators.md`](decisions/emulators.md)).
 
 ## 2026-10-25 — Release 25 Oct: The Double, Theme Tunes, Higher or Lower
 

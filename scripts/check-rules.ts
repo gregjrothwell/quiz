@@ -36,6 +36,7 @@ import {
 } from 'firebase/database';
 import {
   Timestamp,
+  addDoc,
   collection,
   deleteDoc,
   deleteField,
@@ -1629,6 +1630,114 @@ function buildChecks(probes: Probes): Check[] {
       hint: 'firestore.rules grants list on games — every round ever played, with '
         + 'every player’s name and every answer, in one query',
       run: () => getDocs(query(collection(db, 'games'), limit(1))),
+    },
+    {
+      /*
+        The error beacon (docs/decisions/slop-cannon.md, A4). The client
+        swallows a refusal on purpose, so unpublished, every row is lost in
+        silence and only this says so. No uid in the row means no client may
+        delete it: one probe row per run stays, and `read-errors` skips it by
+        its message.
+      */
+      label: 'Firestore   · file an error beacon row',
+      expect: 'allow',
+      hint: 'firestore.rules is missing the clientErrors block — every beacon '
+        + 'row is refused silently and `read-errors` will never have anything to say',
+      run: () =>
+        addDoc(collection(db, 'clientErrors'), {
+          message: 'rules-check probe',
+          source: 'notice',
+          build: 'rules-check',
+          device: 'other',
+          at: serverTimestamp(),
+        }),
+    },
+    {
+      label: 'Firestore   · put a uid on an error beacon row',
+      expect: 'deny',
+      hint: 'firestore.rules does not hasOnly clientErrors — a row could name its writer',
+      run: () =>
+        addDoc(collection(db, 'clientErrors'), {
+          message: 'rules-check probe',
+          source: 'notice',
+          build: 'rules-check',
+          device: 'other',
+          uid,
+          at: serverTimestamp(),
+        }),
+    },
+    {
+      /*
+        The Slop Cannon's kill switch (C2). Refused, every shot reads as pulled
+        — safe, but nothing could ever be loaded.
+      */
+      label: 'Firestore   · read the Slop Cannon kill switch',
+      expect: 'allow',
+      hint: 'firestore.rules is missing the config/cannon read — every shot is '
+        + 'treated as pulled and the lobby never offers one',
+      run: () => getDoc(doc(db, 'config', 'cannon')),
+    },
+    {
+      label: 'Firestore   · flip the Slop Cannon kill switch from a client',
+      expect: 'deny',
+      hint: 'firestore.rules lets a client write config/cannon — anybody could '
+        + 'pull, or un-pull, a shot',
+      run: () => setDoc(doc(db, 'config', 'cannon'), { off: [] }),
+    },
+    {
+      label: 'Firestore   · Keep a Slop Cannon shot',
+      expect: 'allow',
+      hint: 'firestore.rules is missing the cannonVerdicts block — every Keep and '
+        + 'Bin is refused silently and `read-cannon` will never have anything to say',
+      run: async () => {
+        const reference = doc(db, 'cannonVerdicts', `${probeGameId}_rules-check_${uid}`);
+        await setDoc(reference, {
+          gameId: probeGameId, shot: 'rules-check', verdict: 'keep', uid, at: serverTimestamp(),
+        });
+        return deleteDoc(reference);
+      },
+    },
+    {
+      label: 'Firestore   · change a Keep to a Bin',
+      expect: 'deny',
+      hint: 'firestore.rules grants update on cannonVerdicts — one player could vote twice',
+      run: async () => {
+        const reference = doc(db, 'cannonVerdicts', `${probeGameId}_rules-check-twice_${uid}`);
+        await setDoc(reference, {
+          gameId: probeGameId, shot: 'rules-check-twice', verdict: 'keep', uid, at: serverTimestamp(),
+        });
+        try {
+          await setDoc(reference, {
+            gameId: probeGameId, shot: 'rules-check-twice', verdict: 'bin', uid, at: serverTimestamp(),
+          });
+        } finally {
+          await deleteDoc(reference);
+        }
+      },
+    },
+    {
+      label: 'Firestore   · keep a round that carried a Slop Cannon shot',
+      expect: 'allow',
+      hint: 'firestore.rules does not allow games.cannon — every round with a shot '
+        + 'loaded is refused silently and never kept',
+      run: async () => {
+        const reference = doc(db, 'games', `${probeGameId}-cannon`);
+        await setDoc(reference, {
+          ...probeGame(uid, { [uid]: { name: 'Rules check' } }),
+          cannon: { 'rules-check': true },
+        });
+        return deleteDoc(reference);
+      },
+    },
+    {
+      label: 'Firestore   · keep a round carrying nine shots',
+      expect: 'deny',
+      hint: 'firestore.rules does not bound games.cannon to eight',
+      run: () =>
+        setDoc(doc(db, 'games', `${probeGameId}-cannon-nine`), {
+          ...probeGame(uid, { [uid]: { name: 'Rules check' } }),
+          cannon: Object.fromEntries(Array.from({ length: 9 }, (_, i) => [`shot-${String(i)}`, true])),
+        }),
     },
     {
       label: 'Realtime DB · write presence',

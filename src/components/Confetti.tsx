@@ -20,9 +20,14 @@ interface Piece {
 
 const between = (low: number, high: number): number => low + Math.random() * (high - low);
 
+/** A single small burst from one point, up and to the right: the Slop Cannon (F4). */
+const BURST_PIECES = 60;
+const BURST_LIFETIME_MS = 2_500;
+
 /**
  * Two confetti cannons from the bottom corners of the screen, fired once when
- * `fire` turns true.
+ * `fire` turns true. Given `from`, one small cannon at that point instead —
+ * the Slop Cannon's paper burst over the Keep / Bin panel (docs/decisions/slop-cannon.md, F4).
  *
  * A canvas rather than a hundred and fifty elements: one layer, painted for
  * three and a half seconds and then cleared, so nothing about it lingers in the
@@ -32,7 +37,7 @@ const between = (low: number, high: number): number => low + Math.random() * (hi
  * The caller decides whether it fires at all — reduced motion must not, and the
  * screens that use it already know.
  */
-export function Confetti({ fire }: { fire: boolean }) {
+export function Confetti({ fire, from }: { fire: boolean; from?: { x: number; y: number } }) {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -48,7 +53,20 @@ export function Confetti({ fire }: { fire: boolean }) {
     canvas.height = height * scale;
     ctx.scale(scale, scale);
 
-    const pieces: Piece[] = Array.from({ length: PIECES }, (_, index) => {
+    const lifetime = from ? BURST_LIFETIME_MS : LIFETIME_MS;
+    const pieces: Piece[] = Array.from({ length: from ? BURST_PIECES : PIECES }, (_, index) => {
+      if (from) {
+        return {
+          x: from.x,
+          y: from.y,
+          vx: between(2, 10),
+          vy: -between(6, 14),
+          size: between(5, 9),
+          spin: between(0, Math.PI * 2),
+          turn: between(-0.25, 0.25),
+          colour: COLOURS[index % COLOURS.length] ?? '#ffb226',
+        };
+      }
       const fromLeft = index % 2 === 0;
       return {
         x: fromLeft ? 0 : width,
@@ -72,7 +90,7 @@ export function Confetti({ fire }: { fire: boolean }) {
       last = now;
       ctx.clearRect(0, 0, width, height);
 
-      const fade = Math.max(0, 1 - Math.max(0, now - startedAt - LIFETIME_MS * 0.7) / (LIFETIME_MS * 0.3));
+      const fade = Math.max(0, 1 - Math.max(0, now - startedAt - lifetime * 0.7) / (lifetime * 0.3));
       ctx.globalAlpha = fade;
 
       for (const piece of pieces) {
@@ -93,7 +111,7 @@ export function Confetti({ fire }: { fire: boolean }) {
         ctx.restore();
       }
 
-      if (now - startedAt < LIFETIME_MS) {
+      if (now - startedAt < lifetime) {
         frame = requestAnimationFrame(draw);
       } else {
         ctx.clearRect(0, 0, width, height);
@@ -105,7 +123,7 @@ export function Confetti({ fire }: { fire: boolean }) {
       cancelAnimationFrame(frame);
       ctx.clearRect(0, 0, width, height);
     };
-  }, [fire]);
+  }, [fire, from]);
 
   return <canvas ref={ref} className="confetti" aria-hidden="true" />;
 }

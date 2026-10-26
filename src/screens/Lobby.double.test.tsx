@@ -45,10 +45,10 @@ function lobby(room: RoomState, isQuizmaster: boolean, onStart = vi.fn()) {
 
 const doubleChoice = () => screen.queryByRole('button', { name: /^(New ?)?The Double/ });
 
-/** The last argument `onStart` was called with: whether the round is a double. */
+/** The eleventh argument `onStart` was called with: whether the round is a double. */
 function startedAsDouble(onStart: ReturnType<typeof vi.fn>): unknown {
   const call = onStart.mock.calls.at(-1) ?? [];
-  return call.at(-1);
+  return call.at(10);
 }
 
 describe('the Double in the lobby', () => {

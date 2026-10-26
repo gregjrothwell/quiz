@@ -1,3 +1,4 @@
+import type { Loaded } from './cannon';
 import type { PackId } from '../questions/types';
 import type { FormFact } from './form';
 import { carryFirstMs, firstTouchOf } from './answers';
@@ -66,6 +67,8 @@ export type Action =
       ladderNotices?: readonly string[];
       /** Optional for the reason `jigsawEnabled` is. Ignored in round two, which is always a double. */
       doubleEnabled?: boolean;
+      /** The Slop Cannon's loaded shots. Optional for the reason `jigsawEnabled` is. */
+      cannon?: Loaded;
     }
   /**
    * `durationSecs` is settled here and nowhere else. The security rules pin it
@@ -143,6 +146,7 @@ export function reduce(state: RoomState, action: Action): RoomState {
         action.history ?? {},
         action.ladderNotices ?? [],
         action.doubleEnabled ?? false,
+        action.cannon ?? {},
       );
     case 'start':
       return start(state, action.at, action.gameId, action.durationSecs);
@@ -230,6 +234,7 @@ function selectPack(
   history: RoomState['history'],
   ladderNotices: readonly string[],
   doubleEnabled: boolean,
+  cannon: Loaded,
 ): RoomState {
   if (state.phase !== 'lobby') return state;
   return {
@@ -247,6 +252,7 @@ function selectPack(
     // Round two of a double is a double whatever the quizmaster's device sends:
     // turning it off here would strand round one's scores on the room.
     doubleEnabled: state.double !== null || doubleEnabled,
+    cannon,
   };
 }
 

@@ -6,6 +6,7 @@ import { SoundCheck } from '../components/SoundCheck';
 import { TmdbNotice } from '../components/TmdbCredit';
 import { WhatsNewButton } from '../components/WhatsNewButton';
 import { joinLink } from '../engine/roomCode';
+import { toLoaded, type Loaded, type Shot } from '../engine/cannon';
 import {
   leadingPacks,
   nextVote,
@@ -117,7 +118,14 @@ interface LobbyProps {
     chaserEnabled: boolean,
     history: HistoryGroup,
     doubleEnabled: boolean,
+    cannon: Loaded,
   ) => void;
+  /**
+   * The Slop Cannon's shots this device may offer: registered, and not pulled
+   * by the kill switch (docs/decisions/slop-cannon.md, B2). Empty, the section
+   * does not render — which is every lobby while the cannon is dark (B6).
+   */
+  shots?: readonly Shot[];
   onLeave: () => void;
   /** Opens What's new. The room stays put — App only flips a flag. */
   onUpdates?: () => void;
@@ -142,6 +150,7 @@ export function Lobby({
   onVote,
   onBrowse,
   onStart,
+  shots = [],
   onLeave,
   onUpdates,
   notice,
@@ -185,6 +194,8 @@ export function Lobby({
   // Beat the Chaser: the room against Mr Fries. Not on Survey Says (v1).
   const [chaser, setChaser] = useState(false);
   const [jigsaw, setJigsaw] = useState(false);
+  // The Slop Cannon: each shot unloaded until the quizmaster loads it (B2).
+  const [loaded, setLoaded] = useState<ReadonlySet<string>>(() => new Set());
   /*
     Geekend are a separate group who have seen none of the questions, so their
     rounds deal from and bank into a history of their own
@@ -757,6 +768,39 @@ export function Lobby({
             </div>
           ) : null}
 
+          {shots.length > 0 ? (
+            <div className="stack">
+              <p className="eyebrow">Slop Cannon</p>
+              <p className="muted hint">
+                Unfinished ideas, tried on this round only. Everyone gets a Keep or Bin at the end.
+              </p>
+              <div className="picker">
+                {shots.map((shot) => {
+                  const on = loaded.has(shot.id);
+                  return (
+                    <button
+                      key={shot.id}
+                      type="button"
+                      className="pick"
+                      aria-pressed={on}
+                      onClick={() =>
+                        setLoaded((current) => {
+                          const next = new Set(current);
+                          if (on) next.delete(shot.id);
+                          else next.add(shot.id);
+                          return next;
+                        })
+                      }
+                    >
+                      <b>{shot.title}</b>
+                      <span>{shot.blurb}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
           <button
             type="button"
             className="btn btn--primary"
@@ -781,6 +825,9 @@ export function Lobby({
                 chaser && !survey,
                 history,
                 double,
+                // Only what is still on offer: a shot pulled since it was
+                // loaded is not fired.
+                toLoaded(shots.filter((shot) => loaded.has(shot.id)).map((shot) => shot.id)),
               )
             }
           >

@@ -2,6 +2,8 @@ import { chaserResult, chaserScore } from '../engine/chaser';
 import { Commentary } from '../components/Commentary';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Awards } from '../components/Awards';
+import { CannonVerdicts } from '../components/CannonVerdicts';
+import { CANNON_AFTER_FANFARE_MS, cannonFires, type Asked, type CannonVerdict } from '../engine/cannon';
 import { Confetti } from '../components/Confetti';
 import { DoubleTable } from '../components/DoubleTable';
 import { isHalfTime, morningTotals } from '../engine/double';
@@ -52,6 +54,9 @@ interface FinalProps {
    * late, and the awards are withheld rather than shown from a partial view.
    */
   log: QuestionRecord[];
+  /** The shots loaded into this round and the new modes it used: one Keep / Bin each (D1, E5). */
+  asked?: readonly Asked[];
+  onCannonVerdict?: (shot: string, verdict: CannonVerdict) => void;
   onPlayAgain: () => void;
   onLeave: () => void;
   onSeason: () => void;
@@ -121,6 +126,8 @@ export function Final({
   youUid,
   isQuizmaster,
   log,
+  asked = [],
+  onCannonVerdict,
   onPlayAgain,
   onLeave,
   onSeason,
@@ -250,6 +257,15 @@ export function Final({
   useCue('roll', podiumKey, holding && beat === 'roll');
   useCue('fanfare', podiumKey, hasPodium && firstSight && landed);
 
+  // The Slop Cannon, after the fanfare rather than over it (F1).
+  const cannonArmed = cannonFires(asked.length, hasPodium, firstSight) && landed;
+  const [cannonDue, setCannonDue] = useState(false);
+  useEffect(() => {
+    if (!cannonArmed) return;
+    const timer = window.setTimeout(() => setCannonDue(true), CANNON_AFTER_FANFARE_MS);
+    return () => window.clearTimeout(timer);
+  }, [cannonArmed]);
+
   const [cardState, setCardState] = useState<CardState>('idle');
 
   /*
@@ -366,6 +382,17 @@ export function Final({
         style={at(holding ? LANDED_AT + 300 : 0)}
         data-held={landed ? undefined : ''}
       >
+        {/* Under the podium, in the part held until it lands (D2). */}
+        {onCannonVerdict ? (
+          <CannonVerdicts
+            key={room.gameId ?? ''}
+            rows={asked}
+            onVerdict={onCannonVerdict}
+            fire={cannonDue}
+            burst={!reducedMotion}
+          />
+        ) : null}
+
         <Standings players={players} scores={scores} youUid={youUid} />
 
         {double ? <DoubleTable players={players} scores={roundScores} double={double} youUid={youUid} /> : null}
