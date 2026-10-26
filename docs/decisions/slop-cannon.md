@@ -126,6 +126,7 @@ tier ([`cost.md`](cost.md)).
   podium's bottom edge and lose their buttons after one tap; both verdicts and
   `games/{id}.cannon` land; a dispatched `ErrorEvent` on Final lands one
   `clientErrors` row with room, phase, gameId and `build: index-…`.
+- **Full e2e locally: 40/40** (20.2 min, every spec incl. `host-writes` golden — an ordinary round writes no `cannon`).
 - **`check-rules` live, before publish: 143 PASS, 4 FAIL** — exactly the four
   new allow cases (beacon row, kill-switch read, Keep, a round with a shot).
   The four new denies pass vacuously until then. After the merge it must read
