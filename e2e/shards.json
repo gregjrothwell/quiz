@@ -25,5 +25,8 @@
   ],
   [
     "e2e/slop-cannon.spec.ts"
+  ],
+  [
+    "e2e/slop-cannon-double.spec.ts"
   ]
 ]
