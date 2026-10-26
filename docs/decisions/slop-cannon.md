@@ -96,7 +96,7 @@ what changed is below.
 - **D4.** `npm run read-cannon` prints per shot: rounds loaded, Keep, Bin, and
   how many players in those rounds did not vote.
 
-### E. Keep / Bin on new lobby modes — DRAFT, for Greg's approval
+### E. Keep / Bin on new lobby modes — APPROVED and built 26 October 2026
 
 Added 26 October 2026. Greg: *"Extend Keep/Bin on Final to the New-stickered
 lobby modes played that round … Story and ACs first."* With nothing loaded,
@@ -143,7 +143,10 @@ with Mr Fries or The Double from the day it ships, so #154 is no longer dark.
 It needs a What's new line, e.g. *"Played Mr Fries or The Double? Tell us
 Keep or Bin at the end."*
 
-| Open — Greg to decide | Recommendation |
+**Approved 26 Oct**, Greg: *"Approve E1–E7 as recommended: modes only, not packs; lobby names under a "New this round · keep it?" eyebrow."* Built in `be3371d`.
+**Evidence:** `e2e/slop-cannon.spec.ts` 7/7 (a shot plus Mr Fries asks both, in order, and both verdicts and `games/.cannon` land; a plain half-time asks nothing; round two asks about the Double). Full e2e 41/41 (24.9 min) after the change, `host-writes` golden included. Unit 2,125. **Not covered by e2e after 8 Nov:** the mode assertions follow today's sticker dates, so after the stickers come off they prove "nothing asked"; the unit tests hold the boundary. Gallery: three new entries at `#/preview`.
+
+| Was open — decided as recommended | Recommendation |
 |---|---|
 | Approve E1–E7 | — |
 | New **packs** too (6 stickered today: Random, Name the Artist, The Price is Right, Survey Says, Theme Tunes, Higher or Lower)? | **Not now.** Questions already get Good/Rubbish at each reveal, and a pack verdict asked at the end of a round that *was* that pack measures the round as much as the pack. Revisit if modes produce useful verdicts |
