@@ -158,8 +158,14 @@ describe('foldGameRecord', () => {
     }
   });
 
-  test('the only optional key is the link', () => {
-    expect(GAME_RECORD_OPTIONAL_KEYS).toEqual(['doubleOf']);
+  test('the optional keys are the link and the Slop Cannon', () => {
+    expect(GAME_RECORD_OPTIONAL_KEYS).toEqual(['doubleOf', 'cannon']);
+  });
+
+  test('keeps the Slop Cannon\'s shots when any were loaded, and writes nothing when none were (B5)', () => {
+    expect(foldGameRecord(finishedRoom({ cannon: { 'test-shot': true } }), WHOLE_LOG, 'greg')?.cannon)
+      .toEqual({ 'test-shot': true });
+    expect(foldGameRecord(finishedRoom(), WHOLE_LOG, 'greg')).not.toHaveProperty('cannon');
   });
 
   test('carries the round flags the room was played under', () => {

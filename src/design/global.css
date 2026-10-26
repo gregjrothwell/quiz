@@ -4849,6 +4849,19 @@ select.input option {
   color: var(--amber);
 }
 
+/* The Slop Cannon (docs/decisions/slop-cannon.md): what this round is trying. */
+.cannon-line {
+  margin: 0;
+  color: var(--cyan);
+  font-family: var(--tech);
+  letter-spacing: 0.02em;
+}
+
+/* One Keep / Bin strip per shot, under the podium. */
+.cannon__row {
+  align-items: center;
+}
+
 /* The Commentator (docs/decisions/commentator.md): one line, under the moment. */
 .commentary {
   margin: 0;

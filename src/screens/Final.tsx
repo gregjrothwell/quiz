@@ -2,6 +2,8 @@ import { chaserResult, chaserScore } from '../engine/chaser';
 import { Commentary } from '../components/Commentary';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Awards } from '../components/Awards';
+import { CannonVerdicts } from '../components/CannonVerdicts';
+import type { CannonVerdict, Shot } from '../engine/cannon';
 import { Confetti } from '../components/Confetti';
 import { DoubleTable } from '../components/DoubleTable';
 import { isHalfTime, morningTotals } from '../engine/double';
@@ -52,6 +54,9 @@ interface FinalProps {
    * late, and the awards are withheld rather than shown from a partial view.
    */
   log: QuestionRecord[];
+  /** The Slop Cannon's shots loaded into this round: one Keep / Bin each (D1). */
+  shots?: readonly Shot[];
+  onCannonVerdict?: (shot: string, verdict: CannonVerdict) => void;
   onPlayAgain: () => void;
   onLeave: () => void;
   onSeason: () => void;
@@ -121,6 +126,8 @@ export function Final({
   youUid,
   isQuizmaster,
   log,
+  shots = [],
+  onCannonVerdict,
   onPlayAgain,
   onLeave,
   onSeason,
@@ -366,6 +373,11 @@ export function Final({
         style={at(holding ? LANDED_AT + 300 : 0)}
         data-held={landed ? undefined : ''}
       >
+        {/* Under the podium, in the part held until it lands (D2). */}
+        {onCannonVerdict ? (
+          <CannonVerdicts key={room.gameId ?? ''} shots={shots} onVerdict={onCannonVerdict} />
+        ) : null}
+
         <Standings players={players} scores={scores} youUid={youUid} />
 
         {double ? <DoubleTable players={players} scores={roundScores} double={double} youUid={youUid} /> : null}

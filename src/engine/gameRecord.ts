@@ -127,6 +127,11 @@ export interface GameRecord {
    * print the pair (docs/decisions/morning-double.md, rule 11).
    */
   doubleOf?: string;
+  /**
+   * The Slop Cannon's loaded shots, when any were (docs/decisions/slop-cannon.md,
+   * B5), so `read-games` and `read-cannon` can say which rounds carried which.
+   */
+  cannon?: Readonly<Record<string, true>>;
 }
 
 /**
@@ -153,7 +158,7 @@ export const GAME_RECORD_KEYS = [
  * `hasAll`: a bundle from before one of these writes no such key, and the rule
  * must not refuse every round a stale bundle keeps.
  */
-export const GAME_RECORD_OPTIONAL_KEYS = ['doubleOf'] as const satisfies readonly (keyof GameRecord)[];
+export const GAME_RECORD_OPTIONAL_KEYS = ['doubleOf', 'cannon'] as const satisfies readonly (keyof GameRecord)[];
 
 /** What the stored document carries, which is the fold plus the server's stamp. */
 export const GAME_DOCUMENT_KEYS = [...GAME_RECORD_KEYS, 'finishedAt'] as const;
@@ -317,5 +322,6 @@ export function foldGameRecord(
     writtenBy,
     // Omitted, never written empty, outside round two of a double.
     ...(room.double ? { doubleOf: room.double.gameId } : {}),
+    ...(Object.keys(room.cannon).length > 0 ? { cannon: { ...room.cannon } } : {}),
   };
 }

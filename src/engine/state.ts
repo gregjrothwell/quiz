@@ -1,3 +1,4 @@
+import type { Loaded } from './cannon';
 import type { FormFact } from './form';
 import type { Steal } from './scoring';
 import type { Standoff } from './standoff';
@@ -415,6 +416,14 @@ export interface RoomState {
    * game log. A sibling of `lastDeltas`, and cleared when they are.
    */
   lastPicks: Record<string, Answer>;
+  /**
+   * The Slop Cannon: which shots the quizmaster loaded into this round
+   * (docs/decisions/slop-cannon.md, B3). Set by the `selectPack` that starts
+   * the round and fixed for it, as `wagerEnabled` is. Empty on almost every
+   * round, and then omitted from the room document, so an ordinary round
+   * writes the shape it always has. The rule bounds it to ≤ 8 keys, all `true`.
+   */
+  cannon: Loaded;
 }
 
 /**
@@ -477,6 +486,7 @@ export function createRoom(code: string): RoomState {
     standoff: null,
     doubleEnabled: false,
     double: null,
+    cannon: {},
     packVotes: {},
     voteTaps: {},
     browsing: null,

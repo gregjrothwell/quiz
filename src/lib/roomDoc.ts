@@ -1,3 +1,4 @@
+import { readLoaded } from '../engine/cannon';
 import { deleteField, serverTimestamp, Timestamp, type DocumentData } from 'firebase/firestore';
 import type { AnswerDoc } from '../engine/answers';
 import { readBrowsing, readPackVotes, readVoteTaps, writesTheVote } from '../engine/packVote';
@@ -19,7 +20,10 @@ import { isDurationAllowed, LEGACY_DURATION_SECS, type Answer, type RoomState } 
  * room-document update to every other client — that fan-out is what burns the
  * Firestore free tier.
  */
-export type PersistedRoom = Omit<RoomState, 'answers'>;
+export type PersistedRoom = Omit<RoomState, 'answers' | 'cannon'> & {
+  /** Absent when nothing is loaded, so an ordinary round writes the shape it always has. */
+  cannon?: RoomState['cannon'];
+};
 
 /**
  * `openedAt` off a raw snapshot, in milliseconds.
@@ -126,6 +130,9 @@ export function toRoomState(code: string, data: DocumentData, answers: Record<st
     // not part of one (`toUpdate` leaves both off).
     doubleEnabled: data['doubleEnabled'] === true,
     double: readFirstHalf(data['double']),
+    // Absent on every round with nothing loaded. The host writes it, but it is
+    // read through the bounds rather than trusted, as the Ladder's notices are.
+    cannon: readLoaded(data['cannon']),
   };
 }
 
@@ -233,6 +240,8 @@ export function toPersisted(state: RoomState): PersistedRoom {
     ...(state.ladderNotices && state.ladderNotices.length > 0
       ? { ladderNotices: state.ladderNotices }
       : {}),
+    // Omitted when nothing is loaded, for the same reason.
+    ...(Object.keys(state.cannon).length > 0 ? { cannon: state.cannon } : {}),
   };
 }
 
@@ -286,6 +295,13 @@ export function toUpdate(state: RoomState, previous: RoomState | null): Record<s
   if (update.double == null) {
     delete update.double;
     if (previous?.double) update.double = deleteField();
+  }
+
+  // The Slop Cannon the same way: a round with nothing loaded writes no
+  // `cannon`, and the round after a loaded one deletes it rather than leaving
+  // the last round's shots on the room.
+  if (update.cannon === undefined && previous && Object.keys(previous.cannon).length > 0) {
+    update.cannon = deleteField();
   }
 
   // The lobby vote travels as `packVotes.{uid}` field writes, for the reason

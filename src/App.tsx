@@ -19,7 +19,11 @@ import {
   questionDurationMs,
   type Level,
 } from './engine/state';
-import { firestore, isFirebaseConfigured } from './firebase';
+import { NO_ROOM, messageOf, type ErrorContext } from './engine/clientError';
+import { firestore, isFirebaseConfigured, vaultFirestore } from './firebase';
+import { createBeacon } from './lib/clientErrors';
+import { available, loadedShots, type CannonVerdict, type KillSwitch, type Loaded } from './engine/cannon';
+import { readCannonKillSwitch, recordCannonVerdict, registeredShots } from './lib/cannon';
 import { BUZZ_LOCK, buzz } from './lib/haptics';
 import { playerIdFor } from './lib/identity';
 import { recordVote } from './lib/questionVotes';
@@ -76,8 +80,22 @@ function Loading({ what }: { what: string }) {
   return <p className="muted">Loading {what}…</p>;
 }
 
+/**
+ * The error beacon, one per page (docs/decisions/slop-cannon.md, A). Lazy on
+ * Firestore, so a page with nothing to report never opens Lite for it.
+ */
+const beacon = createBeacon(vaultFirestore);
+
+/** The Slop Cannon's registry for this page: empty live in v1, the test shot under the emulators. */
+const SHOTS_HERE = registeredShots();
+
 /** The packs and the season's question history, for dealing a round (`src/host/prepare.ts`). */
 const PACK_PORTS: PackPorts = { loadPack: loadPackQuestions, loadAsked, recordAsked, loadRates };
+
+/** A step for an uncaught error: the room's, or the landing. */
+function roomStepOf(context: ErrorContext): string {
+  return context.room ? `${context.gameId ?? ''}:${context.phase ?? ''}` : 'landing';
+}
 
 interface ActionError {
   message: string;
@@ -457,6 +475,7 @@ function Game() {
       chaserEnabled: boolean,
       history: HistoryGroup,
       doubleEnabled: boolean,
+      cannon: Loaded,
     ) => {
       setBusy(true);
       setActionError(null);
@@ -516,6 +535,7 @@ function Game() {
               history,
               ladderNotices,
               doubleEnabled,
+              cannon,
             },
             ...(facts.length > 0
               ? [{ type: 'titles' as const, at: Date.now(), facts, durationSecs }]
@@ -585,6 +605,34 @@ function Game() {
       void recordVote(firestore(), question.id, uid, verdict);
     },
     [uid, room],
+  );
+
+  /*
+    The Slop Cannon's kill switch (C1–C3): one read per page load, once signed
+    in, and none at all while nothing is registered — the cannon is dark in v1
+    and costs nothing. Until it lands every shot reads as pulled, so the lobby
+    never offers one the switch has turned off.
+  */
+  const [kill, setKill] = useState<KillSwitch>('all');
+  useEffect(() => {
+    if (!uid || SHOTS_HERE.length === 0) return;
+    let live = true;
+    void readCannonKillSwitch(vaultFirestore()).then((read) => {
+      if (live) setKill(read);
+    });
+    return () => {
+      live = false;
+    };
+  }, [uid]);
+
+  /** Keep / Bin on a shot (D1). Swallowed on failure inside, as a question vote is. */
+  const cannonGameId = room?.gameId ?? null;
+  const handleCannonVerdict = useCallback(
+    (shot: string, verdict: CannonVerdict) => {
+      if (!uid || !cannonGameId) return;
+      void recordCannonVerdict(vaultFirestore(), cannonGameId, shot, uid, verdict);
+    },
+    [uid, cannonGameId],
   );
 
   const form = room?.form ?? null;
@@ -705,6 +753,46 @@ function Game() {
       });
   }, [room, uid, gameLog, finalSnapshot, report]);
 
+  const problem =
+    (actionError?.step === roomStep ? actionError.message : null)
+    ?? packsError
+    // A closed listener does not reopen on its own; a reload resubscribes.
+    ?? (answersError ? `Answers stopped reaching this device (${answersError}). Reload the page to reconnect.` : null);
+
+  /*
+    The beacon (A1): whatever the notice says, written down once per room step.
+    Keyed on the step for the reason the notice is: the same refusal on the
+    next question is a second row, a re-render of this one is not.
+  */
+  const roomCode = room?.code ?? null;
+  const roomPhase = room?.phase ?? null;
+  const roomGameId = room?.gameId ?? null;
+  useEffect(() => {
+    if (!problem) return;
+    beacon(problem, 'notice', { room: roomCode, phase: roomPhase, gameId: roomGameId }, roomStep ?? 'landing');
+  }, [problem, roomCode, roomPhase, roomGameId, roomStep]);
+
+  useEffect(() => {
+    if (connection === 'error') beacon(error ?? 'Unknown connection error.', 'notice', NO_ROOM, 'connection');
+  }, [connection, error]);
+
+  // Uncaught errors and rejections (A1). The room is the one on screen when it happened.
+  const contextRef = useRef(NO_ROOM);
+  useEffect(() => {
+    contextRef.current = { room: roomCode, phase: roomPhase, gameId: roomGameId };
+  }, [roomCode, roomPhase, roomGameId]);
+  useEffect(() => {
+    const onError = (event: ErrorEvent) =>
+      beacon(event.message || messageOf(event.error), 'error', contextRef.current, roomStepOf(contextRef.current));
+    const onRejection = (event: PromiseRejectionEvent) =>
+      beacon(messageOf(event.reason), 'rejection', contextRef.current, roomStepOf(contextRef.current));
+    window.addEventListener('error', onError);
+    window.addEventListener('unhandledrejection', onRejection);
+    return () => {
+      window.removeEventListener('error', onError);
+      window.removeEventListener('unhandledrejection', onRejection);
+    };
+  }, []);
 
   if (connection === 'error') {
     return (
@@ -719,12 +807,6 @@ function Game() {
       </Stage>
     );
   }
-
-  const problem =
-    (actionError?.step === roomStep ? actionError.message : null)
-    ?? packsError
-    // A closed listener does not reopen on its own; a reload resubscribes.
-    ?? (answersError ? `Answers stopped reaching this device (${answersError}). Reload the page to reconnect.` : null);
 
   if (showSeason) {
     return (
@@ -812,6 +894,7 @@ function Game() {
           onVote={(packId) => void writeOwnVote(packId).catch(report)}
           onBrowse={(packId) => void writeBrowsing(packId).catch(report)}
           onStart={handleStart}
+          shots={available(SHOTS_HERE, kill)}
           onLeave={handleLeave}
           onUpdates={() => setShowUpdates(true)}
         />
@@ -844,6 +927,7 @@ function Game() {
         (room.phase === 'scoreboard' && (
           <Scoreboard
             room={room}
+            shots={loadedShots(room.cannon, SHOTS_HERE)}
             youUid={uid}
             isQuizmaster={isQuizmaster}
             onNext={() => void dispatch({ type: 'next', at: Date.now() }).catch(report)}
@@ -869,6 +953,8 @@ function Game() {
             youUid={uid}
             isQuizmaster={isQuizmaster}
             log={gameLog}
+            shots={loadedShots(room.cannon, SHOTS_HERE)}
+            onCannonVerdict={handleCannonVerdict}
             // At half-time of The Double the same button is Round two.
             onPlayAgain={() => void dispatch({ type: isHalfTime(room) ? 'roundTwo' : 'reset' }).catch(report)}
             onLeave={handleLeave}

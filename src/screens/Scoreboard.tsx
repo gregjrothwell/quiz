@@ -4,12 +4,15 @@ import { NewSticker } from '../components/NewSticker';
 import { SquadScore } from '../components/SquadScore';
 import { Standings } from '../components/Standings';
 import { morningTotals } from '../engine/double';
+import type { Shot } from '../engine/cannon';
 import type { RoomState } from '../engine/state';
 import { useCue } from '../lib/sound';
 import { isNewRound, todayIso } from '../questions/newRounds';
 
 interface ScoreboardProps {
   room: RoomState;
+  /** The Slop Cannon's shots loaded into this round, named so the room knows (B2). */
+  shots?: readonly Shot[];
   youUid: string | null;
   isQuizmaster: boolean;
   onNext: () => void;
@@ -30,7 +33,7 @@ const ORDINALS = [
   'Ten',
 ] as const;
 
-export function Scoreboard({ room, youUid, isQuizmaster, onNext, today = todayIso() }: ScoreboardProps) {
+export function Scoreboard({ room, shots = [], youUid, isQuizmaster, onNext, today = todayIso() }: ScoreboardProps) {
   const isLast = room.index + 1 >= room.questions.length;
   // The reducer sends a room of one straight to the results, so this does too.
   const toFinal = isLast && room.standoffEnabled && Object.keys(room.players).length >= 2;
@@ -70,6 +73,9 @@ export function Scoreboard({ room, youUid, isQuizmaster, onNext, today = todayIs
           Standings
         </h2>
         {room.chaserEnabled ? <p className="chaser-line">{chaserTally(chaserScore(room.questions))} 🍟</p> : null}
+        {shots.length > 0 ? (
+          <p className="cannon-line">Slop Cannon: {shots.map((shot) => shot.title).join(', ')}</p>
+        ) : null}
         <Commentary room={room} moment="scoreboard" />
       </header>
 
