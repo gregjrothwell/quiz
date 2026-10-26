@@ -2,7 +2,7 @@
 
 > **Owner: Greg Rothwell. Last updated: 26 October 2026. Budget: 250 lines.**
 
-**Status: APPROVED 26 October 2026, as drafted.** Greg: *"Let's build the lab -
+**Status: LIVE 26 October 2026** (#154, `index-B-mCNyGu`, `check-rules` 147/0). **APPROVED 26 October 2026, as drafted.** Greg: *"Let's build the lab -
 but call it slop cannon"*, then **A–D as drafted** — beacon first, quizmaster-only
 switches, Keep / Bin only. This is the Lab from
 [`direction-oct-2026.md`](direction-oct-2026.md#3-beta-testing--more-from-the-office),
