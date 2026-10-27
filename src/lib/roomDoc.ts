@@ -87,10 +87,11 @@ export function toRoomState(code: string, data: DocumentData, answers: Record<st
     // state, so nothing downstream has to defend against a missing number.
     durationSecs: persisted.durationSecs ?? LEGACY_DURATION_SECS,
     // Every room that predates the opening titles has no field at all, and
-    // `undefined` is not `null` — `coldOpenRunning` tests against null, so
-    // leaving it undefined would read as "the titles are up" in every room
-    // created before this shipped. Defaulted here for the same reason
-    // `durationSecs` is: so nothing downstream has to defend against it.
+    // `undefined` is not `null`. The titles are up whenever `form` is not null
+    // (`showTitles` in App.tsx), so leaving it undefined would read as "the
+    // titles are up" in every room created before this shipped. Defaulted here
+    // for the same reason `durationSecs` is: so nothing downstream has to
+    // defend against it.
     form: persisted.form ?? null,
     // Absent in every room created before the wager, and `undefined` is not
     // `false` — `isWagerQuestion` would read as neither on nor off. Defaulted

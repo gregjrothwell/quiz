@@ -1,6 +1,6 @@
 # The round in review, and the replay
 
-> **Owner: Greg Rothwell. Last updated: 20 August 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 27 October 2026. Budget: 250 lines.**
 
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
@@ -8,9 +8,10 @@ Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reach
 ## The round in review
 
 Two panels under the rosettes, saying what the round did to the room rather than
-what the room did to each other: **the one that beat everybody** — a question at
-least two people answered and nobody got, shown with the answer they all missed —
-and **nobody missed it**, where everyone who answered was right.
+what the room did to each other: **a question nobody got** — at least two people
+answered and nobody got it, shown with the answer they all missed — and **nobody
+missed it**, where everyone who answered was right. The first of those was
+titled "The one that beat everybody" until Greg renamed it, 27 October 2026.
 
 **It costs nothing.** `reviewFor` in `src/engine/awards.ts` reads the same
 `useGameLog` records the awards already run on, which every device already has
@@ -30,6 +31,19 @@ Three decisions in it are load-bearing:
 - **The engine returns an index; the screen holds the prompt.** `Highlight` is a
   question number and a count, and `src/components/Review.tsx` owns every word.
   Same split as the awards and the lobby's level names.
+
+### Thrown out, and a tied survey — 27 October 2026
+
+A question the quizmaster threw out is not a stumper and not a sweep.
+`reviewFor` takes the skipped indices (`skippedIndices`) and leaves those
+records out. The scoreboard already says no points were awarded; the log still
+holds the reveal, because a skip after it does not rewrite the log, and the
+final card was naming the discarded question.
+
+A Survey Says guess can tie. Every tied option was right, and `correctIndex`
+is only the lowest. The card names all of them ("The answers were A and B").
+One option is still "The answer was …". The title, from the same day, is
+"A question nobody got".
 
 ### The log now survives a reload
 

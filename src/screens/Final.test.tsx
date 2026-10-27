@@ -106,6 +106,61 @@ describe('the podium caption', () => {
   });
 });
 
+describe('a question the quizmaster threw out', () => {
+  test('is not named as a question nobody got', () => {
+    // #given a one-question round nobody got, thrown out after the reveal
+    const room: RoomState = {
+      ...createRoom('HKQ7'),
+      phase: 'finished',
+      gameId: 'thrown-out',
+      players: { ann: ANN, bob: BOB },
+      scores: SCORES,
+      questions: [
+        {
+          id: 'q0',
+          prompt: 'The hard one',
+          options: ['A', 'B', 'C', 'D'],
+          correctIndex: 0,
+          category: 'General',
+          difficulty: 'easy',
+        },
+      ],
+      skipped: ['q0'],
+    };
+    const snapshot: FinalSnapshot = { gameId: 'thrown-out', players: { ann: ANN, bob: BOB }, scores: SCORES };
+
+    // #when the podium lands
+    const { container } = render(
+      <Final
+        room={room}
+        snapshot={snapshot}
+        banked={null}
+        youPlayerId="bob"
+        youUid="bob"
+        isQuizmaster={false}
+        log={[
+          {
+            index: 0,
+            correctIndex: 0,
+            answers: {
+              ann: { optionIndex: 1, elapsedMs: 1_000 },
+              bob: { optionIndex: 2, elapsedMs: 1_100 },
+            },
+            deltas: { ann: 0, bob: 0 },
+          },
+        ]}
+        onPlayAgain={noop}
+        onLeave={noop}
+        onSeason={noop}
+      />,
+    );
+    landed();
+
+    // #then the final card does not call it a question nobody got
+    expect(container.textContent).not.toContain('A question nobody got');
+  });
+});
+
 describe('the podium build', () => {
   test('rolls the drum under the hold, then plays the fanfare on the landing', () => {
     // #given a podium seen for the first time
