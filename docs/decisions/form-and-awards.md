@@ -1,6 +1,6 @@
 # Form and the awards
 
-> **Owner: Greg Rothwell. Last updated: 21 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 27 October 2026. Budget: 250 lines.**
 
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
@@ -41,10 +41,13 @@ press, with `Back` beside it for a pack chosen in error.
 
 Two things make that safe:
 
-- **The room cannot get stuck behind a quizmaster who wandered off**, because the
-  role is derived from who has been present longest. If they close their laptop,
-  somebody else inherits the button within a second. That is also why the old
-  per-device timeout could be deleted rather than kept as a fallback.
+- **The room cannot get stuck behind a quizmaster who wandered off.** Leave
+  hands the chair over in the same write. A host who vanishes is replaced once
+  they have been gone from presence for 50 seconds and their beat has been
+  silent for 75 (`CLAIM_AFTER_ABSENT_MS`, `CLAIM_AFTER_SILENT_MS` in
+  `src/engine/host.ts`). That is also why the old per-device timeout could be
+  deleted rather than kept as a fallback. The "within a second" line this
+  bullet used to carry was the derived quizmaster, before W3 named a `hostUid`.
 - **The window rides inside the digest** (`form.durationSecs`) rather than on the
   quizmaster's device, so the round still opens on the window that was chosen if
   the chair changes hands while the titles are up. It cannot go on the room's own
@@ -54,6 +57,8 @@ Two things make that safe:
 
 A room the season knows nothing about — one full of first-timers with no records
 at all — has no titles worth showing and starts on the single press it was given.
+A round against Mr Fries still shows his card first; the host opens question one
+from there.
 
 ### Why the titles live in the lobby
 
@@ -63,26 +68,51 @@ thinking time, which is the same reasoning that already put the round title card
 on the standings screen rather than over the question.
 
 So the round is introduced while the room is still in `lobby`, carrying a `form`
-digest, and `start` follows six seconds later. This deliberately avoids a **new
-phase**: the rules pin `phase` to five values, so a sixth would have cost a rules
-republish, and the whole point of the Phase 2 ruleset was to be the last one.
+digest. The first version then started the round six seconds later. That timer
+is gone: `start` is the quizmaster's second press (`handleBeginRound`). This
+deliberately avoids a **new phase**: the rules pin `phase` to five values, so a
+sixth would have cost a rules republish, and the whole point of the Phase 2
+ruleset was to be the last one.
 
 ### Three things that will bite
 
-- **The round is started by an effect, not by `await sleep(...)` in
-  `handleStart`.** `dispatch` closes over `room`, so anything awaited between
-  taking that closure and writing folds the round over a snapshot that is however
-  many seconds old — the same staleness that once let a pack fetch erase everyone
-  who joined while it ran, measured at five of ten players. Six seconds of titles
-  is a far wider window than that fetch ever was.
-- **The card is time-boxed on every device, not just cleared by `start`.** A
-  quizmaster who closes their laptop mid-sequence would otherwise leave the room
-  on a title card nobody can clear. Every client runs its own timer from
-  `form.at`, so the room falls back to a working lobby on its own.
+- **`dispatch` closes over `room`.** Anything awaited between taking that
+  closure and writing folds the round over a snapshot that is however many
+  seconds old — the same staleness that once let a pack fetch erase everyone
+  who joined while it ran, measured at five of ten players. The titles no
+  longer wait inside `handleStart`; the second press is its own dispatch. Do
+  not put the six seconds back on that path.
+- **There is no per-device timeout on the card.** The first version time-boxed
+  it from `form.at`, so a closed laptop could not leave the room stuck. That
+  timer was deleted when the next person inherited the button. Putting it back
+  would start the round without the quizmaster, which is the bug the second
+  press fixed. Until the chair changes hands the room waits on the card — up
+  to the 75 seconds above, not one.
 - **`toRoomState` defaults `form` to null, and that is load-bearing.** Every room
   created before this has no field at all, and `undefined` is not `null` — the
-  showing condition tests against null, so leaving it undefined would read as
-  "the titles are up" in every older room.
+  showing condition tests against null (`showTitles` in `App.tsx`), so leaving
+  it undefined would read as "the titles are up" in every older room.
+
+### The cards, checked 27 October 2026
+
+PROJ-62. Read against `master` at `b37a605`. The opening titles still do not
+start the round: that has been true since `31c04ed` ("Give the quizmaster back
+the moment the quiz starts"). A round against Mr Fries is the exception on
+*his* card only, and only after the titles have been dismissed.
+
+| Card | When | Advances | Earns its place |
+|---|---|---|---|
+| Tonight's field (`ColdOpen`) | Lobby, after Start the show, when the season has a fact | Quizmaster: **Start the round**. **Back** returns to the lobby. No timer. Everyone else waits. | Yes. The second press is the point. A room with nothing to say skips it and starts on the one press. |
+| Against Mr Fries (`ChaserIntro`) | Lobby, before question one, when the round is against him. After the field card if that went up; otherwise on the first press. | Host opens the question 3s after `chaserIntro.at` (`CHASER_INTRO_MS`). Quizmaster can tap **Next question** sooner. Players: "Get ready — question one is coming up". | Yes. Shipped 23 Oct on purpose. This is the only opening card on a timer. The clock starts when the question opens. |
+| Round Two… (`Scoreboard`) | Between questions, not after the last | Quizmaster: **Next question** (or Final results / To Share or Shaft). No timer. | Yes. It sits where no clock is running, so it costs no answering time. |
+| Share or Shaft | The whole final, not a beat before it | Talk 60s (quizmaster can end it), then the pick clock, then the reveal. **Final results** is a tap. | It is the mode's own screen. It does not come down early. |
+| Podium (`Final`) | The round is over | Builds about 4s. A tap, Space or Enter skips. Then it stays until **Another round** or **Second half**. | Yes. |
+| The one that beat everybody / Nobody missed it (`Review`) | Under the rosettes, when this device saw the whole round. One stumper, one sweep: most people, earliest on a tie, at least two answers. | Stays with the podium. | The fact does. A thrown-out question is left out (27 Oct). Wording is Greg's. |
+| Rosettes (`Awards`) | Same screen: fastest finger, comeback, the only one who knew, boldly wrong. Omitted when nothing was earned, or this device missed part of the round. | Same. | Yes. A thrown-out question can still feed them. Not changed. |
+
+Commentator lines ("Nobody got that") are captions on the reveal, not these cards.
+
+**Left for Greg, not built:** restoring any timer on the field card; shortening the round-title or Share or Shaft cards; rewording "The one that beat everybody"; whether rosettes should also ignore a thrown-out question; a field card whose named people have all left, which renders nothing and falls through to the lobby's Start the show (a fresh deal, not the round the titles were holding).
 
 ### `playerId` on the player entry, at last
 

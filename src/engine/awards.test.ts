@@ -362,6 +362,31 @@ describe('the round in review', () => {
     expect(review).toContainEqual({ id: 'stumper', index: 2, attempts: 2 });
   });
 
+  test('leaves out a question the quizmaster threw out', () => {
+    // #given two questions nobody got, and the bigger one thrown out after its reveal
+    const log = [
+      record(0, 0, { greg: answer(1, 900), sam: answer(2, 1_200) }),
+      record(1, 0, { greg: answer(1, 900), sam: answer(2, 1_200), alex: answer(3, 1_400) }),
+    ];
+
+    // #when the round is reviewed, with that question's index skipped
+    const review = reviewFor(log, new Set([1]));
+
+    // #then the discarded question is not the one that beat everybody — the
+    // scoreboard already said it awarded no points — and the other one is
+    expect(review).toContainEqual({ id: 'stumper', index: 0, attempts: 2 });
+    expect(review.some((entry) => entry.index === 1)).toBe(false);
+  });
+
+  test('a thrown-out clean sweep is not named either', () => {
+    // #given a question everybody got, which the quizmaster then threw out
+    const log = [record(0, 0, { greg: answer(0, 900), sam: answer(0, 1_200) })];
+
+    // #when the round is reviewed
+    // #then it is not "nobody missed it" — it was not part of the round
+    expect(reviewFor(log, new Set([0]))).toEqual([]);
+  });
+
   test('leaves out a highlight nothing earned', () => {
     // #given a round where every question was split
     const log = [

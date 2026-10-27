@@ -24,6 +24,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-27 — Opening titles and the cards after a round
+
+Checked for PROJ-62, against `b37a605`. The opening titles still wait for **Start the round** (since `31c04ed`); they do not start the round. Mr Fries's card is the one on a timer: the host opens question one after 3s. The stumper card was naming a thrown-out question, and a tied Survey Says answer as if only the lowest option were right. Both fixed. Wording, and whether the cards still earn their place, left for Greg. [`form-and-awards.md`](decisions/form-and-awards.md), [`review-replay.md`](decisions/review-replay.md).
+
 ## 2026-10-27 — A missed cut-off stays visible
 
 The amber line is on the reveal from the first paint, and it stays on the standings when Next is pressed. The replay's chips are the fold's picks, so a late answer does not land a name on a lectern. `IN_FLIGHT_HOLD_MS` stays 3s. [`cass-q1.md`](decisions/cass-q1.md).

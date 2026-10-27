@@ -276,9 +276,17 @@ function highlight(
  *
  * A highlight nothing supports is left out rather than shown empty, exactly as
  * {@link awardsFor} does.
+ *
+ * `skipped` is the questions the quizmaster threw out. The scoreboard already
+ * says those awarded no points. The log still holds the reveal, because a
+ * skip after the reveal does not rewrite it, and naming one of them here
+ * would call a discarded question the one that beat the room.
  */
-export function reviewFor(everything: QuestionRecord[]): Highlight[] {
-  const log = scored(everything);
+export function reviewFor(
+  everything: QuestionRecord[],
+  skipped: ReadonlySet<number> = new Set(),
+): Highlight[] {
+  const log = scored(everything).filter((record) => !skipped.has(record.index));
   const stumper = highlight(log, (correct) => correct === 0);
   const sweep = highlight(log, (correct, attempts) => correct === attempts);
 

@@ -13,6 +13,7 @@ import { Review } from '../components/Review';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { Standings } from '../components/Standings';
 import { awardsFor, reviewFor, sawWholeGame, type QuestionRecord } from '../engine/awards';
+import { skippedIndices } from '../engine/streak';
 import { podiumFor, roomStandings, seatedLast, type RiserHeight } from '../engine/scoring';
 import type { RoomState } from '../engine/state';
 // Type-only, so the drawing module itself stays out of this chunk.
@@ -160,7 +161,7 @@ export function Final({
   */
   const sawItAll = sawWholeGame(log, room.questions.length);
   const awards = sawItAll ? awardsFor(log, Object.keys(players)) : [];
-  const review = sawItAll ? reviewFor(log) : [];
+  const review = sawItAll ? reviewFor(log, skippedIndices(room)) : [];
   const leaders = rows.filter((entry) => entry.position === 1);
   const winnerName =
     leaders.length > 1

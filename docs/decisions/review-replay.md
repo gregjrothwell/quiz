@@ -1,6 +1,6 @@
 # The round in review, and the replay
 
-> **Owner: Greg Rothwell. Last updated: 20 August 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 27 October 2026. Budget: 250 lines.**
 
 Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reached
 2,422 lines. The text is unchanged; only where it lives is.
@@ -30,6 +30,19 @@ Three decisions in it are load-bearing:
 - **The engine returns an index; the screen holds the prompt.** `Highlight` is a
   question number and a count, and `src/components/Review.tsx` owns every word.
   Same split as the awards and the lobby's level names.
+
+### Thrown out, and a tied survey — 27 October 2026
+
+A question the quizmaster threw out is not a stumper and not a sweep.
+`reviewFor` takes the skipped indices (`skippedIndices`) and leaves those
+records out. The scoreboard already says no points were awarded; the log still
+holds the reveal, because a skip after it does not rewrite the log, and the
+final card was naming the discarded question.
+
+A Survey Says guess can tie. Every tied option was right, and `correctIndex`
+is only the lowest. The card names all of them ("The answers were A and B").
+One option is still "The answer was …". The title is unchanged: "The one that
+beat everybody".
 
 ### The log now survives a reload
 
