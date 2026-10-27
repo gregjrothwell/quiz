@@ -1191,6 +1191,12 @@ export function Preview() {
               priya: { optionIndex: 0, elapsedMs: 4_100 },
               greg: { optionIndex: 0, elapsedMs: 9_850 },
             },
+            // The counted set. Greg's answer is only in `answers`, which is how
+            // a late write sits beside the fold.
+            lastPicks: {
+              sam: { optionIndex: 2, elapsedMs: 2_300 },
+              priya: { optionIndex: 0, elapsedMs: 4_100 },
+            },
             lastDeltas: { sam: 0, priya: 1_000 },
           })}
           youUid="greg"
@@ -2023,6 +2029,30 @@ export function Preview() {
         />
       ),
     })),
+    {
+      // Appended so every `#/preview/N` index above keeps pointing where it did.
+      title: 'Standings · answer didn’t land',
+      node: (
+        <Scoreboard
+          room={mockRoom({
+            phase: 'scoreboard',
+            answers: {
+              sam: { optionIndex: 2, elapsedMs: 2_300 },
+              priya: { optionIndex: 0, elapsedMs: 4_100 },
+              greg: { optionIndex: 0, elapsedMs: 9_850 },
+            },
+            lastPicks: {
+              sam: { optionIndex: 2, elapsedMs: 2_300 },
+              priya: { optionIndex: 0, elapsedMs: 4_100 },
+            },
+            lastDeltas: { sam: 0, priya: 1_000 },
+          })}
+          youUid="greg"
+          isQuizmaster={false}
+          onNext={noop}
+        />
+      ),
+    },
   ];
 
   const shown = only === null ? screens : screens.filter((_, index) => index === only);

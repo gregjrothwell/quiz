@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { REPLAY_SHAPE, arrivalsBy, replayDurationMs, replayTimeline } from './replay';
+import { REPLAY_SHAPE, answersForReplay, arrivalsBy, replayDurationMs, replayTimeline } from './replay';
 import type { Answer } from './state';
 
 function answer(optionIndex: number, elapsedMs: number): Answer {
@@ -145,6 +145,39 @@ describe('replayDurationMs', () => {
 
     // #then the tight race gets out of the way
     expect(replayDurationMs(tight, 700)).toBeLessThan(replayDurationMs(spread, 700));
+  });
+});
+
+describe('answersForReplay', () => {
+  test('keeps a late answer out of the chips when the fold published the rest', () => {
+    // #given the room's answers, including one that missed the fold
+    const answers = {
+      sam: answer(2, 2_300),
+      priya: answer(0, 4_100),
+      greg: answer(0, 9_850),
+    };
+    const counted = { sam: answer(2, 2_300), priya: answer(0, 4_100) };
+
+    // #when the replay asks which picks landed
+    const picks = answersForReplay(answers, counted, { sam: 0, priya: 1_000 });
+
+    // #then only the counted ones, so the late name never sits on a lectern
+    expect(Object.keys(picks).sort()).toEqual(['priya', 'sam']);
+  });
+
+  test('uses the tally when a fixture has no published picks', () => {
+    // #given answers and the deltas the reveal awarded, and no lastPicks
+    const answers = {
+      sam: answer(2, 2_300),
+      priya: answer(0, 4_100),
+      greg: answer(0, 9_850),
+    };
+
+    // #when the replay is built the way the gallery used to be
+    const picks = answersForReplay(answers, {}, { sam: 0, priya: 1_000 });
+
+    // #then the unscored answer is still left out
+    expect(Object.keys(picks).sort()).toEqual(['priya', 'sam']);
   });
 });
 

@@ -5,7 +5,8 @@ import { SquadScore } from '../components/SquadScore';
 import { Standings } from '../components/Standings';
 import { morningTotals } from '../engine/double';
 import type { Shot } from '../engine/cannon';
-import type { RoomState } from '../engine/state';
+import { LOST_LINE, verdictFor } from '../engine/scoring';
+import { currentQuestion, type RoomState } from '../engine/state';
 import { useCue } from '../lib/sound';
 import { isNewRound, todayIso } from '../questions/newRounds';
 
@@ -38,6 +39,16 @@ export function Scoreboard({ room, shots = [], youUid, isQuizmaster, onNext, tod
   // The reducer sends a room of one straight to the results, so this does too.
   const toFinal = isLast && room.standoffEnabled && Object.keys(room.players).length >= 2;
   const skippedLast = room.skipped.includes(room.questions[room.index]?.id ?? '');
+  const question = currentQuestion(room);
+  // Next leaves the reveal. The late answer and the tally are still on the
+  // room, so the amber line stays here for anyone whose answer missed the cut-off.
+  const lost = verdictFor({
+    answer: youUid ? room.answers[youUid] : undefined,
+    correctIndex: question?.correctIndex ?? null,
+    deltas: room.lastDeltas,
+    uid: youUid,
+    ...(question?.survey?.top ? { top: question.survey.top } : {}),
+  }) === 'lost';
   const nextNumber = room.index + 2;
   const nextOrdinal = ORDINALS[nextNumber - 1] ?? String(nextNumber);
 
@@ -86,6 +97,12 @@ export function Scoreboard({ room, shots = [], youUid, isQuizmaster, onNext, tod
               // and the new host never saw it.
               'Not enough of the room’s answers to count on that one — no points awarded.'
             : 'That question was thrown out — no points awarded.'}
+        </p>
+      ) : null}
+
+      {lost ? (
+        <p className="nudge" role="status">
+          {LOST_LINE}
         </p>
       ) : null}
 

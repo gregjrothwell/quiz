@@ -1,6 +1,6 @@
 # Cass loses question one
 
-> **Owner: Greg Rothwell. Last updated: 23 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 27 October 2026. Budget: 250 lines.**
 
 Follows [`office-feedback-9-oct.md`](office-feedback-9-oct.md) §1 and §5, whose leading
 hypothesis this replaces. Read off live `games/` with the Admin SDK on 21 October 2026, every
@@ -211,3 +211,15 @@ so a round driven from the terminal folds on the clock as before.
 and whether a 10s question one of hers is counted when she taps late. A tap in the last
 instant can still race the fold if her lamp is slow as well — the hold only starts once the
 host has seen the lamp.
+
+## 27 October 2026 — the line stays, and the chip does not
+
+`IN_FLIGHT_HOLD_MS` is still 3s. Greg chose that on 23 Oct; the 4.8–5.5s writes stay outside it.
+
+What changed is the screen, for every missed cut-off, not only question one:
+
+- The amber line is on the reveal from the first paint (`verdict--in` when the verdict is `lost`), so it does not wait for the replay to settle.
+- Next leaves that screen. The standings keep the same line, because the late answer and the tally are still on the room.
+- The replay lands chips from `lastPicks` (the fold). A late answer stays in `answers` so the line can be said, and it does not put a name on a lectern. A missed answer is not painted as a scored wrong.
+
+`src/engine/replay.ts` (`answersForReplay`), `QuestionScreen`, `Scoreboard`. `src/screens/lateAnswer.test.tsx`.
