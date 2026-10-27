@@ -547,7 +547,11 @@ const SEASON_ROWS: SeasonRow[] = [
   { playerId: 'joe', name: 'Joe', squad: 'Bundae', played: 5, wins: 2, points: 45_010,
     best: 9_200, form: 32_000, fastest: 1, comeback: 0, loneWolf: 0, contrarian: 0 },
   { playerId: 'greg', name: 'Greg', squad: 'Hermes', played: 14, wins: 4, points: 80_000,
-    best: 7_400, form: 30_000, fastest: 2, comeback: 2, loneWolf: 0, contrarian: 1 },
+    best: 7_400, form: 30_000, fastest: 2, comeback: 2, loneWolf: 0, contrarian: 1,
+    rivals: {
+      sam: { name: 'Sam', beaten: 4, lost: 1 },
+      priya: { name: 'Priya', beaten: 1, lost: 3 },
+    } },
   { playerId: 'sam', name: 'Sam', squad: 'Hermes', played: 12, wins: 5, points: 41_200,
     best: 8_150, form: 28_000, fastest: 3, comeback: 1, loneWolf: 2, contrarian: 0 },
   { playerId: 'priya', name: 'Priya', squad: 'Bundae', played: 11, wins: 3, points: 33_100,

@@ -9,6 +9,7 @@ import { shouldAutoJoin } from './engine/autoJoin';
 import type { Verdict } from './engine/questionVote';
 import { honoursFor, sawWholeGame, NO_HONOURS } from './engine/awards';
 import { isHalfTime, seasonWin } from './engine/double';
+import { nightAgainst } from './engine/rivals';
 import { finalFor } from './engine/finals';
 import { formFor } from './engine/form';
 import { skippedIndices, streakOf } from './engine/streak';
@@ -752,12 +753,17 @@ function Game() {
     // Still on the room at `finished`. `reset` is what clears it. Absent for
     // anyone who was not one of the two, so their tallies are carried, not bumped.
     const countedFinal = finalFor(room.standoff, uid);
+    // The table the room just ranked. Round two of a double banks a residual
+    // and shows the morning, so "who you beat" follows the morning.
+    const night = nightAgainst(uid, players, scores, room.double);
 
     recordGame({
       playerId: playerIdFor(uid),
       name: player.name,
       gameId,
       score: scores[uid] ?? 0,
+      resultScore: night.resultScore,
+      opponents: night.opponents,
       // A round where nobody scored is not a win for everybody. In round two of
       // The Double, the win is the morning's (docs/decisions/morning-double.md).
       won: seasonWin(players, scores, room.double, uid),

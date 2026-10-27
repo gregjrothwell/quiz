@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { rivalsCaption } from '../engine/rivals';
 import { MIN_GAMES_TO_QUALIFY, rankByForm } from '../engine/table';
 import { squadKey, squadsOf } from '../engine/squad';
 import type { SeasonRow } from '../lib/season';
@@ -42,6 +43,7 @@ export function LeagueBoard({ rows, youPlayerId }: LeagueBoardProps) {
   // Filtered first, then ranked, so a league's table reads 1, 2, 3 rather than
   // carrying the positions those rows held on the office-wide board.
   const { ranked, provisional } = rankByForm(shown);
+  const caption = rivalsCaption(shown.find((row) => row.playerId === youPlayerId)?.rivals);
 
   const cells = (row: SeasonRow, position: string) => {
     const rosettes = row.fastest + row.comeback + row.loneWolf + row.contrarian;
@@ -100,41 +102,44 @@ export function LeagueBoard({ rows, youPlayerId }: LeagueBoardProps) {
       {shown.length === 0 ? (
         <p className="lede">Nobody in {squad} has finished a round yet.</p>
       ) : (
-        <div className="season-wrap">
-          <table className="season">
-            <thead>
-              <tr>
-                <th scope="col">
-                  <span className="sr-only">Position</span>
-                </th>
-                <th scope="col">Contender</th>
-                <th scope="col">Form</th>
-                <th scope="col">Squad</th>
-                <th scope="col">Played</th>
-                <th scope="col">Wins</th>
-                <th scope="col">Best</th>
-                <th scope="col">Rosettes</th>
-                <th scope="col">Points</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ranked.map((row, index) => cells(row, String(index + 1)))}
-
-              {/* Listed rather than hidden, and said in words rather than left
-                  to be inferred from a gap: somebody two rounds short should be
-                  able to see what they are two rounds short of. */}
-              {provisional.length > 0 ? (
-                <tr className="season__break">
-                  <td colSpan={COLUMNS}>
-                    {MIN_GAMES_TO_QUALIFY} rounds to qualify
-                  </td>
+        <>
+          {caption ? <p className="lede rivals">{caption}</p> : null}
+          <div className="season-wrap">
+            <table className="season">
+              <thead>
+                <tr>
+                  <th scope="col">
+                    <span className="sr-only">Position</span>
+                  </th>
+                  <th scope="col">Contender</th>
+                  <th scope="col">Form</th>
+                  <th scope="col">Squad</th>
+                  <th scope="col">Played</th>
+                  <th scope="col">Wins</th>
+                  <th scope="col">Best</th>
+                  <th scope="col">Rosettes</th>
+                  <th scope="col">Points</th>
                 </tr>
-              ) : null}
+              </thead>
+              <tbody>
+                {ranked.map((row, index) => cells(row, String(index + 1)))}
 
-              {provisional.map((row) => cells(row, '—'))}
-            </tbody>
-          </table>
-        </div>
+                {/* Listed rather than hidden, and said in words rather than left
+                    to be inferred from a gap: somebody two rounds short should be
+                    able to see what they are two rounds short of. */}
+                {provisional.length > 0 ? (
+                  <tr className="season__break">
+                    <td colSpan={COLUMNS}>
+                      {MIN_GAMES_TO_QUALIFY} rounds to qualify
+                    </td>
+                  </tr>
+                ) : null}
+
+                {provisional.map((row) => cells(row, '—'))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </>
   );

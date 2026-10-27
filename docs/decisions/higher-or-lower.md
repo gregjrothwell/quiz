@@ -51,6 +51,8 @@ apart the prices may be keeps the mirror believable.
 **So version one is a round of separate pairs.** Each question is one shown
 price and one hidden item. The streak is out of version one too: it is a
 scoring change, and the Commentator or the rivals caption can say it later.
+The caption shipped 27 October 2026 ([`rivals.md`](rivals.md)). A streak line
+can feed it; that is still not a scoring change.
 
 ## Measured — 24 October 2026
 

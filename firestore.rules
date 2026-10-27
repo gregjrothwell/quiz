@@ -1227,12 +1227,26 @@ service cloud.firestore {
           && gotShafted <= finals;
       }
 
+      // Who you've finished ahead of, and behind, one entry per opponent.
+      // Optional: every live row predates it, and a client one deploy behind
+      // writes none. The new client writes it whenever the season half of a
+      // bank has one, and hasOnly refuses that write until this block is
+      // published. CI publishes the rules before the site.
+      //
+      // **The bound is the size, not each entry.** Rules cannot walk a map
+      // (the same limit as the cannon's key length). Forty is the client's
+      // cap, `RIVALS_CAP`. docs/decisions/rivals.md.
+      function rivalsOk(d) {
+        let rivals = d.get('rivals', {});
+        return rivals is map && rivals.size() <= 40;
+      }
+
       function rowOk(d) {
         return d.keys().hasOnly(
              ['name', 'played', 'wins', 'points', 'best', 'lastGame', 'lastPlayed',
               'fastest', 'comeback', 'loneWolf', 'contrarian', 'team',
               'recent', 'form',
-              'finals', 'shared', 'shafted', 'gotShafted'])
+              'finals', 'shared', 'shafted', 'gotShafted', 'rivals'])
         && d.name is string
         && d.name.size() > 0
         && d.name.size() <= 40
@@ -1277,7 +1291,8 @@ service cloud.firestore {
         && d.get('team', '').size() <= 40
         && recentOk(d)
         && formOk(d)
-        && finalsOk(d);
+        && finalsOk(d)
+        && rivalsOk(d);
       }
 
       // The row goes in once, as `d`: written against `request.resource.data`

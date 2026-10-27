@@ -2849,6 +2849,11 @@ select.input option {
   overflow-x: auto;
 }
 
+/* The season caption, under the filter and again under the podium. */
+.rivals {
+  margin: 0 0 1.25rem;
+}
+
 .season {
   width: 100%;
   min-width: 30rem;

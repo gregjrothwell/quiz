@@ -24,6 +24,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-27 — Rivals: who you've beaten or lost to most
+
+A season caption, from a `rivals` map on the row: who you finished strictly ahead of, and behind. A tie is neither; a tie for the lead names everyone. Shown on the season table and under the podium. No scoring change, no giant-killer bonus, no backfill. Rules cap the map at 40 and do not walk it. [`rivals.md`](decisions/rivals.md).
+
 ## 2026-10-27 — Greg decided the cards
 
 The stumper card is titled **A question nobody got**. Tonight's field stays tap-only; a vanished host waiting out the chair is accepted, and no timer goes back. Rosettes ignore a thrown-out question, and the season row banks from that same set. Round-title cards and Share or Shaft stay as long as they are. [`form-and-awards.md`](decisions/form-and-awards.md).

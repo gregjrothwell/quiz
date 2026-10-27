@@ -37,7 +37,12 @@ const SCORES = { ann: 5_000, bob: 3_000 };
 const NEWCOMER = { played: 0, wins: 0, best: 0 };
 
 /** Ann won and Bob came second; `live` is who is still in the room. */
-function podium(gameId: string, live: RoomState['players'], asked: readonly Asked[] = []) {
+function podium(
+  gameId: string,
+  live: RoomState['players'],
+  asked: readonly Asked[] = [],
+  rivalsCaption: string | null = null,
+) {
   const room: RoomState = {
     ...createRoom('HKQ7'),
     phase: 'finished',
@@ -47,11 +52,14 @@ function podium(gameId: string, live: RoomState['players'], asked: readonly Aske
     history: { ann: NEWCOMER, bob: NEWCOMER },
   };
   const snapshot: FinalSnapshot = { gameId, players: { ann: ANN, bob: BOB }, scores: SCORES };
+  const banked = rivalsCaption
+    ? { season: 'season-2', week: 'week-2026-W44', squad: '', rivalsCaption }
+    : null;
   return (
     <Final
       room={room}
       snapshot={snapshot}
-      banked={null}
+      banked={banked}
       youPlayerId="bob"
       youUid="bob"
       isQuizmaster={false}
@@ -103,6 +111,22 @@ describe('the podium caption', () => {
     expect(container.querySelector('h1')).toHaveTextContent('Ann');
     expect(container.querySelector('.commentary')).toHaveTextContent('Ann');
     expect(container.querySelector('.commentary')).not.toHaveTextContent('Bob');
+  });
+
+  test('says who you have beaten most once the round has banked', () => {
+    // #given the final screen, and this device has just banked the season
+    const { getByText } = render(podium(
+      'caption-rivals',
+      { ann: ANN, bob: BOB },
+      [],
+      'You’ve beaten Ann most this season — 4 times.',
+    ));
+
+    // #when the build lands
+    landed();
+
+    // #then the season caption is on the podium
+    expect(getByText('You’ve beaten Ann most this season — 4 times.')).toBeTruthy();
   });
 });
 
