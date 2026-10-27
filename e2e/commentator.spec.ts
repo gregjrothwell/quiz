@@ -11,9 +11,14 @@ isolateFiles();
  * the same caption on every screen, and no voice anywhere — speech came out on
  * 22 October 2026.
  *
- * Speech is recorded rather than heard: each tab's `speechSynthesis.speak` is
- * replaced before the app loads, and what it was asked to say is kept on the
- * page. The seeded vault calls A right. Question one nobody gets; question two
+ * Speech is recorded rather than heard. Each tab's `speechSynthesis` is the
+ * stuck queue from room 5SVU (PROJ-59, `createStuckQueue`): a finished line
+ * stays paused, `cancel()` does nothing while it is, and the next `speak()`
+ * plays that line again before the new one. What was heard is kept on the
+ * page as `__spoken`. The voice stays off unless `window.__commentarySpeech`
+ * is set before load — this spec does not set it, so no tab speaks.
+ *
+ * The seeded vault calls A right. Question one nobody gets; question two
  * only Fen gets; the rest everybody gets. Fen, Gil and Hux have no season row
  * yet, so the winner's line is a debut.
  */
@@ -32,12 +37,45 @@ async function readRoom(code: string): Promise<RoomDoc> {
 async function seat(browser: Browser, name: string): Promise<Page> {
   const page = await (await browser.newContext()).newPage();
   await page.addInitScript(() => {
-    const spoken: string[] = [];
-    (window as unknown as { __spoken: string[] }).__spoken = spoken;
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.speak = (utterance: SpeechSynthesisUtterance) => {
-        spoken.push(utterance.text);
+    // Same queue as `createStuckQueue` in src/lib/commentarySpeech.ts. Kept
+    // inline because an init script cannot import the module. A finished line
+    // stays paused; cancel is a no-op while it is; the next speak hears it again.
+    const heard: string[] = [];
+    (window as unknown as { __spoken: string[] }).__spoken = heard;
+    if (!('speechSynthesis' in window)) return;
+    const synth = window.speechSynthesis;
+    let paused = false;
+    let queued: string[] = [];
+    const speak = (utterance: SpeechSynthesisUtterance): void => {
+      if (paused && queued.length > 0) {
+        paused = false;
+        for (const line of queued) heard.push(line);
+        queued = [];
+      }
+      heard.push(utterance.text);
+      queued = [utterance.text];
+      paused = true;
+    };
+    synth.speak = speak;
+    try {
+      synth.cancel = () => {
+        if (paused) return;
+        queued = [];
       };
+    } catch {
+      // A locked cancel leaves the native one. Speech is off in this spec.
+    }
+    try {
+      synth.resume = () => {
+        paused = false;
+      };
+    } catch {
+      // As for cancel.
+    }
+    try {
+      Object.defineProperty(synth, 'paused', { configurable: true, get: () => paused });
+    } catch {
+      // Native `paused` stays. The unit test is what fails if the flush goes.
     }
   });
   await setEmulatorFlag(page);

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 import { isItunesPreviewUrl } from './apple-media';
+import { flushSpeechQueue } from './commentarySpeech';
 
 /**
  * The house audio.
@@ -1153,4 +1154,29 @@ export function usePreviewPlaying(url: string): boolean {
     () => previewPlaying === url,
     () => false,
   );
+}
+
+/**
+ * Says a line with the browser's own speech.
+ *
+ * Only the host's device calls it, and only when a test has turned the
+ * Commentator's voice on (docs/decisions/commentator.md). Silent when muted
+ * or where speech is not available. Returns whether it submitted a line, so
+ * the caller can give the claim back when it did not.
+ *
+ * Flushes a paused queue first. `cancel()` alone leaves a finished line
+ * queued, and the next `speak()` plays it again — the standings line during
+ * the podium, room 5SVU (PROJ-59).
+ */
+export function speak(text: string): boolean {
+  if (muted || typeof window === 'undefined' || !('speechSynthesis' in window)) return false;
+  const synth = window.speechSynthesis;
+  flushSpeechQueue(synth);
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'en-GB';
+  const british = synth.getVoices().find((voice) => voice.lang === 'en-GB');
+  if (british) utterance.voice = british;
+  utterance.volume = Math.min(1, Math.max(0.2, volume * 4));
+  synth.speak(utterance);
+  return true;
 }
