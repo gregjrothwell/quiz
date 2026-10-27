@@ -242,4 +242,5 @@ and is still absent from the board.
 
 Who you’ve beaten most, and who you’ve lost to most, is a caption on this
 table and under the podium. The counts are a map on the row. A tie is
-neither. The giant-killer bonus is not this. [`rivals.md`](rivals.md).
+neither. The giant-killer bonus is not this. History is `npm run
+backfill-rivals`, from `games/`. [`rivals.md`](rivals.md).

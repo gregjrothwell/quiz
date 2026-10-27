@@ -2,8 +2,10 @@
 
 > **Owner: Greg Rothwell. Last updated: 27 October 2026. Budget: 250 lines.**
 
-**Status: built 27 October 2026, not live.** PROJ-64, v1 only. Greg scoped it
-that evening: the season caption now, the giant-killer bonus later.
+**Status: built 27 October 2026, not live.** PROJ-64, v1 only. Greg scoped the
+caption that evening, and asked for the history the same day. The backfill is
+a dry run until `--go`, and it has not been run. The giant-killer bonus is
+later.
 
 The next phase makes the show about the people in the room
 ([`direction-oct-2026.md`](direction-oct-2026.md)). This is the first line that
@@ -75,10 +77,35 @@ judged with the field on it.
 name from the side that played more recently. `setSquad` copies the document
 it read, so changing squad does not clear the map.
 
+## Backfill
+
+`npm run backfill-rivals` replays `games/` onto `season-2` rows. Dry run until
+`--go`, the same shape as `backfill-finals`. It is not part of the bank: the
+rules set `games/` read to false, so a client cannot see the history.
+
+Run it **after** the deploy, and again a few days later. Both writers use
+`set`, so a phone still on the previous bundle erases its own map at the next
+bank. Admin writes bypass the rules. The rules still have to be published
+before the new client, which CI does, or that client's bank is refused.
+
+It files each uid under `claims/{uid}.playerId` when that claim exists, and
+the opponent keys the same way, so one person is not split across the uid row
+and the row they play as now. It does not create a season row, and it does
+not touch a week row or anything but `rivals`.
+
+Counts take the max of the row and the replay. They are not added, so a
+second run does not double a round, and a meeting the record does not have is
+left in place. The name follows whichever side has met them more.
+
+**What it cannot recover.** `games/` starts 8 September 2026. Season-2 started
+3 August, and those earlier rounds are not in the caption. A record the
+quizmaster's device failed to write is the same gap. `recent` cannot fill it:
+it stores your score, not the table. Round two of a double whose first half
+is missing is skipped, rather than ranked on the residual. The dry run prints
+`played` against how many kept rounds it could see.
+
 ## What it does not do
 
-- **No backfill.** The caption starts from the next round this client banks.
-  `games/` could rebuild it; that is a later job, the way finals were.
 - **No giant-killer bonus.** That is a scoring change and wants a measurement
   first. Not this.
 - **No Higher or Lower streak.** The streak is still a scoring change. The
@@ -94,4 +121,5 @@ it read, so changing squad does not clear the map.
 `src/engine/rivals.ts` is the counts, the cap, the night, and the sentence.
 `bankGame` carries the map. The season table renders it for your row
 (`LeagueBoard`); the podium renders the sentence `recordGame` returns, which
-costs no extra read.
+costs no extra read. `scripts/rivals-backfill.ts` is the replay;
+`npm run backfill-rivals` writes it.

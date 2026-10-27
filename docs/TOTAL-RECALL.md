@@ -24,6 +24,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-27 — Rivals backfill, from games/
+
+Greg asked for the history the same day. `npm run backfill-rivals` replays `games/` onto season-2, dry run until `--go`, and never lowers a count. Rounds before the record existed (8 Sep) and a round two whose first half is missing are not in the caption. [`rivals.md`](decisions/rivals.md).
+
 ## 2026-10-27 — Rivals: who you've beaten or lost to most
 
 A season caption, from a `rivals` map on the row: who you finished strictly ahead of, and behind. A tie is neither; a tie for the lead names everyone. Shown on the season table and under the podium. No scoring change, no giant-killer bonus, no backfill. Rules cap the map at 40 and do not walk it. [`rivals.md`](decisions/rivals.md).
