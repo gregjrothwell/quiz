@@ -170,6 +170,11 @@ describe('parseGameRecord', () => {
     expect(parseGameRecord(FOUR_SEATS)).toEqual(FOUR_SEATS);
   });
 
+  test('keeps doubleOf, which is how round two names round one', () => {
+    expect(parseGameRecord({ ...FOUR_SEATS, doubleOf: 'round-one' })?.doubleOf).toBe('round-one');
+    expect(parseGameRecord({ ...FOUR_SEATS, doubleOf: 4 })).toEqual(FOUR_SEATS);
+  });
+
   test('ignores the server stamp, which is not part of the record', () => {
     expect(parseGameRecord({ ...FOUR_SEATS, finishedAt: { seconds: 1 } })).toEqual(FOUR_SEATS);
   });

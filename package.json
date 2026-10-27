@@ -42,6 +42,7 @@
     "read-games": "tsx --env-file=.env.local scripts/read-games.ts",
     "audit-players": "tsx --env-file=.env.local scripts/player-audit.ts",
     "read-traces": "tsx --env-file=.env.local scripts/read-traces.ts",
+    "read-owed": "tsx --env-file=.env.local scripts/read-owed.ts",
     "read-errors": "tsx --env-file=.env.local scripts/read-errors.ts",
     "read-cannon": "tsx --env-file=.env.local scripts/read-cannon.ts",
     "cannon": "tsx --env-file=.env.local scripts/cannon.ts",
