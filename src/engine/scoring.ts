@@ -273,6 +273,13 @@ export function tallyQuestion(params: {
  */
 export type Verdict = 'correct' | 'wrong' | 'lost' | 'silent';
 
+/**
+ * What the screen says for {@link Verdict} `lost`. Amber, and the same words
+ * on the reveal and on the standings, so a quick Next does not take the only
+ * copy away. The apostrophe is the one the rest of the copy uses.
+ */
+export const LOST_LINE = 'Your answer didn’t reach the room in time';
+
 export interface VerdictInput {
   /** This player's answer to the question in play, if this device has one. */
   answer: Answer | undefined;

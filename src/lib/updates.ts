@@ -18,6 +18,12 @@ export interface Update {
 
 export const UPDATES: readonly Update[] = [
   {
+    date: '2026-10-27',
+    lines: [
+      'If your answer misses the cut-off, the screen says so straight away and keeps saying it on the standings. Your name doesn’t land on the lectern for an answer that didn’t count.',
+    ],
+  },
+  {
     date: '2026-10-26',
     lines: [
       'Played Against Mr Fries or The Double? At the end of the round, tell us Keep or Bin.',

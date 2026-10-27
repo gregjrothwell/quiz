@@ -10,13 +10,13 @@ import { PodiumTile, type TileArrival, type TileState } from '../components/Podi
 import { NewSticker } from '../components/NewSticker';
 import { QuestionVote } from '../components/QuestionVote';
 import { ScoreTicker } from '../components/ScoreTicker';
-import { replayDurationMs, replayTimeline, type Arrival } from '../engine/replay';
+import { answersForReplay, replayDurationMs, replayTimeline, type Arrival } from '../engine/replay';
 import { BONUS_PROMPT, isBonusCatchphrase } from '../engine/catchphraseBonus';
 import { isCall, optionsAtMs, optionsDue } from '../engine/optionsHold';
 import { isUnmatched, matchTypedAnswer } from '../engine/typedAnswer';
 import { questionPack } from '../engine/randomRound';
 import type { Verdict } from '../engine/questionVote';
-import { stakeFor, verdictFor, WAGER_SHARES } from '../engine/scoring';
+import { LOST_LINE, stakeFor, verdictFor, WAGER_SHARES } from '../engine/scoring';
 import { isPickCorrect } from '../engine/survey';
 import { STREAK_SHOWN_FROM } from '../engine/streak';
 import { songClueAtMs, songClueDue } from '../engine/songClue';
@@ -217,7 +217,7 @@ export function QuestionScreen({
           ? 'Not this time — that didn’t match'
           : 'Not this time'
         : verdict === 'lost'
-          ? 'Your answer didn’t reach the room in time'
+          ? LOST_LINE
           : 'You didn’t answer';
 
   /**
@@ -257,8 +257,11 @@ export function QuestionScreen({
 
   // Adjusted during render rather than in an effect: React re-renders before
   // committing, so no frame is ever painted from the stale timeline.
-  if (revealed && !telling && frozen.key !== replayKey && Object.keys(room.answers).length > 0) {
-    setFrozen({ key: replayKey, arrivals: replayTimeline(room.answers) });
+  // Counted picks only. `room.answers` also holds a late answer, so the player
+  // can be told it missed the cut-off, and that answer must not land a chip.
+  const forReplay = answersForReplay(room.answers, room.lastPicks, room.lastDeltas);
+  if (revealed && !telling && frozen.key !== replayKey && Object.keys(forReplay).length > 0) {
+    setFrozen({ key: replayKey, arrivals: replayTimeline(forReplay) });
   }
 
   const arrivals = revealed && frozen.key === replayKey ? frozen.arrivals : NO_ARRIVALS;
@@ -539,7 +542,9 @@ export function QuestionScreen({
       }
       if (telling) return myAnswer?.optionIndex === index ? 'picked' : 'gone';
       if (isPickCorrect(question, index)) return 'correct';
-      if (myAnswer?.optionIndex === index) return 'wrong';
+      // A missed cut-off is not a wrong answer. Red here is what made the
+      // lectern look scored.
+      if (verdict !== 'lost' && myAnswer?.optionIndex === index) return 'wrong';
       return 'gone';
     }
     if (!myAnswer) return 'idle';
@@ -972,7 +977,10 @@ export function QuestionScreen({
         */}
           <p className="tally">
             {revealed ? (
-              <span className={settled ? 'verdict verdict--in' : 'verdict'} data-tone={telling ? 'silent' : verdict}>
+              <span
+                className={settled || verdict === 'lost' ? 'verdict verdict--in' : 'verdict'}
+                data-tone={telling ? 'silent' : verdict}
+              >
                 {verdictLabel}
                 {/*
                   A lost stake has to show its number too. The `+` used to be

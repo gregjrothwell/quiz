@@ -59,6 +59,28 @@ export const REPLAY_SHAPE: ReplayShape = {
  * always replay in the same order — otherwise the same question replays
  * differently on each device, and the room sees two versions of who was first.
  */
+/**
+ * The picks the replay may land on a lectern.
+ *
+ * A late answer stays in `answers` so the player can be told it missed the
+ * cut-off (`verdictFor`'s `lost`). It is not a counted pick, and a chip with
+ * their name on it is what makes a missed answer look as if it scored.
+ * `lastPicks` is the counted set, written at the fold. A fixture with no
+ * `lastPicks` — the gallery, a test — uses the tally instead: everyone
+ * `deltas` names who also answered. A steal can put a uid into `deltas` who
+ * never answered; they have no chip either way.
+ */
+export function answersForReplay(
+  answers: Record<string, Answer>,
+  lastPicks: Record<string, Answer>,
+  deltas: Record<string, number>,
+): Record<string, Answer> {
+  if (Object.keys(lastPicks).length > 0) return lastPicks;
+  return Object.fromEntries(
+    Object.entries(answers).filter(([uid]) => Object.hasOwn(deltas, uid)),
+  );
+}
+
 export function replayTimeline(
   answers: Record<string, Answer>,
   shape: ReplayShape = REPLAY_SHAPE,
