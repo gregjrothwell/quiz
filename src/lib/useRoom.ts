@@ -1,18 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import {
+  increment as rtdbIncrement,
   onDisconnect,
   onValue,
   ref as rtdbRef,
   remove as rtdbRemove,
   set as rtdbSet,
+  update as rtdbUpdate,
 } from 'firebase/database';
 import {
   collection,
   deleteField,
   doc,
   getDoc,
-  increment,
   onSnapshot,
   serverTimestamp,
   setDoc,
@@ -68,6 +69,14 @@ import {
   questionDurationMs,
   type RoomState,
 } from '../engine/state';
+import {
+  EMPTY_LOBBY_VOTE,
+  highlightFor,
+  lobbyVotePath,
+  readLobbyVote,
+  voteGenOf,
+  type LobbyVoteView,
+} from '../engine/packVote';
 import { randomRoomCode } from '../engine/roomCode';
 import type { PackId } from '../questions/types';
 import { playerIdFor } from './identity';
@@ -260,6 +269,15 @@ export function useRoom(): UseRoom {
   const [error, setError] = useState<string | null>(null);
 
   const [presenceWorking, setPresenceWorking] = useState(true);
+  /**
+   * The lobby vote generation this tab has heard, and what was under it.
+   * Keyed by room and generation so a snapshot from the previous one — or from
+   * the previous room — cannot paint its votes onto the lobby now showing.
+   */
+  const [heardVote, setHeardVote] = useState<{ key: string; view: LobbyVoteView }>({
+    key: '',
+    view: EMPTY_LOBBY_VOTE,
+  });
 
   /*
     Seeded from storage, not left empty.
@@ -283,6 +301,8 @@ export function useRoom(): UseRoom {
    * `dispatch`.
    */
   const roomRef = useRef<RoomState | null>(null);
+  /** The `voteGen` the room document currently names. Writes go under it. */
+  const voteGenRef = useRef('0');
 
   /**
    * This client's place in the queue, remembered so that coming back from a
@@ -564,6 +584,27 @@ export function useRoom(): UseRoom {
     };
   }, [code, uid]);
 
+  // Which generation of the lobby vote this room is reading. Absent on a room
+  // that has not started or reset since the vote left the document.
+  const voteGen = voteGenOf(persisted ? (persisted as { voteGen?: unknown }).voteGen : undefined);
+  const voteKey = code ? `${code}/${voteGen}` : '';
+
+  // The vote, from the Realtime Database. A separate listener from the room
+  // document: a tap must not be a read for every player. The generation is the
+  // clear — `start` and `reset` mint a new one on the document, and this
+  // follows it. The previous tree is left where it is. The ref is what a tap
+  // writes under, read from the effect rather than during render.
+  useEffect(() => {
+    voteGenRef.current = voteGen;
+    if (!code || !uid) return;
+    const key = `${code}/${voteGen}`;
+    return onValue(rtdbRef(realtimeDb(), lobbyVotePath(code, voteGen)), (snapshot) => {
+      setHeardVote({ key, view: readLobbyVote(snapshot.val()) });
+    });
+  }, [code, uid, voteGen]);
+
+  const lobbyVote = heardVote.key === voteKey ? heardVote.view : EMPTY_LOBBY_VOTE;
+
   const room = useMemo<RoomState | null>(() => {
     if (!code || !persisted) return null;
     // Two filters, for two different stale readings:
@@ -580,9 +621,15 @@ export function useRoom(): UseRoom {
     // A player since W3 holds only their own answer until the reveal, which
     // publishes the room's. Their own stays alongside, so an answer that missed
     // the host's fold still reads as "didn't reach the room in time".
-    if (readsAll || state.phase === 'question') return state;
-    return { ...state, answers: { ...live, ...state.lastPicks } };
-  }, [code, persisted, answers, readsAll]);
+    const withAnswers =
+      readsAll || state.phase === 'question' ? state : { ...state, answers: { ...live, ...state.lastPicks } };
+    return {
+      ...withAnswers,
+      packVotes: lobbyVote.packVotes,
+      voteTaps: lobbyVote.voteTaps,
+      browsing: highlightFor(lobbyVote.browsingBy, resolveHost(withAnswers)),
+    };
+  }, [code, persisted, answers, readsAll, lobbyVote]);
 
   const isQuizmaster = Boolean(uid && room && resolveHost(room) === uid);
 
@@ -852,32 +899,42 @@ export function useRoom(): UseRoom {
   );
 
   /**
-   * This device's lobby vote, as one field path so concurrent votes merge.
-   * Only the lobby: once the show starts the vote is cleared and means nothing.
+   * This device's lobby vote, under its own uid on the Realtime Database.
+   * Only the lobby: once the show starts the generation moves on and a tap
+   * here would land on a tree nobody is reading.
    *
-   * The tap is counted in the same write, so the limit costs no write of its
-   * own and no read anybody was not already making. `increment` rather than a
-   * value, so two taps in flight both count.
+   * The tap is counted in the same update, so the limit costs no write of its
+   * own. `increment` rather than a value, so two taps in flight both count.
+   * Neither field is on the room document.
    */
   const writeOwnVote = useCallback(
     async (packId: PackId | null): Promise<void> => {
       if (!code || !uid || !room || room.phase !== 'lobby') return;
-      await updateDoc(roomDoc(code), {
-        [`packVotes.${uid}`]: packId ?? deleteField(),
-        [`voteTaps.${uid}`]: increment(1),
+      const gen = voteGenRef.current;
+      await rtdbUpdate(rtdbRef(realtimeDb()), {
+        [`${lobbyVotePath(code, gen)}/packVotes/${uid}`]: packId,
+        [`${lobbyVotePath(code, gen)}/voteTaps/${uid}`]: rtdbIncrement(1),
       });
     },
     [code, uid, room],
   );
 
-  /** The quizmaster's highlighted pack, so the room can see what is being considered. */
+  /**
+   * The host's highlighted pack, written under their own uid. The room shows
+   * that slot and no other, which is what keeps a member from setting it.
+   */
   const writeBrowsing = useCallback(
     async (packId: PackId | null): Promise<void> => {
-      if (!code || !room || room.phase !== 'lobby' || !isQuizmaster) return;
+      if (!code || !uid || !room || room.phase !== 'lobby' || !isQuizmaster) return;
       if (room.browsing === packId) return;
-      await updateDoc(roomDoc(code), { browsing: packId });
+      const path = `${lobbyVotePath(code, voteGenRef.current)}/browsing/${uid}`;
+      if (packId === null) {
+        await rtdbRemove(rtdbRef(realtimeDb(), path));
+        return;
+      }
+      await rtdbSet(rtdbRef(realtimeDb(), path), packId);
     },
-    [code, room, isQuizmaster],
+    [code, uid, room, isQuizmaster],
   );
 
   const leave = useCallback(async (): Promise<void> => {

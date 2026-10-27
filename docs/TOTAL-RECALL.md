@@ -24,6 +24,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-27 — The lobby vote moves onto the Realtime Database
+
+PROJ-34. A tap no longer rewrites the room document. `lobbyVote/{code}/{voteGen}` on the RTDB; `start` and `reset` mint `voteGen` in the phase write, and the old tree is left unread because the rule cannot see the host. No paste: CI publishes `database.rules.json` before the site. [`lobby-vote.md`](decisions/lobby-vote.md).
+
 ## 2026-10-27 — Greg decided the cards
 
 The stumper card is titled **A question nobody got**. Tonight's field stays tap-only; a vanished host waiting out the chair is accepted, and no timer goes back. Rosettes ignore a thrown-out question, and the season row banks from that same set. Round-title cards and Share or Shaft stay as long as they are. [`form-and-awards.md`](decisions/form-and-awards.md).

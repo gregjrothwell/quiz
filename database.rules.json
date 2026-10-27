@@ -67,6 +67,39 @@
           }
         }
       }
+    },
+
+    "lobbyVote": {
+      "$code": {
+        "$gen": {
+          ".read": "auth != null",
+
+          "packVotes": {
+            "$uid": {
+              ".write": "auth != null && auth.uid === $uid && $gen.matches(/^[A-Za-z0-9_-]{1,40}$/)",
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 64"
+            }
+          },
+
+          "voteTaps": {
+            "$uid": {
+              ".write": "auth != null && auth.uid === $uid && newData.exists() && $gen.matches(/^[A-Za-z0-9_-]{1,40}$/)",
+              ".validate": "newData.isNumber() && newData.val() <= 1000 && newData.val() % 1 == 0 && (data.exists() ? newData.val() == data.val() + 1 : newData.val() == 1)"
+            }
+          },
+
+          "browsing": {
+            "$uid": {
+              ".write": "auth != null && auth.uid === $uid && $gen.matches(/^[A-Za-z0-9_-]{1,40}$/)",
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 64"
+            }
+          },
+
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
     }
   }
 }

@@ -1,7 +1,7 @@
 import { readLoaded } from '../engine/cannon';
 import { deleteField, serverTimestamp, Timestamp, type DocumentData } from 'firebase/firestore';
 import type { AnswerDoc } from '../engine/answers';
-import { readBrowsing, readPackVotes, readVoteTaps, writesTheVote } from '../engine/packVote';
+import { mintsVoteGen } from '../engine/packVote';
 import { isDurationAllowed, LEGACY_DURATION_SECS, type Answer, type RoomState } from '../engine/state';
 
 /**
@@ -20,7 +20,7 @@ import { isDurationAllowed, LEGACY_DURATION_SECS, type Answer, type RoomState } 
  * room-document update to every other client — that fan-out is what burns the
  * Firestore free tier.
  */
-export type PersistedRoom = Omit<RoomState, 'answers' | 'cannon'> & {
+export type PersistedRoom = Omit<RoomState, 'answers' | 'cannon' | 'packVotes' | 'voteTaps' | 'browsing'> & {
   /** Absent when nothing is loaded, so an ordinary round writes the shape it always has. */
   cannon?: RoomState['cannon'];
 };
@@ -113,11 +113,12 @@ export function toRoomState(code: string, data: DocumentData, answers: Record<st
     chaserIntro: readChaserIntro(data['chaserIntro']),
     history: persisted.history ?? {},
     standoff: persisted.standoff ?? null,
-    // Absent in every room from before the vote, and writable by any member,
-    // so read through the guards rather than trusted.
-    packVotes: readPackVotes(data['packVotes']),
-    voteTaps: readVoteTaps(data['voteTaps']),
-    browsing: readBrowsing(data['browsing']),
+    // The vote lives on the Realtime Database. A copy still sitting on the
+    // document — every room that voted before PROJ-34 — is not read, or a tap
+    // that moved would keep showing here.
+    packVotes: {},
+    voteTaps: {},
+    browsing: null,
     // Absent in every room made before W3, which is what makes it one: such a
     // room keeps the derived quizmaster. See `resolveHost`.
     hostUid: typeof data['hostUid'] === 'string' ? data['hostUid'] : null,
@@ -231,9 +232,6 @@ export function toPersisted(state: RoomState): PersistedRoom {
     standoff: state.standoff,
     doubleEnabled: state.doubleEnabled,
     double: state.double,
-    packVotes: state.packVotes,
-    voteTaps: state.voteTaps,
-    browsing: state.browsing,
     hostUid: state.hostUid,
     lastPicks: state.lastPicks,
     // Omitted when empty so a Ladder that climbed, and every other round,
@@ -266,7 +264,11 @@ export function toPersisted(state: RoomState): PersistedRoom {
  * so a new field on RoomState still fails to compile until someone decides how
  * it persists.
  */
-export function toUpdate(state: RoomState, previous: RoomState | null): Record<string, unknown> {
+export function toUpdate(
+  state: RoomState,
+  previous: RoomState | null,
+  mint: () => string = () => crypto.randomUUID(),
+): Record<string, unknown> {
   const persisted = toPersisted(state);
   const update: Record<string, unknown> = { ...persisted };
 
@@ -305,13 +307,12 @@ export function toUpdate(state: RoomState, previous: RoomState | null): Record<s
     update.cannon = deleteField();
   }
 
-  // The lobby vote travels as `packVotes.{uid}` field writes, for the reason
-  // `players` does. Written whole only when crossing the lobby, to clear it.
-  if (!writesTheVote(previous?.phase ?? null, state.phase)) {
-    delete update.packVotes;
-    delete update.voteTaps;
-    delete update.browsing;
-  }
+  // The lobby vote is not on this document. Crossing into or out of the lobby
+  // mints `voteGen` in this same write, which is the clear: clients read
+  // `lobbyVote/{code}/{voteGen}` and the previous generation goes unread.
+  // A refused write mints nothing, so the vote the room is looking at stays.
+  // See docs/decisions/lobby-vote.md.
+  if (mintsVoteGen(previous?.phase ?? null, state.phase)) update.voteGen = mint();
 
   for (const [uid, score] of Object.entries(persisted.scores)) {
     update[`scores.${uid}`] = score;

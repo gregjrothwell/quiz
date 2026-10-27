@@ -1,14 +1,19 @@
 import { describe, expect, test } from 'vitest';
 import {
+  highlightFor,
+  INITIAL_VOTE_GEN,
   leadingPacks,
+  lobbyVotePath,
+  mintsVoteGen,
   nextVote,
   readBrowsing,
+  readLobbyVote,
   readPackVotes,
   readVoteTaps,
   tallyPackVotes,
   tapsLeft,
   VOTE_TAPS,
-  writesTheVote,
+  voteGenOf,
 } from './packVote';
 import type { Player } from './state';
 
@@ -134,28 +139,75 @@ describe('tapsLeft', () => {
   });
 });
 
-describe('writesTheVote', () => {
-  test('a dispatch inside the lobby leaves the votes to their own field writes', () => {
-    // `selectPack` and the opening titles both dispatch in the lobby; writing
-    // the map back would overwrite a vote cast a moment ago.
-    expect(writesTheVote('lobby', 'lobby')).toBe(false);
+describe('voteGenOf', () => {
+  test('a short id is the generation the room is reading', () => {
+    expect(voteGenOf('gen-1')).toBe('gen-1');
+    expect(voteGenOf('550e8400-e29b-41d4-a716-446655440000')).toHaveLength(36);
   });
 
-  test('starting a round writes them, which is how they clear', () => {
-    expect(writesTheVote('lobby', 'question')).toBe(true);
+  test('anything else is the initial generation, including a room that has none', () => {
+    for (const raw of [undefined, null, '', 'has spaces', 'x'.repeat(41), 1, {}]) {
+      expect(voteGenOf(raw)).toBe(INITIAL_VOTE_GEN);
+    }
+  });
+});
+
+describe('readLobbyVote', () => {
+  test('reads one generation, and the path it was read from', () => {
+    expect(lobbyVotePath('ABCD', 'gen-1')).toBe('lobbyVote/ABCD/gen-1');
+    expect(
+      readLobbyVote({
+        packVotes: { sam: 'sleeves', priya: 'not-a-pack' },
+        voteTaps: { sam: 1, priya: -1 },
+        browsing: { host: 'flags', sam: 'nope' },
+      }),
+    ).toEqual({
+      packVotes: { sam: 'sleeves' },
+      voteTaps: { sam: 1 },
+      browsingBy: { host: 'flags' },
+    });
   });
 
-  test('a reset back to the lobby writes them, cleared', () => {
-    expect(writesTheVote('finished', 'lobby')).toBe(true);
-    expect(writesTheVote('scoreboard', 'lobby')).toBe(true);
+  test('an empty generation, and a missing one, is nobody voting', () => {
+    const empty = { packVotes: {}, voteTaps: {}, browsingBy: {} };
+    for (const raw of [undefined, null, 'sleeves', []]) {
+      expect(readLobbyVote(raw)).toEqual(empty);
+    }
+  });
+});
+
+describe('highlightFor', () => {
+  test('the room is shown the host slot, not another player writing their own', () => {
+    const browsingBy = { host: 'flags' as const, guest: 'sleeves' as const };
+    expect(highlightFor(browsingBy, 'host')).toBe('flags');
+    expect(highlightFor(browsingBy, 'guest')).toBe('sleeves');
+    expect(highlightFor(browsingBy, 'absent')).toBeNull();
+    expect(highlightFor(browsingBy, null)).toBeNull();
+  });
+});
+
+describe('mintsVoteGen', () => {
+  test('a dispatch inside the lobby keeps the generation the votes were cast on', () => {
+    // `selectPack` and the opening titles both dispatch in the lobby; minting
+    // a new id would throw away a vote cast a moment ago.
+    expect(mintsVoteGen('lobby', 'lobby')).toBe(false);
   });
 
-  test('mid-round transitions never touch them', () => {
-    expect(writesTheVote('question', 'reveal')).toBe(false);
-    expect(writesTheVote('reveal', 'scoreboard')).toBe(false);
+  test('starting a round mints one, which is how the vote clears', () => {
+    expect(mintsVoteGen('lobby', 'question')).toBe(true);
+  });
+
+  test('a reset back to the lobby mints one, so the next lobby starts empty', () => {
+    expect(mintsVoteGen('finished', 'lobby')).toBe(true);
+    expect(mintsVoteGen('scoreboard', 'lobby')).toBe(true);
+  });
+
+  test('mid-round transitions never mint one', () => {
+    expect(mintsVoteGen('question', 'reveal')).toBe(false);
+    expect(mintsVoteGen('reveal', 'scoreboard')).toBe(false);
   });
 
   test('with no earlier snapshot there is nothing to cross', () => {
-    expect(writesTheVote(null, 'lobby')).toBe(false);
+    expect(mintsVoteGen(null, 'lobby')).toBe(false);
   });
 });
