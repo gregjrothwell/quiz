@@ -4,8 +4,8 @@ import type { QuizQuestion } from '../engine/state';
 import { Review } from './Review';
 
 /**
- * The panel under the rosettes. The title stays "The one that beat everybody".
- * What it quotes as the answer has to be every answer that was right.
+ * The panel under the rosettes. Greg, 27 October 2026: the title is
+ * "A question nobody got". What it quotes has to be every answer that was right.
  */
 
 afterEach(cleanup);
@@ -31,7 +31,7 @@ describe('the question nobody got', () => {
       />,
     );
 
-    expect(screen.getByText('The one that beat everybody')).toBeInTheDocument();
+    expect(screen.getByText('A question nobody got')).toBeInTheDocument();
     expect(screen.getByText('Which one?')).toBeInTheDocument();
     expect(screen.getByText('The answer was Beta. 4 answers, not one of them right.')).toBeInTheDocument();
   });

@@ -107,7 +107,7 @@ describe('the podium caption', () => {
 });
 
 describe('a question the quizmaster threw out', () => {
-  test('is not named as the one that beat everybody', () => {
+  test('is not named as a question nobody got', () => {
     // #given a one-question round nobody got, thrown out after the reveal
     const room: RoomState = {
       ...createRoom('HKQ7'),
@@ -156,8 +156,8 @@ describe('a question the quizmaster threw out', () => {
     );
     landed();
 
-    // #then the final card does not call it the one that beat everybody
-    expect(container.textContent).not.toContain('The one that beat everybody');
+    // #then the final card does not call it a question nobody got
+    expect(container.textContent).not.toContain('A question nobody got');
   });
 });
 

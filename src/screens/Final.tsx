@@ -160,8 +160,9 @@ export function Final({
     worse than neither of them saying.
   */
   const sawItAll = sawWholeGame(log, room.questions.length);
-  const awards = sawItAll ? awardsFor(log, Object.keys(players)) : [];
-  const review = sawItAll ? reviewFor(log, skippedIndices(room)) : [];
+  const thrownOut = skippedIndices(room);
+  const awards = sawItAll ? awardsFor(log, Object.keys(players), thrownOut) : [];
+  const review = sawItAll ? reviewFor(log, thrownOut) : [];
   const leaders = rows.filter((entry) => entry.position === 1);
   const winnerName =
     leaders.length > 1

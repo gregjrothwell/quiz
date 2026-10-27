@@ -50,7 +50,7 @@ function describe(highlight: Highlight): { title: string; detail: string } {
   switch (highlight.id) {
     case 'stumper':
       return {
-        title: 'The one that beat everybody',
+        title: 'A question nobody got',
         detail: `${highlight.attempts} answers, not one of them right.`,
       };
     case 'sweep':

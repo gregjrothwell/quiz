@@ -771,7 +771,7 @@ function Game() {
       // reloaded before the log was kept would otherwise bank a shelf it cannot
       // stand behind — and unlike a screen that says nothing, that is permanent.
       honours: sawWholeGame(gameLog, room.questions.length)
-        ? honoursFor(gameLog, Object.keys(players), uid)
+        ? honoursFor(gameLog, Object.keys(players), uid, skippedIndices(room))
         : NO_HONOURS,
       ...(countedFinal ? { final: countedFinal } : {}),
     })

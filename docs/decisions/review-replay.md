@@ -8,9 +8,10 @@ Moved verbatim out of `docs/HANDOVER.md` on 20 August 2026, when that file reach
 ## The round in review
 
 Two panels under the rosettes, saying what the round did to the room rather than
-what the room did to each other: **the one that beat everybody** — a question at
-least two people answered and nobody got, shown with the answer they all missed —
-and **nobody missed it**, where everyone who answered was right.
+what the room did to each other: **a question nobody got** — at least two people
+answered and nobody got it, shown with the answer they all missed — and **nobody
+missed it**, where everyone who answered was right. The first of those was
+titled "The one that beat everybody" until Greg renamed it, 27 October 2026.
 
 **It costs nothing.** `reviewFor` in `src/engine/awards.ts` reads the same
 `useGameLog` records the awards already run on, which every device already has
@@ -41,8 +42,8 @@ final card was naming the discarded question.
 
 A Survey Says guess can tie. Every tied option was right, and `correctIndex`
 is only the lowest. The card names all of them ("The answers were A and B").
-One option is still "The answer was …". The title is unchanged: "The one that
-beat everybody".
+One option is still "The answer was …". The title, from the same day, is
+"A question nobody got".
 
 ### The log now survives a reload
 

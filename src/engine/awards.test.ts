@@ -180,6 +180,56 @@ describe('comeback', () => {
   });
 });
 
+describe('a thrown-out question', () => {
+  test('earns no rosette, and does not keep one a later question would lose', () => {
+    // #given Greg fastest and alone on the right answer, Alex boldly wrong, on a
+    // question the quizmaster then threw out. The next question was ordinary.
+    const log = [
+      record(
+        0,
+        0,
+        { greg: answer(0, 400), sam: answer(1, 2_000), alex: answer(2, 2_100) },
+        { greg: 960, sam: 0, alex: 0 },
+      ),
+      record(
+        1,
+        1,
+        { sam: answer(1, 900), greg: answer(1, 1_500), alex: answer(1, 1_600) },
+        { sam: 900, greg: 800, alex: 700 },
+      ),
+    ];
+
+    // #when the awards are worked out with the first question skipped
+    const awards = awardsFor(log, ['greg', 'sam', 'alex'], new Set([0]));
+
+    // #then fastest finger is the kept question, and the discarded one left
+    // no lone wolf and no boldly wrong
+    expect(find(awards, 'fastest')).toEqual({ id: 'fastest', uids: ['sam'], elapsedMs: 900 });
+    expect(find(awards, 'lone-wolf')).toBeUndefined();
+    expect(find(awards, 'contrarian')).toBeUndefined();
+  });
+
+  test('does not count a comeback that the thrown-out points invented', () => {
+    // #given Sam taking the lead on a question that was then thrown out
+    const log = [
+      record(0, 0, {}, { greg: 1_000 }),
+      record(1, 0, {}, { sam: 5_000 }),
+    ];
+
+    // #when that question is left out
+    const award = find(awardsFor(log, ['greg', 'sam'], new Set([1])), 'comeback');
+
+    // #then there is no climb — the points were taken back
+    expect(award).toBeUndefined();
+    expect(find(awardsFor(log, ['greg', 'sam']), 'comeback')).toEqual({
+      id: 'comeback',
+      uids: ['sam'],
+      from: 2,
+      to: 1,
+    });
+  });
+});
+
 describe('awardsFor', () => {
   test('returns nothing for a game with no questions logged', () => {
     // #given an empty log, as a client that joined at the final screen would have
@@ -484,6 +534,24 @@ describe('honoursFor', () => {
     const honours = honoursFor(log, ['greg', 'alex'], 'alex');
 
     // #then the shelf stays empty rather than gaining a consolation
+    expect(honours).toEqual({ fastest: 0, comeback: 0, loneWolf: 0, contrarian: 0 });
+  });
+
+  test('does not bank a rosette that came off a thrown-out question', () => {
+    // #given Greg fastest, and the only one right, on a question later thrown out
+    const log = [
+      record(
+        0,
+        0,
+        { greg: answer(0, 400), sam: answer(1, 2_000), alex: answer(2, 2_100) },
+        { greg: 960, sam: 0, alex: 0 },
+      ),
+    ];
+
+    // #when his honours are counted with that question skipped
+    const honours = honoursFor(log, ['greg', 'sam', 'alex'], 'greg', new Set([0]));
+
+    // #then the shelf stays empty — the screen will not show the rosette either
     expect(honours).toEqual({ fastest: 0, comeback: 0, loneWolf: 0, contrarian: 0 });
   });
 

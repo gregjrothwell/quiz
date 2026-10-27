@@ -107,12 +107,14 @@ the moment the quiz starts"). A round against Mr Fries is the exception on
 | Round Two… (`Scoreboard`) | Between questions, not after the last | Quizmaster: **Next question** (or Final results / To Share or Shaft). No timer. | Yes. It sits where no clock is running, so it costs no answering time. |
 | Share or Shaft | The whole final, not a beat before it | Talk 60s (quizmaster can end it), then the pick clock, then the reveal. **Final results** is a tap. | It is the mode's own screen. It does not come down early. |
 | Podium (`Final`) | The round is over | Builds about 4s. A tap, Space or Enter skips. Then it stays until **Another round** or **Second half**. | Yes. |
-| The one that beat everybody / Nobody missed it (`Review`) | Under the rosettes, when this device saw the whole round. One stumper, one sweep: most people, earliest on a tie, at least two answers. | Stays with the podium. | The fact does. A thrown-out question is left out (27 Oct). Wording is Greg's. |
-| Rosettes (`Awards`) | Same screen: fastest finger, comeback, the only one who knew, boldly wrong. Omitted when nothing was earned, or this device missed part of the round. | Same. | Yes. A thrown-out question can still feed them. Not changed. |
+| A question nobody got / Nobody missed it (`Review`) | Under the rosettes, when this device saw the whole round. One stumper, one sweep: most people, earliest on a tie, at least two answers. | Stays with the podium. | Yes. Title is Greg's, 27 Oct. A thrown-out question is left out. |
+| Rosettes (`Awards`) | Same screen: fastest finger, comeback, the only one who knew, boldly wrong. Omitted when nothing was earned, or this device missed part of the round. | Same. | Yes. A thrown-out question earns none of them, and is not banked (27 Oct). |
 
 Commentator lines ("Nobody got that") are captions on the reveal, not these cards.
 
-**Left for Greg, not built:** restoring any timer on the field card; shortening the round-title or Share or Shaft cards; rewording "The one that beat everybody"; whether rosettes should also ignore a thrown-out question; a field card whose named people have all left, which renders nothing and falls through to the lobby's Start the show (a fresh deal, not the round the titles were holding).
+**Decided, Greg, 27 October 2026.** The stumper card is titled **A question nobody got**. Tonight's field stays tap-only: a vanished host may sit there until the chair is claimed, about 75 seconds, and auto-starting is worse. Rosettes ignore a thrown-out question, the same rule as that card, and `honoursFor` banks from the same set so the season row matches the screen. Round-title cards and Share or Shaft stay the length they are.
+
+**Still open:** a field card whose named people have all left renders nothing, and the lobby's Start the show then deals a fresh round.
 
 ### `playerId` on the player entry, at last
 
@@ -167,6 +169,11 @@ Two rules the tests pin down, both about not lying:
 crowd is a bad question; being wrong alone is a decision. Note this needs three
 or more players to mean anything — with two, every wrong answer is also a lonely
 one.
+
+**27 October 2026.** A question the quizmaster threw out earns no rosette.
+`awardsFor` and `honoursFor` take the same skipped indices as the review, so
+the screen and the season row agree. The points were already taken back; the
+log still held the reveal, and that reveal was what the rosettes were reading.
 
 **21 October 2026.** A typed call that matches nothing is stored as
 `optionIndex` 4, one index shared by every no-match. `contrarian` skips that

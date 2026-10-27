@@ -218,10 +218,11 @@ export function honoursFor(
   log: QuestionRecord[],
   playerUids: string[],
   uid: string,
+  skipped: ReadonlySet<number> = new Set(),
 ): Honours {
   const honours: Honours = { ...NO_HONOURS };
 
-  for (const award of awardsFor(log, playerUids)) {
+  for (const award of awardsFor(log, playerUids, skipped)) {
     if (award.uids.includes(uid)) honours[HONOUR_KEYS[award.id]] += 1;
   }
 
@@ -270,6 +271,19 @@ function highlight(
 }
 
 /**
+ * Questions the awards and the review may speak about.
+ *
+ * Tells have no right answer. A question the quizmaster threw out awarded no
+ * points — the reducer took them back — but the log still holds the reveal,
+ * because a skip after it does not rewrite the log. Counting that reveal would
+ * hand out a rosette, and name a card, for a question the room was told did
+ * not count.
+ */
+function inPlay(everything: QuestionRecord[], skipped: ReadonlySet<number>): QuestionRecord[] {
+  return scored(everything).filter((record) => !skipped.has(record.index));
+}
+
+/**
  * What the round did to the room, for a panel beside the rosettes. Costs
  * nothing: the log is already on every device, the same free retelling the
  * replay is built from.
@@ -277,16 +291,14 @@ function highlight(
  * A highlight nothing supports is left out rather than shown empty, exactly as
  * {@link awardsFor} does.
  *
- * `skipped` is the questions the quizmaster threw out. The scoreboard already
- * says those awarded no points. The log still holds the reveal, because a
- * skip after the reveal does not rewrite it, and naming one of them here
- * would call a discarded question the one that beat the room.
+ * `skipped` is the questions the quizmaster threw out, the same set
+ * {@link awardsFor} takes, so the card and the rosettes agree.
  */
 export function reviewFor(
   everything: QuestionRecord[],
   skipped: ReadonlySet<number> = new Set(),
 ): Highlight[] {
-  const log = scored(everything).filter((record) => !skipped.has(record.index));
+  const log = inPlay(everything, skipped);
   const stumper = highlight(log, (correct) => correct === 0);
   const sweep = highlight(log, (correct, attempts) => correct === attempts);
 
@@ -300,9 +312,18 @@ export function reviewFor(
  * Every award the game actually earned, in the order they are worth reading.
  * An award nothing supports is left out rather than shown empty — a podium with
  * a blank rosette on it is worse than one without.
+ *
+ * `skipped` is the questions the quizmaster threw out. They earn nothing and
+ * they keep nothing: fastest finger, comeback, lone wolf and boldly wrong all
+ * read the round with those questions removed. {@link honoursFor} passes the
+ * same set, so a rosette the screen withholds is not banked either.
  */
-export function awardsFor(everything: QuestionRecord[], playerUids: string[]): Award[] {
-  const log = scored(everything);
+export function awardsFor(
+  everything: QuestionRecord[],
+  playerUids: string[],
+  skipped: ReadonlySet<number> = new Set(),
+): Award[] {
+  const log = inPlay(everything, skipped);
   if (log.length === 0) return [];
 
   return [
