@@ -383,6 +383,10 @@ export function parseGameRecord(value: unknown): GameRecord | null {
     parsedQuestions.push(question);
   }
 
+  // Optional. A round two of The Double names round one here. Anything else
+  // is ignored, so one bad field does not hide the rest of the round.
+  const doubleOf = typeof value.doubleOf === 'string' ? value.doubleOf : undefined;
+
   return {
     roomCode,
     packId,
@@ -395,6 +399,7 @@ export function parseGameRecord(value: unknown): GameRecord | null {
     scores: parsedScores,
     questions: parsedQuestions,
     writtenBy,
+    ...(doubleOf === undefined ? {} : { doubleOf }),
   };
 }
 

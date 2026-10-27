@@ -61,7 +61,7 @@ Built to replace Polly in Teams.
 Before it `index-t7PF9llL` (#152, 25 Oct 23:02 GMT, merge `b52330d`): host-room `--pack themes|higher`, CI e2e in four shards, Dependabot dev bumps.
 Before it `index-DoX2y2L_` (release #147, 25 Oct 01:10 BST, merge `9d70a5c`, gh-pages `5c999e2`; 9/9 files byte-identical, `check-rules` 139/0) — **The Double** ([`morning-double.md`](decisions/morning-double.md)), **Theme Tunes 65** ([`tv-themes.md`](decisions/tv-themes.md)) and **Higher or Lower 90** ([`higher-or-lower.md`](decisions/higher-or-lower.md)), both blind; standings rank members only. Before it `index-C2KxhalW` (#146, 24 Oct 10:27 BST, merge `43f14ee`, gh-pages `81a85de`): **Geekend keep their own question history** — `seasons/season-2-geekend/asked/{pack}`, and a lobby "Who's playing" switch. Before it #145 (24 Oct, `d26ca41`, `index-CoblXX9Z`): **Geekend is a squad**. Before it #140 (`release-23-oct`, 23 Oct 13:43, `a0ce60a`): the lit-lamp reveal hold (3s cap), What's new in the lobby, the Ladder notice, Beat the Chaser's title card, Dependabot #115–#118. Every bundle before these, with hashes: [`live-history.md`](decisions/live-history.md).
 **Owed for #154:** the first round with Mr Fries or the Double → `npm run read-cannon` shows its Keep/Bin; `npm run read-errors` after the next office round (no player row yet — a live client's beacon is unproved, the built-in browser fails App Check).
-**Live checks still owed:** the first Double, Theme Tunes and Higher or Lower rounds (`read-games`; Higher or Lower: 55–85% right, or re-band); the first Geekend round makes `season-2-geekend/asked/{pack}` and leaves `season-2`'s doc for that pack unchanged; the first office round under W3 (`read-games`); #79's long name; #77's lobby reload; **#104's first final and first Catchphrase call**. **Finals backfill written 21 Oct** (12 rows, read back); re-run the dry run in a few days, since an old bundle erases its own tallies. Firebase chunk `firebase-DwYnjfYh` since #111 (Vite 8.3.5), so returning players fetch it once.
+**Live checks still owed** — `npm run read-owed` prints them: the first Double, Theme Tunes and Higher or Lower rounds (`read-games`; Higher or Lower: 55–85% right, or re-band); the first Geekend round makes `season-2-geekend/asked/{pack}` and leaves `season-2`'s doc for that pack unchanged; the first office round under W3 (`read-games`); #79's long name; #77's lobby reload; **#104's first final and first Catchphrase call**. **Finals backfill written 21 Oct** (12 rows, read back); re-run the dry run in a few days, since an old bundle erases its own tallies. Firebase chunk `firebase-DwYnjfYh` since #111 (Vite 8.3.5), so returning players fetch it once.
 **21 packs** + **Random Round** (six played packs dealt into one); **The Price Was Right 154**, **The Price is Right 81** and **Blankety Blank 148** (all blind); **Catchphrase 233** (every 5th a double-scoring bonus); **Name that Tune 424**; **Name the Artist 259**; synth **Classical**; **On the box 445**
 (hashed TMDB stills, at most 8 titles before 1990); **Flags** 76; **Sleeves 212**
 after seven candidate batches, the last pre-screened; picture is **Fine Art** 49.
@@ -127,11 +127,11 @@ sound / volume preferences. `src/screens/` one per phase, plus `Preview`.
 
 Commands: the table in [`AGENTS.md`](../AGENTS.md), plus `fetch-questions`,
 `fetch-otqa`, `asked-probe`, `take-stock`, `prune-rooms`, `write-*-pack`,
-`check-bundle`, `read-games`, `audit-players`, and two new ones — **`sleeve-audit`** (Mac + `uv`;
+`check-bundle`, `read-games`, `read-owed`, `audit-players`, and two new ones — **`sleeve-audit`** (Mac + `uv`;
 reads what is printed on each album cover) and **`still-dimensions`** (sizes
 every still in the packs). `npm test` covers `src/` plus the pure parts of
 `scripts/`; anything touching the network stays out, so it runs offline — a test
-importing `read-games` breaks that, since that module calls `main()` at import.
+importing `read-games` or `read-owed` breaks that, since each calls `main()` at import.
 
 ## If you're picking this up cold
 
