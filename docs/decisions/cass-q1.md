@@ -223,3 +223,28 @@ What changed is the screen, for every missed cut-off, not only question one:
 - The replay lands chips from `lastPicks` (the fold). A late answer stays in `answers` so the line can be said, and it does not put a name on a lectern. A missed answer is not painted as a scored wrong.
 
 `src/engine/replay.ts` (`answersForReplay`), `QuestionScreen`, `Scoreboard`. `src/screens/lateAnswer.test.tsx`.
+
+## 27 October 2026 — the readings, verified
+
+The check left open on 23 Oct, run by Alfred on Greg's Mac Mini against `quiz-d686e`,
+about 16:23 UK: `npm run read-traces -- --name cass --last 100`. **6 shown of 42 read.**
+**Verified.** Stamps are UTC (`toISOString`). On 26–27 Oct that is UK time; on 22–23 Oct the office was an hour ahead (BST).
+
+Office rounds with Cass since the trace went live (21 Oct), from `npm run read-games -- --last 30` the same session:
+
+- **AA6T** 27 Oct 09:53 — Geography, 5 seats, 15 questions, 10s.
+- **SC46** 26 Oct — Theme Tunes 10s and Random Round 15s, 7 seats. The 15s question one is 09:45; the 10s one is 09:56.
+- **SWNU** 23 Oct GK 15s, and **B498** 22 Oct, are already in the sections above.
+
+```text
+2026-10-27 09:45  AA6T  Cass  windows 4g  seen late 0.1s  write 0.1s  tap 3.1s of 10s  visible 75.1s  fresh tab, clock back 0.0s  counted  → neither
+2026-10-26 09:56  SC46  Cass  windows 4g  seen late 0.0s  write —  tap — of 10s  visible 766.4s  15 samples, clock back 0.0s  no tap  → neither
+2026-10-26 09:45  SC46  Cass  windows 4g  seen late 0.0s  write 2.4s  tap 2.3s of 15s  visible 83.4s  fresh tab, clock back 0.0s  counted  → slow write
+2026-10-23 08:46  SWNU  Cass  windows 4g  seen late 0.1s  write 4.8s  tap 4.8s of 15s  visible 93.7s  fresh tab, clock back 0.0s  counted  → slow write
+2026-10-22 08:53  B498  Cass  windows 4g  seen late 0.0s  write 2.4s  tap 5.5s of 10s  visible 622.2s  15 samples, clock back 0.0s  counted  → slow write
+2026-10-22 08:44  B498  Cass  windows 4g  seen late 0.0s  write 0.2s  tap 3.9s of 15s  visible 66.0s  fresh tab, clock back 0.0s  counted  → neither
+```
+
+None of the six reads `late delivery` (seen late 0.0–0.1s). Intermittent `slow write` continues (2.4–4.8s), counted when the tap was early enough.
+Today's AA6T 10s question one was `neither`, counted, write 0.1s — the post–3s-hold check did not show a missed cut-off on that round.
+SC46's second question one (09:56, Theme Tunes, 10s) was `no tap`, not a late miss.
