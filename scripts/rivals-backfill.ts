@@ -110,6 +110,21 @@ function rankedScores(
   return Object.keys(totals).length === 0 ? 'empty' : totals;
 }
 
+/** Game ids the harnesses mint: `rank-harness`, `final-harness`, `sync-harness`, `host-room`. */
+const HARNESS_ID = /^(rank|final|host)-\d+$|^harness-game$/;
+
+/**
+ * Why a kept round was a test rather than the room, or undefined. A harness
+ * names its game; a hand test seats only names with "test" in them (`CC test`,
+ * `G TEST`, `Test Jo`). One real name at the table keeps the round.
+ */
+export function testRunOf(game: Pick<KeptRivalGame, 'id' | 'players'>): string | undefined {
+  if (HARNESS_ID.test(game.id)) return 'harness run';
+  const names = Object.values(game.players).map((player) => player.name);
+  if (names.length > 0 && names.every((name) => /test/i.test(name))) return 'test run';
+  return undefined;
+}
+
 function byTime(left: KeptRivalGame, right: KeptRivalGame): number {
   const leftAt = left.at ?? Number.NEGATIVE_INFINITY;
   const rightAt = right.at ?? Number.NEGATIVE_INFINITY;
@@ -148,6 +163,11 @@ export function replayRivals(
   const kept = new Map<string, number>();
 
   for (const game of [...unique].sort(byTime)) {
+    const test = testRunOf(game);
+    if (test) {
+      skipped.push({ id: game.id, reason: test });
+      continue;
+    }
     const totals = rankedScores(game, byId);
     if (totals === 'missing-half') {
       skipped.push({ id: game.id, reason: `first half missing (${game.doubleOf ?? '?'})` });

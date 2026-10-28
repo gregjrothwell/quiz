@@ -13,6 +13,7 @@ import {
   replayRivals,
   rivalsBackfillWillWrite,
   scoresOf,
+  testRunOf,
   type KeptRivalGame,
   type SeasonRivalRow,
 } from './rivals-backfill';
@@ -63,6 +64,37 @@ describe('replayRivals', () => {
     expect(maps.get('priya')).toEqual({ sam: { name: 'Sam', beaten: 0, lost: 1 } });
     expect(kept.get('sam')).toBe(2);
     expect(kept.get('priya')).toBe(1);
+  });
+
+  // The ids and names below are the ones on the live `games/` on 28 October 2026.
+  test('harness and hand-test rounds are skipped, and a real name keeps a round', () => {
+    const { maps, kept, skipped } = replayRivals([
+      game('rank-1792097239825', { ada: { name: 'Ada', score: 9 }, bo: { name: 'Bo', score: 1 } }, { at: 1 }),
+      game('final-1792691983738', { ada: { name: 'Ada', score: 9 }, bo: { name: 'Bo', score: 1 } }, { at: 2 }),
+      game('host-1792691983738', { ada: { name: 'Ada', score: 9 }, bo: { name: 'Bo', score: 1 } }, { at: 3 }),
+      game('harness-game', { ada: { name: 'Ada', score: 9 }, bo: { name: 'Bo', score: 1 } }, { at: 4 }),
+      game('hand', { g: { name: 'G TEST', score: 9 }, jo: { name: 'Test Jo', score: 1 } }, { at: 5 }),
+      game('real', { g: { name: 'G TEST', score: 9 }, sam: { name: 'Sam', score: 1 } }, { at: 6 }),
+    ]);
+
+    expect(skipped).toEqual([
+      { id: 'rank-1792097239825', reason: 'harness run' },
+      { id: 'final-1792691983738', reason: 'harness run' },
+      { id: 'host-1792691983738', reason: 'harness run' },
+      { id: 'harness-game', reason: 'harness run' },
+      { id: 'hand', reason: 'test run' },
+    ]);
+    expect(maps.has('ada')).toBe(false);
+    expect(maps.has('jo')).toBe(false);
+    expect(maps.get('g')).toEqual({ sam: { name: 'Sam', beaten: 1, lost: 0 } });
+    expect(kept.get('g')).toBe(1);
+  });
+
+  test('testRunOf leaves a real round, and an id that only starts like a harness one', () => {
+    expect(testRunOf({ id: '6346bca0-20b3', players: { a: { name: 'Steve' } } })).toBeUndefined();
+    expect(testRunOf({ id: 'rank-ed', players: { a: { name: 'Steve' } } })).toBeUndefined();
+    expect(testRunOf({ id: 'x', players: {} })).toBeUndefined();
+    expect(testRunOf({ id: 'x', players: { a: { name: 'CC test' } } })).toBe('test run');
   });
 
   // Joining seeds a score of 0, so a seat is not a game played (PROJ-64 review).
