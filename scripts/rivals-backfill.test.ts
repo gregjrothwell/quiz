@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest';
 import { RIVALS_CAP, rivalsCaption, type Rival } from '../src/engine/rivals';
 import {
   RIVALS_BACKFILL_SEASON,
+  answeredOf,
   atOf,
   claimOf,
   historyGaps,
@@ -18,16 +19,18 @@ import {
 
 function game(
   id: string,
-  seats: Record<string, { name: string; score: number }>,
+  seats: Record<string, { name: string; score: number; answered?: boolean }>,
   opts: { at?: number | null; doubleOf?: string } = {},
 ): KeptRivalGame {
   const players: KeptRivalGame['players'] = {};
   const scores: KeptRivalGame['scores'] = {};
+  const answered = new Set<string>();
   for (const [uid, seat] of Object.entries(seats)) {
     players[uid] = { name: seat.name };
     scores[uid] = seat.score;
+    if (seat.answered !== false) answered.add(uid);
   }
-  const kept: KeptRivalGame = { id, at: opts.at ?? null, players, scores };
+  const kept: KeptRivalGame = { id, at: opts.at ?? null, players, scores, answered };
   return opts.doubleOf === undefined ? kept : { ...kept, doubleOf: opts.doubleOf };
 }
 
@@ -60,6 +63,21 @@ describe('replayRivals', () => {
     expect(maps.get('priya')).toEqual({ sam: { name: 'Sam', beaten: 0, lost: 1 } });
     expect(kept.get('sam')).toBe(2);
     expect(kept.get('priya')).toBe(1);
+  });
+
+  // Joining seeds a score of 0, so a seat is not a game played (PROJ-64 review).
+  test('a seat that never answered is not ranked, and is not ranked against', () => {
+    const { maps, kept } = replayRivals([
+      game('late', {
+        sam: { name: 'Sam', score: 4 },
+        priya: { name: 'Priya', score: 0 },
+        alex: { name: 'Alex', score: 0, answered: false },
+      }, { at: 1 }),
+    ]);
+
+    expect(maps.get('sam')).toEqual({ priya: { name: 'Priya', beaten: 1, lost: 0 } });
+    expect(maps.get('alex')).toBeUndefined();
+    expect(kept.get('alex')).toBeUndefined();
   });
 
   test('round two ranks the morning, and round one still counts on its own', () => {
@@ -257,6 +275,15 @@ describe('the script', () => {
     expect(claimOf({ playerId: 'sam' })).toBe('sam');
     expect(claimOf({})).toBeNull();
     expect(scoresOf({ sam: 4, priya: '9', alex: Number.NaN })).toEqual({ sam: 4 });
+    expect(
+      answeredOf([
+        { answers: { sam: { optionIndex: 1 } } },
+        { answers: { priya: { optionIndex: 0 } } },
+        { skipped: true, answers: {} },
+        null,
+      ]),
+    ).toEqual(new Set(['sam', 'priya']));
+    expect(answeredOf(undefined)).toEqual(new Set());
     expect(playersOf({ sam: { name: 'Sam' }, bad: null })).toEqual({
       sam: { name: 'Sam' },
       bad: { name: '' },

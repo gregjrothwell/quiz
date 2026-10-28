@@ -34,6 +34,12 @@ A round you **finished strictly ahead of** is one beaten. Strictly behind is
 one lost. A tie is neither, and it does not open a row for someone new. It
 does refresh the name of someone already there.
 
+**A seat is not a game played.** Joining seeds a score of 0, so someone who
+joined and never answered is nobody's opponent (`tookPart`): it takes an
+answer in the round, or a total that is not 0, the morning of a double seen
+from round two. The bank reads answers off this device's log, and the
+backfill reads them off `games/{id}.questions` (PROJ-64 review, 28 Oct 2026).
+
 The comparison is the table the room just ranked. An ordinary round and
 half-time use the round. **Round two of a double uses the morning**, because
 that is the podium — the banked residual is a different number, and ranking

@@ -25,6 +25,7 @@ import { getFirestore as getAdminFirestore } from 'firebase-admin/firestore';
 import { rivalsCaption } from '../src/engine/rivals';
 import {
   RIVALS_BACKFILL_SEASON,
+  answeredOf,
   atOf,
   claimOf,
   doubleOfOf,
@@ -64,6 +65,7 @@ async function main(): Promise<void> {
       at: atOf(data.finishedAt),
       players: playersOf(data.players),
       scores: scoresOf(data.scores),
+      answered: answeredOf(data.questions),
     };
     games.push(doubleOf === undefined ? game : { ...game, doubleOf });
   });

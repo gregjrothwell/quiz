@@ -1,4 +1,4 @@
-import { meetRivals, rivalsFrom, type NightOpponent, type Rival } from '../src/engine/rivals';
+import { meetRivals, rivalsFrom, tookPart, type NightOpponent, type Rival } from '../src/engine/rivals';
 
 /**
  * The only bucket this backfill writes. Week rows are not "this season", and
@@ -28,6 +28,11 @@ export interface KeptRivalGame {
   at: number | null;
   players: Record<string, KeptRivalPlayer>;
   scores: Record<string, number>;
+  /**
+   * Uids with an answer on any of the round's questions. A seat is not a game
+   * played: joining seeds a score of 0 ({@link tookPart}).
+   */
+  answered: ReadonlySet<string>;
   /** Round one's game id, on round two of a double only. */
   doubleOf?: string;
 }
@@ -158,6 +163,9 @@ export function replayRivals(
       if (!Object.hasOwn(totals, uid)) continue;
       const score = totals[uid];
       if (score === undefined) continue;
+      // Round two of a double: an answer in either half is having played.
+      const first = game.doubleOf ? byId.get(game.doubleOf) : undefined;
+      if (!tookPart(uid, score, game.answered) && !first?.answered.has(uid)) continue;
       seats.push({ uid, playerId: claims.get(uid) ?? uid, name: player.name, score });
     }
     if (seats.length === 0) {
@@ -310,6 +318,19 @@ export function playersOf(value: unknown): Record<string, KeptRivalPlayer> {
     players[uid] = { name: typeof name === 'string' ? name : '' };
   }
   return players;
+}
+
+/** Who answered anything, off `games/{id}.questions`. */
+export function answeredOf(value: unknown): Set<string> {
+  const answered = new Set<string>();
+  if (!Array.isArray(value)) return answered;
+  for (const question of value) {
+    if (!question || typeof question !== 'object') continue;
+    const answers = (question as { answers?: unknown }).answers;
+    if (!answers || typeof answers !== 'object' || Array.isArray(answers)) continue;
+    for (const uid of Object.keys(answers)) answered.add(uid);
+  }
+  return answered;
 }
 
 export function scoresOf(value: unknown): Record<string, number> {

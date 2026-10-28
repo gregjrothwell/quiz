@@ -141,19 +141,41 @@ export function foldRivals(
   return capRivals(next);
 }
 
+/** Everyone with an answer on any question in a log of the round. */
+export function answeredIn(log: readonly { answers: Readonly<Record<string, unknown>> }[]): Set<string> {
+  const answered = new Set<string>();
+  for (const record of log) for (const uid of Object.keys(record.answers)) answered.add(uid);
+  return answered;
+}
+
+/**
+ * Whether a seat played the round: answered something, or ended on a score.
+ *
+ * A seat alone is not enough. Joining seeds a score of 0, so someone who
+ * joined room 6JA5 eight seconds before the final screen would otherwise be
+ * someone the whole room had beaten. A score that is not 0 counts without an
+ * answer here, which is the morning of a double seen from round two.
+ */
+export function tookPart(uid: string, total: number, answered: ReadonlySet<string>): boolean {
+  return answered.has(uid) || total !== 0;
+}
+
 /**
  * The result the room ranked, as opponents of `youUid`.
  *
  * Ordinary rounds and half-time use the round. Round two of a double banks a
  * residual and ranks the morning, so the head-to-head follows the morning —
  * the table the podium just showed. Someone who was not on that table is not
- * an opponent, and neither are you.
+ * an opponent, nor is someone who sat there without playing
+ * ({@link tookPart}), and neither are you.
  */
 export function nightAgainst(
   youUid: string,
   players: Readonly<Record<string, { name: string; playerId?: string }>>,
   scores: Readonly<Record<string, number>>,
   double: FirstHalf | null,
+  /** Who answered a question this round, from the log this device kept. */
+  answered: ReadonlySet<string>,
 ): { resultScore: number; opponents: NightOpponent[] } {
   const totals = morningTotals({ double, scores: { ...scores } });
   const you = players[youUid];
@@ -164,6 +186,7 @@ export function nightAgainst(
   for (const [uid, player] of Object.entries(players)) {
     if (uid === youUid) continue;
     if (!Object.hasOwn(totals, uid)) continue;
+    if (!tookPart(uid, totals[uid] ?? 0, answered)) continue;
     const playerId = player.playerId ?? uid;
     if (seen.has(playerId)) continue;
     seen.add(playerId);

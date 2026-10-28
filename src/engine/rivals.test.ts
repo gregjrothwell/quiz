@@ -4,6 +4,7 @@ import {
   RIVALS_CAP,
   foldRivals,
   meetRivals,
+  answeredIn,
   nightAgainst,
   rivalsCaption,
   rivalsFrom,
@@ -169,6 +170,8 @@ describe('the rivals caption', () => {
   });
 });
 
+const BOTH: ReadonlySet<string> = new Set(['sam', 'priya']);
+
 describe('nightAgainst', () => {
   const players = {
     greg: { name: 'Greg' },
@@ -177,7 +180,7 @@ describe('nightAgainst', () => {
   };
 
   test('ranks an ordinary round on the scores just banked', () => {
-    const night = nightAgainst('greg', players, { greg: 1_000, sam: 400, priya: 1_500 }, null);
+    const night = nightAgainst('greg', players, { greg: 1_000, sam: 400, priya: 1_500 }, null, BOTH);
 
     expect(night.resultScore).toBe(1_000);
     expect(night.opponents).toEqual([
@@ -193,6 +196,7 @@ describe('nightAgainst', () => {
       players,
       { greg: 100, sam: 800, priya: 100 },
       { gameId: 'half', scores: { greg: 1_000, sam: 200, priya: 100 } },
+      BOTH,
     );
 
     expect(night.resultScore).toBe(1_100);
@@ -203,7 +207,57 @@ describe('nightAgainst', () => {
   });
 
   test('a player on their own has no opponents', () => {
-    expect(nightAgainst('greg', { greg: { name: 'Greg' } }, { greg: 500 }, null).opponents).toEqual([]);
+    expect(nightAgainst('greg', { greg: { name: 'Greg' } }, { greg: 500 }, null, new Set()).opponents).toEqual([]);
+  });
+
+  // Joining seeds a score of 0, so a seat is not a game played. Room 6JA5 had
+  // someone join eight seconds before the final screen (PROJ-64 review).
+  test('someone who joined and never answered is nobody you beat', () => {
+    const night = nightAgainst(
+      'greg',
+      { ...players, late: { name: 'Late' } },
+      { greg: 1_000, sam: 400, priya: 1_500, late: 0 },
+      null,
+      BOTH,
+    );
+
+    expect(night.opponents.map((opponent) => opponent.playerId)).toEqual(['priya-claimed', 'sam']);
+  });
+
+  test('someone who answered and scored nothing is still someone you beat', () => {
+    const night = nightAgainst(
+      'greg',
+      { ...players, late: { name: 'Late' } },
+      { greg: 1_000, sam: 400, priya: 1_500, late: 0 },
+      null,
+      new Set(['sam', 'priya', 'late']),
+    );
+
+    expect(night.opponents.map((opponent) => opponent.playerId)).toEqual(['late', 'priya-claimed', 'sam']);
+  });
+
+  test('a morning score counts as having played, with no answer in round two', () => {
+    const night = nightAgainst(
+      'greg',
+      players,
+      { greg: 100, sam: 0, priya: 100 },
+      { gameId: 'half', scores: { greg: 1_000, sam: 200, priya: 100 } },
+      new Set(['priya']),
+    );
+
+    expect(night.opponents.map((opponent) => opponent.playerId)).toEqual(['priya-claimed', 'sam']);
+  });
+});
+
+describe('answeredIn', () => {
+  test('everyone with an answer on any question in the log', () => {
+    expect(
+      answeredIn([
+        { answers: { greg: { optionIndex: 0, elapsedMs: 1 } } },
+        { answers: { sam: { optionIndex: 1, elapsedMs: 1 } } },
+        { answers: {} },
+      ]),
+    ).toEqual(new Set(['greg', 'sam']));
   });
 });
 
