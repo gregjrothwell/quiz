@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 27 October 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 28 October 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -23,6 +23,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
+
+## 2026-10-28 — A PR names its Jira ticket (PROJ-66, live)
+
+PROJ-60 and PROJ-61 went live in #140 and sat at To Do for five days; 2 of the 40 PRs before today named a ticket. Plan now prints `ticket=`, and Verify (required) fails when no `PROJ-<n>` is in the title, branch, description or a commit. `Ticket: none — <why>` waives it. Docs-only PRs and Dependabot are exempt. Proved on probe #164 (refused, then passed on the waiver), and in production on Dependabot #165 (step skipped). #163, `60706b2`; the site bundle is unchanged. AGENTS.md carries the rule for cloud agents. Whoever takes a PR live moves its tickets to Done (Greg, 28 Oct).
 
 ## 2026-10-27 — Greg decided the cards
 
