@@ -20,6 +20,7 @@ import type { Honours } from '../engine/awards';
 import { tallyOf, type FinalsTally } from '../engine/finals';
 import type { FormRecord } from '../engine/form';
 import { bankGame, foldRecords, type GameOutcome, type PlayerRecord } from '../engine/records';
+import { rivalsCaption, rivalsFrom, type Rival } from '../engine/rivals';
 import { cleanSquad } from '../engine/squad';
 import { sideFor } from '../engine/squadScore';
 import { weekId } from '../engine/week';
@@ -79,6 +80,11 @@ export interface SeasonRow extends Honours {
    * model, not the document, so it uses the name the rest of the app does.
    */
   squad: string;
+  /**
+   * Who this player has finished ahead of, and behind. Absent on a row from
+   * before the field, which is every row until they next bank a decisive round.
+   */
+  rivals?: Record<string, Rival>;
 }
 
 /**
@@ -157,6 +163,11 @@ export interface Banked {
   week: string;
   /** The squad the week's row was filed under — a Lurker's pick, or their own. */
   squad: string;
+  /**
+   * Who you've beaten or lost to most, after this game landed on the season.
+   * Null when there is nobody to name yet. The week row is not consulted.
+   */
+  rivalsCaption: string | null;
 }
 
 /**
@@ -186,6 +197,8 @@ export async function recordGame(result: GameResult): Promise<Banked> {
   const buckets = [season ?? SEASON, week ?? SEASON];
   const references = buckets.map((bucket) => playerDoc(result.playerId, bucket));
 
+  let rivalsCaptionText: string | null = null;
+
   await runTransaction(firestore(), async (transaction) => {
     // Every read before any write, which Firestore requires of a transaction.
     // In parallel because they are independent documents and the round-trips
@@ -195,25 +208,50 @@ export async function recordGame(result: GameResult): Promise<Banked> {
     references.forEach((reference, index) => {
       const snapshot = snapshots[index];
       const existing = snapshot?.exists() ? (snapshot.data() as SeasonDoc) : null;
+      // The caption reads the season, which `bucketsFor` puts first. The week
+      // is the same rule and the same `set`, but it is not "this season", so
+      // it does not take the night's opponents and cannot grow a map of them.
+      const seasonBucket = index === 0;
 
       // Guarded per bucket rather than once for the pair. They cannot normally
       // disagree, but if a write ever half-lands the retry has to finish the
       // job rather than skip it because the other half looked done.
-      if (existing?.lastGame === result.gameId) return;
+      if (existing?.lastGame === result.gameId) {
+        if (seasonBucket) rivalsCaptionText = rivalsCaption(existing.rivals);
+        return;
+      }
 
-      // The only difference between the two documents. `bucketsFor` puts the
-      // season first, so index 0 keeps the player's standing squad and the
-      // week takes whoever they actually sat with.
-      const squad = index === 0 ? result.squad : weekSquad(result);
+      // The only difference between the two documents. The season keeps the
+      // player's standing squad and the week takes whoever they actually sat with.
+      const squad = seasonBucket ? result.squad : weekSquad(result);
+      // The week is not the season the caption reads, so it is not handed the
+      // night. Keys are omitted rather than set undefined.
+      const next = bankGame(existing, {
+        name: result.name,
+        gameId: result.gameId,
+        score: result.score,
+        won: result.won,
+        squad,
+        honours: result.honours,
+        ...(result.final ? { final: result.final } : {}),
+        ...(seasonBucket && result.resultScore !== undefined ? { resultScore: result.resultScore } : {}),
+        ...(seasonBucket && result.opponents ? { opponents: result.opponents } : {}),
+      });
+      if (seasonBucket) rivalsCaptionText = rivalsCaption(next.rivals);
 
-      transaction.set(reference, bankGame(existing, { ...result, squad }));
+      transaction.set(reference, next);
     });
   });
 
   // Your own game is the one you will go straight to the board to look for.
   invalidateSeason();
 
-  return { season: buckets[0] as string, week: buckets[1] as string, squad: weekSquad(result) };
+  return {
+    season: buckets[0] as string,
+    week: buckets[1] as string,
+    squad: weekSquad(result),
+    rivalsCaption: rivalsCaptionText,
+  };
 }
 
 /**
@@ -505,6 +543,7 @@ export async function loadTable(
 
   const rows = snapshot.docs.map((entry) => {
     const data = entry.data() as SeasonDoc;
+    const rivals = rivalsFrom(data.rivals);
     return {
       playerId: entry.id,
       name: data.name,
@@ -520,6 +559,7 @@ export async function loadTable(
       comeback: data.comeback ?? 0,
       loneWolf: data.loneWolf ?? 0,
       contrarian: data.contrarian ?? 0,
+      ...(Object.keys(rivals).length > 0 ? { rivals } : {}),
     };
   });
 

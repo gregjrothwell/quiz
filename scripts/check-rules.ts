@@ -922,7 +922,8 @@ function buildChecks(probes: Probes): Check[] {
       label: "Firestore   · bank a regular's full row (six recent, every field)",
       expect: 'allow',
       hint: 'the season rule runs out of its 1,000-expression budget on a full '
-        + 'row — no regular can bank a round. docs/decisions/finals-history.md',
+        + 'row — no regular can bank a round. Until `rivals` is published this '
+        + 'also FAILs, because hasOnly refuses the field. docs/decisions/finals-history.md',
       run: () =>
         setDoc(ownSeasonRow, {
           ...validSeasonRow,
@@ -945,7 +946,48 @@ function buildChecks(probes: Probes): Check[] {
           shared: 5,
           shafted: 2,
           gotShafted: 2,
+          rivals: {
+            sam: { name: 'Sam', beaten: 4, lost: 1 },
+            priya: { name: 'Priya', beaten: 1, lost: 3 },
+          },
         }),
+    },
+    {
+      // FAILs against the published rules until CI publishes this block:
+      // hasOnly does not yet list `rivals`. PASSes after. Optional, so a row
+      // without the field (every case above that omits it) keeps passing.
+      label: 'Firestore   · bank a season row carrying rivals',
+      expect: 'allow',
+      hint: 'firestore.rules has not taken `rivals` into the season row hasOnly '
+        + 'list — a round that records who you beat is refused, so the night '
+        + 'does not land. This FAILs until CI publishes the rules and PASSes after.',
+      run: () =>
+        setDoc(ownSeasonRow, {
+          ...validSeasonRow,
+          played: 4,
+          wins: 1,
+          rivals: { sam: { name: 'Sam', beaten: 3, lost: 1 } },
+        }),
+    },
+    {
+      label: 'Firestore   · bank more than 40 rivals',
+      expect: 'deny',
+      hint: 'firestore.rules is missing the size cap on `rivals` — a crafted '
+        + 'client can inflate the season row without limit',
+      run: () =>
+        setDoc(ownSeasonRow, {
+          ...validSeasonRow,
+          played: 41,
+          rivals: Object.fromEntries(
+            Array.from({ length: 41 }, (_, i) => [`p${i}`, { name: 'Sam', beaten: 1, lost: 0 }]),
+          ),
+        }),
+    },
+    {
+      label: 'Firestore   · bank rivals as a list',
+      expect: 'deny',
+      hint: 'firestore.rules is missing the map check on `rivals`',
+      run: () => setDoc(ownSeasonRow, { ...validSeasonRow, rivals: ['Sam'] }),
     },
     {
       label: 'Firestore   · bank a finals tally that is negative',

@@ -22,6 +22,7 @@ export const UPDATES: readonly Update[] = [
     lines: [
       'If your answer misses the cut-off, the screen says so straight away and keeps saying it on the standings. Your name doesn’t land on the lectern for an answer that didn’t count.',
       'At the end of the round, a question nobody got is called that. A question the quizmaster threw out doesn’t earn a rosette.',
+      'The season table, and the end of a round, say who you’ve beaten most this season, and who you’ve lost to most.',
     ],
   },
   {

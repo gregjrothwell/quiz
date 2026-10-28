@@ -450,6 +450,8 @@ export function Final({
         {/* Said once, here, because this is the moment there is a record worth
             keeping — and the season table is where the code lives. Not a prompt or
             a dialog: nobody has ever thanked a quiz for interrupting the podium. */}
+        {banked?.rivalsCaption ? <p className="lede rivals">{banked.rivalsCaption}</p> : null}
+
         <p className="muted hint hint--apart">
           That’s gone onto the season table, which is tied to this browser. Grab a recovery code
           there if you ever play from anywhere else.
