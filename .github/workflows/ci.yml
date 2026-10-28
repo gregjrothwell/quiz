@@ -468,3 +468,41 @@ jobs:
             --user "GitHub Actions <actions@github.com>" \
             --repo "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
             --message "Deploy ${GITHUB_SHA}"
+
+  # The merged PR's tickets go to Done once it is live (PROJ-72). Until 28
+  # October 2026 that was a rule an agent had to remember, and PROJ-60 and
+  # PROJ-61 sat at To Do for five days after #140 shipped them. Which keys
+  # count, and why an epic never closes here: .github/scripts/jira-done.sh.
+  #
+  # After a successful deploy, or after a docs-only merge, which deploys
+  # nothing and so is live on merge. A failed deploy moves nothing. The token
+  # lives in the `jira` environment, which only `master` may use: this repo is
+  # public, and a branch's workflow cannot read a secret it cannot reach.
+  jira:
+    name: Move merged tickets to Done
+    needs: [plan, deploy]
+    if: >-
+      ${{ !cancelled()
+      && github.event_name == 'push'
+      && github.ref == 'refs/heads/master'
+      && (needs.deploy.result == 'success'
+          || (needs.plan.result == 'success' && needs.plan.outputs.code == 'false')) }}
+    runs-on: ubuntu-latest
+    environment: jira
+    permissions:
+      contents: read
+      # The commits-to-pulls API, to find the PR this merge came from.
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+
+      - name: Move tickets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: .github/scripts/jira-done.sh

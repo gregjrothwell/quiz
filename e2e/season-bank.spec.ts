@@ -45,6 +45,12 @@ function fullRow(name: string): PlayerRecord {
     shared: 5,
     shafted: 2,
     gotShafted: 2,
+    // On the heavy row, so the next rules change is judged against a regular
+    // rather than a fresh document. docs/decisions/rivals.md.
+    rivals: {
+      sam: { name: 'Sam', beaten: 4, lost: 1 },
+      priya: { name: 'Priya', beaten: 1, lost: 3 },
+    },
   };
 }
 

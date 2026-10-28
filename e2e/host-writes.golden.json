@@ -5,12 +5,12 @@
       "index": 0,
       "stage": null,
       "changed": {
-        "browsing": "<deleted>",
         "form": "<deleted>",
         "gameId": "<game>",
         "openedAt": "<time>",
         "phase": "question",
-        "questionOpenedAt": "<time>"
+        "questionOpenedAt": "<time>",
+        "voteGen": "<gen>"
       }
     },
     {

@@ -2,6 +2,7 @@
   [
     "e2e/commentator.spec.ts",
     "e2e/host-authority-rules.spec.ts",
+    "e2e/lobby-vote-rules.spec.ts",
     "e2e/ladder-notice.spec.ts",
     "e2e/smoke.spec.ts"
   ],

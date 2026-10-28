@@ -237,3 +237,10 @@ fail. This section is the record; the data cannot carry it.
 
 One row (`hey`, one round, zero points, zero best) has nothing to estimate from
 and is still absent from the board.
+
+## Rivals — 27 October 2026
+
+Who you’ve beaten most, and who you’ve lost to most, is a caption on this
+table and under the podium. The counts are a map on the row. A tie is
+neither. The giant-killer bonus is not this. History is `npm run
+backfill-rivals`, from `games/`. [`rivals.md`](rivals.md).

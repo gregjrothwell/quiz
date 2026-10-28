@@ -4,6 +4,56 @@ import { describe, expect, it } from 'vitest';
 import { createRoom } from '../engine/state';
 import { toPersisted, toRoomState, toUpdate } from './roomDoc';
 
+describe('the lobby vote is not on the room document', () => {
+  it('a create does not write the vote, and a document that still has one reads as nobody voting', () => {
+    expect(toPersisted(createRoom('ABCD'))).not.toHaveProperty('packVotes');
+    expect(toPersisted(createRoom('ABCD'))).not.toHaveProperty('voteTaps');
+    expect(toPersisted(createRoom('ABCD'))).not.toHaveProperty('browsing');
+
+    const data = {
+      ...toPersisted(createRoom('ABCD')),
+      packVotes: { guest: 'flags' },
+      voteTaps: { guest: 2 },
+      browsing: 'screens',
+    };
+    const state = toRoomState('ABCD', data, {});
+    expect(state.packVotes).toEqual({});
+    expect(state.voteTaps).toEqual({});
+    expect(state.browsing).toBeNull();
+  });
+
+  it('crossing the lobby mints a generation and does not write the vote maps', () => {
+    const before = {
+      ...createRoom('ABCD'),
+      packVotes: { guest: 'flags' as const },
+      voteTaps: { guest: 1 },
+      browsing: 'flags' as const,
+    };
+    const leaving = toUpdate(
+      { ...before, phase: 'question', questionOpenedAt: 1, gameId: 'g', packVotes: {}, voteTaps: {}, browsing: null },
+      before,
+      () => 'gen-next',
+    );
+    expect(leaving.voteGen).toBe('gen-next');
+    expect(leaving).not.toHaveProperty('packVotes');
+    expect(leaving).not.toHaveProperty('voteTaps');
+    expect(leaving).not.toHaveProperty('browsing');
+
+    const entering = toUpdate(
+      { ...before, phase: 'lobby', packVotes: {}, voteTaps: {}, browsing: null },
+      { ...before, phase: 'finished' },
+      () => 'gen-after',
+    );
+    expect(entering.voteGen).toBe('gen-after');
+  });
+
+  it('a dispatch that stays in the lobby does not mint a generation', () => {
+    const lobby = createRoom('ABCD');
+    expect(toUpdate(lobby, lobby, () => 'gen-next')).not.toHaveProperty('voteGen');
+    expect(toUpdate(lobby, null, () => 'gen-next')).not.toHaveProperty('voteGen');
+  });
+});
+
 describe('the room document and W3', () => {
   it('reads a room made before W3 as having no host, so it keeps the derived quizmaster', () => {
     const legacy = { ...toPersisted(createRoom('ABCD')) } as Record<string, unknown>;

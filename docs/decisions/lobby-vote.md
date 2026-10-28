@@ -1,6 +1,6 @@
 # Lobby vote — the room says which set it wants
 
-> **Owner: Greg Rothwell. Last updated: 15 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 27 October 2026. Budget: 250 lines.**
 
 ## Story
 
@@ -37,7 +37,9 @@ id) and `browsing` (the quizmaster's highlighted pack, or null). `wellFormed()`
 does not `hasOnly` the room's keys — the same reason `wagerEnabled`,
 `stealEnabled` and `expiresAt` needed none. Checked against `firestore.rules`
 on this branch, and proved by the e2e allow case: a second browser's vote lands
-and the quizmaster's screen counts it.
+and the quizmaster's screen counts it. **Superseded 27 October 2026** — the
+section at the end is where the vote lives now. The paragraphs below are how
+it shipped.
 
 **Not in `players.{uid}`.** `playerOk` `hasOnly`s the entry's keys, so a vote
 there would need a paste — and the project rule is that `players` changes only
@@ -198,3 +200,33 @@ The live check is the first office lobby after: lock a vote, reload, still locke
 release branch: one PR already held both. CI's Playwright, including the reload, passed on the PR and on
 master; the served `index-BWSiBKMq` is byte-identical to a local build (SHA-256 `fe7789a6…`) and carries
 `voteTaps`. The office-lobby check has not happened yet.
+
+## On the Realtime Database — 27 October 2026
+
+PROJ-34. Greg asked for the 15 October note (PR #78, not on this master) now.
+A tap rewrote the room document, which every player listens to: one tap was
+*N* reads, about 1,800 a lobby at thirty seats.
+
+**Where.** `lobbyVote/{code}/{voteGen}/` holds `packVotes/{uid}`,
+`voteTaps/{uid}` and `browsing/{uid}`. The room document keeps `voteGen` only,
+the id of the generation clients read. A tap does not write the document.
+`toUpdate` never writes the three maps. `toRoomState` does not read them.
+
+**Who.** The rule cannot read the Firestore room, same as presence. A player
+writes only their own uid. The screen shows the host's `browsing` slot
+(`resolveHost`), so a member's slot is not the highlight. `voteTaps` moves by
+one and cannot be deleted. Taking a vote back deletes that player's pack id.
+
+**Clear.** `start` and `reset` mint a new `voteGen` in the phase write. Clients
+follow it, so the new lobby is empty in the same snapshot that opens it, and a
+refused start leaves the old generation. The old tree is not deleted: a rule
+that allowed the delete would let any member who can read the room wipe the
+vote. Rooms expire; the leftover is unread.
+
+**Firestore.** `ownVoteOk` stays, so an old bundle cannot park a large string
+on the room. `voteGen` is a short id (`voteGenOk`), and in a hosted room only
+the host writes it.
+
+**Publish.** No console paste. On master the `rules` job publishes
+`database.rules.json` and `firestore.rules` before the site. Merging publishes
+the `lobbyVote` block. Do not paste either file.

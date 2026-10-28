@@ -18,7 +18,7 @@ Built to replace Polly in Teams.
 |---|---|
 | repeats and the question history; staking points on the last question; **the Share or Shaft final** (live with #60, 24 Sep); **finals on the seats** (live 21 Oct, #104) | [`repeats.md`](decisions/repeats.md) · [`wager.md`](decisions/wager.md) · [`share-or-shaft.md`](decisions/share-or-shaft.md) · [`finals-history.md`](decisions/finals-history.md) |
 | the vault, reveals, answer secrecy, **the answer window**, and **a reveal that stalls** | [`vault.md`](decisions/vault.md) · [`answer-window.md`](decisions/answer-window.md) · [`reveal-delays.md`](decisions/reveal-delays.md) |
-| the season table, squads, `recordGame`, anything called `team`; the August board; squads **during** a round | [`season.md`](decisions/season.md) · [`season-shipped.md`](decisions/season-shipped.md) · [`live-squads.md`](decisions/live-squads.md) |
+| the season table, squads, `recordGame`, anything called `team`; the August board; squads **during** a round; **who you've beaten or lost to most** | [`season.md`](decisions/season.md) · [`season-shipped.md`](decisions/season-shipped.md) · [`live-squads.md`](decisions/live-squads.md) · [`rivals.md`](decisions/rivals.md) |
 | the opening titles, honours, rosettes | [`form-and-awards.md`](decisions/form-and-awards.md) |
 | `playerId`, recovery codes, claiming, the anonymous-account purge | [`identity.md`](decisions/identity.md) |
 | the clock and the countdown, and whose clock it runs on | [`clock.md`](decisions/clock.md) · [`shared-clock.md`](decisions/shared-clock.md) |

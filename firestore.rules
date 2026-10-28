@@ -337,6 +337,7 @@ service cloud.firestore {
           && durationOk()
           && ownEntryOk()
           && ownVoteOk()
+          && voteGenOk()
           && cannonOk();
       }
 
@@ -354,22 +355,15 @@ service cloud.firestore {
               && request.resource.data.cannon.values().hasOnly([true]));
       }
 
-      // What the writer leaves under their own key in the lobby vote (S2, 22
-      // October 2026). `onlyMine` says whose key a member may move, not what
-      // goes under it, so a member could park a ~900 kB string there and leave,
-      // and every client re-reads the room on every transition.
+      // What may sit under the writer's own key if a client still writes the
+      // lobby vote onto the room (S2, 22 October 2026). The app no longer does
+      // — PROJ-34 moved the tap to the Realtime Database — but an old bundle
+      // can, and `onlyMine` says whose key moved, not what was written. A
+      // ~900 kB string there is re-read by every client on every transition.
       //
-      // The vote is a pack id, or absent once taken back: `writeOwnVote`
-      // writes `packId ?? deleteField()` (src/lib/useRoom.ts), and the longest
-      // id is `general-knowledge`, 17 characters. The tap count is
-      // `increment(1)` from nothing, two a lobby (`VOTE_TAPS`), and `start` and
-      // `reset` clear both maps. 64 and 1000 are ceilings on size, not the
-      // game's limits, so nothing a real lobby writes comes near them. In
+      // 64 and 1000 are ceilings on size, not the game's limits. In
       // `wellFormed` rather than `selfWrite`, so the host's own key is held to
-      // it too.
-      //
-      // Only the writer's key: rules cannot walk a map. In a hosted room
-      // nobody else may write a member's key except the host.
+      // it too. Rules cannot walk a map, so only the writer's key is checked.
       function ownVoteOk() {
         return (!(request.auth.uid in request.resource.data.get('packVotes', {}))
             || (request.resource.data.packVotes[request.auth.uid] is string
@@ -377,6 +371,18 @@ service cloud.firestore {
           && (!(request.auth.uid in request.resource.data.get('voteTaps', {}))
             || (request.resource.data.voteTaps[request.auth.uid] is int
                 && request.resource.data.voteTaps[request.auth.uid] <= 1000));
+      }
+
+      // Which Realtime Database generation the lobby is reading (PROJ-34).
+      // Minted by `start` and `reset` in the phase write. A short id: it is on
+      // the document every client already reads, and an unbounded string there
+      // is the S2 gap again. Absent on a room that has not minted one.
+      function voteGenOk() {
+        return !('voteGen' in request.resource.data)
+          || (request.resource.data.voteGen is string
+              && request.resource.data.voteGen.size() > 0
+              && request.resource.data.voteGen.size() <= 40
+              && request.resource.data.voteGen.matches('^[A-Za-z0-9_-]+$'));
       }
 
       // ── Host authority (W3) ─────────────────────────────────────────────
@@ -1227,12 +1233,26 @@ service cloud.firestore {
           && gotShafted <= finals;
       }
 
+      // Who you've finished ahead of, and behind, one entry per opponent.
+      // Optional: every live row predates it, and a client one deploy behind
+      // writes none. The new client writes it whenever the season half of a
+      // bank has one, and hasOnly refuses that write until this block is
+      // published. CI publishes the rules before the site.
+      //
+      // **The bound is the size, not each entry.** Rules cannot walk a map
+      // (the same limit as the cannon's key length). Forty is the client's
+      // cap, `RIVALS_CAP`. docs/decisions/rivals.md.
+      function rivalsOk(d) {
+        let rivals = d.get('rivals', {});
+        return rivals is map && rivals.size() <= 40;
+      }
+
       function rowOk(d) {
         return d.keys().hasOnly(
              ['name', 'played', 'wins', 'points', 'best', 'lastGame', 'lastPlayed',
               'fastest', 'comeback', 'loneWolf', 'contrarian', 'team',
               'recent', 'form',
-              'finals', 'shared', 'shafted', 'gotShafted'])
+              'finals', 'shared', 'shafted', 'gotShafted', 'rivals'])
         && d.name is string
         && d.name.size() > 0
         && d.name.size() <= 40
@@ -1277,7 +1297,8 @@ service cloud.firestore {
         && d.get('team', '').size() <= 40
         && recentOk(d)
         && formOk(d)
-        && finalsOk(d);
+        && finalsOk(d)
+        && rivalsOk(d);
       }
 
       // The row goes in once, as `d`: written against `request.resource.data`

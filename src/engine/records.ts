@@ -1,5 +1,6 @@
 import type { Honours } from './awards';
 import { addFinals, tallyOf, withTonight, type CountedFinal } from './finals';
+import { foldRivals, meetRivals, type NightOpponent, type Rival } from './rivals';
 import { cleanSquad } from './squad';
 
 /**
@@ -86,6 +87,15 @@ export interface PlayerRecord {
   shafted?: number;
   /** The opponent's counted pick was shaft. Both shafting counts. */
   gotShafted?: number;
+  /**
+   * Who this player has finished ahead of, and behind. Optional for the same
+   * reason as the rosettes: every live row predates it, and a client one
+   * deploy behind writes none. Absent means none yet.
+   *
+   * Carried on every write below. Both writers use `set`, so a field this
+   * object does not name is erased by the next game.
+   */
+  rivals?: Record<string, Rival>;
   /** The last game banked here, so the same one cannot count twice. */
   lastGame: string;
   lastPlayed: number;
@@ -114,6 +124,7 @@ export const PLAYER_RECORD_KEYS = [
   'shared',
   'shafted',
   'gotShafted',
+  'rivals',
   'lastGame',
   'lastPlayed',
 ] as const satisfies readonly (keyof PlayerRecord)[];
@@ -139,6 +150,18 @@ export interface GameOutcome {
    * A no-pick is a present final whose `pick` is null, not an absent one.
    */
   final?: CountedFinal;
+  /**
+   * This player's score on the table the room ranked, when that is not
+   * `score`. Round two of a double banks a residual and ranks the morning.
+   * Absent means `score`.
+   */
+  resultScore?: number;
+  /**
+   * Everyone else on that table. Absent means this night changes no rivalry
+   * and does not clear one — a caller from before the field, and the week
+   * bucket, which is not the season the caption reads.
+   */
+  opponents?: readonly NightOpponent[];
 }
 
 /**
@@ -227,6 +250,7 @@ export function foldRecords(source: PlayerRecord, target: PlayerRecord | null): 
   // Firestore rejects outright.
   const squad = target?.team ?? source.team;
   const recent = foldRecent(source.recent, target?.recent);
+  const rivals = foldRivals(source.rivals, target?.rivals, newest === source);
 
   return {
     ...(squad === undefined ? {} : { team: squad }),
@@ -240,6 +264,7 @@ export function foldRecords(source: PlayerRecord, target: PlayerRecord | null): 
     loneWolf: (target?.loneWolf ?? 0) + (source.loneWolf ?? 0),
     contrarian: (target?.contrarian ?? 0) + (source.contrarian ?? 0),
     ...addFinals(tallyOf(source), tallyOf(target)),
+    ...(rivals ? { rivals } : {}),
     recent,
     form: formOf(scoresOf(recent)),
     lastGame: newest.lastGame,
@@ -277,6 +302,7 @@ export function bankGame(existing: PlayerRecord | null, outcome: GameOutcome): P
   const squad = cleanSquad(outcome.squad) || cleanSquad(existing?.team);
   const at = Date.now();
   const recent = pushRecent(existing?.recent, outcome, at);
+  const rivals = meetRivals(existing?.rivals, outcome.resultScore ?? outcome.score, outcome.opponents ?? []);
 
   return {
     // `set` is a whole-document overwrite, so a field this object does not name
@@ -294,6 +320,7 @@ export function bankGame(existing: PlayerRecord | null, outcome: GameOutcome): P
     loneWolf: (existing?.loneWolf ?? 0) + outcome.honours.loneWolf,
     contrarian: (existing?.contrarian ?? 0) + outcome.honours.contrarian,
     ...withTonight(tallyOf(existing), outcome.final ?? null),
+    ...(rivals ? { rivals } : {}),
     recent,
     form: formOf(scoresOf(recent)),
     lastGame: outcome.gameId,

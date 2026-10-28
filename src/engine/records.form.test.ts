@@ -12,6 +12,7 @@ import {
   type PlayerRecord,
   type RecentRound,
 } from './records';
+import { RIVALS_CAP } from './rivals';
 
 function record(overrides: Partial<PlayerRecord> = {}): PlayerRecord {
   return {
@@ -253,5 +254,13 @@ describe('the season row agrees with the security rules', () => {
   test('a recent entry hasOnly the three fields the client writes', () => {
     const entryHasOnly = /recentEntryOk[\s\S]*?hasOnly\(\[([^\]]*)\]\)/.exec(block)?.[1];
     expect(quotedNames(entryHasOnly)).toEqual([...RECENT_ROUND_KEYS].sort());
+  });
+
+  test('rivals are optional and capped where the client caps them', () => {
+    // Absent is an empty map, so a row from before the field still banks.
+    // The size is the whole check: rules cannot walk a map.
+    expect(block).toMatch(/let rivals = d\.get\('rivals', \{\}\)/);
+    expect(block).toContain(`rivals.size() <= ${RIVALS_CAP}`);
+    expect(block).toContain('rivals is map');
   });
 });
