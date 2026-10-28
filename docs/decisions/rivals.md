@@ -99,6 +99,11 @@ the opponent keys the same way, so one person is not split across the uid row
 and the row they play as now. It does not create a season row, and it does
 not touch a week row or anything but `rivals`.
 
+**Test rounds are skipped** (`testRunOf`, 28 October 2026): a harness game id
+(`rank-`, `final-`, `host-`, `harness-game`), or a table where every name has
+"test" in it. One real name keeps the round. The first `--go` that day wrote
+24 rows; with the 11 test rounds in, `G TEST` would have had a line.
+
 Counts take the max of the row and the replay. They are not added, so a
 second run does not double a round, and a meeting the record does not have is
 left in place. The name follows whichever side has met them more.
