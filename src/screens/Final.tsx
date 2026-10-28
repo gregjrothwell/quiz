@@ -338,7 +338,7 @@ export function Final({
         ) : null}
         {/* The frozen table, as everything else here: the winner pressing Leave
             must not take the line with them. */}
-        <Commentary room={{ ...room, players, scores }} moment="podium" show={landed} />
+        <Commentary room={{ ...room, players, scores }} moment="podium" speakHere={isQuizmaster} show={landed} />
       </header>
 
       {hasPodium ? (

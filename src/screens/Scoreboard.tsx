@@ -87,7 +87,7 @@ export function Scoreboard({ room, shots = [], youUid, isQuizmaster, onNext, tod
         {shots.length > 0 ? (
           <p className="cannon-line">Slop Cannon: {shots.map((shot) => shot.title).join(', ')}</p>
         ) : null}
-        <Commentary room={room} moment="scoreboard" />
+        <Commentary room={room} moment="scoreboard" speakHere={isQuizmaster} />
       </header>
 
       {skippedLast ? (
