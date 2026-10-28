@@ -22,7 +22,7 @@ function isPackId(value: unknown): value is PackId {
 }
 
 /**
- * The votes off a raw room document.
+ * The votes off an untrusted map (a room document, or one Realtime Database generation).
  *
  * Untrusted: any member can write any field of the room, so only a string
  * naming a real pack survives. A room from before the vote has no field at all
@@ -38,7 +38,7 @@ export function readPackVotes(raw: unknown): PackVotes {
 }
 
 /**
- * The taps spent off a raw room document.
+ * The taps spent off an untrusted map.
  *
  * Untrusted for the reason the votes are: only a whole, non-negative count
  * survives. A room from before the count reads as nobody having tapped.
@@ -52,7 +52,7 @@ export function readVoteTaps(raw: unknown): VoteTaps {
   return taps;
 }
 
-/** The quizmaster's highlighted pack off a raw room document, or null. */
+/** One highlighted pack off an untrusted value, or null. */
 export function readBrowsing(raw: unknown): PackId | null {
   return isPackId(raw) ? raw : null;
 }
@@ -98,16 +98,85 @@ export function nextVote(current: PackId | undefined, tapped: PackId): PackId | 
 }
 
 /**
- * Whether a phase transition may write `packVotes`, `voteTaps` and `browsing` wholesale.
+ * The generation a room reads before `start` or `reset` has minted one.
+ * A path segment, so the Realtime Database rules can bound it.
+ */
+export const INITIAL_VOTE_GEN = '0';
+
+/** What `voteGen` on the room document is allowed to be. The rules hold the same shape. */
+export const VOTE_GEN_PATTERN = /^[A-Za-z0-9_-]{1,40}$/;
+
+/**
+ * Which generation of the lobby vote the room is reading.
+ *
+ * Absent, or anything that is not a short id, is the initial generation — a
+ * room from before the vote moved, and a room that has not started or reset.
+ */
+export function voteGenOf(raw: unknown): string {
+  return typeof raw === 'string' && VOTE_GEN_PATTERN.test(raw) ? raw : INITIAL_VOTE_GEN;
+}
+
+/** `lobbyVote/{code}/{gen}` on the Realtime Database. */
+export function lobbyVotePath(code: string, gen: string): string {
+  return `lobbyVote/${code}/${gen}`;
+}
+
+/** One generation of the vote, as the lobby reads it. `browsingBy` is uid → pack. */
+export interface LobbyVoteView {
+  packVotes: PackVotes;
+  voteTaps: VoteTaps;
+  browsingBy: Record<string, PackId>;
+}
+
+export const EMPTY_LOBBY_VOTE: LobbyVoteView = { packVotes: {}, voteTaps: {}, browsingBy: {} };
+
+/**
+ * One generation off a Realtime Database snapshot.
+ *
+ * Untrusted for the reason the room fields were: the rules let a player write
+ * their own slot, not what goes in it beyond a length. Anything else is dropped.
+ */
+export function readLobbyVote(raw: unknown): LobbyVoteView {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return EMPTY_LOBBY_VOTE;
+  const record = raw as Record<string, unknown>;
+  return {
+    packVotes: readPackVotes(record['packVotes']),
+    voteTaps: readVoteTaps(record['voteTaps']),
+    browsingBy: readBrowsingBy(record['browsing']),
+  };
+}
+
+function readBrowsingBy(raw: unknown): Record<string, PackId> {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return {};
+  const browsingBy: Record<string, PackId> = {};
+  for (const [uid, value] of Object.entries(raw)) {
+    const packId = readBrowsing(value);
+    if (packId) browsingBy[uid] = packId;
+  }
+  return browsingBy;
+}
+
+/**
+ * The highlight the room is shown: the host's own slot, and nobody else's.
+ * A member can write `browsing/{their uid}`; it does not become the highlight
+ * unless they are the host. No host yet means nothing is highlighted.
+ */
+export function highlightFor(browsingBy: Record<string, PackId>, hostUid: string | null): PackId | null {
+  if (!hostUid) return null;
+  return browsingBy[hostUid] ?? null;
+}
+
+/**
+ * Whether this phase transition mints a new `voteGen` on the room document.
  *
  * Only when it crosses into or out of the lobby, which is where `start` and
- * `reset` clear them. Any other dispatch — `selectPack`, the opening titles,
- * both in the lobby — folds over the writer's snapshot, so writing the map back
- * would stamp the quizmaster's view of the votes over a vote cast a moment ago.
- * That is the `players` race (see `toUpdate` in src/lib/useRoom.ts), and the
- * cure is the same: votes travel as `packVotes.{uid}` field writes.
+ * `reset` used to clear the vote. The vote itself is not on the document.
+ * Minting a new id in that same write is the clear: every client follows the
+ * id, and the previous generation is left unread. A dispatch that stays in the
+ * lobby — `selectPack`, the opening titles — does not mint one, or it would
+ * throw away a vote cast a moment ago. A create has no earlier phase.
  */
-export function writesTheVote(previousPhase: Phase | null, nextPhase: Phase): boolean {
+export function mintsVoteGen(previousPhase: Phase | null, nextPhase: Phase): boolean {
   if (previousPhase === null) return false;
   return (previousPhase === 'lobby') !== (nextPhase === 'lobby');
 }

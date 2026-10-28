@@ -24,13 +24,16 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { attachDebugAppCheck } from './appCheck';
+import { lobbyVotePath } from '../src/engine/packVote';
 import { weekId } from '../src/engine/week';
 import {
   get,
   getDatabase,
+  increment as rtdbIncrement,
   ref,
   remove,
   set,
+  update as rtdbUpdate,
   type Database,
   type DatabaseReference,
 } from 'firebase/database';
@@ -1779,6 +1782,7 @@ function buildChecks(probes: Probes): Check[] {
       hint: 'database.rules.json is missing its root deny',
       run: () => get(ref(rtdb, '/')),
     },
+    ...lobbyVoteChecks(rtdb, uid, `rules-check-${probeGameId}`),
     {
       // Last, because it waits out a real gate. This is the direction that
       // ruins a quiz night rather than merely leaking one: if the vault never
@@ -1804,6 +1808,100 @@ function buildChecks(probes: Probes): Check[] {
         // Deletable by design, so the next run can prove this again.
         return deleteDoc(reveal);
       },
+    },
+  ];
+}
+
+/**
+ * PROJ-34: the lobby vote on the Realtime Database. The same writes
+ * `writeOwnVote` and `writeBrowsing` make, and the ones they must not.
+ * The tree is left behind — the rules do not allow deleting a generation,
+ * which is what stops any member who can read the room from wiping it.
+ */
+function lobbyVoteChecks(rtdb: Database, uid: string, code: string): Check[] {
+  const gen = lobbyVotePath(code, '0');
+  const hint = 'publish database.rules.json — the `lobbyVote` block (CI rules job on master; do not paste)';
+  const own = (leaf: string) => `${gen}/${leaf}/${uid}`;
+  return [
+    {
+      label: 'Realtime DB · cast a lobby vote and count the tap',
+      expect: 'allow',
+      hint,
+      run: async () => {
+        await rtdbUpdate(ref(rtdb), {
+          [`${gen}/packVotes/${uid}`]: 'sleeves',
+          [`${gen}/voteTaps/${uid}`]: rtdbIncrement(1),
+        });
+        const snap = await get(ref(rtdb, gen));
+        const value = snap.val() as { packVotes?: Record<string, string>; voteTaps?: Record<string, number> } | null;
+        if (value?.packVotes?.[uid] !== 'sleeves' || value?.voteTaps?.[uid] !== 1) {
+          throw new Error(`vote landed as ${JSON.stringify(value)}`);
+        }
+      },
+    },
+    {
+      label: "Realtime DB · write another player's lobby vote",
+      expect: 'deny',
+      hint: 'database.rules.json lets a player write lobbyVote packVotes as somebody else',
+      run: () => set(ref(rtdb, `${gen}/packVotes/not-my-uid`), 'flags'),
+    },
+    {
+      label: 'Realtime DB · park a long string on a lobby vote',
+      expect: 'deny',
+      hint: 'database.rules.json does not bound lobbyVote pack ids — a player can bloat the node every client reads',
+      run: () => set(ref(rtdb, own('packVotes')), 'x'.repeat(65)),
+    },
+    {
+      label: 'Realtime DB · set the tap count to a word',
+      expect: 'deny',
+      hint: 'database.rules.json does not hold lobbyVote voteTaps to a number',
+      run: () => set(ref(rtdb, own('voteTaps')), 'two'),
+    },
+    {
+      label: 'Realtime DB · jump the tap count',
+      expect: 'deny',
+      hint: 'database.rules.json lets a player set voteTaps to anything — the lock is a refresh away',
+      run: () => set(ref(rtdb, own('voteTaps')), 5),
+    },
+    {
+      label: 'Realtime DB · take the vote back, and count that tap',
+      expect: 'allow',
+      hint,
+      run: () =>
+        rtdbUpdate(ref(rtdb), {
+          [`${gen}/packVotes/${uid}`]: null,
+          [`${gen}/voteTaps/${uid}`]: rtdbIncrement(1),
+        }),
+    },
+    {
+      label: 'Realtime DB · delete the tap count',
+      expect: 'deny',
+      hint: 'database.rules.json lets a player delete voteTaps and unlock their cards',
+      run: () => remove(ref(rtdb, own('voteTaps'))),
+    },
+    {
+      label: 'Realtime DB · highlight a pack as yourself',
+      expect: 'allow',
+      hint,
+      run: () => set(ref(rtdb, own('browsing')), 'flags'),
+    },
+    {
+      label: "Realtime DB · highlight a pack as the host",
+      expect: 'deny',
+      hint: 'database.rules.json lets a player write browsing as somebody else — they can set the highlight',
+      run: () => set(ref(rtdb, `${gen}/browsing/not-my-uid`), 'flags'),
+    },
+    {
+      label: 'Realtime DB · vote under a generation id the rules do not allow',
+      expect: 'deny',
+      hint: 'database.rules.json does not bound the lobbyVote generation id',
+      run: () => set(ref(rtdb, `${lobbyVotePath(code, 'x'.repeat(41))}/packVotes/${uid}`), 'sleeves'),
+    },
+    {
+      label: 'Realtime DB · delete a lobby-vote generation',
+      expect: 'deny',
+      hint: 'database.rules.json lets anyone signed in delete lobbyVote/{code}/{gen} — a member can wipe the vote',
+      run: () => remove(ref(rtdb, gen)),
     },
   ];
 }
@@ -2005,6 +2103,24 @@ function buildHostChecks(probes: HostProbes): Check[] {
     },
     { label: 'W3: a member cannot change settings', expect: 'deny', hint, run: () => updateDoc(room(dbB), { wagerEnabled: true }) },
     { label: 'W3: a member cannot write `browsing`', expect: 'deny', hint, run: () => updateDoc(room(dbB), { browsing: 'flags' }) },
+    {
+      label: 'W3: a member cannot mint `voteGen`',
+      expect: 'deny',
+      hint: 'firestore.rules lets a member write `voteGen` — they can point the lobby at an empty generation',
+      run: () => updateDoc(room(dbB), { voteGen: 'member-cleared-the-vote' }),
+    },
+    {
+      label: 'W3: the host cannot park a long `voteGen`',
+      expect: 'deny',
+      hint: 'firestore.rules `voteGenOk` does not bound the id — it rides on the room document every client reads',
+      run: () => updateDoc(room(db), { voteGen: 'x'.repeat(41) }),
+    },
+    {
+      label: 'W3: the host mints `voteGen` (the lobby-vote clear)',
+      expect: 'allow',
+      hint: 'firestore.rules `voteGenOk` refuses the id `start` and `reset` write',
+      run: () => updateDoc(room(db), { voteGen: 'gen-rules-check' }),
+    },
     {
       label: "W3: a member cannot remove the host's seat",
       expect: 'deny',

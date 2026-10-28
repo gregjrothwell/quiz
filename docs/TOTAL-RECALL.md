@@ -28,6 +28,10 @@ notes, not chronology; every entry they described is still listed below by date.
 
 PROJ-60 and PROJ-61 went live in #140 and sat at To Do for five days; 2 of the 40 PRs before today named a ticket. Plan now prints `ticket=`, and Verify (required) fails when no `PROJ-<n>` is in the title, branch, description or a commit. `Ticket: none — <why>` waives it. Docs-only PRs and Dependabot are exempt. Proved on probe #164 (refused, then passed on the waiver), and in production on Dependabot #165 (step skipped). #163, `60706b2`; the site bundle is unchanged. AGENTS.md carries the rule for cloud agents. Whoever takes a PR live moves its tickets to Done (Greg, 28 Oct).
 
+## 2026-10-27 — The lobby vote moves onto the Realtime Database
+
+PROJ-34. A tap no longer rewrites the room document. `lobbyVote/{code}/{voteGen}` on the RTDB; `start` and `reset` mint `voteGen` in the phase write, and the old tree is left unread because the rule cannot see the host. No paste: CI publishes `database.rules.json` before the site. [`lobby-vote.md`](decisions/lobby-vote.md).
+
 ## 2026-10-27 — Greg decided the cards
 
 The stumper card is titled **A question nobody got**. Tonight's field stays tap-only; a vanished host waiting out the chair is accepted, and no timer goes back. Rosettes ignore a thrown-out question, and the season row banks from that same set. Round-title cards and Share or Shaft stay as long as they are. [`form-and-awards.md`](decisions/form-and-awards.md).

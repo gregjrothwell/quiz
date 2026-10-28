@@ -21,8 +21,9 @@ isolateFiles();
  *
  * What is compared, and what is not. Each entry is one change the Admin SDK saw,
  * as the phase, question, stage of the final, and the fields that changed, with
- * their values made stable: timestamps, answer times (`elapsedMs`), the game id
- * and question ids are replaced by placeholders, uids by the player's name. Scores are kept: everyone
+ * their values made stable: timestamps, answer times (`elapsedMs`), the game id,
+ * question ids and the lobby-vote generation (`voteGen`, PROJ-34) are replaced
+ * by placeholders, uids by the player's name. Scores are kept: everyone
  * answers A, which the seeded vault calls right, in a fixed order a beat apart,
  * so the rank ladder pays the same every run. Which questions are dealt is
  * random, so their text and categories are not compared — the count is.
@@ -175,7 +176,13 @@ test('the host makes the same writes, start to podium, through a Share or Shaft 
   stop();
 
   const questionIds = (finished.get('questions') as { id: string }[]).map((question, index) => [question.id, `<q${String(index)}>`] as const);
-  const ids = new Map<string, string>([[gameId, '<game>'], ...questionIds]);
+  // Minted fresh on start. Compared as <gen>, the same way the game id is <game>.
+  const voteGen = finished.get('voteGen');
+  const ids = new Map<string, string>([
+    [gameId, '<game>'],
+    ...(typeof voteGen === 'string' ? [[voteGen, '<gen>'] as const] : []),
+    ...questionIds,
+  ]);
 
   // From the first question on: the lobby before it is the member side's.
   const start = raw.findIndex((data) => data.phase !== 'lobby');

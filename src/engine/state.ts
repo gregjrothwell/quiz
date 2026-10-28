@@ -386,18 +386,23 @@ export interface RoomState {
    * The lobby vote: uid → the pack that player would like. Advisory — the
    * quizmaster still picks. See `packVote.ts` and docs/decisions/lobby-vote.md.
    *
-   * Written one `packVotes.{uid}` field at a time, like `players`, and never
-   * wholesale by a phase transition except to clear it on the way into or out
-   * of the lobby. No ruleset paste, for the reason `wagerEnabled` gives.
+   * Not stored on the room document. `useRoom` overlays it from
+   * `lobbyVote/{code}/{voteGen}` on the Realtime Database, so a tap does not
+   * wake every listener of the room. The reducer still clears it when a round
+   * starts or the room resets; the write that actually clears it is a new
+   * `voteGen` on that phase change.
    */
   packVotes: PackVotes;
   /**
    * uid → how many taps that player has spent on the vote in this lobby.
-   * On the room rather than in the lobby's own state so a reload does not hand
-   * out more. Counted up in the same write as the vote, cleared with it.
+   * From the same Realtime Database node as `packVotes`, so a reload does not
+   * hand out more. Counted up in the same write as the vote.
    */
   voteTaps: VoteTaps;
-  /** The pack the quizmaster has highlighted in the lobby, shown to the room. */
+  /**
+   * The pack the host has highlighted, from their own `browsing` slot.
+   * A member's slot is not this.
+   */
   browsing: PackId | null;
   /**
    * Who runs the room (W3). Set to the creator when the room is made; moved by
