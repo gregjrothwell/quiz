@@ -24,6 +24,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-10-28 — Release #168 live: Rivals, lobby vote on the RTDB, podium repeat, Jira auto-Done
+
+Greg: "go live with everything". #167, #162, #165, #161 and #160 were each merged into `release-2026-10-28` with its own merge commit, then merged to master as `f698090`. Rules published and Pages deployed (gh-pages `74687ee`, `index-3smqKauF`). `check-rules` 164/0, with every new allow case passing: rivals on a season row, an RTDB vote and tap, the host minting `voteGen`. `sync-harness 10` 10/10. The `jira` job found the four keys and warned without a token, so PROJ-64/34/59 were moved by hand. **The release title named PROJ-72**, which the job would have closed. Release titles should name done tickets only. Rivals backfill dry run: 25 rows; `--go` waits for Greg.
+
 ## 2026-10-28 — Rivals: a seat is not a game played
 
 Review of #160: joining seeds a score of 0, so a late joiner who never answered counted as beaten by the whole room (the room 6JA5 shape). `tookPart` now needs an answer in the round, or a total that isn't 0. The bank reads answers off the device's log; the backfill reads them off `games/{id}.questions`. [`rivals.md`](decisions/rivals.md).
