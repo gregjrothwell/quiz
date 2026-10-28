@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 27 October 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 28 October 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -23,6 +23,14 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
+
+## 2026-10-28 — Rivals: a seat is not a game played
+
+Review of #160: joining seeds a score of 0, so a late joiner who never answered counted as beaten by the whole room (the room 6JA5 shape). `tookPart` now needs an answer in the round, or a total that isn't 0. The bank reads answers off the device's log; the backfill reads them off `games/{id}.questions`. [`rivals.md`](decisions/rivals.md).
+
+## 2026-10-28 — A PR names its Jira ticket (PROJ-66, live)
+
+PROJ-60 and PROJ-61 went live in #140 and sat at To Do for five days; 2 of the 40 PRs before today named a ticket. Plan now prints `ticket=`, and Verify (required) fails when no `PROJ-<n>` is in the title, branch, description or a commit. `Ticket: none — <why>` waives it. Docs-only PRs and Dependabot are exempt. Proved on probe #164 (refused, then passed on the waiver), and in production on Dependabot #165 (step skipped). #163, `60706b2`; the site bundle is unchanged. AGENTS.md carries the rule for cloud agents. Whoever takes a PR live moves its tickets to Done (Greg, 28 Oct).
 
 ## 2026-10-27 — Rivals backfill, from games/
 
@@ -138,22 +146,13 @@ Greg: "Build the Q1 trace for every device … Don't go live." Every device file
 
 Read off `games/` back to 9 Sep. Cass misses Q1 on **8 of 24 10s rounds and 0 of 22 15s rounds**; her Q1 answers land 2–5.5s behind her own clock (`at − elapsedMs`, 4.6s again in 79YX today), her later ones 0.1s. That supersedes the 9 Oct shared-clock hypothesis, and "none before 6 Oct" was wrong (WAM6, 16 Sep). The lag's cause is open; options in [`cass-q1.md`](decisions/cass-q1.md). Today's three rounds she scored Q1. Live checks: The Price is Right played (3U48, 8/8 answered all ten); Random Round 79YX ended on a tune.
 
-## 2026-10-21 — Live: #96 (gh-pages `dbe92b1`): The Price is Right, 81, blind
-
-Greg: "Go live with #96." PR CI green (Playwright against emulators), merged `8117b23` 09:04 BST → build, e2e, rules, gh-pages green 09:10. Live `index-BAaZqtS-` byte-identical to a local build; `tags.json` served byte-identical with no answer field; 81/81 pictures 200; on the show shelf. Seeded earlier the same morning (81/81). #93 marked merged with it. Live check: the first office round, `read-games --pack tags`. [`price-is-right.md`](decisions/price-is-right.md).
-
-## 2026-10-21 — Live: #94 (gh-pages `3b00a0e`): Random Round's last question, the lobby shelves; The Price is Right seeded
-
-Greg: "Go live with #94." CI green on the PR head (Playwright against emulators), merged `565d20e` 08:41 BST → build, e2e, rules, gh-pages green 08:47. Live `index-DLJOhSAP` is byte-identical to a local build of `565d20e`; the finale list and the shelves are in it, and the live gallery shows both shelves. Live check: the next office Random Rounds. Before it, on Greg's word: The Price is Right seeded (81 added, read back 81/81) and `host-room --pack tags` revealed in 149 ms with no payload logged; not deployed (`decisions/price-is-right.md` lands with its PR).
-
-## 2026-10-20 — Random Round's last question, the lobby shelves, The Price is Right begun
-
-Greg: Random Round always ended on an album, "almost like the last question is a random answer". Measured: 9 rounds, all The Ladder; a sleeve last in 7, 18% right; hard prices 6%. Decided: the last is never a sleeve or a price ([`random-round.md`](decisions/random-round.md#20-october-2026--the-last-question-is-never-a-sleeve-or-a-price)). Handover item 18, both lobby grids: show rounds first (45 of the last 60 rounds), Random Round two tiles wide, a sound mark ([`lobby-shelves.md`](decisions/lobby-shelves.md)). Both on `release-20-oct`, not live. **The Price is Right** (`tags`, blind): a picture, guess today's price; 81 ONS items, writer and draw script on `price-is-right`, waiting on Greg's pick of drawing style (`decisions/price-is-right.md` on that branch). Lint is red locally from five stale `.claude/worktrees`, not from the code.
-
 ## 2026-10-02 to 2026-10-15 — archived, one line each
 
-Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's; #68 and Blankety Blank built the same night, at 309 with the W3 release entry; the first office rounds of #67 and #68 the same night again, at 304 with the go-live; The Price Was Right built on 17 October, at 302 with #91's go-live; #70 and #69 on 20 October, at 296, with the Random Round, lobby and Price is Right entry; the two 7 October entries on 21 October, at 302 with #98's go-live; the two 12 October go-lives on 21 October, at 306 with #104's go-live; the 8 and 14 October lobby-vote entries on 22 October, at 302 with #107's go-live; the two 15 October vote-taps entries the same day, at 301 with #110's go-live; the two 15 October reveal-name entries the same day, at 301 with #113's go-live; W1's TMDB branch and the productionisation plan, both 15 October, the same day, at 300 with release 2026-10-22-3's go-live; W2's `rules-from-ci` branch, 15 October, the same night, at 297 with #138's go-live; #91's go-live and the three 15 October W3 entries on 24 October, at 299, ahead of a release carrying five spine entries.
+Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's; #68 and Blankety Blank built the same night, at 309 with the W3 release entry; the first office rounds of #67 and #68 the same night again, at 304 with the go-live; The Price Was Right built on 17 October, at 302 with #91's go-live; #70 and #69 on 20 October, at 296, with the Random Round, lobby and Price is Right entry; the two 7 October entries on 21 October, at 302 with #98's go-live; the two 12 October go-lives on 21 October, at 306 with #104's go-live; the 8 and 14 October lobby-vote entries on 22 October, at 302 with #107's go-live; the two 15 October vote-taps entries the same day, at 301 with #110's go-live; the two 15 October reveal-name entries the same day, at 301 with #113's go-live; W1's TMDB branch and the productionisation plan, both 15 October, the same day, at 300 with release 2026-10-22-3's go-live; W2's `rules-from-ci` branch, 15 October, the same night, at 297 with #138's go-live; #91's go-live and the three 15 October W3 entries on 24 October, at 299, ahead of a release carrying five spine entries; the 20 October entry and #94's and #96's go-lives, 21 October, on 28 October, at 306 with #160's rivals entries.
 
+- **2026-10-21** — [Live: #96 (gh-pages `dbe92b1`): The Price is Right, 81, blind](recall/2026-10.md#2026-10-21--live-96-gh-pages-dbe92b1-the-price-is-right-81-blind)
+- **2026-10-21** — [Live: #94 (gh-pages `3b00a0e`): Random Round's last question, the lobby shelves; The Price is Right seeded](recall/2026-10.md#2026-10-21--live-94-gh-pages-3b00a0e-random-rounds-last-question-the-lobby-shelves-the-price-is-right-seeded)
+- **2026-10-20** — [Random Round's last question, the lobby shelves, The Price is Right begun](recall/2026-10.md#2026-10-20--random-rounds-last-question-the-lobby-shelves-the-price-is-right-begun)
 - **2026-10-17** — [Live: #91 (gh-pages `f6268e6`): The Price Was Right 154, Catchphrase 233](recall/2026-10.md#2026-10-17--live-91-gh-pages-f6268e6-the-price-was-right-154-catchphrase-233)
 - **2026-10-15** — [Live: #88 + #87 (gh-pages `7d42c0e`): W1, W2 and W3 in one deploy](recall/2026-10.md#2026-10-15--live-88--87-gh-pages-7d42c0e-w1-w2-and-w3-in-one-deploy)
 - **2026-10-15** — [W3 finished; the release with W2 and W3 built, not live](recall/2026-10.md#2026-10-15--w3-finished-the-release-with-w2-and-w3-built-not-live)

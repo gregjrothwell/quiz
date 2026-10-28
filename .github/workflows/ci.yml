@@ -94,6 +94,7 @@ jobs:
       code: ${{ steps.plan.outputs.code }}
       reuse_run: ${{ steps.plan.outputs.reuse_run }}
       whats_new: ${{ steps.plan.outputs.whats_new }}
+      ticket: ${{ steps.plan.outputs.ticket }}
     steps:
       # Depth 2: a push compares the commit with its first parent.
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
@@ -125,6 +126,14 @@ jobs:
         if: needs.plan.outputs.whats_new == 'missing'
         run: |
           echo "::error title=What's new::This PR changes what players see (src/ or public/) but not src/lib/updates.ts. Add a line in player words, or write \"What's new: none — <why>\" in the PR description or a commit message. An empty commit re-runs CI."
+          exit 1
+
+      # A PR names its Jira ticket, so whoever takes it live can move the
+      # ticket to Done (PROJ-66, 28 October 2026). Same shape as the check above.
+      - name: PR names its Jira ticket
+        if: needs.plan.outputs.ticket == 'missing'
+        run: |
+          echo "::error title=Jira ticket::Name the ticket (PROJ-<n>) in the PR title, branch, description or a commit message, or write \"Ticket: none — <why>\" in the description or a commit message. An empty commit re-runs CI."
           exit 1
 
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0

@@ -8,6 +8,9 @@
 #   whats_new=ok|waived|missing|n/a
 #                     on a pull request that changes what players see, whether
 #                     it carries its line on the What's new page
+#   ticket=ok|waived|missing|n/a
+#                     on a pull request that builds, whether it names its Jira
+#                     ticket (PROJ-<n>)
 #
 # Why: go-live took ~16 minutes on 22 October 2026, and about 8 of them were
 # CI re-running verify and e2e on a tree byte-identical to the one the PR had
@@ -114,6 +117,28 @@ if [ "$EVENT" = pull_request ] && [ "$code" = true ]; then
   fi
 fi
 
+# A pull request names its Jira ticket, so the ticket can follow it to Done.
+# PROJ-60 and PROJ-61 went live in #140 on 23 October 2026 and sat at To Do
+# for five days: 2 of the 40 PRs before 28 October named a ticket, and the
+# rule saying they should was in a file cloud agents never read (PROJ-66).
+# Title, branch, description or any commit message will do. Docs-only PRs
+# never reach here (code=false), and nor does Dependabot. The waiver is
+# "Ticket: none — why", for work that genuinely has no ticket.
+ticket=n/a
+if [ "$EVENT" = pull_request ] && [ "$code" = true ]; then
+  pr=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.user.login, .head.ref, .title, (.body // "")')
+  if [ "$(head -n1 <<<"$pr")" = 'dependabot[bot]' ]; then
+    ticket=n/a
+  else
+    said=$(printf '%s\n' "$pr"
+      gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/commits" --paginate --jq '.[].commit.message')
+    if grep -qE 'PROJ-[0-9]+' <<<"$said"; then ticket=ok
+    elif grep -qiE '^ticket: none' <<<"$said"; then ticket=waived
+    else ticket=missing; fi
+  fi
+fi
+
 echo "code=$code"
 echo "reuse_run=$reuse"
 echo "whats_new=$whats_new"
+echo "ticket=$ticket"
