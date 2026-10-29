@@ -63,6 +63,7 @@ test('a table of test names is kept in games/, and banks nobody', async ({ brows
       for (const page of [host, other]) {
         await expect(page.locator('.podium')).toBeVisible();
         await page.keyboard.press('a');
+        await page.keyboard.press('Enter');
       }
       answered = key;
     }
