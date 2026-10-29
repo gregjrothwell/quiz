@@ -1,12 +1,19 @@
 # What went live, and when
 
-> **Owner: Greg Rothwell. Last updated: 24 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 29 October 2026. Budget: 250 lines.**
 
 Split out of [`HANDOVER.md`](../HANDOVER.md) on 24 October 2026, at 150 lines
 against a 150 budget. **Moved verbatim; only where it lives has changed.** The
 handover keeps the current live bundle and the checks still owed; the chain of
 bundles before it, and the release records that were sitting in its Outstanding
 list, are here. Links were relative to `docs/`, so `decisions/` is dropped from them.
+
+## The live chain before `index-3smqKauF`, moved 29 October 2026
+
+Verbatim from the handover, at 148 lines against 150; only the link changed.
+
+Before it `index-CtEv5OcI` (#158 + #159, 27 Oct 16:55 GMT, merge `bc7cbff`, gh-pages `153e9f2`), and #156 + #157 (27 Oct 15:04, gh-pages `7b19c39`). This file missed both until 28 Oct.
+Before them `index-B-mCNyGu` (#154, 26 Oct 20:48 GMT, merge `e2fab8c`, gh-pages `4ea6796`; `check-rules` 147/0): **the Slop Cannon and the error beacon** ([`slop-cannon.md`](slop-cannon.md)); `clientErrors/` from every page. Earlier live states: TOTAL-RECALL.
 
 ## The live chain, newest first, as of 22 October 2026
 

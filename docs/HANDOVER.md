@@ -57,9 +57,9 @@ Built to replace Polly in Teams.
 >   **Productionisation plan decided 15 Oct** (all six as recommended; D6: league owners sign in, players stay anonymous); W1, **a TMDB credit the live site
 >   lacked**; **W2, rules from CI** ([`rules-from-ci.md`](decisions/rules-from-ci.md)); **W3, host authority, expand half** ([`host-authority.md`](decisions/host-authority.md)). **All three live 15 Oct.** Next: W3's contract half after 14 Nov; W4; W5 by 1 Mar 2027 — [`public-scale.md`](decisions/public-scale.md#the-plan-15-october-2026).
 
-**Live is `index-3smqKauF`** (release #168, 28 Oct 14:25 GMT, merge `f698090`, gh-pages `74687ee`; rules from CI; `check-rules` **164/0**; `sync-harness 10` 10/10): **Rivals** caption on the season table and podium ([`rivals.md`](decisions/rivals.md), late joiners excluded); **lobby vote on the RTDB** under `lobbyVote/{code}/{voteGen}` ([`lobby-vote.md`](decisions/lobby-vote.md)); podium speech repeat fixed, voice still off; CI's `jira` job (no token yet, warns); qs/express. **Rivals backfill** written 28 Oct: 24 rows, harness and hand-test rounds skipped. 10 test season/week rows deleted the same day (backup `.secrets/backups/test-season-rows-2026-10-28.json`). **Owed:** re-run the backfill about 31 Oct (PROJ-73); test runs still reach prod (PROJ-74); #168 not yet seen in a real room (PROJ-75); `JIRA_API_TOKEN` (PROJ-72).
-Before it `index-CtEv5OcI` (#158 + #159, 27 Oct 16:55 GMT, merge `bc7cbff`, gh-pages `153e9f2`), and #156 + #157 (27 Oct 15:04, gh-pages `7b19c39`). This file missed both until 28 Oct.
-Before them `index-B-mCNyGu` (#154, 26 Oct 20:48 GMT, merge `e2fab8c`, gh-pages `4ea6796`; `check-rules` 147/0): **the Slop Cannon and the error beacon** ([`slop-cannon.md`](decisions/slop-cannon.md)); `clientErrors/` from every page. Earlier live states: TOTAL-RECALL.
+**Live is `index-3smqKauF`** (release #168, 28 Oct 14:25 GMT, merge `f698090`, gh-pages `74687ee`; rules from CI; `check-rules` **164/0**; `sync-harness 10` 10/10): **Rivals** caption on the season table and podium ([`rivals.md`](decisions/rivals.md), late joiners excluded); **lobby vote on the RTDB** under `lobbyVote/{code}/{voteGen}` ([`lobby-vote.md`](decisions/lobby-vote.md)); podium speech repeat fixed, voice still off; CI's `jira` job (no token yet, warns); qs/express. **Rivals backfill** written 28 Oct: 24 rows, harness and hand-test rounds skipped. 10 test season/week rows deleted the same day (backup `.secrets/backups/test-season-rows-2026-10-28.json`). **Owed:** re-run the backfill about 31 Oct (PROJ-73); test runs still reach prod (PROJ-74, fix in #175); #168 not yet seen in a real room (PROJ-75); `JIRA_API_TOKEN` (PROJ-72).
+Earlier live states: [`live-history.md`](decisions/live-history.md), then TOTAL-RECALL.
+**Open, not live (29 Oct), one release:** #173 (PROJ-77 + PROJ-79), #174 (PROJ-80), #175 (PROJ-74), #176 (PROJ-78's 0ms), #177 (`read-owed` folds, on #175).
 **Owed for #154:** the first round with Mr Fries or the Double → `npm run read-cannon` shows its Keep/Bin (none played since; 0 shots, 29 Oct). **The beacon is proved live** — on 28 Oct it caught a tab open across #168's deploy failing to load the share card and Season (PROJ-77: reload once on `vite:preloadError`).
 **Live checks still owed** — `npm run read-owed` prints them. Settled 29 Oct: the Double (SC46, 26 Oct); Higher or Lower 81% right, inside 55–85; Theme Tunes once (easy 43%, medium 54%, hard 43% — too few to re-band). Still owed: the first Geekend round makes `season-2-geekend/asked/{pack}` and leaves `season-2`'s doc for that pack unchanged; the first office round under W3 (`read-games`); #79's long name; #77's lobby reload; **#104's first final and first Catchphrase call**. **Finals backfill written 21 Oct** (12 rows, read back); re-run the dry run in a few days, since an old bundle erases its own tallies. Firebase chunk `firebase-DwYnjfYh` since #111 (Vite 8.3.5), so returning players fetch it once.
 **21 packs** + **Random Round** (six played packs dealt into one); **The Price Was Right 154**, **The Price is Right 81** and **Blankety Blank 148** (all blind); **Catchphrase 233** (every 5th a double-scoring bonus); **Name that Tune 424**; **Name the Artist 259**; synth **Classical**; **On the box 445**
@@ -103,7 +103,7 @@ scoring 500 + rank 500/400/300/200/100.
     `release-17-oct` (#91): Prices 95→154, Catchphrase 178→233, both blind ([`price-was-right.md`](decisions/price-was-right.md), [`catchphrase-batch-6.md`](decisions/catchphrase-batch-6.md)).
 11. **`firstMs` is not deterring** ([`first-touch.md`](decisions/first-touch.md)). 29 Oct, Y86U (GK, 10s): one player's first touch
     was under 1s on 14 of 15 questions (5 of 15 the day before), changed after on 10; another snapped 11 of 15 and kept
-    seven finals under 1s, one stamped 0ms. Restricting is Greg's call; the 0ms `elapsedMs` wants a look.
+    seven finals under 1s. Restricting is Greg's call (snaps did not win Y86U). The 0ms was the clock's 100ms tick: #176.
 12. **Closed 29 Oct (Greg): Cass's slow question-one write.** 2.4–4.8s on 22, 23 and 26 Oct; 0.1–0.2s on all four
     of 27–29 Oct (`read-owed`). The 3s lit-lamp hold stays (#140, [`cass-q1.md`](decisions/cass-q1.md)).
 13. **Closed 29 Oct — reveal over Firestore Lite (#71)**: Y86U's 15 reveals, vault step median 51ms (37–122ms, one
@@ -111,7 +111,7 @@ scoring 500 + rank 500/400/300/200/100.
 14. **Loose ends from 26–27 September**: five new tunes transcribed to nothing
     and want an ear (`live-forever`, `golden-touch`, `build-me-up-buttercup`,
     `call-the-shots`, `gangnam-style`); **expired rooms pruned 29 Oct**
-    (194, read back, none left; PROJ-79); reCAPTCHA's monthly count is unmeasured (10k free per organisation).
+    (194, read back, none left; `--go` hung on exit, fixed in #173, PROJ-79); reCAPTCHA's monthly count is unmeasured (10k free per organisation).
 15. **Sleeve songs (#62, #63) have been played** — `XDUF` at half the clock, then
     from the first frame ([`sleeves-song.md`](decisions/sleeves-song.md)). Five songs
     still want an ear; *Reasonable Doubt* and *Future Nostalgia* show a **single's**
