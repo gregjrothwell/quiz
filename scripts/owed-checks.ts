@@ -1,15 +1,19 @@
 import { askedSeason } from '../src/engine/askedHistory';
 import type { GameRecord } from '../src/engine/gameRecord';
 import { DIFFICULTIES, type Difficulty } from '../src/questions/types';
+import { formatTally, type ShotTally } from './cannon-report';
+import { formatGroup, type ErrorGroup } from './error-report';
 import { summariseQuestion } from './game-report';
 
 /**
  * The print behind `npm run read-owed`. Pure, so `npm test` covers it.
  * `read-owed.ts` only fetches and prints what this says.
  *
- * The five sections are the live checks still owed in `docs/HANDOVER.md`:
+ * The first five sections are the live checks still owed in `docs/HANDOVER.md`:
  * The Double's pair, Theme Tunes by level, Higher or Lower's % right,
- * Cass's question-one traces, and whether Geekend's asked doc exists.
+ * Cass's question-one traces, and whether Geekend's asked doc exists. The last
+ * two are what `read-errors` and `read-cannon` print, so one command after a
+ * round reads everything (29 October 2026).
  *
  * Hit rate is correct over seats, which is what `read-games` prints. Higher
  * or Lower's "% right" is correct over answers, which is the 55–85 band.
@@ -50,6 +54,10 @@ export interface OwedInput {
   geekendAsked: readonly GeekendAsked[];
   /** Office id counts for the Geekend packs. Null means that office doc is absent. */
   officeAsked: Readonly<Record<string, number | null>>;
+  /** `read-errors`, over `since`. */
+  errors: { groups: readonly ErrorGroup[]; probes: number; since: string };
+  /** `read-cannon`. */
+  cannon: readonly ShotTally[];
 }
 
 interface LevelLine {
@@ -203,6 +211,25 @@ export function formatGeekend(
   return lines.join('\n');
 }
 
+export function formatErrors(errors: OwedInput['errors']): string {
+  const lines = [`Errors players saw, last ${errors.since}`];
+  const probes = errors.probes > 0 ? ` ${String(errors.probes)} check-rules probe rows skipped.` : '';
+  if (errors.groups.length === 0) {
+    lines.push(`  None.${probes}`);
+    return lines.join('\n');
+  }
+  for (const group of errors.groups) lines.push(formatGroup(group));
+  if (probes) lines.push(` ${probes}`);
+  return lines.join('\n');
+}
+
+export function formatCannon(tallies: readonly ShotTally[]): string {
+  const lines = ['Slop Cannon, Keep and Bin'];
+  if (tallies.length === 0) lines.push('  Nothing fired yet.');
+  for (const tally of tallies) lines.push(`  ${formatTally(tally)}`);
+  return lines.join('\n');
+}
+
 export function formatOwedChecks(input: OwedInput): string {
   const unreadable = input.gamesUnreadable > 0 ? `, ${String(input.gamesUnreadable)} unreadable` : '';
   const header = `Owed live checks — last ${String(input.last)} kept rounds${unreadable},`
@@ -219,6 +246,10 @@ export function formatOwedChecks(input: OwedInput): string {
     formatCass(input.cassLines, input.last),
     '',
     formatGeekend(input.geekendAsked, input.officeAsked),
+    '',
+    formatErrors(input.errors),
+    '',
+    formatCannon(input.cannon),
     '',
   ].join('\n');
 }
