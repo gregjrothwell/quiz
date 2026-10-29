@@ -18,6 +18,12 @@ export interface Update {
 
 export const UPDATES: readonly Update[] = [
   {
+    date: '2026-10-29',
+    lines: [
+      'If the quiz is updated while your screen is open, it reloads itself once, so the round’s card and the season table still open.',
+    ],
+  },
+  {
     date: '2026-10-27',
     lines: [
       'If your answer misses the cut-off, the screen says so straight away and keeps saying it on the standings. Your name doesn’t land on the lectern for an answer that didn’t count.',

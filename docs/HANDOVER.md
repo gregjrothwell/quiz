@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 26 October 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 29 October 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -60,8 +60,8 @@ Built to replace Polly in Teams.
 **Live is `index-3smqKauF`** (release #168, 28 Oct 14:25 GMT, merge `f698090`, gh-pages `74687ee`; rules from CI; `check-rules` **164/0**; `sync-harness 10` 10/10): **Rivals** caption on the season table and podium ([`rivals.md`](decisions/rivals.md), late joiners excluded); **lobby vote on the RTDB** under `lobbyVote/{code}/{voteGen}` ([`lobby-vote.md`](decisions/lobby-vote.md)); podium speech repeat fixed, voice still off; CI's `jira` job (no token yet, warns); qs/express. **Rivals backfill** written 28 Oct: 24 rows, harness and hand-test rounds skipped. 10 test season/week rows deleted the same day (backup `.secrets/backups/test-season-rows-2026-10-28.json`). **Owed:** re-run the backfill about 31 Oct (PROJ-73); test runs still reach prod (PROJ-74); #168 not yet seen in a real room (PROJ-75); `JIRA_API_TOKEN` (PROJ-72).
 Before it `index-CtEv5OcI` (#158 + #159, 27 Oct 16:55 GMT, merge `bc7cbff`, gh-pages `153e9f2`), and #156 + #157 (27 Oct 15:04, gh-pages `7b19c39`). This file missed both until 28 Oct.
 Before them `index-B-mCNyGu` (#154, 26 Oct 20:48 GMT, merge `e2fab8c`, gh-pages `4ea6796`; `check-rules` 147/0): **the Slop Cannon and the error beacon** ([`slop-cannon.md`](decisions/slop-cannon.md)); `clientErrors/` from every page. Earlier live states: TOTAL-RECALL.
-**Owed for #154:** the first round with Mr Fries or the Double → `npm run read-cannon` shows its Keep/Bin; `npm run read-errors` after the next office round (no player row yet — a live client's beacon is unproved, the built-in browser fails App Check).
-**Live checks still owed** — `npm run read-owed` prints them: the first Double, Theme Tunes and Higher or Lower rounds (`read-games`; Higher or Lower: 55–85% right, or re-band); the first Geekend round makes `season-2-geekend/asked/{pack}` and leaves `season-2`'s doc for that pack unchanged; the first office round under W3 (`read-games`); #79's long name; #77's lobby reload; **#104's first final and first Catchphrase call**. **Finals backfill written 21 Oct** (12 rows, read back); re-run the dry run in a few days, since an old bundle erases its own tallies. Firebase chunk `firebase-DwYnjfYh` since #111 (Vite 8.3.5), so returning players fetch it once.
+**Owed for #154:** the first round with Mr Fries or the Double → `npm run read-cannon` shows its Keep/Bin (none played since; 0 shots, 29 Oct). **The beacon is proved live** — on 28 Oct it caught a tab open across #168's deploy failing to load the share card and Season (PROJ-77: reload once on `vite:preloadError`).
+**Live checks still owed** — `npm run read-owed` prints them. Settled 29 Oct: the Double (SC46, 26 Oct); Higher or Lower 81% right, inside 55–85; Theme Tunes once (easy 43%, medium 54%, hard 43% — too few to re-band). Still owed: the first Geekend round makes `season-2-geekend/asked/{pack}` and leaves `season-2`'s doc for that pack unchanged; the first office round under W3 (`read-games`); #79's long name; #77's lobby reload; **#104's first final and first Catchphrase call**. **Finals backfill written 21 Oct** (12 rows, read back); re-run the dry run in a few days, since an old bundle erases its own tallies. Firebase chunk `firebase-DwYnjfYh` since #111 (Vite 8.3.5), so returning players fetch it once.
 **21 packs** + **Random Round** (six played packs dealt into one); **The Price Was Right 154**, **The Price is Right 81** and **Blankety Blank 148** (all blind); **Catchphrase 233** (every 5th a double-scoring bonus); **Name that Tune 424**; **Name the Artist 259**; synth **Classical**; **On the box 445**
 (hashed TMDB stills, at most 8 titles before 1990); **Flags** 76; **Sleeves 212**
 after seven candidate batches, the last pre-screened; picture is **Fine Art** 49.
@@ -104,9 +104,8 @@ scoring 500 + rank 500/400/300/200/100.
 11. **`firstMs` and the pack picker are live and unplayed.** It is a deterrent,
     so the only test is whether his behaviour changes next round:
     [`first-touch.md`](decisions/first-touch.md).
-12. **Cass's question-one write is slow; she sees the question on time** (23 Oct, 24 traces): ack 4.8s and
-    2.4s, both counted. Same 4g room otherwise 0.1–0.3s (Rach 1.4s). The host holds the reveal up to 3s
-    for a lit lamp (Greg, 23 Oct: covers the 2.4s write; 15s rounds largely avoid it; 4.8–5.5s not covered). Live 23 Oct, #140 ([`cass-q1.md`](decisions/cass-q1.md)).
+12. **Closed 29 Oct (Greg): Cass's slow question-one write.** 2.4–4.8s on 22, 23 and 26 Oct; 0.1–0.2s on all four
+    of 27–29 Oct (`read-owed`). The 3s lit-lamp hold stays (#140, [`cass-q1.md`](decisions/cass-q1.md)).
 13. **Reveal over Firestore Lite, live 7 Oct (#71)**: all four at once, median vault step 71ms v #70's 167ms in a
     browser; **the next office round's `read-games` is the live check** ([`office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md#4-the-slow-reveal)).
 14. **Loose ends from 26–27 September**: five new tunes transcribed to nothing
