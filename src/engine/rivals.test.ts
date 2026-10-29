@@ -117,12 +117,33 @@ describe('the rivals caption', () => {
     );
   });
 
-  test('says once without a count when it has only happened once', () => {
-    expect(rivalsCaption({ sam: { name: 'Sam', beaten: 1, lost: 0 } })).toBe(
-      'You’ve beaten Sam most this season.',
-    );
-    expect(rivalsCaption({ priya: { name: 'Priya', beaten: 0, lost: 1 } })).toBe(
-      'You’ve lost to Priya most this season.',
+  // PROJ-80: "beaten Bert & cass & Greg & … most this season — once each" says nothing.
+  test('says nothing about a lead of one', () => {
+    expect(rivalsCaption({ sam: { name: 'Sam', beaten: 1, lost: 0 } })).toBeNull();
+    expect(rivalsCaption({ priya: { name: 'Priya', beaten: 0, lost: 1 } })).toBeNull();
+    expect(rivalsCaption({ sam: { name: 'Sam', beaten: 1, lost: 1 } })).toBeNull();
+  });
+
+  test('drops only the clause that says nothing', () => {
+    expect(rivalsCaption({
+      sam: { name: 'Sam', beaten: 3, lost: 0 },
+      priya: { name: 'Priya', beaten: 0, lost: 1 },
+    })).toBe('You’ve beaten Sam most this season — 3 times.');
+    expect(rivalsCaption({
+      sam: { name: 'Sam', beaten: 1, lost: 0 },
+      priya: { name: 'Priya', beaten: 0, lost: 2 },
+    })).toBe('You’ve lost to Priya most this season — 2 times.');
+  });
+
+  test('says nothing about a lead shared by more than two', () => {
+    const three = {
+      sam: { name: 'Sam', beaten: 2, lost: 0 },
+      alex: { name: 'Alex', beaten: 2, lost: 0 },
+      jo: { name: 'Jo', beaten: 2, lost: 0 },
+    };
+    expect(rivalsCaption(three)).toBeNull();
+    expect(rivalsCaption({ ...three, priya: { name: 'Priya', beaten: 0, lost: 4 } })).toBe(
+      'You’ve lost to Priya most this season — 4 times.',
     );
   });
 
