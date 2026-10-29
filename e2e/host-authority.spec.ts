@@ -99,6 +99,7 @@ test('the host vanishes mid-question and the room carries on', async ({ browser 
   for (const each of [ann, bob]) {
     await expect(each.page.locator('.podium')).toBeVisible();
     await each.page.keyboard.press('a');
+    await each.page.keyboard.press('Enter');
   }
 
   // #then every device sees both lamps lit (AC6), Bob's included on Ann's screen
@@ -169,6 +170,7 @@ test('an ordinary hosted round: the creator reveals with every answer counted (A
 
   await expect(ann.page.locator('.podium')).toBeVisible();
   await ann.page.keyboard.press('a');
+  await ann.page.keyboard.press('Enter');
 
   // The host's own device reveals when the clock runs out, as it does today.
   await expect(ann.page.getByText(/^Correct · \+/)).toBeVisible({ timeout: 60_000 });

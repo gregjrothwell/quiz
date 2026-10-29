@@ -120,6 +120,7 @@ test('the Commentator: one caption on every screen, and no voice', async ({ brow
       for (const [i, page] of [host, gil, hux].entries()) {
         await expect(page.locator('.podium')).toBeVisible();
         await page.keyboard.press(keys[i] ?? 'a');
+        await page.keyboard.press('Enter');
       }
       answered = key;
     }
