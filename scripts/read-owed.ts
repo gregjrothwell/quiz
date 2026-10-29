@@ -38,6 +38,7 @@ import {
   type KeptRound,
 } from './owed-checks';
 import { formatTrace } from './trace-report';
+import { seatedNames, testRunOf } from '../src/engine/testRun';
 
 const DEFAULT_LAST = 40;
 
@@ -100,7 +101,13 @@ async function main(): Promise<void> {
   const gameSnaps = (await db.collection('games').orderBy('finishedAt', 'desc').limit(last).get()).docs;
   const games: KeptRound[] = [];
   let gamesUnreadable = 0;
+  let testRuns = 0;
   for (const snapshot of gameSnaps) {
+    // The owed checks are about the office's rounds, not a harness's (PROJ-74).
+    if (testRunOf(snapshot.id, seatedNames(snapshot.get('players')))) {
+      testRuns += 1;
+      continue;
+    }
     const data: unknown = snapshot.data();
     const record = parseGameRecord(data);
     if (!record) {
@@ -154,7 +161,7 @@ async function main(): Promise<void> {
     officeAsked[doc.packId] = office.exists ? idCount(office.data()) : null;
   }
 
-  console.log(`Reading owed checks from ${projectId}.\n`);
+  console.log(`Reading owed checks from ${projectId}; ${testRuns} test run(s) skipped.\n`);
   console.log(formatOwedChecks({
     last,
     games,

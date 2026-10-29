@@ -13,7 +13,6 @@ import {
   replayRivals,
   rivalsBackfillWillWrite,
   scoresOf,
-  testRunOf,
   type KeptRivalGame,
   type SeasonRivalRow,
 } from './rivals-backfill';
@@ -89,13 +88,6 @@ describe('replayRivals', () => {
     expect(maps.has('jo')).toBe(false);
     expect(maps.get('g')).toEqual({ sam: { name: 'Sam', beaten: 1, lost: 0 } });
     expect(kept.get('g')).toBe(1);
-  });
-
-  test('testRunOf leaves a real round, and an id that only starts like a harness one', () => {
-    expect(testRunOf({ id: '6346bca0-20b3', players: { a: { name: 'Steve' } } })).toBeUndefined();
-    expect(testRunOf({ id: 'rank-ed', players: { a: { name: 'Steve' } } })).toBeUndefined();
-    expect(testRunOf({ id: 'x', players: {} })).toBeUndefined();
-    expect(testRunOf({ id: 'x', players: { a: { name: 'CC test' } } })).toBe('test run');
   });
 
   // Joining seeds a score of 0, so a seat is not a game played (PROJ-64 review).

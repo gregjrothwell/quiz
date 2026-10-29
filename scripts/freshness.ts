@@ -34,6 +34,7 @@ import {
   type PackIds,
   type PlayedRound,
 } from './freshness-core';
+import { seatedNames, testRunOf } from '../src/engine/testRun';
 
 const ROOT = join(import.meta.dirname, '..');
 const PACKS = join(ROOT, 'public', 'packs');
@@ -117,6 +118,8 @@ async function recentRounds(db: FirebaseFirestore.Firestore, now: number): Promi
   const since = Timestamp.fromMillis(now - WINDOW_DAYS * 86_400_000);
   const snapshot = await db.collection('games').where('finishedAt', '>=', since).get();
   return snapshot.docs.flatMap((game) => {
+    // A test round is not the office playing a pack (PROJ-74).
+    if (testRunOf(game.id, seatedNames(game.get('players')))) return [];
     const packId = game.get('packId') as unknown;
     const finishedAt = game.get('finishedAt') as unknown;
     const questions = game.get('questions') as unknown;
