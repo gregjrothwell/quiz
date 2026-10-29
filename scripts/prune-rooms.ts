@@ -38,13 +38,13 @@ import { getFirestore, Timestamp, type Firestore } from 'firebase-admin/firestor
 // and the preflight can never disagree about which bucket is a probe.
 import { weekId } from '../src/engine/week';
 
-/**
- * Subcollections a room can carry. All are created lazily, so any may be absent.
- *
- * Named by hand, so a new one is orphaned forever until it is added here —
- * `standoff` holds the Share or Shaft picks, one per finalist per room.
- */
-const SUBCOLLECTIONS = ['answers', 'reveal', 'standoff'] as const;
+/*
+  Subcollections are not named here. They used to be, by hand — `answers`,
+  `reveal`, `standoff` — and W3 added `host` on 15 October 2026 without adding
+  it to the list, so a prune after that would have orphaned every room's `host`
+  documents for good (found 29 October, before one ran). `deleteRoom` asks the
+  room what it has instead.
+*/
 
 /**
  * Rooms `check-rules` owns, which `--legacy` would otherwise sweep up every run.
@@ -205,8 +205,8 @@ async function deleteRoom(db: Firestore, rtdb: Database, code: string): Promise<
 
   let documents = 0;
 
-  for (const name of SUBCOLLECTIONS) {
-    const children = await db.collection('rooms').doc(code).collection(name).get();
+  for (const subcollection of await db.collection('rooms').doc(code).listCollections()) {
+    const children = await subcollection.get();
     for (const child of children.docs) {
       await child.ref.delete();
       documents += 1;
