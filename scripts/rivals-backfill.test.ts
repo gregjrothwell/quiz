@@ -51,7 +51,8 @@ describe('replayRivals', () => {
     expect(kept.get('sam')).toBe(3);
     expect(maps.get('sam')).toEqual({ priya: { name: 'Priya', beaten: 1, lost: 1 } });
     expect(maps.get('priya')).toEqual({ sam: { name: 'Sam', beaten: 1, lost: 1 } });
-    expect(rivalsCaption(maps.get('sam'))).toBe('You and Priya are level this season — 1 each.');
+    // Level on one each says nothing (PROJ-80): no caption until a lead reaches 2.
+    expect(rivalsCaption(maps.get('sam'))).toBeNull();
   });
 
   test('a solo round names nobody, and a blank name is not an opponent', () => {
