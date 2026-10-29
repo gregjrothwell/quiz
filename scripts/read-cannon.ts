@@ -16,6 +16,7 @@ import { readFile } from 'node:fs/promises';
 import { cert, initializeApp as initAdmin, type ServiceAccount } from 'firebase-admin/app';
 import { getFirestore as getAdminFirestore } from 'firebase-admin/firestore';
 import { formatTally, tallyShots, type KeptRound, type VerdictRow } from './cannon-report';
+import { seatedNames, testRunOf } from '../src/engine/testRun';
 
 function required(name: string): string {
   const value = process.env[name];
@@ -33,18 +34,21 @@ async function main(): Promise<void> {
 
   // Only rounds that carried a shot. `cannon` is absent on every other round,
   // and an orderBy on a field excludes documents without it.
-  const games = (await db.collection('games').orderBy('cannon').get()).docs;
+  // A test round's Keep or Bin is not the office's (PROJ-74).
+  const games = (await db.collection('games').orderBy('cannon').get()).docs
+    .filter((game) => !testRunOf(game.id, seatedNames(game.get('players'))));
   const rounds: KeptRound[] = games.map((game) => ({
     gameId: game.id,
     players: keysOf(game.get('players')),
     shots: keysOf(game.get('cannon')),
   }));
 
+  const counted = new Set(rounds.map((round) => round.gameId));
   const verdicts: VerdictRow[] = [];
   for (const row of (await db.collection('cannonVerdicts').get()).docs) {
     const data = row.data();
     const { gameId, shot, uid, verdict } = data;
-    if (typeof gameId === 'string' && typeof shot === 'string' && typeof uid === 'string'
+    if (typeof gameId === 'string' && counted.has(gameId) && typeof shot === 'string' && typeof uid === 'string'
       && (verdict === 'keep' || verdict === 'bin')) {
       verdicts.push({ gameId, shot, uid, verdict });
     }

@@ -40,6 +40,7 @@ import {
   revealCost,
   type KindTally,
 } from './game-report';
+import { testRunOf } from '../src/engine/testRun';
 
 const DEFAULT_LAST = 10;
 
@@ -145,7 +146,9 @@ function printGame(game: KeptGame, everyQuestion: boolean): void {
       + `${String(summary.durationSecs).padStart(3)}s  hit ${percent(summary.hitRate)}  `
       + `median ${seconds(summary.medianElapsedMs)}  snaps ${String(summary.snaps).padStart(2)}${flags}${skipped}`,
   );
-  console.log(`      game ${game.gameId}`);
+  // Shown, not skipped: this is where a harness run is read back (PROJ-74).
+  const test = testRunOf(game.gameId, Object.values(game.record.players).map((player) => player.name));
+  console.log(`      game ${game.gameId}${test ? ` · ${test}` : ''}`);
   if (summary.final) console.log(`      final ${summary.final}`);
 
   if (!everyQuestion) return;

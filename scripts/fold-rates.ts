@@ -17,6 +17,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { parseGameRecord } from './game-report';
 import { foldRates } from './rates';
 import type { GameRecord } from '../src/engine/gameRecord';
+import { seatedNames, testRunOf } from '../src/engine/testRun';
 
 const PACKS = join(import.meta.dirname, '..', 'public', 'packs');
 const OUT = join(PACKS, 'rates.json');
@@ -40,7 +41,13 @@ async function main(): Promise<void> {
   const snapshot = await db.collection('games').get();
   const games: { id: string; record: GameRecord }[] = [];
   let unreadable = 0;
+  let testRuns = 0;
   for (const document of snapshot.docs) {
+    // A harness answers to a script, not from what anyone knows (PROJ-74).
+    if (testRunOf(document.id, seatedNames(document.get('players')))) {
+      testRuns += 1;
+      continue;
+    }
     const record = parseGameRecord(document.data());
     if (record) games.push({ id: document.id, record });
     else unreadable += 1;
@@ -50,7 +57,7 @@ async function main(): Promise<void> {
   const text = `${JSON.stringify(rates, null, 2)}\n`;
   const pct = (hits: number, tries: number): string => `${String(Math.round((100 * hits) / Math.max(1, tries)))}%`;
 
-  console.log(`${String(snapshot.size)} kept rounds read, ${String(unreadable)} unreadable.`);
+  console.log(`${String(snapshot.size)} kept rounds read, ${String(unreadable)} unreadable, ${String(testRuns)} test runs skipped.`);
   console.log(`Overall: ${pct(rates.overall.hits, rates.overall.tries)} of ${String(rates.overall.tries)} answers`);
   for (const [difficulty, tally] of Object.entries(rates.byDifficulty)) {
     console.log(`  ${difficulty.padEnd(7)} ${pct(tally.hits, tally.tries).padStart(4)} of ${String(tally.tries)}`);

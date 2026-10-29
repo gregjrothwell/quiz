@@ -34,6 +34,7 @@ import {
   type KeptPlayer,
   type SeasonFinalsRow,
 } from './finals-backfill';
+import { seatedNames, testRunOf } from '../src/engine/testRun';
 
 function playersOf(value: unknown): Record<string, KeptPlayer> {
   if (!value || typeof value !== 'object') return {};
@@ -82,8 +83,14 @@ async function main(): Promise<void> {
   const db = getAdminFirestore(initAdmin({ credential: cert(key) }, 'backfill-finals'));
 
   const games: KeptGame[] = [];
+  let testRuns = 0;
   const gameSnap = await db.collection('games').get();
   gameSnap.forEach((entry) => {
+    // A test round never banked a final, so it must not backfill one (PROJ-74).
+    if (testRunOf(entry.id, seatedNames(entry.data().players))) {
+      testRuns += 1;
+      return;
+    }
     games.push({ id: entry.id, players: playersOf(entry.data().players) });
   });
 
@@ -102,7 +109,8 @@ async function main(): Promise<void> {
   const missing = plans.flatMap((plan) => (plan.action === 'missing' ? [plan] : []));
 
   console.log(`\n${go ? 'Writing' : 'Dry run —'} ${writes.length} ${BACKFILL_SEASON} row(s), from ${tallies.size} finalist(s).`);
-  console.log(`${unchanged} already hold at least these counts and are left alone.\n`);
+  console.log(`${unchanged} already hold at least these counts and are left alone.`);
+  console.log(`${testRuns} test run(s) in games/ skipped.\n`);
 
   for (const plan of writes) {
     console.log(`  write  ${plan.name.slice(0, 18).padEnd(18)} ${counts(plan.before)}  →  ${counts(plan.after)}`);
