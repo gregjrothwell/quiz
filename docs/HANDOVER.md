@@ -42,7 +42,7 @@ Built to replace Polly in Teams.
 | what a finished round left behind, and reading it back | [`decisions/game-record.md`](decisions/game-record.md) |
 | upgrading `package.json`; the studio set and lighting cues; **the game-show moments** (reveal, podium, wipe — live 21 Oct, #100) | [`dependencies.md`](decisions/dependencies.md) · [`lighting.md`](decisions/lighting.md) · [`game-show-moments.md`](decisions/game-show-moments.md) |
 
-## State as of 14 October 2026
+## State as of 29 October 2026
 
 > **READ FIRST — the Friday 9 October game of 30 did not happen.**
 > - The biggest room ever played is still 11. Thirty answering at once is untested.
@@ -87,7 +87,7 @@ scoring 500 + rank 500/400/300/200/100.
    `npm run backfill-form` — the scores it is defined over were never stored, so
    these are invented and decay as people bank. Real ones were not overwritten
    ([`season.md`](decisions/season.md)).
-5. **A quizmaster dropping out mid-round**: W3's expand half has been live since 15 Oct; its scripts (#90) live 22 Oct with #107, harnesses green live — [`host-authority.md`](decisions/host-authority.md#what-was-built-15-october-2026).
+5. **Closed 29 Oct — a quizmaster dropping out mid-round** is W3's expand half, live 15 Oct, harnesses green live; what is left is the contract half, after 14 Nov (State, above) — [`host-authority.md`](decisions/host-authority.md#what-was-built-15-october-2026).
 6. **No Content-Security-Policy.** Deliberate: a `<meta http-equiv>` CSP breaks
    the live app silently and the stale CDN makes that painful to diagnose.
 7. **Three things still want a second person**: the review panel, a quizmaster
@@ -97,17 +97,17 @@ scoring 500 + rank 500/400/300/200/100.
    spent — it still substitutes, and says so (live 23 Oct, #140; [`repeats.md`](decisions/repeats.md)).
    A fold of `games/` does not fix it ([`beat-the-chaser.md`](decisions/beat-the-chaser.md)).
    Re-rating plan, not chosen: [`ladder-rerating.md`](decisions/ladder-rerating.md).
-9. **Rules are published by hand until W2 is live; then by CI on `master`** ([`rules-from-ci.md`](decisions/rules-from-ci.md)). Live = repo, read 15 Oct.
-   `check-rules` **91/91 both ways, 27 September**; run it after any rules merge. Read [`security.md`](decisions/security.md) first.
+9. **Closed 29 Oct — rules are published by CI on `master`** since W2 (15 Oct, [`rules-from-ci.md`](decisions/rules-from-ci.md)); hand-pasting
+   is over. `check-rules` **164/0** after #168 (28 Oct); run it after any rules merge. Read [`security.md`](decisions/security.md) first.
 10. **Seed before any new ids ship** — `seed-vault -- --pack <id>`; unseeded breaks at reveal. **All seeded 17 Oct**, with
     `release-17-oct` (#91): Prices 95→154, Catchphrase 178→233, both blind ([`price-was-right.md`](decisions/price-was-right.md), [`catchphrase-batch-6.md`](decisions/catchphrase-batch-6.md)).
-11. **`firstMs` and the pack picker are live and unplayed.** It is a deterrent,
-    so the only test is whether his behaviour changes next round:
-    [`first-touch.md`](decisions/first-touch.md).
+11. **`firstMs` is not deterring** ([`first-touch.md`](decisions/first-touch.md)). 29 Oct, Y86U (GK, 10s): one player's first touch
+    was under 1s on 14 of 15 questions (5 of 15 the day before), changed after on 10; another snapped 11 of 15 and kept
+    seven finals under 1s, one stamped 0ms. Restricting is Greg's call; the 0ms `elapsedMs` wants a look.
 12. **Closed 29 Oct (Greg): Cass's slow question-one write.** 2.4–4.8s on 22, 23 and 26 Oct; 0.1–0.2s on all four
     of 27–29 Oct (`read-owed`). The 3s lit-lamp hold stays (#140, [`cass-q1.md`](decisions/cass-q1.md)).
-13. **Reveal over Firestore Lite, live 7 Oct (#71)**: all four at once, median vault step 71ms v #70's 167ms in a
-    browser; **the next office round's `read-games` is the live check** ([`office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md#4-the-slow-reveal)).
+13. **Closed 29 Oct — reveal over Firestore Lite (#71)**: Y86U's 15 reveals, vault step median 51ms (37–122ms, one
+    1,077ms), against 71ms in a browser on 7 Oct ([`office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md#4-the-slow-reveal)).
 14. **Loose ends from 26–27 September**: five new tunes transcribed to nothing
     and want an ear (`live-forever`, `golden-touch`, `build-me-up-buttercup`,
     `call-the-shots`, `gangnam-style`); **56 rooms past expiry** —
