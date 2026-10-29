@@ -613,9 +613,10 @@ function Game() {
       // second rather than on the base alone. Making it exact would need the
       // answer document to say "I walked in", which is a new field and a rules
       // paste for a case worth 100 points. See docs/decisions/scoring.md.
-      submitAnswer(optionIndex, joinedMidQuestion ? durationMs : clock.elapsedMs, wager).catch(report);
+      // Read at the press, not off the face (PROJ-78).
+      submitAnswer(optionIndex, joinedMidQuestion ? durationMs : clock.elapsedNow(), wager).catch(report);
     },
-    [submitAnswer, clock.elapsedMs, joinedMidQuestion, durationMs, report],
+    [submitAnswer, clock, joinedMidQuestion, durationMs, report],
   );
 
   /**

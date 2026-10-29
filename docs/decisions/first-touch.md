@@ -1,6 +1,6 @@
 # `firstMs` — showing when somebody committed
 
-> **Owner: Greg Rothwell. Last updated: 8 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 29 October 2026. Budget: 250 lines.**
 
 What was built on 8 September 2026 against the exploit analysed in
 [`answer-spam.md`](answer-spam.md), which is where the arithmetic lives and why
@@ -83,3 +83,22 @@ about: it is a display decision, so no honest player can lose a point to it.
   moved after answering, because nothing here makes an answer final.
 - **It is a deterrent, not a rule.** The arithmetic in this file is unchanged
   for anybody willing to be seen doing it.
+
+## 29 October 2026: it is not deterring, and the 0ms (PROJ-78)
+
+**Y86U** (General Knowledge, 10s, 7 seats, 15 questions). First touch under 1s:
+Alistair 14 times, Bret 11, nobody else at all. Alistair kept 4 of those snaps
+(2 right, 2,000 points) and finished 2nd on 7,400. Bret kept 7 (3 right, 3,000)
+and finished 4th on 5,400. Joe won on 9,300 without a single snap. So the two
+who were seen doing it did it anyway; it did not decide this round. One round
+is not a trend: 28 October had Bret at 5 of 15. **Greg to decide** between
+keeping the reveal marker and making a pick final, as
+[`answer-spam.md`](answer-spam.md#recommendation--the-first-lectern-you-touch-is-your-answer)
+sets out. The numbers in that file still stand.
+
+**The 0ms was the clock, not the rules.** One answer in 6,704 kept ever: Bret,
+question 13. The face ticks every 100ms and an answer took the last tick's
+reading, so a press before the first tick read 0 and every answer read 0–100ms
+fast (Bret's others: 113, 202, 227ms). `useQuestionClock` now gives
+`elapsedNow()`, read at the press and capped at the window. Ranks between
+close answers are now ordered by when people actually pressed.
