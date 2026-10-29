@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 26 October 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 29 October 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -42,7 +42,7 @@ Built to replace Polly in Teams.
 | what a finished round left behind, and reading it back | [`decisions/game-record.md`](decisions/game-record.md) |
 | upgrading `package.json`; the studio set and lighting cues; **the game-show moments** (reveal, podium, wipe — live 21 Oct, #100) | [`dependencies.md`](decisions/dependencies.md) · [`lighting.md`](decisions/lighting.md) · [`game-show-moments.md`](decisions/game-show-moments.md) |
 
-## State as of 14 October 2026
+## State as of 29 October 2026
 
 > **READ FIRST — the Friday 9 October game of 30 did not happen.**
 > - The biggest room ever played is still 11. Thirty answering at once is untested.
@@ -57,11 +57,11 @@ Built to replace Polly in Teams.
 >   **Productionisation plan decided 15 Oct** (all six as recommended; D6: league owners sign in, players stay anonymous); W1, **a TMDB credit the live site
 >   lacked**; **W2, rules from CI** ([`rules-from-ci.md`](decisions/rules-from-ci.md)); **W3, host authority, expand half** ([`host-authority.md`](decisions/host-authority.md)). **All three live 15 Oct.** Next: W3's contract half after 14 Nov; W4; W5 by 1 Mar 2027 — [`public-scale.md`](decisions/public-scale.md#the-plan-15-october-2026).
 
-**Live is `index-3smqKauF`** (release #168, 28 Oct 14:25 GMT, merge `f698090`, gh-pages `74687ee`; rules from CI; `check-rules` **164/0**; `sync-harness 10` 10/10): **Rivals** caption on the season table and podium ([`rivals.md`](decisions/rivals.md), late joiners excluded); **lobby vote on the RTDB** under `lobbyVote/{code}/{voteGen}` ([`lobby-vote.md`](decisions/lobby-vote.md)); podium speech repeat fixed, voice still off; CI's `jira` job (no token yet, warns); qs/express. **Rivals backfill** written 28 Oct: 24 rows, harness and hand-test rounds skipped. 10 test season/week rows deleted the same day (backup `.secrets/backups/test-season-rows-2026-10-28.json`). **Owed:** re-run the backfill about 31 Oct (PROJ-73); test runs still reach prod (PROJ-74); #168 not yet seen in a real room (PROJ-75); `JIRA_API_TOKEN` (PROJ-72).
-Before it `index-CtEv5OcI` (#158 + #159, 27 Oct 16:55 GMT, merge `bc7cbff`, gh-pages `153e9f2`), and #156 + #157 (27 Oct 15:04, gh-pages `7b19c39`). This file missed both until 28 Oct.
-Before them `index-B-mCNyGu` (#154, 26 Oct 20:48 GMT, merge `e2fab8c`, gh-pages `4ea6796`; `check-rules` 147/0): **the Slop Cannon and the error beacon** ([`slop-cannon.md`](decisions/slop-cannon.md)); `clientErrors/` from every page. Earlier live states: TOTAL-RECALL.
-**Owed for #154:** the first round with Mr Fries or the Double → `npm run read-cannon` shows its Keep/Bin; `npm run read-errors` after the next office round (no player row yet — a live client's beacon is unproved, the built-in browser fails App Check).
-**Live checks still owed** — `npm run read-owed` prints them: the first Double, Theme Tunes and Higher or Lower rounds (`read-games`; Higher or Lower: 55–85% right, or re-band); the first Geekend round makes `season-2-geekend/asked/{pack}` and leaves `season-2`'s doc for that pack unchanged; the first office round under W3 (`read-games`); #79's long name; #77's lobby reload; **#104's first final and first Catchphrase call**. **Finals backfill written 21 Oct** (12 rows, read back); re-run the dry run in a few days, since an old bundle erases its own tallies. Firebase chunk `firebase-DwYnjfYh` since #111 (Vite 8.3.5), so returning players fetch it once.
+**Live is `index-3smqKauF`** (release #168, 28 Oct 14:25 GMT, merge `f698090`, gh-pages `74687ee`; rules from CI; `check-rules` **164/0**; `sync-harness 10` 10/10): **Rivals** caption on the season table and podium ([`rivals.md`](decisions/rivals.md), late joiners excluded); **lobby vote on the RTDB** under `lobbyVote/{code}/{voteGen}` ([`lobby-vote.md`](decisions/lobby-vote.md)); podium speech repeat fixed, voice still off; CI's `jira` job (no token yet, warns); qs/express. **Rivals backfill** written 28 Oct: 24 rows, harness and hand-test rounds skipped. 10 test season/week rows deleted the same day (backup `.secrets/backups/test-season-rows-2026-10-28.json`). **Owed:** re-run the backfill about 31 Oct (PROJ-73); test runs still reach prod (PROJ-74, fix in #175); #168 not yet seen in a real room (PROJ-75); `JIRA_API_TOKEN` (PROJ-72).
+Earlier live states: [`live-history.md`](decisions/live-history.md), then TOTAL-RECALL.
+**Open, not live (29 Oct), one release:** #173 (PROJ-77 + PROJ-79), #174 (PROJ-80), #175 (PROJ-74), #176 (PROJ-78's 0ms), #177 (`read-owed` folds, on #175).
+**Owed for #154:** the first round with Mr Fries or the Double → `npm run read-cannon` shows its Keep/Bin (none played since; 0 shots, 29 Oct). **The beacon is proved live** — on 28 Oct it caught a tab open across #168's deploy failing to load the share card and Season (PROJ-77: reload once on `vite:preloadError`).
+**Live checks still owed** — `npm run read-owed` prints them. Settled 29 Oct: the Double (SC46, 26 Oct); Higher or Lower 81% right, inside 55–85; Theme Tunes once (easy 43%, medium 54%, hard 43% — too few to re-band). Still owed: the first Geekend round makes `season-2-geekend/asked/{pack}` and leaves `season-2`'s doc for that pack unchanged; the first office round under W3 (`read-games`); #79's long name; #77's lobby reload; **#104's first final and first Catchphrase call**. **Finals backfill written 21 Oct** (12 rows, read back); re-run the dry run in a few days, since an old bundle erases its own tallies. Firebase chunk `firebase-DwYnjfYh` since #111 (Vite 8.3.5), so returning players fetch it once.
 **21 packs** + **Random Round** (six played packs dealt into one); **The Price Was Right 154**, **The Price is Right 81** and **Blankety Blank 148** (all blind); **Catchphrase 233** (every 5th a double-scoring bonus); **Name that Tune 424**; **Name the Artist 259**; synth **Classical**; **On the box 445**
 (hashed TMDB stills, at most 8 titles before 1990); **Flags** 76; **Sleeves 212**
 after seven candidate batches, the last pre-screened; picture is **Fine Art** 49.
@@ -87,7 +87,7 @@ scoring 500 + rank 500/400/300/200/100.
    `npm run backfill-form` — the scores it is defined over were never stored, so
    these are invented and decay as people bank. Real ones were not overwritten
    ([`season.md`](decisions/season.md)).
-5. **A quizmaster dropping out mid-round**: W3's expand half has been live since 15 Oct; its scripts (#90) live 22 Oct with #107, harnesses green live — [`host-authority.md`](decisions/host-authority.md#what-was-built-15-october-2026).
+5. **Closed 29 Oct — a quizmaster dropping out mid-round** is W3's expand half, live 15 Oct, harnesses green live; what is left is the contract half, after 14 Nov (State, above) — [`host-authority.md`](decisions/host-authority.md#what-was-built-15-october-2026).
 6. **No Content-Security-Policy.** Deliberate: a `<meta http-equiv>` CSP breaks
    the live app silently and the stale CDN makes that painful to diagnose.
 7. **Three things still want a second person**: the review panel, a quizmaster
@@ -97,22 +97,21 @@ scoring 500 + rank 500/400/300/200/100.
    spent — it still substitutes, and says so (live 23 Oct, #140; [`repeats.md`](decisions/repeats.md)).
    A fold of `games/` does not fix it ([`beat-the-chaser.md`](decisions/beat-the-chaser.md)).
    Re-rating plan, not chosen: [`ladder-rerating.md`](decisions/ladder-rerating.md).
-9. **Rules are published by hand until W2 is live; then by CI on `master`** ([`rules-from-ci.md`](decisions/rules-from-ci.md)). Live = repo, read 15 Oct.
-   `check-rules` **91/91 both ways, 27 September**; run it after any rules merge. Read [`security.md`](decisions/security.md) first.
+9. **Closed 29 Oct — rules are published by CI on `master`** since W2 (15 Oct, [`rules-from-ci.md`](decisions/rules-from-ci.md)); hand-pasting
+   is over. `check-rules` **164/0** after #168 (28 Oct); run it after any rules merge. Read [`security.md`](decisions/security.md) first.
 10. **Seed before any new ids ship** — `seed-vault -- --pack <id>`; unseeded breaks at reveal. **All seeded 17 Oct**, with
     `release-17-oct` (#91): Prices 95→154, Catchphrase 178→233, both blind ([`price-was-right.md`](decisions/price-was-right.md), [`catchphrase-batch-6.md`](decisions/catchphrase-batch-6.md)).
-11. **`firstMs` and the pack picker are live and unplayed.** It is a deterrent,
-    so the only test is whether his behaviour changes next round:
-    [`first-touch.md`](decisions/first-touch.md).
-12. **Cass's question-one write is slow; she sees the question on time** (23 Oct, 24 traces): ack 4.8s and
-    2.4s, both counted. Same 4g room otherwise 0.1–0.3s (Rach 1.4s). The host holds the reveal up to 3s
-    for a lit lamp (Greg, 23 Oct: covers the 2.4s write; 15s rounds largely avoid it; 4.8–5.5s not covered). Live 23 Oct, #140 ([`cass-q1.md`](decisions/cass-q1.md)).
-13. **Reveal over Firestore Lite, live 7 Oct (#71)**: all four at once, median vault step 71ms v #70's 167ms in a
-    browser; **the next office round's `read-games` is the live check** ([`office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md#4-the-slow-reveal)).
+11. **`firstMs` is not deterring** ([`first-touch.md`](decisions/first-touch.md)). 29 Oct, Y86U (GK, 10s): one player's first touch
+    was under 1s on 14 of 15 questions (5 of 15 the day before), changed after on 10; another snapped 11 of 15 and kept
+    seven finals under 1s. Restricting is Greg's call (snaps did not win Y86U). The 0ms was the clock's 100ms tick: #176.
+12. **Closed 29 Oct (Greg): Cass's slow question-one write.** 2.4–4.8s on 22, 23 and 26 Oct; 0.1–0.2s on all four
+    of 27–29 Oct (`read-owed`). The 3s lit-lamp hold stays (#140, [`cass-q1.md`](decisions/cass-q1.md)).
+13. **Closed 29 Oct — reveal over Firestore Lite (#71)**: Y86U's 15 reveals, vault step median 51ms (37–122ms, one
+    1,077ms), against 71ms in a browser on 7 Oct ([`office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md#4-the-slow-reveal)).
 14. **Loose ends from 26–27 September**: five new tunes transcribed to nothing
     and want an ear (`live-forever`, `golden-touch`, `build-me-up-buttercup`,
-    `call-the-shots`, `gangnam-style`); **56 rooms past expiry** —
-    `npm run prune-rooms -- --go`; reCAPTCHA's monthly count is unmeasured (10k free per organisation).
+    `call-the-shots`, `gangnam-style`); **expired rooms pruned 29 Oct**
+    (194, read back, none left; `--go` hung on exit, fixed in #173, PROJ-79); reCAPTCHA's monthly count is unmeasured (10k free per organisation).
 15. **Sleeve songs (#62, #63) have been played** — `XDUF` at half the clock, then
     from the first frame ([`sleeves-song.md`](decisions/sleeves-song.md)). Five songs
     still want an ear; *Reasonable Doubt* and *Future Nostalgia* show a **single's**
