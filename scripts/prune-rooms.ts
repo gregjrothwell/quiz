@@ -382,23 +382,23 @@ async function main(): Promise<void> {
     return;
   }
 
-  // Opened only to delete, and closed after: an open RTDB connection keeps the
-  // process alive, so without `goOffline` the script finishes and never exits.
+  // Opened only to delete. Its connection holds the process open even after
+  // `goOffline` (measured 29 October 2026: a remove and `goOffline`, still alive
+  // at 40s), which is why the run ends in `process.exit` below.
   const rtdb = getDatabase(app);
   let documents = 0;
-  try {
-    for (const room of doomed) {
-      documents += await deleteRoom(db, rtdb, room.code);
-    }
-  } finally {
-    rtdb.goOffline();
+  for (const room of doomed) {
+    documents += await deleteRoom(db, rtdb, room.code);
   }
 
   console.log(`\nDeleted ${doomed.length} room(s), ${documents} documents including subcollections, and their lamps.`);
   console.log(doomed.length >= BATCH ? 'Hit the batch cap — run it again for the rest.\n' : '\n');
 }
 
-main().catch((cause: unknown) => {
-  console.error(`\nprune-rooms failed: ${cause instanceof Error ? cause.message : String(cause)}`);
-  process.exit(1);
-});
+main().then(
+  () => process.exit(0),
+  (cause: unknown) => {
+    console.error(`\nprune-rooms failed: ${cause instanceof Error ? cause.message : String(cause)}`);
+    process.exit(1);
+  },
+);
