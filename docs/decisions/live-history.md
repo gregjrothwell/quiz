@@ -8,6 +8,12 @@ handover keeps the current live bundle and the checks still owed; the chain of
 bundles before it, and the release records that were sitting in its Outstanding
 list, are here. Links were relative to `docs/`, so `decisions/` is dropped from them.
 
+## `index-3smqKauF`, live until 29 October 2026
+
+Verbatim from the handover when release #179 replaced it; only the links changed.
+
+**Live is `index-3smqKauF`** (release #168, 28 Oct 14:25 GMT, merge `f698090`, gh-pages `74687ee`; rules from CI; `check-rules` **164/0**; `sync-harness 10` 10/10): **Rivals** caption on the season table and podium ([`rivals.md`](rivals.md), late joiners excluded); **lobby vote on the RTDB** under `lobbyVote/{code}/{voteGen}` ([`lobby-vote.md`](lobby-vote.md)); podium speech repeat fixed, voice still off; CI's `jira` job (no token yet, warns); qs/express. **Rivals backfill** written 28 Oct: 24 rows, harness and hand-test rounds skipped. 10 test season/week rows deleted the same day (backup `.secrets/backups/test-season-rows-2026-10-28.json`). **Owed:** re-run the backfill about 31 Oct (PROJ-73); test runs still reach prod (PROJ-74, fix in #175); #168 not yet seen in a real room (PROJ-75); `JIRA_API_TOKEN` (PROJ-72).
+
 ## The live chain before `index-3smqKauF`, moved 29 October 2026
 
 Verbatim from the handover, at 148 lines against 150; only the link changed.
