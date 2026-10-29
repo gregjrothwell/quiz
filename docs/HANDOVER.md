@@ -110,8 +110,8 @@ scoring 500 + rank 500/400/300/200/100.
     1,077ms), against 71ms in a browser on 7 Oct ([`office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md#4-the-slow-reveal)).
 14. **Loose ends from 26–27 September**: five new tunes transcribed to nothing
     and want an ear (`live-forever`, `golden-touch`, `build-me-up-buttercup`,
-    `call-the-shots`, `gangnam-style`); **56 rooms past expiry** —
-    `npm run prune-rooms -- --go`; reCAPTCHA's monthly count is unmeasured (10k free per organisation).
+    `call-the-shots`, `gangnam-style`); **expired rooms pruned 29 Oct**
+    (194, read back, none left; PROJ-79); reCAPTCHA's monthly count is unmeasured (10k free per organisation).
 15. **Sleeve songs (#62, #63) have been played** — `XDUF` at half the clock, then
     from the first frame ([`sleeves-song.md`](decisions/sleeves-song.md)). Five songs
     still want an ear; *Reasonable Doubt* and *Future Nostalgia* show a **single's**
