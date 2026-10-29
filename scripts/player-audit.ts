@@ -31,6 +31,7 @@ import {
   tallyPlayers,
   type SeasonRow,
 } from './player-report';
+import { seatedNames, testRunOf } from '../src/engine/testRun';
 
 const DEFAULT_LAST = 50;
 const SEASON = 'season-2';
@@ -82,10 +83,17 @@ async function loadKept(
   const snapshots = await db.collection('games').orderBy('finishedAt', 'desc').limit(last).get();
 
   const kept: { gameId: string; record: GameRecord }[] = [];
+  let testRuns = 0;
   for (const snapshot of snapshots.docs) {
+    // Harness seats and test names are not players to audit (PROJ-74).
+    if (testRunOf(snapshot.id, seatedNames(snapshot.get('players')))) {
+      testRuns += 1;
+      continue;
+    }
     const record = parseGameRecord(snapshot.data());
     if (record) kept.push({ gameId: snapshot.id, record });
   }
+  if (testRuns > 0) console.log(`${testRuns} test run(s) skipped.`);
   return kept;
 }
 

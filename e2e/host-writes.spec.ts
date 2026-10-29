@@ -144,6 +144,7 @@ test('the host makes the same writes, start to podium, through a Share or Shaft 
       for (const page of [host, ann, bob]) {
         await expect(page.locator('.podium')).toBeVisible();
         await page.keyboard.press('a');
+        await page.keyboard.press('Enter');
         await page.waitForTimeout(400);
       }
       answered = key;

@@ -169,8 +169,9 @@ describe('a Bonus Catchphrase', () => {
     expect(container.textContent).toMatch(/guess as the squares come off/i);
     expect(container.textContent).not.toMatch(/options arrive at halfway/i);
 
-    // #when somebody guesses from the first square
+    // #when somebody guesses from the first square, and locks it in
     fireEvent.keyDown(window, { key: 'c' });
+    fireEvent.keyDown(window, { key: 'Enter' });
 
     // #then it is written
     expect(onAnswer).toHaveBeenLastCalledWith(2, undefined);
@@ -220,11 +221,17 @@ describe('a Catchphrase picture from halfway', () => {
     const onAnswer = vi.fn();
     const { container } = render(screen(at(5_500), { onAnswer }));
 
+    // A pick, then Enter, is the lock (docs/decisions/lock-in.md).
     fireEvent.keyDown(window, { key: 'b' });
+    fireEvent.keyDown(window, { key: 'Enter' });
     expect(onAnswer).toHaveBeenLastCalledWith(1, undefined);
 
+    // A tap, then a tap on the same lectern.
     const third = tiles(container)[2];
-    if (third) fireEvent.click(third);
+    if (third) {
+      fireEvent.click(third);
+      fireEvent.click(third);
+    }
     expect(onAnswer).toHaveBeenLastCalledWith(2, undefined);
   });
 
@@ -240,6 +247,7 @@ describe('the hold is Catchphrase’s alone', () => {
     const { container } = render(screen(at(500), { packId: 'screens', onAnswer }));
     for (const option of PUZZLE.options) expect(container.textContent).toContain(option);
     fireEvent.keyDown(window, { key: 'a' });
+    fireEvent.keyDown(window, { key: 'Enter' });
     expect(onAnswer).toHaveBeenCalledWith(0, undefined);
   });
 

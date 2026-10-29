@@ -75,6 +75,7 @@ export async function playToFinal(
       for (const page of pages) {
         await expect(page.locator('.podium')).toBeVisible();
         await page.keyboard.press('a');
+        await page.keyboard.press('Enter');
       }
       answered = key;
     }

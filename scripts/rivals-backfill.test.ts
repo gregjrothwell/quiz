@@ -13,7 +13,6 @@ import {
   replayRivals,
   rivalsBackfillWillWrite,
   scoresOf,
-  testRunOf,
   type KeptRivalGame,
   type SeasonRivalRow,
 } from './rivals-backfill';
@@ -51,7 +50,8 @@ describe('replayRivals', () => {
     expect(kept.get('sam')).toBe(3);
     expect(maps.get('sam')).toEqual({ priya: { name: 'Priya', beaten: 1, lost: 1 } });
     expect(maps.get('priya')).toEqual({ sam: { name: 'Sam', beaten: 1, lost: 1 } });
-    expect(rivalsCaption(maps.get('sam'))).toBe('You and Priya are level this season — 1 each.');
+    // Level on one each says nothing (PROJ-80): no caption until a lead reaches 2.
+    expect(rivalsCaption(maps.get('sam'))).toBeNull();
   });
 
   test('a solo round names nobody, and a blank name is not an opponent', () => {
@@ -88,13 +88,6 @@ describe('replayRivals', () => {
     expect(maps.has('jo')).toBe(false);
     expect(maps.get('g')).toEqual({ sam: { name: 'Sam', beaten: 1, lost: 0 } });
     expect(kept.get('g')).toBe(1);
-  });
-
-  test('testRunOf leaves a real round, and an id that only starts like a harness one', () => {
-    expect(testRunOf({ id: '6346bca0-20b3', players: { a: { name: 'Steve' } } })).toBeUndefined();
-    expect(testRunOf({ id: 'rank-ed', players: { a: { name: 'Steve' } } })).toBeUndefined();
-    expect(testRunOf({ id: 'x', players: {} })).toBeUndefined();
-    expect(testRunOf({ id: 'x', players: { a: { name: 'CC test' } } })).toBe('test run');
   });
 
   // Joining seeds a score of 0, so a seat is not a game played (PROJ-64 review).

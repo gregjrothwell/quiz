@@ -50,6 +50,9 @@ import { isNewRound, todayIso } from '../questions/newRounds';
  */
 const HUSH_MS = 700;
 
+/** How long before the buzzer an unlocked pick locks itself (docs/decisions/lock-in.md). */
+export const AUTO_LOCK_MS = 2_000;
+
 const CLOCK_LEAD_MS = CLOCK_LEAD_SECONDS * 1000;
 
 /**
@@ -95,7 +98,11 @@ interface QuestionScreenProps {
    * device with no log — a gallery fixture, a test — simply has no run to tell.
    */
   streak?: number;
-  onAnswer: (optionIndex: number, wager?: number) => void;
+  /**
+   * Locks an answer in: the one write per question. `late` is the auto-lock of
+   * a pick nobody locked, timed from the full window (docs/decisions/lock-in.md).
+   */
+  onAnswer: (optionIndex: number, wager?: number, late?: boolean) => void;
   onReveal: () => void;
   onNext: () => void;
   /**
@@ -172,6 +179,18 @@ export function QuestionScreen({
   const [draftState, setDraftState] = useState<{ key: string; text: string }>({ key: '', text: '' });
   const [lockedCall, setLockedCall] = useState<string | null>(null);
   const draft = draftState.key === callKey ? draftState.text : '';
+
+  /*
+    The pick, before it is locked in (PROJ-78, docs/decisions/lock-in.md).
+
+    Local, like the call box: moving it writes nothing. The lock is the answer
+    write, so once there is an answer for this question the pick is final and
+    the lecterns shut. Keyed by question so a new one starts empty.
+  */
+  const [pickState, setPickState] = useState<{ key: string; index: number } | null>(null);
+  const locked = myAnswer !== undefined;
+  const pending = !locked && pickState?.key === callKey ? pickState.index : null;
+  const autoLockedRef = useRef<string | null>(null);
 
   /*
     Read off the reveal rather than worked out here, because "your answer was not
@@ -468,12 +487,25 @@ export function QuestionScreen({
       // Gated on the clock rather than on having answered, so a key can change a
       // pick as well as make one — and so a late press cannot write past expiry.
       // Not before the options are out: a key would pick a lectern nobody can see.
-      if (pick >= 0 && optionsOut && !called && !revealed && !clock.expired && pick < optionCount) {
+      if (pick >= 0 && optionsOut && !called && !locked && !revealed && !clock.expired && pick < optionCount) {
         event.preventDefault();
-        // The stake goes with a keyed answer as well as a tapped one. Answering
-        // with `a` is the fastest way to play, so dropping it here would lose
-        // the bet for exactly the players most likely to have placed one.
-        onAnswer(pick, wagering ? stake : undefined);
+        // A key picks; it never locks. A held key repeats, and a repeat that
+        // locked would be the snap this exists to stop.
+        setPickState({ key: callKey, index: pick });
+        return;
+      }
+
+      // Enter locks the pick in. Not on a focused button: there Enter is that
+      // button's click, and a lectern's click is already its own lock.
+      if (
+        key === 'enter'
+        && pending !== null
+        && !(target instanceof HTMLButtonElement)
+        && optionsOut && !called && !locked && !revealed && !clock.expired
+      ) {
+        event.preventDefault();
+        // The stake goes with a keyed lock as well as a tapped one.
+        onAnswer(pending, wagering ? stake : undefined);
         return;
       }
 
@@ -507,6 +539,9 @@ export function QuestionScreen({
     isQuizmaster,
     clock.expired,
     called,
+    locked,
+    pending,
+    callKey,
     onAnswer,
     onReveal,
     onNext,
@@ -521,6 +556,18 @@ export function QuestionScreen({
     question?.previewStart,
     question?.previewSeconds,
   ]);
+
+  /*
+    A pick nobody locked in locks itself with AUTO_LOCK_MS left, timed from the
+    full window. Not at zero: a write that lands after the reveal is not
+    counted, and office writes have taken four or five seconds.
+  */
+  useEffect(() => {
+    if (pending === null || locked || revealed || !optionsOut || clock.expired) return;
+    if (remainingMs > AUTO_LOCK_MS || autoLockedRef.current === callKey) return;
+    autoLockedRef.current = callKey;
+    onAnswer(pending, wagering ? stake : undefined, true);
+  }, [pending, locked, revealed, optionsOut, clock.expired, remainingMs, callKey, onAnswer, wagering, stake]);
 
   // Placed after the hooks above: an early return before them would change the
   // hook order between renders.
@@ -547,7 +594,7 @@ export function QuestionScreen({
       if (verdict !== 'lost' && myAnswer?.optionIndex === index) return 'wrong';
       return 'gone';
     }
-    if (!myAnswer) return 'idle';
+    if (!myAnswer) return pending === index ? 'held' : 'idle';
     // Only the pick itself is marked. The others stay `idle` because they are
     // still live — you can change your mind until the clock stops, and dimming
     // a tile you can still press reads as "unavailable". There was a `dim`
@@ -581,8 +628,12 @@ export function QuestionScreen({
       // The clock closes the lecterns, not the first press. Expiry matters on
       // its own now: it used to be covered incidentally, because having answered
       // disabled the tiles and everyone had answered or run out of time.
-      disabled={!optionsOut || revealed || clock.expired || called}
-      onPick={(picked: number) => onAnswer(picked, wagering ? stake : undefined)}
+      disabled={!optionsOut || revealed || clock.expired || called || locked}
+      // A tap picks; a tap on the lectern you already picked locks it in.
+      onPick={(picked: number) => {
+        if (pending === picked) onAnswer(picked, wagering ? stake : undefined);
+        else setPickState({ key: callKey, index: picked });
+      }}
       order={index}
       // Your points, popped over your own lectern as the verdict lands. Only
       // yours and only on this screen: everybody else's are the standings' job.
@@ -873,14 +924,11 @@ export function QuestionScreen({
                       className={share === stake ? 'btn' : 'btn btn--ghost'}
                       // Locked with the lecterns, so a stake cannot be moved after
                       // the clock has run out on the answer it belongs to.
-                      disabled={clock.expired || called}
+                      // Shut with the lecterns once the answer is locked in: the
+                      // stake rides the lock and is as final as it is.
+                      disabled={clock.expired || called || locked}
                       aria-pressed={share === stake}
-                      onClick={() => {
-                        setWager(share);
-                        // Already answered? Then the stake is a change to an
-                        // answer that exists, and has to be written to count.
-                        if (myAnswer && !called) onAnswer(myAnswer.optionIndex, share);
-                      }}
+                      onClick={() => setWager(share)}
                     >
                       {share === 0 ? 'Nothing' : `${share}%`}
                     </button>
@@ -1012,10 +1060,11 @@ export function QuestionScreen({
               // for this player when the options arrive.
               'Called — you can’t change it'
             ) : myAnswer ? (
-              // Not "Locked in" any more, and worth saying rather than leaving to
-              // be discovered: every other quiz app takes the first answer and
-              // keeps it, so nobody will try a second lectern unless told they can.
-              'You can still change it'
+              'Locked in'
+            ) : pending !== null ? (
+              // Said, because a pick that looks chosen but is not will otherwise
+              // be left there, and ranked last when it locks itself.
+              'Tap it again, or press Enter, to lock it in'
             ) : calling ? (
               'Call it, or wait'
             ) : (

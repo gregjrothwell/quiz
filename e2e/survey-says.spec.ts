@@ -68,9 +68,11 @@ test('a Survey Says round: the room is the answer, start to podium', async ({ br
     const part = room.questions[room.index]?.survey?.part;
 
     if (room.phase === 'question' && part) {
-      await host.keyboard.press(picks[part].host);
-      await ann.keyboard.press(picks[part].ann);
-      await bob.keyboard.press(picks[part].bob);
+      // A pick, then Enter to lock it in (docs/decisions/lock-in.md).
+      for (const [page, pick] of [[host, picks[part].host], [ann, picks[part].ann], [bob, picks[part].bob]] as const) {
+        await page.keyboard.press(pick);
+        await page.keyboard.press('Enter');
+      }
     }
     if (room.phase === 'reveal' && part === 'tell' && Object.keys(room.lastPicks ?? {}).length > 0) {
       tellPicksPublished = true;

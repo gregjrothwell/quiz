@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface QuestionClock {
   elapsedMs: number;
@@ -6,6 +6,17 @@ export interface QuestionClock {
   /** Whole seconds left, for the timer face. */
   secondsLeft: number;
   expired: boolean;
+}
+
+/** The clock a device answers with: the face, plus a reading taken at the press. */
+export interface LiveQuestionClock extends QuestionClock {
+  /**
+   * Elapsed time now, not at the last tick. The face repaints every 100ms, and
+   * an answer stamped with the face's reading was up to 100ms fast — and 0 for
+   * a press before the first tick, which room Y86U recorded once (PROJ-78).
+   * Capped at the window, as the face is.
+   */
+  elapsedNow: () => number;
 }
 
 interface Reading {
@@ -59,8 +70,10 @@ export function useQuestionClock(
    * before this did.
    */
   originMs: number | null = null,
-): QuestionClock {
+): LiveQuestionClock {
   const [reading, setReading] = useState<Reading>({ questionIndex, elapsedMs: 0 });
+  // The same start the face counts from, kept where a press can read it.
+  const startedRef = useRef<{ questionIndex: number; startedAt: number } | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -74,6 +87,7 @@ export function useQuestionClock(
     // and it can only ever move the start *earlier*: `questionOriginMs` pins the
     // origin at this device's own arrival and never past it.
     const startedAt = originMs ?? Date.now();
+    startedRef.current = { questionIndex, startedAt };
 
     // 100ms keeps the arc visibly smooth without repainting every frame.
     const interval = setInterval(() => {
@@ -94,10 +108,17 @@ export function useQuestionClock(
     isOpen && reading.questionIndex === questionIndex ? Math.max(0, reading.elapsedMs) : 0;
   const remainingMs = Math.max(0, durationMs - elapsedMs);
 
+  const elapsedNow = useCallback((): number => {
+    const started = startedRef.current;
+    if (!isOpen || started?.questionIndex !== questionIndex) return 0;
+    return Math.min(durationMs, Math.max(0, Date.now() - started.startedAt));
+  }, [isOpen, questionIndex, durationMs]);
+
   return {
     elapsedMs,
     remainingMs,
     secondsLeft: Math.ceil(remainingMs / 1000),
     expired: isOpen && remainingMs === 0,
+    elapsedNow,
   };
 }

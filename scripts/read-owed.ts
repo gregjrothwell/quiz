@@ -4,8 +4,10 @@
  *   npm run read-owed
  *   npm run read-owed -- --last 40
  *
- * Five sections, which are the list in docs/HANDOVER.md ("Live checks still
- * owed"):
+ *   npm run read-owed -- --since 7d     # errors over a week, not a day
+ *
+ * Seven sections. The first five are the list in docs/HANDOVER.md ("Live
+ * checks still owed"); the last two are `read-errors` and `read-cannon`:
  *
  *   1. The Double — any kept round whose `doubleOf` names round one, and
  *      whether that round is in the same window.
@@ -15,6 +17,8 @@
  *   4. Cass — `read-traces -- --name cass` for the same window.
  *   5. Geekend — whether `seasons/season-2-geekend/asked/{pack}` exists.
  *      One read cannot show the office doc was left unchanged; the line says so.
+ *   6. Errors players saw, over `--since` (default 1d), grouped as `read-errors`.
+ *   7. The Slop Cannon's Keep and Bin, as `read-cannon`, test rounds left out.
  *
  * **Needs a service account**, as `read-games` does. Point
  * `GOOGLE_APPLICATION_CREDENTIALS` at a key under `.secrets/`, and run via
@@ -27,8 +31,10 @@
 
 import { readFile } from 'node:fs/promises';
 import { cert, initializeApp as initAdmin, type ServiceAccount } from 'firebase-admin/app';
-import { getFirestore as getAdminFirestore } from 'firebase-admin/firestore';
+import { Timestamp, getFirestore as getAdminFirestore } from 'firebase-admin/firestore';
 import { parseTrace } from '../src/engine/q1Trace';
+import { tallyShots, type KeptRound as CannonRound, type VerdictRow } from './cannon-report';
+import { groupErrors, parseErrorRow, parseSince, type ErrorRow } from './error-report';
 import { parseGameRecord } from './game-report';
 import {
   formatOwedChecks,
@@ -38,14 +44,28 @@ import {
   type KeptRound,
 } from './owed-checks';
 import { formatTrace } from './trace-report';
+import { seatedNames, testRunOf } from '../src/engine/testRun';
 
 const DEFAULT_LAST = 40;
+
+function sinceArg(argv: readonly string[]): string {
+  const at = argv.indexOf('--since');
+  return at >= 0 ? argv[at + 1] ?? '1d' : '1d';
+}
+
+function keysOf(value: unknown): string[] {
+  return typeof value === 'object' && value !== null ? Object.keys(value) : [];
+}
 
 function parseLast(argv: readonly string[]): number {
   let last = DEFAULT_LAST;
   for (let i = 0; i < argv.length; i += 1) {
     const flag = argv[i];
-    if (flag !== '--last') throw new Error(`Unknown argument ${flag ?? ''}. The only one is --last.`);
+    if (flag === '--since') {
+      i += 1;
+      continue;
+    }
+    if (flag !== '--last') throw new Error(`Unknown argument ${flag ?? ''}. The others are --last and --since.`);
     const value = argv[i + 1];
     const parsed = Number.parseInt(value ?? '', 10);
     if (!Number.isFinite(parsed) || parsed <= 0) throw new Error(`--last wants a positive number, got ${value ?? ''}`);
@@ -100,7 +120,13 @@ async function main(): Promise<void> {
   const gameSnaps = (await db.collection('games').orderBy('finishedAt', 'desc').limit(last).get()).docs;
   const games: KeptRound[] = [];
   let gamesUnreadable = 0;
+  let testRuns = 0;
   for (const snapshot of gameSnaps) {
+    // The owed checks are about the office's rounds, not a harness's (PROJ-74).
+    if (testRunOf(snapshot.id, seatedNames(snapshot.get('players')))) {
+      testRuns += 1;
+      continue;
+    }
     const data: unknown = snapshot.data();
     const record = parseGameRecord(data);
     if (!record) {
@@ -154,7 +180,36 @@ async function main(): Promise<void> {
     officeAsked[doc.packId] = office.exists ? idCount(office.data()) : null;
   }
 
-  console.log(`Reading owed checks from ${projectId}.\n`);
+  const since = sinceArg(process.argv.slice(2));
+  const errorRows: ErrorRow[] = [];
+  const errorSnaps = (
+    await db.collection('clientErrors')
+      .where('at', '>=', Timestamp.fromMillis(Date.now() - parseSince(since)))
+      .orderBy('at', 'desc')
+      .get()
+  ).docs;
+  for (const snapshot of errorSnaps) {
+    const data = snapshot.data();
+    const row = parseErrorRow(data, data['at'] instanceof Timestamp ? data['at'].toMillis() : null);
+    if (row) errorRows.push(row);
+  }
+
+  // As `read-cannon`: only rounds that carried a shot, test rounds left out,
+  // and only verdicts on the rounds counted.
+  const cannonRounds: CannonRound[] = (await db.collection('games').orderBy('cannon').get()).docs
+    .filter((game) => !testRunOf(game.id, seatedNames(game.get('players'))))
+    .map((game) => ({ gameId: game.id, players: keysOf(game.get('players')), shots: keysOf(game.get('cannon')) }));
+  const counted = new Set(cannonRounds.map((round) => round.gameId));
+  const verdicts: VerdictRow[] = [];
+  for (const row of (await db.collection('cannonVerdicts').get()).docs) {
+    const { gameId, shot, uid, verdict } = row.data();
+    if (typeof gameId === 'string' && counted.has(gameId) && typeof shot === 'string' && typeof uid === 'string'
+      && (verdict === 'keep' || verdict === 'bin')) {
+      verdicts.push({ gameId, shot, uid, verdict });
+    }
+  }
+
+  console.log(`Reading owed checks from ${projectId}; ${testRuns} test run(s) skipped.\n`);
   console.log(formatOwedChecks({
     last,
     games,
@@ -163,6 +218,8 @@ async function main(): Promise<void> {
     tracesRead: traceSnaps.length,
     geekendAsked,
     officeAsked,
+    errors: { ...groupErrors(errorRows), since },
+    cannon: tallyShots(cannonRounds, verdicts),
   }));
 }
 

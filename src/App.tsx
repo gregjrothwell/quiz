@@ -10,6 +10,7 @@ import type { Verdict } from './engine/questionVote';
 import { honoursFor, sawWholeGame, NO_HONOURS } from './engine/awards';
 import { isHalfTime, seasonWin } from './engine/double';
 import { answeredIn, nightAgainst } from './engine/rivals';
+import { testRunOf } from './engine/testRun';
 import { finalFor } from './engine/finals';
 import { formFor } from './engine/form';
 import { skippedIndices, streakOf } from './engine/streak';
@@ -595,7 +596,7 @@ function Game() {
   );
 
   const handleAnswer = useCallback(
-    (optionIndex: number, wager?: number) => {
+    (optionIndex: number, wager?: number, late?: boolean) => {
       // Cued on the tap rather than on the write landing: the point of the
       // sound is to confirm the press, and a round-trip to Firestore is long
       // enough for the delay to read as a missed input.
@@ -613,9 +614,12 @@ function Game() {
       // second rather than on the base alone. Making it exact would need the
       // answer document to say "I walked in", which is a new field and a rules
       // paste for a case worth 100 points. See docs/decisions/scoring.md.
-      submitAnswer(optionIndex, joinedMidQuestion ? durationMs : clock.elapsedMs, wager).catch(report);
+      // Read at the press, not off the face (PROJ-78). A pick nobody locked in
+      // is `late`: locked for them near the end and ranked from the full window,
+      // as a mid-question join is (docs/decisions/lock-in.md).
+      submitAnswer(optionIndex, late || joinedMidQuestion ? durationMs : clock.elapsedNow(), wager).catch(report);
     },
-    [submitAnswer, clock.elapsedMs, joinedMidQuestion, durationMs, report],
+    [submitAnswer, clock, joinedMidQuestion, durationMs, report],
   );
 
   /**
@@ -749,6 +753,11 @@ function Game() {
     // promotes whoever was second, and banks a win that never happened.
     const players = finalSnapshot?.players ?? room.players;
     const scores = finalSnapshot?.scores ?? room.scores;
+
+    // A harness run, or a table of nobody but test names, stays off the season
+    // table everybody reads. The host still keeps it in `games/`, where every
+    // reader skips it the same way (PROJ-74, docs/decisions/test-runs.md).
+    if (testRunOf(gameId, Object.values(players).map((seat) => seat.name))) return;
 
     // Still on the room at `finished`. `reset` is what clears it. Absent for
     // anyone who was not one of the two, so their tallies are carried, not bumped.

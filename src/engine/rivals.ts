@@ -4,8 +4,9 @@ import type { FirstHalf } from './state';
 /**
  * Who you have finished ahead of, and behind, across the season.
  *
- * A tie is neither. The caption names whoever leads each list, and names
- * every joint leader, the same way the opening titles name a shared champion.
+ * A tie is neither. The caption names whoever leads each list, when the lead
+ * says something: at least {@link MIN_LEAD} rounds, held by at most
+ * {@link MAX_LEADERS} people (PROJ-80).
  * The giant-killer bonus is not this: it wants a measurement first, and it
  * would be a scoring change. docs/decisions/rivals.md.
  */
@@ -203,6 +204,23 @@ interface Lead {
   count: number;
 }
 
+/**
+ * The smallest lead the caption names. One round says nothing about anyone:
+ * the 29 October backfill had "beaten nine people most — once each".
+ */
+const MIN_LEAD = 2;
+
+/**
+ * The most people one clause names. Past this a shared lead is a list, not a
+ * rival. Three, not two: Greg, 29 October 2026, so "lost to Greg & Kelly &
+ * Rach — 9 times each" still says something.
+ */
+const MAX_LEADERS = 3;
+
+function worthSaying(lead: Lead | null): Lead | null {
+  return lead && lead.count >= MIN_LEAD && lead.names.length <= MAX_LEADERS ? lead : null;
+}
+
 function leadOf(rivals: Readonly<Record<string, Rival>>, field: 'beaten' | 'lost'): Lead | null {
   let best = 0;
   for (const rival of Object.values(rivals)) best = Math.max(best, rival[field]);
@@ -227,9 +245,8 @@ function named(names: readonly string[]): string {
   return names.join(' & ');
 }
 
-/** "once", "4 times", and "4 times each" when the lead is shared. */
+/** "4 times", and "4 times each" when the lead is shared. */
 function times(count: number, shared: boolean): string {
-  if (count === 1) return shared ? 'once each' : 'once';
   return shared ? `${count} times each` : `${count} times`;
 }
 
@@ -237,21 +254,21 @@ function times(count: number, shared: boolean): string {
 function detail(lead: Lead, withSeason: boolean): string {
   const shared = lead.names.length > 1;
   const season = withSeason ? ' this season' : '';
-  const tail = lead.count === 1 && !shared ? '' : ` — ${times(lead.count, shared)}`;
-  return `${named(lead.names)} most${season}${tail}`;
+  return `${named(lead.names)} most${season} — ${times(lead.count, shared)}`;
 }
 
 /**
- * The line under your season, or nothing when there is nobody to name.
+ * The line under your season, or nothing when there is nobody worth naming.
  *
- * A shared lead names everyone, sorted, so the sentence does not depend on
- * map order. The same person leading both lists is one sentence, not two
- * that contradict each other.
+ * A clause whose lead says nothing ({@link worthSaying}) is left out, and the
+ * other clause stands alone. A shared lead names both, sorted, so the sentence
+ * does not depend on map order. The same person leading both lists is one
+ * sentence, not two that contradict each other.
  */
 export function rivalsCaption(rivals: Readonly<Record<string, Rival>> | undefined): string | null {
   if (!rivals) return null;
-  const beaten = leadOf(rivals, 'beaten');
-  const lost = leadOf(rivals, 'lost');
+  const beaten = worthSaying(leadOf(rivals, 'beaten'));
+  const lost = worthSaying(leadOf(rivals, 'lost'));
   if (!beaten && !lost) return null;
 
   if (beaten && lost && sameIds(beaten.ids, lost.ids)) {

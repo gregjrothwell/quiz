@@ -2,8 +2,10 @@ import { describe, expect, test } from 'vitest';
 import type { GameRecord, RecordedQuestion } from '../src/engine/gameRecord';
 import type { Difficulty, PackId } from '../src/questions/types';
 import {
+  formatCannon,
   formatCass,
   formatDouble,
+  formatErrors,
   formatGeekend,
   formatHigher,
   formatOwedChecks,
@@ -153,7 +155,7 @@ describe('formatGeekend', () => {
 });
 
 describe('formatOwedChecks', () => {
-  test('prints the five owed sections, in the handover\'s order', () => {
+  test('prints the owed sections, in the handover\'s order', () => {
     const text = formatOwedChecks({
       last: 40,
       games: [],
@@ -162,6 +164,8 @@ describe('formatOwedChecks', () => {
       tracesRead: 0,
       geekendAsked: [],
       officeAsked: {},
+      errors: { groups: [], probes: 0, since: '1d' },
+      cannon: [],
     });
     const headings = [
       'The Double',
@@ -169,10 +173,53 @@ describe('formatOwedChecks', () => {
       'Higher or Lower',
       'Cass, question one',
       'Geekend asked',
+      'Errors players saw, last 1d',
+      'Slop Cannon, Keep and Bin',
     ];
     const positions = headings.map((heading) => text.indexOf(heading));
     expect(positions.every((position) => position >= 0)).toBe(true);
     expect([...positions].sort((a, b) => a - b)).toEqual(positions);
     expect(text.startsWith('Owed live checks — last 40 kept rounds')).toBe(true);
+  });
+});
+
+describe('formatErrors', () => {
+  test('says none, and counts the probe rows it left out', () => {
+    expect(formatErrors({ groups: [], probes: 2, since: '1d' })).toBe(
+      'Errors players saw, last 1d\n  None. 2 check-rules probe rows skipped.',
+    );
+  });
+
+  test('prints each group as read-errors does', () => {
+    const text = formatErrors({
+      groups: [{
+        message: 'Failed to fetch dynamically imported module',
+        room: '3KVN',
+        count: 6,
+        phases: ['finished'],
+        builds: ['index-CtEv5OcI'],
+        devices: ['mobile'],
+        sources: ['window'],
+        first: Date.UTC(2026, 9, 28, 14, 30),
+        last: Date.UTC(2026, 9, 28, 14, 31),
+      }],
+      probes: 0,
+      since: '7d',
+    });
+    expect(text).toContain('Errors players saw, last 7d');
+    expect(text).toContain('  6 × Failed to fetch dynamically imported module');
+    expect(text).toContain('3KVN · finished');
+  });
+});
+
+describe('formatCannon', () => {
+  test('says when nothing has fired', () => {
+    expect(formatCannon([])).toBe('Slop Cannon, Keep and Bin\n  Nothing fired yet.');
+  });
+
+  test('prints a line per shot', () => {
+    expect(formatCannon([{ shot: 'chaser', rounds: 2, keep: 5, bin: 1, silent: 3 }])).toContain(
+      'chaser                     2 rounds   keep   5   bin   1   no vote   3',
+    );
   });
 });

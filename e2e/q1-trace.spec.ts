@@ -194,6 +194,7 @@ test('AC1–AC4 through the app: question one leaves one trace per device', asyn
   // #when Ann answers question one and the host's device reveals it
   await expect(ann.page.locator('.podium')).toBeVisible();
   await ann.page.keyboard.press('a');
+  await ann.page.keyboard.press('Enter');
   await expect(ann.page.getByText(/^Correct · \+/)).toBeVisible({ timeout: 60_000 });
 
   const gameId = opened.gameId ?? '';
@@ -206,6 +207,9 @@ test('AC1–AC4 through the app: question one leaves one trace per device', asyn
     expect(typeof annTrace?.[key], key).toBe('number');
   }
   expect(annTrace).not.toHaveProperty('optionIndex');
+  // Locked by Enter, not by the auto-lock near the buzzer, which stamps the
+  // whole window (docs/decisions/lock-in.md). That would read 10,000 here.
+  expect(annTrace?.['tapElapsedMs']).toBeLessThan(8_000);
 
   // #and so did the host's, which never answered
   const hostTrace = await until(() => traceOf(gameId, uidOf(opened, 'Host')), (kept) => kept !== undefined);

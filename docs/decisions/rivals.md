@@ -1,6 +1,6 @@
 # Rivals — who you've beaten, and who you've lost to
 
-> **Owner: Greg Rothwell. Last updated: 27 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 29 October 2026. Budget: 250 lines.**
 
 **Status: built 27 October 2026, not live.** PROJ-64, v1 only. Greg scoped the
 caption that evening, and asked for the history the same day. The backfill is
@@ -19,14 +19,21 @@ the podium, once that device has banked. Nobody else's line is shown.
 | The season so far | The line |
 |---|---|
 | Ahead of Sam four times, behind Priya three | You’ve beaten Sam most this season — 4 times, and lost to Priya most — 3 times. |
-| Ahead of Sam once, and that is all | You’ve beaten Sam most this season. |
+| Ahead of Sam once, and that is all | Nothing (PROJ-80, below). |
 | Sam and Alex tied on four | You’ve beaten Alex & Sam most this season — 4 times each. |
 | Sam leads both lists, 3 and 3 | You and Sam are level this season — 3 each. |
 | Sam leads both lists, 4 and 2 | You’ve beaten Sam most this season, and lost to Sam most — 4 and 2. |
 | No decisive round, or you played alone | Nothing. An empty caption reads as a fault. |
 
-Names in a tie are sorted, so the sentence does not follow map order. "Once"
-does not grow a number; a shared once says "once each".
+Names in a tie are sorted, so the sentence does not follow map order.
+
+**A clause needs a lead of at least 2, held by at most three people** (PROJ-80,
+29 October 2026). It started at two; Greg said three is fine, so Joe's "lost to
+Greg & Kelly & Rach — 9 times each" stays. No "and N others": which names it
+showed would be alphabetical. Otherwise that clause goes and the other stands
+alone. Measured on live season-2 that day: 25 rows with rivals, 20 keep a
+caption; every caption that changes loses a "once each" list, up to nine names
+long, and nothing else.
 
 ## What counts
 

@@ -4,7 +4,9 @@ import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', 'playwright-report', 'test-results'] },
+  // `.cache/` holds one-off probes and `.claude/worktrees/` other sessions' checkouts: neither is
+  // the repo, and linting them made a clean `npm run lint` impossible locally (1,255 errors, 29 Oct).
+  { ignores: ['dist', 'node_modules', 'playwright-report', 'test-results', '.cache', '.claude'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

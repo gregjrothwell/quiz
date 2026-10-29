@@ -25,7 +25,8 @@
     "e2e/rig-probe.spec.ts"
   ],
   [
-    "e2e/slop-cannon.spec.ts"
+    "e2e/slop-cannon.spec.ts",
+    "e2e/test-run.spec.ts"
   ],
   [
     "e2e/slop-cannon-double.spec.ts"
