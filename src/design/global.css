@@ -1870,6 +1870,12 @@ select.input option {
   flex-shrink: 100;
 }
 
+/* A pick not yet locked in: the amber outline without the glow (lock-in.md). */
+.tile--held {
+  border-color: var(--amber);
+  border-style: dashed;
+}
+
 .tile--picked {
   border-color: var(--amber);
   background: linear-gradient(180deg, #3a2a08, #1a1204 55%, #0a0700 100%);

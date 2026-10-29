@@ -8,7 +8,8 @@ const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'] as const;
  * lands: dropped away rather than merely dimmed, so the two survivors carry the
  * whole screen.
  */
-export type TileState = 'idle' | 'picked' | 'correct' | 'wrong' | 'hushed' | 'gone';
+/** `held` is a pick not yet locked in; `picked` is a locked one (docs/decisions/lock-in.md). */
+export type TileState = 'idle' | 'held' | 'picked' | 'correct' | 'wrong' | 'hushed' | 'gone';
 
 /** One player shown landing on this lectern during the reveal replay. */
 export interface TileArrival {
@@ -81,6 +82,7 @@ function seconds(elapsedMs: number): string {
 
 const CLASS_FOR_STATE: Record<TileState, string> = {
   idle: '',
+  held: 'tile--held',
   picked: 'tile--picked',
   correct: 'tile--correct',
   wrong: 'tile--wrong',
@@ -121,7 +123,7 @@ export function PodiumTile({
       className={tileClassName(state)}
       style={{ animationDelay: `${order * 70}ms` }}
       disabled={disabled}
-      aria-pressed={state === 'picked'}
+      aria-pressed={state === 'picked' || state === 'held'}
       onClick={() => onPick(index)}
     >
       <span className="tile__letter" aria-hidden="true">

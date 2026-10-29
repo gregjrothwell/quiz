@@ -20,6 +20,7 @@ export const UPDATES: readonly Update[] = [
   {
     date: '2026-10-29',
     lines: [
+      'Lock it in. Picking a lectern is free, and you can move it as much as you like. Press Enter, or tap the same lectern again, to lock it in. Your speed counts from the lock, and a locked answer is final. A pick you never lock locks itself just before the buzzer, but it ranks behind everyone who locked theirs.',
       'If the quiz is updated while your screen is open, it reloads itself once, so the round’s card and the season table still open.',
     ],
   },

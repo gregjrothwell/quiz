@@ -140,6 +140,7 @@ test('a round against Mr Fries: his picks recompute, the room takes what it shou
       for (const [page, letter] of [[host, 'a'], [dev, 'a'], [eli, 'b']] as const) {
         await expect(page.locator('.podium')).toBeVisible();
         await page.keyboard.press(letter);
+        await page.keyboard.press('Enter');
       }
       answered = key;
     }

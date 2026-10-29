@@ -596,7 +596,7 @@ function Game() {
   );
 
   const handleAnswer = useCallback(
-    (optionIndex: number, wager?: number) => {
+    (optionIndex: number, wager?: number, late?: boolean) => {
       // Cued on the tap rather than on the write landing: the point of the
       // sound is to confirm the press, and a round-trip to Firestore is long
       // enough for the delay to read as a missed input.
@@ -614,8 +614,10 @@ function Game() {
       // second rather than on the base alone. Making it exact would need the
       // answer document to say "I walked in", which is a new field and a rules
       // paste for a case worth 100 points. See docs/decisions/scoring.md.
-      // Read at the press, not off the face (PROJ-78).
-      submitAnswer(optionIndex, joinedMidQuestion ? durationMs : clock.elapsedNow(), wager).catch(report);
+      // Read at the press, not off the face (PROJ-78). A pick nobody locked in
+      // is `late`: locked for them near the end and ranked from the full window,
+      // as a mid-question join is (docs/decisions/lock-in.md).
+      submitAnswer(optionIndex, late || joinedMidQuestion ? durationMs : clock.elapsedNow(), wager).catch(report);
     },
     [submitAnswer, clock, joinedMidQuestion, durationMs, report],
   );
