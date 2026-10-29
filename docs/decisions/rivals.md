@@ -27,14 +27,13 @@ the podium, once that device has banked. Nobody else's line is shown.
 
 Names in a tie are sorted, so the sentence does not follow map order.
 
-**A clause needs a lead of at least 2, held by at most two people** (PROJ-80,
-29 October 2026; Greg asked for a rule, this is the one the ticket suggested,
-without its "and N others", because which two names it showed would be
-alphabetical). Otherwise that clause goes and the other stands alone. Measured
-on live season-2 that day: 25 rows with rivals, 20 keep a caption; the five that
-lose it were all "once each" lists, up to nine names long. The cost is a
-three-way tie that does mean something, such as Joe's "lost to Greg & Kelly &
-Rach — 9 times each", which is now dropped.
+**A clause needs a lead of at least 2, held by at most three people** (PROJ-80,
+29 October 2026). It started at two; Greg said three is fine, so Joe's "lost to
+Greg & Kelly & Rach — 9 times each" stays. No "and N others": which names it
+showed would be alphabetical. Otherwise that clause goes and the other stands
+alone. Measured on live season-2 that day: 25 rows with rivals, 20 keep a
+caption; every caption that changes loses a "once each" list, up to nine names
+long, and nothing else.
 
 ## What counts
 

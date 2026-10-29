@@ -210,8 +210,12 @@ interface Lead {
  */
 const MIN_LEAD = 2;
 
-/** The most people one clause names. Past this a shared lead is a list, not a rival. */
-const MAX_LEADERS = 2;
+/**
+ * The most people one clause names. Past this a shared lead is a list, not a
+ * rival. Three, not two: Greg, 29 October 2026, so "lost to Greg & Kelly &
+ * Rach — 9 times each" still says something.
+ */
+const MAX_LEADERS = 3;
 
 function worthSaying(lead: Lead | null): Lead | null {
   return lead && lead.count >= MIN_LEAD && lead.names.length <= MAX_LEADERS ? lead : null;

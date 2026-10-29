@@ -135,14 +135,23 @@ describe('the rivals caption', () => {
     })).toBe('You’ve lost to Priya most this season — 2 times.');
   });
 
-  test('says nothing about a lead shared by more than two', () => {
-    const three = {
+  test('names a lead shared by three', () => {
+    expect(rivalsCaption({
       sam: { name: 'Sam', beaten: 2, lost: 0 },
       alex: { name: 'Alex', beaten: 2, lost: 0 },
       jo: { name: 'Jo', beaten: 2, lost: 0 },
+    })).toBe('You’ve beaten Alex & Jo & Sam most this season — 2 times each.');
+  });
+
+  test('says nothing about a lead shared by more than three', () => {
+    const four = {
+      sam: { name: 'Sam', beaten: 2, lost: 0 },
+      alex: { name: 'Alex', beaten: 2, lost: 0 },
+      jo: { name: 'Jo', beaten: 2, lost: 0 },
+      kit: { name: 'Kit', beaten: 2, lost: 0 },
     };
-    expect(rivalsCaption(three)).toBeNull();
-    expect(rivalsCaption({ ...three, priya: { name: 'Priya', beaten: 0, lost: 4 } })).toBe(
+    expect(rivalsCaption(four)).toBeNull();
+    expect(rivalsCaption({ ...four, priya: { name: 'Priya', beaten: 0, lost: 4 } })).toBe(
       'You’ve lost to Priya most this season — 4 times.',
     );
   });
