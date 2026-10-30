@@ -9,6 +9,10 @@
    ──────────────────────────────────────────────────────────────────────────── */
 
 :root {
+  /* Scrollbars, pickers and other controls the browser draws itself. Without
+     this they come out light on a dark set. */
+  color-scheme: dark;
+
   /* Set */
   --night: #010610;
   --studio: #04101f;
@@ -24,13 +28,19 @@
   --cyan-dim: #159fcc;
   --amber: #ffb226;
   --amber-bright: #ffd479;
+  /* The top of every lit-amber well: a picked card, a held tile. */
+  --amber-deep: #3a2a08;
+  /* Text sat on a lit fill. One value each, where the amber had been written
+     out by hand as two slightly different near-blacks. */
+  --amber-ink: #1a1203;
+  --cyan-ink: #02121c;
 
   /* Verdicts */
   --correct: #1fdd8a;
   --wrong: #ff2e4d;
 
   /* Ink */
-  --ink: #eef6ff;
+  --ink: var(--ink);
   --ink-soft: #9fb8cf;
   /* 4.99:1 on --panel-hi. Was #5d7794 at 3.27:1. The documented minimum
      for AA here is #708fb2 at 4.52; this one keeps headroom so a later
@@ -377,15 +387,15 @@ textarea {
   width: clamp(4.5rem, 13vw, 6.25rem);
   height: auto;
   border-radius: 4px;
-  border: 3px solid #eef6ff;
-  background: #eef6ff;
+  border: 3px solid var(--ink);
+  background: var(--ink);
   box-shadow: 0 0 26px -6px rgb(41 214 255 / 0.5);
 }
 
 .entry__hint {
   margin: 0;
   font-family: var(--tech);
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--ink-dim);
@@ -511,10 +521,17 @@ textarea {
   transform: translate(-50%, -50%);
 }
 
-.sound:hover {
-  color: var(--cyan);
-  border-color: var(--edge);
-  background: rgb(41 214 255 / 0.08);
+/*
+  Every `:hover` in this file sits inside `(hover: hover)`. A phone reports a
+  tap as a hover and keeps it until the next tap elsewhere, so an ungated lift
+  stays lifted under the thumb after the tap. `global.test.ts` holds the line.
+*/
+@media (hover: hover) {
+  .sound:hover {
+    color: var(--cyan);
+    border-color: var(--edge);
+    background: rgb(41 214 255 / 0.08);
+  }
 }
 
 .sound svg {
@@ -570,14 +587,14 @@ textarea {
 
 .sound-volume::-webkit-slider-runnable-track {
   height: 0.35rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--edge);
   background: rgb(2 10 20 / 0.62);
 }
 
 .sound-volume::-moz-range-track {
   height: 0.35rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--edge);
   background: rgb(2 10 20 / 0.62);
 }
@@ -604,20 +621,30 @@ textarea {
   transition: background-color 160ms ease;
 }
 
-.sound-volume:hover::-webkit-slider-thumb,
 .sound-volume:focus-visible::-webkit-slider-thumb {
   background: var(--cyan);
 }
 
-.sound-volume:hover::-moz-range-thumb,
 .sound-volume:focus-visible::-moz-range-thumb {
   background: var(--cyan);
+}
+
+/* The two engines stay in separate rules: a selector list one browser cannot
+   parse is dropped whole by that browser. */
+@media (hover: hover) {
+  .sound-volume:hover::-webkit-slider-thumb {
+    background: var(--cyan);
+  }
+
+  .sound-volume:hover::-moz-range-thumb {
+    background: var(--cyan);
+  }
 }
 
 .sound-volume:focus-visible {
   outline: 2px solid var(--cyan);
   outline-offset: 3px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 /*
@@ -712,7 +739,7 @@ textarea {
 }
 
 .gold {
-  background: linear-gradient(180deg, #fff3d0 0%, #ffd479 30%, #c88a12 52%, #ffe6a8 64%, #ffb226 100%);
+  background: linear-gradient(180deg, #fff3d0 0%, var(--amber-bright) 30%, #c88a12 52%, #ffe6a8 64%, var(--amber) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -839,8 +866,10 @@ select.input {
   background-size: 0.75rem;
 }
 
-select.input:hover:not(:disabled) {
-  border-color: var(--cyan-dim);
+@media (hover: hover) {
+  select.input:hover:not(:disabled) {
+    border-color: var(--cyan-dim);
+  }
 }
 
 select.input:disabled {
@@ -885,10 +914,12 @@ select.input option {
   transition: transform 120ms ease, box-shadow 160ms ease, border-color 160ms ease;
 }
 
-.btn:hover:not(:disabled) {
-  border-color: var(--cyan);
-  box-shadow: 0 0 26px -4px rgb(41 214 255 / 0.5);
-  transform: translateY(-1px);
+@media (hover: hover) {
+  .btn:hover:not(:disabled) {
+    border-color: var(--cyan);
+    box-shadow: 0 0 26px -4px rgb(41 214 255 / 0.5);
+    transform: translateY(-1px);
+  }
 }
 
 .btn:active:not(:disabled) {
@@ -903,13 +934,15 @@ select.input option {
 .btn--primary {
   background: linear-gradient(180deg, var(--amber-bright), var(--amber));
   border-color: var(--amber-bright);
-  color: #241a02;
+  color: var(--amber-ink);
   box-shadow: 0 0 30px -8px rgb(255 178 38 / 0.8);
 }
 
-.btn--primary:hover:not(:disabled) {
-  border-color: #fff3d0;
-  box-shadow: 0 0 34px -4px rgb(255 178 38 / 0.9);
+@media (hover: hover) {
+  .btn--primary:hover:not(:disabled) {
+    border-color: #fff3d0;
+    box-shadow: 0 0 34px -4px rgb(255 178 38 / 0.9);
+  }
 }
 
 .btn--ghost {
@@ -925,10 +958,29 @@ select.input option {
   font-size: 0.75rem;
 }
 
-.btn--ghost:hover:not(:disabled) {
-  border-color: var(--ink-dim);
-  box-shadow: none;
-  color: var(--ink);
+@media (hover: hover) {
+  .btn--ghost:hover:not(:disabled) {
+    border-color: var(--ink-dim);
+    box-shadow: none;
+    color: var(--ink);
+  }
+}
+
+/*
+  One focus ring for everything a keyboard lands on. Without it these fell back
+  to the browser's own ring, which differs per browser and is a thin blue line
+  on a navy set. The laptop runs the whole round from the keyboard, so this is
+  the cursor there.
+*/
+.btn:focus-visible,
+.tile:focus-visible,
+.pick:focus-visible,
+.pack:focus-visible,
+.filter-chip:focus-visible,
+.lamp--vote:focus-visible,
+.sound:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
 }
 
 .btn-row {
@@ -1133,7 +1185,7 @@ select.input option {
 .plate__role {
   font-family: var(--tech);
   font-weight: 600;
-  font-size: 0.66rem;
+  font-size: 0.72rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--amber);
@@ -1214,9 +1266,11 @@ select.input option {
   }
 }
 
-.pack:hover:not(:disabled) {
-  border-color: var(--cyan-dim);
-  transform: translateY(-2px);
+@media (hover: hover) {
+  .pack:hover:not(:disabled) {
+    border-color: var(--cyan-dim);
+    transform: translateY(-2px);
+  }
 }
 
 /* A spent lobby vote (docs/decisions/lobby-vote.md): the card stays readable,
@@ -1227,7 +1281,7 @@ select.input option {
 
 .pack[aria-pressed='true'] {
   border-color: var(--amber);
-  background: linear-gradient(180deg, #3a2a08, #140e02);
+  background: linear-gradient(180deg, var(--amber-deep), #140e02);
 }
 
 .pack[aria-pressed='true']::after {
@@ -1385,7 +1439,7 @@ select.input option {
   margin-bottom: 0.35rem;
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--cyan);
@@ -1411,14 +1465,16 @@ select.input option {
   transition: border-color 140ms ease, transform 140ms ease;
 }
 
-.pick:hover:not(:disabled) {
-  border-color: var(--cyan-dim);
-  transform: translateY(-2px);
+@media (hover: hover) {
+  .pick:hover:not(:disabled) {
+    border-color: var(--cyan-dim);
+    transform: translateY(-2px);
+  }
 }
 
 .pick[aria-pressed='true'] {
   border-color: var(--amber);
-  background: linear-gradient(180deg, #3a2a08, #140e02);
+  background: linear-gradient(180deg, var(--amber-deep), #140e02);
 }
 
 .pick[aria-pressed='true']::after {
@@ -1500,7 +1556,7 @@ select.input option {
 .chip {
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: #a9e8ff;
@@ -1638,11 +1694,18 @@ select.input option {
   text-transform: uppercase;
 }
 
-.store-badge:hover,
 .store-badge:focus-visible {
   color: #fff;
   outline: 2px solid var(--cyan);
   outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .store-badge:hover {
+    color: #fff;
+    outline: 2px solid var(--cyan);
+    outline-offset: 2px;
+  }
 }
 
 .still__credit {
@@ -1830,9 +1893,11 @@ select.input option {
     opacity 200ms ease;
 }
 
-.tile:hover:not(:disabled) {
-  border-color: var(--cyan-dim);
-  transform: translateY(-2px);
+@media (hover: hover) {
+  .tile:hover:not(:disabled) {
+    border-color: var(--cyan-dim);
+    transform: translateY(-2px);
+  }
 }
 
 /* The lit front edge of the lectern. */
@@ -1855,7 +1920,7 @@ select.input option {
   font-family: var(--shout);
   font-size: 1.4rem;
   line-height: 1;
-  color: #02121c;
+  color: var(--cyan-ink);
   background: linear-gradient(180deg, #e8fbff, #7fd9f5 45%, #1a9dc4 55%, #bdeeff);
   box-shadow: 0 0 20px -4px rgb(41 214 255 / 0.9), inset 0 0 0 1px rgb(0 0 0 / 0.3);
   transition: background 160ms ease;
@@ -1878,12 +1943,12 @@ select.input option {
 
 .tile--picked {
   border-color: var(--amber);
-  background: linear-gradient(180deg, #3a2a08, #1a1204 55%, #0a0700 100%);
+  background: linear-gradient(180deg, var(--amber-deep), #1a1204 55%, #0a0700 100%);
   box-shadow: 0 0 40px -12px rgb(255 178 38 / 0.9), var(--shadow-lift);
 }
 
 .tile--picked .tile__letter {
-  background: linear-gradient(180deg, #fff4d6, #ffd479 45%, #c88a12 55%, #ffe6a8);
+  background: linear-gradient(180deg, #fff4d6, var(--amber-bright) 45%, #c88a12 55%, #ffe6a8);
 }
 
 .tile--picked::after {
@@ -1993,7 +2058,7 @@ select.input option {
   margin: 0;
   font-family: var(--tech);
   font-weight: 600;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--ink-dim);
@@ -2060,7 +2125,7 @@ select.input option {
   margin: 0 0 0.15rem;
   font-family: var(--tech);
   font-weight: 600;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--cyan);
@@ -2140,9 +2205,11 @@ select.input option {
   transform: translateY(-50%);
 }
 
-.filter-chip:hover {
-  color: var(--ink);
-  border-color: var(--cyan-dim);
+@media (hover: hover) {
+  .filter-chip:hover {
+    color: var(--ink);
+    border-color: var(--cyan-dim);
+  }
 }
 
 .filter-chip--on {
@@ -2235,7 +2302,7 @@ select.input option {
   margin: 0;
   font-family: var(--tech);
   font-weight: 600;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--ink-dim);
@@ -2321,7 +2388,7 @@ select.input option {
 .tile__pick i {
   flex: none;
   font-style: normal;
-  font-size: 0.66rem;
+  font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
   color: var(--ink-dim);
 }
@@ -2536,7 +2603,7 @@ select.input option {
 .ladder__cap {
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.66rem;
+  font-size: 0.72rem;
   letter-spacing: 0.24em;
   text-transform: uppercase;
   color: var(--cyan);
@@ -2576,7 +2643,7 @@ select.input option {
   flex: 1 1 auto;
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.66rem;
+  font-size: 0.72rem;
   letter-spacing: 0.08em;
   padding: 0.28rem 0.3rem;
   border-radius: var(--radius-sm);
@@ -2597,7 +2664,7 @@ select.input option {
 }
 
 .rung--live {
-  color: #02121c;
+  color: var(--cyan-ink);
   border-color: var(--amber-bright);
   background: linear-gradient(90deg, var(--amber-bright), var(--amber));
   box-shadow: 0 0 22px -2px rgb(255 178 38 / 0.9);
@@ -2819,7 +2886,7 @@ select.input option {
   border-radius: var(--radius-sm);
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--amber);
@@ -2873,7 +2940,7 @@ select.input option {
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   color: var(--cyan);
   text-align: left;
   padding: 0 0.9rem 0.4rem;
@@ -2924,7 +2991,7 @@ select.input option {
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   color: var(--cyan);
   text-shadow: none;
   width: auto;
@@ -2942,7 +3009,7 @@ select.input option {
 .you {
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.62rem;
+  font-size: 0.72rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--amber);
@@ -3212,7 +3279,7 @@ select.input option {
 
   .finale--4 .riser__name,
   .finale--5 .riser__name {
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     letter-spacing: 0.02em;
   }
 
@@ -3306,7 +3373,7 @@ select.input option {
   max-width: 7rem;
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.66rem;
+  font-size: 0.72rem;
   line-height: 1.25;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -3604,7 +3671,7 @@ select.input option {
   background: rgb(4 16 31 / 0.9);
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.66rem;
+  font-size: 0.72rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink-dim);
@@ -3616,7 +3683,7 @@ select.input option {
 .lamp--in {
   border-color: var(--cyan);
   background: var(--cyan);
-  color: #02121c;
+  color: var(--cyan-ink);
   box-shadow: 0 0 12px 1px rgb(41 214 255 / 0.6);
   transform: scale(1.04);
 }
@@ -3631,7 +3698,7 @@ select.input option {
   font: inherit;
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.66rem;
+  font-size: 0.72rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   position: relative;
@@ -3662,9 +3729,11 @@ select.input option {
   transform: translateY(-50%);
 }
 
-.lamp--vote:hover:not(.lamp--in) {
-  border-color: var(--cyan);
-  color: var(--ink);
+@media (hover: hover) {
+  .lamp--vote:hover:not(.lamp--in) {
+    border-color: var(--cyan);
+    color: var(--ink);
+  }
 }
 
 /*
@@ -3716,7 +3785,7 @@ select.input option {
   margin: 0;
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--ink-dim);
@@ -3994,8 +4063,10 @@ select.input option {
     transition: opacity 140ms ease;
   }
 
-  .tile:hover:not(:disabled) .tile__key {
-    opacity: 1;
+  @media (hover: hover) {
+    .tile:hover:not(:disabled) .tile__key {
+      opacity: 1;
+    }
   }
 
   .standing {
@@ -4619,8 +4690,10 @@ select.input option {
   box-shadow: 0 0 18px 2px rgb(31 221 138 / 0.7);
 }
 
-.pick--share:hover:not(:disabled) {
-  border-color: var(--correct);
+@media (hover: hover) {
+  .pick--share:hover:not(:disabled) {
+    border-color: var(--correct);
+  }
 }
 
 .pick--shaft,
@@ -4639,8 +4712,10 @@ select.input option {
   box-shadow: 0 0 18px 2px rgb(255 46 77 / 0.7);
 }
 
-.pick--shaft:hover:not(:disabled) {
-  border-color: var(--wrong);
+@media (hover: hover) {
+  .pick--shaft:hover:not(:disabled) {
+    border-color: var(--wrong);
+  }
 }
 
 /* Both buttons lock once a pick is made, but the one chosen stays lit rather
@@ -4724,16 +4799,21 @@ select.input option {
   cursor: pointer;
 }
 
-.updates-teaser:hover,
 .updates-teaser:focus-visible {
   border-color: var(--amber);
+}
+
+@media (hover: hover) {
+  .updates-teaser:hover {
+    border-color: var(--amber);
+  }
 }
 
 .updates-teaser__kicker {
   display: block;
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--amber);
@@ -4752,11 +4832,11 @@ select.input option {
   display: inline-block;
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.62rem;
+  font-size: 0.72rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   line-height: 1;
-  color: #1a1203;
+  color: var(--amber-ink);
   background: var(--amber);
   border-radius: var(--radius-sm);
   padding: 0.22rem 0.45rem;
@@ -4772,6 +4852,15 @@ select.input option {
   display: block;
   width: fit-content;
   margin-bottom: 0.4rem;
+}
+
+/* `.pick span` is the card's subtitle, and outranks `.new-sticker` on
+   specificity, so until 30 October 2026 it painted this sticker's word in
+   --ink-dim on amber: 1.68:1. Put back the sticker's own ink and size. */
+.pick .new-sticker {
+  color: var(--amber-ink);
+  font-size: 0.72rem;
+  margin-top: 0;
 }
 
 .card .new-sticker {
@@ -4982,7 +5071,7 @@ select.input option {
 
 /* On a phone the round's score drops under the name: beside it, it squeezed
    the name out of the row altogether (gallery, 375px, 24 Oct). */
-@media (max-width: 640px) {
+@media (max-width: 40rem) {
   .standing__name:has(.standing__round) {
     flex-wrap: wrap;
     row-gap: 0.1rem;
