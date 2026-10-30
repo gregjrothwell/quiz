@@ -176,13 +176,16 @@ export function Landing({
             Deliberately not a restatement of the lede above, which already
             says what running the show involves.
           */}
-          <p className="muted hint">
-            You&rsquo;ll be the quizmaster, and everyone else joins with your code.
+          <p id="run-hint" className="muted hint">
+            {trimmedName.length === 0
+              ? 'Put your name in the box above first — then you can start a room.'
+              : 'You’ll be the quizmaster, and everyone else joins with your code.'}
           </p>
           <button
             type="button"
             className="btn btn--primary"
             disabled={!canCreate}
+            aria-describedby="run-hint"
             onClick={() => onCreate(trimmedName, squad, withWhom)}
           >
             Start a new room
