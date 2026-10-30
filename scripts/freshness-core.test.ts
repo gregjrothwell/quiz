@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { freshness, isDue, notificationFor, type PlayedRound } from './freshness-core';
+import { freshness, isDue, liveSeason, notificationFor, type PlayedRound } from './freshness-core';
 
 /*
   Pack freshness — approved by Greg on 5 October 2026, the day Catchphrase (30
@@ -138,5 +138,33 @@ describe('isDue', () => {
   test('a Mac that was off at 08:00 runs when it is next on', () => {
     // Off all morning, the app opened at 13:05: still today's run.
     expect(isDue(at(6, 13, 5), '2026-10-05')).toBe(true);
+  });
+});
+
+describe('liveSeason', () => {
+  test('passes over a probe season written to after the last round', () => {
+    // 30 October 2026: check-rules wrote `rules-check` at 19:29, after the
+    // last round at 11:55, and every pack read as unasked.
+    expect(
+      liveSeason([
+        { season: 'season-2', latest: 1_793_274_909_147 },
+        { season: 'rules-check', latest: 1_793_302_147_044 },
+        { season: 'week-1999-W02', latest: 1_793_302_147_045 },
+      ]),
+    ).toBe('season-2');
+  });
+
+  test('takes the season most recently written to', () => {
+    expect(
+      liveSeason([
+        { season: 'season-2', latest: 200 },
+        { season: 'season-3', latest: 300 },
+        { season: 'season-1', latest: 100 },
+      ]),
+    ).toBe('season-3');
+  });
+
+  test('is null when no season has been written to', () => {
+    expect(liveSeason([{ season: 'rules-check', latest: 5 }, { season: 'season-1', latest: 0 }])).toBeNull();
   });
 });
