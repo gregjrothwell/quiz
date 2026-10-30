@@ -18,7 +18,7 @@ export const CARD_HEIGHT = 630;
 /** Straight off `src/design/global.css`. Duplicated because canvas cannot read CSS. */
 export const INK = '#eef6ff';
 export const INK_SOFT = '#9fb8cf';
-const INK_DIM = '#5d7794';
+const INK_DIM = '#7a96bc';
 export const NIGHT = '#010610';
 const PANEL = '#071a2e';
 export const EDGE = '#12405f';

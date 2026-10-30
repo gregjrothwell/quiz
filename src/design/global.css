@@ -40,7 +40,7 @@
   --wrong: #ff2e4d;
 
   /* Ink */
-  --ink: var(--ink);
+  --ink: #eef6ff;
   --ink-soft: #9fb8cf;
   /* 4.99:1 on --panel-hi. Was #5d7794 at 3.27:1. The documented minimum
      for AA here is #708fb2 at 4.52; this one keeps headroom so a later
@@ -860,7 +860,7 @@ select.input {
   cursor: pointer;
   /* Room for the chevron, so a long squad name never runs under it. */
   padding-right: 2.75rem;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%235d7794' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5 6 6.5l5-5'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%237a96bc' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5 6 6.5l5-5'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 1rem center;
   background-size: 0.75rem;
@@ -5070,9 +5070,12 @@ select.input option {
 }
 
 /* On a phone the round's score drops under the name: beside it, it squeezed
-   the name out of the row altogether (gallery, 375px, 24 Oct). */
+   the name out of the row altogether (gallery, 375px, 24 Oct). The "New
+   leader" stamp did the same — 109px that will not shrink left the name 35px,
+   "Pr…" (30 Oct) — so it wraps under the name too, but only when it has to. */
 @media (max-width: 40rem) {
-  .standing__name:has(.standing__round) {
+  .standing__name:has(.standing__round),
+  .standing__name:has(.standing__tag) {
     flex-wrap: wrap;
     row-gap: 0.1rem;
   }

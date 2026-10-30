@@ -56,6 +56,14 @@ describe('global.css', () => {
     expect(rules.some((r) => r.selector === '.btn')).toBe(true);
   });
 
+  it('defines no custom property in terms of itself', () => {
+    // `--ink: var(--ink)` is a cycle: every `var(--ink)` on the page goes
+    // invalid and text falls back to the browser's own colour. A literal-to-
+    // token sweep did exactly this on 30 October 2026.
+    const cycles = [...css.matchAll(/(--[a-z0-9-]+):\s*var\(\1\b/g)].map((m) => m[1]);
+    expect(cycles).toEqual([]);
+  });
+
   it('tells the browser the set is dark, so native controls and scrollbars match', () => {
     const root = rules.find((r) => r.selector === ':root');
     expect(root?.body).toMatch(/color-scheme:\s*dark/);
