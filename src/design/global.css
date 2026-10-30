@@ -51,6 +51,34 @@
   --tech: 'Chakra Petch', 'Rajdhani', ui-monospace, monospace;
   --body: 'Archivo', 'Helvetica Neue', sans-serif;
 
+  /*
+     Type. Eight fixed steps for text, two that breathe with the screen (the
+     eyebrow labels and answer text), and seven for display lines (the
+     `.display--*` classes, everything sized like them, and the question on a
+     laptop). Before 30 October 2026 there were 52 distinct sizes, most of
+     them a near-miss of one of these. A handful of set pieces keep their own
+     — see `global.test.ts` for the list and why.
+  */
+  --text-2xs: 0.72rem;
+  --text-xs: 0.8rem;
+  --text-sm: 0.9rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.4rem;
+  --text-2xl: 1.6rem;
+  --text-3xl: 2.4rem;
+  --text-fluid-sm: clamp(0.8rem, 2.2vw, 0.95rem);
+  --text-fluid: clamp(1rem, 2.6vw, 1.18rem);
+  --display-inline: clamp(1.3rem, 5vw, 1.9rem);
+  --display-lead: clamp(1.4rem, 4.4vw, 2.6rem);
+  --display-section: clamp(1.8rem, 7vw, 3rem);
+  --display-screen: clamp(2rem, 7vw, 3.4rem);
+  --display-title: clamp(2.2rem, 9vw, 3.6rem);
+  --display-hero: clamp(2.4rem, 11vw, 5rem);
+  /* The question on a laptop, where it has to sit above the fold at 1280×720
+     with four options under it. Its own step rather than the nearest. */
+  --display-question: clamp(2.1rem, 3.4vw, 3rem);
+
   --gutter: clamp(1rem, 4vw, 3rem);
   /*
      Panels, buttons and inputs. The other two named steps are below; the
@@ -83,7 +111,7 @@ body {
   background: var(--night);
   color: var(--ink);
   font-family: var(--body);
-  font-size: 16px;
+  font-size: var(--text-md);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -151,9 +179,9 @@ textarea {
   background: repeating-linear-gradient(
     90deg,
     transparent 0 38px,
-    rgb(41 214 255 / 0.1) 38px 42px,
+    color-mix(in srgb, var(--cyan) 10%, transparent) 38px 42px,
     transparent 42px 78px,
-    rgb(255 178 38 / 0.07) 78px 82px
+    color-mix(in srgb, var(--amber) 7%, transparent) 78px 82px
   );
   -webkit-mask: linear-gradient(180deg, #000 0%, transparent 92%);
   mask: linear-gradient(180deg, #000 0%, transparent 92%);
@@ -171,11 +199,11 @@ textarea {
   height: 330px;
   transform: translateX(-50%);
   border-radius: 50%;
-  border: 3px solid rgb(41 214 255 / 0.4);
+  border: 3px solid color-mix(in srgb, var(--cyan) 40%, transparent);
   box-shadow:
-    0 0 70px 12px rgb(41 214 255 / 0.18),
-    inset 0 0 70px 8px rgb(41 214 255 / 0.12);
-  background: radial-gradient(60% 60% at 50% 100%, rgb(41 214 255 / 0.13), transparent 70%);
+    0 0 70px 12px color-mix(in srgb, var(--cyan) 18%, transparent),
+    inset 0 0 70px 8px color-mix(in srgb, var(--cyan) 12%, transparent);
+  background: radial-gradient(60% 60% at 50% 100%, color-mix(in srgb, var(--cyan) 13%, transparent), transparent 70%);
 }
 
 /*
@@ -204,7 +232,7 @@ textarea {
   width: 16%;
   height: 95%;
   filter: blur(18px);
-  background: linear-gradient(180deg, rgb(41 214 255 / 0.36), transparent 72%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--cyan) 36%, transparent), transparent 72%);
   clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%);
 }
 
@@ -216,7 +244,7 @@ textarea {
 .beams i:nth-child(2) {
   left: 26%;
   transform: rotate(3deg);
-  background: linear-gradient(180deg, rgb(255 178 38 / 0.3), transparent 72%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--amber) 30%, transparent), transparent 72%);
 }
 
 .beams i:nth-child(3) {
@@ -227,7 +255,7 @@ textarea {
 .beams i:nth-child(4) {
   left: 80%;
   transform: rotate(-10deg);
-  background: linear-gradient(180deg, rgb(255 178 38 / 0.26), transparent 72%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--amber) 26%, transparent), transparent 72%);
 }
 
 /* ── The rig, operated ──────────────────────────────────────────────────────
@@ -293,7 +321,7 @@ textarea {
     `z-index: -1`, behind the content column, so the wash cannot reach the
     contrast of anything anybody has to read.
   */
-  background: radial-gradient(100% 62% at 50% 0%, rgb(255 178 38 / 0.6), transparent 72%);
+  background: radial-gradient(100% 62% at 50% 0%, color-mix(in srgb, var(--amber) 60%, transparent), transparent 72%);
   animation: blaze 1600ms ease-out;
 }
 
@@ -311,9 +339,9 @@ textarea {
   background: linear-gradient(
     100deg,
     transparent 32%,
-    rgb(41 214 255 / 0.14) 44%,
+    color-mix(in srgb, var(--cyan) 14%, transparent) 44%,
     rgb(255 255 255 / 0.3) 50%,
-    rgb(255 178 38 / 0.14) 56%,
+    color-mix(in srgb, var(--amber) 14%, transparent) 56%,
     transparent 68%
   );
   transform: translateX(-100%);
@@ -357,9 +385,9 @@ textarea {
   background: linear-gradient(
     90deg,
     transparent,
-    rgb(41 214 255 / 0.5) 22%,
-    rgb(255 212 121 / 0.9) 50%,
-    rgb(41 214 255 / 0.5) 78%,
+    color-mix(in srgb, var(--cyan) 50%, transparent) 22%,
+    color-mix(in srgb, var(--amber-bright) 90%, transparent) 50%,
+    color-mix(in srgb, var(--cyan) 50%, transparent) 78%,
     transparent
   );
 }
@@ -389,13 +417,14 @@ textarea {
   border-radius: 4px;
   border: 3px solid var(--ink);
   background: var(--ink);
-  box-shadow: 0 0 26px -6px rgb(41 214 255 / 0.5);
+  box-shadow: 0 0 26px -6px color-mix(in srgb, var(--cyan) 50%, transparent);
 }
 
 .entry__hint {
   margin: 0;
   font-family: var(--tech);
-  font-size: 0.72rem;
+  font-weight: 600;
+  font-size: var(--text-2xs);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--ink-dim);
@@ -420,7 +449,8 @@ textarea {
   flex: 1 1 20rem;
   min-width: 0;
   font-family: var(--tech);
-  font-size: 0.9rem;
+  font-weight: 600;
+  font-size: var(--text-sm);
   color: var(--ink-soft);
 }
 
@@ -434,7 +464,7 @@ textarea {
 .share__status {
   margin: 0;
   min-height: 1.3em;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--ink-dim);
 }
 
@@ -530,7 +560,7 @@ textarea {
   .sound:hover {
     color: var(--cyan);
     border-color: var(--edge);
-    background: rgb(41 214 255 / 0.08);
+    background: color-mix(in srgb, var(--cyan) 8%, transparent);
   }
 }
 
@@ -699,23 +729,23 @@ textarea {
   not made here.
 */
 .display--hero {
-  font-size: clamp(2.4rem, 11vw, 5rem);
+  font-size: var(--display-hero);
 }
 
 .display--screen {
-  font-size: clamp(2rem, 7vw, 3.4rem);
+  font-size: var(--display-screen);
 }
 
 .display--section {
-  font-size: clamp(1.8rem, 7vw, 3rem);
+  font-size: var(--display-section);
 }
 
 .display--panel {
-  font-size: 1.6rem;
+  font-size: var(--text-2xl);
 }
 
 .display--inline {
-  font-size: clamp(1.3rem, 5vw, 1.9rem);
+  font-size: var(--display-inline);
 }
 
 /*
@@ -746,7 +776,7 @@ textarea {
 }
 
 .chrome-wrap {
-  filter: drop-shadow(0 0 26px rgb(41 214 255 / 0.45)) drop-shadow(0 3px 0 rgb(0 0 0 / 0.55));
+  filter: drop-shadow(0 0 26px color-mix(in srgb, var(--cyan) 45%, transparent)) drop-shadow(0 3px 0 rgb(0 0 0 / 0.55));
 }
 
 .wordmark {
@@ -772,12 +802,12 @@ textarea {
 .eyebrow {
   font-family: var(--tech);
   font-weight: 700;
-  font-size: clamp(0.8rem, 2.2vw, 0.95rem);
+  font-size: var(--text-fluid-sm);
   letter-spacing: 0.3em;
   text-transform: uppercase;
   color: var(--cyan);
   margin: 0;
-  text-shadow: 0 0 18px rgb(41 214 255 / 0.6);
+  text-shadow: 0 0 18px color-mix(in srgb, var(--cyan) 60%, transparent);
 }
 
 .lede {
@@ -801,7 +831,7 @@ textarea {
   naming this changes no spacing anywhere.
 */
 .hint {
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   margin: 0;
 }
 
@@ -820,14 +850,14 @@ textarea {
 .field__label {
   font-family: var(--tech);
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--ink-dim);
 }
 
 .input {
-  background: rgb(1 6 16 / 0.7);
+  background: color-mix(in srgb, var(--night) 70%, transparent);
   border: 1px solid var(--edge);
   border-radius: var(--radius);
   padding: 0.85rem 1rem;
@@ -839,7 +869,7 @@ textarea {
 .input:focus-visible {
   outline: none;
   border-color: var(--cyan);
-  box-shadow: 0 0 0 3px rgb(41 214 255 / 0.2);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cyan) 20%, transparent);
 }
 
 /*
@@ -892,7 +922,7 @@ select.input option {
 .input--code {
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 2.4rem;
+  font-size: var(--text-3xl);
   letter-spacing: 0.42em;
   text-align: center;
   text-transform: uppercase;
@@ -903,13 +933,13 @@ select.input option {
 .btn {
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 1rem;
+  font-size: var(--text-md);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   padding: 0.85rem 1.75rem;
   border-radius: var(--radius);
   border: 1px solid var(--cyan-dim);
-  background: linear-gradient(180deg, rgb(41 214 255 / 0.16), rgb(41 214 255 / 0.05));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--cyan) 16%, transparent), color-mix(in srgb, var(--cyan) 5%, transparent));
   color: #bff0ff;
   transition: transform 120ms ease, box-shadow 160ms ease, border-color 160ms ease;
 }
@@ -917,7 +947,7 @@ select.input option {
 @media (hover: hover) {
   .btn:hover:not(:disabled) {
     border-color: var(--cyan);
-    box-shadow: 0 0 26px -4px rgb(41 214 255 / 0.5);
+    box-shadow: 0 0 26px -4px color-mix(in srgb, var(--cyan) 50%, transparent);
     transform: translateY(-1px);
   }
 }
@@ -926,22 +956,28 @@ select.input option {
   transform: translateY(0);
 }
 
+/* "Not yet", drawn as an empty outline rather than a faded button: at 40%
+   opacity the amber primary turned a murky ochre that read as broken. */
 .btn:disabled {
-  opacity: 0.4;
   cursor: not-allowed;
+  background: none;
+  border-style: dashed;
+  border-color: var(--edge);
+  color: var(--ink-dim);
+  box-shadow: none;
 }
 
 .btn--primary {
   background: linear-gradient(180deg, var(--amber-bright), var(--amber));
   border-color: var(--amber-bright);
   color: var(--amber-ink);
-  box-shadow: 0 0 30px -8px rgb(255 178 38 / 0.8);
+  box-shadow: 0 0 30px -8px color-mix(in srgb, var(--amber) 80%, transparent);
 }
 
 @media (hover: hover) {
   .btn--primary:hover:not(:disabled) {
     border-color: #fff3d0;
-    box-shadow: 0 0 34px -4px rgb(255 178 38 / 0.9);
+    box-shadow: 0 0 34px -4px color-mix(in srgb, var(--amber) 90%, transparent);
   }
 }
 
@@ -955,7 +991,7 @@ select.input option {
    did not load. Full size would dominate the box it is sitting in. */
 .btn--small {
   padding: 0.35rem 0.75rem;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
 }
 
 @media (hover: hover) {
@@ -992,7 +1028,7 @@ select.input option {
 /* ── Panels ─────────────────────────────────────────────────────────────── */
 
 .panel {
-  background: linear-gradient(180deg, var(--panel-hi), rgb(7 26 46 / 0.5));
+  background: linear-gradient(180deg, var(--panel-hi), color-mix(in srgb, var(--panel) 50%, transparent));
   border: 1px solid var(--edge);
   border-radius: var(--radius);
   padding: clamp(1rem, 3vw, 1.6rem);
@@ -1017,7 +1053,7 @@ select.input option {
   grid-template-columns: 1fr;
 }
 
-@media (min-width: 46rem) {
+@media (min-width: 44rem) {
   /* The same breakpoint the two action panels use, so the page reflows once
      rather than twice on the way down to a phone. */
   .identity {
@@ -1026,7 +1062,7 @@ select.input option {
   }
 }
 
-@media (min-width: 46rem) {
+@media (min-width: 44rem) {
   .split--two {
     grid-template-columns: 1fr 1fr;
     /*
@@ -1075,19 +1111,19 @@ select.input option {
   border-radius: var(--radius);
   background: linear-gradient(180deg, #02080f, #040f1b);
   border: 1px solid var(--edge);
-  box-shadow: inset 0 0 30px rgb(0 0 0 / 0.9), 0 0 34px -10px rgb(41 214 255 / 0.55);
+  box-shadow: inset 0 0 30px rgb(0 0 0 / 0.9), 0 0 34px -10px color-mix(in srgb, var(--cyan) 55%, transparent);
 }
 
 .roomcode__char {
   font-family: var(--tech);
   font-weight: 700;
-  font-size: clamp(2.2rem, 9vw, 3.6rem);
+  font-size: var(--display-title);
   line-height: 1;
   letter-spacing: 0.06em;
   width: 1.05em;
   text-align: center;
   color: var(--amber-bright);
-  text-shadow: 0 0 6px var(--amber), 0 0 22px rgb(255 178 38 / 0.75);
+  text-shadow: 0 0 6px var(--amber), 0 0 22px color-mix(in srgb, var(--amber) 75%, transparent);
 }
 
 /* ── Contender nameplates ───────────────────────────────────────────────── */
@@ -1154,7 +1190,7 @@ select.input option {
   inset: auto var(--lit-edge-x, 0.7rem) var(--lit-edge-y, 0.3rem);
   height: var(--lit-edge-height, 3px);
   border-radius: var(--lit-edge-radius, 3px);
-  background: var(--lit-edge-fill, rgb(41 214 255 / 0.25));
+  background: var(--lit-edge-fill, color-mix(in srgb, var(--cyan) 25%, transparent));
 }
 
 .plate::after {
@@ -1162,7 +1198,7 @@ select.input option {
   --lit-edge-y: 0;
   --lit-edge-radius: 0 0 3px 3px;
   --lit-edge-fill: linear-gradient(90deg, transparent, var(--cyan), transparent);
-  box-shadow: 0 0 16px 2px rgb(41 214 255 / 0.7);
+  box-shadow: 0 0 16px 2px color-mix(in srgb, var(--cyan) 70%, transparent);
 }
 
 .plate--host {
@@ -1171,13 +1207,13 @@ select.input option {
 
 .plate--host::after {
   background: linear-gradient(90deg, transparent, var(--amber), transparent);
-  box-shadow: 0 0 18px 3px rgb(255 178 38 / 0.8);
+  box-shadow: 0 0 18px 3px color-mix(in srgb, var(--amber) 80%, transparent);
 }
 
 .plate__name {
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 1rem;
+  font-size: var(--text-md);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -1185,7 +1221,7 @@ select.input option {
 .plate__role {
   font-family: var(--tech);
   font-weight: 600;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--amber);
@@ -1193,7 +1229,7 @@ select.input option {
 
 .plate__tick {
   color: var(--correct);
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }
 
 /* ── Pack picker ────────────────────────────────────────────────────────── */
@@ -1286,12 +1322,12 @@ select.input option {
 
 .pack[aria-pressed='true']::after {
   background: var(--amber);
-  box-shadow: 0 0 18px 2px rgb(255 178 38 / 0.9);
+  box-shadow: 0 0 18px 2px color-mix(in srgb, var(--amber) 90%, transparent);
 }
 
 .pack__title {
   font-family: var(--shout);
-  font-size: 1.35rem;
+  font-size: var(--text-lg);
   letter-spacing: 0.01em;
   text-transform: uppercase;
   display: block;
@@ -1299,7 +1335,7 @@ select.input option {
 
 .pack__blurb {
   color: var(--ink-dim);
-  font-size: 0.86rem;
+  font-size: var(--text-sm);
   display: block;
   margin-top: 0.15rem;
 }
@@ -1314,7 +1350,7 @@ select.input option {
   font-family: var(--tech);
   font-weight: 700;
   color: var(--cyan);
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   letter-spacing: 0.12em;
   font-variant-numeric: tabular-nums;
 }
@@ -1328,7 +1364,7 @@ select.input option {
 }
 
 .pack--leading:not([aria-pressed='true']) {
-  border-color: rgb(255 178 38 / 0.55);
+  border-color: color-mix(in srgb, var(--amber) 55%, transparent);
 }
 
 .pack--browsing {
@@ -1359,7 +1395,7 @@ select.input option {
   margin: 0;
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -1379,8 +1415,8 @@ select.input option {
 */
 .pack--feature {
   background:
-    radial-gradient(120% 140% at 0% 0%, rgb(41 214 255 / 0.14), transparent 55%),
-    radial-gradient(120% 140% at 100% 100%, rgb(255 178 38 / 0.12), transparent 55%),
+    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--cyan) 14%, transparent), transparent 55%),
+    radial-gradient(120% 140% at 100% 100%, color-mix(in srgb, var(--amber) 12%, transparent), transparent 55%),
     linear-gradient(180deg, var(--panel-hi), var(--panel));
 }
 
@@ -1389,7 +1425,7 @@ select.input option {
 }
 
 .pack--feature .pack__title {
-  font-size: 1.7rem;
+  font-size: var(--text-2xl);
 }
 
 @media (min-width: 30rem) {
@@ -1439,7 +1475,7 @@ select.input option {
   margin-bottom: 0.35rem;
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--cyan);
@@ -1479,7 +1515,7 @@ select.input option {
 
 .pick[aria-pressed='true']::after {
   background: var(--amber);
-  box-shadow: 0 0 18px 2px rgb(255 178 38 / 0.9);
+  box-shadow: 0 0 18px 2px color-mix(in srgb, var(--amber) 90%, transparent);
 }
 
 .pick:disabled {
@@ -1490,7 +1526,7 @@ select.input option {
 .pick b {
   font-family: var(--shout);
   font-weight: 400;
-  font-size: 1.2rem;
+  font-size: var(--text-lg);
   text-transform: uppercase;
   letter-spacing: 0.02em;
   display: block;
@@ -1499,7 +1535,7 @@ select.input option {
 .pick span {
   display: block;
   color: var(--ink-dim);
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   margin-top: 0.1rem;
 }
 
@@ -1509,7 +1545,7 @@ select.input option {
   font-family: var(--tech);
   font-weight: 700;
   color: var(--cyan);
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   letter-spacing: 0.14em;
   margin-top: 0.4rem;
   font-variant-numeric: tabular-nums;
@@ -1529,10 +1565,10 @@ select.input option {
   gap: 0.55rem 1rem;
   padding: 0.7rem 1rem;
   border-radius: var(--radius);
-  background: linear-gradient(90deg, rgb(11 39 67 / 0.95), rgb(4 16 31 / 0.6));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--panel-hi) 95%, transparent), color-mix(in srgb, var(--studio) 60%, transparent));
   border: 1px solid var(--edge);
   border-left: 4px solid var(--cyan);
-  box-shadow: 0 0 30px -12px rgb(41 214 255 / 0.7);
+  box-shadow: 0 0 30px -12px color-mix(in srgb, var(--cyan) 70%, transparent);
 }
 
 .qhead__meta {
@@ -1556,26 +1592,26 @@ select.input option {
 .chip {
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: #a9e8ff;
-  background: rgb(41 214 255 / 0.12);
-  border: 1px solid rgb(41 214 255 / 0.4);
+  background: color-mix(in srgb, var(--cyan) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cyan) 40%, transparent);
   border-radius: var(--radius-sm);
   padding: 0.28rem 0.7rem;
 }
 
 .chip--hard {
   color: #ff97a8;
-  background: rgb(255 46 77 / 0.12);
-  border-color: rgb(255 46 77 / 0.5);
+  background: color-mix(in srgb, var(--wrong) 12%, transparent);
+  border-color: color-mix(in srgb, var(--wrong) 50%, transparent);
 }
 
 .prompt {
   font-family: var(--body);
   font-weight: 700;
-  font-size: clamp(1.4rem, 4.4vw, 2.6rem);
+  font-size: var(--display-lead);
   line-height: 1.15;
   letter-spacing: -0.02em;
   margin: 0;
@@ -1646,7 +1682,8 @@ select.input option {
 .still__state-text {
   margin: 0;
   font-family: var(--tech);
-  font-size: 0.8rem;
+  font-weight: 600;
+  font-size: var(--text-xs);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.72);
@@ -1687,7 +1724,7 @@ select.input option {
   background: #000;
   color: #fff;
   font-family: var(--tech);
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-decoration: none;
@@ -1710,7 +1747,7 @@ select.input option {
 
 .still__credit {
   margin-top: 0.4rem;
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   color: rgb(255 255 255 / 0.72);
 }
 
@@ -1722,7 +1759,7 @@ select.input option {
 */
 .tune-credit {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   color: rgb(255 255 255 / 0.72);
 }
 
@@ -1750,7 +1787,7 @@ select.input option {
   align-items: center;
   gap: 0.4rem 0.75rem;
   margin-top: 2rem;
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   color: rgb(255 255 255 / 0.72);
 }
 
@@ -1797,7 +1834,7 @@ select.input option {
 
 .bonus-squares__square {
   background: linear-gradient(160deg, var(--panel-hi), var(--panel));
-  box-shadow: inset 0 0 0 1px var(--edge), inset 0 0 18px rgb(41 214 255 / 0.18);
+  box-shadow: inset 0 0 0 1px var(--edge), inset 0 0 18px color-mix(in srgb, var(--cyan) 18%, transparent);
   transition:
     opacity 450ms ease-out,
     transform 450ms ease-out;
@@ -1906,7 +1943,7 @@ select.input option {
   --lit-edge-y: 0.35rem;
   --lit-edge-height: 4px;
   --lit-edge-radius: 4px;
-  --lit-edge-fill: linear-gradient(90deg, transparent, rgb(41 214 255 / 0.45), transparent);
+  --lit-edge-fill: linear-gradient(90deg, transparent, color-mix(in srgb, var(--cyan) 45%, transparent), transparent);
   transition: background 200ms ease, box-shadow 200ms ease;
 }
 
@@ -1918,17 +1955,17 @@ select.input option {
   display: grid;
   place-items: center;
   font-family: var(--shout);
-  font-size: 1.4rem;
+  font-size: var(--text-xl);
   line-height: 1;
   color: var(--cyan-ink);
   background: linear-gradient(180deg, #e8fbff, #7fd9f5 45%, #1a9dc4 55%, #bdeeff);
-  box-shadow: 0 0 20px -4px rgb(41 214 255 / 0.9), inset 0 0 0 1px rgb(0 0 0 / 0.3);
+  box-shadow: 0 0 20px -4px color-mix(in srgb, var(--cyan) 90%, transparent), inset 0 0 0 1px rgb(0 0 0 / 0.3);
   transition: background 160ms ease;
 }
 
 .tile__text {
   font-weight: 600;
-  font-size: clamp(1rem, 2.6vw, 1.18rem);
+  font-size: var(--text-fluid);
   /* Gives way before the crowd beside it: wraps down to its longest word, and
      only then are names cut. At the default 1 the two shrank in proportion,
      and a long option on a phone cut "Greg" to nothing. */
@@ -1944,7 +1981,7 @@ select.input option {
 .tile--picked {
   border-color: var(--amber);
   background: linear-gradient(180deg, var(--amber-deep), #1a1204 55%, #0a0700 100%);
-  box-shadow: 0 0 40px -12px rgb(255 178 38 / 0.9), var(--shadow-lift);
+  box-shadow: 0 0 40px -12px color-mix(in srgb, var(--amber) 90%, transparent), var(--shadow-lift);
 }
 
 .tile--picked .tile__letter {
@@ -1953,13 +1990,13 @@ select.input option {
 
 .tile--picked::after {
   background: linear-gradient(90deg, transparent, var(--amber), transparent);
-  box-shadow: 0 0 20px 3px rgb(255 178 38 / 0.9);
+  box-shadow: 0 0 20px 3px color-mix(in srgb, var(--amber) 90%, transparent);
 }
 
 .tile--correct {
   border-color: var(--correct);
   background: linear-gradient(180deg, #0a3d2a, #04281c 55%, #01120c 100%);
-  box-shadow: 0 0 56px -10px rgb(31 221 138 / 0.95), var(--shadow-lift);
+  box-shadow: 0 0 56px -10px color-mix(in srgb, var(--correct) 95%, transparent), var(--shadow-lift);
 }
 
 .tile--correct .tile__letter {
@@ -1968,11 +2005,11 @@ select.input option {
 
 .tile--correct::after {
   background: linear-gradient(90deg, transparent, var(--correct), transparent);
-  box-shadow: 0 0 24px 4px rgb(31 221 138 / 1);
+  box-shadow: 0 0 24px 4px color-mix(in srgb, var(--correct) 100%, transparent);
 }
 
 .tile--wrong {
-  border-color: rgb(255 46 77 / 0.7);
+  border-color: color-mix(in srgb, var(--wrong) 70%, transparent);
   background: linear-gradient(180deg, #3a0a15, #20060c 55%, #0d0205 100%);
 }
 
@@ -1982,7 +2019,7 @@ select.input option {
 
 .tile--wrong::after {
   background: linear-gradient(90deg, transparent, var(--wrong), transparent);
-  box-shadow: 0 0 20px 3px rgb(255 46 77 / 0.85);
+  box-shadow: 0 0 20px 3px color-mix(in srgb, var(--wrong) 85%, transparent);
 }
 
 /*
@@ -1997,7 +2034,7 @@ select.input option {
 .tile--hushed {
   opacity: 0.16;
   transform: scale(0.985);
-  border-color: rgb(18 64 95 / 0.5);
+  border-color: color-mix(in srgb, var(--edge) 50%, transparent);
   box-shadow: none;
 }
 
@@ -2050,7 +2087,7 @@ select.input option {
   border: 1px solid var(--edge);
   border-top: 3px solid var(--cyan-dim);
   border-radius: var(--radius-sm);
-  background: linear-gradient(180deg, var(--panel), rgb(7 26 46 / 0.45));
+  background: linear-gradient(180deg, var(--panel), color-mix(in srgb, var(--panel) 45%, transparent));
   animation: settle 340ms ease backwards;
 }
 
@@ -2058,7 +2095,7 @@ select.input option {
   margin: 0;
   font-family: var(--tech);
   font-weight: 600;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--ink-dim);
@@ -2074,7 +2111,7 @@ select.input option {
 
 .award__detail {
   margin: 0;
-  font-size: 0.82rem;
+  font-size: var(--text-xs);
   color: var(--ink-soft);
 }
 
@@ -2125,7 +2162,7 @@ select.input option {
   margin: 0 0 0.15rem;
   font-family: var(--tech);
   font-weight: 600;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--cyan);
@@ -2134,7 +2171,7 @@ select.input option {
 .cold-open__line {
   margin: 0;
   font-family: var(--shout);
-  font-size: clamp(1.4rem, 5.5vw, 2.4rem);
+  font-size: var(--display-lead);
   line-height: 1.05;
   color: var(--ink);
   overflow-wrap: break-word;
@@ -2179,7 +2216,7 @@ select.input option {
   position: relative;
   font-family: var(--tech);
   font-weight: 600;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -2231,7 +2268,7 @@ select.input option {
   padding: 1rem;
   border: 1px solid var(--edge);
   border-radius: 4px;
-  background: linear-gradient(180deg, var(--panel), rgb(7 26 46 / 0.45));
+  background: linear-gradient(180deg, var(--panel), color-mix(in srgb, var(--panel) 45%, transparent));
 }
 
 /* Sized to its label rather than to the panel: a column stretches its children,
@@ -2244,7 +2281,7 @@ select.input option {
 .recovery__hint,
 .recovery__status {
   margin: 0;
-  font-size: 0.82rem;
+  font-size: var(--text-xs);
   color: var(--ink-soft);
 }
 
@@ -2294,7 +2331,7 @@ select.input option {
   border: 1px solid var(--edge);
   border-left: 3px solid var(--cyan-dim);
   border-radius: var(--radius-sm);
-  background: linear-gradient(180deg, var(--panel), rgb(7 26 46 / 0.45));
+  background: linear-gradient(180deg, var(--panel), color-mix(in srgb, var(--panel) 45%, transparent));
   animation: settle 340ms ease backwards;
 }
 
@@ -2302,7 +2339,7 @@ select.input option {
   margin: 0;
   font-family: var(--tech);
   font-weight: 600;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--ink-dim);
@@ -2312,7 +2349,7 @@ select.input option {
    and `.stage` clips rather than scrolls. */
 .review__prompt {
   margin: 0;
-  font-size: 0.98rem;
+  font-size: var(--text-md);
   line-height: 1.35;
   color: var(--ink);
   overflow-wrap: break-word;
@@ -2320,7 +2357,7 @@ select.input option {
 
 .review__detail {
   margin: 0;
-  font-size: 0.82rem;
+  font-size: var(--text-xs);
   color: var(--ink-soft);
 }
 
@@ -2347,14 +2384,18 @@ select.input option {
 .tile__pick {
   display: inline-flex;
   align-items: baseline;
-  gap: 0.35rem;
+  /* The time drops under the name before the name is cut: at 320px "Priya"
+     was down to "Pr…" in 36 of the gallery's picks (30 Oct 2026). */
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0 0.35rem;
   padding: 0.2rem 0.5rem;
   border-radius: var(--radius-pill);
   border: 1px solid var(--edge);
-  background: rgb(1 6 16 / 0.65);
+  background: color-mix(in srgb, var(--night) 65%, transparent);
   font-family: var(--tech);
   font-weight: 600;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   letter-spacing: 0.04em;
   color: var(--ink-soft);
   white-space: nowrap;
@@ -2388,7 +2429,7 @@ select.input option {
 .tile__pick i {
   flex: none;
   font-style: normal;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   font-variant-numeric: tabular-nums;
   color: var(--ink-dim);
 }
@@ -2446,7 +2487,7 @@ select.input option {
   line-height: 1;
   color: var(--correct);
   text-shadow:
-    0 0 18px rgb(31 221 138 / 0.8),
+    0 0 18px color-mix(in srgb, var(--correct) 80%, transparent),
     0 2px 0 #021a10;
   opacity: 0;
   animation: pop 1600ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
@@ -2484,7 +2525,7 @@ select.input option {
   border-radius: var(--radius-sm);
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--amber);
@@ -2516,7 +2557,7 @@ select.input option {
   aspect-ratio: 1;
   flex: 0 0 auto;
   border-radius: 50%;
-  box-shadow: 0 0 34px -4px rgb(255 178 38 / 0.7);
+  box-shadow: 0 0 34px -4px color-mix(in srgb, var(--amber) 70%, transparent);
 }
 
 .timer::before {
@@ -2525,7 +2566,7 @@ select.input option {
   inset: 7px;
   border-radius: 50%;
   background: radial-gradient(circle at 50% 35%, #0a2337, #02080f);
-  border: 1px solid rgb(255 178 38 / 0.35);
+  border: 1px solid color-mix(in srgb, var(--amber) 35%, transparent);
 }
 
 .timer__svg {
@@ -2545,33 +2586,33 @@ select.input option {
   stroke: var(--amber);
   stroke-width: 5;
   stroke-linecap: round;
-  filter: drop-shadow(0 0 4px rgb(255 178 38 / 0.9));
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--amber) 90%, transparent));
   transition: stroke 400ms linear;
 }
 
 .timer__sweep--low {
   stroke: var(--wrong);
-  filter: drop-shadow(0 0 5px rgb(255 46 77 / 0.95));
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--wrong) 95%, transparent));
 }
 
 .timer__count {
   position: relative;
   font-family: var(--tech);
   font-weight: 700;
-  font-size: clamp(1.3rem, 4.5vw, 1.9rem);
+  font-size: var(--display-inline);
   line-height: 1;
   font-variant-numeric: tabular-nums;
   color: var(--amber-bright);
-  text-shadow: 0 0 10px var(--amber), 0 0 28px rgb(255 178 38 / 0.8);
+  text-shadow: 0 0 10px var(--amber), 0 0 28px color-mix(in srgb, var(--amber) 80%, transparent);
 }
 
 .timer--low {
-  box-shadow: 0 0 40px -4px rgb(255 46 77 / 0.85);
+  box-shadow: 0 0 40px -4px color-mix(in srgb, var(--wrong) 85%, transparent);
 }
 
 .timer--low .timer__count {
   color: #ffc2cc;
-  text-shadow: 0 0 10px var(--wrong), 0 0 30px rgb(255 46 77 / 0.9);
+  text-shadow: 0 0 10px var(--wrong), 0 0 30px color-mix(in srgb, var(--wrong) 90%, transparent);
 }
 
 /* ── The ladder ─────────────────────────────────────────────────────────── */
@@ -2594,7 +2635,7 @@ select.input option {
   user-select: none;
 }
 
-@media (min-width: 58rem) {
+@media (min-width: 56rem) {
   .qgrid {
     grid-template-columns: 1fr 8.5rem;
   }
@@ -2603,7 +2644,7 @@ select.input option {
 .ladder__cap {
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   letter-spacing: 0.24em;
   text-transform: uppercase;
   color: var(--cyan);
@@ -2617,7 +2658,7 @@ select.input option {
   margin: 0.65rem 0 0;
   text-align: center;
   color: var(--ink-soft);
-  font-size: 0.92rem;
+  font-size: var(--text-sm);
   line-height: 1.35;
 }
 
@@ -2643,13 +2684,13 @@ select.input option {
   flex: 1 1 auto;
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   letter-spacing: 0.08em;
   padding: 0.28rem 0.3rem;
   border-radius: var(--radius-sm);
-  border: 1px solid rgb(18 64 95 / 0.55);
+  border: 1px solid color-mix(in srgb, var(--edge) 55%, transparent);
   color: var(--ink-dim);
-  background: rgb(4 16 31 / 0.6);
+  background: color-mix(in srgb, var(--studio) 60%, transparent);
   font-variant-numeric: tabular-nums;
 }
 
@@ -2659,18 +2700,18 @@ select.input option {
 
 .rung--done {
   color: #8fd8f0;
-  border-color: rgb(41 214 255 / 0.3);
-  background: rgb(41 214 255 / 0.08);
+  border-color: color-mix(in srgb, var(--cyan) 30%, transparent);
+  background: color-mix(in srgb, var(--cyan) 8%, transparent);
 }
 
 .rung--live {
   color: var(--cyan-ink);
   border-color: var(--amber-bright);
   background: linear-gradient(90deg, var(--amber-bright), var(--amber));
-  box-shadow: 0 0 22px -2px rgb(255 178 38 / 0.9);
+  box-shadow: 0 0 22px -2px color-mix(in srgb, var(--amber) 90%, transparent);
 }
 
-@media (min-width: 58rem) {
+@media (min-width: 56rem) {
   .ladder {
     flex-direction: column-reverse;
     flex-wrap: nowrap;
@@ -2680,7 +2721,7 @@ select.input option {
   .rung {
     justify-content: space-between;
     padding: 0.3rem 0.6rem;
-    font-size: 0.78rem;
+    font-size: var(--text-xs);
     letter-spacing: 0.1em;
   }
 
@@ -2696,8 +2737,8 @@ select.input option {
   text-align: center;
   padding: clamp(2rem, 7vw, 4rem) 1rem;
   overflow: hidden;
-  border-top: 1px solid rgb(41 214 255 / 0.25);
-  border-bottom: 1px solid rgb(41 214 255 / 0.25);
+  border-top: 1px solid color-mix(in srgb, var(--cyan) 25%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--cyan) 25%, transparent);
 }
 
 .card::before {
@@ -2707,7 +2748,7 @@ select.input option {
   height: 2px;
   transform: translateY(-50%);
   background: linear-gradient(90deg, transparent, var(--cyan), var(--amber), var(--cyan), transparent);
-  box-shadow: 0 0 40px 6px rgb(41 214 255 / 0.55);
+  box-shadow: 0 0 40px 6px color-mix(in srgb, var(--cyan) 55%, transparent);
   opacity: 0.55;
 }
 
@@ -2718,7 +2759,7 @@ select.input option {
   font-family: var(--shout);
   font-size: clamp(12rem, 40vw, 24rem);
   line-height: 0.7;
-  color: rgb(41 214 255 / 0.055);
+  color: color-mix(in srgb, var(--cyan) 5.5%, transparent);
   pointer-events: none;
   user-select: none;
 }
@@ -2737,7 +2778,7 @@ select.input option {
   text-transform: uppercase;
   color: var(--amber-bright);
   margin: 0.9rem 0 0;
-  text-shadow: 0 0 20px rgb(255 178 38 / 0.7);
+  text-shadow: 0 0 20px color-mix(in srgb, var(--amber) 70%, transparent);
 }
 
 /* ── Standings ──────────────────────────────────────────────────────────── */
@@ -2760,7 +2801,7 @@ select.input option {
   border: 1px solid var(--edge);
   border-left: 3px solid var(--cyan-dim);
   border-radius: var(--radius-sm);
-  background: linear-gradient(90deg, var(--panel), rgb(7 26 46 / 0.45));
+  background: linear-gradient(90deg, var(--panel), color-mix(in srgb, var(--panel) 45%, transparent));
   position: relative;
   overflow: hidden;
   /*
@@ -2790,7 +2831,7 @@ select.input option {
   background: linear-gradient(
     100deg,
     transparent 35%,
-    rgb(255 212 121 / 0.16) 50%,
+    color-mix(in srgb, var(--amber-bright) 16%, transparent) 50%,
     transparent 65%
   );
   transform: translateX(-100%);
@@ -2804,13 +2845,13 @@ select.input option {
 .standing--leader {
   border-color: var(--amber);
   border-left-color: var(--amber);
-  background: linear-gradient(90deg, #20180a, rgb(7 26 46 / 0.45));
+  background: linear-gradient(90deg, #20180a, color-mix(in srgb, var(--panel) 45%, transparent));
 }
 
 .standing__bar {
   position: absolute;
   inset: 0 auto 0 0;
-  background: linear-gradient(90deg, rgb(41 214 255 / 0.16), transparent);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--cyan) 16%, transparent), transparent);
   z-index: 0;
   transition: width 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -2829,7 +2870,7 @@ select.input option {
 
 .standing__pos {
   font-family: var(--shout);
-  font-size: 1.6rem;
+  font-size: var(--text-2xl);
   line-height: 1;
   color: var(--cyan);
   font-variant-numeric: tabular-nums;
@@ -2864,7 +2905,7 @@ select.input option {
   flex: none;
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums;
   animation: lift 360ms cubic-bezier(0.2, 0.8, 0.2, 1) 520ms backwards;
@@ -2886,7 +2927,7 @@ select.input option {
   border-radius: var(--radius-sm);
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--amber);
@@ -2898,18 +2939,18 @@ select.input option {
 .standing__score {
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 1.4rem;
+  font-size: var(--text-xl);
   line-height: 1;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
   color: var(--amber-bright);
-  text-shadow: 0 0 12px rgb(255 178 38 / 0.5);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--amber) 50%, transparent);
 }
 
 .standing__delta {
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   letter-spacing: 0.06em;
   color: var(--correct);
   margin-left: 0.5rem;
@@ -2940,7 +2981,7 @@ select.input option {
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   color: var(--cyan);
   text-align: left;
   padding: 0 0.9rem 0.4rem;
@@ -2950,22 +2991,22 @@ select.input option {
   font-family: var(--tech);
   font-weight: 600;
   padding: 0.75rem 0.9rem;
-  background: linear-gradient(90deg, var(--panel), rgb(7 26 46 / 0.45));
-  border-top: 1px solid rgb(18 64 95 / 0.6);
-  border-bottom: 1px solid rgb(18 64 95 / 0.6);
+  background: linear-gradient(90deg, var(--panel), color-mix(in srgb, var(--panel) 45%, transparent));
+  border-top: 1px solid color-mix(in srgb, var(--edge) 60%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--edge) 60%, transparent);
 }
 
 .season td:first-child {
   border-left: 3px solid var(--cyan);
   border-radius: 3px 0 0 3px;
   font-family: var(--shout);
-  font-size: 1.25rem;
+  font-size: var(--text-lg);
   color: var(--cyan);
   width: 3rem;
 }
 
 .season td:last-child {
-  border-right: 1px solid rgb(18 64 95 / 0.6);
+  border-right: 1px solid color-mix(in srgb, var(--edge) 60%, transparent);
   border-radius: 0 3px 3px 0;
 }
 
@@ -2976,7 +3017,7 @@ select.input option {
    the week board light its points column and the season board its average. */
 .season td.season__ranked {
   color: var(--amber-bright);
-  text-shadow: 0 0 12px rgb(255 178 38 / 0.6);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--amber) 60%, transparent);
 }
 
 /* The line between the ranked table and the records too short to rank. It is a
@@ -2991,14 +3032,14 @@ select.input option {
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   color: var(--cyan);
   text-shadow: none;
   width: auto;
 }
 
 .season tr[data-you] td {
-  background: linear-gradient(90deg, #20180a, rgb(7 26 46 / 0.45));
+  background: linear-gradient(90deg, #20180a, color-mix(in srgb, var(--panel) 45%, transparent));
 }
 
 .season tr[data-you] td:first-child {
@@ -3009,7 +3050,7 @@ select.input option {
 .you {
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--amber);
@@ -3087,7 +3128,7 @@ select.input option {
 
 .riser--first::after {
   background: linear-gradient(90deg, transparent, var(--amber), transparent);
-  box-shadow: 0 0 22px 3px rgb(255 178 38 / 0.9);
+  box-shadow: 0 0 22px 3px color-mix(in srgb, var(--amber) 90%, transparent);
 }
 
 /*
@@ -3123,7 +3164,7 @@ select.input option {
   background: linear-gradient(
     100deg,
     transparent 0 35%,
-    rgb(255 212 121 / 0.35) 50%,
+    color-mix(in srgb, var(--amber-bright) 35%, transparent) 50%,
     transparent 65% 100%
   );
   background-size: 300% 100%;
@@ -3159,7 +3200,7 @@ select.input option {
 .riser__name {
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: var(--text-sm);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   overflow-wrap: anywhere;
@@ -3168,16 +3209,17 @@ select.input option {
 .riser__score {
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: var(--text-md);
   font-variant-numeric: tabular-nums;
   color: var(--cyan);
-  text-shadow: 0 0 14px rgb(41 214 255 / 0.7);
+  text-shadow: 0 0 14px color-mix(in srgb, var(--cyan) 70%, transparent);
 }
 
 /* The rest of a tie too big for five risers: "+2 level", under the score. */
 .riser__more {
   font-family: var(--tech);
-  font-size: 0.75rem;
+  font-weight: 600;
+  font-size: var(--text-xs);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -3279,13 +3321,13 @@ select.input option {
 
   .finale--4 .riser__name,
   .finale--5 .riser__name {
-    font-size: 0.72rem;
+    font-size: var(--text-2xs);
     letter-spacing: 0.02em;
   }
 
   .finale--4 .riser__score,
   .finale--5 .riser__score {
-    font-size: 0.8rem;
+    font-size: var(--text-xs);
   }
 }
 
@@ -3328,7 +3370,7 @@ select.input option {
   width: 100%;
   max-width: 5.5rem;
   height: auto;
-  filter: drop-shadow(0 0 10px rgb(41 214 255 / 0.25));
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--cyan) 25%, transparent));
 }
 
 /*
@@ -3373,7 +3415,7 @@ select.input option {
   max-width: 7rem;
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   line-height: 1.25;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -3389,7 +3431,7 @@ select.input option {
 .seat__score {
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   font-variant-numeric: tabular-nums;
 }
 
@@ -3404,7 +3446,8 @@ select.input option {
 .steal {
   margin: 0.2rem 0 0;
   font-family: var(--tech);
-  font-size: 0.8rem;
+  font-weight: 600;
+  font-size: var(--text-xs);
   letter-spacing: 0.02em;
   color: var(--ink-dim);
   opacity: 0;
@@ -3449,7 +3492,7 @@ select.input option {
   align-items: center;
   border: 1px solid var(--amber);
   border-radius: var(--radius);
-  background: rgb(255 178 38 / 0.06);
+  background: color-mix(in srgb, var(--amber) 6%, transparent);
   padding: 0.85rem 1rem;
   margin-block-end: 1.25rem;
   text-align: center;
@@ -3509,7 +3552,7 @@ select.input option {
   flex: 1 1 auto;
   min-width: 0;
   /* 16px, so a phone does not zoom the page when the box is focused. */
-  font-size: 1rem;
+  font-size: var(--text-md);
   padding: 0.55rem 0.75rem;
 }
 
@@ -3522,7 +3565,7 @@ select.input option {
    still once the call box is above it. Cap the still only while the box is
    there, and only on a narrow screen, so the whole picture stays above the
    desk. Wider screens have the room. */
-@media (max-width: 40rem) {
+@media (max-width: 43.99rem) {
   .qgrid:has(.call) .still__img {
     max-height: 26vh;
     object-fit: contain;
@@ -3535,7 +3578,7 @@ select.input option {
   margin: 0;
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 1rem;
+  font-size: var(--text-md);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -3560,7 +3603,7 @@ select.input option {
 
 .verdict[data-tone='correct'] {
   color: var(--correct);
-  text-shadow: 0 0 18px rgb(31 221 138 / 0.55);
+  text-shadow: 0 0 18px color-mix(in srgb, var(--correct) 55%, transparent);
 }
 
 .verdict[data-tone='wrong'] {
@@ -3616,8 +3659,8 @@ select.input option {
   background: linear-gradient(
     90deg,
     transparent,
-    rgb(41 214 255 / 0.35) 30%,
-    rgb(41 214 255 / 0.35) 70%,
+    color-mix(in srgb, var(--cyan) 35%, transparent) 30%,
+    color-mix(in srgb, var(--cyan) 35%, transparent) 70%,
     transparent
   );
 }
@@ -3628,7 +3671,7 @@ select.input option {
   gap: 0.45rem;
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--ink-dim);
@@ -3639,14 +3682,14 @@ select.input option {
   height: 0.5rem;
   border-radius: 50%;
   background: var(--wrong);
-  box-shadow: 0 0 10px 1px rgb(255 46 77 / 0.9);
+  box-shadow: 0 0 10px 1px color-mix(in srgb, var(--wrong) 90%, transparent);
   animation: onair-pulse 2200ms ease-in-out infinite;
 }
 
 @keyframes onair-pulse {
   50% {
     opacity: 0.35;
-    box-shadow: 0 0 4px 0 rgb(255 46 77 / 0.5);
+    box-shadow: 0 0 4px 0 color-mix(in srgb, var(--wrong) 50%, transparent);
   }
 }
 
@@ -3668,10 +3711,10 @@ select.input option {
   padding: 0.2rem 0.5rem;
   border-radius: var(--radius-pill);
   border: 1px solid var(--edge);
-  background: rgb(4 16 31 / 0.9);
+  background: color-mix(in srgb, var(--studio) 90%, transparent);
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink-dim);
@@ -3684,7 +3727,7 @@ select.input option {
   border-color: var(--cyan);
   background: var(--cyan);
   color: var(--cyan-ink);
-  box-shadow: 0 0 12px 1px rgb(41 214 255 / 0.6);
+  box-shadow: 0 0 12px 1px color-mix(in srgb, var(--cyan) 60%, transparent);
   transform: scale(1.04);
 }
 
@@ -3698,7 +3741,7 @@ select.input option {
   font: inherit;
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   position: relative;
@@ -3765,7 +3808,7 @@ select.input option {
 
 .lamp--in.lamp--you {
   background: var(--amber-bright);
-  box-shadow: 0 0 12px 1px rgb(255 178 38 / 0.6);
+  box-shadow: 0 0 12px 1px color-mix(in srgb, var(--amber) 60%, transparent);
 }
 
 /* ── The squad bar ──────────────────────────────────────────────────────────
@@ -3785,7 +3828,7 @@ select.input option {
   margin: 0;
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--ink-dim);
@@ -3796,7 +3839,7 @@ select.input option {
   height: 8px;
   border-radius: var(--radius-pill);
   overflow: hidden;
-  background: rgb(4 16 31 / 0.9);
+  background: color-mix(in srgb, var(--studio) 90%, transparent);
   border: 1px solid var(--edge);
 }
 
@@ -3824,7 +3867,7 @@ select.input option {
   gap: 0.4rem;
   font-family: var(--tech);
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   letter-spacing: 0.06em;
   color: var(--ink-soft);
 }
@@ -3839,7 +3882,7 @@ select.input option {
 
 .squads__dot--lead {
   background: var(--cyan);
-  box-shadow: 0 0 10px 1px rgb(41 214 255 / 0.6);
+  box-shadow: 0 0 10px 1px color-mix(in srgb, var(--cyan) 60%, transparent);
 }
 
 .squads__name { text-transform: uppercase; }
@@ -3859,7 +3902,7 @@ select.input option {
   margin: 0;
   font-family: var(--tech);
   font-weight: 600;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--ink-dim);
@@ -3926,7 +3969,7 @@ select.input option {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(100deg, transparent 20%, rgb(31 221 138 / 0.3) 48%, transparent 76%);
+  background: linear-gradient(100deg, transparent 20%, color-mix(in srgb, var(--correct) 30%, transparent) 48%, transparent 76%);
   transform: translateX(-100%);
   animation: sweep 900ms cubic-bezier(0.3, 0.7, 0.3, 1) 120ms 1;
   pointer-events: none;
@@ -3959,7 +4002,7 @@ select.input option {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(100deg, transparent 35%, rgb(255 212 121 / 0.14) 50%, transparent 65%);
+    background: linear-gradient(100deg, transparent 35%, color-mix(in srgb, var(--amber-bright) 14%, transparent) 50%, transparent 65%);
     transform: translateX(-100%);
     animation: sweep 3.4s ease-in-out 1.2s infinite;
     pointer-events: none;
@@ -3984,10 +4027,10 @@ select.input option {
 @keyframes glow {
   0%,
   100% {
-    text-shadow: 0 0 6px var(--amber), 0 0 20px rgb(255 178 38 / 0.5);
+    text-shadow: 0 0 6px var(--amber), 0 0 20px color-mix(in srgb, var(--amber) 50%, transparent);
   }
   50% {
-    text-shadow: 0 0 10px var(--amber), 0 0 38px rgb(255 178 38 / 0.95);
+    text-shadow: 0 0 10px var(--amber), 0 0 38px color-mix(in srgb, var(--amber) 95%, transparent);
   }
 }
 
@@ -4030,7 +4073,7 @@ select.input option {
   }
 
   .prompt {
-    font-size: clamp(2.1rem, 3.4vw, 3rem);
+    font-size: var(--display-question);
   }
 
   .tile {
@@ -4040,11 +4083,11 @@ select.input option {
   .tile__letter {
     width: 3.2rem;
     height: 3.2rem;
-    font-size: 1.6rem;
+    font-size: var(--text-2xl);
   }
 
   .tile__text {
-    font-size: 1.3rem;
+    font-size: var(--text-lg);
   }
 
   /* Keyboard hint, revealed on hover so it never competes with the answer. */
@@ -4053,7 +4096,7 @@ select.input option {
     margin-left: auto;
     font-family: var(--tech);
     font-weight: 700;
-    font-size: 0.75rem;
+    font-size: var(--text-xs);
     letter-spacing: 0.14em;
     color: var(--ink-dim);
     border: 1px solid var(--edge);
@@ -4074,7 +4117,7 @@ select.input option {
   }
 
   .standing__score {
-    font-size: 1.7rem;
+    font-size: var(--text-2xl);
   }
 }
 
@@ -4090,14 +4133,14 @@ select.input option {
     flex-wrap: wrap;
     align-items: center;
     color: var(--ink-dim);
-    font-size: 0.82rem;
+    font-size: var(--text-xs);
     margin: 0;
   }
 
   .legend kbd {
     font-family: var(--tech);
     font-weight: 700;
-    font-size: 0.8rem;
+    font-size: var(--text-xs);
     letter-spacing: 0.1em;
     border: 1px solid var(--edge);
     border-bottom-width: 2px;
@@ -4241,7 +4284,7 @@ select.input option {
 
 .standoff__name {
   font-family: var(--shout);
-  font-size: clamp(1.3rem, 4vw, 2rem);
+  font-size: var(--display-inline);
   text-transform: uppercase;
   letter-spacing: 0.02em;
   overflow-wrap: anywhere;
@@ -4249,7 +4292,7 @@ select.input option {
 
 .standoff__you {
   font-family: var(--body);
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   text-transform: none;
   color: var(--ink-dim);
 }
@@ -4261,7 +4304,7 @@ select.input option {
 */
 .standoff__seat .standoff__record {
   margin-top: 0.3rem;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   line-height: 1.35;
   color: var(--ink-dim);
   overflow-wrap: anywhere;
@@ -4270,7 +4313,7 @@ select.input option {
 .standoff__stake {
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--ink-soft);
   letter-spacing: 0.08em;
   font-variant-numeric: tabular-nums;
@@ -4323,7 +4366,7 @@ select.input option {
 .standoff__state[data-state='shaft'] {
   font-family: var(--shout);
   font-weight: 400;
-  font-size: clamp(2rem, 8vw, 3.5rem);
+  font-size: var(--display-screen);
   letter-spacing: 0.02em;
   line-height: 1;
 }
@@ -4389,7 +4432,7 @@ select.input option {
 .standoff__pot-label {
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--ink-dim);
@@ -4402,7 +4445,7 @@ select.input option {
   line-height: 1;
   color: var(--amber);
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 24px rgb(255 178 38 / 0.55);
+  text-shadow: 0 0 24px color-mix(in srgb, var(--amber) 55%, transparent);
 }
 
 /* ── The reveal, acted out ──────────────────────────────────────────────────
@@ -4514,7 +4557,7 @@ select.input option {
   height: 100%;
   pointer-events: none;
   fill: none;
-  stroke: rgb(255 46 77 / 0.6);
+  stroke: color-mix(in srgb, var(--wrong) 60%, transparent);
   stroke-width: 1.5;
   vector-effect: non-scaling-stroke;
   animation: lift 1ms linear 230ms backwards;
@@ -4590,18 +4633,18 @@ select.input option {
 }
 
 .standoff__wash[data-outcome='shared'] {
-  background: radial-gradient(90% 60% at 50% 35%, rgb(31 221 138 / 0.28), transparent 70%);
+  background: radial-gradient(90% 60% at 50% 35%, color-mix(in srgb, var(--correct) 28%, transparent), transparent 70%);
   animation: wash 1600ms ease-out 300ms;
 }
 
 .standoff__wash[data-outcome='shafted'] {
-  background: radial-gradient(90% 60% at 50% 35%, rgb(255 46 77 / 0.38), transparent 70%);
+  background: radial-gradient(90% 60% at 50% 35%, color-mix(in srgb, var(--wrong) 38%, transparent), transparent 70%);
   animation: wash 1400ms ease-out 230ms;
 }
 
 /* Both shafting: the house goes dark, and one light finds third place. */
 .standoff__wash[data-outcome='bothShafted'] {
-  background: rgb(1 6 16 / 0.92);
+  background: color-mix(in srgb, var(--night) 92%, transparent);
   animation: blackout 3000ms ease 500ms;
 }
 
@@ -4624,11 +4667,11 @@ select.input option {
   margin: 0;
   text-align: center;
   font-family: var(--shout);
-  font-size: clamp(2rem, 8vw, 3.4rem);
+  font-size: var(--display-screen);
   text-transform: uppercase;
   line-height: 1;
   color: var(--amber);
-  text-shadow: 0 0 30px rgb(255 178 38 / 0.8);
+  text-shadow: 0 0 30px color-mix(in srgb, var(--amber) 80%, transparent);
   animation: rise 700ms cubic-bezier(0.2, 0.8, 0.2, 1) 1100ms backwards;
 }
 
@@ -4655,7 +4698,7 @@ select.input option {
 }
 
 .picker--standoff .pick b {
-  font-size: clamp(2.2rem, 9vw, 3.6rem);
+  font-size: var(--display-title);
   line-height: 1;
 }
 
@@ -4676,7 +4719,7 @@ select.input option {
 
 .pick--share,
 .pick--share[aria-pressed='true'] {
-  border-color: rgb(31 221 138 / 0.55);
+  border-color: color-mix(in srgb, var(--correct) 55%, transparent);
   background: linear-gradient(180deg, #0b3a2a, #04170f);
 }
 
@@ -4687,7 +4730,7 @@ select.input option {
 .pick--share::after,
 .pick--share[aria-pressed='true']::after {
   background: linear-gradient(90deg, transparent, var(--correct), transparent);
-  box-shadow: 0 0 18px 2px rgb(31 221 138 / 0.7);
+  box-shadow: 0 0 18px 2px color-mix(in srgb, var(--correct) 70%, transparent);
 }
 
 @media (hover: hover) {
@@ -4698,7 +4741,7 @@ select.input option {
 
 .pick--shaft,
 .pick--shaft[aria-pressed='true'] {
-  border-color: rgb(255 46 77 / 0.55);
+  border-color: color-mix(in srgb, var(--wrong) 55%, transparent);
   background: linear-gradient(180deg, #3d0a14, #17040a);
 }
 
@@ -4709,7 +4752,7 @@ select.input option {
 .pick--shaft::after,
 .pick--shaft[aria-pressed='true']::after {
   background: linear-gradient(90deg, transparent, var(--wrong), transparent);
-  box-shadow: 0 0 18px 2px rgb(255 46 77 / 0.7);
+  box-shadow: 0 0 18px 2px color-mix(in srgb, var(--wrong) 70%, transparent);
 }
 
 @media (hover: hover) {
@@ -4735,10 +4778,10 @@ select.input option {
   padding: 0.2rem 0.8rem;
   border: 2px solid var(--ink);
   border-radius: var(--radius-sm);
-  background: rgb(4 16 31 / 0.72);
+  background: color-mix(in srgb, var(--studio) 72%, transparent);
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   letter-spacing: 0.3em;
   text-transform: uppercase;
   color: var(--ink);
@@ -4765,7 +4808,7 @@ select.input option {
 .standoff__headline {
   margin: 0;
   font-family: var(--shout);
-  font-size: clamp(1.5rem, 5vw, 2.4rem);
+  font-size: var(--display-lead);
   text-transform: uppercase;
   line-height: 1.1;
   animation: lift 420ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
@@ -4782,7 +4825,7 @@ select.input option {
   margin-left: 0.5rem;
   border-radius: var(--radius-pill);
   background: var(--cyan);
-  box-shadow: 0 0 10px 1px rgb(41 214 255 / 0.6);
+  box-shadow: 0 0 10px 1px color-mix(in srgb, var(--cyan) 60%, transparent);
   transform: translateY(-2px);
 }
 
@@ -4791,8 +4834,8 @@ select.input option {
   display: block;
   width: 100%;
   text-align: left;
-  background: rgb(255 178 38 / 0.08);
-  border: 1px solid rgb(255 178 38 / 0.45);
+  background: color-mix(in srgb, var(--amber) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--amber) 45%, transparent);
   border-radius: 8px 8px 3px 3px;
   padding: 0.65rem 0.9rem;
   color: var(--ink);
@@ -4813,7 +4856,7 @@ select.input option {
   display: block;
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--amber);
@@ -4822,7 +4865,7 @@ select.input option {
 .updates-teaser__line {
   display: block;
   margin-top: 0.25rem;
-  font-size: 0.95rem;
+  font-size: var(--text-sm);
   line-height: 1.35;
 }
 
@@ -4832,7 +4875,7 @@ select.input option {
   display: inline-block;
   font-family: var(--tech);
   font-weight: 700;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   line-height: 1;
@@ -4840,7 +4883,7 @@ select.input option {
   background: var(--amber);
   border-radius: var(--radius-sm);
   padding: 0.22rem 0.45rem;
-  box-shadow: 0 0 12px 1px rgb(255 178 38 / 0.45);
+  box-shadow: 0 0 12px 1px color-mix(in srgb, var(--amber) 45%, transparent);
 }
 
 .pack__new {
@@ -4859,7 +4902,7 @@ select.input option {
    --ink-dim on amber: 1.68:1. Put back the sticker's own ink and size. */
 .pick .new-sticker {
   color: var(--amber-ink);
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   margin-top: 0;
 }
 
@@ -4908,7 +4951,7 @@ select.input option {
 .tile__note {
   display: block;
   margin-top: 0.15rem;
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   font-weight: 500;
   letter-spacing: 0.04em;
   opacity: 0.85;
@@ -4941,11 +4984,12 @@ select.input option {
   margin: 0;
   color: var(--amber-bright);
   font-family: var(--tech);
+  font-weight: 600;
   letter-spacing: 0.02em;
 }
 
 .chaser-line--result {
-  font-size: 1.25rem;
+  font-size: var(--text-lg);
   color: var(--amber);
 }
 
@@ -4954,6 +4998,7 @@ select.input option {
   margin: 0;
   color: var(--cyan);
   font-family: var(--tech);
+  font-weight: 600;
   letter-spacing: 0.02em;
 }
 
@@ -5055,7 +5100,8 @@ select.input option {
 .standing__round {
   flex: none;
   font-family: var(--tech);
-  font-size: 0.72rem;
+  font-weight: 600;
+  font-size: var(--text-2xs);
   letter-spacing: 0.08em;
   color: var(--ink-soft);
   font-variant-numeric: tabular-nums;
@@ -5073,7 +5119,7 @@ select.input option {
    the name out of the row altogether (gallery, 375px, 24 Oct). The "New
    leader" stamp did the same — 109px that will not shrink left the name 35px,
    "Pr…" (30 Oct) — so it wraps under the name too, but only when it has to. */
-@media (max-width: 40rem) {
+@media (max-width: 43.99rem) {
   .standing__name:has(.standing__round),
   .standing__name:has(.standing__tag) {
     flex-wrap: wrap;
