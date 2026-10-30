@@ -99,6 +99,20 @@ export function freshness(input: {
     .sort((a, b) => a.freshRounds - b.freshRounds || a.pack.localeCompare(b.pack));
 }
 
+/**
+ * The season rounds are writing to: the `season-N` most recently written to.
+ *
+ * **Only `season-N` counts.** `check-rules` writes an asked row under
+ * `rules-check` on every run, and no client may delete it, so its timestamp
+ * is newer than the last round whenever the preflight ran since. On 30 October
+ * 2026 that made every pack read as unasked. Matching what a real season is
+ * called, rather than listing the probes, keeps a new probe from doing the same.
+ */
+export function liveSeason(seasons: { season: string; latest: number }[]): string | null {
+  const real = seasons.filter(({ season, latest }) => /^season-\d+$/.test(season) && latest > 0);
+  return real.sort((a, b) => b.latest - a.latest)[0]?.season ?? null;
+}
+
 /** What the notification says, or null when there is nothing to say. */
 export function notificationFor(rows: FreshnessRow[]): string | null {
   const low = rows.filter((row) => row.low);

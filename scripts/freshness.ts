@@ -28,6 +28,7 @@ import {
   WINDOW_DAYS,
   freshness,
   isDue,
+  liveSeason,
   localDay,
   notificationFor,
   type FreshnessRow,
@@ -89,7 +90,7 @@ async function publishedPacks(): Promise<PackIds[]> {
  * The asked ids of the season most recently written to. The client's `SEASON`
  * lives in a module that loads Firebase, which a script must never import, and
  * a hardcoded copy goes stale — `take-stock` learned that. The live season is
- * the one rounds are writing to.
+ * the one rounds are writing to, which {@link liveSeason} picks.
  */
 async function currentAsked(db: FirebaseFirestore.Firestore): Promise<{ season: string; asked: Record<string, string[]> }> {
   const parents = await db.collection('seasons').listDocuments();
@@ -109,7 +110,7 @@ async function currentAsked(db: FirebaseFirestore.Firestore): Promise<{ season: 
       return { season: parent.id, latest, asked };
     }),
   );
-  const live = seasons.sort((a, b) => b.latest - a.latest)[0];
+  const live = seasons.find((entry) => entry.season === liveSeason(seasons));
   if (!live) throw new Error('No season has an asked history');
   return { season: live.season, asked: live.asked };
 }
