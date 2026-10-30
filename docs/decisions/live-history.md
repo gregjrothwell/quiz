@@ -1,12 +1,18 @@
 # What went live, and when
 
-> **Owner: Greg Rothwell. Last updated: 29 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 30 October 2026. Budget: 250 lines.**
 
 Split out of [`HANDOVER.md`](../HANDOVER.md) on 24 October 2026, at 150 lines
 against a 150 budget. **Moved verbatim; only where it lives has changed.** The
 handover keeps the current live bundle and the checks still owed; the chain of
 bundles before it, and the release records that were sitting in its Outstanding
 list, are here. Links were relative to `docs/`, so `decisions/` is dropped from them.
+
+## `index-DusPPoDJ`, live until 30 October 2026
+
+Verbatim from the handover when #182 replaced it; only the links changed.
+
+**Live is `index-DusPPoDJ`** (release #179, 29 Oct 19:24 GMT, merge `726443a`, gh-pages `1598b08`; 15/15 assets byte-identical; rules unchanged; `check-rules` **164/0**): **lock it in** — a pick is free, Enter or a second tap locks it, unlocked picks auto-lock at 2s left and rank last ([`lock-in.md`](lock-in.md)); answers timed at the press (the 0ms); stale-chunk reload once (PROJ-77); rivals caption needs a lead of 2+, up to three names; test rounds not banked, readers skip them ([`test-runs.md`](test-runs.md)); `read-owed` prints errors and the Slop Cannon. **Owed:** the office's first locked round and a phone (`read-games`: no sub-1s first touches changed later); `read-owed` after a round that follows a deploy (PROJ-77); rivals backfill re-run about 31 Oct (PROJ-73); #168 in a real room (PROJ-75); `JIRA_API_TOKEN` (PROJ-72) — CI's Jira job moves nothing until then.
 
 ## `index-3smqKauF`, live until 29 October 2026
 
