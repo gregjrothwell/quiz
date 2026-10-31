@@ -2,7 +2,7 @@
 
 > **Owner: Greg Rothwell. Last updated: 31 October 2026. Budget: 250 lines.**
 
-**Status: PR [#184](https://github.com/gregjrothwell/quiz/pull/184), not merged. PR wait 8m25s → 6m11s on a cache hit.** Merging
+**Status: PR [#184](https://github.com/gregjrothwell/quiz/pull/184), not merged. PR wait 8m25s → 6m11s on a cache hit; master warms the caches; pre-push hook.** Merging
 deploys, so it waits for Greg's yes. Brief from Alfred, 31 Oct 2026, after Greg flagged
 Owen Gretzinger's post on cutting agent CI from ~40 min to ~2 min
 (<https://x.com/owengretzinger/status/2116291924219060319>). Alfred's own two notes
@@ -65,7 +65,6 @@ run's overall conclusion, and both still hold.
   path now. Making them faster would not shorten the wall clock, and `isolate: false`
   risks tests leaking state into each other.
 - **Blobless checkout.** Checkout takes 5s at depth 1; nothing to win.
-- **Pre-push hook.** A local workflow change, not CI runtime. Greg to decide.
 - **Paid or larger runners (Phase 2).** Need Greg's spending yes. Bigger runners would not
   move the floor either: the 258s is wall-clock game time, not CPU.
 
@@ -90,9 +89,10 @@ By arithmetic it should come in around 7m20s, still saving the 76s from the spli
 **When a hit happens.** Caches are scoped to the ref that saved them, and master never
 builds: a merge reuses the PR's `dist` (`lead-time.md`), so master never saves a
 `modules-` cache. Each PR's **first** run therefore misses, and every later push to the
-same PR hits. That is the push → fail → push loop this ticket was about. Warming the cache
-from master would make first runs hit too. Not done: it means a job that exists only to
-install.
+same PR hits. **Fixed the same day**: Greg said yes, so a `warm` job now fills both caches
+on every master push. It needs nothing and nothing needs it, so it can't hold up a deploy;
+on a hit it costs seconds. `scripts/ci-speed.test.ts` fails if its keys drift from the
+jobs that read them.
 
 **Variance.** Spec times moved ±30s between runs on identical code: shard 2 was 279s,
 then 294s. The re-cut is near its limit. One whole-round spec per shard would need ~10
@@ -100,3 +100,17 @@ shards to save maybe another 30s.
 
 Storage: `e2e-` 379 MB plus `modules-` 108 MB per PR, against GitHub's 10 GB per repo,
 which evicts the oldest first.
+
+## Pre-push hook — 31 Oct 2026
+
+Greg said yes. `.githooks/pre-push` runs typecheck, lint and the unit tests before a push
+leaves the machine, about 30s locally (the suite alone is 6s). A failure here costs a
+minute instead of a CI run. It stays quiet when green and prints the log only on failure.
+It skips when the push changes only `docs/` or Markdown, matching Plan, and runs whenever
+it can't tell. `SKIP_PREPUSH=1 git push` overrides it.
+
+It's installed by the `prepare` script (`git config core.hooksPath .githooks`), which
+`npm install` and `npm ci` run. Every worktree on a Mac shares the one `.git/config`, so
+one install covers them all. The Mac mini needs one `npm install` of its own. Tested both
+ways in `scripts/ci-speed.test.ts` against a scratch repo: a code change runs the checks,
+a docs-only change doesn't.
