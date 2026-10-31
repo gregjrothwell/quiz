@@ -595,3 +595,50 @@ jobs:
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
         run: .github/scripts/jira-done.sh
+
+  # Fills the two install caches from master, so a pull request's *first* run
+  # hits them too. Caches belong to the ref that saved them; a pull request can
+  # read its base branch's but no other's. Master itself almost never builds —
+  # a merge publishes the PR's `dist` (ci-plan.sh) — so until this job existed
+  # nothing on master ever saved one, and every new PR started cold (PROJ-93,
+  # 31 October 2026, docs/decisions/ci-speed.md).
+  #
+  # Nothing needs it and it needs nothing: it runs beside the deploy and cannot
+  # hold it up. On a hit both cache steps restore and every other step skips,
+  # so a quiet master costs seconds. Install scripts run, as in build and e2e;
+  # this job holds no credential beyond a read-only token.
+  warm:
+    name: Warm install caches
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # The keys and paths must match build/checks and e2e-shard exactly, or
+      # this fills a cache nobody reads.
+      - id: modules
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: node_modules
+          key: modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc', 'package-lock.json') }}
+
+      - id: e2e
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: |
+            node_modules
+            ~/.cache/ms-playwright
+          key: e2e-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc', 'package-lock.json') }}
+
+      - if: steps.modules.outputs.cache-hit != 'true' || steps.e2e.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - if: steps.e2e.outputs.cache-hit != 'true'
+        run: npx playwright install chromium
