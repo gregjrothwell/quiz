@@ -2,7 +2,7 @@
 
 > **Owner: Greg Rothwell. Last updated: 31 October 2026. Budget: 250 lines.**
 
-**Status: PR [#184](https://github.com/gregjrothwell/quiz/pull/184), not merged.** Merging
+**Status: PR [#184](https://github.com/gregjrothwell/quiz/pull/184), not merged. PR wait 8m25s → 6m11s on a cache hit.** Merging
 deploys, so it waits for Greg's yes. Brief from Alfred, 31 Oct 2026, after Greg flagged
 Owen Gretzinger's post on cutting agent CI from ~40 min to ~2 min
 (<https://x.com/owengretzinger/status/2116291924219060319>). Alfred's own two notes
@@ -69,6 +69,34 @@ run's overall conclusion, and both still hold.
 - **Paid or larger runners (Phase 2).** Need Greg's spending yes. Bigger runners would not
   move the floor either: the 258s is wall-clock game time, not CPU.
 
-## Measured after
+## Measured after — 31 Oct 2026
 
-_Pending: first run (cache miss) and second run (cache hit)._
+| | Baseline 41080509766 | Miss 41222607714 | **Hit 41223387829** |
+|---|---|---|---|
+| Wall clock | 8m25s | 8m35s | **6m11s** |
+| Shards start at | +2m05s | +2m09s | **+49s** |
+| Build (was verify) | 110s | 112s | **32s** |
+| Shard setup before specs | ~55s | ~90s | **~25s** |
+| Slowest shard's specs | 307s | 284s | 294s |
+
+**The hit is the result: 2m14s off, 27%.** The shards start 76s earlier and set up 30s
+faster. The rest is the spec floor.
+
+**The miss run was worse than the baseline.** I had dropped setup-node's `cache: npm` as
+redundant. Without `~/.npm`, `npm ci` fetched from the registry: 72–80s against 27s. It
+is back as the fallback (`d79e3b5`). A miss with the fallback has **not been measured**.
+By arithmetic it should come in around 7m20s, still saving the 76s from the split.
+
+**When a hit happens.** Caches are scoped to the ref that saved them, and master never
+builds: a merge reuses the PR's `dist` (`lead-time.md`), so master never saves a
+`modules-` cache. Each PR's **first** run therefore misses, and every later push to the
+same PR hits. That is the push → fail → push loop this ticket was about. Warming the cache
+from master would make first runs hit too. Not done: it means a job that exists only to
+install.
+
+**Variance.** Spec times moved ±30s between runs on identical code: shard 2 was 279s,
+then 294s. The re-cut is near its limit. One whole-round spec per shard would need ~10
+shards to save maybe another 30s.
+
+Storage: `e2e-` 379 MB plus `modules-` 108 MB per PR, against GitHub's 10 GB per repo,
+which evicts the oldest first.
