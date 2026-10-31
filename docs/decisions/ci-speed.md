@@ -2,8 +2,7 @@
 
 > **Owner: Greg Rothwell. Last updated: 31 October 2026. Budget: 250 lines.**
 
-**Status: PR [#184](https://github.com/gregjrothwell/quiz/pull/184), not merged. PR wait 8m25s → 6m11s on a cache hit; master warms the caches; pre-push hook.** Merging
-deploys, so it waits for Greg's yes. Brief from Alfred, 31 Oct 2026, after Greg flagged
+**Status: LIVE 31 October 2026** ([#184](https://github.com/gregjrothwell/quiz/pull/184), merge `8b9ebea`, Greg: "go live"). PR wait 8m25s → 6m11s on a cache hit; master warms the caches; pre-push hook. Brief from Alfred, 31 Oct 2026, after Greg flagged
 Owen Gretzinger's post on cutting agent CI from ~40 min to ~2 min
 (<https://x.com/owengretzinger/status/2116291924219060319>). Alfred's own two notes
 (`claude-handover-quiz-ci-speed-2026-10-31.md`, `ci-speed-owen-gretzinger-2026-10-31.md`)
@@ -104,7 +103,7 @@ which evicts the oldest first.
 ## Pre-push hook — 31 Oct 2026
 
 Greg said yes. `.githooks/pre-push` runs typecheck, lint and the unit tests before a push
-leaves the machine, about 30s locally (the suite alone is 6s). A failure here costs a
+leaves the machine: 15s for the whole `git push` on its first real use (the suite alone is 6s). A failure here costs a
 minute instead of a CI run. It stays quiet when green and prints the log only on failure.
 It skips when the push changes only `docs/` or Markdown, matching Plan, and runs whenever
 it can't tell. `SKIP_PREPUSH=1 git push` overrides it.
@@ -114,3 +113,13 @@ It's installed by the `prepare` script (`git config core.hooksPath .githooks`), 
 one install covers them all. The Mac mini needs one `npm install` of its own. Tested both
 ways in `scripts/ci-speed.test.ts` against a scratch repo: a code change runs the checks,
 a docs-only change doesn't.
+
+## Live — 31 Oct 2026
+
+Merged `8b9ebea` on Greg's "go live", after the classifier refused auto-merge as a
+production deploy. Master run 41226733297: Plan reused the PR's `dist`; rules republished
+(files unchanged); gh-pages had nothing new to commit, because the site's bytes are
+unchanged, so it stays `b7871e4` and live is still `index-0q-ot5PS.js`. `warm` saved
+master's `modules-` (108 MB) and `e2e-` (379 MB) caches at 17:55Z. **Still unmeasured:**
+a new PR's first run reading those caches. The next PR is the test: its Build should show
+`actions/cache` hitting and no `npm ci` step.
