@@ -1,0 +1,74 @@
+# PR CI speed (PROJ-93)
+
+> **Owner: Greg Rothwell. Last updated: 31 October 2026. Budget: 250 lines.**
+
+**Status: PR [#184](https://github.com/gregjrothwell/quiz/pull/184), not merged.** Merging
+deploys, so it waits for Greg's yes. Brief from Alfred, 31 Oct 2026, after Greg flagged
+Owen Gretzinger's post on cutting agent CI from ~40 min to ~2 min
+(<https://x.com/owengretzinger/status/2116291924219060319>). Alfred's own two notes
+(`claude-handover-quiz-ci-speed-2026-10-31.md`, `ci-speed-owen-gretzinger-2026-10-31.md`)
+were never on this Mac; this was worked from the ticket alone.
+
+This is about the **pull-request** wait. The go-live path (master reusing the PR's `dist`,
+docs-only skip) is [`lead-time.md`](lead-time.md) and is unchanged.
+
+## Baseline — PR run 41080509766, 30 Oct 2026: 8m25s
+
+| Stage | Time | Notes |
+|---|---|---|
+| Plan | 11s | |
+| Verify and build | 110s | `npm ci` 27s, typecheck 8s, lint 12s, test 33s, build 8s — in series |
+| Six Playwright shards | 5m16s–6m10s | each ~55s of setup (`npm ci` 21–29s), then specs |
+| Joining job | 3s | |
+
+Every shard waited for all 110s of verify, though it needs only `dist`.
+
+Per-spec times from that run, summed per file:
+
+| Spec | Time | Spec | Time |
+|---|---|---|---|
+| commentator | 258s | double | 126s |
+| slop-cannon-double | 246s | survey-says | 120s |
+| host-writes | 186s | node-round | 96s |
+| test-run | 150s | host-authority | 91s |
+| slop-cannon | 134s | rig-probe | 30s |
+| beat-the-chaser | 126s | host-authority-rules | 26s |
+
+The rest are under 15s each. **The Commentator's 258s is the floor**: it plays a whole
+round on real clocks, and no grouping makes a shard faster than its slowest spec. Going
+below it means changing how long a round takes under test, which is a different job.
+
+## What changed (#184)
+
+1. **Verify split in two.** `Build` installs, builds and uploads `dist` and the tree
+   marker. `Typecheck, lint and test` runs alongside it. The shards need `build` only.
+   **`Verify and build` stays** as the job joining the two, because the ruleset requires
+   that name and `rules` and `deploy` read `needs.verify.result`. The What's new and Jira
+   gates moved into it.
+2. **`node_modules` cached** with `actions/cache` v5.1.0 (GitHub's own action, node24,
+   pinned to `caa2961`), keyed on `.nvmrc` and `package-lock.json`. The shards cache
+   Chromium with it. A pull request can read master's caches but master never reads a
+   pull request's, so a branch cannot plant a tree that ships. `rules` and `deploy` don't
+   use the cache and keep `npm ci --ignore-scripts`.
+3. **Seven shards instead of six** (`e2e/shards.json`), each filled to about the 258s
+   floor and no further.
+4. `e2e` (the required "Playwright against emulators") now needs `build`, not `verify`.
+   A lint failure no longer hides the e2e result; verify still blocks the merge and the
+   deploy.
+
+`ci-plan.sh` needed nothing. It finds the `tree-<hash>` artefact by name and checks the
+run's overall conclusion, and both still hold.
+
+## Left out, and why
+
+- **Oxlint, Vitest `isolate: false`.** Lint (12s) and the tests (33s) are off the critical
+  path now. Making them faster would not shorten the wall clock, and `isolate: false`
+  risks tests leaking state into each other.
+- **Blobless checkout.** Checkout takes 5s at depth 1; nothing to win.
+- **Pre-push hook.** A local workflow change, not CI runtime. Greg to decide.
+- **Paid or larger runners (Phase 2).** Need Greg's spending yes. Bigger runners would not
+  move the floor either: the 258s is wall-clock game time, not CPU.
+
+## Measured after
+
+_Pending: first run (cache miss) and second run (cache hit)._
