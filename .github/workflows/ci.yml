@@ -16,7 +16,7 @@
 # to add it for an end-to-end runner, the answer is the Firebase emulator —
 # docs/decisions/audit-backlog.md.
 #
-# Actions used are GitHub's own (checkout, setup-node, setup-java,
+# Actions used are GitHub's own (checkout, setup-node, setup-java, cache,
 # upload/download-artifact), plus **one that is not**: Google's
 # `google-github-actions/auth`, in the `rules` job only, pinned to a commit.
 # That is the accepted cost of keyless rules publishing (D5, Greg, 15 October
@@ -57,8 +57,9 @@
 # AntV, Red Hat) harvested CI credentials exactly that way. Neither job needs
 # a script: firebase-tools, tsx and gh-pages run without them, proved from a
 # clean `npm ci --ignore-scripts` on 22 October 2026
-# (docs/decisions/security-sweep-oct-2026.md). verify and e2e still run them —
-# they build and drive a browser, and hold nothing that writes.
+# (docs/decisions/security-sweep-oct-2026.md). build, checks and e2e still run
+# them — they build and drive a browser, and hold nothing that writes. Those
+# three restore `node_modules` from a cache; the two credentialed jobs never do.
 #
 # **Plan comes first, and decides how much of the rest runs** (22 October 2026,
 # docs/decisions/ci-deploy.md, "Lead time"). A change that touches only
@@ -109,49 +110,44 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: .github/scripts/ci-plan.sh | tee -a "$GITHUB_OUTPUT"
 
-  verify:
-    name: Verify and build
+  # Verify used to be one job: install, typecheck, lint, test, build, in that
+  # order, and every Playwright shard waited the whole 110s for it. The shards
+  # need only `dist`, so the build is its own job and they start as soon as it
+  # lands; typecheck, lint and test run beside them. "Verify and build" is kept
+  # as the job that joins the two, because the ruleset requires that name and
+  # `rules` and `deploy` read its result (PROJ-93, 31 October 2026,
+  # docs/decisions/ci-speed.md).
+  #
+  # Both run unless Plan succeeded *and* said there is nothing to build: docs
+  # only, or a passed PR build to publish. A failed Plan runs them in full.
+  build:
+    name: Build
     needs: plan
-    # Runs unless Plan succeeded *and* said there is nothing to build: docs
-    # only, or a passed PR build to publish. A failed Plan runs this in full.
     if: >-
       ${{ !cancelled() && !(needs.plan.result == 'success'
       && (needs.plan.outputs.code != 'true' || needs.plan.outputs.reuse_run != '')) }}
     runs-on: ubuntu-latest
     steps:
-      # A change players can see goes live with its line on the What's new page
-      # (Greg, 22 October 2026: #110 shipped without one). Plan decides from the
-      # changed files; this fails the required check so the PR cannot merge.
-      - name: What's new carries this change
-        if: needs.plan.outputs.whats_new == 'missing'
-        run: |
-          echo "::error title=What's new::This PR changes what players see (src/ or public/) but not src/lib/updates.ts. Add a line in player words, or write \"What's new: none — <why>\" in the PR description or a commit message. An empty commit re-runs CI."
-          exit 1
-
-      # A PR names its Jira ticket, so whoever takes it live can move the
-      # ticket to Done (PROJ-66, 28 October 2026). Same shape as the check above.
-      - name: PR names its Jira ticket
-        if: needs.plan.outputs.ticket == 'missing'
-        run: |
-          echo "::error title=Jira ticket::Name the ticket (PROJ-<n>) in the PR title, branch, description or a commit message, or write \"Ticket: none — <why>\" in the description or a commit message. An empty commit re-runs CI."
-          exit 1
-
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version-file: .nvmrc
-          cache: npm
 
-      - run: npm ci
+      # `node_modules` itself, keyed on the exact lockfile and Node version, so
+      # a hit is the tree `npm ci` would have written; ~27s of `npm ci` becomes
+      # a few seconds of restore. A miss installs as before. A pull request can
+      # read master's caches but master never reads a pull request's, so a
+      # branch cannot plant a tree that ships. The two jobs that hold a
+      # credential (`rules`, `deploy`) never use it and still install clean.
+      - id: modules
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: node_modules
+          key: modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc', 'package-lock.json') }}
 
-      - run: npm run typecheck
-      - run: npm run lint
-
-      # Offline by design. Anything under `scripts/` that talks to the network or
-      # the live project is excluded from the suite on purpose, so this needs no
-      # Firebase credentials of any kind.
-      - run: npm test
+      - if: steps.modules.outputs.cache-hit != 'true'
+        run: npm ci
 
       - name: Build
         # Only the values that are *supposed* to ship. Repository variables, not
@@ -186,7 +182,9 @@ jobs:
       # Names the exact tree this run built. When master later has the same
       # tree, its run finds this marker and publishes this run's `dist` rather
       # than building it again (ci-plan.sh). Pull requests only: master's own
-      # builds are never reused. Kept as long as `dist`.
+      # builds are never reused. Kept as long as `dist`. ci-plan.sh also
+      # requires the whole run to have passed, so a marker from a run whose
+      # tests failed is never chosen.
       - name: Record the tree this run built
         id: tree
         if: github.event_name == 'pull_request'
@@ -203,27 +201,95 @@ jobs:
           retention-days: 7
           if-no-files-found: error
 
+  checks:
+    name: Typecheck, lint and test
+    needs: plan
+    if: >-
+      ${{ !cancelled() && !(needs.plan.result == 'success'
+      && (needs.plan.outputs.code != 'true' || needs.plan.outputs.reuse_run != '')) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version-file: .nvmrc
+
+      # The same cache as `build`: see there.
+      - id: modules
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: node_modules
+          key: modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc', 'package-lock.json') }}
+
+      - if: steps.modules.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - run: npm run typecheck
+      - run: npm run lint
+
+      # Offline by design. Anything under `scripts/` that talks to the network or
+      # the live project is excluded from the suite on purpose, so this needs no
+      # Firebase credentials of any kind.
+      - run: npm test
+
+  verify:
+    name: Verify and build
+    needs: [plan, build, checks]
+    if: >-
+      ${{ !cancelled() && !(needs.plan.result == 'success'
+      && (needs.plan.outputs.code != 'true' || needs.plan.outputs.reuse_run != '')) }}
+    runs-on: ubuntu-latest
+    steps:
+      # A change players can see goes live with its line on the What's new page
+      # (Greg, 22 October 2026: #110 shipped without one). Plan decides from the
+      # changed files; this fails the required check so the PR cannot merge.
+      - name: What's new carries this change
+        if: needs.plan.outputs.whats_new == 'missing'
+        run: |
+          echo "::error title=What's new::This PR changes what players see (src/ or public/) but not src/lib/updates.ts. Add a line in player words, or write \"What's new: none — <why>\" in the PR description or a commit message. An empty commit re-runs CI."
+          exit 1
+
+      # A PR names its Jira ticket, so whoever takes it live can move the
+      # ticket to Done (PROJ-66, 28 October 2026). Same shape as the check above.
+      - name: PR names its Jira ticket
+        if: needs.plan.outputs.ticket == 'missing'
+        run: |
+          echo "::error title=Jira ticket::Name the ticket (PROJ-<n>) in the PR title, branch, description or a commit message, or write \"Ticket: none — <why>\" in the description or a commit message. An empty commit re-runs CI."
+          exit 1
+
+      - name: Built, typechecked, linted and tested
+        env:
+          BUILD: ${{ needs.build.result }}
+          CHECKS: ${{ needs.checks.result }}
+        run: |
+          echo "build: $BUILD, checks: $CHECKS"
+          test "$BUILD" = success
+          test "$CHECKS" = success
+
   # Talks to the Firebase emulator, never the live project. Must never name the
   # App Check debug-token environment variable — `check-bundle` refuses a build
   # if this file does. Give the runner the emulator, not a token.
   # Java 21 is for the Firestore emulator. setup-java is v5 (node24), not v4.
   #
-  # Six jobs at once, each on its own runner with its own emulators, so no two
-  # specs ever share one. The groups are `e2e/shards.json`, balanced by the
-  # per-file times of run 40151240593 (19.4 min of specs on one worker, 25 Oct
-  # 2026): about 4¾ minutes each, the Commentator's round alone being 4⅓. The
-  # fifth and sixth, 26 Oct, are the Slop Cannon's two specs, one each: they play
-  # three whole rounds between them, which took shard 0's specs from ~300s to
-  # 677s when they shared it, and 472s alone (#154).
+  # Seven jobs at once, each on its own runner with its own emulators, so no two
+  # specs ever share one. The groups are `e2e/shards.json`. Six were balanced
+  # by run 40151240593 (25 Oct 2026) and the Slop Cannon's two specs kept apart:
+  # they play three whole rounds between them, 677s when they shared a shard
+  # (#154). Re-cut into seven on 31 Oct from run 41080509766 (PROJ-93): the
+  # Commentator's round, 258s, is the floor no grouping goes under, so every
+  # other shard is filled to about that and no more — two whole-round specs
+  # each, or one long one and the quick rules specs.
   # `scripts/e2e-shards.test.ts` fails if a spec is in no group or this list
   # does not match the groups. Inside a shard it is still one worker: each spec
   # wipes its emulators first (e2e/isolate.ts).
   e2e-shard:
     name: Playwright shard ${{ matrix.shard }}
-    needs: verify
-    # `!cancelled()` rather than the default: when Plan fails, verify still
-    # runs, and so must this.
-    if: ${{ !cancelled() && needs.verify.result == 'success' }}
+    # The build alone, not verify: typecheck, lint and test run beside the
+    # shards rather than ahead of them. `!cancelled()` rather than the default:
+    # when Plan fails, build still runs, and so must this.
+    needs: build
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     # The slowest shard ran ~5 min of specs when this was written; 15 leaves
     # room for a slow runner without letting a hang hold a PR for half an hour.
@@ -232,23 +298,33 @@ jobs:
       # Every shard reports, so one red file does not hide another.
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3, 4, 5]
+        shard: [0, 1, 2, 3, 4, 5, 6]
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version-file: .nvmrc
-          cache: npm
 
-      - run: npm ci
+      # As in `build`, plus Playwright's Chromium, which is pinned by the same
+      # lockfile. `playwright install` below then finds it already there.
+      - id: modules
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: |
+            node_modules
+            ~/.cache/ms-playwright
+          key: e2e-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc', 'package-lock.json') }}
+
+      - if: steps.modules.outputs.cache-hit != 'true'
+        run: npm ci
 
       - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: temurin
           java-version: '21'
 
-      # Verify's build, so every shard drives the bundle that is about to go live.
+      # The build job's `dist`, so every shard drives the bundle that is about to go live.
       - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: dist
@@ -288,13 +364,14 @@ jobs:
   # The required check. The ruleset names "Playwright against emulators", and a
   # matrix job reports one check per shard under other names, so this one job
   # stands for all of them. It runs whenever the shards were meant to, and
-  # fails unless every shard passed. Skipped when verify did not pass — exactly
-  # when the single e2e job used to skip, since a skipped required check passes.
-  # `rules` and `deploy` need this job, so they still wait on every shard.
+  # fails unless every shard passed. Skipped when the build did not pass —
+  # docs only, a reused PR build, or a broken build that verify already fails —
+  # since a skipped required check passes. `rules` and `deploy` need this job
+  # and verify, so they still wait on every shard and every check.
   e2e:
     name: Playwright against emulators
-    needs: [verify, e2e-shard]
-    if: ${{ !cancelled() && needs.verify.result == 'success' }}
+    needs: [build, e2e-shard]
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Every shard passed

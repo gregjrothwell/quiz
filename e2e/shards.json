@@ -1,34 +1,36 @@
 [
   [
     "e2e/commentator.spec.ts",
-    "e2e/host-authority-rules.spec.ts",
-    "e2e/lobby-vote-rules.spec.ts",
     "e2e/ladder-notice.spec.ts",
+    "e2e/lobby-vote-rules.spec.ts",
     "e2e/smoke.spec.ts"
   ],
   [
     "e2e/host-writes.spec.ts",
-    "e2e/node-round.spec.ts"
+    "e2e/rig-probe.spec.ts",
+    "e2e/quiz-wrapped.spec.ts",
+    "e2e/q1-trace.spec.ts"
   ],
   [
     "e2e/beat-the-chaser.spec.ts",
+    "e2e/slop-cannon.spec.ts"
+  ],
+  [
     "e2e/double.spec.ts",
-    "e2e/q1-trace.spec.ts",
-    "e2e/asked-history.spec.ts",
-    "e2e/lobby-vote.spec.ts",
-    "e2e/season-bank.spec.ts"
+    "e2e/survey-says.spec.ts"
   ],
   [
-    "e2e/survey-says.spec.ts",
-    "e2e/host-authority.spec.ts",
-    "e2e/quiz-wrapped.spec.ts",
-    "e2e/rig-probe.spec.ts"
-  ],
-  [
-    "e2e/slop-cannon.spec.ts",
-    "e2e/test-run.spec.ts"
+    "e2e/test-run.spec.ts",
+    "e2e/node-round.spec.ts"
   ],
   [
     "e2e/slop-cannon-double.spec.ts"
+  ],
+  [
+    "e2e/host-authority.spec.ts",
+    "e2e/host-authority-rules.spec.ts",
+    "e2e/asked-history.spec.ts",
+    "e2e/lobby-vote.spec.ts",
+    "e2e/season-bank.spec.ts"
   ]
 ]
