@@ -130,9 +130,13 @@ jobs:
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
+      # `cache: npm` is the fallback for a miss on the cache below: without
+      # `~/.npm`, `npm ci` fetches from the registry, 72–80s against 27s
+      # (PR #184's first run, 31 October 2026).
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version-file: .nvmrc
+          cache: npm
 
       # `node_modules` itself, keyed on the exact lockfile and Node version, so
       # a hit is the tree `npm ci` would have written; ~27s of `npm ci` becomes
@@ -211,9 +215,13 @@ jobs:
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
+      # `cache: npm` is the fallback for a miss on the cache below: without
+      # `~/.npm`, `npm ci` fetches from the registry, 72–80s against 27s
+      # (PR #184's first run, 31 October 2026).
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version-file: .nvmrc
+          cache: npm
 
       # The same cache as `build`: see there.
       - id: modules
@@ -302,9 +310,13 @@ jobs:
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
+      # `cache: npm` is the fallback for a miss on the cache below: without
+      # `~/.npm`, `npm ci` fetches from the registry, 72–80s against 27s
+      # (PR #184's first run, 31 October 2026).
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version-file: .nvmrc
+          cache: npm
 
       # As in `build`, plus Playwright's Chromium, which is pinned by the same
       # lockfile. `playwright install` below then finds it already there.
