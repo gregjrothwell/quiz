@@ -18,6 +18,12 @@ export interface Update {
 
 export const UPDATES: readonly Update[] = [
   {
+    date: '2026-11-02',
+    lines: [
+      'An answer you picked but never locked in now says “not locked” on the reveal, instead of looking like a ten-second answer. Tap your lectern twice, or press Enter, to lock it.',
+    ],
+  },
+  {
     date: '2026-10-29',
     lines: [
       'Lock it in. Picking a lectern is free, and you can move it as much as you like. Press Enter, or tap the same lectern again, to lock it in. Your speed counts from the lock, and a locked answer is final. A pick you never lock locks itself just before the buzzer, but it ranks behind everyone who locked theirs.',
