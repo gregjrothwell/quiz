@@ -15,7 +15,14 @@
  * Run: `npm run write-themes-pack`
  */
 
-import { THEME_SPECS, THEME_PROMPT, THEMES_MIN_PACK, themeTerm, type ThemeSpec } from './hand-themes-data';
+import {
+  THEME_SPECS,
+  THEME_PROMPT,
+  THEMES_DROPPED,
+  THEMES_MIN_PACK,
+  themeTerm,
+  type ThemeSpec,
+} from './hand-themes-data';
 import { cachedItunesGet, ITUNES_COUNTRY, type ItunesGet } from './itunes';
 import { writeSealedPack } from './write-sealed-pack';
 import { stableId } from './write-hand-packs';
@@ -95,6 +102,7 @@ export async function buildThemesPack(
   const questions = [];
   const skipped: string[] = [];
   for (const spec of THEME_SPECS) {
+    if (THEMES_DROPPED.has(spec.slug)) continue;
     const recording = pickThemeRecording(await lookup(themeSearchUrl(spec)), spec);
     if (!recording) {
       skipped.push(spec.slug);

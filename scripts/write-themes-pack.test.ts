@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'vitest';
 import type { ThemeSpec } from './hand-themes-data';
 import { buildThemesPack, pickThemeRecording, themeSearchUrl } from './write-themes-pack';
+import { THEME_SPECS, THEMES_DROPPED } from './hand-themes-data';
+import { stableId } from './write-hand-packs';
 
 /*
   Synthetic programmes and artists only: Theme Tunes is blind, and a fixture
@@ -86,5 +88,36 @@ describe('themeSearchUrl', () => {
 describe('buildThemesPack', () => {
   test('refuses to build below three rounds, naming slugs only', async () => {
     await expect(buildThemesPack(async () => ({ results: [] }))).rejects.toThrow(/^Only 0 themes resolved \(need 45\)\. Skipped: theme-\d{3}/);
+  });
+});
+
+describe('the themes Greg took out', () => {
+  test('never reach the pack, though every spec resolves', async () => {
+    // #given a store that has every theme, by its own credit and title
+    const bySearch = new Map(
+      THEME_SPECS.map((spec, index) => [
+        themeSearchUrl(spec),
+        {
+          results: [
+            {
+              kind: 'song',
+              trackId: index + 1,
+              trackName: spec.track,
+              artistName: spec.artist,
+              previewUrl: `https://audio-ssl.itunes.apple.com/itunes-assets/x/${String(index)}.m4a`,
+              trackViewUrl: `https://music.apple.com/gb/album/x/${String(index)}`,
+            },
+          ],
+        },
+      ]),
+    );
+
+    // #when the pack is built
+    const { pack } = await buildThemesPack(async (url) => bySearch.get(url) ?? { results: [] });
+
+    // #then the dropped ones are missing, and only they are
+    const ids = new Set(pack.questions.map((question) => question.id));
+    expect([...THEMES_DROPPED].filter((slug) => ids.has(stableId(slug)))).toEqual([]);
+    expect(pack.questions).toHaveLength(THEME_SPECS.length - THEMES_DROPPED.size);
   });
 });
