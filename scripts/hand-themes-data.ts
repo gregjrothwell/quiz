@@ -40,6 +40,16 @@ export function themeTerm(spec: ThemeSpec): string {
  * avoids it; theme-085 shouts its title through the whole clip, which whisper
  * heard as nothing at all — a transcriber's silence is not a clean clip.
  */
+/**
+ * Played, and taken out by Greg, 2 November 2026 (PROJ-96). Kept in the specs and
+ * skipped by the writer, so the list says which and nothing says what. theme-041
+ * is credited right but is an arrangement from the artist's own album that the
+ * office heard as a random song; theme-034 and theme-077 share its three flags
+ * (titled with only the programme's name, a non-soundtrack genre, an album with
+ * no TV or theme words). A metadata pass, not a listen.
+ */
+export const THEMES_DROPPED: ReadonlySet<string> = new Set(['theme-034', 'theme-041', 'theme-077']);
+
 export const THEME_SPECS: ThemeSpec[] = [
   { slug: 'theme-001', correct: 'EastEnders', incorrect: ['Coronation Street', 'Emmerdale', 'Brookside'], difficulty: 'easy', artist: 'Simon May', track: 'EastEnders' },
   { slug: 'theme-003', correct: 'Doctor Who', incorrect: ["Blake's 7", 'Red Dwarf', 'The Tomorrow People'], difficulty: 'easy', artist: 'Ron Grainer', track: 'Doctor Who' },
