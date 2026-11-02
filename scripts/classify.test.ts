@@ -3,6 +3,7 @@ import {
   capPack,
   isUsOnly,
   isWellFormed,
+  lacksItsMaterial,
   packForCategory,
   sortIntoPacks,
   ukScore,
@@ -232,6 +233,70 @@ describe('isWellFormed', () => {
   });
 });
 
+/*
+  Every prompt below is real, from the cached pool. The office met the first one
+  in General Knowledge on 2 November 2026 (PROJ-96), with no citation on screen.
+*/
+describe('lacksItsMaterial', () => {
+  test.each([
+    'The following citation is taken from this novel of F. Scott Fitzgerald.',
+    'Who sang the following lyrics?',
+    'What 80s song contains the following lyrics:',
+    'Which of the following movies does this quote come from?',
+    'This quote belongs to which Teenage Mutant Ninja Turtles character?',
+    'What 1990s western, written by Kevin Jarre and directed by George P. Cosmatos, is this quote from?',
+    'On whose tombstone would you find this quotation taken from one of his most famous poems?',
+    'What sports legend has as his epitaph:',
+    'What member of the  Rat Pack  has a tombstone which reads:',
+    'Who says:',
+    'Complete these lyrics from the Death Cab for Cutie song What Sarah Said:',
+    'Complete the name of this popular Star Wars character:',
+    'When was this headline breaking news:',
+    'Pittsburgh is home to many universities and research facilities. One of them is described here:',
+    'In what 1987 horror movie does this conversation occur:',
+    'Name this Bon Jovi classic:',
+  ])('drops %j: it points at words it does not include', (prompt) => {
+    expect(lacksItsMaterial(prompt)).toBe(true);
+  });
+
+  test.each([
+    // The material is there, after a colon or a question mark, or before the cue.
+    'Which scientist is credited with the following quote: I never think of the future - it comes soon enough.?',
+    'Finish this quote by Bruce Lee: the human brain can subjugate anything, even ....',
+    'What is the participle in the following sentence?  Jane noticed her father walking along the shoreline.',
+    'Music is the shorthand of emotion. This quotation belongs to which famous artist?',
+    'The following lyrics are from which 1972 hit: Its gonna be a bright, bright sunshiny day?',
+    'Which film features the line "I\'ll be back"?',
+    'What spiritual leader of his country made the following statement, We must be the change we wish to see in the world.?',
+    // A kind of thing, not a quote.
+    'This type of poem is typified by a great poem by Omar Khayyam',
+    // "Of the following" is the options, which are on screen.
+    'Which of the following statements about Scottish law is true?',
+    'Which of the following words means a street performer?',
+    'Gwendolyn Brooks wrote all of the following poems except one. Can you find the odd one out?',
+    // A colon the options complete.
+    'In "Katamari Damacy", you control a character known as:',
+    'All of the following are towns/villages in the Pacific Island nation of Kiribati EXCEPT:',
+    'The famous evil female Baba Yaga comes from:',
+    'Which element has the chemical symbol Fe?',
+  ])('keeps %j', (prompt) => {
+    expect(lacksItsMaterial(prompt)).toBe(false);
+  });
+
+  test('sortIntoPacks counts what it drops for this, apart from the malformed', () => {
+    const pool = [
+      makeQuestion({ id: 'a', question: 'Who sang the following lyrics?', category: 'Entertainment: Music' }),
+      makeQuestion({ id: 'b' }),
+    ];
+
+    const { packs, dropped } = sortIntoPacks(pool);
+
+    expect(dropped.missingMaterial).toBe(1);
+    expect(dropped.malformed).toBe(0);
+    expect([...packs.values()].flat().map((question) => question.id)).toEqual(['b']);
+  });
+});
+
 describe('packForCategory', () => {
   test('maps film and television into one pack', () => {
     // #given the two source categories that share a pack
@@ -306,7 +371,7 @@ describe('sortIntoPacks', () => {
     const { dropped } = sortIntoPacks(pool);
 
     // #then each drop reason is counted independently
-    expect(dropped).toEqual({ malformed: 1, usOnly: 1, capped: 0, offTopicSport: 0 });
+    expect(dropped).toEqual({ malformed: 1, missingMaterial: 0, usOnly: 1, capped: 0, offTopicSport: 0 });
   });
 
   test('drops a sport question naming no sport followed in Britain', () => {

@@ -531,6 +531,66 @@ export function isUkRelevantSport(question: Question): boolean {
   return UK_SPORTS_PATTERN.test(allText(question));
 }
 
+/*
+  The words a prompt uses to point at a quote, a lyric or a passage it was meant
+  to show. The sources lost that material on the way in: 217 prompts in the pool
+  end at a colon, and a sample showed about half are "Complete these lyrics…:"
+  or "Who says:" with nothing after. PROJ-96, docs/decisions/question-votes.md.
+*/
+const MATERIAL_NOUN =
+  'quote|quotation|citation|lyrics?|lines?|passage|excerpt|extract|sentence|exchange|dialogue|conversation|headline|epitaph|poem|ballad|chorus|verse|words|statement|riddle';
+
+/**
+ * "The following citation", "this quote", "these famous lines" — not "which of
+ * the following", and not "this type of poem", which asks about a kind of thing.
+ */
+const POINTS_AT_MATERIAL = new RegExp(
+  `(?<!\\bof )\\b(?:the following|this|these)\\s+(?:(?!of\\b)[\\w'-]+\\s+){0,2}?(?:${MATERIAL_NOUN})\\b`,
+  'i',
+);
+
+/** "…made the following statement, We must be the change…": the material after a comma. */
+const FOLLOWING_THEN_COMMA = new RegExp(
+  `\\bthe following\\s+(?:[\\w'-]+\\s+){0,2}?(?:${MATERIAL_NOUN})\\s*,\\s*\\S+(?:\\s+\\S+){3,}`,
+  'i',
+);
+
+/**
+ * A colon ending is only missing something when the prompt says what: "known as:"
+ * or "EXCEPT:" is finished by the options. Broad on purpose — the pool has far more
+ * than a pack can hold, so a good question lost here costs nothing a player sees.
+ */
+const COLON_CUE = new RegExp(
+  `\\b(?:${MATERIAL_NOUN}|says|said|reads|wrote|(?<!\\bof the )following|complete|finish|fill in|described here|this|these)\\b`,
+  'i',
+);
+
+/** A colon followed by at least three words: the material, inline. */
+const MATERIAL_AFTER_COLON = /:\s*\S+(?:\s+\S+){2,}/;
+/** Three or more words inside quotation marks. */
+const QUOTED_MATERIAL = /["“][^"”]*\S+(?:\s+\S+){2,}[^"”]*["”]/;
+/** Sentence ends, but not an initial: "George P. Cosmatos", "F. Scott". */
+const SENTENCE_BREAK = /(?<=[a-z0-9"'”)][.?!])\s+/;
+
+/**
+ * True when the prompt points at a quote, lyric or passage that is not in it.
+ * Unanswerable however good the options are, so it is dropped.
+ */
+export function lacksItsMaterial(prompt: string): boolean {
+  const text = prompt.trim();
+  if (text.endsWith(':')) return COLON_CUE.test(text);
+  if (!POINTS_AT_MATERIAL.test(text)) return false;
+  if (MATERIAL_AFTER_COLON.test(text) || QUOTED_MATERIAL.test(text) || FOLLOWING_THEN_COMMA.test(text)) {
+    return false;
+  }
+  // Another sentence of three or more words is the material, before ("Music is
+  // the shorthand of emotion. This quotation…") or after ("…the following
+  // sentence?  Jane noticed…").
+  const sentences = text.split(SENTENCE_BREAK);
+  const others = sentences.filter((sentence) => !POINTS_AT_MATERIAL.test(sentence));
+  return !others.some((sentence) => sentence.trim().split(/\s+/).length >= 3);
+}
+
 export function isWellFormed(question: Question): boolean {
   const { question: prompt, correct, incorrect } = question;
 
@@ -577,7 +637,7 @@ export function packForCategory(category: string): PackId {
 
 export interface SortResult {
   packs: Map<PackId, Question[]>;
-  dropped: { malformed: number; usOnly: number; capped: number; offTopicSport: number };
+  dropped: { malformed: number; missingMaterial: number; usOnly: number; capped: number; offTopicSport: number };
 }
 
 /**
@@ -624,7 +684,7 @@ export function capPack(questions: Question[], cap = PACK_CAP): Question[] {
  */
 export function sortIntoPacks(pool: Question[], minUkScore = 1, cap = PACK_CAP): SortResult {
   const packs = new Map<PackId, Question[]>();
-  const dropped = { malformed: 0, usOnly: 0, capped: 0, offTopicSport: 0 };
+  const dropped = { malformed: 0, missingMaterial: 0, usOnly: 0, capped: 0, offTopicSport: 0 };
 
   const push = (packId: PackId, question: Question): void => {
     const existing = packs.get(packId);
@@ -635,6 +695,10 @@ export function sortIntoPacks(pool: Question[], minUkScore = 1, cap = PACK_CAP):
   for (const question of pool) {
     if (!isWellFormed(question)) {
       dropped.malformed += 1;
+      continue;
+    }
+    if (lacksItsMaterial(question.question)) {
+      dropped.missingMaterial += 1;
       continue;
     }
     if (isUsOnly(question)) {
