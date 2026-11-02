@@ -246,11 +246,11 @@
     "id": "themes",
     "title": "Theme Tunes",
     "blurb": "Name the programme from its theme.",
-    "count": 62,
+    "count": 65,
     "counts": {
-      "easy": 25,
-      "medium": 24,
-      "hard": 13
+      "easy": 22,
+      "medium": 23,
+      "hard": 20
     }
   },
   {
