@@ -5,8 +5,8 @@
     "blurb": "Proper general knowledge. The safe opener.",
     "count": 1500,
     "counts": {
-      "easy": 159,
-      "medium": 1282,
+      "easy": 158,
+      "medium": 1283,
       "hard": 59
     }
   },
@@ -27,9 +27,9 @@
     "blurb": "Everything that already happened.",
     "count": 1500,
     "counts": {
-      "easy": 73,
-      "medium": 1335,
-      "hard": 92
+      "easy": 72,
+      "medium": 1337,
+      "hard": 91
     }
   },
   {
@@ -102,10 +102,10 @@
     "id": "video-games",
     "title": "Video Games",
     "blurb": "Consoles, classics and boss fights.",
-    "count": 1400,
+    "count": 1398,
     "counts": {
-      "easy": 308,
-      "medium": 884,
+      "easy": 307,
+      "medium": 883,
       "hard": 208
     }
   },
