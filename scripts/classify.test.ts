@@ -66,6 +66,28 @@ describe('isUsOnly', () => {
   });
 });
 
+describe('isUsOnly — the subject, not the distractors (PROJ-96)', () => {
+  // Real prompts. Voted down or nobody right in office rounds, 23 Oct–2 Nov 2026.
+  test.each([
+    ['In 1987 he became the first football coach to have Gatorade splashed on his head.', 'Bill Parcells'],
+    ['This actor, born on October 18,1987, starred in the famous Disney Channel movie High School Musical.', 'Zac Efron'],
+    ['What is the county seat of King County, Washington?', 'Seattle'],
+    ['The 105 Freeway is AKA:', 'The Glen Anderson Freeway'],
+    ['When reciting the United States Pledge of Allegiance, what should you do?', 'Face the flag'],
+  ])('drops %j', (prompt, correct) => {
+    expect(isUsOnly(makeQuestion({ question: prompt, correct }))).toBe(true);
+  });
+
+  test('keeps a film question whose distractor is the film Freeway', () => {
+    const question = makeQuestion({
+      question: 'Brittany Murphy had her major film role in this 1995 comedy inspired by Emma.',
+      correct: 'Clueless',
+      incorrect: ['Freeway', 'Drop Dead Gorgeous', 'Girl, Interrupted'],
+    });
+    expect(isUsOnly(question)).toBe(false);
+  });
+});
+
 describe('ukScore', () => {
   test('counts distinct British reference points', () => {
     // #given a question naming two separate UK markers

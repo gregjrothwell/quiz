@@ -230,6 +230,27 @@ const US_ONLY = [
   'cbs',
 ];
 
+/*
+  American knowledge the sport list never reached: US roads and counties, US
+  school sport, Disney Channel. Read off the subject only, unlike US_ONLY — the
+  1996 film Freeway is a distractor on a Clueless question that is fine here.
+  PROJ-96: a Gatorade football coach and a Disney Channel birthday reached the
+  office in General Knowledge and Geography, 23 Oct–2 Nov 2026.
+*/
+const US_SUBJECT = [
+  'football coach',
+  'county seat',
+  'freeway',
+  'disney channel',
+  'national collegiate',
+  'ncaa',
+  'high school football',
+  'college basketball',
+  'state senator',
+  'electoral college',
+  'pledge of allegiance',
+];
+
 const UK_MARKERS = [
   'britain',
   'british',
@@ -478,6 +499,7 @@ function toPattern(terms: string[]): RegExp {
 }
 
 const US_ONLY_PATTERN = toPattern(US_ONLY);
+const US_SUBJECT_PATTERN = toPattern(US_SUBJECT);
 const UK_SPORTS_PATTERN = toPattern(UK_SPORTS);
 const UK_PATTERN = new RegExp(toPattern(UK_MARKERS).source, 'gi');
 const ORDER_DEPENDENT_PATTERN = toPattern(ORDER_DEPENDENT);
@@ -499,7 +521,7 @@ function subjectText(question: Question): string {
  * question as US sports trivia, and over-stripping costs nothing at this pool size.
  */
 export function isUsOnly(question: Question): boolean {
-  return US_ONLY_PATTERN.test(allText(question));
+  return US_ONLY_PATTERN.test(allText(question)) || US_SUBJECT_PATTERN.test(subjectText(question));
 }
 
 /**
