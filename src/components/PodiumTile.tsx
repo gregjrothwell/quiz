@@ -28,6 +28,14 @@ export interface TileArrival {
    */
   firstMs: number;
   snap: boolean;
+  /**
+   * Stamped at the full window: a pick nobody locked in, locked for them at
+   * the buzzer (docs/decisions/lock-in.md). Shown as "not locked" rather than
+   * a time, which the office read as a broken clock on 2 November 2026. A
+   * player who walked in mid-question is stamped the same way, and nothing
+   * on another device can tell the two apart; that case is rare.
+   */
+  unlocked?: boolean;
 }
 
 interface PodiumTileProps {
@@ -162,7 +170,7 @@ export function PodiumTile({
                 {arrival.snap && arrival.firstMs < arrival.elapsedMs
                   ? `${seconds(arrival.firstMs)} → `
                   : null}
-                {seconds(arrival.elapsedMs)}
+                {arrival.unlocked ? 'not locked' : seconds(arrival.elapsedMs)}
               </i>
             </span>
           ))}
