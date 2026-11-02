@@ -16,11 +16,32 @@
       "reason": "Greg, 2 Nov: Percy Jackson fan trivia in General Knowledge. Needs the books, not general knowledge, and spells it color."
     },
     {
+      "id": "0b4e2eedb14c",
+      "good": 0,
+      "bad": 3,
+      "at": "2026-11-02",
+      "reason": "Greg, 2 Nov: a High School Musical actor's birthday, filed under Geography. American, and in the wrong pack. The US filter now drops it too."
+    },
+    {
       "id": "1be81e0b523e",
       "good": 0,
       "bad": 3,
       "at": "2026-11-02",
       "reason": "Greg, 2 Nov: why the night sky is dark. Redshift is a real part of the answer, so two options are defensible, and it was banded easy."
+    },
+    {
+      "id": "244a3b269e7c",
+      "good": 0,
+      "bad": 0,
+      "at": "2026-11-02",
+      "reason": "Greg, 2 Nov: Hawaii's largest ancestry group in 2000. US census trivia; nobody right in AA6T."
+    },
+    {
+      "id": "245a7c95823e",
+      "good": 0,
+      "bad": 1,
+      "at": "2026-11-02",
+      "reason": "Greg, 2 Nov: the first American football coach to have Gatorade poured on him. Nobody right in 5ESN. The US filter now drops it too."
     },
     {
       "id": "33690abbbc71",
