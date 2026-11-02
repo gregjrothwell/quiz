@@ -105,3 +105,25 @@ played and voted on.
 
 Not done: no `--go`, no re-sort. 1 in 100 is too thin to pick thresholds from;
 the colon prompts are the bigger, cheaper win and want fixing at the harvest.
+
+## Fixed at the harvest — 2 November 2026 (PROJ-96)
+
+Greg's first round back hit a Fitzgerald "following citation" with no citation,
+an ambiguous night-sky question and Percy Jackson lore, all in General Knowledge.
+
+- **`lacksItsMaterial`** (`scripts/classify.ts`) drops a prompt that points at a
+  quote, lyric, line, passage, epitaph or headline it does not carry. A colon
+  ending counts only with a cue word ("known as:", "EXCEPT:" stay); "the
+  following X" / "this X" counts unless the material is after a colon, in
+  quotes, after a comma, or in another sentence. "Of the following" is the options.
+- **Pool: 266 of 43,269 hit** (168 colon, 98 not). A sample of 70 read by eye:
+  about one in six is a false positive (the material was inline with no
+  punctuation), kept as the price of a broad rule. The pool overflows every
+  capped pack, so nothing a player sees is lost.
+- **Packs:** 87 out, 85 in from overflow; video-games 1,400 → 1,398, the rest
+  unchanged in size. **42 incoming ids were not in the live vault**, checked by
+  reading their docs — `seed-vault` for the eight changed packs before this ships.
+- **Retired by hand** (`retired.json`, new optional `reason`): `33690abbbc71`
+  (citation, 2 bad), `1be81e0b523e` (night sky, 3 bad), `0879b8c18d7e` (Percy
+  Jackson, 1 bad), and `038268fabd1b` (the epitaph, 5 bad, over the line since 14 Oct).
+- Not done: the American-knowledge `bad` verdicts above; a fold with `--go`.
