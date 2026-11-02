@@ -48,11 +48,20 @@ describe('pre-push hook', () => {
     expect(pkg.scripts.prepare).toContain('core.hooksPath .githooks');
   });
 
+  /**
+   * The environment minus git's own variables. A hook exports GIT_DIR, and from
+   * a linked worktree it is absolute, so it would point every git call here at
+   * the real repository rather than the scratch one (PROJ-97).
+   */
+  function withoutGit(): NodeJS.ProcessEnv {
+    return Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.startsWith('GIT_')));
+  }
+
   /** Runs the hook in a scratch repo with an npm that records instead of checking. */
   function push(files: Record<string, string>): string {
     const dir = mkdtempSync(join(tmpdir(), 'quiz-hook-'));
     const git = (...args: string[]) =>
-      execFileSync('git', args, { cwd: dir, encoding: 'utf8' }).trim();
+      execFileSync('git', args, { cwd: dir, env: withoutGit(), encoding: 'utf8' }).trim();
     git('init', '-q', '-b', 'master');
     git('-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-q', '--allow-empty', '-m', 'base');
     const base = git('rev-parse', 'HEAD');
@@ -70,7 +79,7 @@ describe('pre-push hook', () => {
     }
     execFileSync('sh', [HOOK, 'origin', 'url'], {
       cwd: dir,
-      env: { ...process.env, PATH: `${bin}:${process.env.PATH ?? ''}`, SKIP_PREPUSH: '' },
+      env: { ...withoutGit(), PATH: `${bin}:${process.env.PATH ?? ''}`, SKIP_PREPUSH: '' },
       input: `refs/heads/x ${head} refs/heads/x ${base}\n`,
       encoding: 'utf8',
     });
@@ -87,5 +96,34 @@ describe('pre-push hook', () => {
 
   test('a docs-only change skips them', () => {
     expect(push({ 'docs/a.md': 'x', 'README.md': 'y' })).toBe('');
+  });
+
+  /*
+    PROJ-97, 2 November 2026: a push from a linked worktree runs this file with
+    the hook's absolute GIT_DIR in the environment. The scratch repo's `git init`
+    followed it to the real repository and set core.bare, and every git command
+    in the main checkout then refused. A repo of its own, with a linked worktree,
+    stands in for the real one; the worktree's git dir is what the hook exports.
+  */
+  test('a GIT_DIR inherited from a worktree hook leaves the real repo alone', () => {
+    const real = mkdtempSync(join(tmpdir(), 'quiz-real-'));
+    const inReal = (...args: string[]) =>
+      execFileSync('git', args, { cwd: real, env: withoutGit(), encoding: 'utf8' }).trim();
+    inReal('init', '-q', '-b', 'master');
+    inReal('-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-q', '--allow-empty', '-m', 'real');
+    inReal('worktree', 'add', '-q', join(real, 'wt'), '-b', 'side');
+    const before = inReal('rev-parse', 'master');
+
+    const held = process.env.GIT_DIR;
+    process.env.GIT_DIR = join(real, '.git', 'worktrees', 'wt');
+    try {
+      expect(push({ 'src/a.ts': 'x' })).toContain('ran');
+    } finally {
+      if (held === undefined) delete process.env.GIT_DIR;
+      else process.env.GIT_DIR = held;
+    }
+
+    expect(inReal('config', 'core.bare')).toBe('false');
+    expect(inReal('rev-parse', 'master')).toBe(before);
   });
 });
