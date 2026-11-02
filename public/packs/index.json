@@ -17,8 +17,8 @@
     "count": 1500,
     "counts": {
       "easy": 79,
-      "medium": 1353,
-      "hard": 68
+      "medium": 1354,
+      "hard": 67
     }
   },
   {
@@ -69,10 +69,10 @@
     "id": "sport",
     "title": "Sport",
     "blurb": "Pitches, tracks and podiums.",
-    "count": 776,
+    "count": 772,
     "counts": {
       "easy": 33,
-      "medium": 728,
+      "medium": 724,
       "hard": 15
     }
   },
