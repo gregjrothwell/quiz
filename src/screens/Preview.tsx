@@ -1869,6 +1869,34 @@ export function Preview() {
       ),
     },
     {
+      // Two picks nobody locked, stamped at the buzzer (docs/decisions/lock-in.md),
+      // one on the longest name: "not locked" is twice the width of a time.
+      title: 'Reveal · not locked',
+      node: (
+        <QuestionScreen
+          room={mockRoom({
+            phase: 'reveal',
+            durationSecs: 10,
+            players: LONG_NAMES,
+            answers: {
+              chris: { optionIndex: 0, elapsedMs: 2_300 },
+              bart: { optionIndex: 0, elapsedMs: 10_000 },
+              wolf: { optionIndex: 0, elapsedMs: 10_000 },
+            },
+            lastDeltas: { chris: 1_000, bart: 900, wolf: 800 },
+          })}
+          youUid="chris"
+          isQuizmaster={false}
+          clock={CLOCK}
+          revealed
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
       title: 'Lobby · every pack, quizmaster',
       node: (
         <Lobby

@@ -1,6 +1,6 @@
 # Lock it in — a pick is free, a lock is final
 
-> **Owner: Greg Rothwell. Last updated: 29 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 2 November 2026. Budget: 250 lines.**
 
 **Status: built 29 October 2026, not live.** PROJ-78. Greg, that evening:
 "lock in enter key?", then "continue" on the four design points below.
@@ -58,3 +58,14 @@ compromise: it keeps most of a slow write inside the window.
 
 One more press per question for everyone, and a pick nobody locks is ranked
 last. The What's new line says so.
+
+## The first office round — 2 November 2026
+
+Theme Tunes `E3JM`, 7 seats: **22 of 99 answers auto-locked** at exactly 10.0s,
+five players of seven, eight of Greg's fifteen. The reveal showed them as
+"10.0s", which read as a broken clock. Greg weighed reverting and kept it: he
+will explain it to the office and test it properly. The reveal now says **"not
+locked"** for an answer stamped at the full window (PROJ-78). A mid-question
+join is stamped the same way and no other device can tell, so it reads "not
+locked" too; that case is rare. Lock-in did deter: Bret locked five sub-second
+guesses that round and got one right.
