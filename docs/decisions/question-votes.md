@@ -126,4 +126,13 @@ an ambiguous night-sky question and Percy Jackson lore, all in General Knowledge
 - **Retired by hand** (`retired.json`, new optional `reason`): `33690abbbc71`
   (citation, 2 bad), `1be81e0b523e` (night sky, 3 bad), `0879b8c18d7e` (Percy
   Jackson, 1 bad), and `038268fabd1b` (the epitaph, 5 bad, over the line since 14 Oct).
-- Not done: the American-knowledge `bad` verdicts above; a fold with `--go`.
+- **US subject markers** (`US_SUBJECT`): a football coach, a county seat, a
+  freeway, Disney Channel, NCAA and the like, read off the prompt and the true
+  answer only — "Freeway" is also a 1996 film that sits as a distractor on a
+  Clueless question. 99 pool hits, 16 in packs, 14 of them right. Plus three more
+  by hand: `0b4e2eedb14c` (High School Musical, in Geography, 3 bad),
+  `245a7c95823e` (Gatorade coach, 1 bad), `244a3b269e7c` (Hawaii census, 0 votes,
+  nobody right). Second re-sort: 16 out, 12 in; sport 776 → 772. 12 seeded, read back.
+- **Not done: the wider American lean.** About 700 harvested questions mention
+  the US; many are fine by the British-office rule ("American Gothic", Las Vegas),
+  so a keyword cannot judge it. That wants a model or human pass. A fold with `--go`.
