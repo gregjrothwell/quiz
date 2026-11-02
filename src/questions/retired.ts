@@ -27,6 +27,11 @@ export interface RetiredQuestion {
   bad: number;
   /** ISO date the fold retired it. */
   at: string;
+  /**
+   * Why, when Greg retired it by hand rather than the fold reaching it — the
+   * tally alone would not say (PROJ-96, 2 November 2026). The fold leaves it off.
+   */
+  reason?: string;
 }
 
 interface RetiredFile {
