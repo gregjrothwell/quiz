@@ -613,6 +613,7 @@ export function QuestionScreen({
         isYou: arrival.uid === youUid,
         firstMs: arrival.firstMs,
         snap: arrival.snap,
+        unlocked: arrival.elapsedMs >= questionDurationMs(room),
       }));
 
   // Held options are dark, empty lecterns rather than no lecterns, so nothing

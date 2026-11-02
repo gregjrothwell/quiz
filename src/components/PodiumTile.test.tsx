@@ -50,6 +50,16 @@ describe('PodiumTile name chips', () => {
     expect(container.querySelector('.tile__pick > i')).toHaveTextContent('0.1s → 5.2s');
   });
 
+  test('a pick that was never locked says so instead of a time', () => {
+    // #given an answer locked for them at the buzzer (docs/decisions/lock-in.md)
+    // #when its chip lands
+    const { container } = show([arrival({ elapsedMs: 10_000, unlocked: true })]);
+
+    // #then it reads as what happened, not as a ten-second answer
+    expect(container.querySelector('.tile__pick > i')).toHaveTextContent('not locked');
+    expect(container.querySelector('.tile__pick > i')).not.toHaveTextContent('10.0s');
+  });
+
   test('the screen reader still gets the whole name', () => {
     // #given a long name, which the chip on screen will cut short
     // #when it lands

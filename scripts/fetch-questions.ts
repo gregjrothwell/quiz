@@ -322,7 +322,8 @@ async function writePacks(rawPool: Question[]): Promise<void> {
     console.log(`Held back ${retiredOut} the office voted out — see src/questions/retired.json.`);
   }
   console.log(
-    `Dropped ${dropped.malformed} malformed, ${dropped.usOnly} US-only, ` +
+    `Dropped ${dropped.malformed} malformed, ${dropped.missingMaterial} missing their quote, ` +
+      `${dropped.usOnly} US-only, ` +
       `${dropped.offTopicSport} sport with no UK-followed sport in it, ` +
       `${dropped.capped} over the pack cap.\n`,
   );

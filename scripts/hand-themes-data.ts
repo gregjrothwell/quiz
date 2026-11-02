@@ -40,6 +40,55 @@ export function themeTerm(spec: ThemeSpec): string {
  * avoids it; theme-085 shouts its title through the whole clip, which whisper
  * heard as nothing at all — a transcriber's silence is not a clean clip.
  */
+/**
+ * Played, and taken out by Greg, 2 November 2026 (PROJ-96). Kept in the specs and
+ * skipped by the writer, so the list says which and nothing says what. theme-041
+ * is credited right but is an arrangement from the artist's own album that the
+ * office heard as a random song; theme-034 and theme-077 share its three flags
+ * (titled with only the programme's name, a non-soundtrack genre, an album with
+ * no TV or theme words). A metadata pass, not a listen.
+ *
+ * The other eighteen, same day: a private review of the names and metadata
+ * (nobody listened) judged 018 the wrong recording, nine an arrangement or era a
+ * British viewer would not know (001, 014, 037, 039, 043, 047, 059, 072, 089), and
+ * eight impossible to tell without a listen (007, 013, 015, 017, 044, 062, 063,
+ * 064). Greg: drop the lot and find more.
+ *
+ * theme-101 to theme-128 were found the same day, privately, to replace them.
+ * Seven of those the finder was not sure of (104, 110, 111, 112, 114, 118, 120)
+ * go too, on the same rule: unsure is out.
+ */
+export const THEMES_DROPPED: ReadonlySet<string> = new Set([
+  'theme-001',
+  'theme-007',
+  'theme-013',
+  'theme-014',
+  'theme-015',
+  'theme-017',
+  'theme-018',
+  'theme-034',
+  'theme-037',
+  'theme-039',
+  'theme-041',
+  'theme-043',
+  'theme-044',
+  'theme-047',
+  'theme-059',
+  'theme-062',
+  'theme-063',
+  'theme-064',
+  'theme-072',
+  'theme-077',
+  'theme-089',
+  'theme-104',
+  'theme-110',
+  'theme-111',
+  'theme-112',
+  'theme-114',
+  'theme-118',
+  'theme-120',
+]);
+
 export const THEME_SPECS: ThemeSpec[] = [
   { slug: 'theme-001', correct: 'EastEnders', incorrect: ['Coronation Street', 'Emmerdale', 'Brookside'], difficulty: 'easy', artist: 'Simon May', track: 'EastEnders' },
   { slug: 'theme-003', correct: 'Doctor Who', incorrect: ["Blake's 7", 'Red Dwarf', 'The Tomorrow People'], difficulty: 'easy', artist: 'Ron Grainer', track: 'Doctor Who' },
@@ -106,10 +155,39 @@ export const THEME_SPECS: ThemeSpec[] = [
   { slug: 'theme-095', correct: 'Lovejoy', incorrect: ['Boon', 'Minder', 'Bergerac'], difficulty: 'hard', artist: 'Denis King', track: 'Lovejoy' },
   { slug: 'theme-097', correct: "Howards' Way", incorrect: ['Triangle', 'Bergerac', 'The Onedin Line'], difficulty: 'hard', artist: 'Simon May', track: "Howards' Way" },
   { slug: 'theme-100', correct: 'Wallace & Gromit', incorrect: ['Shaun the Sheep', 'Postman Pat', 'Creature Comforts'], difficulty: 'easy', artist: 'Julian Nott', track: 'Wallace & Gromit' },
+  { slug: 'theme-101', correct: 'The Morecambe & Wise Show', incorrect: ['The Two Ronnies', 'The Benny Hill Show', 'The Generation Game'], difficulty: 'easy', artist: 'Morecambe & Wise', track: 'Bring Me Sunshine' },
+  { slug: 'theme-102', correct: 'Who Wants to Be a Millionaire?', incorrect: ['The Weakest Link', 'Deal or No Deal', 'The Chase'], difficulty: 'easy', artist: 'Keith Strachan & Matthew Strachan', track: 'Opening Theme' },
+  { slug: 'theme-103', correct: 'The Great British Bake Off', incorrect: ['MasterChef', 'The Great Pottery Throw Down', 'Come Dine with Me'], difficulty: 'easy', artist: 'Tom Howe', track: 'The Great British Bake Off' },
+  { slug: 'theme-104', correct: 'The Archers', incorrect: ['Desert Island Discs', "Gardeners' Question Time", 'Just a Minute'], difficulty: 'easy', artist: 'Arthur Wood', track: 'Barwick Green' },
+  { slug: 'theme-105', correct: 'The Pink Panther Show', incorrect: ['The Flintstones', 'Top Cat', 'Wacky Races'], difficulty: 'easy', artist: 'Henry Mancini', track: 'The Pink Panther Theme' },
+  { slug: 'theme-106', correct: 'Stranger Things', incorrect: ['The X-Files', 'Twin Peaks', 'Black Mirror'], difficulty: 'easy', artist: 'Kyle Dixon', track: 'Stranger Things' },
+  { slug: 'theme-107', correct: 'Squid Game', incorrect: ['Money Heist', 'Alice in Borderland', 'Kingdom'], difficulty: 'easy', artist: 'Jung Jae Il', track: 'Way Back then' },
+  { slug: 'theme-108', correct: 'Ski Sunday', incorrect: ['Grandstand', 'Wimbledon', 'Pot Black'], difficulty: 'medium', artist: 'Sam Fonteyn', track: 'Pop Looks Bach' },
+  { slug: 'theme-109', correct: 'The Adventures of Black Beauty', incorrect: ['Follyfoot', 'Champion the Wonder Horse', 'The Famous Five'], difficulty: 'medium', artist: 'London String Chorale', track: 'Galloping Home' },
+  { slug: 'theme-110', correct: 'The Inbetweeners', incorrect: ['Skins', 'Fresh Meat', 'Him & Her'], difficulty: 'medium', artist: 'Morning Runner', track: 'Gone Up in Flames' },
+  { slug: 'theme-111', correct: 'Happy Valley', incorrect: ['Line of Duty', 'Broadchurch', 'The Fall'], difficulty: 'medium', artist: 'Jake Bugg', track: 'Trouble Town' },
+  { slug: 'theme-112', correct: 'All Creatures Great and Small', incorrect: ['Heartbeat', 'The Darling Buds of May', 'Emmerdale'], difficulty: 'medium', artist: 'Johnny Pearson', track: 'All Creatures Great and Small' },
+  { slug: 'theme-113', correct: 'Cheers', incorrect: ['Frasier', 'Taxi', 'Friends'], difficulty: 'medium', artist: 'Gary Portnoy', track: 'Cheers Theme Song (TV Version)' },
+  { slug: 'theme-114', correct: 'Silent Witness', incorrect: ['Waking the Dead', 'Prime Suspect', 'Spooks'], difficulty: 'medium', artist: 'John Harle', track: 'Silent Witness Theme (Silencium)' },
+  { slug: 'theme-115', correct: 'Call the Midwife', incorrect: ['The Village', 'Lark Rise to Candleford', 'Cranford'], difficulty: 'medium', artist: 'Peter Salem', track: 'Call the Midwife' },
+  { slug: 'theme-116', correct: 'Desert Island Discs', incorrect: ['The Archers', 'Just a Minute', "Woman's Hour"], difficulty: 'medium', artist: 'Eric Coates', track: 'By the Sleepy Lagoon' },
+  { slug: 'theme-117', correct: 'The Crown', incorrect: ['Victoria', 'The Tudors', 'Wolf Hall'], difficulty: 'medium', artist: 'Hans Zimmer', track: 'The Crown' },
+  { slug: 'theme-118', correct: 'Robin of Sherwood', incorrect: ['The Adventures of Robin Hood', 'Robin Hood', 'Maid Marian and Her Merry Men'], difficulty: 'medium', artist: 'Clannad', track: 'Robin (The Hooded Man)' },
+  { slug: 'theme-119', correct: 'Prisoner: Cell Block H', incorrect: ['Neighbours', 'Sons and Daughters', 'The Flying Doctors'], difficulty: 'hard', artist: 'Lynne Hamilton', track: 'On the Inside' },
+  { slug: 'theme-120', correct: 'Pot Black', incorrect: ['Ski Sunday', 'Grandstand', 'Superstars'], difficulty: 'hard', artist: 'Winifred Atwell', track: 'Black and White Rag' },
+  { slug: 'theme-121', correct: 'Van der Valk', incorrect: ['The Sweeney', 'Softly, Softly', 'Special Branch'], difficulty: 'hard', artist: 'Simon Park', track: 'Eye Level' },
+  { slug: 'theme-122', correct: 'The Saint', incorrect: ['The Persuaders!', 'Danger Man', 'The Avengers'], difficulty: 'hard', artist: 'Edwin Astley', track: 'The Saint' },
+  { slug: 'theme-123', correct: 'The Old Grey Whistle Test', incorrect: ['Top of the Pops', 'The Tube', 'Later... with Jools Holland'], difficulty: 'hard', artist: 'Area Code 615', track: 'Stone Fox Chase' },
+  { slug: 'theme-124', correct: 'Whatever Happened to the Likely Lads?', incorrect: ['Porridge', 'Rising Damp', 'Man About the House'], difficulty: 'hard', artist: 'Highly Likely', track: 'Whatever Happened to You' },
+  { slug: 'theme-125', correct: 'Brideshead Revisited', incorrect: ['The Jewel in the Crown', 'Upstairs, Downstairs', 'The Forsyte Saga'], difficulty: 'hard', artist: 'Geoffrey Burgon', track: 'Brideshead Revisited' },
+  { slug: 'theme-126', correct: 'Roobarb', incorrect: ['Mr Benn', 'Ivor the Engine', 'Bod'], difficulty: 'hard', artist: 'Johnny Hawksworth', track: 'Roobarb' },
+  { slug: 'theme-127', correct: 'Detectorists', incorrect: ["Mackenzie Crook's Worzel Gummidge", 'This Country', 'The Durrells'], difficulty: 'hard', artist: 'Johnny Flynn', track: 'Detectorists' },
+  { slug: 'theme-128', correct: 'Superstars', incorrect: ['A Question of Sport', 'Pot Black', "It's a Knockout"], difficulty: 'hard', artist: 'Johnny Pearson', track: 'Heavy Action' },
 ];
 
 /** The world-famous American ones, counted against the one-in-six cap. */
 export const AMERICAN_THEMES: readonly string[] = [
   'theme-067', 'theme-068', 'theme-070', 'theme-071', 'theme-072',
   'theme-073', 'theme-082', 'theme-083', 'theme-084',
+  'theme-105', 'theme-106', 'theme-113',
 ];
