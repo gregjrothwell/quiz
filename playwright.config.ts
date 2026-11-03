@@ -25,5 +25,7 @@ export default defineConfig({
     url: 'http://127.0.0.1:4173/quiz/',
     reuseExistingServer: !process.env.CI,
   },
-  projects: [{ name: 'chromium', use: { browserName: 'chromium' } }],
+  // Stable Google Chrome (channel), not Playwright's bundled Chromium — clears
+  // Chromium KEVs that lag Chrome Stable (PROJ-104 / CVE-2026-87491).
+  projects: [{ name: 'chrome', use: { channel: 'chrome' } }],
 });
