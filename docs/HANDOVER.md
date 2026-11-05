@@ -104,8 +104,8 @@ scoring 500 + rank 500/400/300/200/100.
 11. **`firstMs` is not deterring** ([`first-touch.md`](decisions/first-touch.md)). 29 Oct, Y86U (GK, 10s): one player's first touch
     was under 1s on 14 of 15 questions (5 of 15 the day before), changed after on 10; another snapped 11 of 15 and kept
     seven finals under 1s. **Closed 29 Oct: lock it in is live** (#178, Greg); the 0ms was the clock's 100ms tick (#176).
-12. **Closed 29 Oct (Greg): Cass's slow question-one write.** 2.4–4.8s on 22, 23 and 26 Oct; 0.1–0.2s on all four
-    of 27–29 Oct (`read-owed`). The 3s lit-lamp hold stays (#140, [`cass-q1.md`](decisions/cass-q1.md)).
+12. **Reopened 5 Nov: question one's slow write. Greg picked keep-warm plus timing, on a branch, not live.** Closed 29 Oct on four fast rounds, which were all short lobbies. Across 103 traces, 0 of 43 writes under 80s in the room took over 1.5s, against 10 of 60 at 80s or more; Cass 7 of 7. Inference: the first write after the SDK's 60s idle close.
+    SB88, 5 Nov, 15s: four of seven writes over 1.5s, Cass 6.4s missed the fold by ~0.2s, JR 9.0s refused by the 8s arrival grace, unseen. The 3s hold saved two and lost these, and stays. The slow pre-game facts are timed by the same release. Check and options: [`cass-q1-cold-write.md`](decisions/cass-q1-cold-write.md).
 13. **Closed 29 Oct — reveal over Firestore Lite (#71)**: Y86U's 15 reveals, vault step median 51ms (37–122ms, one
     1,077ms), against 71ms in a browser on 7 Oct ([`office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md#4-the-slow-reveal)).
 14. **Loose ends from 26–27 September**: five new tunes transcribed to nothing

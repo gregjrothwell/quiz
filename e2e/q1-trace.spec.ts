@@ -2,6 +2,7 @@ import { expect, test, type Browser, type BrowserContext, type Page } from '@pla
 import {
   connectFirestoreEmulator,
   deleteDoc,
+  doc,
   getDoc,
   getFirestore,
   serverTimestamp,
@@ -73,7 +74,9 @@ function builtTrace(uid: string, gameId: string): Q1TraceDoc {
     visibleSince: 990_000,
     device: 'linux',
     network: '4g',
+    lastWarmAt: 970_000,
   });
+  tracer.timedStart({ dealMs: 1_200, packMs: 800, askedMs: 300, formMs: 400, dealWriteMs: 90 });
   clock = 1_004_000;
   const token = tracer.tapped({ gameId, index: 0, elapsedMs: 4_000 });
   clock = 1_004_250;
@@ -119,6 +122,8 @@ test('AC7 deny: no second write, nobody else’s, no extra field, no reading, se
   expect(await denied(writeQ1Trace(db, { ...trace, optionIndex: 2 } as Q1TraceDoc))).toBe(true);
   // Out of bounds.
   expect(await denied(writeQ1Trace(db, { ...trace, ackMs: 900_000 }))).toBe(true);
+  expect(await denied(writeQ1Trace(db, { ...trace, dealMs: 900_000 }))).toBe(true);
+  expect(await denied(writeQ1Trace(db, { ...trace, warmAgoMs: -1 }))).toBe(true);
   // A client clock in place of the server's.
   expect(
     await denied(setDoc(traceRef(db, gameId, cass.uid), { ...trace, at: Timestamp.fromMillis(1) })),
@@ -169,6 +174,29 @@ async function traceOf(gameId: string, uid: string): Promise<Record<string, unkn
   return (await admin().doc(`q1Traces/${gameId}_${uid}`).get()).data();
 }
 
+test('keep-warm allow: deleting your own answer that is not there, as the lobby does', async () => {
+  const cass = await player();
+  const db = lite(cass);
+  const code = `W${Date.now().toString(36).slice(-3).toUpperCase()}`;
+  const answer = doc(db, 'rooms', code, 'answers', cass.uid);
+
+  await deleteDoc(answer);
+
+  expect((await admin().doc(`rooms/${code}/answers/${cass.uid}`).get()).exists).toBe(false);
+  await cass.close();
+});
+
+test('keep-warm deny: deleting somebody else\'s answer', async () => {
+  const cass = await player();
+  const other = await player();
+  const code = `W${Date.now().toString(36).slice(-3).toUpperCase()}`;
+
+  expect(await denied(deleteDoc(doc(lite(cass), 'rooms', code, 'answers', other.uid)))).toBe(true);
+
+  await cass.close();
+  await other.close();
+});
+
 test('AC1–AC4 through the app: question one leaves one trace per device', async ({ browser }) => {
   test.setTimeout(120_000);
 
@@ -215,6 +243,16 @@ test('AC1–AC4 through the app: question one leaves one trace per device', asyn
   const hostTrace = await until(() => traceOf(gameId, uidOf(opened, 'Host')), (kept) => kept !== undefined);
   expect(hostTrace).toMatchObject({ writes: 0, counted: false });
   expect(hostTrace).not.toHaveProperty('ackMs');
+
+  // #and the host's says where Start the show spent its time; Ann pressed nothing
+  for (const key of ['dealMs', 'packMs', 'askedMs', 'formMs', 'dealWriteMs']) {
+    expect(typeof hostTrace?.[key], key).toBe('number');
+    expect(annTrace, key).not.toHaveProperty(key);
+  }
+
+  // #and both devices had a keep-warm acknowledged before question one
+  expect(typeof annTrace?.['warmAgoMs']).toBe('number');
+  expect(typeof hostTrace?.['warmAgoMs']).toBe('number');
 
   await host.context.close();
   await ann.context.close();

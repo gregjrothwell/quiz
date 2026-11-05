@@ -243,6 +243,12 @@ function probeTrace(uid: string): Q1TraceDoc {
     dropped: 'window',
     revealMs: 10_300,
     counted: true,
+    warmAgoMs: 30_000,
+    dealMs: 1_200,
+    packMs: 800,
+    askedMs: 300,
+    formMs: 400,
+    dealWriteMs: 90,
   };
 }
 
@@ -1524,6 +1530,20 @@ function buildChecks(probes: Probes): Check[] {
         // Swept, so the preflight leaves nothing behind.
         return deleteDoc(reference);
       },
+    },
+    {
+      // What every device in a lobby does each 45s (cass-q1-cold-write.md).
+      label: 'Firestore   · keep-warm: delete your own answer that is not there',
+      expect: 'allow',
+      hint: 'firestore.rules no longer lets a player delete their own answer. The lobby '
+        + 'keep-warm is refused, and a refusal closes the write stream it is there to keep open',
+      run: () => deleteDoc(doc(db, 'rooms', 'RCHK', 'answers', uid)),
+    },
+    {
+      label: 'Firestore   · keep-warm: delete somebody else\'s answer',
+      expect: 'deny',
+      hint: 'firestore.rules lets one player delete another\'s answer, which would erase it',
+      run: () => deleteDoc(doc(db, 'rooms', 'RCHK', 'answers', uidB)),
     },
     {
       label: 'Firestore   · file a trace as somebody else',

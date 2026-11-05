@@ -51,6 +51,7 @@ import { useGameLog } from './lib/useGameLog';
 import { loadAsked, loadForm, recordAsked, recordGame, type Banked } from './lib/season';
 import { answerStillInFlight } from './host/due';
 import { dealRound } from './host/prepare';
+import { createStartTimer } from './host/startTiming';
 import type { PackPorts } from './host/ports';
 import { play } from './lib/sound';
 import { useStillPreload } from './lib/stills';
@@ -210,6 +211,7 @@ function Game() {
     leave,
     dispatch,
     submitAnswer,
+    noteRoundStart,
     writeOwnSquad,
     writeOwnVote,
     writeBrowsing,
@@ -503,8 +505,10 @@ function Game() {
       // Survey Says deals its own ten at no level, so it says nothing about the next round.
       if (packId !== 'survey') setLastDeal({ count, level });
       // Dealing, and remembering what was dealt, is `src/host/prepare.ts`.
-      dealRound({ packId, count, level, jigsawEnabled, chaserEnabled }, PACK_PORTS)
+      const startTimer = createStartTimer(Date.now, PACK_PORTS);
+      dealRound({ packId, count, level, jigsawEnabled, chaserEnabled }, startTimer.ports)
         .then(async ({ questions, ladderNotices, remember }) => {
+          startTimer.dealt();
           const pack = packs.find((entry) => entry.id === packId);
 
           /*
@@ -546,6 +550,7 @@ function Game() {
             playerId: player.playerId ?? uid,
           }));
           const records = await loadForm(roster).catch(() => []);
+          startTimer.formRead();
           const facts = formFor(records);
           // Kept on the room for the Commentator: "first win" on every screen alike.
           const history = Object.fromEntries(
@@ -597,13 +602,16 @@ function Game() {
                   ]),
           ]);
 
+          startTimer.written();
+          noteRoundStart(startTimer.timing());
+
           // After the round is safely under way, for the same reason.
           await remember();
         })
         .catch(report)
         .finally(() => setBusy(false));
     },
-    [dispatch, packs, report, room?.players, room?.double],
+    [dispatch, noteRoundStart, packs, report, room?.players, room?.double],
   );
 
   const handleAnswer = useCallback(

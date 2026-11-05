@@ -895,7 +895,7 @@ service cloud.firestore {
 
       allow create: if request.auth != null
         && trace().keys().hasAll(['gameId', 'roomCode', 'uid', 'durationMs', 'correctionMs', 'priorSamples', 'writes', 'device', 'at'])
-        && trace().keys().hasOnly(['gameId', 'roomCode', 'uid', 'durationMs', 'correctionMs', 'priorSamples', 'writes', 'device', 'network', 'seenAfterOpenMs', 'serverOffsetMs', 'visibleForMs', 'tapMs', 'tapElapsedMs', 'ackMs', 'refused', 'dropped', 'revealMs', 'counted', 'at'])
+        && trace().keys().hasOnly(['gameId', 'roomCode', 'uid', 'durationMs', 'correctionMs', 'priorSamples', 'writes', 'device', 'network', 'seenAfterOpenMs', 'serverOffsetMs', 'visibleForMs', 'tapMs', 'tapElapsedMs', 'ackMs', 'refused', 'dropped', 'revealMs', 'counted', 'warmAgoMs', 'dealMs', 'packMs', 'askedMs', 'formMs', 'dealWriteMs', 'at'])
         && trace().uid == request.auth.uid
         && trace().gameId is string
         && trace().gameId.size() > 0
@@ -916,6 +916,12 @@ service cloud.firestore {
         && intIn('tapElapsedMs', 0, 600000)
         && intIn('ackMs', 0, 600000)
         && intIn('revealMs', 0, 600000)
+        && intIn('warmAgoMs', 0, 86400000)
+        && intIn('dealMs', 0, 600000)
+        && intIn('packMs', 0, 600000)
+        && intIn('askedMs', 0, 600000)
+        && intIn('formMs', 0, 600000)
+        && intIn('dealWriteMs', 0, 600000)
         && textUpTo('network', 16)
         && textUpTo('refused', 40)
         && (!('dropped' in trace().keys()) || trace().dropped in ['phase', 'window'])
