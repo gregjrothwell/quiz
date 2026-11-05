@@ -6,11 +6,9 @@ import {
   formatCass,
   formatDouble,
   formatErrors,
-  formatGeekend,
   formatHigher,
   formatOwedChecks,
   formatThemes,
-  GEEKEND_SEASON,
   type KeptRound,
 } from './owed-checks';
 
@@ -134,26 +132,6 @@ describe('formatCass', () => {
   });
 });
 
-describe('formatGeekend', () => {
-  test('says when the asked collection is empty', () => {
-    const text = formatGeekend([], {});
-    expect(text).toContain(`seasons/${GEEKEND_SEASON}/asked is empty`);
-    expect(GEEKEND_SEASON).toBe('season-2-geekend');
-  });
-
-  test('reports a doc that exists, and the office count beside it', () => {
-    const text = formatGeekend(
-      [{ packId: 'themes', ids: 15 }, { packId: 'higher', ids: null }],
-      { themes: 40, higher: null },
-    );
-    expect(text).toContain('themes: Geekend doc exists, 15 ids');
-    expect(text).toContain('season-2/asked/themes has 40 ids');
-    expect(text).toContain('higher: Geekend doc exists, ids unreadable');
-    expect(text).toContain('season-2/asked/higher is absent');
-    expect(text).toContain('cannot show that the office document was left unchanged');
-  });
-});
-
 describe('formatOwedChecks', () => {
   test('prints the owed sections, in the handover\'s order', () => {
     const text = formatOwedChecks({
@@ -162,8 +140,6 @@ describe('formatOwedChecks', () => {
       gamesUnreadable: 0,
       cassLines: [],
       tracesRead: 0,
-      geekendAsked: [],
-      officeAsked: {},
       errors: { groups: [], probes: 0, since: '1d' },
       cannon: [],
     });
@@ -172,7 +148,6 @@ describe('formatOwedChecks', () => {
       'Theme Tunes, hit rate by level',
       'Higher or Lower',
       'Cass, question one',
-      'Geekend asked',
       'Errors players saw, last 1d',
       'Slop Cannon, Keep and Bin',
     ];

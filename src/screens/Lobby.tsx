@@ -16,7 +16,6 @@ import {
 } from '../engine/packVote';
 import { STEAL_SHARE } from '../engine/scoring';
 import { resolveHost } from '../engine/host';
-import type { HistoryGroup } from '../engine/askedHistory';
 import { SQUADS } from '../engine/squad';
 import { rememberSquad, rememberedSquad } from '../lib/rememberedSquad';
 import { play, useSound } from '../lib/sound';
@@ -116,7 +115,6 @@ interface LobbyProps {
     jigsawEnabled: boolean,
     standoffEnabled: boolean,
     chaserEnabled: boolean,
-    history: HistoryGroup,
     doubleEnabled: boolean,
     cannon: Loaded,
   ) => void;
@@ -196,14 +194,6 @@ export function Lobby({
   const [jigsaw, setJigsaw] = useState(false);
   // The Slop Cannon: each shot unloaded until the quizmaster loads it (B2).
   const [loaded, setLoaded] = useState<ReadonlySet<string>>(() => new Set());
-  /*
-    Geekend are a separate group who have seen none of the questions, so their
-    rounds deal from and bank into a history of their own
-    (`src/engine/askedHistory.ts`). Starts on Geekend when the quizmaster is
-    one, and is a switch rather than inferred because a Geekend quizmaster can
-    still host the office.
-  */
-  const [history, setHistory] = useState<HistoryGroup>(squad === 'Geekend' ? 'geekend' : 'office');
   const [durationSecs, setDurationSecs] = useState<number>(DEFAULT_DURATION_SECS);
   /*
     The way out for somebody who never got asked.
@@ -640,36 +630,6 @@ export function Lobby({
           )}
 
           <div className="stack">
-            <p className="eyebrow">Who’s playing</p>
-            <div className="picker">
-              <button
-                type="button"
-                className="pick"
-                aria-pressed={history === 'office'}
-                onClick={() => setHistory('office')}
-              >
-                <b>The office</b>
-                <span>Questions the office hasn’t had</span>
-              </button>
-              <button
-                type="button"
-                className="pick"
-                aria-pressed={history === 'geekend'}
-                onClick={() => setHistory('geekend')}
-              >
-                <b>Geekend</b>
-                <span>Questions Geekend haven’t had</span>
-              </button>
-            </div>
-            {history === 'geekend' ? (
-              <p className="muted hint">
-                Geekend keep their own list of questions already asked, so this round can use
-                ones the office has had, and doesn’t use any up for the office.
-              </p>
-            ) : null}
-          </div>
-
-          <div className="stack">
             <p className="eyebrow">How it ends</p>
             <div className="picker">
               <button
@@ -823,7 +783,6 @@ export function Lobby({
                 jigsaw,
                 standoff,
                 chaser && !survey,
-                history,
                 double,
                 // Only what is still on offer: a shot pulled since it was
                 // loaded is not fired.
