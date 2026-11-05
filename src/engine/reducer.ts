@@ -6,8 +6,8 @@ import { BONUS_MULTIPLIER, isBonusCatchphrase } from './catchphraseBonus';
 import { questionPack } from './randomRound';
 import { stealFor, tallyQuestion } from './scoring';
 import { friesPick, roomTakes } from './chaser';
-import { isHalfTime, morningTotals } from './double';
-import { finalistsFor, settleStandoff, stakesFor, type StandoffPick } from './standoff';
+import { finalistsAfterLast, isHalfTime, morningTotals } from './double';
+import { settleStandoff, stakesFor, type StandoffPick } from './standoff';
 import { isTell } from './survey';
 import {
   currentQuestion,
@@ -580,9 +580,23 @@ function skip(state: RoomState): RoomState {
   };
 }
 
+/**
+ * The results, leaving nothing of the last question behind.
+ */
+function toFinished(state: RoomState): RoomState {
+  return { ...state, phase: 'finished', answers: {}, lastDeltas: {}, lastSteal: null, lastPicks: {} };
+}
+
 function next(state: RoomState, at: number): RoomState {
   if (state.phase === 'reveal') {
-    return { ...state, phase: 'scoreboard' };
+    /*
+      The last question goes straight to the results unless a final follows. A
+      full table with the winner on top, one press before the drum roll, left the
+      podium nothing to reveal. docs/decisions/round-end.md. Before a final the
+      table stays: it is who is about to play, and for how much.
+    */
+    const isLast = state.index + 1 >= state.questions.length;
+    return isLast && !finalistsAfterLast(state) ? toFinished(state) : { ...state, phase: 'scoreboard' };
   }
 
   if (state.phase === 'scoreboard') {
@@ -590,15 +604,9 @@ function next(state: RoomState, at: number): RoomState {
     if (nextIndex >= state.questions.length) {
       // Round one of a double ends at half-time: its final, if the room chose
       // one, is played on the whole morning at the end of round two.
-      const halfTime = state.doubleEnabled && state.double === null;
-      // After the wager has been paid on the last question, so a stake that
-      // came off is what decides who reaches the final. On the morning in
-      // round two of a double, which outside one is just the round.
-      const morning = morningTotals(state);
-      const finalists = state.standoffEnabled && !halfTime
-        ? finalistsFor(state.players, morning, state.gameId ?? '')
-        : null;
+      const finalists = finalistsAfterLast(state);
       if (finalists) {
+        const morning = morningTotals(state);
         return {
           ...state,
           phase: 'standoff',
@@ -615,7 +623,7 @@ function next(state: RoomState, at: number): RoomState {
           },
         };
       }
-      return { ...state, phase: 'finished', answers: {}, lastDeltas: {}, lastSteal: null, lastPicks: {} };
+      return toFinished(state);
     }
     return {
       ...state,
@@ -633,7 +641,7 @@ function next(state: RoomState, at: number): RoomState {
   // take the room to the results before anything had been decided.
   if (state.phase === 'standoff') {
     if (state.standoff?.stage !== 'revealed') return state;
-    return { ...state, phase: 'finished', answers: {}, lastDeltas: {}, lastSteal: null, lastPicks: {} };
+    return toFinished(state);
   }
 
   return state;

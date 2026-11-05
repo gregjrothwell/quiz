@@ -87,6 +87,19 @@ describe('at the podium', () => {
     expect(finished({ ann: { played: 9, wins: 2, best: 6_000 } })?.text).toBe('Ann again. That makes 3.');
   });
 
+  test('no season best from a double: two rounds against one round’s best is no record', () => {
+    const double = commentFor(
+      room({
+        phase: 'finished',
+        scores: { ann: 5_000, bob: 3_000 },
+        history: { ann: { played: 9, wins: 2, best: 4_000 } },
+        double: { gameId: 'first', scores: {} },
+      }),
+      'podium',
+    );
+    expect(double?.fact).toBe('againWinner');
+  });
+
   test('nothing for a dead heat, or a winner the season knows nothing about', () => {
     expect(commentFor(room({ phase: 'finished', scores: { ann: 5_000, bob: 5_000 } }), 'podium')).toBeNull();
     expect(finished({})).toBeNull();

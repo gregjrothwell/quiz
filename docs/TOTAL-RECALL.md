@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 2 November 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 5 November 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -23,6 +23,14 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
+
+## 2026-11-05 — Built, not live: Geekend's option goes, the end of a round told once (PROJ-116)
+
+Greg: "remove geekend - do what's most logical on the rest and flag if unsure." Never played; the squad stays. Lobby remembers, one How it ends, plain half-time, straight to the podium with no final. [`round-end.md`](decisions/round-end.md).
+
+## 2026-11-05 — Question one's slow write reopened: it follows the lobby, not Cass (nothing built)
+
+Correction to Outstanding 12's close of 29 Oct: those four fast rounds were short lobbies. No write under 80s in the room took over 1.5s (0 of 43); Cass 7 of 7 at 80s or more. SB88 lost two answers, one to the fold, one to `arrivalOk`, the first refusal measured. [`cass-q1-cold-write.md`](decisions/cass-q1-cold-write.md).
 
 ## 2026-11-02 — Live: #190 (gh-pages `410c17a`): question cleanup, Theme Tunes swap, "not locked"
 
@@ -125,17 +133,10 @@ Greg: "Go live with #113 as soon as it's green." Merged `1f5fb8a` one second aft
 
 Greg: "Go live with #111, then #114 — merge each as soon as it's green." Merged `8fe1628` and `0556d32`; rules published 07:43Z (S2), gh-pages `324a6bd` 07:45Z, Pages 07:46Z. Live `index-CYR8cluB`, 14/14 assets byte-identical; Firebase chunk now `firebase-DwYnjfYh`. `check-rules` 133/0 with S2's allow cases; `rank-harness` EBSW green; What's new shows #109's lines. Not done: a browser lobby vote on live — the quizmaster has no vote cards and the built-in browser is one identity; covered by check-rules' live member vote and #111's e2e. [`security-sweep-oct-2026.md`](decisions/security-sweep-oct-2026.md).
 
-## 2026-10-22 — #110 live: landing links beside Join, the sound check stops (#109)
+## 2026-10-02 to 2026-10-22 — archived, one line each
 
-Greg: "Go live with #109 once CI is green, via a release branch." `release-2026-10-22-2` (merge `87a4cc4`), PR #110 green, merged `2905df7`; master run 39736707403 published rules then gh-pages `5fdd041`; Pages built 06:59Z in 48s. Live `index-BmjDGoTc` byte-identical to local; `check-rules` 129/0 before and after; local e2e 18/18. Live checks: links 623–676 at 1280×720 (were 719–772), sound check play/stop/reset by real clicks. This corrects "not live" in the entry below.
-
-## 2026-10-22 — Landing links beside Join; the sound check stops on a second press
-
-Greg: Season table / What's new sat "too low" on his MacBook. Measured: at 1280×720 the row was wholly below the fold, because it followed the taller Join panel. Now it sits in the grid under "Run the show" (`split--landing`); a phone still stacks it last. Sound check: one button, play then stop, label follows `sound.ts` ([`sound-check.md`](decisions/sound-check.md#a-second-press-stops-it--22-october-2026)). Branch `landing-links-sound-stop`, not live.
-Same day, the direction review — security sweep (CI install scripts with the rules key; vote fields unbounded), the Lab for beta tests, five wow ideas all accepted: [`direction-oct-2026.md`](decisions/direction-oct-2026.md).
-
-## 2026-10-02 to 2026-10-15 — archived, one line each
-
+- **2026-10-22** — [#110 live: landing links beside Join, the sound check stops (#109)](recall/2026-10.md#2026-10-22--110-live-landing-links-beside-join-the-sound-check-stops-109)
+- **2026-10-22** — [Landing links beside Join; the sound check stops on a second press](recall/2026-10.md#2026-10-22--landing-links-beside-join-the-sound-check-stops-on-a-second-press)
 Moved verbatim to [`recall/2026-10.md`](recall/2026-10.md) on 7 October, at 300 lines; the first two on 12 October, at 294; the three from 5 October on 14 October, at 299; Mr Fries' choice on 15 October, at 303; Sleeves 168 the same day, at 303 again; the two 6 October pack-growth entries the same day again, at 306 with W3's; #68 and Blankety Blank built the same night, at 309 with the W3 release entry; the first office rounds of #67 and #68 the same night again, at 304 with the go-live; The Price Was Right built on 17 October, at 302 with #91's go-live; #70 and #69 on 20 October, at 296, with the Random Round, lobby and Price is Right entry; the two 7 October entries on 21 October, at 302 with #98's go-live; the two 12 October go-lives on 21 October, at 306 with #104's go-live; the 8 and 14 October lobby-vote entries on 22 October, at 302 with #107's go-live; the two 15 October vote-taps entries the same day, at 301 with #110's go-live; the two 15 October reveal-name entries the same day, at 301 with #113's go-live; W1's TMDB branch and the productionisation plan, both 15 October, the same day, at 300 with release 2026-10-22-3's go-live; W2's `rules-from-ci` branch, 15 October, the same night, at 297 with #138's go-live; #91's go-live and the three 15 October W3 entries on 24 October, at 299, ahead of a release carrying five spine entries; the 20 October entry and #94's and #96's go-lives, 21 October, on 28 October, at 306 with #160's rivals entries; the question-one trace and Cass's question one, 21 October, the same day, at 301 with #161's in release 2026-10-28; the game-show moments and #98's go-live, 21 October, the same day again, at 303 with the rivals backfill; #100's go-live, 21 October, on 29 October, at 301 with PROJ-77; finals history built, 21 October, the same day, at 302 with release #179's go-live; call it built, 21 October, on 30 October, at 303 with #182's go-live; #104's go-live and the finals backfill, both 21 October, on 31 October, at 304 with #184's; #107's go-live and its release, both 22 October, on 2 November, at 302 with #190's.
 
 - **2026-10-22** — [#107 live: What's new page + #90 (W3 scripts)](recall/2026-10.md#2026-10-22--107-live-whats-new-page--90-w3-scripts)

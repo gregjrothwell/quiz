@@ -1,6 +1,6 @@
 # Cass loses question one
 
-> **Owner: Greg Rothwell. Last updated: 27 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 5 November 2026. Budget: 250 lines. Continues in [`cass-q1-cold-write.md`](cass-q1-cold-write.md).**
 
 Follows [`office-feedback-9-oct.md`](office-feedback-9-oct.md) §1 and §5, whose leading
 hypothesis this replaces. Read off live `games/` with the Admin SDK on 21 October 2026, every
@@ -60,7 +60,7 @@ September); what changed is 10s rounds and Catchphrase on question one.
 `arrivalOk` in `firestore.rules` refuses an answer landing more than 8s after
 `openedAt + elapsedMs`. Every lag measured is ≤5.5s, so these answers most likely **landed and
 were too late for the fold**, rather than being refused. A refused one leaves no trace either,
-so this is inference from the survivors, not a reading of the misses.
+so this is inference from the survivors, not a reading of the misses. **Corrected 5 Nov:** JR's 9.0s write in SB88 was refused.
 
 ## "No message" — read in code, not tested
 
@@ -192,7 +192,7 @@ the third trace, the round before it, is 0.2s.
 App Check token before opening it again. Five other fresh tabs in SWNU had been open as long
 as Cass's and acknowledged in 0.1–0.3s. A warmup at round start would be guessing, and it
 needs a main-SDK write the rules already allow without a stale room update clobbering the
-question. Not done.
+question. Not done. **Corrected 5 Nov:** no write under 80s in the room has been slow; idle looks necessary, not sufficient.
 
 **The hold.** The clock reveal waits while a seated player's lamp is lit and their answer has
 not landed, for up to 3s after the gate (`IN_FLIGHT_HOLD_MS` in `src/host/due.ts`). The lamp

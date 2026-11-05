@@ -49,8 +49,9 @@ export const FACES = [`400 96px ${SHOUT}`, `600 32px ${TECH}`, `700 32px ${TECH}
  * `cardModel` exists to prevent. The engine hands over names; the wording lives
  * here and there, on the same split as the awards panel.
  */
-function headline(winners: readonly string[]): string {
+function headline(winners: readonly string[], double: boolean): string {
   if (winners.length === 0) return 'That’s a wrap';
+  if (double) return `${winners.join(' & ')} ${winners.length > 1 ? 'share' : 'wins'} The Double`;
   if (winners.length > 1) return `${winners.join(' & ')} — dead heat`;
   return `${winners[0]} takes it`;
 }
@@ -344,13 +345,13 @@ export async function drawCard(card: CardModel): Promise<Blob> {
   ctx.fillStyle = INK;
   fitted(
     ctx,
-    headline(card.winners),
+    headline(card.winners, card.double),
     (s) => `400 ${s}px ${SHOUT}, Impact, sans-serif`,
     CARD_WIDTH - 112,
     82,
     36,
   );
-  ctx.fillText(headline(card.winners), 56, 156);
+  ctx.fillText(headline(card.winners, card.double), 56, 156);
 
   drawPodium(ctx, card, 494);
 
@@ -371,7 +372,7 @@ export async function drawCard(card: CardModel): Promise<Blob> {
   ctx.fillStyle = INK_DIM;
   ctx.font = `600 18px ${TECH}, monospace`;
   ctx.fillText(
-    `${card.questionCount} QUESTIONS · ${new Date(card.at).toLocaleDateString('en-GB', {
+    `${card.questionCount === null ? '' : `${String(card.questionCount)} QUESTIONS · `}${new Date(card.at).toLocaleDateString('en-GB', {
       day: 'numeric',
       month: 'long',
       year: 'numeric',

@@ -35,6 +35,24 @@ export const TRACE_DROPS = ['phase', 'window'] as const;
 export type TraceDrop = (typeof TRACE_DROPS)[number];
 
 /**
+ * Where **Start the show** spent its time, on the quizmaster's device only.
+ * Absent on everyone else's, and on a step that never ran.
+ * See docs/decisions/cass-q1-cold-write.md.
+ */
+export interface RoundStartTiming {
+  /** The press to the round being dealt: pack, question history, and rates if any. */
+  dealMs?: number;
+  /** The slowest pack fetch inside that. */
+  packMs?: number;
+  /** The slowest question-history read inside that. */
+  askedMs?: number;
+  /** The season rows behind the pre-game facts. */
+  formMs?: number;
+  /** The room write that follows, sent to acknowledged. */
+  dealWriteMs?: number;
+}
+
+/**
  * The document. Every duration is whole milliseconds on this device's clock
  * except `serverOffsetMs`, and the relative ones count from the moment this
  * device first saw question one confirmed by the server.
@@ -75,6 +93,13 @@ export interface Q1TraceDoc {
   revealMs?: number;
   /** Whether the reveal scored this player. Absent when the reveal itself was never seen. */
   counted?: boolean;
+  /** How long before question one a keep-warm was last acknowledged. Absent: none ever was. */
+  warmAgoMs?: number;
+  dealMs?: number;
+  packMs?: number;
+  askedMs?: number;
+  formMs?: number;
+  dealWriteMs?: number;
 }
 
 /** Every key the document can carry — `firestore.rules` lists exactly these plus `at`. */
@@ -98,6 +123,12 @@ export const TRACE_KEYS = [
   'dropped',
   'revealMs',
   'counted',
+  'warmAgoMs',
+  'dealMs',
+  'packMs',
+  'askedMs',
+  'formMs',
+  'dealWriteMs',
 ] as const satisfies readonly (keyof Q1TraceDoc)[];
 
 /** The bounds the rules hold, so a strange reading is clamped rather than refusing the trace. */
@@ -123,6 +154,8 @@ export interface SeenQuestion {
   visibleSince: number | null;
   device: TraceDevice;
   network: string | null;
+  /** When this device last had a keep-warm acknowledged, or null if it never has. */
+  lastWarmAt: number | null;
 }
 
 /** Any snapshot of the room: where it has got to, and who the last reveal scored. */
@@ -156,6 +189,8 @@ interface Observation {
   dropped: TraceDrop | null;
   revealAt: number | null;
   counted: boolean | null;
+  warmAgoMs: number | null;
+  start: RoundStartTiming | null;
 }
 
 export interface Q1Tracer {
@@ -167,7 +202,11 @@ export interface Q1Tracer {
   settled(token: number, refused?: string): void;
   /** This device left the room: write what is known. */
   leave(): void;
+  /** The quizmaster's timings for the round being started. */
+  timedStart(timing: RoundStartTiming): void;
 }
+
+const START_KEYS = ['dealMs', 'packMs', 'askedMs', 'formMs', 'dealWriteMs'] as const;
 
 function clamp(value: number, low: number, high: number): number {
   return Math.min(high, Math.max(low, Math.round(value)));
@@ -203,6 +242,11 @@ export function toTraceDoc(seen: Observation): Q1TraceDoc {
   if (seen.dropped !== null) trace.dropped = seen.dropped;
   if (seen.revealAt !== null) trace.revealMs = span(seen.revealAt - seen.seenAt);
   if (seen.counted !== null) trace.counted = seen.counted;
+  if (seen.warmAgoMs !== null) trace.warmAgoMs = clamp(seen.warmAgoMs, 0, SKEW_LIMIT_MS);
+  for (const key of START_KEYS) {
+    const value = seen.start?.[key];
+    if (value !== undefined) trace[key] = span(value);
+  }
   return trace;
 }
 
@@ -218,6 +262,9 @@ export function createQ1Tracer({
   // start a second trace for the same round. The rules refuse an update anyway;
   // this keeps the refusal from ever being sent.
   const done = new Set<string>();
+  // Timings noted before their question one has been seen. The first question
+  // one after takes them, so the next round cannot inherit them.
+  let pendingStart: RoundStartTiming | null = null;
 
   /** Write the open trace if it is complete — or regardless, when `force`. */
   function flush(force: boolean): void {
@@ -273,7 +320,10 @@ export function createQ1Tracer({
         dropped: null,
         revealAt: null,
         counted: null,
+        warmAgoMs: seen.lastWarmAt === null ? null : seen.arrivedAt - seen.lastWarmAt,
+        start: pendingStart,
       };
+      pendingStart = null;
     },
 
     sawRoom(room) {
@@ -322,6 +372,13 @@ export function createQ1Tracer({
 
     leave() {
       flush(true);
+    },
+
+    timedStart(timing) {
+      // A round with no titles writes `start` itself, so its question one can
+      // arrive before this does.
+      if (open) open.start = timing;
+      else pendingStart = timing;
     },
   };
 }
@@ -383,7 +440,7 @@ export function parseTrace(data: unknown): Q1TraceDoc | null {
     writes,
     device: knownDevice,
   };
-  for (const key of ['seenAfterOpenMs', 'serverOffsetMs', 'visibleForMs', 'tapMs', 'tapElapsedMs', 'ackMs', 'revealMs'] as const) {
+  for (const key of ['seenAfterOpenMs', 'serverOffsetMs', 'visibleForMs', 'tapMs', 'tapElapsedMs', 'ackMs', 'revealMs', 'warmAgoMs', ...START_KEYS] as const) {
     const value = raw[key];
     if (value === undefined) continue;
     if (!isInt(value)) return null;

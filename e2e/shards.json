@@ -32,5 +32,8 @@
     "e2e/asked-history.spec.ts",
     "e2e/lobby-vote.spec.ts",
     "e2e/season-bank.spec.ts"
+  ],
+  [
+    "e2e/round-end.spec.ts"
   ]
 ]

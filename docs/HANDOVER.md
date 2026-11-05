@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 2 November 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 5 November 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -19,6 +19,7 @@ Built to replace Polly in Teams.
 | repeats and the question history; staking points on the last question; **the Share or Shaft final** (live with #60, 24 Sep); **finals on the seats** (live 21 Oct, #104) | [`repeats.md`](decisions/repeats.md) · [`wager.md`](decisions/wager.md) · [`share-or-shaft.md`](decisions/share-or-shaft.md) · [`finals-history.md`](decisions/finals-history.md) |
 | the vault, reveals, answer secrecy, **the answer window**, and **a reveal that stalls** | [`vault.md`](decisions/vault.md) · [`answer-window.md`](decisions/answer-window.md) · [`reveal-delays.md`](decisions/reveal-delays.md) |
 | the season table, squads, `recordGame`, anything called `team`; the August board; squads **during** a round; **who you've beaten or lost to most** | [`season.md`](decisions/season.md) · [`season-shipped.md`](decisions/season-shipped.md) · [`live-squads.md`](decisions/live-squads.md) · [`rivals.md`](decisions/rivals.md) |
+| **the end of a round**, half-time, what the lobby remembers, How it ends; **why Geekend's option went** (PROJ-116) | [`round-end.md`](decisions/round-end.md) |
 | the opening titles, honours, rosettes | [`form-and-awards.md`](decisions/form-and-awards.md) |
 | `playerId`, recovery codes, claiming, the anonymous-account purge | [`identity.md`](decisions/identity.md) |
 | the clock and the countdown, and whose clock it runs on | [`clock.md`](decisions/clock.md) · [`shared-clock.md`](decisions/shared-clock.md) |
@@ -60,7 +61,7 @@ Built to replace Polly in Teams.
 **Live is `index-5KgGMvMQ`** (release #190, 2 Nov, merge `5e8240c`, gh-pages `410c17a`, Pages 13:45:05Z; 28/28 files byte-identical; rules unchanged): **question cleanup** (PROJ-96) — harvested prompts that lost their quote and US-only subjects filtered, seven retired by hand ([`question-votes.md`](decisions/question-votes.md)); **Theme Tunes 21 out, 21 in, 65** (blind; numbers only in `THEMES_DROPPED`, nobody has listened — the office round is the check); **"not locked"** on the reveal for an unlocked pick (PROJ-78; Greg kept lock-in, [`lock-in.md`](decisions/lock-in.md)); PROJ-97 hook test fix. Earlier: #182 styling pass, `index-0q-ot5PS`. **Owed from #179:** the office's first locked round and a phone (`read-games`); `read-owed` after a round that follows a deploy (PROJ-77); rivals backfill re-run about 31 Oct (PROJ-73); #168 in a real room (PROJ-75); `JIRA_API_TOKEN` (PROJ-72) — CI's Jira job moves nothing until then.
 Earlier live states: [`live-history.md`](decisions/live-history.md), then TOTAL-RECALL.
 **Owed for #154:** the first round with Mr Fries or the Double → `npm run read-cannon` shows its Keep/Bin (none played since; 0 shots, 29 Oct). **The beacon is proved live** — on 28 Oct it caught a tab open across #168's deploy failing to load the share card and Season (PROJ-77: reload once on `vite:preloadError`).
-**Live checks still owed** — `npm run read-owed` prints them. Settled 29 Oct: the Double (SC46, 26 Oct); Higher or Lower 81% right, inside 55–85; Theme Tunes once (easy 43%, medium 54%, hard 43% — too few to re-band). Still owed: the first Geekend round makes `season-2-geekend/asked/{pack}` and leaves `season-2`'s doc for that pack unchanged; the first office round under W3 (`read-games`); #79's long name; #77's lobby reload; **#104's first final and first Catchphrase call**. **Finals backfill written 21 Oct** (12 rows, read back); re-run the dry run in a few days, since an old bundle erases its own tallies. Firebase chunk `firebase-DwYnjfYh` since #111 (Vite 8.3.5), so returning players fetch it once.
+**Live checks still owed** — `npm run read-owed` prints them. Settled 29 Oct: the Double (SC46, 26 Oct); Higher or Lower 81% right, inside 55–85; Theme Tunes once (easy 43%, medium 54%, hard 43% — too few to re-band). Still owed: the first office round under W3 (`read-games`); #79's long name; #77's lobby reload; **#104's first final and first Catchphrase call**. **Finals backfill written 21 Oct** (12 rows, read back); re-run the dry run in a few days, since an old bundle erases its own tallies. Firebase chunk `firebase-DwYnjfYh` since #111 (Vite 8.3.5), so returning players fetch it once.
 **21 packs** + **Random Round** (six played packs dealt into one); **The Price Was Right 154**, **The Price is Right 81** and **Blankety Blank 148** (all blind); **Catchphrase 233** (every 5th a double-scoring bonus); **Name that Tune 424**; **Name the Artist 259**; synth **Classical**; **On the box 445**
 (hashed TMDB stills, at most 8 titles before 1990); **Flags** 76; **Sleeves 212**
 after seven candidate batches, the last pre-screened; picture is **Fine Art** 49.
@@ -103,8 +104,8 @@ scoring 500 + rank 500/400/300/200/100.
 11. **`firstMs` is not deterring** ([`first-touch.md`](decisions/first-touch.md)). 29 Oct, Y86U (GK, 10s): one player's first touch
     was under 1s on 14 of 15 questions (5 of 15 the day before), changed after on 10; another snapped 11 of 15 and kept
     seven finals under 1s. **Closed 29 Oct: lock it in is live** (#178, Greg); the 0ms was the clock's 100ms tick (#176).
-12. **Closed 29 Oct (Greg): Cass's slow question-one write.** 2.4–4.8s on 22, 23 and 26 Oct; 0.1–0.2s on all four
-    of 27–29 Oct (`read-owed`). The 3s lit-lamp hold stays (#140, [`cass-q1.md`](decisions/cass-q1.md)).
+12. **Reopened 5 Nov: question one's slow write. Greg picked keep-warm plus timing, on a branch, not live.** Closed 29 Oct on four fast rounds, which were all short lobbies. Across 103 traces, 0 of 43 writes under 80s in the room took over 1.5s, against 10 of 60 at 80s or more; Cass 7 of 7. Inference: the first write after the SDK's 60s idle close.
+    SB88, 5 Nov, 15s: four of seven writes over 1.5s, Cass 6.4s missed the fold by ~0.2s, JR 9.0s refused by the 8s arrival grace, unseen. The 3s hold saved two and lost these, and stays. The slow pre-game facts are timed by the same release. Check and options: [`cass-q1-cold-write.md`](decisions/cass-q1-cold-write.md).
 13. **Closed 29 Oct — reveal over Firestore Lite (#71)**: Y86U's 15 reveals, vault step median 51ms (37–122ms, one
     1,077ms), against 71ms in a browser on 7 Oct ([`office-feedback-7-oct.md`](decisions/office-feedback-7-oct.md#4-the-slow-reveal)).
 14. **Loose ends from 26–27 September**: five new tunes transcribed to nothing

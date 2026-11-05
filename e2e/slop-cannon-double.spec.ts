@@ -22,7 +22,7 @@ test('E4: a plain half-time asks nothing; the Double is asked at the end of the 
   await startRound(host, code, ['The Double']);
   expect((await readRoom(code)).cannon).toBeUndefined();
   await playToFinal(host, [host, other], code);
-  await expect(other.locator('.finale')).toBeVisible({ timeout: 30_000 });
+  await expect(other.getByRole('heading', { name: /at half-time/ })).toBeVisible({ timeout: 30_000 });
   await expect(host.getByRole('button', { name: 'Second half' })).toBeVisible({ timeout: 30_000 });
   await expect(other.locator('.cannon')).toHaveCount(0);
 

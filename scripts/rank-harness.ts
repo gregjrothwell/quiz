@@ -530,11 +530,8 @@ async function main(): Promise<void> {
     throw new Error(`room never reached ${phase} (was ${view.latest?.phase ?? 'nothing'})`);
   };
 
-  console.log(`\n${stamp()}  >>> WRITING next (to standings)`);
-  await running.dispatch([{ type: 'next', at: Date.now() }]);
-  await waitForPhase('scoreboard');
-
-  console.log(`${stamp()}  >>> WRITING next (to finished)`);
+  // One question and no final, so the last reveal goes straight to the results.
+  console.log(`\n${stamp()}  >>> WRITING next (to finished)`);
   await running.dispatch([{ type: 'next', at: Date.now() }]);
   await waitForPhase('finished');
 

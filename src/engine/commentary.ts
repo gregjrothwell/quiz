@@ -172,7 +172,8 @@ function podiumLine(room: RoomState): Line | null {
 
   if (history.played === 0) return line('debutWin', room, { name });
   if (history.wins === 0) return line('firstWin', room, { name });
-  if (history.best > 0 && winner.score > history.best) return line('seasonBest', room, { name });
+  // Not on a double: two rounds' total against one round's best is no record.
+  if (!room.double && history.best > 0 && winner.score > history.best) return line('seasonBest', room, { name });
   return line('againWinner', room, { name, count: String(history.wins + 1) });
 }
 

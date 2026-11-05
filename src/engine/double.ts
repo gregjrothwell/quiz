@@ -1,4 +1,5 @@
 import { roomStandings, standings } from './scoring';
+import { finalistsFor } from './standoff';
 import type { FirstHalf, RoomState } from './state';
 
 /**
@@ -27,6 +28,28 @@ export function morningTotals(room: Pick<RoomState, 'double' | 'scores'>): Recor
 /** Round one of a double, over, with round two still to come. */
 export function isHalfTime(room: Pick<RoomState, 'phase' | 'doubleEnabled' | 'double'>): boolean {
   return room.phase === 'finished' && room.doubleEnabled && room.double === null;
+}
+
+/** This round is the first half of a double, so its end is half-time, whatever phase it is in. */
+export function endsAtHalfTime(room: Pick<RoomState, 'doubleEnabled' | 'double'>): boolean {
+  return room.doubleEnabled && room.double === null;
+}
+
+/**
+ * Who plays Share or Shaft once the last question is done, or null when no final
+ * follows it. The reducer and every button naming the next step read this one
+ * answer, so a button cannot promise a final the reducer will not play. It did:
+ * the first half of a double with Share or Shaft on said "To Share or Shaft" and
+ * went to half-time.
+ *
+ * On the morning in the second half of a double, which outside one is just the
+ * round. Read after the wager is paid, so a stake that came off decides it.
+ */
+export function finalistsAfterLast(
+  room: Pick<RoomState, 'standoffEnabled' | 'doubleEnabled' | 'double' | 'players' | 'scores' | 'gameId'>,
+): [string, string] | null {
+  if (!room.standoffEnabled || endsAtHalfTime(room)) return null;
+  return finalistsFor(room.players, morningTotals(room), room.gameId ?? '');
 }
 
 /**

@@ -64,7 +64,10 @@ export interface CardModel {
   rosettes: CardRosette[] | null;
   /** Beat the Chaser's result line, or null on a round without Mr Fries. */
   chaser: string | null;
-  questionCount: number;
+  /** The Double, won over two halves. The wording of the headline is the drawing's. */
+  double: boolean;
+  /** Null on The Double: only the second half's count is still on the room. */
+  questionCount: number | null;
   /** When the card was made, for whatever draws it to date. */
   at: number;
 }
@@ -81,6 +84,8 @@ export interface CardInput {
   sawWholeGame: boolean;
   /** Mr Fries's final score, when the room played him. Optional: older callers omit it. */
   chaser?: ChaserScore | null;
+  /** The end of The Double. Optional: older callers omit it. */
+  double?: boolean;
   questionCount: number;
   at: number;
 }
@@ -104,7 +109,8 @@ export function cardModel(input: CardInput): CardModel {
   const seated = seatedLast(rows);
 
   return {
-    pack: packTitle,
+    // Two packs went into a double, and the room only still holds the second.
+    pack: input.double ? 'The Double' : packTitle,
     winners: namesOf(players, rows.filter((row) => row.position === 1).map((row) => row.uid)),
     podium: podiumFor(rows).standing.flatMap((riser) => {
       const name = players[riser.uid]?.name;
@@ -119,7 +125,8 @@ export function cardModel(input: CardInput): CardModel {
       ? awards.map((award) => ({ id: award.id, names: namesOf(players, award.uids) }))
       : null,
     chaser: input.chaser ? chaserResult(input.chaser) : null,
-    questionCount,
+    double: input.double ?? false,
+    questionCount: input.double ? null : questionCount,
     at,
   };
 }

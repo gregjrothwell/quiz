@@ -15,10 +15,8 @@
  *      "a clip may be singing its title" warning.
  *   3. Higher or Lower — % right (correct over answers) against 55–85.
  *   4. Cass — `read-traces -- --name cass` for the same window.
- *   5. Geekend — whether `seasons/season-2-geekend/asked/{pack}` exists.
- *      One read cannot show the office doc was left unchanged; the line says so.
- *   6. Errors players saw, over `--since` (default 1d), grouped as `read-errors`.
- *   7. The Slop Cannon's Keep and Bin, as `read-cannon`, test rounds left out.
+ *   5. Errors players saw, over `--since` (default 1d), grouped as `read-errors`.
+ *   6. The Slop Cannon's Keep and Bin, as `read-cannon`, test rounds left out.
  *
  * **Needs a service account**, as `read-games` does. Point
  * `GOOGLE_APPLICATION_CREDENTIALS` at a key under `.secrets/`, and run via
@@ -38,9 +36,6 @@ import { groupErrors, parseErrorRow, parseSince, type ErrorRow } from './error-r
 import { parseGameRecord } from './game-report';
 import {
   formatOwedChecks,
-  GEEKEND_SEASON,
-  OFFICE_SEASON,
-  type GeekendAsked,
   type KeptRound,
 } from './owed-checks';
 import { formatTrace } from './trace-report';
@@ -95,12 +90,6 @@ function toDate(value: unknown): Date | null {
 function when(value: unknown): string {
   const date = toDate(value);
   return date ? date.toISOString().slice(0, 16).replace('T', ' ') : 'unstamped       ';
-}
-
-function idCount(data: unknown): number | null {
-  if (typeof data !== 'object' || data === null || !('ids' in data)) return null;
-  const ids = (data as { ids: unknown }).ids;
-  return Array.isArray(ids) ? ids.length : null;
 }
 
 async function main(): Promise<void> {
@@ -169,17 +158,6 @@ async function main(): Promise<void> {
     cassLines.push(formatTrace(trace, name, when(data['at'])));
   }
 
-  const geekendSnaps = (await db.collection('seasons').doc(GEEKEND_SEASON).collection('asked').get()).docs;
-  const geekendAsked: GeekendAsked[] = geekendSnaps.map((snapshot) => ({
-    packId: snapshot.id,
-    ids: idCount(snapshot.data()),
-  }));
-  const officeAsked: Record<string, number | null> = {};
-  for (const doc of geekendAsked) {
-    const office = await db.collection('seasons').doc(OFFICE_SEASON).collection('asked').doc(doc.packId).get();
-    officeAsked[doc.packId] = office.exists ? idCount(office.data()) : null;
-  }
-
   const since = sinceArg(process.argv.slice(2));
   const errorRows: ErrorRow[] = [];
   const errorSnaps = (
@@ -216,8 +194,6 @@ async function main(): Promise<void> {
     gamesUnreadable,
     cassLines,
     tracesRead: traceSnaps.length,
-    geekendAsked,
-    officeAsked,
     errors: { ...groupErrors(errorRows), since },
     cannon: tallyShots(cannonRounds, verdicts),
   }));

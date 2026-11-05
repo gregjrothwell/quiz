@@ -11,6 +11,7 @@ import {
 } from 'firebase/database';
 import {
   collection,
+  deleteDoc,
   deleteField,
   doc,
   getDoc,
@@ -57,7 +58,8 @@ import {
   rememberDelta,
   type ClockDeltas,
 } from '../engine/roomClock';
-import { createQ1Tracer, deviceFrom, type Q1Tracer } from '../engine/q1Trace';
+import { warmDelayMs, WARM_EVERY_MS } from '../engine/keepWarm';
+import { createQ1Tracer, deviceFrom, type Q1Tracer, type RoundStartTiming } from '../engine/q1Trace';
 import { networkType, recordQ1Trace, refusalCode } from './q1Trace';
 import { planJoin, planSeatSquad } from '../engine/join';
 import { isCall, optionsAtMs } from '../engine/optionsHold';
@@ -167,6 +169,8 @@ export interface UseRoom {
   leave: () => Promise<void>;
   dispatch: (action: Action | Action[]) => Promise<void>;
   submitAnswer: (optionIndex: number, elapsedMs: number, wager?: number) => Promise<void>;
+  /** The quizmaster's timings for the round being started, for the question-one trace. */
+  noteRoundStart: (timing: RoundStartTiming) => void;
   writeOwnSquad: (squad: string) => Promise<void>;
   /** This player's lobby vote, or null to take it back. */
   writeOwnVote: (packId: PackId | null) => Promise<void>;
@@ -343,6 +347,9 @@ export function useRoom(): UseRoom {
   const serverOffsetRef = useRef<number | null>(null);
   /** When the page last became visible; null while it is hidden. */
   const visibleSinceRef = useRef<number | null>(null);
+  /** When a keep-warm last went out, and when one was last acknowledged. */
+  const warmSentAtRef = useRef<number | null>(null);
+  const warmAckedAtRef = useRef<number | null>(null);
 
   // Anonymous auth gives every browser a durable uid with no sign-up, which is
   // also what makes an accountless cross-session leaderboard possible later.
@@ -463,6 +470,7 @@ export function useRoom(): UseRoom {
             visibleSince: visibleSinceRef.current,
             device: deviceFrom(navigator.userAgent),
             network: networkType(),
+            lastWarmAt: warmAckedAtRef.current,
           });
         }
 
@@ -541,6 +549,56 @@ export function useRoom(): UseRoom {
   // Lamps (W3): who has answered the question in play, from the Realtime
   // Database rather than from the answers nobody else may now read.
   const phaseNow = persisted?.phase ?? null;
+
+  /*
+    Keeps this device's write stream open while the room is in the lobby, so
+    question one's answer does not pay to reopen it, which is the suspected reason
+    those answers take seconds after a long lobby. docs/decisions/cass-q1-cold-write.md.
+
+    The write deletes this player's own answer. Nobody needs that document in the
+    lobby: `start` opens a new round and a stale one is ignored by its index. When
+    it is already gone, which is nearly always, the delete changes nothing, so no
+    listener hears it and it costs one write and no reads. It needs no new rule and
+    leaves nothing for `prune-rooms` to sweep.
+
+    The SDK sends writes in order, so a delete sent just before the round starts
+    still lands before this device's first answer. Failure is swallowed, as the
+    lamp's is: this must never put a notice over the lobby.
+
+    Visible tabs only, so an abandoned one is not writing all day. A tab coming
+    back to the front warms at once if it is due, ahead of any tap.
+  */
+  useEffect(() => {
+    if (!code || !uid || phaseNow !== 'lobby') return;
+    const answer = doc(answersCollection(code), uid);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const tick = (): void => {
+      clearTimeout(timer);
+      if (document.visibilityState !== 'visible') return;
+      const wait = warmDelayMs({ lastSentAt: warmSentAtRef.current, now: Date.now() });
+      if (wait > 0) {
+        timer = setTimeout(tick, wait);
+        return;
+      }
+      warmSentAtRef.current = Date.now();
+      deleteDoc(answer).then(
+        () => {
+          warmAckedAtRef.current = Date.now();
+        },
+        () => undefined,
+      );
+      timer = setTimeout(tick, WARM_EVERY_MS);
+    };
+
+    tick();
+    document.addEventListener('visibilitychange', tick);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('visibilitychange', tick);
+    };
+  }, [code, uid, phaseNow]);
+
   const questionLampKey =
     persisted && phaseNow === 'question' ? lampKey(persisted.gameId ?? null, persisted.index) : null;
 
@@ -1181,6 +1239,7 @@ export function useRoom(): UseRoom {
     leave,
     dispatch,
     submitAnswer,
+    noteRoundStart: tracer.timedStart,
     writeOwnSquad,
     writeOwnVote,
     writeBrowsing,
