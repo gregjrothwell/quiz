@@ -280,14 +280,15 @@ jobs:
   # if this file does. Give the runner the emulator, not a token.
   # Java 21 is for the Firestore emulator. setup-java is v5 (node24), not v4.
   #
-  # Seven jobs at once, each on its own runner with its own emulators, so no two
+  # Eight jobs at once, each on its own runner with its own emulators, so no two
   # specs ever share one. The groups are `e2e/shards.json`. Six were balanced
   # by run 40151240593 (25 Oct 2026) and the Slop Cannon's two specs kept apart:
   # they play three whole rounds between them, 677s when they shared a shard
   # (#154). Re-cut into seven on 31 Oct from run 41080509766 (PROJ-93): the
   # Commentator's round, 258s, is the floor no grouping goes under, so every
   # other shard is filled to about that and no more — two whole-round specs
-  # each, or one long one and the quick rules specs.
+  # each, or one long one and the quick rules specs. The eighth, 5 Nov (PROJ-116),
+  # is `round-end.spec.ts`: two whole halves and a final, so it fills one alone.
   # `scripts/e2e-shards.test.ts` fails if a spec is in no group or this list
   # does not match the groups. Inside a shard it is still one worker: each spec
   # wipes its emulators first (e2e/isolate.ts).
@@ -306,7 +307,7 @@ jobs:
       # Every shard reports, so one red file does not hide another.
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3, 4, 5, 6]
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 

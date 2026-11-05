@@ -1,6 +1,12 @@
 # The Double — two rounds, one morning, one final
 
-> **Owner: Greg Rothwell. Last updated: 24 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 5 November 2026. Budget: 250 lines.**
+
+> **Corrected 5 November 2026.** The table below says settings "survive" Another
+> round. They survived on the room, but the lobby started from its defaults and
+> overwrote them at Start, so Share or Shaft picked with The Double never played
+> unless it was picked again. Half-time is no longer the full results screen either,
+> and the last reveal goes straight to it. See [`round-end.md`](round-end.md).
 
 **Status: built 24 October 2026 on branch `morning-double` (`142fa8b`), not
 live.** Approved by Greg the same day with the recommended answers to D1–D3:

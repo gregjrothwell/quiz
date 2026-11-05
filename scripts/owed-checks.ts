@@ -1,4 +1,3 @@
-import { askedSeason } from '../src/engine/askedHistory';
 import type { GameRecord } from '../src/engine/gameRecord';
 import { DIFFICULTIES, type Difficulty } from '../src/questions/types';
 import { formatTally, type ShotTally } from './cannon-report';
@@ -9,9 +8,9 @@ import { summariseQuestion } from './game-report';
  * The print behind `npm run read-owed`. Pure, so `npm test` covers it.
  * `read-owed.ts` only fetches and prints what this says.
  *
- * The first five sections are the live checks still owed in `docs/HANDOVER.md`:
+ * The first four sections are the live checks still owed in `docs/HANDOVER.md`:
  * The Double's pair, Theme Tunes by level, Higher or Lower's % right,
- * Cass's question-one traces, and whether Geekend's asked doc exists. The last
+ * and Cass's question-one traces. The last
  * two are what `read-errors` and `read-cannon` print, so one command after a
  * round reads everything (29 October 2026).
  *
@@ -21,9 +20,6 @@ import { summariseQuestion } from './game-report';
 
 /** The season the office is on. `SEASON` in `src/lib/season.ts` — that module imports `src/firebase.ts`, which a script must not. */
 export const OWED_SEASON = 'season-2';
-
-export const GEEKEND_SEASON = askedSeason(OWED_SEASON, 'geekend');
-export const OFFICE_SEASON = askedSeason(OWED_SEASON, 'office');
 
 /** Hard hit rate at or above this is the Theme Tunes warning in `tv-themes.md`. */
 const HARD_SINGS_AT = 0.9;
@@ -38,12 +34,6 @@ export interface KeptRound {
   finishedAt: Date | null;
 }
 
-export interface GeekendAsked {
-  packId: string;
-  /** Null when the document exists but `ids` is not a list. */
-  ids: number | null;
-}
-
 export interface OwedInput {
   last: number;
   games: readonly KeptRound[];
@@ -51,9 +41,6 @@ export interface OwedInput {
   /** `formatTrace` lines for Cass, newest first. Empty when she has none. */
   cassLines: readonly string[];
   tracesRead: number;
-  geekendAsked: readonly GeekendAsked[];
-  /** Office id counts for the Geekend packs. Null means that office doc is absent. */
-  officeAsked: Readonly<Record<string, number | null>>;
   /** `read-errors`, over `since`. */
   errors: { groups: readonly ErrorGroup[]; probes: number; since: string };
   /** `read-cannon`. */
@@ -189,28 +176,6 @@ export function formatCass(cassLines: readonly string[], last: number): string {
   return lines.join('\n');
 }
 
-export function formatGeekend(
-  geekend: readonly GeekendAsked[],
-  office: Readonly<Record<string, number | null>>,
-): string {
-  const lines = ['Geekend asked'];
-  if (geekend.length === 0) {
-    lines.push(`  No Geekend asked doc. seasons/${GEEKEND_SEASON}/asked is empty.`);
-    return lines.join('\n');
-  }
-  const sorted = [...geekend].sort((a, b) => a.packId.localeCompare(b.packId));
-  for (const doc of sorted) {
-    const count = doc.ids === null ? 'ids unreadable' : `${String(doc.ids)} ids`;
-    const officeCount = office[doc.packId];
-    const officeLine = officeCount === undefined || officeCount === null
-      ? `Office seasons/${OFFICE_SEASON}/asked/${doc.packId} is absent.`
-      : `Office seasons/${OFFICE_SEASON}/asked/${doc.packId} has ${String(officeCount)} ids.`;
-    lines.push(`  ${doc.packId}: Geekend doc exists, ${count}. ${officeLine}`);
-  }
-  lines.push('  This read cannot show that the office document was left unchanged.');
-  return lines.join('\n');
-}
-
 export function formatErrors(errors: OwedInput['errors']): string {
   const lines = [`Errors players saw, last ${errors.since}`];
   const probes = errors.probes > 0 ? ` ${String(errors.probes)} check-rules probe rows skipped.` : '';
@@ -244,8 +209,6 @@ export function formatOwedChecks(input: OwedInput): string {
     formatHigher(input.games),
     '',
     formatCass(input.cassLines, input.last),
-    '',
-    formatGeekend(input.geekendAsked, input.officeAsked),
     '',
     formatErrors(input.errors),
     '',

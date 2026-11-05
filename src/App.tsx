@@ -4,7 +4,6 @@ import { ColdOpen } from './components/ColdOpen';
 import { RigCheck } from './components/RigCheck';
 import { Stage } from './components/Stage';
 import { arrivalFor, walkedIn, NO_ARRIVAL, type Arrival } from './engine/arrival';
-import type { HistoryGroup } from './engine/askedHistory';
 import { shouldAutoJoin } from './engine/autoJoin';
 import type { Verdict } from './engine/questionVote';
 import { honoursFor, sawWholeGame, NO_HONOURS } from './engine/awards';
@@ -234,7 +233,18 @@ function Game() {
 
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<ActionError | null>(null);
-  const [showSeason, setShowSeason] = useState(false);
+  /*
+    Which game the season table was opened from. It closes itself when the room
+    moves on from that game: the screen has no reason to know about the room, so
+    nothing on it could say a round had started while the clock ran. Null is shut.
+  */
+  const [seasonFrom, setSeasonFrom] = useState<{ gameId: string | null } | null>(null);
+  /*
+    The length and level the host last dealt, for the next lobby. Not on the room,
+    unlike the modes, which already are: these only save a few taps, so a new host
+    or a reload starting from the defaults costs nothing.
+  */
+  const [lastDeal, setLastDeal] = useState<{ count: number; level: Level } | null>(null);
   const [showUpdates, setShowUpdates] = useState(false);
 
 
@@ -485,14 +495,15 @@ function Game() {
       jigsawEnabled: boolean,
       standoffEnabled: boolean,
       chaserEnabled: boolean,
-      history: HistoryGroup,
       doubleEnabled: boolean,
       cannon: Loaded,
     ) => {
       setBusy(true);
       setActionError(null);
+      // Survey Says deals its own ten at no level, so it says nothing about the next round.
+      if (packId !== 'survey') setLastDeal({ count, level });
       // Dealing, and remembering what was dealt, is `src/host/prepare.ts`.
-      dealRound({ packId, count, level, jigsawEnabled, chaserEnabled, history }, PACK_PORTS)
+      dealRound({ packId, count, level, jigsawEnabled, chaserEnabled }, PACK_PORTS)
         .then(async ({ questions, ladderNotices, remember }) => {
           const pack = packs.find((entry) => entry.id === packId);
 
@@ -856,11 +867,11 @@ function Game() {
     );
   }
 
-  if (showSeason) {
+  if (seasonFrom !== null && seasonFrom.gameId === (room?.gameId ?? null)) {
     return (
       <Stage>
         <Suspense fallback={<Loading what="the season" />}>
-          <Season youUid={uid} onBack={() => setShowSeason(false)} />
+          <Season youUid={uid} onBack={() => setSeasonFrom(null)} />
         </Suspense>
       </Stage>
     );
@@ -890,7 +901,7 @@ function Game() {
           initialCode={linkedCode ?? ''}
           onCreate={handleCreate}
           onJoin={handleJoin}
-          onSeason={() => setShowSeason(true)}
+          onSeason={() => setSeasonFrom({ gameId: null })}
           onUpdates={() => setShowUpdates(true)}
         />
       </Stage>
@@ -935,6 +946,7 @@ function Game() {
           busy={busy}
           autoJoined={autoJoined}
           squad={rememberedSquad()}
+          lastDeal={lastDeal}
           onPickSquad={(next) => {
             rememberSquad(next);
             void writeOwnSquad(next).catch(report);
@@ -1006,7 +1018,7 @@ function Game() {
             // At half-time of The Double the same button is Round two.
             onPlayAgain={() => void dispatch({ type: isHalfTime(room) ? 'roundTwo' : 'reset' }).catch(report)}
             onLeave={handleLeave}
-            onSeason={() => setShowSeason(true)}
+            onSeason={() => setSeasonFrom({ gameId: room?.gameId ?? null })}
           />
         )) || (
           /*

@@ -64,6 +64,29 @@ const WHOLE_GAME: QuestionRecord[] = [
   },
 ];
 
+describe('The Double on the card', () => {
+  const players = playersNamed('Ann', 'Bob');
+  const scores = Object.fromEntries(Object.keys(players).map((uid, index) => [uid, 9_000 - index * 2_000]));
+  const input = {
+    packTitle: 'Science',
+    players,
+    scores,
+    rows: roomStandings(players, scores),
+    awards: [],
+    sawWholeGame: false,
+    questionCount: 15,
+    at: AT,
+  };
+
+  test('says The Double, and no count, because the room only still holds the second half', () => {
+    expect(cardModel({ ...input, double: true })).toMatchObject({ pack: 'The Double', double: true, questionCount: null });
+  });
+
+  test('an ordinary round is unchanged', () => {
+    expect(cardModel(input)).toMatchObject({ pack: 'Science', double: false, questionCount: 15 });
+  });
+});
+
 describe('cardModel', () => {
   test('names the winner and stands the top three on the podium', () => {
     // #given a four-player round with a clear result
