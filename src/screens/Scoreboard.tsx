@@ -3,7 +3,7 @@ import { Commentary } from '../components/Commentary';
 import { NewSticker } from '../components/NewSticker';
 import { SquadScore } from '../components/SquadScore';
 import { Standings } from '../components/Standings';
-import { morningTotals } from '../engine/double';
+import { endsAtHalfTime, finalistsAfterLast, morningTotals } from '../engine/double';
 import type { Shot } from '../engine/cannon';
 import { LOST_LINE, verdictFor } from '../engine/scoring';
 import { currentQuestion, type RoomState } from '../engine/state';
@@ -36,8 +36,8 @@ const ORDINALS = [
 
 export function Scoreboard({ room, shots = [], youUid, isQuizmaster, onNext, today = todayIso() }: ScoreboardProps) {
   const isLast = room.index + 1 >= room.questions.length;
-  // The reducer sends a room of one straight to the results, so this does too.
-  const toFinal = isLast && room.standoffEnabled && Object.keys(room.players).length >= 2;
+  // What the reducer will do, asked of the same function, so the button cannot say otherwise.
+  const toFinal = isLast && finalistsAfterLast(room) !== null;
   const skippedLast = room.skipped.includes(room.questions[room.index]?.id ?? '');
   const question = currentQuestion(room);
   // Next leaves the reveal. The late answer and the tally are still on the
@@ -69,7 +69,7 @@ export function Scoreboard({ room, shots = [], youUid, isQuizmaster, onNext, tod
             {nextNumber}
           </span>
           <div className="chrome-wrap">
-            <h1 className="display chrome card__round">Round {nextOrdinal}</h1>
+            <h1 className="display chrome card__round">Question {nextOrdinal}</h1>
           </div>
           <p className="card__topic">{room.packTitle ?? 'Next up'}</p>
           {isNewRound(room.packId, today) ? <NewSticker /> : null}
@@ -132,7 +132,13 @@ export function Scoreboard({ room, shots = [], youUid, isQuizmaster, onNext, tod
         <div className="transport">
           <div className="btn-row">
             <button type="button" className="btn btn--primary" onClick={onNext}>
-              {toFinal ? 'To Share or Shaft' : isLast ? 'Final results' : 'Next question'}
+              {toFinal
+                ? 'To Share or Shaft'
+                : !isLast
+                  ? 'Next question'
+                  : endsAtHalfTime(room)
+                    ? 'Half-time'
+                    : 'Final results'}
             </button>
           </div>
         </div>

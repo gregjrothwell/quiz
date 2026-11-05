@@ -14,6 +14,7 @@ import { answersForReplay, replayDurationMs, replayTimeline, type Arrival } from
 import { BONUS_PROMPT, isBonusCatchphrase } from '../engine/catchphraseBonus';
 import { isCall, optionsAtMs, optionsDue } from '../engine/optionsHold';
 import { isUnmatched, matchTypedAnswer } from '../engine/typedAnswer';
+import { endsAtHalfTime, finalistsAfterLast } from '../engine/double';
 import { questionPack } from '../engine/randomRound';
 import type { Verdict } from '../engine/questionVote';
 import { LOST_LINE, stakeFor, verdictFor, WAGER_SHARES } from '../engine/scoring';
@@ -139,6 +140,19 @@ function playLabel(muted: boolean, blocked: boolean): string {
   return 'Hear it again';
 }
 
+/**
+ * Where the host's button goes from a reveal, in words. The last question skips
+ * the table unless a final follows (`next` in the reducer), and the button and
+ * the line everyone else reads say so.
+ */
+function afterTheReveal(room: RoomState): { button: string; waiting: string } {
+  const isLast = room.index + 1 >= room.questions.length;
+  if (!isLast || finalistsAfterLast(room)) return { button: 'Standings', waiting: 'the standings' };
+  return endsAtHalfTime(room)
+    ? { button: 'Half-time', waiting: 'the half-time table' }
+    : { button: 'Final results', waiting: 'the results' };
+}
+
 export function QuestionScreen({
   room,
   youUid,
@@ -157,6 +171,7 @@ export function QuestionScreen({
 }: QuestionScreenProps) {
   const question = currentQuestion(room);
   const optionCount = question?.options.length ?? 0;
+  const afterReveal = afterTheReveal(room);
 
   const myAnswer = youUid ? room.answers[youUid] : undefined;
   const myDelta = youUid ? (room.lastDeltas[youUid] ?? 0) : 0;
@@ -1099,7 +1114,7 @@ export function QuestionScreen({
               */}
               {revealed ? (
                 <button type="button" className="btn btn--primary" onClick={onNext}>
-                  Standings
+                  {afterReveal.button}
                 </button>
               ) : (
                 /*
@@ -1131,7 +1146,7 @@ export function QuestionScreen({
               room is waiting on one person is the only one that does not say
               so. The lobby, the scoreboard and the final screen all do.
             */
-            <p className="muted">Waiting for the quizmaster to show the standings…</p>
+            <p className="muted">Waiting for the quizmaster to show {afterReveal.waiting}…</p>
           ) : null}
         </div>
       </div>

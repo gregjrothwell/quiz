@@ -80,7 +80,7 @@ export async function playToFinal(
       answered = key;
     }
     await watch(room);
-    const next = host.getByRole('button', { name: /Next question|Standings|Final results/ });
+    const next = host.getByRole('button', { name: /Next question|Standings|Final results|Half-time/ });
     if ((room.phase === 'reveal' || room.phase === 'scoreboard') && (await next.count()) > 0) {
       await next.first().click().catch(() => undefined);
     }

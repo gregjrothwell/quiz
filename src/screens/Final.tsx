@@ -7,6 +7,7 @@ import { CANNON_AFTER_FANFARE_MS, cannonFires, type Asked, type CannonVerdict } 
 import { Confetti } from '../components/Confetti';
 import { DoubleTable } from '../components/DoubleTable';
 import { isHalfTime, morningTotals } from '../engine/double';
+import { SquadScore } from '../components/SquadScore';
 import { WeekBoard } from '../components/WeekBoard';
 import { Chair } from '../components/Chair';
 import { Review } from '../components/Review';
@@ -119,7 +120,86 @@ const CARD_LABELS: Record<CardState, string> = {
   failed: 'Couldn’t make the image',
 };
 
-export function Final({
+export function Final(props: FinalProps) {
+  return isHalfTime(props.room) ? <HalfTime {...props} /> : <FullTime {...props} />;
+}
+
+/** Everyone level on top, by name, joined the way the headline says it. Undefined with nobody to name. */
+function leadersOf(players: FinalProps['room']['players'], rows: ReturnType<typeof roomStandings>) {
+  const leaders = rows.filter((entry) => entry.position === 1);
+  const name =
+    leaders.length > 1
+      ? leaders.map((entry) => players[entry.uid]?.name).filter(Boolean).join(' & ')
+      : rows[0]
+        ? players[rows[0].uid]?.name
+        : undefined;
+  return { leaders, name };
+}
+
+/**
+ * Half-time of The Double: the table and the way on, and that is all. Nobody has
+ * won anything yet, so no podium, no fanfare, no awards and no card, which all
+ * said otherwise. It still banks: that is `App.tsx`, and a morning that never
+ * reaches the second half loses nothing. docs/decisions/round-end.md.
+ *
+ * Keep or Bin stays, only when there is something to ask: a shot or a new mode
+ * played in this half would otherwise never be asked about.
+ */
+function HalfTime({
+  room,
+  snapshot,
+  youUid,
+  isQuizmaster,
+  asked = [],
+  onCannonVerdict,
+  onPlayAgain,
+  onLeave,
+}: FinalProps) {
+  const players = snapshot?.players ?? room.players;
+  const scores = snapshot?.scores ?? room.scores;
+  const rows = roomStandings(players, scores);
+  const { leaders, name } = leadersOf(players, rows);
+
+  return (
+    <>
+      <header>
+        <p className="eyebrow">Half-time{room.packTitle ? ` · ${room.packTitle}` : ''}</p>
+        <h1 className="display display--section">
+          {name ? `${name} ${leaders.length > 1 ? 'lead' : 'leads'} at half-time` : 'Half-time'}
+        </h1>
+        {room.chaserEnabled ? (
+          <p className="chaser-line chaser-line--result">{chaserResult(chaserScore(room.questions))} 🍟</p>
+        ) : null}
+      </header>
+
+      {onCannonVerdict ? (
+        <CannonVerdicts key={room.gameId ?? ''} rows={asked} onVerdict={onCannonVerdict} fire />
+      ) : null}
+
+      <Standings players={players} scores={scores} youUid={youUid} />
+      <SquadScore players={players} scores={scores} />
+
+      <div className="btn-row">
+        {isQuizmaster ? null : <p className="muted">Waiting for the quizmaster to start the second half…</p>}
+        <button type="button" className="btn btn--ghost" onClick={onLeave}>
+          Leave
+        </button>
+      </div>
+
+      {isQuizmaster ? (
+        <div className="transport">
+          <div className="btn-row">
+            <button type="button" className="btn btn--primary" onClick={onPlayAgain}>
+              Second half
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function FullTime({
   room,
   snapshot,
   banked,
@@ -136,13 +216,13 @@ export function Final({
   const players = snapshot?.players ?? room.players;
   const roundScores = snapshot?.scores ?? room.scores;
   /*
-    The Double (docs/decisions/morning-double.md). Round one ends at half-time
-    on its own scores; round two ends on the morning, round one plus round two,
-    and everything that ranks below reads it — the podium, the chair, the
-    table and the card — so the champion of the morning is the one on top.
+    The Double (docs/decisions/morning-double.md). The second half ends on the
+    total, and everything that ranks below reads it — the podium, the chair, the
+    table and the card — so the winner of the Double is the one on top.
   */
-  const halfTime = isHalfTime(room);
   const double = room.double;
+  // The final has just acted the result out, with a headline and a table.
+  const afterFinal = room.standoff?.stage === 'revealed';
   const scores = double ? morningTotals({ double, scores: roundScores }) : roundScores;
 
   /*
@@ -163,13 +243,7 @@ export function Final({
   const thrownOut = skippedIndices(room);
   const awards = sawItAll ? awardsFor(log, Object.keys(players), thrownOut) : [];
   const review = sawItAll ? reviewFor(log, thrownOut) : [];
-  const leaders = rows.filter((entry) => entry.position === 1);
-  const winnerName =
-    leaders.length > 1
-      ? leaders.map((entry) => players[entry.uid]?.name).filter(Boolean).join(' & ')
-      : rows[0]
-        ? players[rows[0].uid]?.name
-        : undefined;
+  const { leaders, name: winnerName } = leadersOf(players, rows);
   /*
     Who stands and how high is `podiumFor`'s — the card draws from the same
     call. Joint places stand equally high; it used to index the top three rows,
@@ -205,7 +279,8 @@ export function Final({
   const podiumKey = room.gameId ?? 'no-game';
   const reducedMotion = useReducedMotion();
   const [firstSight] = useState(() => !builtPodiums.has(podiumKey));
-  const staging = hasPodium && firstSight && !reducedMotion;
+  // No second drum roll after a final: the podium arrives already landed.
+  const staging = hasPodium && firstSight && !reducedMotion && !afterFinal;
 
   useEffect(() => {
     builtPodiums.add(podiumKey);
@@ -302,6 +377,7 @@ export function Final({
             awards,
             sawWholeGame: sawItAll,
             chaser: room.chaserEnabled ? chaserScore(room.questions) : null,
+            double: double !== null,
             questionCount: room.questions.length,
           },
           `vibe-quiz-${room.code}.png`,
@@ -313,12 +389,11 @@ export function Final({
 
   return (
     <>
-      <Confetti fire={staging && landed} />
+      <Confetti fire={hasPodium && firstSight && !reducedMotion && landed} />
 
       <header>
         <p className="eyebrow">
-          {halfTime ? 'Half-time · ' : ''}
-          {room.packTitle ?? 'That’s the round'}
+          {double ? 'The Double' : (room.packTitle ?? 'That’s the round')}
         </p>
         <h1 className="display display--hero finale__title" style={at(holding ? LANDED_AT - 200 : 0)}>
           {winnerName
@@ -326,11 +401,9 @@ export function Final({
               ? leaders.length > 1
                 ? `${winnerName} share The Double`
                 : `${winnerName} wins The Double`
-              : halfTime
-                ? `${winnerName} ${leaders.length > 1 ? 'lead' : 'leads'} at half-time`
-                : leaders.length > 1
-                  ? `${winnerName} — dead heat`
-                  : `${winnerName} takes it`
+              : leaders.length > 1
+                ? `${winnerName} — dead heat`
+                : `${winnerName} takes it`
             : 'That’s a wrap'}
         </h1>
         {room.chaserEnabled ? (
@@ -395,9 +468,13 @@ export function Final({
           />
         ) : null}
 
-        <Standings players={players} scores={scores} youUid={youUid} />
-
-        {double ? <DoubleTable players={players} scores={roundScores} double={double} youUid={youUid} /> : null}
+        {/* One table. On a double it ranks the total too, and shows how it was made. */}
+        {double ? (
+          <DoubleTable players={players} scores={roundScores} double={double} afterFinal={afterFinal} youUid={youUid} />
+        ) : (
+          <Standings players={players} scores={scores} youUid={youUid} />
+        )}
+        <SquadScore players={players} scores={scores} />
 
         <Awards awards={awards} players={players} youUid={youUid} />
 
@@ -416,17 +493,7 @@ export function Final({
         ) : null}
 
         <div className="btn-row">
-          {isQuizmaster ? (
-            <button type="button" className="btn btn--primary" onClick={onPlayAgain}>
-              {halfTime ? 'Second half' : 'Another round'}
-            </button>
-          ) : (
-            <p className="muted">
-              {halfTime
-                ? 'Half-time. Waiting for the quizmaster to start the second half…'
-                : 'Waiting to see if the quizmaster starts another…'}
-            </p>
-          )}
+          {isQuizmaster ? null : <p className="muted">Waiting to see if the quizmaster starts another…</p>}
           {/* Everybody, not just the quizmaster: whoever is in the Teams channel
               is the person who will paste it there. */}
           {hasPodium ? (
@@ -452,11 +519,29 @@ export function Final({
             a dialog: nobody has ever thanked a quiz for interrupting the podium. */}
         {banked?.rivalsCaption ? <p className="lede rivals">{banked.rivalsCaption}</p> : null}
 
-        <p className="muted hint hint--apart">
-          That’s gone onto the season table, which is tied to this browser. Grab a recovery code
-          there if you ever play from anywhere else.
-        </p>
+        {/* Only once it has: a late joiner or a test run banks nothing. */}
+        {banked ? (
+          <p className="muted hint hint--apart">
+            That’s gone onto the season table, which is tied to this browser. Grab a recovery code
+            there if you ever play from anywhere else.
+          </p>
+        ) : null}
       </div>
+
+      {/*
+        In the transport, as on every other screen, so it stays on screen however
+        long the page is. Only once the podium has landed: nobody can press what
+        they cannot see, and a tap before then skips the build.
+      */}
+      {isQuizmaster && landed ? (
+        <div className="transport">
+          <div className="btn-row">
+            <button type="button" className="btn btn--primary" onClick={onPlayAgain}>
+              Another round
+            </button>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }

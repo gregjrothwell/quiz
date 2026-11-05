@@ -33,6 +33,9 @@ import { fixedDurationFor, packNeedsSound, type PackId, type PackSummary } from 
 
 const ROUND_LENGTHS = [10, 15, 20, 25] as const;
 
+/** How a round is decided. Stakes and Share or Shaft are the same decision to the office. */
+type Ending = 'top' | 'stakes' | 'standoff';
+
 /**
  * Below this multiple of the round length a level's pool is thin enough that
  * consecutive rounds draw largely the same questions; at exactly one multiple
@@ -96,6 +99,8 @@ interface LobbyProps {
   autoJoined?: boolean;
   /** Only shown, and only alongside {@link autoJoined}. */
   squad?: string;
+  /** The length and level this device last dealt in this room, to start from. */
+  lastDeal?: { count: number; level: Level } | null;
   /**
    * Writes the pick onto this device's room entry. Storage is remembered here;
    * the room write is the caller's, because only `useRoom` can touch the seat.
@@ -144,6 +149,7 @@ export function Lobby({
   busy,
   autoJoined = false,
   squad = '',
+  lastDeal,
   onPickSquad,
   onVote,
   onBrowse,
@@ -157,31 +163,39 @@ export function Lobby({
   const [fromBrowser] = useState(() => updatesNotice(UPDATES, updatesSeen()));
   const updates = notice ?? fromBrowser;
   const [packId, setPackId] = useState<PackId | null>(null);
-  const [count, setCount] = useState<number>(15);
-  const [level, setLevel] = useState<Level>('ramp');
   /*
-    Off by default, and opt-in from here rather than always on.
+    Every setting starts from the room's last round, for the second half and for
+    Another round. This component is remounted each time, so they used to reset,
+    and untouched they then overwrote the room at Start: Share or Shaft picked with
+    The Double was promised for the end and silently never played.
+    docs/decisions/round-end.md.
 
-    The honest objection to a wager is that a good round can be lost on one
-    question, and the answer is that the room agreed to it before the round
-    started — the same reasoning that made the answer window a choice rather
-    than a constant. Fixed for the round once the show starts.
+    Not the pack (the vote is about the next one) and not The Double (Another round
+    after one is an ordinary round; morning-double.md, rule 10).
   */
-  const [wager, setWager] = useState(false);
+  const [count, setCount] = useState<number>(
+    lastDeal && (ROUND_LENGTHS as readonly number[]).includes(lastDeal.count) ? lastDeal.count : 15,
+  );
+  const [level, setLevel] = useState<Level>(lastDeal?.level ?? 'ramp');
   /*
-    Off by default and opt-in for the same reason as the wager above, but it is
-    a different kind of choice and the room should know which: this one runs on
-    every question rather than the last, so it changes the whole round's shape
-    rather than adding a moment to the end of it.
+    One decision, so one picker. Across 75 real rounds: stakes 32, a final 26,
+    neither 17, both together never (read live, 5 Nov 2026).
+
+    Stakes and Share or Shaft are both opt-in, for the reason the answer window is
+    a choice: a good round can be lost on one question, or on a conversation, and
+    the answer is that the room agreed to it before the round started. Fixed for
+    the round once the show starts. See docs/decisions/share-or-shaft.md.
   */
-  const [steal, setSteal] = useState(false);
+  const [ending, setEnding] = useState<Ending>(
+    room.standoffEnabled ? 'standoff' : room.wagerEnabled ? 'stakes' : 'top',
+  );
   /*
-    Off by default and opt-in, for the wager's reason and more so: the top two
-    stake everything they scored, so a round can be won on the questions and
-    lost on a conversation. The room agrees to that before it starts or not at
-    all. See docs/decisions/share-or-shaft.md.
+    Off by default and opt-in like the ending above, but it is a different kind of
+    choice and the room should know which: this one runs on every question rather
+    than the last, so it changes the whole round's shape rather than adding a
+    moment to the end of it.
   */
-  const [standoff, setStandoff] = useState(false);
+  const [steal, setSteal] = useState(room.stealEnabled);
   /*
     The Double (docs/decisions/morning-double.md): a choice for round one,
     locked on for round two, which is a double whatever is chosen here.
@@ -190,11 +204,13 @@ export function Lobby({
   const [doubleChoice, setDoubleChoice] = useState(false);
   const double = roundTwo || doubleChoice;
   // Beat the Chaser: the room against Mr Fries. Not on Survey Says (v1).
-  const [chaser, setChaser] = useState(false);
+  const [chaser, setChaser] = useState(room.chaserEnabled);
   const [jigsaw, setJigsaw] = useState(false);
   // The Slop Cannon: each shot unloaded until the quizmaster loads it (B2).
   const [loaded, setLoaded] = useState<ReadonlySet<string>>(() => new Set());
-  const [durationSecs, setDurationSecs] = useState<number>(DEFAULT_DURATION_SECS);
+  const [durationSecs, setDurationSecs] = useState<number>(
+    (DURATION_CHOICES as readonly number[]).includes(room.durationSecs) ? room.durationSecs : DEFAULT_DURATION_SECS,
+  );
   /*
     The way out for somebody who never got asked.
 
@@ -245,6 +261,8 @@ export function Lobby({
   const selected = packs.find((pack) => pack.id === packId);
   // Survey Says deals its own ten and plays without stakes or steals (v1).
   const survey = packId === 'survey';
+  const wager = ending === 'stakes' && !survey;
+  const standoff = ending === 'standoff';
   const available = selected ? availableFor(selected, level, jigsaw) : 0;
   const effectiveCount = Math.min(count, available);
   // A pack that fixes its own window overrides the picker without forgetting
@@ -531,38 +549,96 @@ export function Lobby({
               ) : null}
             </div>
 
-            <div className="stack">
-              <p className="eyebrow">The last question</p>
-              <div className="picker">
-                <button
-                  type="button"
-                  className="pick"
-                  aria-pressed={!wager}
-                  onClick={() => setWager(false)}
-                >
-                  <b>Played straight</b>
-                  <span>Every question worth the same</span>
-                </button>
-                <button
-                  type="button"
-                  className="pick"
-                  aria-pressed={wager}
-                  onClick={() => setWager(true)}
-                >
-                  {modeSticker('stakes', today)}
-                  <b>Played for stakes</b>
-                  <span>Bet your points on the last one</span>
-                </button>
-              </div>
-              {wager ? (
-                <p className="muted hint">
-                  Everyone picks how much of their own score to stake before they answer. Get it
-                  right and you win it; get it wrong and you lose it. A player on nothing who
-                  stakes still puts 500 on the line.
-                </p>
-              ) : null}
-            </div>
+            </>
+          )}
 
+          <div className="stack">
+            <p className="eyebrow">How it ends</p>
+            <div className="picker">
+              <button
+                type="button"
+                className="pick"
+                aria-pressed={!wager && !standoff}
+                onClick={() => setEnding('top')}
+              >
+                <b>On the last answer</b>
+                <span>Top of the board wins</span>
+              </button>
+              <button
+                type="button"
+                className="pick"
+                aria-pressed={wager}
+                disabled={survey}
+                onClick={() => setEnding('stakes')}
+              >
+                {modeSticker('stakes', today)}
+                <b>Played for stakes</b>
+                <span>Bet your points on the last one</span>
+              </button>
+              <button
+                type="button"
+                className="pick"
+                aria-pressed={standoff}
+                onClick={() => setEnding('standoff')}
+              >
+                {modeSticker('standoff', today)}
+                <b>Share or Shaft</b>
+                <span>The top two play for everything</span>
+              </button>
+            </div>
+            {wager ? (
+              <p className="muted hint">
+                Everyone picks how much of their own score to stake before they answer. Get it
+                right and you win it; get it wrong and you lose it. A player on nothing who
+                stakes still puts 500 on the line.
+                {double ? ' In The Double, the last question of each half is played this way.' : ''}
+              </p>
+            ) : null}
+            {standoff ? (
+              <p className="muted hint">
+                After the last question the top two put both their scores in one pot, talk it
+                over, then pick in secret. Both share: half each. One shafts: they take the lot.
+                Both shaft: both lose it all, and whoever is third wins. It counts for the season.
+              </p>
+            ) : null}
+          </div>
+
+          <div className="stack">
+            <p className="eyebrow">How long</p>
+            <div className="picker">
+              <button
+                type="button"
+                className="pick"
+                aria-pressed={!double}
+                disabled={roundTwo}
+                onClick={() => setDoubleChoice(false)}
+              >
+                <b>One round</b>
+                <span>This round on its own</span>
+              </button>
+              <button
+                type="button"
+                className="pick"
+                aria-pressed={double}
+                disabled={roundTwo}
+                onClick={() => setDoubleChoice(true)}
+              >
+                {modeSticker('double', today)}
+                <b>The Double</b>
+                <span>Two halves, one total</span>
+              </button>
+            </div>
+            {double ? (
+              <p className="muted hint">
+                {roundTwo
+                  ? 'This is the second half. Its scores are added to the first, and the board ranks the total.'
+                  : 'Two halves that add up. This one ends at half-time, then the second half adds to it, and Share or Shaft, if it is on, is played for the whole total at the end.'}
+              </p>
+            ) : null}
+          </div>
+
+          {survey ? null : (
+            <>
             <div className="stack">
               <p className="eyebrow">Chasing the leader</p>
               <div className="picker">
@@ -628,72 +704,6 @@ export function Lobby({
             </div>
             </>
           )}
-
-          <div className="stack">
-            <p className="eyebrow">How it ends</p>
-            <div className="picker">
-              <button
-                type="button"
-                className="pick"
-                aria-pressed={!standoff}
-                onClick={() => setStandoff(false)}
-              >
-                <b>On the last answer</b>
-                <span>Top of the board wins</span>
-              </button>
-              <button
-                type="button"
-                className="pick"
-                aria-pressed={standoff}
-                onClick={() => setStandoff(true)}
-              >
-                {modeSticker('standoff', today)}
-                <b>Share or Shaft</b>
-                <span>The top two play for everything</span>
-              </button>
-            </div>
-            {standoff ? (
-              <p className="muted hint">
-                After the last question the top two put both their scores in one pot, talk it
-                over, then pick in secret. Both share: half each. One shafts: they take the lot.
-                Both shaft: both lose it all, and whoever is third wins. It counts for the season.
-              </p>
-            ) : null}
-          </div>
-
-          <div className="stack">
-            <p className="eyebrow">How many rounds</p>
-            <div className="picker">
-              <button
-                type="button"
-                className="pick"
-                aria-pressed={!double}
-                disabled={roundTwo}
-                onClick={() => setDoubleChoice(false)}
-              >
-                <b>One round</b>
-                <span>This round on its own</span>
-              </button>
-              <button
-                type="button"
-                className="pick"
-                aria-pressed={double}
-                disabled={roundTwo}
-                onClick={() => setDoubleChoice(true)}
-              >
-                {modeSticker('double', today)}
-                <b>The Double</b>
-                <span>Two rounds, one total</span>
-              </button>
-            </div>
-            {double ? (
-              <p className="muted hint">
-                {roundTwo
-                  ? 'This is the second half. Its scores are added to the first, and the board ranks the total.'
-                  : 'Two halves that add up. This one ends at half-time, then the second half adds to it, and Share or Shaft, if it is on, is played for the whole total at the end.'}
-              </p>
-            ) : null}
-          </div>
 
           {packId === 'picture' ? (
             <div className="stack">
@@ -761,6 +771,12 @@ export function Lobby({
             </div>
           ) : null}
 
+          {/*
+            In the transport, as the host's button is on every other screen. With
+            every option open it sat three screens down on a 1440×900 laptop.
+          */}
+          <div className="transport">
+          <div className="btn-row">
           <button
             type="button"
             className="btn btn--primary"
@@ -778,7 +794,7 @@ export function Lobby({
                 effectiveCount,
                 level,
                 effectiveDuration,
-                wager && !survey,
+                wager,
                 steal && !survey,
                 jigsaw,
                 standoff,
@@ -796,6 +812,8 @@ export function Lobby({
                 ? 'Turn sound on first'
                 : 'Start the show'}
           </button>
+          </div>
+          </div>
         </section>
       ) : (
         <section className="stack stack--loose">

@@ -18,6 +18,14 @@ export interface Update {
 
 export const UPDATES: readonly Update[] = [
   {
+    date: '2026-11-05',
+    lines: [
+      'A shorter ending. With no final to play, the last answer goes straight to the podium. After Share or Shaft there is no second drum roll, and half-time is just the table and the second half.',
+      'The lobby remembers the last round’s settings, so Share or Shaft picked for The Double really is played at the end. How it ends is now one choice: the last answer, stakes, or Share or Shaft.',
+      'The title card between questions now says Question Two, not Round Two. A round is a whole game, and The Double has two halves.',
+    ],
+  },
+  {
     date: '2026-11-02',
     lines: [
       'An answer you picked but never locked in now says “not locked” on the reveal, instead of looking like a ten-second answer. Tap your lectern twice, or press Enter, to lock it.',
