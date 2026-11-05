@@ -14,8 +14,8 @@ a settled answer write) and the `games/` records behind them. Read-only. Stamps 
   who tapped took over 1.5s.
 - **On 5 Nov two answers were lost, not one.** Cass's missed the fold by about 0.2s. JR's was refused outright.
 - **3s is not enough, and no reveal hold can fix JR's.** A write over 8s is refused whenever it was tapped.
-- **Rounds taking longer to start may be part of the same thing.** Time in the room before question one has risen, and that
-  is what makes the write cold. Press-to-question time has never been recorded, so that part is unmeasured.
+- **The slow pre-game facts may be the same thing, on players' screens only.** They arrive by the quizmaster's first write
+  after the lobby. That wait has never been timed, and the quizmaster's own screen does not wait for that write.
 
 ## What the traces show — verified 5 Nov
 
@@ -129,29 +129,40 @@ Oct deploy, 39 after. Later writes leave less room for a slow one, which is why 
 on 15s" in `cass-q1.md` no longer holds as a guarantee. An auto-lock fires with 2s left, so it needs a write under about 2.1s
 or the hold. In E3JM, Cass's "tap 10.0s of 10s" was that auto-lock, sent at 8.1s and landing at 12.8s.
 
-## Rounds taking a long time to start — Greg, 5 Nov
+## The pre-game facts taking a long time to appear — Greg, 5 Nov
 
-**Measured:** the rise in time in the room, in the table above. That counts everything since the tab opened, including
-waiting for people to arrive, so it is not the delay Greg saw.
+Greg: "when you start the game the pre-game facts took a long time to show up." That is "Tonight's field"
+(`ColdOpen`), between **Start the show** and **Start the round**. **The wait itself has never been timed**: nothing records
+the press, and the titles' stamp is cleared at `start` (`reducer.ts:324`). What follows narrows it without measuring it.
 
-**Not measured:** Start to question one. No document keeps it: the titles' stamp is cleared at `start` (`reducer.ts:324`).
+**In the code** (`App.tsx:477`, `prepare.ts`). The quizmaster's button reads "Loading questions…" throughout steps 1 and 2:
 
-**In the code, between the press and question one** (`App.tsx:477`, `:693`, `prepare.ts`):
+1. Fetch the pack, then read its question history (one `getDoc`). A Random Round does this for six packs.
+2. Read one season row per seat, in parallel (`loadForm`).
+3. Write the titles to the room.
+4. **The quizmaster's screen shows the facts at once**, from the local copy of that write. **Everyone else waits for the
+   server**, and this is the quizmaster's first room write since the lobby began.
 
-1. Press Start. Fetch the pack, read the question history and pass rates.
-2. One `getDoc` per seat for the titles (`loadForm`).
-3. Write the titles. **This is the host's first room write since the lobby began, so it is cold too — inference, untimed.**
-4. Wait for a second press, on purpose.
-5. Mr Fries's 3s card, if on.
-6. Write `start`. Everyone waits for that to come back from the server.
+**Ruled out:**
 
-If the host's cold write behaves like Cass's, step 3 alone could be seconds of nothing. Worth timing, not worth believing yet.
+- **Drawing the screen.** Facts stagger by 260ms each, at most four of them, and `ColdOpen` is unchanged since 15 Aug.
+- **Size of the data.** Largest history doc 7.5KB, season rows under 1KB (live). A pack is 125KB gzipped.
+- **The pack from GitHub Pages, from this Mac.** 0.24s cold, 0.09s cached. Not measured from the office.
+
+**So it depends on whose screen was slow:**
+
+- **A player's screen:** the likely cause is the same cold write as the answers. It is the same SDK path after the same long
+  lobby, where answers took 2–9s. **Inference:** a quizmaster's cold write has never been timed, because the only write
+  the traces see from that seat comes straight after this one.
+- **The quizmaster's screen:** the write is not the cause, and keep-warm would not help. That leaves steps 1 and 2, from the
+  office network, which nothing here measures. Those reads run over the listen stream, which delivered question one on time
+  in every trace (seen late at most 0.1s for Cass), so there is no evidence against them yet and none for them.
 
 ## Options — Greg to decide
 
 1. **Keep the write stream open in the lobby. Recommended first.** One small write per device every 45s or so while the
    phase is `lobby`. About 30 writes for SB88's three minutes and eight seats. It tests the explanation directly and helps the
-   host's Start as well if that is the same cold write. Two ways to do it, neither tried: a new doc per player (rules change,
+   pre-game facts as well, if the wait is on players' screens. Two ways to do it, neither tried: a new doc per player (rules change,
    through CI), or deleting your own answer doc, which `firestore.rules:639` already allows.
    **Pass:** Cass under 1.5s on three rounds with 80s or more in the room, against 7 of 7 slow now.
 2. **Send answers over Firestore Lite**, which has no stream to idle. The reveal has run this way since #71. Bigger, because
@@ -159,8 +170,8 @@ If the host's cold write behaves like Cass's, step 3 alone could be seconds of n
 3. **Raise the hold to 5s.** One constant in `src/host/due.ts`. It saves Cass's kind of miss and does not save JR's. Worth
    adding if 1 fails. Not needed alongside it if 1 works.
 4. **Tell the player when an answer is refused.** Separate small bug: JR's refusal is invisible on screen and in the beacon.
-5. **Time the start.** A press-to-open field on the trace needs a rules change. Only useful if Greg's "long time to start"
-   means after pressing Start.
+5. **Time the facts.** On the quizmaster's device: press to reads done, and to the write's ack. Each player: when the titles
+   arrived. New fields on the trace, so a rules change through CI. Worth doing with 1, so one round answers it.
 
 **Free test, no code, tomorrow:** have Cass open the tab under a minute before the round starts. Six of six fast so far.
 
