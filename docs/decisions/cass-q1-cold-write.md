@@ -2,7 +2,7 @@
 
 > **Owner: Greg Rothwell. Last updated: 5 November 2026. Budget: 250 lines.**
 
-**Status: investigated, nothing built. Greg to pick a fix.** Follows [`cass-q1.md`](cass-q1.md), which is at its
+**Status: Greg picked on 5 Nov: keep-warm plus timing, hold stays 3s. Built on a branch, not live; see the end.** Follows [`cass-q1.md`](cass-q1.md), which is at its
 budget. Read from `quiz-d686e` with the Admin SDK on 5 Nov 2026: all 112 traces in `q1Traces` (22 Oct to 5 Nov, 105 with
 a settled answer write) and the `games/` records behind them. Read-only. Stamps are UTC, which is UK time on these dates.
 
@@ -149,6 +149,9 @@ the press, and the titles' stamp is cleared at `start` (`reducer.ts:324`). What 
 - **Size of the data.** Largest history doc 7.5KB, season rows under 1KB (live). A pack is 125KB gzipped.
 - **The pack from GitHub Pages, from this Mac.** 0.24s cold, 0.09s cached. Not measured from the office.
 
+**Greg, 5 Nov: "yes I saw loading questions."** So it was the quizmaster's screen and steps 1 and 2. The list below was written
+before that answer and is kept for the player's side.
+
 **So it depends on whose screen was slow:**
 
 - **A player's screen:** the likely cause is the same cold write as the answers. It is the same SDK path after the same long
@@ -171,7 +174,7 @@ the press, and the titles' stamp is cleared at `start` (`reducer.ts:324`). What 
    adding if 1 fails. Not needed alongside it if 1 works.
 4. **Tell the player when an answer is refused.** Separate small bug: JR's refusal is invisible on screen and in the beacon.
 5. **Time the facts.** On the quizmaster's device: press to reads done, and to the write's ack. Each player: when the titles
-   arrived. New fields on the trace, so a rules change through CI. Worth doing with 1, so one round answers it.
+   arrived. New fields on the trace, so a rules change through CI. Built with 1, quizmaster's side only: the wait was on that screen.
 
 **Free test, no code, tomorrow:** have Cass open the tab under a minute before the round starts. Six of six fast so far.
 
@@ -184,3 +187,47 @@ arrival, so it is good to a few hundred ms. Gate = window + 0.1s. No answer text
 **`read-traces -- --name cass` misses a round, and that hid a slow write from item 12's close.** P6MQ, 28 Oct 09:42, has no
 `games/` doc, so it shows a uid rather than a name; Cass's 4.68s is that row, 84s into the room. All six seats there read `NOT COUNTED`, including 0.07s writes tapped early, so in a round with
 no scored reveal that flag does not mean a miss.
+
+## What was built — Greg, 5 Nov: "Recommendations accepted"
+
+> As a player, I want my first answer to reach the room as fast as my later ones. As the quizmaster, I want to know why
+> the facts take so long, so that the fix goes at the real cause.
+
+1. **Keep-warm.** While the room is in the lobby and the tab is visible, the device deletes its own answer doc: once on entering
+   the lobby, then every 45s (`src/engine/keepWarm.ts`, the effect in `useRoom`). A tab returning to the front warms at
+   once if due. Absent doc, so no change, no listener, no reads. No new rule and nothing for `prune-rooms`.
+2. **Trace: `warmAgoMs`** on every device, how long before question one a keep-warm was last acknowledged. Absent means none was.
+3. **Trace: `dealMs`, `packMs`, `askedMs`, `formMs`, `dealWriteMs`** on the quizmaster's device, for Start the show
+   (`src/host/startTiming.ts`). `read-traces` and `read-owed` print them.
+4. **Not changed:** the 3s hold. No What's new line, because nothing shows on screen.
+
+**Cost:** 80 deletes an hour per visible device in a lobby, so about 30 for a round like SB88. No reads unless a stale answer is
+still there, then one per listener, once. [`cost.md`](cost.md) has 20,000 writes a day. How Firebase bills a delete of an
+absent doc against the free quota was not checked: **placeholder**, small either way.
+
+**Keep-warm will not shorten "Loading questions…"** unless reads share the cold cause. The timing is what says where that wait goes.
+
+**Verified locally, 5 Nov, against the emulators:**
+
+- **The stream, both directions** (one-off probe, 130s in the lobby). Visible tab: one stream open, writes on it at 42s, 87s and the
+  answer at 131s. Hidden tab, so no keep-warm: the answer reopened the stream at 131s. So keep-warm does what it says.
+- **Rules:** `AC7 allow` fails on the old rules and passes on the new, with new deny cases for an out-of-bound `dealMs` and
+  `warmAgoMs`. Deleting your own absent answer is allowed and someone else's denied.
+- **Through the app:** a real question one files all five timings on the host only, and `warmAgoMs` on both devices.
+- **The full suite:** 41 of 45 passed with the Mac's lid shut for parts of the run. The four failures, all timeouts, passed on a rerun
+  with the Mac awake: 9 of 9 across those four specs. `npm test` 2,361 of 2,361. Run with the Firestore emulator on 18080 for this
+  session only, because a `llama-server` holds 8080; not committed.
+
+**Not covered until it is live:** the office network, which is the entire question. Localhost writes take 21–25ms whether warm or
+cold, so the probe proves the stream stays open and says nothing about the seconds. Also `check-rules` against the published
+rules, and a real phone.
+
+**The check, on the first office rounds:** `npm run read-traces -- --name cass`, which prints the `warmed` figure.
+
+| Reading | Means | Next |
+|---|---|---|
+| Cass under 1.5s on three rounds of 80s or more, `warmed` under 60s | The idle stream was the cause | Close item 12 |
+| Still slow, `warmed` under 60s | Idle is not the cause, or not all of it | Lite, and the 5s hold |
+| No `warmed` figure | The keep-warm is failing or the tab was hidden | Look at that first |
+
+For the facts, read the quizmaster's `start:` part: whichever of pack, history, rows or write holds the seconds is what to fix.

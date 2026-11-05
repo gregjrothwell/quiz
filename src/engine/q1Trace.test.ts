@@ -38,6 +38,7 @@ function seen(overrides: Partial<SeenQuestion> = {}): SeenQuestion {
     visibleSince: 940_000,
     device: 'ios',
     network: '4g',
+    lastWarmAt: null,
     ...overrides,
   };
 }
@@ -312,6 +313,105 @@ describe('parseTrace', () => {
     expect(parseTrace({ ...trace, device: 'toaster' })).toBeNull();
     expect(parseTrace({ ...trace, writes: '1' })).toBeNull();
     expect(parseTrace(null)).toBeNull();
+  });
+});
+
+describe('why a round was slow to start (cass-q1-cold-write.md)', () => {
+  const TIMING = { dealMs: 1_200, packMs: 800, askedMs: 300, formMs: 400, dealWriteMs: 90 };
+
+  /** One trace through to its reveal, with no tap. */
+  function finish(h: ReturnType<typeof harness>, gameId = 'game-1'): void {
+    h.at(1_010_400);
+    h.tracer.sawRoom({ gameId, phase: 'reveal', index: 0, scoredUids: [] });
+  }
+
+  test('the quizmaster\'s timings, noted before question one, land on that trace', () => {
+    const h = harness();
+    h.tracer.timedStart(TIMING);
+    h.tracer.sawQuestion(seen());
+    finish(h);
+
+    expect(h.written[0]).toMatchObject(TIMING);
+  });
+
+  test('a round with no titles: the write and question one race, so noted after still lands', () => {
+    const h = harness();
+    h.tracer.sawQuestion(seen());
+    h.tracer.timedStart(TIMING);
+    finish(h);
+
+    expect(h.written[0]).toMatchObject(TIMING);
+  });
+
+  test('the next round does not inherit them', () => {
+    const h = harness();
+    h.tracer.timedStart(TIMING);
+    h.tracer.sawQuestion(seen());
+    finish(h);
+    h.tracer.sawQuestion(seen({ gameId: 'game-2' }));
+    finish(h, 'game-2');
+
+    expect(h.written[1]).not.toHaveProperty('dealMs');
+  });
+
+  test('a player nobody timed files none of them', () => {
+    const h = harness();
+    h.tracer.sawQuestion(seen());
+    finish(h);
+
+    for (const key of Object.keys(TIMING)) expect(h.written[0]).not.toHaveProperty(key);
+  });
+
+  test('a strange reading is clamped to the rules\' bound rather than refusing the trace', () => {
+    const h = harness();
+    h.tracer.timedStart({ dealMs: 9_000_000 });
+    h.tracer.sawQuestion(seen());
+    finish(h);
+
+    expect(h.written[0]?.dealMs).toBe(600_000);
+  });
+});
+
+describe('whether the write path was warm', () => {
+  test('how long before question one this device last had a keep-warm acknowledged', () => {
+    const h = harness();
+    h.tracer.sawQuestion(seen({ lastWarmAt: 970_000 }));
+    h.at(1_010_400);
+    h.tracer.sawRoom({ ...REVEAL, scoredUids: [] });
+
+    expect(h.written[0]?.warmAgoMs).toBe(30_000);
+  });
+
+  test('never acknowledged: absent, which is the finding', () => {
+    const h = harness();
+    h.tracer.sawQuestion(seen({ lastWarmAt: null }));
+    h.at(1_010_400);
+    h.tracer.sawRoom({ ...REVEAL, scoredUids: [] });
+
+    expect(h.written[0]).not.toHaveProperty('warmAgoMs');
+  });
+
+  test('parseTrace keeps the new numbers and refuses a non-number', () => {
+    const doc = {
+      gameId: 'g',
+      roomCode: 'ABCD',
+      uid: 'u',
+      durationMs: 10_000,
+      correctionMs: 0,
+      priorSamples: 0,
+      writes: 0,
+      device: 'windows',
+    };
+
+    expect(parseTrace({ ...doc, warmAgoMs: 12_000, dealMs: 900, packMs: 1, askedMs: 2, formMs: 3, dealWriteMs: 4 })).toMatchObject({
+      warmAgoMs: 12_000,
+      dealMs: 900,
+      packMs: 1,
+      askedMs: 2,
+      formMs: 3,
+      dealWriteMs: 4,
+    });
+    expect(parseTrace({ ...doc, dealMs: 'slow' })).toBeNull();
   });
 });
 
