@@ -81,8 +81,14 @@ test('a rig check run: eight Node clients and three browsers paint every cue', a
   );
 
   try {
+    // #given a real double-click, at real coordinates, starts nothing (PROJ-114)
+    await host.getByRole('button', { name: 'Run the rig check' }).dblclick();
+    await expect(host.getByRole('button', { name: 'Run the rig check' })).toBeVisible();
+    expect((await get(ref(nodes[0]!.rtdb, `rig/${code}/run`))).exists()).toBe(false);
+
     // #when the host runs the rig check
     await host.getByRole('button', { name: 'Run the rig check' }).click();
+    await host.getByRole('button', { name: 'Yes, run it' }).click();
     await expect(others[0]!.getByText(/cue 1 of 10/)).toBeVisible({ timeout: RIG_LEAD_MS + 5_000 });
     await host.waitForTimeout(RIG_LEAD_MS + RIG_CUES * RIG_EVERY_MS + 2_000);
 
@@ -99,7 +105,7 @@ test('a rig check run: eight Node clients and three browsers paint every cue', a
     expect(report.cues.map((cue) => cue.devices)).toEqual(Array.from({ length: RIG_CUES }, () => 11));
 
     // #and the host's screen says what the run came to
-    await expect(host.getByText(/11 phones · \d+ of 10 cues/)).toBeVisible();
+    await expect(host.getByText(/11 devices · \d+ of 10 cues/)).toBeVisible();
   } finally {
     for (const stop of stops) stop();
     for (const node of nodes) await node.close();
