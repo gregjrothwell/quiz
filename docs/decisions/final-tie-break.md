@@ -2,7 +2,7 @@
 
 > **Owner: Greg Rothwell. Last updated: 6 November 2026. Budget: 250 lines.**
 
-**Status: built on `fix/final-coin-line` (PROJ-117, #197), not merged, not live.**
+**Status: LIVE 6 November 2026** (PROJ-117, #197, gh-pages `cd5900f`, `index-BCNaiiQ4`).
 Rule 2 of [`share-or-shaft.md`](share-or-shaft.md).
 
 Greg asked if a coin was the best way to settle a tie, and chose this over a
@@ -25,6 +25,10 @@ Says tell counts nothing. A bonus question counts as one. No rules change:
 With the count taken out of `finalistsAfterLast` it fails on the finalist, Cy for Bo;
 with it in, it passes. The scores and the count passed in both runs, so that failure
 is the tie-break's alone.
+
+**After the deploy, live:** `rank-harness` in room `PQYA` played one question through
+the live rules. The six who answered right were on the room's `rightAnswers` with
+their times, and the one who answered wrong was not.
 
 ## Not covered
 
