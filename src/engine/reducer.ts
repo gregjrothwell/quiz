@@ -7,6 +7,7 @@ import { questionPack } from './randomRound';
 import { stealFor, tallyQuestion } from './scoring';
 import { friesPick, roomTakes } from './chaser';
 import { finalistsAfterLast, isHalfTime, morningTotals } from './double';
+import { foldRight } from './rightAnswers';
 import { settleStandoff, stakesFor, type StandoffPick } from './standoff';
 import { isTell } from './survey';
 import {
@@ -317,6 +318,7 @@ function start(state: RoomState, at: number, gameId: string, durationSecs: numbe
     lastDeltas: {},
     lastSteal: null,
     lastPicks: {},
+    rightAnswers: {},
     // The titles have done their job the moment the first question is up, and
     // leaving them on the document would put them back on screen at the end of
     // the round, when `reset` returns the room to the lobby. The chaser card
@@ -520,6 +522,12 @@ function reveal(
     // subcollection, so this is how every other device gets the reveal chips,
     // the replay and its game log — from the update it is already receiving.
     lastPicks: telling ? {} : publishedPicks(eligible),
+    // Nobody is right on a tell, so it adds nothing.
+    rightAnswers: telling
+      ? state.rightAnswers
+      : foldRight(state.rightAnswers, eligible, (answer) =>
+          top ? top.includes(answer.optionIndex) : answer.optionIndex === correctIndex,
+        ),
     scores,
   };
 }
@@ -561,10 +569,18 @@ function skip(state: RoomState): RoomState {
 
   // Undo any points already awarded for it if we are skipping post-reveal.
   const scores = { ...state.scores };
+  let rightAnswers = state.rightAnswers;
   if (state.phase === 'reveal') {
     for (const [uid, delta] of Object.entries(state.lastDeltas)) {
       scores[uid] = (scores[uid] ?? 0) - delta;
     }
+    const top = question.survey?.top;
+    rightAnswers = foldRight(
+      rightAnswers,
+      state.lastPicks,
+      (answer) => (top ? top.includes(answer.optionIndex) : answer.optionIndex === question.correctIndex),
+      -1,
+    );
   }
 
   return {
@@ -575,6 +591,7 @@ function skip(state: RoomState): RoomState {
     lastDeltas: {},
     lastSteal: null,
     lastPicks: {},
+    rightAnswers,
     scores,
     skipped: [...state.skipped, question.id],
   };
@@ -713,7 +730,11 @@ function roundTwo(state: RoomState): RoomState {
   return {
     ...reset(state),
     doubleEnabled: true,
-    double: { gameId: state.gameId, scores: { ...state.scores } },
+    double: {
+      gameId: state.gameId,
+      scores: { ...state.scores },
+      ...(Object.keys(state.rightAnswers).length > 0 ? { rightAnswers: state.rightAnswers } : {}),
+    },
   };
 }
 
@@ -730,6 +751,7 @@ function reset(state: RoomState): RoomState {
     lastDeltas: {},
     lastSteal: null,
     lastPicks: {},
+    rightAnswers: {},
     form: null,
     chaserIntro: null,
     scores: Object.fromEntries(Object.keys(state.players).map((uid) => [uid, 0])),

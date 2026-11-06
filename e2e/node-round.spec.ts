@@ -4,7 +4,8 @@ import { collection, doc, serverTimestamp, setDoc, updateDoc } from 'firebase/fi
 import { reduce } from '../src/engine/reducer';
 import { randomRoomCode } from '../src/engine/roomCode';
 import { commitmentDoc, freshNonce, revealDoc } from '../src/engine/sealedPick';
-import type { StandoffPick } from '../src/engine/standoff';
+import { finalistsFor, tieAtCut, type StandoffPick } from '../src/engine/standoff';
+import { tieWords } from '../src/engine/standoffWords';
 import { createRoom, type QuizQuestion } from '../src/engine/state';
 import { toPersisted } from '../src/lib/roomDoc';
 import { startNodeHost } from '../scripts/nodeHost';
@@ -124,6 +125,11 @@ test('the host runs a whole round from Node, final and all, with no browser', as
     for (const { client, name, after } of seats) expect(scores[client.uid], name).toBe(after);
     expect(scores[host.uid]).toBe(0);
 
+    // #and the count the final's tie-break reads survived the rules on every reveal
+    const count = ended.rightAnswers as Record<string, { right: number; ms: number }> | undefined;
+    const counted = seats.filter(({ client }) => (count?.[client.uid]?.right ?? 0) > 0);
+    expect(counted.length).toBeGreaterThan(0);
+
     // #and the host kept the round, every question revealed through the vault
     // Its own move once the host sees `finished`, so wait for it rather than read once.
     const kept = await until(() => admin().doc(`games/${gameId}`).get(), (record) => record.exists);
@@ -147,6 +153,139 @@ test('the host runs a whole round from Node, final and all, with no browser', as
   } finally {
     running.stop();
     console.log(lines.join('\n'));
+    for (const { client } of seats) await client.close();
+    await host.close();
+  }
+});
+
+/**
+ * A tie for a place in the final, played for real: the count goes through the
+ * reducer, the rules and the room, and the host picks the finalists from it.
+ *
+ *            Ada     Bo      Cy
+ *   Q1-5     900     800     1,000   each: Cy first, Ada second, Bo third
+ *   Q6       wrong   1,000   wrong
+ *   Q7       1,000   wrong   wrong
+ *   Total    5,500   5,000   5,000
+ *   Right    6       6       5
+ *
+ * Bo and Cy tie for the second seat. Cy was faster, and the game id is chosen so
+ * the coin would pick Cy too, so only "more right first" can put Bo through.
+ */
+const TIE_QUESTIONS: QuizQuestion[] = Array.from({ length: 7 }, (_, index) => ({
+  id: `final-tie-${String(index)}`,
+  prompt: `Tied round question ${String(index + 1)}`,
+  options: ['The first one', 'The second one', 'The third one', 'The fourth one'],
+  correctIndex: null,
+  category: 'General Knowledge',
+  difficulty: 'easy',
+}));
+
+const RIGHT = 0;
+const WRONG = 1;
+type TiePlan = Record<'Ada' | 'Bo' | 'Cy', readonly [number, number]>;
+const SHARED: TiePlan = { Cy: [RIGHT, 1_200], Ada: [RIGHT, 2_400], Bo: [RIGHT, 3_600] };
+const TIE_PLAN: TiePlan[] = [
+  SHARED,
+  SHARED,
+  SHARED,
+  SHARED,
+  SHARED,
+  { Ada: [WRONG, 1_200], Bo: [RIGHT, 1_200], Cy: [WRONG, 1_200] },
+  { Ada: [RIGHT, 1_200], Bo: [WRONG, 1_200], Cy: [WRONG, 1_200] },
+];
+
+test('a tie for the final goes to more right, ahead of the faster player and the coin', async () => {
+  test.setTimeout(240_000);
+
+  // #given a hosted room of three answerers
+  const host = await player();
+  const [ada, bo, cy] = await Promise.all([player(), player(), player()]);
+  if (!ada || !bo || !cy) throw new Error('three players were not made');
+  const seats = [
+    { name: 'Ada' as const, client: ada },
+    { name: 'Bo' as const, client: bo },
+    { name: 'Cy' as const, client: cy },
+  ];
+  const code = randomRoomCode();
+  const joined = reduce(createRoom(code), { type: 'join', uid: host.uid, name: 'Host', at: Date.now() });
+  await setDoc(doc(host.db, 'rooms', code), { ...toPersisted({ ...joined, hostUid: host.uid }) });
+  const running = startNodeHost({ db: host.db, lite: host.lite, code, uid: host.uid, log: () => undefined });
+
+  try {
+    for (const { client, name } of seats) {
+      await updateDoc(doc(client.db, 'rooms', code), {
+        [`players.${client.uid}`]: { name, joinedAt: Date.now() },
+        [`scores.${client.uid}`]: 0,
+      });
+    }
+    await running.until((room) => Object.keys(room.players).length === 4);
+
+    // #and a game id whose coin, on its own, would pick Cy
+    const players = (await running.until(() => true)).players;
+    const tiedScores = { [host.uid]: 0, [ada.uid]: 5_500, [bo.uid]: 5_000, [cy.uid]: 5_000 };
+    let gameId = '';
+    for (let attempt = 0; attempt < 64 && gameId === ''; attempt += 1) {
+      const candidate = `final-tie-${String(Date.now())}-${String(attempt)}`;
+      if (finalistsFor(players, tiedScores, candidate)?.[1] === cy.uid) gameId = candidate;
+    }
+    expect(gameId).not.toBe('');
+
+    // #when the round is played to the plan
+    await running.dispatch([
+      {
+        type: 'selectPack',
+        packId: 'general-knowledge',
+        packTitle: 'GK',
+        questions: TIE_QUESTIONS,
+        wagerEnabled: false,
+        stealEnabled: false,
+        standoffEnabled: true,
+      },
+      { type: 'start', at: Date.now(), gameId, durationSecs: 10 },
+    ]);
+    await running.until((room) => room.phase === 'question');
+    await seedVault(code);
+
+    for (const [index, plan] of TIE_PLAN.entries()) {
+      await running.until((room) => room.phase === 'question' && room.index === index);
+      for (const { client, name } of seats) {
+        const [optionIndex, elapsedMs] = plan[name];
+        await setDoc(doc(collection(client.db, 'rooms', code, 'answers'), client.uid), {
+          optionIndex,
+          elapsedMs,
+          questionIndex: index,
+          at: serverTimestamp(),
+        });
+      }
+      await running.until((room) => room.phase === 'reveal' && room.index === index, 30_000);
+      await running.dispatch({ type: 'next', at: Date.now() });
+      await running.until((room) => room.phase === 'scoreboard');
+      await running.dispatch({ type: 'next', at: Date.now() });
+    }
+    await running.until((room) => room.phase === 'standoff');
+
+    // #then the scores tie as planned, read back past the host's cache
+    const final = (await admin().doc(`rooms/${code}`).get()).data() ?? {};
+    expect(final.scores).toEqual(tiedScores);
+
+    // #and the count on the room says why
+    const count = final.rightAnswers as Record<string, { right: number; ms: number }>;
+    expect(count[bo.uid]).toEqual({ right: 6, ms: 19_200 });
+    expect(count[cy.uid]).toEqual({ right: 5, ms: 6_000 });
+
+    // #and Bo is through, on more right, and the room is told so
+    const finalists = (final.standoff as { finalists: [string, string] }).finalists;
+    expect(finalists).toEqual([ada.uid, bo.uid]);
+    const nameOf = (uid: string): string => players[uid]?.name ?? uid;
+    const tie = tieAtCut(players, tiedScores, finalists, count);
+    expect(tie?.decidedBy).toBe('right');
+    expect(tieWords({ tie, nameOf, youUid: null })).toBe('Bo and Cy tied on 5,000. Bo got more right, 6 to 5.');
+
+    const unexpected = running.failures().filter((failure) => !/^reveal failed: .*Transaction lock timeout/.test(failure));
+    expect(unexpected).toEqual([]);
+  } finally {
+    running.stop();
     for (const { client } of seats) await client.close();
     await host.close();
   }

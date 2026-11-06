@@ -1267,6 +1267,25 @@ export function Preview() {
       ),
     },
     {
+      title: 'Share or Shaft · a tie for the second seat, as the one who missed out',
+      node: (
+        <ShareOrShaft
+          room={finalRoom(
+            {},
+            {
+              scores: { ...FINAL_SCORES, priya: FINAL_SCORES.greg },
+              rightAnswers: { greg: { right: 8, ms: 39_800 }, priya: { right: 7, ms: 25_300 } },
+            },
+          )}
+          youUid="priya"
+          isQuizmaster={false}
+          view={finalView()}
+          onOpenPicks={noop}
+          onNext={noop}
+        />
+      ),
+    },
+    {
       title: 'Share or Shaft · picking, as a finalist',
       node: (
         <ShareOrShaft

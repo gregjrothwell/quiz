@@ -1,4 +1,4 @@
-import { outcomeOf, type Standoff } from './standoff';
+import { outcomeOf, type CutTie, type Standoff } from './standoff';
 
 /**
  * What the reveal says, to whoever is looking at it.
@@ -61,4 +61,50 @@ export function standoffWords({ standoff, nameOf, youUid, leaderAfter }: WordsIn
           .join(' ');
 
   return { headline, note };
+}
+
+function listed(names: readonly string[]): string {
+  if (names.length <= 1) return names.join('');
+  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}
+
+/**
+ * Says how a tie for a place in the final was settled. The board cannot: it shows
+ * a tie as one shared position, in uid order, which can put the one who missed
+ * out first.
+ */
+export function tieWords({
+  tie,
+  nameOf,
+  youUid,
+}: {
+  tie: CutTie | null;
+  nameOf: (uid: string) => string;
+  youUid: string | null;
+}): string | null {
+  if (!tie) return null;
+  const youFirst = (uids: readonly string[]): string[] => [
+    ...uids.filter((uid) => uid === youUid),
+    ...uids.filter((uid) => uid !== youUid),
+  ];
+  const named = (uids: readonly string[], you: string): string =>
+    listed(youFirst(uids).map((uid) => (uid === youUid ? you : nameOf(uid))));
+
+  const tied = named(tie.tied, 'You');
+  const picked = named(tie.picked, 'You');
+  const onePair = tie.tied.length === 2;
+  const lead = `${tied} tied on ${points(tie.score)}`;
+
+  if (tie.decidedBy === 'coin') {
+    return `${lead}. Level on right answers and speed too, so a coin picked ${named(tie.picked, 'you')}.`;
+  }
+  if (tie.decidedBy === 'right') {
+    if (!onePair) return `${lead}. ${picked} got the most right.`;
+    const winner = tie.picked[0] ?? '';
+    const loser = tie.tied.find((uid) => uid !== winner) ?? '';
+    return `${lead}. ${picked} got more right, ${tie.rightOf[winner] ?? 0} to ${tie.rightOf[loser] ?? 0}.`;
+  }
+  if (!onePair) return `${lead}. ${picked} got the most right, then the fastest.`;
+  const each = tie.rightOf[tie.tied[0] ?? ''] ?? 0;
+  return `${lead}, with ${each} right each. ${picked} ${tie.picked[0] === youUid ? 'were' : 'was'} faster.`;
 }

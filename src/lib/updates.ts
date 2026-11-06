@@ -18,6 +18,12 @@ export interface Update {
 
 export const UPDATES: readonly Update[] = [
   {
+    date: '2026-11-06',
+    lines: [
+      'A tie for a place in Share or Shaft now goes to whoever got more right, then whoever was faster, and the final says who tied and why. No more coin toss, unless they are level on those too.',
+    ],
+  },
+  {
     date: '2026-11-05',
     lines: [
       'A shorter ending. With no final to play, the last answer goes straight to the podium. After Share or Shaft there is no second drum roll, and half-time is just the table and the second half.',

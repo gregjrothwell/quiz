@@ -1,3 +1,4 @@
+import { byRightAnswers, type RightAnswers } from './rightAnswers';
 import { roomStandings } from './scoring';
 import type { Player } from './state';
 
@@ -106,15 +107,17 @@ function coin(gameId: string, uid: string): number {
  * Current members only — `roomStandings` filters on membership, because
  * `scores` keeps the number of somebody who has gone home.
  *
- * **A tie at the cut is settled by a coin seeded from the game**, not by the
- * board's own order. `standings` breaks a tie on uid, which is fixed per device,
- * so the same one of two colleagues would win every tie for a place in the
- * final for the rest of the season.
+ * **A tie at the cut goes to whoever got more right, then whoever spent less
+ * time on those answers** (Greg, 6 November 2026). A coin seeded from the game
+ * settles only what is level on both, not the board's own order: `standings`
+ * breaks a tie on uid, which is fixed per device, so the same one of two
+ * colleagues would win every such tie for the rest of the season.
  */
 export function finalistsFor(
   players: Record<string, Player>,
   scores: Record<string, number>,
   gameId: string,
+  rightAnswers: RightAnswers = {},
 ): [string, string] | null {
   const rows = roomStandings(players, scores);
   const cut = rows[1];
@@ -124,10 +127,65 @@ export function finalistsFor(
   const level = rows
     .filter((row) => row.score === cut.score)
     .map((row) => row.uid)
-    .sort((a, b) => coin(gameId, a) - coin(gameId, b) || a.localeCompare(b));
+    .sort(
+      (a, b) =>
+        byRightAnswers(rightAnswers, a, b) || coin(gameId, a) - coin(gameId, b) || a.localeCompare(b),
+    );
 
   const [first, second] = [...clear, ...level];
   return first !== undefined && second !== undefined ? [first, second] : null;
+}
+
+export interface CutTie {
+  /** Everyone level at the cut: the finalists on that score, then who missed out. */
+  tied: string[];
+  /** The finalists who went through on it. */
+  picked: string[];
+  score: number;
+  /** What separated the last one in from the first one out. */
+  decidedBy: 'right' | 'speed' | 'coin';
+  rightOf: Record<string, number>;
+}
+
+/**
+ * The tie {@link finalistsFor} settled, or null when it left nobody out. Takes
+ * the same scores and count, so in The Double that is the morning.
+ *
+ * Only worth saying when somebody missed out: two level at the top with nobody
+ * else on that score both went through, and nothing was decided. Added after room
+ * `3ESY`, 6 November 2026, where the board listed the player who missed out above
+ * the one who went through, and nothing said why.
+ */
+export function tieAtCut(
+  players: Record<string, Player>,
+  scores: Record<string, number>,
+  finalists: readonly [string, string],
+  rightAnswers: RightAnswers,
+): CutTie | null {
+  const score = scores[finalists[1]];
+  if (score === undefined) return null;
+
+  const missedOut = roomStandings(players, scores)
+    .filter((row) => row.score === score && !finalists.includes(row.uid))
+    .map((row) => row.uid)
+    .sort((a, b) => byRightAnswers(rightAnswers, a, b));
+  const firstOut = missedOut[0];
+  if (firstOut === undefined) return null;
+
+  const picked = finalists.filter((uid) => scores[uid] === score);
+  const lastIn = picked[picked.length - 1] ?? finalists[1];
+  const tied = [...picked, ...missedOut];
+  const inRight = rightAnswers[lastIn]?.right ?? 0;
+  const outRight = rightAnswers[firstOut]?.right ?? 0;
+
+  return {
+    tied,
+    picked,
+    score,
+    decidedBy:
+      inRight !== outRight ? 'right' : byRightAnswers(rightAnswers, lastIn, firstOut) !== 0 ? 'speed' : 'coin',
+    rightOf: Object.fromEntries(tied.map((uid) => [uid, rightAnswers[uid]?.right ?? 0])),
+  };
 }
 
 /**

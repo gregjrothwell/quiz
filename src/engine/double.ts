@@ -1,3 +1,4 @@
+import { addRight, type RightAnswers } from './rightAnswers';
 import { roomStandings, standings } from './scoring';
 import { finalistsFor } from './standoff';
 import type { FirstHalf, RoomState } from './state';
@@ -25,6 +26,11 @@ export function morningTotals(room: Pick<RoomState, 'double' | 'scores'>): Recor
   return totals;
 }
 
+/** Right answers over the morning: the same reading as {@link morningTotals}. */
+export function morningRightAnswers(room: Pick<RoomState, 'double' | 'rightAnswers'>): RightAnswers {
+  return room.double?.rightAnswers ? addRight(room.double.rightAnswers, room.rightAnswers) : room.rightAnswers;
+}
+
 /** Round one of a double, over, with round two still to come. */
 export function isHalfTime(room: Pick<RoomState, 'phase' | 'doubleEnabled' | 'double'>): boolean {
   return room.phase === 'finished' && room.doubleEnabled && room.double === null;
@@ -46,10 +52,13 @@ export function endsAtHalfTime(room: Pick<RoomState, 'doubleEnabled' | 'double'>
  * round. Read after the wager is paid, so a stake that came off decides it.
  */
 export function finalistsAfterLast(
-  room: Pick<RoomState, 'standoffEnabled' | 'doubleEnabled' | 'double' | 'players' | 'scores' | 'gameId'>,
+  room: Pick<
+    RoomState,
+    'standoffEnabled' | 'doubleEnabled' | 'double' | 'players' | 'scores' | 'gameId' | 'rightAnswers'
+  >,
 ): [string, string] | null {
   if (!room.standoffEnabled || endsAtHalfTime(room)) return null;
-  return finalistsFor(room.players, morningTotals(room), room.gameId ?? '');
+  return finalistsFor(room.players, morningTotals(room), room.gameId ?? '', morningRightAnswers(room));
 }
 
 /**

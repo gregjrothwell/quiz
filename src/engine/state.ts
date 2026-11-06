@@ -1,3 +1,4 @@
+import type { RightAnswers } from './rightAnswers';
 import type { Loaded } from './cannon';
 import type { FormFact } from './form';
 import type { Steal } from './scoring';
@@ -233,6 +234,8 @@ export interface FirstHalf {
   gameId: string;
   /** Everyone who had a score at half-time, including anyone who has since left. */
   scores: Record<string, number>;
+  /** Their right answers at half-time, so the final's tie-break reads the morning. */
+  rightAnswers?: RightAnswers;
 }
 
 export interface RoomState {
@@ -422,6 +425,12 @@ export interface RoomState {
    */
   lastPicks: Record<string, Answer>;
   /**
+   * Right answers so far this round: the tie-break for a place in the final.
+   * Written with the reveal and taken back if the question is thrown out. Empty
+   * rooms omit it, as `cannon` does. See `rightAnswers.ts`.
+   */
+  rightAnswers: RightAnswers;
+  /**
    * The Slop Cannon: which shots the quizmaster loaded into this round
    * (docs/decisions/slop-cannon.md, B3). Set by the `selectPack` that starts
    * the round and fixed for it, as `wagerEnabled` is. Empty on almost every
@@ -497,6 +506,7 @@ export function createRoom(code: string): RoomState {
     browsing: null,
     hostUid: null,
     lastPicks: {},
+    rightAnswers: {},
   };
 }
 
