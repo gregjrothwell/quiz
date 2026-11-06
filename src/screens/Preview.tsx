@@ -1267,6 +1267,19 @@ export function Preview() {
       ),
     },
     {
+      title: 'Share or Shaft · a coin decided the second seat, as the one it left out',
+      node: (
+        <ShareOrShaft
+          room={finalRoom({}, { scores: { ...FINAL_SCORES, priya: FINAL_SCORES.greg } })}
+          youUid="priya"
+          isQuizmaster={false}
+          view={finalView()}
+          onOpenPicks={noop}
+          onNext={noop}
+        />
+      ),
+    },
+    {
       title: 'Share or Shaft · picking, as a finalist',
       node: (
         <ShareOrShaft

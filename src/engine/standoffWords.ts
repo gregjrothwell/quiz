@@ -1,4 +1,4 @@
-import { outcomeOf, type Standoff } from './standoff';
+import { outcomeOf, type CutTie, type Standoff } from './standoff';
 
 /**
  * What the reveal says, to whoever is looking at it.
@@ -61,4 +61,32 @@ export function standoffWords({ standoff, nameOf, youUid, leaderAfter }: WordsIn
           .join(' ');
 
   return { headline, note };
+}
+
+function listed(names: readonly string[]): string {
+  if (names.length <= 1) return names.join('');
+  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}
+
+/**
+ * Says a coin decided who is in the final. The board cannot: it shows a tie as
+ * one shared position, in uid order, which can put the one who missed out first.
+ */
+export function coinWords({
+  tie,
+  nameOf,
+  youUid,
+}: {
+  tie: CutTie | null;
+  nameOf: (uid: string) => string;
+  youUid: string | null;
+}): string | null {
+  if (!tie) return null;
+  const youFirst = (uids: readonly string[]): string[] => [
+    ...uids.filter((uid) => uid === youUid),
+    ...uids.filter((uid) => uid !== youUid),
+  ];
+  const tied = youFirst(tie.tied).map((uid) => (uid === youUid ? 'You' : nameOf(uid)));
+  const picked = youFirst(tie.picked).map((uid) => (uid === youUid ? 'you' : nameOf(uid)));
+  return `${listed(tied)} tied on ${points(tie.score)}. The coin picked ${listed(picked)}.`;
 }

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import type { Standoff } from './standoff';
-import { standoffWords } from './standoffWords';
+import { coinWords, standoffWords } from './standoffWords';
 
 const NAMES: Record<string, string> = { a: 'Alex', b: 'Bea', c: 'Cal' };
 const nameOf = (uid: string): string => NAMES[uid] ?? uid;
@@ -50,5 +50,29 @@ describe('standoffWords', () => {
     expect(words?.note).toBe('Alex never picked, which counts as share.');
     expect(say({ a: null, b: 'share' }, 'a')?.note).toBe('You never picked, which counts as share.');
     expect(say({ a: 'share', b: 'share' }, 'a')?.note).toBeNull();
+  });
+});
+
+describe('coinWords', () => {
+  const tie = { tied: ['b', 'c'], picked: ['b'], score: 7_300 };
+
+  test('nothing when no coin was needed', () => {
+    expect(coinWords({ tie: null, nameOf, youUid: 'a' })).toBeNull();
+  });
+
+  test('to the room, to the one it picked and to the one it did not', () => {
+    expect(coinWords({ tie, nameOf, youUid: 'a' })).toBe('Bea and Cal tied on 7,300. The coin picked Bea.');
+    expect(coinWords({ tie, nameOf, youUid: 'b' })).toBe('You and Cal tied on 7,300. The coin picked you.');
+    expect(coinWords({ tie, nameOf, youUid: 'c' })).toBe('You and Bea tied on 7,300. The coin picked Bea.');
+  });
+
+  test('three level at the top, where it picks two', () => {
+    const three = { tied: ['a', 'b', 'c'], picked: ['a', 'b'], score: 500 };
+    expect(coinWords({ tie: three, nameOf, youUid: null })).toBe(
+      'Alex, Bea and Cal tied on 500. The coin picked Alex and Bea.',
+    );
+    expect(coinWords({ tie: three, nameOf, youUid: 'b' })).toBe(
+      'You, Alex and Cal tied on 500. The coin picked you and Alex.',
+    );
   });
 });

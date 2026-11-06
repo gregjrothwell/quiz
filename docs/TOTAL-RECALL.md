@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 5 November 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 6 November 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -23,6 +23,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
+
+## 2026-11-06 — Built, not live: the final says when a coin chose (PROJ-117)
+
+`3ESY` played correctly: a tie for second on 7,300, the seeded coin recomputed and matching. But the board listed the player it left out first, and nothing said why. The line runs until the reveal: [`share-or-shaft.md`](decisions/share-or-shaft.md).
 
 ## 2026-11-05 — Built, not live: Geekend's option goes, the end of a round told once (PROJ-116)
 

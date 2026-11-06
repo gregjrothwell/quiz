@@ -8,6 +8,7 @@ import {
   settleStandoff,
   stakesFor,
   takeFor,
+  tieAtCut,
   type Standoff,
 } from './standoff';
 import { PHASES, createRoom, type Player, type QuizQuestion, type RoomState } from './state';
@@ -445,5 +446,45 @@ describe('the phases agree with the security rules', () => {
 
   test('every phase the engine can write is one the rules accept', () => {
     expect(names).toEqual([...PHASES].sort());
+  });
+});
+
+describe('tieAtCut', () => {
+  const players = (...uids: string[]) =>
+    Object.fromEntries(uids.map((uid, joinedAt) => [uid, { name: uid, joinedAt }]));
+
+  test('names who the coin left out, on the scores of room 3ESY', () => {
+    const scores = { greg: 9_200, kelly: 7_300, joe: 7_300, steve: 7_000 };
+    const room = players('greg', 'kelly', 'joe', 'steve');
+    const finalists = finalistsFor(room, scores, 'game');
+    expect(finalists).not.toBeNull();
+    const tie = tieAtCut(room, scores, finalists!);
+    expect(tie?.score).toBe(7_300);
+    expect(tie?.tied.slice().sort()).toEqual(['joe', 'kelly']);
+    expect(tie?.picked).toEqual([finalists![1]]);
+  });
+
+  test('no line for a clean top two', () => {
+    const scores = { a: 900, b: 800, c: 700 };
+    expect(tieAtCut(players('a', 'b', 'c'), scores, ['a', 'b'])).toBeNull();
+  });
+
+  test('no line when the top two are level and nobody else is', () => {
+    const scores = { a: 800, b: 800, c: 700 };
+    expect(tieAtCut(players('a', 'b', 'c'), scores, ['a', 'b'])).toBeNull();
+  });
+
+  test('three level at the top: the coin picked both finalists', () => {
+    const scores = { a: 800, b: 800, c: 800 };
+    expect(tieAtCut(players('a', 'b', 'c'), scores, ['a', 'b'])).toEqual({
+      tied: ['a', 'b', 'c'],
+      picked: ['a', 'b'],
+      score: 800,
+    });
+  });
+
+  test('somebody who went home on the same score was not left out by the coin', () => {
+    const scores = { a: 900, b: 800, gone: 800 };
+    expect(tieAtCut(players('a', 'b'), scores, ['a', 'b'])).toBeNull();
   });
 });

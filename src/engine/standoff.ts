@@ -130,6 +130,40 @@ export function finalistsFor(
   return first !== undefined && second !== undefined ? [first, second] : null;
 }
 
+export interface CutTie {
+  /** Everyone level at the cut: the finalists on that score, then who missed out. */
+  tied: string[];
+  /** The finalists the coin put through. */
+  picked: string[];
+  score: number;
+}
+
+/**
+ * The tie {@link finalistsFor} settled with its coin, or null when it left
+ * nobody out. Takes the same scores, so in The Double that is the morning.
+ *
+ * Only worth saying when somebody missed out: two level at the top with nobody
+ * else on that score both went through, and no coin changed anything. Added
+ * after room `3ESY`, 6 November 2026, where the board listed the player the coin
+ * left out above the one it picked, and nothing said why.
+ */
+export function tieAtCut(
+  players: Record<string, Player>,
+  scores: Record<string, number>,
+  finalists: readonly [string, string],
+): CutTie | null {
+  const score = scores[finalists[1]];
+  if (score === undefined) return null;
+
+  const missedOut = roomStandings(players, scores)
+    .filter((row) => row.score === score && !finalists.includes(row.uid))
+    .map((row) => row.uid);
+  if (missedOut.length === 0) return null;
+
+  const picked = finalists.filter((uid) => scores[uid] === score);
+  return { tied: [...picked, ...missedOut], picked, score };
+}
+
 /**
  * What each finalist puts in: everything they hold above zero. A negative
  * score — a lost minimum stake can leave one — stays with its owner, because a

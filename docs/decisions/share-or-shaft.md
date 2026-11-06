@@ -1,6 +1,6 @@
 # Share or Shaft — the final
 
-> **Owner: Greg Rothwell. Last updated: 24 September 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 6 November 2026. Budget: 250 lines.**
 
 **Status: built on branch `share-or-shaft`, not merged, not deployed. The rules
 are live — pasted 24 September and proved both ways.** After the last question,
@@ -39,6 +39,10 @@ shafting is free and there is no dilemma.
 2. After the last scoreboard the **top two** current members go through. A tie
    at the cut goes to a coin seeded from the game — the board's own tie-break
    is uid order, which would hand every tie to the same person all season.
+   **The final says so, by name, until the reveal** (PROJ-117, 6 Nov): in `3ESY`
+   the board listed the player the coin left out above the one it picked, and
+   nothing on screen said why. Only when somebody missed out; on the morning's
+   totals in The Double, which is what chose them.
 3. The **pot** is each finalist's score above zero. A negative score stays with
    its owner. Nobody else's score moves.
 4. **Talk: 60 seconds**, out loud on the call. The quizmaster can end it early.

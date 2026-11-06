@@ -12,11 +12,12 @@ import {
   PICK_MS,
   potOf,
   takeFor,
+  tieAtCut,
   TALK_MS,
   type StandoffOutcome,
   type StandoffPick,
 } from '../engine/standoff';
-import { standoffWords } from '../engine/standoffWords';
+import { coinWords, standoffWords } from '../engine/standoffWords';
 import type { RoomState } from '../engine/state';
 import { BUZZ_CORRECT, BUZZ_LOCK, BUZZ_SHAFTED, buzz, useBuzz } from '../lib/haptics';
 import { play, useCue } from '../lib/sound';
@@ -334,6 +335,11 @@ export function ShareOrShaft({
   // On the morning in round two of The Double, which is what the final paid out.
   const leaderAfter = roomStandings(room.players, morningTotals(room))[0]?.uid ?? null;
   const words = standoffWords({ standoff, nameOf, youUid, leaderAfter });
+  // Not at the reveal: the settle has moved the two scores this compares.
+  const coin =
+    stage === 'revealed'
+      ? null
+      : coinWords({ tie: tieAtCut(room.players, morningTotals(room), standoff.finalists), nameOf, youUid });
   const pot = potOf(standoff);
   const acting = outcome !== null && reached('clash');
 
@@ -370,6 +376,12 @@ export function ShareOrShaft({
         </p>
         {isNewMode('standoff', today) ? <NewSticker /> : null}
       </div>
+
+      {coin ? (
+        <div className="standoff__stage">
+          <p className="muted hint">{coin}</p>
+        </div>
+      ) : null}
 
       <div
         className="standoff"
