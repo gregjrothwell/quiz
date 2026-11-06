@@ -36,13 +36,16 @@ shafting is free and there is no dilemma.
 
 1. **A lobby choice**, *How it ends*, off by default, with every pack. It stacks
    with the wager, which settles first and so decides who reaches the final.
-2. After the last scoreboard the **top two** current members go through. A tie
-   at the cut goes to a coin seeded from the game — the board's own tie-break
-   is uid order, which would hand every tie to the same person all season.
-   **The final says so, by name, until the reveal** (PROJ-117, 6 Nov): in `3ESY`
-   the board listed the player the coin left out above the one it picked, and
-   nothing on screen said why. Only when somebody missed out; on the morning's
-   totals in The Double, which is what chose them.
+2. After the last scoreboard the **top two** current members go through. **A tie
+   at the cut goes to whoever got more right, then whoever spent less time on
+   those answers** (Greg, 6 Nov 2026, PROJ-117). Only what is level on both goes
+   to a coin seeded from the game, in practice two players with nothing right. The
+   board's own tie-break is uid order, which would hand every tie to the same
+   person all season. **The final says who tied and why, until the reveal**: in
+   `3ESY` the board listed the player who missed out above the one who went
+   through, and nothing on screen said why. Only when somebody missed out; on the
+   morning's totals in The Double, which is what chose them.
+   [`final-tie-break.md`](final-tie-break.md).
 3. The **pot** is each finalist's score above zero. A negative score stays with
    its owner. Nobody else's score moves.
 4. **Talk: 60 seconds**, out loud on the call. The quizmaster can end it early.
@@ -74,8 +77,8 @@ into tomorrow's final.
 
 1. **Opt-in**, off by default; off, a round ends exactly as today. *Met — lobby,
    reducer tests.*
-2. **Finalists**: top two members, seeded coin at the cut, none under two
-   members. *Met — `standoff.test.ts`.*
+2. **Finalists**: top two members, more right then faster at the cut, then a
+   seeded coin, none under two members. *Met — `standoff.test.ts`.*
 3. **Pot**: stakes above zero; nobody else moves. *Met — tests.*
 4. **Talk**, 60 seconds; the quizmaster can end it. *Met — see the clock note.*
 5. **Pick**, 15 seconds, tap or key, first pick locks, others see only *locked

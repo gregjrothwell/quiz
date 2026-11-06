@@ -21,7 +21,7 @@ isolateFiles();
  *
  * What is compared, and what is not. Each entry is one change the Admin SDK saw,
  * as the phase, question, stage of the final, and the fields that changed, with
- * their values made stable: timestamps, answer times (`elapsedMs`), the game id,
+ * their values made stable: timestamps, answer times (`elapsedMs`, and `ms` on the count of right answers), the game id,
  * question ids and the lobby-vote generation (`voteGen`, PROJ-34) are replaced
  * by placeholders, uids by the player's name. Scores are kept: everyone
  * answers A, which the seeded vault calls right, in a fixed order a beat apart,
@@ -75,7 +75,7 @@ function stable(value: unknown, names: ReadonlyMap<string, string>, ids: Readonl
       // copied by the host. It moves by a few milliseconds between honest runs;
       // the scores it ranks are compared, and did not.
       out[names.get(key) ?? ids.get(key) ?? key] =
-        key === 'elapsedMs' ? '<ms>' : stable((value as Record<string, unknown>)[key], names, ids);
+        key === 'elapsedMs' || key === 'ms' ? '<ms>' : stable((value as Record<string, unknown>)[key], names, ids);
     }
     return out;
   }

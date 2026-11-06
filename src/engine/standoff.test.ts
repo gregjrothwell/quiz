@@ -449,42 +449,194 @@ describe('the phases agree with the security rules', () => {
   });
 });
 
+describe('finalistsFor — a tie at the cut', () => {
+  const players = {
+    lead: seat('Lead', 1),
+    kelly: seat('Kelly', 2),
+    joe: seat('Joe', 3),
+  };
+  const scores = { lead: 9_200, kelly: 7_300, joe: 7_300 };
+
+  test('more right answers goes through', () => {
+    const right = { kelly: { right: 8, ms: 39_800 }, joe: { right: 7, ms: 25_300 } };
+    expect(finalistsFor(players, scores, 'game', right)).toEqual(['lead', 'kelly']);
+  });
+
+  test('level on those, the faster goes through', () => {
+    const right = { kelly: { right: 5, ms: 25_900 }, joe: { right: 5, ms: 20_300 } };
+    expect(finalistsFor(players, scores, 'game', right)).toEqual(['lead', 'joe']);
+  });
+
+  test('more right beats faster', () => {
+    const right = { kelly: { right: 7, ms: 25_300 }, joe: { right: 8, ms: 39_800 } };
+    expect(finalistsFor(players, scores, 'game', right)).toEqual(['lead', 'joe']);
+  });
+
+  test('level on both, the coin decides and every device agrees', () => {
+    const none = finalistsFor(players, scores, 'game');
+    const same = finalistsFor(players, scores, 'game', {
+      kelly: { right: 2, ms: 900 },
+      joe: { right: 2, ms: 900 },
+    });
+    expect(same).toEqual(none);
+    expect(none?.[0]).toBe('lead');
+  });
+
+  test('never moves a clear second place', () => {
+    const clear = { lead: 9_200, kelly: 7_300, joe: 7_000 };
+    const right = { joe: { right: 15, ms: 1 } };
+    expect(finalistsFor(players, clear, 'game', right)).toEqual(['lead', 'kelly']);
+  });
+});
+
 describe('tieAtCut', () => {
   const players = (...uids: string[]) =>
     Object.fromEntries(uids.map((uid, joinedAt) => [uid, { name: uid, joinedAt }]));
+  const scores = { greg: 9_200, kelly: 7_300, joe: 7_300, steve: 7_000 };
+  const room = players('greg', 'kelly', 'joe', 'steve');
 
-  test('names who the coin left out, on the scores of room 3ESY', () => {
-    const scores = { greg: 9_200, kelly: 7_300, joe: 7_300, steve: 7_000 };
-    const room = players('greg', 'kelly', 'joe', 'steve');
-    const finalists = finalistsFor(room, scores, 'game');
-    expect(finalists).not.toBeNull();
-    const tie = tieAtCut(room, scores, finalists!);
-    expect(tie?.score).toBe(7_300);
-    expect(tie?.tied.slice().sort()).toEqual(['joe', 'kelly']);
-    expect(tie?.picked).toEqual([finalists![1]]);
-  });
-
-  test('no line for a clean top two', () => {
-    const scores = { a: 900, b: 800, c: 700 };
-    expect(tieAtCut(players('a', 'b', 'c'), scores, ['a', 'b'])).toBeNull();
-  });
-
-  test('no line when the top two are level and nobody else is', () => {
-    const scores = { a: 800, b: 800, c: 700 };
-    expect(tieAtCut(players('a', 'b', 'c'), scores, ['a', 'b'])).toBeNull();
-  });
-
-  test('three level at the top: the coin picked both finalists', () => {
-    const scores = { a: 800, b: 800, c: 800 };
-    expect(tieAtCut(players('a', 'b', 'c'), scores, ['a', 'b'])).toEqual({
-      tied: ['a', 'b', 'c'],
-      picked: ['a', 'b'],
-      score: 800,
+  test('decided by right answers, with the counts: room 3ESY', () => {
+    const right = { kelly: { right: 8, ms: 39_800 }, joe: { right: 7, ms: 25_300 } };
+    expect(tieAtCut(room, scores, ['greg', 'kelly'], right)).toEqual({
+      tied: ['kelly', 'joe'],
+      picked: ['kelly'],
+      score: 7_300,
+      decidedBy: 'right',
+      rightOf: { kelly: 8, joe: 7 },
     });
   });
 
-  test('somebody who went home on the same score was not left out by the coin', () => {
-    const scores = { a: 900, b: 800, gone: 800 };
-    expect(tieAtCut(players('a', 'b'), scores, ['a', 'b'])).toBeNull();
+  test('decided by speed', () => {
+    const right = { kelly: { right: 5, ms: 20_300 }, joe: { right: 5, ms: 25_900 } };
+    expect(tieAtCut(room, scores, ['greg', 'kelly'], right)?.decidedBy).toBe('speed');
+  });
+
+  test('decided by the coin, when nobody has a right answer to compare', () => {
+    expect(tieAtCut(room, scores, ['greg', 'kelly'], {})?.decidedBy).toBe('coin');
+  });
+
+  test('no line for a clean top two', () => {
+    expect(tieAtCut(players('a', 'b', 'c'), { a: 900, b: 800, c: 700 }, ['a', 'b'], {})).toBeNull();
+  });
+
+  test('no line when the top two are level and nobody else is', () => {
+    expect(tieAtCut(players('a', 'b', 'c'), { a: 800, b: 800, c: 700 }, ['a', 'b'], {})).toBeNull();
+  });
+
+  test('three level at the top: judged between the last in and the first out', () => {
+    const right = { a: { right: 9, ms: 10 }, b: { right: 8, ms: 10 }, c: { right: 7, ms: 10 } };
+    const tie = tieAtCut(players('a', 'b', 'c'), { a: 800, b: 800, c: 800 }, ['a', 'b'], right);
+    expect(tie?.tied).toEqual(['a', 'b', 'c']);
+    expect(tie?.picked).toEqual(['a', 'b']);
+    expect(tie?.decidedBy).toBe('right');
+  });
+
+  test('somebody who went home on the same score did not miss out on anything', () => {
+    expect(tieAtCut(players('a', 'b'), { a: 900, b: 800, gone: 800 }, ['a', 'b'], {})).toBeNull();
+  });
+});
+
+describe('the running count of right answers', () => {
+  const players = { a: seat('A', 1), b: seat('B', 2), c: seat('C', 3) };
+  const question = (id: string): QuizQuestion => ({
+    id,
+    prompt: id,
+    options: ['w', 'x', 'y', 'z'],
+    correctIndex: null,
+    category: 'General Knowledge',
+    difficulty: 'easy',
+  });
+
+  function open(): RoomState {
+    return {
+      ...createRoom('HKQ7'),
+      phase: 'question',
+      gameId: 'game',
+      players,
+      standoffEnabled: true,
+      scores: { a: 0, b: 0, c: 0 },
+      questions: [question('q1'), question('q2')],
+      questionOpenedAt: 1,
+    };
+  }
+  const answered = (state: RoomState, uid: string, optionIndex: number, elapsedMs: number): RoomState =>
+    reduce(state, { type: 'answer', uid, optionIndex, elapsedMs });
+  const revealed = (state: RoomState, questionId: string): RoomState =>
+    reduce(state, { type: 'reveal', correctIndex: 0, questionId });
+
+  test('counts right answers and their time, and nothing for a wrong one', () => {
+    let state = answered(open(), 'a', 0, 1_200);
+    state = answered(state, 'b', 1, 800);
+    state = revealed(state, 'q1');
+    expect(state.rightAnswers).toEqual({ a: { right: 1, ms: 1_200 } });
+  });
+
+  test('adds up over questions', () => {
+    let state = revealed(answered(open(), 'a', 0, 1_200), 'q1');
+    state = reduce(state, { type: 'next', at: 2 });
+    state = reduce(state, { type: 'next', at: 3 });
+    state = revealed(answered(state, 'a', 0, 800), 'q2');
+    expect(state.rightAnswers).toEqual({ a: { right: 2, ms: 2_000 } });
+  });
+
+  test('a question thrown out after its reveal is taken back', () => {
+    const state = revealed(answered(open(), 'a', 0, 1_200), 'q1');
+    expect(reduce(state, { type: 'skip' }).rightAnswers).toEqual({});
+  });
+
+  test('a question thrown out takes back only that question', () => {
+    let state = revealed(answered(open(), 'a', 0, 1_200), 'q1');
+    state = reduce(state, { type: 'next', at: 2 });
+    state = reduce(state, { type: 'next', at: 3 });
+    state = revealed(answered(state, 'a', 0, 800), 'q2');
+    expect(reduce(state, { type: 'skip' }).rightAnswers).toEqual({ a: { right: 1, ms: 1_200 } });
+  });
+
+  test('a new round starts clean', () => {
+    const state = revealed(answered(open(), 'a', 0, 1_200), 'q1');
+    expect(reduce(state, { type: 'reset' }).rightAnswers).toEqual({});
+  });
+
+  test('the final reads it: level on points, the one with more right goes through', () => {
+    const next = run(
+      lastScoreboard({
+        scores: { first: 5_000, second: 3_000, third: 3_000, last: 0 },
+        rightAnswers: { second: { right: 3, ms: 9_000 }, third: { right: 4, ms: 12_000 } },
+      }),
+      { type: 'next', at: 1 },
+    );
+    expect(next.standoff?.finalists).toEqual(['first', 'third']);
+  });
+
+  test('The Double reads the morning, adding round one', () => {
+    const next = run(
+      lastScoreboard({
+        scores: { first: 5_000, second: 3_000, third: 3_000, last: 0 },
+        doubleEnabled: true,
+        double: {
+          gameId: 'round-one',
+          scores: {},
+          rightAnswers: { second: { right: 2, ms: 1_000 } },
+        },
+        rightAnswers: { second: { right: 3, ms: 9_000 }, third: { right: 4, ms: 12_000 } },
+      }),
+      { type: 'next', at: 1 },
+    );
+    expect(next.standoff?.finalists).toEqual(['first', 'second']);
+  });
+
+  test('half-time holds the count for round two', () => {
+    const halfTime: RoomState = {
+      ...createRoom('TEST'),
+      phase: 'finished',
+      gameId: 'round-one',
+      doubleEnabled: true,
+      players: { a: seat('A', 1) },
+      scores: { a: 1_000 },
+      rightAnswers: { a: { right: 1, ms: 500 } },
+    };
+    const next = reduce(halfTime, { type: 'roundTwo' });
+    expect(next.rightAnswers).toEqual({});
+    expect(next.double?.rightAnswers).toEqual({ a: { right: 1, ms: 500 } });
   });
 });

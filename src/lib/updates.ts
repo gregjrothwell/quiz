@@ -20,7 +20,7 @@ export const UPDATES: readonly Update[] = [
   {
     date: '2026-11-06',
     lines: [
-      'If a tie decides who plays Share or Shaft, the final now says who tied and who the coin picked.',
+      'A tie for a place in Share or Shaft now goes to whoever got more right, then whoever was faster, and the final says who tied and why. No more coin toss, unless they are level on those too.',
     ],
   },
   {

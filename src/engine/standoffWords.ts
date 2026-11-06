@@ -69,10 +69,11 @@ function listed(names: readonly string[]): string {
 }
 
 /**
- * Says a coin decided who is in the final. The board cannot: it shows a tie as
- * one shared position, in uid order, which can put the one who missed out first.
+ * Says how a tie for a place in the final was settled. The board cannot: it shows
+ * a tie as one shared position, in uid order, which can put the one who missed
+ * out first.
  */
-export function coinWords({
+export function tieWords({
   tie,
   nameOf,
   youUid,
@@ -86,7 +87,24 @@ export function coinWords({
     ...uids.filter((uid) => uid === youUid),
     ...uids.filter((uid) => uid !== youUid),
   ];
-  const tied = youFirst(tie.tied).map((uid) => (uid === youUid ? 'You' : nameOf(uid)));
-  const picked = youFirst(tie.picked).map((uid) => (uid === youUid ? 'you' : nameOf(uid)));
-  return `${listed(tied)} tied on ${points(tie.score)}. The coin picked ${listed(picked)}.`;
+  const named = (uids: readonly string[], you: string): string =>
+    listed(youFirst(uids).map((uid) => (uid === youUid ? you : nameOf(uid))));
+
+  const tied = named(tie.tied, 'You');
+  const picked = named(tie.picked, 'You');
+  const onePair = tie.tied.length === 2;
+  const lead = `${tied} tied on ${points(tie.score)}`;
+
+  if (tie.decidedBy === 'coin') {
+    return `${lead}. Level on right answers and speed too, so a coin picked ${named(tie.picked, 'you')}.`;
+  }
+  if (tie.decidedBy === 'right') {
+    if (!onePair) return `${lead}. ${picked} got the most right.`;
+    const winner = tie.picked[0] ?? '';
+    const loser = tie.tied.find((uid) => uid !== winner) ?? '';
+    return `${lead}. ${picked} got more right, ${tie.rightOf[winner] ?? 0} to ${tie.rightOf[loser] ?? 0}.`;
+  }
+  if (!onePair) return `${lead}. ${picked} got the most right, then the fastest.`;
+  const each = tie.rightOf[tie.tied[0] ?? ''] ?? 0;
+  return `${lead}, with ${each} right each. ${picked} ${tie.picked[0] === youUid ? 'were' : 'was'} faster.`;
 }

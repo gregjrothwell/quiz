@@ -124,6 +124,11 @@ test('the host runs a whole round from Node, final and all, with no browser', as
     for (const { client, name, after } of seats) expect(scores[client.uid], name).toBe(after);
     expect(scores[host.uid]).toBe(0);
 
+    // #and the count the final's tie-break reads survived the rules on every reveal
+    const count = ended.rightAnswers as Record<string, { right: number; ms: number }> | undefined;
+    const counted = seats.filter(({ client }) => (count?.[client.uid]?.right ?? 0) > 0);
+    expect(counted.length).toBeGreaterThan(0);
+
     // #and the host kept the round, every question revealed through the vault
     // Its own move once the host sees `finished`, so wait for it rather than read once.
     const kept = await until(() => admin().doc(`games/${gameId}`).get(), (record) => record.exists);

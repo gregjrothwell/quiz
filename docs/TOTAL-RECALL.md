@@ -24,9 +24,9 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
-## 2026-11-06 — Built, not live: the final says when a coin chose (PROJ-117)
+## 2026-11-06 — Built, not live: a tie for the final goes to most right, then fastest (PROJ-117)
 
-`3ESY` played correctly: a tie for second on 7,300, the seeded coin recomputed and matching. But the board listed the player it left out first, and nothing said why. The line runs until the reveal: [`share-or-shaft.md`](decisions/share-or-shaft.md).
+`3ESY` played correctly, but the coin decided 5 of 29 finals and nothing said so. Greg chose most right, then fastest; the coin stays for level on both. The final says who tied and why: [`final-tie-break.md`](decisions/final-tie-break.md).
 
 ## 2026-11-05 — Built, not live: Geekend's option goes, the end of a round told once (PROJ-116)
 

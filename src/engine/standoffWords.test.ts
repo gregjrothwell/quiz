@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import type { Standoff } from './standoff';
-import { coinWords, standoffWords } from './standoffWords';
+import { standoffWords, tieWords } from './standoffWords';
 
 const NAMES: Record<string, string> = { a: 'Alex', b: 'Bea', c: 'Cal' };
 const nameOf = (uid: string): string => NAMES[uid] ?? uid;
@@ -53,26 +53,47 @@ describe('standoffWords', () => {
   });
 });
 
-describe('coinWords', () => {
-  const tie = { tied: ['b', 'c'], picked: ['b'], score: 7_300 };
+describe('tieWords', () => {
+  const byRight = {
+    tied: ['b', 'c'],
+    picked: ['b'],
+    score: 7_300,
+    decidedBy: 'right' as const,
+    rightOf: { b: 8, c: 7 },
+  };
 
-  test('nothing when no coin was needed', () => {
-    expect(coinWords({ tie: null, nameOf, youUid: 'a' })).toBeNull();
+  test('nothing without a tie', () => {
+    expect(tieWords({ tie: null, nameOf, youUid: 'a' })).toBeNull();
   });
 
-  test('to the room, to the one it picked and to the one it did not', () => {
-    expect(coinWords({ tie, nameOf, youUid: 'a' })).toBe('Bea and Cal tied on 7,300. The coin picked Bea.');
-    expect(coinWords({ tie, nameOf, youUid: 'b' })).toBe('You and Cal tied on 7,300. The coin picked you.');
-    expect(coinWords({ tie, nameOf, youUid: 'c' })).toBe('You and Bea tied on 7,300. The coin picked Bea.');
+  test('more right: to the room, to the one through and to the one out', () => {
+    expect(tieWords({ tie: byRight, nameOf, youUid: 'a' })).toBe('Bea and Cal tied on 7,300. Bea got more right, 8 to 7.');
+    expect(tieWords({ tie: byRight, nameOf, youUid: 'b' })).toBe('You and Cal tied on 7,300. You got more right, 8 to 7.');
+    expect(tieWords({ tie: byRight, nameOf, youUid: 'c' })).toBe('You and Bea tied on 7,300. Bea got more right, 8 to 7.');
   });
 
-  test('three level at the top, where it picks two', () => {
-    const three = { tied: ['a', 'b', 'c'], picked: ['a', 'b'], score: 500 };
-    expect(coinWords({ tie: three, nameOf, youUid: null })).toBe(
-      'Alex, Bea and Cal tied on 500. The coin picked Alex and Bea.',
+  test('speed', () => {
+    const tie = { ...byRight, decidedBy: 'speed' as const, rightOf: { b: 5, c: 5 } };
+    expect(tieWords({ tie, nameOf, youUid: 'a' })).toBe('Bea and Cal tied on 7,300, with 5 right each. Bea was faster.');
+    expect(tieWords({ tie, nameOf, youUid: 'b' })).toBe('You and Cal tied on 7,300, with 5 right each. You were faster.');
+  });
+
+  test('the coin', () => {
+    const tie = { ...byRight, decidedBy: 'coin' as const, rightOf: { b: 0, c: 0 } };
+    expect(tieWords({ tie, nameOf, youUid: 'a' })).toBe('Bea and Cal tied on 7,300. Level on right answers and speed too, so a coin picked Bea.');
+    expect(tieWords({ tie, nameOf, youUid: 'b' })).toBe('You and Cal tied on 7,300. Level on right answers and speed too, so a coin picked you.');
+  });
+
+  test('three tied for one seat or two', () => {
+    const three = { tied: ['a', 'b', 'c'], picked: ['a', 'b'], score: 500, rightOf: { a: 9, b: 8, c: 7 } };
+    expect(tieWords({ tie: { ...three, decidedBy: 'right' }, nameOf, youUid: null })).toBe(
+      'Alex, Bea and Cal tied on 500. Alex and Bea got the most right.',
     );
-    expect(coinWords({ tie: three, nameOf, youUid: 'b' })).toBe(
-      'You, Alex and Cal tied on 500. The coin picked you and Alex.',
+    expect(tieWords({ tie: { ...three, decidedBy: 'speed' }, nameOf, youUid: 'b' })).toBe(
+      'You, Alex and Cal tied on 500. You and Alex got the most right, then the fastest.',
+    );
+    expect(tieWords({ tie: { ...three, decidedBy: 'coin' }, nameOf, youUid: null })).toBe(
+      'Alex, Bea and Cal tied on 500. Level on right answers and speed too, so a coin picked Alex and Bea.',
     );
   });
 });

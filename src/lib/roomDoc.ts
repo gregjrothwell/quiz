@@ -1,4 +1,5 @@
 import { readLoaded } from '../engine/cannon';
+import type { RightAnswers, RightTally } from '../engine/rightAnswers';
 import { deleteField, serverTimestamp, Timestamp, type DocumentData } from 'firebase/firestore';
 import type { AnswerDoc } from '../engine/answers';
 import { mintsVoteGen } from '../engine/packVote';
@@ -20,7 +21,9 @@ import { isDurationAllowed, LEGACY_DURATION_SECS, type Answer, type RoomState } 
  * room-document update to every other client — that fan-out is what burns the
  * Firestore free tier.
  */
-export type PersistedRoom = Omit<RoomState, 'answers' | 'cannon' | 'packVotes' | 'voteTaps' | 'browsing'> & {
+export type PersistedRoom = Omit<RoomState, 'answers' | 'cannon' | 'rightAnswers' | 'packVotes' | 'voteTaps' | 'browsing'> & {
+  /** Omitted while nobody has a right answer, as `cannon` is. */
+  rightAnswers?: RoomState['rightAnswers'];
   /** Absent when nothing is loaded, so an ordinary round writes the shape it always has. */
   cannon?: RoomState['cannon'];
 };
@@ -135,7 +138,22 @@ export function toRoomState(code: string, data: DocumentData, answers: Record<st
     // Absent on every round with nothing loaded. The host writes it, but it is
     // read through the bounds rather than trusted, as the Ladder's notices are.
     cannon: readLoaded(data['cannon']),
+    rightAnswers: readRightAnswers(data['rightAnswers']),
   };
+}
+
+/** Right answers so far, or none. Absent on every room from before the tie-break. */
+function readRightAnswers(value: unknown): RightAnswers {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return {};
+  const count: Record<string, RightTally> = {};
+  for (const [uid, tally] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof tally !== 'object' || tally === null) continue;
+    const { right, ms } = tally as { right?: unknown; ms?: unknown };
+    if (typeof right === 'number' && Number.isFinite(right) && typeof ms === 'number' && Number.isFinite(ms)) {
+      count[uid] = { right, ms };
+    }
+  }
+  return count;
 }
 
 /**
@@ -150,7 +168,12 @@ function readFirstHalf(value: unknown): RoomState['double'] {
   if (typeof scores !== 'object' || scores === null || Array.isArray(scores)) return null;
   const entries = Object.entries(scores as Record<string, unknown>);
   if (!entries.every(([, score]) => typeof score === 'number' && Number.isFinite(score))) return null;
-  return { gameId, scores: Object.fromEntries(entries) as Record<string, number> };
+  const rightAnswers = readRightAnswers((value as { rightAnswers?: unknown }).rightAnswers);
+  return {
+    gameId,
+    scores: Object.fromEntries(entries) as Record<string, number>,
+    ...(Object.keys(rightAnswers).length > 0 ? { rightAnswers } : {}),
+  };
 }
 
 const LADDER_NOTICE_MAX = 160;
@@ -241,6 +264,8 @@ export function toPersisted(state: RoomState): PersistedRoom {
       : {}),
     // Omitted when nothing is loaded, for the same reason.
     ...(Object.keys(state.cannon).length > 0 ? { cannon: state.cannon } : {}),
+    // Omitted until somebody is right, so a room's lobby writes stay as they were.
+    ...(Object.keys(state.rightAnswers).length > 0 ? { rightAnswers: state.rightAnswers } : {}),
   };
 }
 
@@ -305,6 +330,12 @@ export function toUpdate(
   // the last round's shots on the room.
   if (update.cannon === undefined && previous && Object.keys(previous.cannon).length > 0) {
     update.cannon = deleteField();
+  }
+
+  // The same again: a new round, or the only right answer being thrown out,
+  // has to delete the count or the old one stays on the room.
+  if (update.rightAnswers === undefined && previous && Object.keys(previous.rightAnswers).length > 0) {
+    update.rightAnswers = deleteField();
   }
 
   // The lobby vote is not on this document. Crossing into or out of the lobby

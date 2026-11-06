@@ -20,8 +20,8 @@
       "changed": {
         "lastDeltas": {
           "<Jo>": 800,
-          "<Ivy>": 900,
-          "<Hal>": 1000
+          "<Hal>": 1000,
+          "<Ivy>": 900
         },
         "lastPicks": {
           "<Jo>": {
@@ -29,12 +29,12 @@
             "elapsedMs": "<ms>",
             "optionIndex": 0
           },
-          "<Ivy>": {
+          "<Hal>": {
             "at": "<time>",
             "elapsedMs": "<ms>",
             "optionIndex": 0
           },
-          "<Hal>": {
+          "<Ivy>": {
             "at": "<time>",
             "elapsedMs": "<ms>",
             "optionIndex": 0
@@ -46,10 +46,24 @@
           "count": 10,
           "revealed": 1
         },
+        "rightAnswers": {
+          "<Jo>": {
+            "ms": "<ms>",
+            "right": 1
+          },
+          "<Hal>": {
+            "ms": "<ms>",
+            "right": 1
+          },
+          "<Ivy>": {
+            "ms": "<ms>",
+            "right": 1
+          }
+        },
         "scores": {
           "<Jo>": 800,
-          "<Ivy>": 900,
-          "<Hal>": 1000
+          "<Hal>": 1000,
+          "<Ivy>": 900
         }
       }
     },
@@ -80,8 +94,8 @@
       "changed": {
         "lastDeltas": {
           "<Jo>": 800,
-          "<Ivy>": 900,
-          "<Hal>": 1000
+          "<Hal>": 1000,
+          "<Ivy>": 900
         },
         "lastPicks": {
           "<Jo>": {
@@ -89,12 +103,12 @@
             "elapsedMs": "<ms>",
             "optionIndex": 0
           },
-          "<Ivy>": {
+          "<Hal>": {
             "at": "<time>",
             "elapsedMs": "<ms>",
             "optionIndex": 0
           },
-          "<Hal>": {
+          "<Ivy>": {
             "at": "<time>",
             "elapsedMs": "<ms>",
             "optionIndex": 0
@@ -106,10 +120,24 @@
           "count": 10,
           "revealed": 2
         },
+        "rightAnswers": {
+          "<Jo>": {
+            "ms": "<ms>",
+            "right": 2
+          },
+          "<Hal>": {
+            "ms": "<ms>",
+            "right": 2
+          },
+          "<Ivy>": {
+            "ms": "<ms>",
+            "right": 2
+          }
+        },
         "scores": {
           "<Jo>": 1600,
-          "<Ivy>": 1800,
-          "<Hal>": 2000
+          "<Hal>": 2000,
+          "<Ivy>": 1800
         }
       }
     },
@@ -140,8 +168,8 @@
       "changed": {
         "lastDeltas": {
           "<Jo>": 800,
-          "<Ivy>": 900,
-          "<Hal>": 1000
+          "<Hal>": 1000,
+          "<Ivy>": 900
         },
         "lastPicks": {
           "<Jo>": {
@@ -149,12 +177,12 @@
             "elapsedMs": "<ms>",
             "optionIndex": 0
           },
-          "<Ivy>": {
+          "<Hal>": {
             "at": "<time>",
             "elapsedMs": "<ms>",
             "optionIndex": 0
           },
-          "<Hal>": {
+          "<Ivy>": {
             "at": "<time>",
             "elapsedMs": "<ms>",
             "optionIndex": 0
@@ -166,10 +194,24 @@
           "count": 10,
           "revealed": 3
         },
+        "rightAnswers": {
+          "<Jo>": {
+            "ms": "<ms>",
+            "right": 3
+          },
+          "<Hal>": {
+            "ms": "<ms>",
+            "right": 3
+          },
+          "<Ivy>": {
+            "ms": "<ms>",
+            "right": 3
+          }
+        },
         "scores": {
           "<Jo>": 2400,
-          "<Ivy>": 2700,
-          "<Hal>": 3000
+          "<Hal>": 3000,
+          "<Ivy>": 2700
         }
       }
     },
@@ -200,8 +242,8 @@
       "changed": {
         "lastDeltas": {
           "<Jo>": 800,
-          "<Ivy>": 900,
-          "<Hal>": 1000
+          "<Hal>": 1000,
+          "<Ivy>": 900
         },
         "lastPicks": {
           "<Jo>": {
@@ -209,12 +251,12 @@
             "elapsedMs": "<ms>",
             "optionIndex": 0
           },
-          "<Ivy>": {
+          "<Hal>": {
             "at": "<time>",
             "elapsedMs": "<ms>",
             "optionIndex": 0
           },
-          "<Hal>": {
+          "<Ivy>": {
             "at": "<time>",
             "elapsedMs": "<ms>",
             "optionIndex": 0
@@ -226,10 +268,24 @@
           "count": 10,
           "revealed": 4
         },
+        "rightAnswers": {
+          "<Jo>": {
+            "ms": "<ms>",
+            "right": 4
+          },
+          "<Hal>": {
+            "ms": "<ms>",
+            "right": 4
+          },
+          "<Ivy>": {
+            "ms": "<ms>",
+            "right": 4
+          }
+        },
         "scores": {
           "<Jo>": 3200,
-          "<Ivy>": 3600,
-          "<Hal>": 4000
+          "<Hal>": 4000,
+          "<Ivy>": 3600
         }
       }
     },
@@ -260,8 +316,8 @@
       "changed": {
         "lastDeltas": {
           "<Jo>": 800,
-          "<Ivy>": 900,
-          "<Hal>": 1000
+          "<Hal>": 1000,
+          "<Ivy>": 900
         },
         "lastPicks": {
           "<Jo>": {
@@ -269,12 +325,12 @@
             "elapsedMs": "<ms>",
             "optionIndex": 0
           },
-          "<Ivy>": {
+          "<Hal>": {
             "at": "<time>",
             "elapsedMs": "<ms>",
             "optionIndex": 0
           },
-          "<Hal>": {
+          "<Ivy>": {
             "at": "<time>",
             "elapsedMs": "<ms>",
             "optionIndex": 0
@@ -286,10 +342,24 @@
           "count": 10,
           "revealed": 5
         },
+        "rightAnswers": {
+          "<Jo>": {
+            "ms": "<ms>",
+            "right": 5
+          },
+          "<Hal>": {
+            "ms": "<ms>",
+            "right": 5
+          },
+          "<Ivy>": {
+            "ms": "<ms>",
+            "right": 5
+          }
+        },
         "scores": {
           "<Jo>": 4000,
-          "<Ivy>": 4500,
-          "<Hal>": 5000
+          "<Hal>": 5000,
+          "<Ivy>": 4500
         }
       }
     },
@@ -320,8 +390,8 @@
       "changed": {
         "lastDeltas": {
           "<Jo>": 800,
-          "<Ivy>": 900,
-          "<Hal>": 1000
+          "<Hal>": 1000,
+          "<Ivy>": 900
         },
         "lastPicks": {
           "<Jo>": {
@@ -329,12 +399,12 @@
             "elapsedMs": "<ms>",
             "optionIndex": 0
           },
-          "<Ivy>": {
+          "<Hal>": {
             "at": "<time>",
             "elapsedMs": "<ms>",
             "optionIndex": 0
           },
-          "<Hal>": {
+          "<Ivy>": {
             "at": "<time>",
             "elapsedMs": "<ms>",
             "optionIndex": 0
@@ -346,10 +416,24 @@
           "count": 10,
           "revealed": 6
         },
+        "rightAnswers": {
+          "<Jo>": {
+            "ms": "<ms>",
+            "right": 6
+          },
+          "<Hal>": {
+            "ms": "<ms>",
+            "right": 6
+          },
+          "<Ivy>": {
+            "ms": "<ms>",
+            "right": 6
+          }
+        },
         "scores": {
           "<Jo>": 4800,
-          "<Ivy>": 5400,
-          "<Hal>": 6000
+          "<Hal>": 6000,
+          "<Ivy>": 5400
         }
       }
     },
@@ -380,8 +464,8 @@
       "changed": {
         "lastDeltas": {
           "<Jo>": 800,
-          "<Ivy>": 900,
-          "<Hal>": 1000
+          "<Hal>": 1000,
+          "<Ivy>": 900
         },
         "lastPicks": {
           "<Jo>": {
@@ -389,12 +473,12 @@
             "elapsedMs": "<ms>",
             "optionIndex": 0
           },
-          "<Ivy>": {
+          "<Hal>": {
             "at": "<time>",
             "elapsedMs": "<ms>",
             "optionIndex": 0
           },
-          "<Hal>": {
+          "<Ivy>": {
             "at": "<time>",
             "elapsedMs": "<ms>",
             "optionIndex": 0
@@ -406,10 +490,24 @@
           "count": 10,
           "revealed": 7
         },
+        "rightAnswers": {
+          "<Jo>": {
+            "ms": "<ms>",
+            "right": 7
+          },
+          "<Hal>": {
+            "ms": "<ms>",
+            "right": 7
+          },
+          "<Ivy>": {
+            "ms": "<ms>",
+            "right": 7
+          }
+        },
         "scores": {
           "<Jo>": 5600,
-          "<Ivy>": 6300,
-          "<Hal>": 7000
+          "<Hal>": 7000,
+          "<Ivy>": 6300
         }
       }
     },
@@ -440,8 +538,8 @@
       "changed": {
         "lastDeltas": {
           "<Jo>": 800,
-          "<Ivy>": 900,
-          "<Hal>": 1000
+          "<Hal>": 1000,
+          "<Ivy>": 900
         },
         "lastPicks": {
           "<Jo>": {
@@ -449,12 +547,12 @@
             "elapsedMs": "<ms>",
             "optionIndex": 0
           },
-          "<Ivy>": {
+          "<Hal>": {
             "at": "<time>",
             "elapsedMs": "<ms>",
             "optionIndex": 0
           },
-          "<Hal>": {
+          "<Ivy>": {
             "at": "<time>",
             "elapsedMs": "<ms>",
             "optionIndex": 0
@@ -466,10 +564,24 @@
           "count": 10,
           "revealed": 8
         },
+        "rightAnswers": {
+          "<Jo>": {
+            "ms": "<ms>",
+            "right": 8
+          },
+          "<Hal>": {
+            "ms": "<ms>",
+            "right": 8
+          },
+          "<Ivy>": {
+            "ms": "<ms>",
+            "right": 8
+          }
+        },
         "scores": {
           "<Jo>": 6400,
-          "<Ivy>": 7200,
-          "<Hal>": 8000
+          "<Hal>": 8000,
+          "<Ivy>": 7200
         }
       }
     },
@@ -500,8 +612,8 @@
       "changed": {
         "lastDeltas": {
           "<Jo>": 800,
-          "<Ivy>": 900,
-          "<Hal>": 1000
+          "<Hal>": 1000,
+          "<Ivy>": 900
         },
         "lastPicks": {
           "<Jo>": {
@@ -509,12 +621,12 @@
             "elapsedMs": "<ms>",
             "optionIndex": 0
           },
-          "<Ivy>": {
+          "<Hal>": {
             "at": "<time>",
             "elapsedMs": "<ms>",
             "optionIndex": 0
           },
-          "<Hal>": {
+          "<Ivy>": {
             "at": "<time>",
             "elapsedMs": "<ms>",
             "optionIndex": 0
@@ -526,10 +638,24 @@
           "count": 10,
           "revealed": 9
         },
+        "rightAnswers": {
+          "<Jo>": {
+            "ms": "<ms>",
+            "right": 9
+          },
+          "<Hal>": {
+            "ms": "<ms>",
+            "right": 9
+          },
+          "<Ivy>": {
+            "ms": "<ms>",
+            "right": 9
+          }
+        },
         "scores": {
           "<Jo>": 7200,
-          "<Ivy>": 8100,
-          "<Hal>": 9000
+          "<Hal>": 9000,
+          "<Ivy>": 8100
         }
       }
     },
@@ -560,8 +686,8 @@
       "changed": {
         "lastDeltas": {
           "<Jo>": 800,
-          "<Ivy>": 900,
-          "<Hal>": 1000
+          "<Hal>": 1000,
+          "<Ivy>": 900
         },
         "lastPicks": {
           "<Jo>": {
@@ -569,12 +695,12 @@
             "elapsedMs": "<ms>",
             "optionIndex": 0
           },
-          "<Ivy>": {
+          "<Hal>": {
             "at": "<time>",
             "elapsedMs": "<ms>",
             "optionIndex": 0
           },
-          "<Hal>": {
+          "<Ivy>": {
             "at": "<time>",
             "elapsedMs": "<ms>",
             "optionIndex": 0
@@ -586,10 +712,24 @@
           "count": 10,
           "revealed": 10
         },
+        "rightAnswers": {
+          "<Jo>": {
+            "ms": "<ms>",
+            "right": 10
+          },
+          "<Hal>": {
+            "ms": "<ms>",
+            "right": 10
+          },
+          "<Ivy>": {
+            "ms": "<ms>",
+            "right": 10
+          }
+        },
         "scores": {
           "<Jo>": 8000,
-          "<Ivy>": 9000,
-          "<Hal>": 10000
+          "<Hal>": 10000,
+          "<Ivy>": 9000
         }
       }
     },
@@ -618,8 +758,8 @@
           "sealed": null,
           "stage": "talk",
           "stakes": {
-            "<Ivy>": 9000,
-            "<Hal>": 10000
+            "<Hal>": 10000,
+            "<Ivy>": 9000
           }
         }
       }
@@ -638,8 +778,8 @@
           "sealed": null,
           "stage": "pick",
           "stakes": {
-            "<Ivy>": 9000,
-            "<Hal>": 10000
+            "<Hal>": 10000,
+            "<Ivy>": 9000
           }
         }
       }
@@ -661,8 +801,8 @@
           ],
           "stage": "closed",
           "stakes": {
-            "<Ivy>": 9000,
-            "<Hal>": 10000
+            "<Hal>": 10000,
+            "<Ivy>": 9000
           }
         }
       }
@@ -673,13 +813,13 @@
       "stage": "revealed",
       "changed": {
         "lastDeltas": {
-          "<Ivy>": 500,
-          "<Hal>": -500
+          "<Hal>": -500,
+          "<Ivy>": 500
         },
         "scores": {
           "<Jo>": 8000,
-          "<Ivy>": 9500,
-          "<Hal>": 9500
+          "<Hal>": 9500,
+          "<Ivy>": 9500
         },
         "standoff": {
           "finalists": [
@@ -687,8 +827,8 @@
             "<Ivy>"
           ],
           "picks": {
-            "<Ivy>": "share",
-            "<Hal>": "share"
+            "<Hal>": "share",
+            "<Ivy>": "share"
           },
           "sealed": [
             "<Hal>",
@@ -696,8 +836,8 @@
           ],
           "stage": "revealed",
           "stakes": {
-            "<Ivy>": 9000,
-            "<Hal>": 10000
+            "<Hal>": 10000,
+            "<Ivy>": 9000
           }
         }
       }

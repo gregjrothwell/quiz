@@ -4,7 +4,7 @@ import { Confetti } from '../components/Confetti';
 import { NewSticker } from '../components/NewSticker';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { Standings } from '../components/Standings';
-import { morningTotals } from '../engine/double';
+import { morningRightAnswers, morningTotals } from '../engine/double';
 import { roomStandings } from '../engine/scoring';
 import { finalFor, finalsLine, withTonight, type FinalsTally } from '../engine/finals';
 import {
@@ -17,7 +17,7 @@ import {
   type StandoffOutcome,
   type StandoffPick,
 } from '../engine/standoff';
-import { coinWords, standoffWords } from '../engine/standoffWords';
+import { standoffWords, tieWords } from '../engine/standoffWords';
 import type { RoomState } from '../engine/state';
 import { BUZZ_CORRECT, BUZZ_LOCK, BUZZ_SHAFTED, buzz, useBuzz } from '../lib/haptics';
 import { play, useCue } from '../lib/sound';
@@ -336,10 +336,14 @@ export function ShareOrShaft({
   const leaderAfter = roomStandings(room.players, morningTotals(room))[0]?.uid ?? null;
   const words = standoffWords({ standoff, nameOf, youUid, leaderAfter });
   // Not at the reveal: the settle has moved the two scores this compares.
-  const coin =
+  const tieLine =
     stage === 'revealed'
       ? null
-      : coinWords({ tie: tieAtCut(room.players, morningTotals(room), standoff.finalists), nameOf, youUid });
+      : tieWords({
+          tie: tieAtCut(room.players, morningTotals(room), standoff.finalists, morningRightAnswers(room)),
+          nameOf,
+          youUid,
+        });
   const pot = potOf(standoff);
   const acting = outcome !== null && reached('clash');
 
@@ -377,9 +381,9 @@ export function ShareOrShaft({
         {isNewMode('standoff', today) ? <NewSticker /> : null}
       </div>
 
-      {coin ? (
+      {tieLine ? (
         <div className="standoff__stage">
-          <p className="muted hint">{coin}</p>
+          <p className="muted hint">{tieLine}</p>
         </div>
       ) : null}
 
