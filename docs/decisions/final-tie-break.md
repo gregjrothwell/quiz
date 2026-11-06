@@ -18,7 +18,17 @@ reloaded could reach a different finalist. `ms` is over right answers only. A Su
 Says tell counts nothing. A bonus question counts as one. No rules change:
 `wellFormed` does not list the room's keys, and only the host writes this one.
 
+## Evidence
+
+`e2e/node-round.spec.ts` plays a real tied round on the emulators: Bo and Cy tie on
+5,000, Bo with 6 right, Cy with 5 but faster, on a game id whose coin would pick Cy.
+With the count taken out of `finalistsAfterLast` it fails on the finalist, Cy for Bo;
+with it in, it passes. The scores and the count passed in both runs, so that failure
+is the tie-break's alone.
+
 ## Not covered
 
-No live tied round has played this. The first tied final in `read-games` is the
-check: its finalist should have the higher count.
+Answering is by Node clients, so no browser has played a tie; the line is proved by
+`ShareOrShaft.tie.test.tsx` and the gallery. No live tied round has played this. The
+first tied final in `read-games` is the check: its finalist should have the higher
+count.
