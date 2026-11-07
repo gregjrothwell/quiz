@@ -72,7 +72,7 @@ import { collection, doc, getFirestore, onSnapshot, Timestamp, setDoc } from 'fi
 // The vault's candidates go over Lite, as the app sends them — see `resolveAnswer`.
 import { getFirestore as getLiteFirestore, setLogLevel as setLiteLogLevel } from 'firebase/firestore/lite';
 import { reduce } from '../src/engine/reducer';
-import { liveAnswers, type AnswerDoc } from '../src/engine/answers';
+import type { AnswerDoc } from '../src/engine/answers';
 import {
   DEFAULT_DURATION_SECS,
   buildQuizQuestions,
@@ -84,7 +84,7 @@ import { randomRoomCode } from '../src/engine/roomCode';
 import type { SealedQuestion } from '../src/questions/types';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { toPersisted, type PersistedRoom } from '../src/lib/roomDoc';
+import { answerDocFrom, liveAnswersFromRoom, toPersisted, type PersistedRoom } from '../src/lib/roomDoc';
 
 /** Reads a required value from .env.local, so a missing one fails with a name. */
 function required(name: string): string {
@@ -243,14 +243,18 @@ async function main(): Promise<void> {
   // was told "your answer didn't reach the room in time", and nobody could ever
   // score. The filtering is `liveAnswers`, the same function the app uses, so
   // the harness cannot score a round differently from the browsers watching it.
+  // `liveAnswersFromRoom` is that read: server `openedAt`, not the question index alone.
   onSnapshot(collection(db, 'rooms', code, 'answers'), (snapshot) => {
     const next: Record<string, AnswerDoc> = {};
-    for (const document of snapshot.docs) next[document.id] = document.data() as AnswerDoc;
+    for (const document of snapshot.docs) {
+      const parsed = answerDocFrom(document.data());
+      if (parsed) next[document.id] = parsed;
+    }
     answers.live = next;
 
     const room = view.latest;
     if (!room) return;
-    const counted = Object.keys(liveAnswers(room.players, room.index, next)).length;
+    const counted = Object.keys(liveAnswersFromRoom(room, next)).length;
     console.log(`${stamp()}  answers for question ${room.index + 1}: ${counted}`);
   });
 

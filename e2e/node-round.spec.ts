@@ -290,3 +290,114 @@ test('a tie for the final goes to more right, ahead of the faster player and the
     await host.close();
   }
 });
+
+/**
+ * PROJ-119: last round's answer must not score in this one.
+ *
+ * Each player has one answer document, overwritten per question, and question
+ * numbers repeat every round. Bo answers the last question of round one and then
+ * sits out round two, still seated — a locked phone, so no lobby keep-warm
+ * deletes the document. On round two's last question his old document matches
+ * the index. Before the fix it scored, right and fast; now its server `at` is
+ * before that question's `openedAt` and it is dropped.
+ */
+// A round of its own each time, as asked-history makes it in a real room: a
+// reveal is never rewritten, so replaying a question id in one room stalls it.
+const staleQuestions = (round: number): QuizQuestion[] => Array.from({ length: 2 }, (_, index) => ({
+  id: `stale-answer-${String(round)}-${String(index)}`,
+  prompt: `Stale answer round ${String(round)} question ${String(index + 1)}`,
+  options: ['The first one', 'The second one', 'The third one', 'The fourth one'],
+  correctIndex: null,
+  category: 'General Knowledge',
+  difficulty: 'easy',
+}));
+
+test('an answer left from the last round does not score on the same question number in the next', async () => {
+  test.setTimeout(240_000);
+
+  // #given a hosted room with Ada and Bo seated
+  const host = await player();
+  const [ada, bo] = await Promise.all([player(), player()]);
+  if (!ada || !bo) throw new Error('two players were not made');
+  const code = randomRoomCode();
+  const joined = reduce(createRoom(code), { type: 'join', uid: host.uid, name: 'Host', at: Date.now() });
+  await setDoc(doc(host.db, 'rooms', code), { ...toPersisted({ ...joined, hostUid: host.uid }) });
+  const running = startNodeHost({ db: host.db, lite: host.lite, code, uid: host.uid, log: () => undefined });
+
+  const answer = async (client: typeof ada, questionIndex: number): Promise<void> => {
+    await setDoc(doc(collection(client.db, 'rooms', code, 'answers'), client.uid), {
+      optionIndex: 0,
+      elapsedMs: 1_200,
+      questionIndex,
+      at: serverTimestamp(),
+    });
+  };
+  const playRound = async (round: number, answerers: (typeof ada)[]): Promise<void> => {
+    const gameId = `stale-${String(round)}-${String(Date.now())}`;
+    const questions = staleQuestions(round);
+    await running.dispatch([
+      {
+        type: 'selectPack',
+        packId: 'general-knowledge',
+        packTitle: 'GK',
+        questions,
+        wagerEnabled: false,
+        stealEnabled: false,
+        standoffEnabled: false,
+      },
+      { type: 'start', at: Date.now(), gameId, durationSecs: 10 },
+    ]);
+    await running.until((room) => room.phase === 'question' && room.gameId === gameId);
+    await seedVault(code);
+    for (let index = 0; index < questions.length; index += 1) {
+      await running.until((room) => room.phase === 'question' && room.index === index);
+      for (const client of answerers) await answer(client, index);
+      await running.until((room) => room.phase === 'reveal' && room.index === index, 30_000);
+      await running.dispatch({ type: 'next', at: Date.now() });
+      if (index < questions.length - 1) {
+        await running.until((room) => room.phase === 'scoreboard');
+        await running.dispatch({ type: 'next', at: Date.now() });
+      }
+    }
+    await running.until((room) => room.phase === 'finished');
+  };
+
+  try {
+    for (const [client, name] of [[ada, 'Ada'], [bo, 'Bo']] as const) {
+      await updateDoc(doc(client.db, 'rooms', code), {
+        [`players.${client.uid}`]: { name, joinedAt: Date.now() },
+        [`scores.${client.uid}`]: 0,
+      });
+    }
+    await running.until((room) => Object.keys(room.players).length === 3);
+
+    // #and round one, which both answer right
+    await playRound(1, [ada, bo]);
+    const first = (await admin().doc(`rooms/${code}`).get()).data() ?? {};
+    expect((first.scores as Record<string, number>)[bo.uid], 'Bo scored in round one').toBeGreaterThan(0);
+
+    // #when the room goes again and Bo, still seated, answers nothing
+    await running.dispatch({ type: 'reset' });
+    await running.until((room) => room.phase === 'lobby');
+    await playRound(2, [ada]);
+
+    // #then Bo's document still holds round one's last answer — the precondition
+    const left = (await admin().doc(`rooms/${code}/answers/${bo.uid}`).get()).data() ?? {};
+    expect(left.questionIndex).toBe(1);
+
+    // #and it scored nothing, and was not published as a pick
+    const ended = (await admin().doc(`rooms/${code}`).get()).data() ?? {};
+    const scores = ended.scores as Record<string, number>;
+    expect(scores[ada.uid], 'Ada answered round two').toBeGreaterThan(0);
+    expect(scores[bo.uid], 'Bo answered nothing in round two').toBe(0);
+    expect(Object.keys((ended.lastPicks ?? {}) as Record<string, unknown>)).not.toContain(bo.uid);
+
+    const unexpected = running.failures().filter((failure) => !/^reveal failed: .*Transaction lock timeout/.test(failure));
+    expect(unexpected).toEqual([]);
+  } finally {
+    running.stop();
+    await ada.close();
+    await bo.close();
+    await host.close();
+  }
+});

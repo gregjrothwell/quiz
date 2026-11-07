@@ -39,10 +39,11 @@ import {
 } from '../engine/host';
 import { reduce, type Action } from '../engine/reducer';
 import { foldActions } from '../host/moves';
-import { carryFirstMs, firstTouchOf, liveAnswers, type AnswerDoc } from '../engine/answers';
+import { carryFirstMs, firstTouchOf, type AnswerDoc } from '../engine/answers';
 import {
   answerDocFrom,
   lampKey,
+  liveAnswersFromRoom,
   openedAtMillis,
   toPersisted,
   toRoomState,
@@ -555,11 +556,15 @@ export function useRoom(): UseRoom {
     question one's answer does not pay to reopen it, which is the suspected reason
     those answers take seconds after a long lobby. docs/decisions/cass-q1-cold-write.md.
 
-    The write deletes this player's own answer. Nobody needs that document in the
-    lobby: `start` opens a new round and a stale one is ignored by its index. When
-    it is already gone, which is nearly always, the delete changes nothing, so no
-    listener hears it and it costs one write and no reads. It needs no new rule and
-    leaves nothing for `prune-rooms` to sweep.
+    The write deletes this player's own answer, which keeps the stream warm. It is
+    not what stops a previous round scoring. Question numbers repeat every round,
+    so index alone would score the old pick on the same number. `liveAnswers` drops a document
+    whose server `at` is before this question's server `openedAt`. A hidden tab
+    skips this delete, and a document with no `at` — a pending stamp, or a client
+    from before the field — is still scored. When the document is already gone,
+    which is nearly always, the delete changes nothing, so no listener hears it
+    and it costs one write and no reads. It needs no new rule and leaves nothing
+    for `prune-rooms` to sweep.
 
     The SDK sends writes in order, so a delete sent just before the round starts
     still lands before this device's first answer. Failure is swallowed, as the
@@ -674,7 +679,7 @@ export function useRoom(): UseRoom {
     // the way in, so a client can write an answer to a room it is not a member
     // of — which used to leave the "how many have answered" pips reading more
     // than the number of players.
-    const live = liveAnswers(persisted.players, persisted.index, answers);
+    const live = liveAnswersFromRoom(persisted, answers);
     const state = toRoomState(code, persisted, live);
     // A player since W3 holds only their own answer until the reveal, which
     // publishes the room's. Their own stays alongside, so an answer that missed

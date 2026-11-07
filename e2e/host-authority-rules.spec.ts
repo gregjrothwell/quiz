@@ -16,6 +16,7 @@ import {
 } from 'firebase/firestore';
 import { Timestamp as AdminTimestamp } from 'firebase-admin/firestore';
 
+import { planClaim } from '../src/engine/host';
 import { planJoin } from '../src/engine/join';
 import { reduce, type Action } from '../src/engine/reducer';
 import { randomRoomCode } from '../src/engine/roomCode';
@@ -373,6 +374,33 @@ test('AC7: the host leaves and hands the chair over in the same write', async ()
   // And the new host can beat and drive.
   await setDoc(doc(ann.db, 'rooms', code, 'host', 'beat'), { at: serverTimestamp() });
   await dispatch(ann, code, [{ type: 'skip' }]);
+});
+
+test('a later member can claim a stale beat while an earlier member is still seated', async () => {
+  // The client asks only for the longest-seated present player. The rules do
+  // not: `claim()` is any member, once the beat is 75 s old. This records the
+  // hole. It does not change it.
+  const code = await hostedRoom(host);
+  await join(ann, code, 'Ann');
+  await join(bob, code, 'Bob');
+  const seated = await state(ann, code);
+  expect(seated.players[ann.uid]?.joinedAt).toBeLessThan(seated.players[bob.uid]?.joinedAt ?? 0);
+
+  const now = Date.now();
+  const present = new Set([ann.uid, bob.uid]);
+  const seen = {
+    hostUid: host.uid,
+    players: seated.players,
+    present,
+    absentSince: now - 50_000,
+    now,
+  };
+  expect(planClaim({ ...seen, uid: ann.uid }).claim, 'the client asks Ann').toBe(true);
+  expect(planClaim({ ...seen, uid: bob.uid }).claim, 'the client does not ask Bob').toBe(false);
+
+  await ageBeat(code, 80_000);
+  await claim(bob, code);
+  expect((await admin().doc(`rooms/${code}`).get()).data()?.hostUid).toBe(bob.uid);
 });
 
 test('AC8/AC9: a claim is refused while the beat is fresh and allowed once it is 75 s old', async () => {
