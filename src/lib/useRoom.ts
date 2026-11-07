@@ -557,8 +557,8 @@ export function useRoom(): UseRoom {
     those answers take seconds after a long lobby. docs/decisions/cass-q1-cold-write.md.
 
     The write deletes this player's own answer, which keeps the stream warm. It is
-    not what stops a previous round scoring. The next round starts again at index
-    0, so index alone would score the old pick. `liveAnswers` drops a document
+    not what stops a previous round scoring. Question numbers repeat every round,
+    so index alone would score the old pick on the same number. `liveAnswers` drops a document
     whose server `at` is before this question's server `openedAt`. A hidden tab
     skips this delete, and a document with no `at` — a pending stamp, or a client
     from before the field — is still scored. When the document is already gone,

@@ -75,7 +75,7 @@ export interface AnswerDoc extends Answer {
  *   player and overwrites it each question, so a player who has not answered yet
  *   still has last question's answer sitting there. Scoring it again would
  *   credit them for a question they never touched. Index is not enough on its
- *   own: the next round starts again at 0.
+ *   own: question numbers repeat every round.
  * - **Only this opening of that question.** `at` and `openedAtMs` are both the
  *   server's clock, in milliseconds. An answer stamped before this question's
  *   `openedAt` is a previous round's document sitting on the same index. Equal
