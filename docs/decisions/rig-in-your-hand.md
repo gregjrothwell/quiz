@@ -1,6 +1,6 @@
 # The rig in your hand — the probe, then the rig
 
-> **Owner: Greg Rothwell. Last updated: 22 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 5 November 2026. Budget: 250 lines.**
 
 **Status: APPROVED 22 October 2026, as recommended.** Greg: *"Approve all four stories as recommended: Mr Fries on pack×difficulty rates, room wins on more than half right, 🍟 until there's art, fix HANDOVER item 8; rig probe now and rig only on a pass; Commentator without Gemini, spoken from the host only, you draft ~30 lines; Wrapped's five cards opening 5 D[ec, Christmas finale left out for now]"* (the message was cut at 300 characters; the bracket is the rest of the button he pressed). Wow item 4 of
 [`direction-oct-2026.md`](direction-oct-2026.md#5-wow--all-five-accepted).
@@ -67,7 +67,25 @@ One bug on the way: `.info/serverTimeOffset` can answer before `onValue`
 returns, so the offset is read with `onlyOnce`.
 
 **Still to do: P5, the real run.** 8+ phones in the office, the host presses
-the button in the lobby, then `npm run read-rig -- <code>`.
+the button in the lobby and confirms, then `npm run read-rig -- <code>`.
+
+### 3 November 2026: an accidental run, on laptops. Not P5
+
+Greg pressed the button by accident in room NRMY at 09:51:34, before that
+morning's Random Round. From `read-rig` and `read-traces`, read that day:
+
+- **7 devices painted all 10 cues.** Spread 18–28 ms, 25–30 ms late, 100% within
+  ±50 ms on every cue. Passes the line, 10 of 10.
+- **It does not count as P5:** 7 devices rather than 8+, and all 7 question-one
+  traces report `windows`, so these were not phones. Whether they shared the
+  office Wi-Fi was not measured.
+- **It says nothing yet about phones.** The open question is still how phones
+  behave, so Part 2 stays unbuilt until P5 runs.
+- **The round was untouched.** The last cue was about 20 s before question one,
+  and all 7 answered all 15 questions.
+
+Because of it, the button now asks first, and the wording stopped assuming a
+phone (PROJ-114).
 
 ## Part 2 — the rig (only if the probe passes)
 

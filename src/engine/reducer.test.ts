@@ -1273,3 +1273,41 @@ describe('the reveal publishes the picks (W3, AC5)', () => {
     expect(reduce(revealed, { type: 'reset' }).lastPicks).toEqual({});
   });
 });
+
+describe('transitions the reducer refuses', () => {
+  test('next during a question or in the lobby does not move the index', () => {
+    const room = playingRoom();
+    expect(reduce(room, { type: 'next', at: 4_000 })).toBe(room);
+
+    const lobby = reduce(room, { type: 'reset' });
+    expect(lobby.phase).toBe('lobby');
+    expect(reduce(lobby, { type: 'next', at: 4_000 })).toBe(lobby);
+  });
+
+  test('start from the reveal does not reopen question one', () => {
+    const revealed = reduce(playingRoom(), revealNow(playingRoom()));
+    expect(revealed.phase).toBe('reveal');
+    expect(reduce(revealed, { type: 'start', at: 9_000, gameId: 'game-2', durationSecs: 10 })).toBe(revealed);
+  });
+
+  test('selectPack during a question does not replace the list', () => {
+    const room = playingRoom();
+    const next = reduce(room, {
+      type: 'selectPack',
+      packId: 'flags',
+      packTitle: 'Flags',
+      questions: [{ ...QUESTIONS[0]!, id: 'other' }],
+      wagerEnabled: true,
+      stealEnabled: true,
+    });
+    expect(next).toBe(room);
+  });
+
+  test('skip from the scoreboard and settle from a question change nothing', () => {
+    const room = playingRoom();
+    const board = apply(room, revealNow, { type: 'next', at: 6_000 });
+    expect(board.phase).toBe('scoreboard');
+    expect(reduce(board, { type: 'skip' })).toBe(board);
+    expect(reduce(room, { type: 'settle', picks: {} })).toBe(room);
+  });
+});
