@@ -301,8 +301,10 @@ test('a tie for the final goes to more right, ahead of the faster player and the
  * the index. Before the fix it scored, right and fast; now its server `at` is
  * before that question's `openedAt` and it is dropped.
  */
-// A round of its own each time, as asked-history makes it in a real room: a
-// reveal is never rewritten, so replaying a question id in one room stalls it.
+// A round of its own each time, as asked-history makes it in a real room. With
+// round one's ids replayed, round two's first reveal never came (30s, 7 Nov).
+// Cause not established: `resolveAnswer` reads an existing reveal back, so it
+// is not simply the reveal being immutable. A PROJ-119 follow-up.
 const staleQuestions = (round: number): QuizQuestion[] => Array.from({ length: 2 }, (_, index) => ({
   id: `stale-answer-${String(round)}-${String(index)}`,
   prompt: `Stale answer round ${String(round)} question ${String(index + 1)}`,
