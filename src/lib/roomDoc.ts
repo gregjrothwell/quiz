@@ -1,9 +1,9 @@
 import { readLoaded } from '../engine/cannon';
 import type { RightAnswers, RightTally } from '../engine/rightAnswers';
 import { deleteField, serverTimestamp, Timestamp, type DocumentData } from 'firebase/firestore';
-import type { AnswerDoc } from '../engine/answers';
+import { liveAnswers, type AnswerDoc } from '../engine/answers';
 import { mintsVoteGen } from '../engine/packVote';
-import { isDurationAllowed, LEGACY_DURATION_SECS, type Answer, type RoomState } from '../engine/state';
+import { isDurationAllowed, LEGACY_DURATION_SECS, type Answer, type Player, type RoomState } from '../engine/state';
 
 /**
  * The room document and the room state, translated both ways.
@@ -41,6 +41,26 @@ export type PersistedRoom = Omit<RoomState, 'answers' | 'cannon' | 'rightAnswers
 export function openedAtMillis(data: DocumentData | undefined): number | null {
   const value: unknown = data?.['openedAt'];
   return value instanceof Timestamp ? value.toMillis() : null;
+}
+
+/**
+ * The answers that score, from a room snapshot and the parsed answer documents.
+ *
+ * This is the read `useRoom` and the terminal host share. `openedAt` is the
+ * server timestamp on that snapshot. Anything that is not a resolved
+ * `Timestamp` — a pending `serverTimestamp()`, a client number, a field that
+ * never landed — is null, and `liveAnswers` then keeps every answer for the
+ * index. `questionOpenedAt` is the writer's own clock and is not read.
+ */
+export function liveAnswersFromRoom(data: DocumentData, docs: Record<string, AnswerDoc>): Record<string, Answer> {
+  const indexValue: unknown = data['index'];
+  const index = typeof indexValue === 'number' && Number.isFinite(indexValue) ? indexValue : 0;
+  return liveAnswers(playersOf(data['players']), index, docs, openedAtMillis(data));
+}
+
+function playersOf(value: unknown): Record<string, Player> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return {};
+  return value as Record<string, Player>;
 }
 
 /**

@@ -73,4 +73,44 @@ describe('liveAnswers', () => {
     expect(liveAnswers({}, 0, { greg: { optionIndex: 1, elapsedMs: 900, questionIndex: 0 } }))
       .toEqual({});
   });
+
+  test('drops a same-index answer stamped before this question opened', () => {
+    // The next round starts again at index 0. Index alone would score the
+    // previous round's pick. `at` and `openedAt` are both the server's clock.
+    const docs = {
+      greg: { optionIndex: 1, elapsedMs: 900, questionIndex: 0, at: 4_999 },
+      sam: { optionIndex: 2, elapsedMs: 1_200, questionIndex: 0, at: 5_000 },
+    };
+
+    expect(liveAnswers(players, 0, docs, 5_000)).toEqual({
+      sam: { optionIndex: 2, elapsedMs: 1_200, at: 5_000 },
+    });
+  });
+
+  test('keeps an answer with no at, including one stamped exactly at the open', () => {
+    // Missing `at` is a pending server timestamp, or a client from before the
+    // field. Rejecting it would drop a legitimate answer. Equal stamps count:
+    // the same millisecond as the open is this question.
+    const docs = {
+      greg: { optionIndex: 1, elapsedMs: 900, questionIndex: 0 },
+      sam: { optionIndex: 0, elapsedMs: 400, questionIndex: 0, at: 5_000 },
+    };
+
+    expect(liveAnswers(players, 0, docs, 5_000)).toEqual({
+      greg: { optionIndex: 1, elapsedMs: 900 },
+      sam: { optionIndex: 0, elapsedMs: 400, at: 5_000 },
+    });
+  });
+
+  test('does not filter when this question has no resolved openedAt', () => {
+    // A pending `serverTimestamp()` on the room reads as null. Dropping every
+    // stamped answer then would hide a legitimate one until the open acknowledged.
+    const docs = {
+      greg: { optionIndex: 1, elapsedMs: 900, questionIndex: 0, at: 1_000 },
+    };
+
+    expect(liveAnswers(players, 0, docs, null)).toEqual({
+      greg: { optionIndex: 1, elapsedMs: 900, at: 1_000 },
+    });
+  });
 });

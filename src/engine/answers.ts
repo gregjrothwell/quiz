@@ -69,12 +69,21 @@ export interface AnswerDoc extends Answer {
  * gets scored, so two versions of it would not look like a rendering bug — they
  * would score a live round differently on different clients.
  *
- * Two rules, and each closes something real:
+ * Three rules, and each closes something real:
  *
  * - **Only the question in play.** The subcollection holds one document per
  *   player and overwrites it each question, so a player who has not answered yet
  *   still has last question's answer sitting there. Scoring it again would
- *   credit them for a question they never touched.
+ *   credit them for a question they never touched. Index is not enough on its
+ *   own: the next round starts again at 0.
+ * - **Only this opening of that question.** `at` and `openedAtMs` are both the
+ *   server's clock, in milliseconds. An answer stamped before this question's
+ *   `openedAt` is a previous round's document sitting on the same index. Equal
+ *   counts as this question. Absent `at` is kept: a pending `serverTimestamp()`
+ *   has not resolved, and a client from before the field never wrote one.
+ *   Absent `openedAtMs` is kept too — the open itself is still pending, or the
+ *   field never landed, and dropping every stamped answer then would hide a
+ *   legitimate one. A client wall clock is not an input.
  * - **Only people the room lists.** Nothing checks membership on the way in —
  *   the room code is the capability, as everywhere else — so a client can write
  *   an answer to a room it never joined. It no longer scores and no longer
@@ -84,12 +93,16 @@ export function liveAnswers(
   players: Record<string, Player>,
   index: number,
   docs: Record<string, AnswerDoc>,
+  /** This question's server `openedAt`, in milliseconds. Null when it has not resolved. */
+  openedAtMs: number | null = null,
 ): Record<string, Answer> {
   const live: Record<string, Answer> = {};
 
   for (const [uid, answer] of Object.entries(docs)) {
     if (answer.questionIndex !== index) continue;
     if (!players[uid]) continue;
+    // Strictly before, not `<=`. The same millisecond as the open is this question.
+    if (openedAtMs !== null && answer.at !== undefined && answer.at < openedAtMs) continue;
     // Rebuilt field by field on purpose, so a stray field on the document
     // cannot reach the reducer — which means a new one has to be added here
     // deliberately. `wager`, `firstMs` and `at` are spread conditionally rather
