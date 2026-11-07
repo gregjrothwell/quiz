@@ -17,6 +17,7 @@ export function RigCheck({ code, uid, isHost }: { code: string; uid: string; isH
   const [run, setRun] = useState<RigRun | null>(null);
   const [report, setReport] = useState<RigReport | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [asking, setAsking] = useState(false);
 
   useEffect(
     () =>
@@ -40,6 +41,7 @@ export function RigCheck({ code, uid, isHost }: { code: string; uid: string; isH
   }, [code, run]);
 
   const start = (): void => {
+    setAsking(false);
     setError(null);
     setReport(null);
     startRig(realtimeDb(), code, uid).then(setRun, (cause: unknown) =>
@@ -54,21 +56,37 @@ export function RigCheck({ code, uid, isHost }: { code: string; uid: string; isH
         <section className="panel stack rig-check">
           <p className="eyebrow">Rig check</p>
           {cue !== null ? (
-            <p aria-live="polite">Hold your phone up — cue {cue + 1} of {RIG_CUES}</p>
+            <p aria-live="polite">On a phone? Hold it up: cue {cue + 1} of {RIG_CUES}</p>
           ) : (
             <p className="muted hint">
-              Ten slow amber fades, two seconds apart, on every phone in the room. It measures how
+              Ten slow amber fades, two seconds apart, on every screen in the room. It measures how
               closely they change together, before we build the lights.
             </p>
           )}
           {isHost ? (
-            <button type="button" className="btn btn--ghost" disabled={cue !== null} onClick={start}>
-              Run the rig check
+            // One button that becomes Cancel, with the yes underneath it: the
+            // second click of a double-click lands on Cancel, never on the yes.
+            // Greg started a run by accident on 3 Nov 2026 (PROJ-114).
+            <button
+              type="button"
+              className="btn btn--ghost"
+              disabled={cue !== null}
+              onClick={() => setAsking(!asking)}
+            >
+              {asking ? 'Cancel' : 'Run the rig check'}
             </button>
+          ) : null}
+          {isHost && asking ? (
+            <>
+              <p className="muted hint">Every screen in the room fades amber ten times, for about twenty seconds. Run it now?</p>
+              <button type="button" className="btn" onClick={start}>
+                Yes, run it
+              </button>
+            </>
           ) : null}
           {isHost && report ? (
             <p className="muted" aria-live="polite">
-              {report.devices} {report.devices === 1 ? 'phone' : 'phones'} · {report.cuesPassed} of {RIG_CUES} cues
+              {report.devices} {report.devices === 1 ? 'device' : 'devices'} · {report.cuesPassed} of {RIG_CUES} cues
               had {Math.round(RIG_PASS_SHARE * 100)}% within ±{RIG_TOLERANCE_MS} ms · worst spread{' '}
               {Math.round(Math.max(0, ...report.cues.map((entry) => entry.spreadMs)))} ms ·{' '}
               {report.pass ? 'passes' : `needs ${RIG_PASS_CUES} to pass`}

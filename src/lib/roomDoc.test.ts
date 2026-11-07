@@ -1,8 +1,9 @@
-import { deleteField } from 'firebase/firestore';
+import { deleteField, Timestamp } from 'firebase/firestore';
 import { describe, expect, it } from 'vitest';
 
+import type { AnswerDoc } from '../engine/answers';
 import { createRoom } from '../engine/state';
-import { toPersisted, toRoomState, toUpdate } from './roomDoc';
+import { answerDocFrom, liveAnswersFromRoom, openedAtMillis, toPersisted, toRoomState, toUpdate } from './roomDoc';
 
 describe('the lobby vote is not on the room document', () => {
   it('a create does not write the vote, and a document that still has one reads as nobody voting', () => {
@@ -180,5 +181,56 @@ describe('the room document and the Double', () => {
     const before = { ...createRoom('ABCD'), phase: 'finished' as const, doubleEnabled: true, double: HALF };
     const after = { ...before, phase: 'lobby' as const, doubleEnabled: false, double: null };
     expect(toUpdate(after, before).double).toEqual(deleteField());
+  });
+});
+
+describe('answers scored from the room snapshot', () => {
+  it('scores an answer from the server openedAt, and keeps one with no stamp', () => {
+    const players = {
+      greg: { name: 'Greg', joinedAt: 1 },
+      sam: { name: 'Sam', joinedAt: 2 },
+      alex: { name: 'Alex', joinedAt: 3 },
+      jo: { name: 'Jo', joinedAt: 4 },
+    };
+    const openedAt = Timestamp.fromMillis(5_000);
+    const room = {
+      players,
+      index: 0,
+      // The writer's own clock. Scoring must not read it.
+      questionOpenedAt: 9_000,
+      openedAt,
+    };
+    const before: AnswerDoc = { optionIndex: 1, elapsedMs: 900, questionIndex: 0, at: 4_999 };
+    const onOpen: AnswerDoc = { optionIndex: 2, elapsedMs: 400, questionIndex: 0, at: 5_000 };
+    const after: AnswerDoc = { optionIndex: 0, elapsedMs: 800, questionIndex: 0, at: 5_400 };
+    const pending = answerDocFrom({ optionIndex: 3, elapsedMs: 100, questionIndex: 0, at: null });
+    expect(pending).toEqual({ optionIndex: 3, elapsedMs: 100, questionIndex: 0 });
+    if (!pending) throw new Error('a pending stamp should still parse');
+
+    expect(liveAnswersFromRoom(room, { greg: before, sam: onOpen, alex: after, jo: pending })).toEqual({
+      sam: { optionIndex: 2, elapsedMs: 400, at: 5_000 },
+      alex: { optionIndex: 0, elapsedMs: 800, at: 5_400 },
+      jo: { optionIndex: 3, elapsedMs: 100 },
+    });
+
+    // A pending open is not a Timestamp, so nothing is dropped on it.
+    expect(openedAtMillis({ openedAt: null })).toBeNull();
+    expect(openedAtMillis({ questionOpenedAt: 9_000 })).toBeNull();
+    expect(liveAnswersFromRoom({ ...room, openedAt: null }, { greg: before })).toEqual({
+      greg: { optionIndex: 1, elapsedMs: 900, at: 4_999 },
+    });
+
+    // A resolved stamp on the answer document is milliseconds before it is scored.
+    const stamped = answerDocFrom({
+      optionIndex: 1,
+      elapsedMs: 900,
+      questionIndex: 0,
+      at: Timestamp.fromMillis(5_400),
+    });
+    expect(stamped?.at).toBe(5_400);
+    if (!stamped) throw new Error('a resolved stamp should parse');
+    expect(liveAnswersFromRoom(room, { sam: stamped })).toEqual({
+      sam: { optionIndex: 1, elapsedMs: 900, at: 5_400 },
+    });
   });
 });

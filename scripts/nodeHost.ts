@@ -31,7 +31,7 @@ import {
   type Firestore as LiteFirestore,
 } from 'firebase/firestore/lite';
 import { onValue, ref as rtdbRef, type Database } from 'firebase/database';
-import { liveAnswers, type AnswerDoc } from '../src/engine/answers';
+import type { AnswerDoc } from '../src/engine/answers';
 import type { QuestionRecord } from '../src/engine/awards';
 import { resolveHost } from '../src/engine/host';
 import type { Action } from '../src/engine/reducer';
@@ -54,7 +54,7 @@ import { logged, type GameLog } from '../src/host/gameLog';
 import { foldActions, perform, removePlayers } from '../src/host/moves';
 import type { HostPorts } from '../src/host/ports';
 import { keepGameRecord } from '../src/lib/gameRecords';
-import { answerDocFrom, toRoomState, toUpdate } from '../src/lib/roomDoc';
+import { answerDocFrom, liveAnswersFromRoom, toRoomState, toUpdate } from '../src/lib/roomDoc';
 import { resolveAnswer } from '../src/lib/vault';
 
 export interface NodeHostOptions {
@@ -115,9 +115,7 @@ export function startNodeHost({ db, lite, code, uid, rtdb, only, log = () => und
 
   const room = (): RoomState | null => {
     if (!persisted) return null;
-    const players = (persisted.players ?? {}) as RoomState['players'];
-    const index = Number(persisted.index ?? 0);
-    return toRoomState(code, persisted, liveAnswers(players, index, answers));
+    return toRoomState(code, persisted, liveAnswersFromRoom(persisted, answers));
   };
 
   const ports: HostPorts = {

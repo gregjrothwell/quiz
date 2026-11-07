@@ -104,4 +104,21 @@ describe('the heartbeat timing', () => {
   it('asks before the rules would allow it, so the claim lands close to the threshold', () => {
     expect(CLAIM_AFTER_ABSENT_MS + BEAT_EVERY_MS).toBeLessThanOrEqual(CLAIM_AFTER_SILENT_MS);
   });
+
+  it('lets any member claim a stale beat, not only the successor the client would pick', () => {
+    // `planClaim` asks only for the longest-seated present player. `claim()`
+    // does not: once the beat is silent, any member may set `hostUid` to
+    // themselves. This locks that hole so a later tightening has to say so.
+    const body = /function claim\(\) \{([\s\S]*?)\n {6}\}/.exec(rules)?.[1] ?? '';
+    expect(body).toContain('isMember()');
+    expect(body).toContain('beatSilent()');
+    expect(body).toContain('request.resource.data.hostUid == request.auth.uid');
+    expect(body).toContain("changed().hasOnly(['hostUid'])");
+    expect(body).not.toMatch(/joinedAt|successor|present|resolveQuizmaster/);
+
+    const absentSince = 1_000_000 - CLAIM_AFTER_ABSENT_MS;
+    const present = new Set(['ann', 'bob']);
+    expect(planClaim({ hostUid: 'host', players, present, absentSince, now: 1_000_000, uid: 'ann' }).claim).toBe(true);
+    expect(planClaim({ hostUid: 'host', players, present, absentSince, now: 1_000_000, uid: 'bob' }).claim).toBe(false);
+  });
 });
