@@ -116,4 +116,30 @@ describe('resolveAnswer', () => {
 
     await expect(resolveAnswer(DB, 'ROOM', QUESTION)).resolves.toBe(3);
   });
+
+  test('emulator lock timeouts are retried until a candidate lands', async () => {
+    const aborted = Object.assign(new Error('Transaction lock timeout.'), { code: 'aborted' });
+    let round = 0;
+    setDoc.mockImplementation((_ref: unknown, data: { answer: string }) => {
+      // Four calls per round. First round: every write contends. Second: C lands.
+      const thisRound = Math.floor(round / 4);
+      round += 1;
+      if (thisRound === 0) return Promise.reject(aborted);
+      return data.answer === 'C' ? Promise.resolve() : Promise.reject(refused);
+    });
+
+    await expect(resolveAnswer(DB, 'ROOM', QUESTION)).resolves.toBe(2);
+    expect(asked()).toEqual(['A', 'B', 'C', 'D', 'A', 'B', 'C', 'D']);
+    expect(getDoc).not.toHaveBeenCalled();
+  });
+
+  test('contention that never clears still falls through to a stored reveal', async () => {
+    const aborted = Object.assign(new Error('Transaction lock timeout.'), { code: 'aborted' });
+    setDoc.mockRejectedValue(aborted);
+    getDoc.mockResolvedValue({ exists: () => true, data: () => ({ answer: 'B' }) });
+
+    await expect(resolveAnswer(DB, 'ROOM', QUESTION)).resolves.toBe(1);
+    // Three rounds of four candidates, then the read-back.
+    expect(asked()).toHaveLength(12);
+  });
 });

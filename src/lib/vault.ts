@@ -40,14 +40,27 @@ function revealDoc(db: Firestore, code: string, questionId: string) {
   return doc(db, 'rooms', code, 'reveal', questionId);
 }
 
-function isPermissionDenied(cause: unknown): boolean {
-  return (
-    typeof cause === 'object' &&
-    cause !== null &&
-    'code' in cause &&
-    String((cause as { code: unknown }).code) === 'permission-denied'
-  );
+function errorCode(cause: unknown): string | null {
+  if (typeof cause !== 'object' || cause === null || !('code' in cause)) return null;
+  return String((cause as { code: unknown }).code);
 }
+
+function isPermissionDenied(cause: unknown): boolean {
+  return errorCode(cause) === 'permission-denied';
+}
+
+/**
+ * The Firestore emulator sometimes answers four parallel writes to the same
+ * reveal document with `aborted` / "Transaction lock timeout" (host-loop.md).
+ * That is contention on one doc, not a real refusal, so it is retried here
+ * rather than bubbling out and burning a host-level reveal attempt.
+ */
+function isEmulatorContention(cause: unknown): boolean {
+  return errorCode(cause) === 'aborted';
+}
+
+/** How many times the four-way ask is repeated after an emulator lock timeout. */
+const CONTENTION_RETRIES = 3;
 
 /**
  * Finds which option the vault says is correct, and leaves the proof behind at
@@ -71,26 +84,37 @@ function isPermissionDenied(cause: unknown): boolean {
  * A reveal that has already been recorded — because the quizmaster's tab
  * reloaded, or the role changed hands mid-question — is read back rather than
  * rewritten, since the rules make these documents immutable once created.
+ *
+ * Emulator lock timeouts on the four-way ask are retried in place (no sleep):
+ * the host's backoff ladder still covers a vault that will not open at all.
  */
 export async function resolveAnswer(
   db: Firestore,
   code: string,
   question: QuizQuestion,
 ): Promise<number> {
-  const candidates = question.options.map((option, index) =>
-    setDoc(revealDoc(db, code, question.id), { answer: option }).then(() => index),
-  );
+  for (let attempt = 0; attempt < CONTENTION_RETRIES; attempt += 1) {
+    const candidates = question.options.map((option, index) =>
+      setDoc(revealDoc(db, code, question.id), { answer: option }).then(() => index),
+    );
 
-  try {
-    return await Promise.any(candidates);
-  } catch (cause) {
-    // A refusal is the expected outcome for every option but one, and carries
-    // no information beyond "not this one". Anything else — offline, a missing
-    // ruleset — has to surface, or a reveal that cannot happen looks
-    // identical to a question nobody got right.
-    const failures: unknown[] = cause instanceof AggregateError ? cause.errors : [cause];
-    const other = failures.find((failure) => !isPermissionDenied(failure));
-    if (other !== undefined) throw other;
+    try {
+      return await Promise.any(candidates);
+    } catch (cause) {
+      // A refusal is the expected outcome for every option but one, and carries
+      // no information beyond "not this one". Emulator contention is retried.
+      // Anything else — offline, a missing ruleset — has to surface, or a
+      // reveal that cannot happen looks identical to a question nobody got right.
+      const failures: unknown[] = cause instanceof AggregateError ? cause.errors : [cause];
+      const hard = failures.find(
+        (failure) => !isPermissionDenied(failure) && !isEmulatorContention(failure),
+      );
+      if (hard !== undefined) throw hard;
+      if (failures.some(isEmulatorContention) && attempt < CONTENTION_RETRIES - 1) {
+        continue;
+      }
+      break;
+    }
   }
 
   // Every candidate refused. Either the gate has not opened yet, or this
