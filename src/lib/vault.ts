@@ -50,10 +50,11 @@ function isPermissionDenied(cause: unknown): boolean {
 }
 
 /**
- * The Firestore emulator sometimes answers four parallel writes to the same
- * reveal document with `aborted` / "Transaction lock timeout" (host-loop.md).
- * That is contention on one doc, not a real refusal, so it is retried here
- * rather than bubbling out and burning a host-level reveal attempt.
+ * `aborted`: the write lost a lock rather than being judged. The emulator
+ * answers some vault candidates with "Transaction lock timeout" after 2 s
+ * (host-loop.md). It is not a refusal, so `resolveAnswer` still reads the
+ * reveal back — and rethrows it when nothing landed, so the host's ladder asks
+ * again. Nothing here limits it to the emulator: any `aborted` takes this path.
  */
 function isEmulatorContention(cause: unknown): boolean {
   return errorCode(cause) === 'aborted';
