@@ -1,6 +1,6 @@
 # hostLoop — story and acceptance criteria
 
-> **Owner: Greg Rothwell. Last updated: 22 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 10 November 2026. Budget: 250 lines.**
 
 **Status: APPROVED 22 October 2026, all three steps.** Greg: *"Approve the host
 clean-up as recommended: all three steps including the test scripts and the CI
@@ -171,7 +171,12 @@ rule moved to `src/host/gameLog.ts`, shared by `useGameLog` and Node.
   pointed at the emulator. The second run sent none.
 - *The emulator refuses some vault candidates with "Transaction lock timeout".*
   The retry ladder recovers them (3, 2, 3 attempts in one run); C2 allows
-  those and fails on anything else.
+  those and fails on anything else. **Not always (9 November 2026):** CI run
+  42392873752 stalled `double.spec` on `double-two-0` for six attempts. Each
+  time one wrong candidate was refused at once and the rest hit the lock at
+  +2.0 s, and the right one (`options[0]`) lost every time, so no reveal ever
+  landed. Still open on PROJ-119. #200's read-back under contention does not
+  touch this: it only helps once a reveal already exists.
 
 **Changed for whoever runs them.** `final-harness` now waits out the real
 60 s talk, and the host settles 5 s after the whistle whether or not the second

@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 7 November 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 9 November 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -136,9 +136,9 @@ importing `read-games` or `read-owed` breaks that, since each calls `main()` at 
 
 **The token leak is closed and the gate is on `master`**, so a CI deploy is
 safe. If rules matter: `npm run check-rules`, then `npm run sync-harness 30`.
-**PROJ-119, not live** (`cursor/PROJ-119-stale-answer-dfb1`): a previous round's
-answer is dropped when its server `at` is before this question's server
-`openedAt`. No `at` still scores. A stale beat still lets any member claim.
+**PROJ-119 live 7 Nov** (#199, gh-pages `cdad107`): a previous round's answer is
+dropped when its server `at` is before the question's `openedAt`. No `at` still
+scores. Open follow-ups are on the ticket (In Progress), not here.
 
 **Seeded 27 September** — screens, sleeves and tunes: 270 added, 1 changed (an
 id seeded earlier from an unpublished spec), read back 680/680. The seed only

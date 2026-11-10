@@ -40,13 +40,24 @@ function revealDoc(db: Firestore, code: string, questionId: string) {
   return doc(db, 'rooms', code, 'reveal', questionId);
 }
 
+function errorCode(cause: unknown): string | null {
+  if (typeof cause !== 'object' || cause === null || !('code' in cause)) return null;
+  return String((cause as { code: unknown }).code);
+}
+
 function isPermissionDenied(cause: unknown): boolean {
-  return (
-    typeof cause === 'object' &&
-    cause !== null &&
-    'code' in cause &&
-    String((cause as { code: unknown }).code) === 'permission-denied'
-  );
+  return errorCode(cause) === 'permission-denied';
+}
+
+/**
+ * `aborted`: the write lost a lock rather than being judged. The emulator
+ * answers some vault candidates with "Transaction lock timeout" after 2 s
+ * (host-loop.md). It is not a refusal, so `resolveAnswer` still reads the
+ * reveal back — and rethrows it when nothing landed, so the host's ladder asks
+ * again. Nothing here limits it to the emulator: any `aborted` takes this path.
+ */
+function isEmulatorContention(cause: unknown): boolean {
+  return errorCode(cause) === 'aborted';
 }
 
 /**
@@ -71,6 +82,12 @@ function isPermissionDenied(cause: unknown): boolean {
  * A reveal that has already been recorded — because the quizmaster's tab
  * reloaded, or the role changed hands mid-question — is read back rather than
  * rewritten, since the rules make these documents immutable once created.
+ *
+ * Emulator lock timeouts are not thrown as hard failures: the reveal is read
+ * back if one write landed, otherwise the aborted error is rethrown so the
+ * host's backoff ladder (host-loop.md) can ask again. That keeps the
+ * failure shape node-round already filters, instead of burning the 4s
+ * reveal timeout on in-place retries.
  */
 export async function resolveAnswer(
   db: Firestore,
@@ -81,29 +98,38 @@ export async function resolveAnswer(
     setDoc(revealDoc(db, code, question.id), { answer: option }).then(() => index),
   );
 
+  let contention: unknown | undefined;
   try {
     return await Promise.any(candidates);
   } catch (cause) {
     // A refusal is the expected outcome for every option but one, and carries
-    // no information beyond "not this one". Anything else — offline, a missing
-    // ruleset — has to surface, or a reveal that cannot happen looks
-    // identical to a question nobody got right.
+    // no information beyond "not this one". Emulator contention is soft: fall
+    // through to a read-back, then rethrow so the host can back off. Anything
+    // else — offline, a missing ruleset — has to surface, or a reveal that
+    // cannot happen looks identical to a question nobody got right.
     const failures: unknown[] = cause instanceof AggregateError ? cause.errors : [cause];
-    const other = failures.find((failure) => !isPermissionDenied(failure));
-    if (other !== undefined) throw other;
+    const hard = failures.find(
+      (failure) => !isPermissionDenied(failure) && !isEmulatorContention(failure),
+    );
+    if (hard !== undefined) throw hard;
+    contention = failures.find(isEmulatorContention);
   }
 
-  // Every candidate refused. Either the gate has not opened yet, or this
-  // question was already revealed once — a reloaded tab, or the role changing
-  // hands mid-question — and these documents are immutable once written, so a
-  // second attempt at the right answer is refused exactly like a wrong one.
-  // Reading it back is the only way to tell those two apart.
+  // Every candidate refused, or the only non-refusals were emulator lock
+  // timeouts. Either the gate has not opened yet, or this question was already
+  // revealed once — a reloaded tab, or the role changing hands mid-question —
+  // and these documents are immutable once written, so a second attempt at the
+  // right answer is refused exactly like a wrong one. Reading it back is the
+  // only way to tell those two apart. Under contention one of the four may
+  // still have landed.
   const existing = await getDoc(revealDoc(db, code, question.id));
   if (existing.exists()) {
     const { answer } = existing.data() as { answer?: unknown };
     const index = question.options.indexOf(String(answer));
     if (index >= 0) return index;
   }
+
+  if (contention !== undefined) throw contention;
 
   throw new Error(
     'The vault would not confirm an answer for this question. It only opens once '

@@ -56,6 +56,7 @@ import {
   getDocsFromServer,
   getFirestore,
   onSnapshot,
+  serverTimestamp,
   setDoc,
   Timestamp,
   updateDoc,
@@ -315,8 +316,11 @@ async function main(): Promise<void> {
         elapsedMs: seat.elapsedMs,
         questionIndex: 0,
       };
+      // `at` as the app stamps it, so the host's stale-answer check (PROJ-119)
+      // compares a real server stamp with `openedAt` rather than waving through
+      // an answer that has none.
       return Promise.all([
-        setDoc(doc(collection(client.db, 'rooms', code, 'answers'), client.uid), answer),
+        setDoc(doc(collection(client.db, 'rooms', code, 'answers'), client.uid), { ...answer, at: serverTimestamp() }),
         lightLamp(client.app, code, gameId, 0, client.uid),
       ]);
     }),
