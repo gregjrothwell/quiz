@@ -136,11 +136,16 @@ async function start(host: Player, code: string, durationSecs = 5): Promise<void
 }
 
 /** `submitAnswer`. */
-async function answer(as: Player, code: string, optionIndex: number): Promise<void> {
+async function answer(
+  as: Player,
+  code: string,
+  optionIndex: number,
+  questionIndex = 0,
+): Promise<void> {
   await setDoc(doc(as.db, 'rooms', code, 'answers', as.uid), {
     optionIndex,
     elapsedMs: 1200,
-    questionIndex: 0,
+    questionIndex,
     at: serverTimestamp(),
   });
 }
@@ -465,6 +470,35 @@ test('AC11: a room made before the deploy plays on under the member rule', async
 // by a member and by the host, whose writes take the other branch of the
 // update rule; it fails if the bound refuses the game.
 // docs/decisions/security-sweep-oct-2026.md.
+
+
+test('PROJ-119: answers may only name the open question', async () => {
+  const code = await hostedRoom(host);
+  await join(ann, code, 'Ann');
+  await start(host, code, 5);
+
+  // #given question 0 is open
+  await answer(ann, code, 0, 0);
+  expect((await getDoc(doc(ann.db, 'rooms', code, 'answers', ann.uid))).data()?.questionIndex).toBe(0);
+
+  // #when the host moves on to question 1 (reveal → scoreboard → next question)
+  await seedVault(code);
+  // Age the open stamp past the window so the vault gate opens without a sleep.
+  await admin()
+    .doc(`rooms/${code}`)
+    .update({ openedAt: AdminTimestamp.fromMillis(Date.now() - 10_000) });
+  await setDoc(doc(host.db, 'rooms', code, 'reveal', QUESTIONS[0]!.id), { answer: 'First' });
+  await dispatch(host, code, [{ type: 'reveal', correctIndex: 0, questionId: QUESTIONS[0]!.id }]);
+  await dispatch(host, code, [{ type: 'next', at: Date.now() }]);
+  await dispatch(host, code, [{ type: 'next', at: Date.now() }]);
+  expect((await state(host, code)).index).toBe(1);
+
+  // #then a past or future index is refused, and the open one still lands
+  expect(await denied(answer(ann, code, 1, 0)), 'past question').toBe(true);
+  expect(await denied(answer(ann, code, 1, 2)), 'future question').toBe(true);
+  await answer(ann, code, 1, 1);
+  expect((await getDoc(doc(ann.db, 'rooms', code, 'answers', ann.uid))).data()?.questionIndex).toBe(1);
+});
 
 test('S2 allow: a member and the host vote, take it back and move it, as writeOwnVote does', async () => {
   const code = await hostedRoom(host);
