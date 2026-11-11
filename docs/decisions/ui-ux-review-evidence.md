@@ -161,3 +161,21 @@ A question's arrival is the one beat with almost no movement and no sound. `grep
 - The lobby's length is its preamble and settings, not the pack shelves restyled on 20 Oct
   ([`lobby-shelves.md`](lobby-shelves.md)). `office-feedback-9-oct.md` holds nothing on the UI.
 
+
+## How games do it
+
+Moved verbatim from `ui-ux-review.md` on 11 November 2026.
+
+**How games do it — a thin look, two searches, 10 Nov:**
+
+- Kahoot shows the question alone before the answers; in Team mode it is 5s of question, then 5s
+  with the answers before the timer starts. *From a search summary* of Kahoot's support forum
+  (support.kahoot.com, posts 360028793713 and 115000985507); the pages were not opened, and the
+  plain-mode timing is not verified.
+- Jackbox "draws on the language of TV — narrative timing, transitions and dialogue". *From a search
+  summary* of Built In's piece on its design principles (builtin.com), page not opened. No source
+  found on how it times a reveal.
+- "Juice it or lose it" (Jonasson and Purho, GDC Europe 2012): a plain game made to feel alive by
+  layering small responses — easing, squash, particles, sound — on every action. *From search summaries*, talk
+  not watched; **what follows from it for a quiz is my reading**: every press answers back, and
+  nothing arrives or leaves without easing.

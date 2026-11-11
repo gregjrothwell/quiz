@@ -1,8 +1,8 @@
 # UI/UX review — November 2026
 
 > **Owner: Greg Rothwell. Last updated: 11 November 2026. Budget: 250 lines.**
-> **Status: session 3 of 3. Finished as a review: measured, costed and ranked. Nothing is built and
-> nothing is chosen — see "Everything, ranked" and "Open questions for Greg".**
+> **Status: four sessions. Greg answered the open questions on 11 Nov — the answers are under "Open
+> questions for Greg". Building is on PROJ-178 and PROJ-179; the level above is session 4.**
 
 Greg's lead architect said the UI/UX "isn't very good". Nothing more specific was passed on, so
 this is a full pass rather than a response to a named complaint. No code was changed.
@@ -103,19 +103,8 @@ frame by frame. Durations below are from the stylesheet and the engine, checked 
 - **Turned down 28 Aug:** a verdict wash at the reveal, and the rig tightening in the last seconds
   ("one cue too many"). Proposals 5 and 6 below reopen those, so they are Greg's call.
 
-**How games do it — a thin look, two searches, 10 Nov:**
-
-- Kahoot shows the question alone before the answers; in Team mode it is 5s of question, then 5s
-  with the answers before the timer starts. *From a search summary* of Kahoot's support forum
-  (support.kahoot.com, posts 360028793713 and 115000985507); the pages were not opened, and the
-  plain-mode timing is not verified.
-- Jackbox "draws on the language of TV — narrative timing, transitions and dialogue". *From a search
-  summary* of Built In's piece on its design principles (builtin.com), page not opened. No source
-  found on how it times a reveal.
-- "Juice it or lose it" (Jonasson and Purho, GDC Europe 2012): a plain game made to feel alive by
-  layering small responses — easing, squash, particles, sound — on every action. *From search summaries*, talk
-  not watched; **what follows from it for a quiz is my reading**: every press answers back, and
-  nothing arrives or leaves without easing.
+**How games do it** — a thin look, two searches on 10 Nov (Kahoot, Jackbox, "Juice it or lose it"),
+none of the pages opened: moved verbatim to [the evidence file](ui-ux-review-evidence.md#how-games-do-it).
 
 **Proposals — none chosen, none built. S is hours, M a day or two, L touches the rules.**
 
@@ -139,6 +128,12 @@ frame by frame. Durations below are from the stylesheet and the engine, checked 
 
 Session 1's four ideas map onto these: picture as hero → 1; question centre stage → 3 and 4; a clock
 you feel → 6; a held reveal → 5.
+
+## Session 4 — the level above the screens (11 November)
+
+Greg wanted more than a screen audit. [`ui-ux-review-the-show.md`](ui-ux-review-the-show.md) reads
+79 real rounds from `games/`: under half a round is play, one person hosts three-quarters of them,
+one regular wins 60% of theirs, and nobody plays on a phone. Eight findings, eight questions.
 
 ## Session 3 — flows, keyboard, a big screen, sound (11 November)
 
@@ -218,6 +213,11 @@ and 2 were measured and where the instrument lied; the session-1 findings table;
 sound (contrast, names, live regions, tokens); and three directions for the phone and lobby.
 
 ## Open questions for Greg
+
+**Answered 11 Nov** (Greg): 1 yes → PROJ-178. 2 "add in and build" → PROJ-179; length, Catchphrase
+and tunes taken from the doc's recommendations. 3 → the worry is right and the carrier was wrong:
+the question-one trace, not the error beacon, PROJ-180. 4 "go blind": build without showing him
+first. 5 → branch `PROJ-177-ui-ux-review`, PROJ-177. 6 and 7 not answered. Fastest finger → PROJ-181.
 
 1. **Build the first PR (rows 1–3)?** It needs a PROJ ticket and a branch off `master`.
 2. **The lead-in**: five decisions in [`question-lead-in.md`](question-lead-in.md#decisions--all-gregs).
