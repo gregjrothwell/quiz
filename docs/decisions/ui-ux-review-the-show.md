@@ -182,12 +182,12 @@ review ticket (PROJ-118).
 | Question | Answer | What follows |
 |---|---|---|
 | 1. The table at the breaks, your own line on the reveal | **Yes** | PROJ-182. After the lead-in (PROJ-179): the "Question two" card lives on the standings today and has to move first |
-| 2. Advancing on a timer | **"Need more info"** | Below |
-| 3. Per-format identity | Not answered | — |
-| 4. A house round, options folded | **"Need more info"** | Below |
+| 2. Advancing on a timer | "Need more info"; then, with it, **wait** | Decided after PROJ-182 has been played and the gap re-read from `games/`. Detail below |
+| 3. Per-format identity | **"Sounds provisionally ok"** | Provisional, so no ticket. It needs the Claude Design system linked first |
+| 4. A house round, options folded | "Need more info"; then, with it, **yes** | PROJ-183, after PROJ-178 and PROJ-179. Detail below |
 | 5. A warm-up question in the lobby | **"Sounds like something for productionisation"** | Parked with W4 ([`public-scale.md`](public-scale.md)): it is the newcomer's problem, and the office has learned lock-in |
 | 6. One person winning 60% | **Not a problem** | Finding 4 stands as a description. Step 6 of the order above has no case left to answer and drops |
-| 7. Retire steals, the jigsaw, the Slop Cannon | Not answered | — |
+| 7. Retire steals, the jigsaw, the Slop Cannon | **"Sounds provisionally ok"** | Provisional, so no ticket. Which go and which fold is not named yet; Steal has PROJ-118 |
 | 8. Together while they play | **On a call** | The call is the social layer: no chat or reactions to build. The quizmaster's voice is the host, and every cue has to sit under speech (`DEFAULT_VOLUME` is already −20 dB for that reason) |
 
 ### More on advancing on a timer
