@@ -177,7 +177,63 @@ review ticket (PROJ-118).
 - **Nobody was asked anything.** No player was interviewed, and the architect's view is two
   sentences relayed by Greg. Whether people are on a call or in one room while they play is not known.
 
+## Greg's answers, 11 November
+
+| Question | Answer | What follows |
+|---|---|---|
+| 1. The table at the breaks, your own line on the reveal | **Yes** | PROJ-182. After the lead-in (PROJ-179): the "Question two" card lives on the standings today and has to move first |
+| 2. Advancing on a timer | **"Need more info"** | Below |
+| 3. Per-format identity | Not answered | — |
+| 4. A house round, options folded | **"Need more info"** | Below |
+| 5. A warm-up question in the lobby | **"Sounds like something for productionisation"** | Parked with W4 ([`public-scale.md`](public-scale.md)): it is the newcomer's problem, and the office has learned lock-in |
+| 6. One person winning 60% | **Not a problem** | Finding 4 stands as a description. Step 6 of the order above has no case left to answer and drops |
+| 7. Retire steals, the jigsaw, the Slop Cannon | Not answered | — |
+| 8. Together while they play | **On a call** | The call is the social layer: no chat or reactions to build. The quizmaster's voice is the host, and every cue has to sit under speech (`DEFAULT_VOLUME` is already −20 dB for that reason) |
+
+### More on advancing on a timer
+
+- **What it would be.** After the reveal settles, a short count ("Next question in 5") on every
+  screen, then the next question opens. The quizmaster keeps Start, and gets Pause and Go now. At
+  half-time and the end it waits for them, as today.
+- **What it is in the code.** One more duty in `src/host/due.ts`, which already decides "is
+  anything due?" for the reveal on the clock and for opening question one after Mr Fries's card
+  (`openQuestionDue`, `CHASER_INTRO_MS`). The host's device writes it, as it writes every
+  transition now, so no rules change. *Read at the level of that file's exports, not line by line.*
+  M, a day or two with tests. It stalls if the host's tab is asleep — as the reveal does today.
+- **What it saves — less than it looks, once the table moves.** The 11.5s gap is the reveal, the
+  table and two presses. Moving the table to the breaks (answer 1) removes the table and one press.
+  What a timer then adds is the other press, about fifteen a round, and an even pace: per-round
+  median gaps run from 7.0s to 26.7s today, a tenth of all gaps are over 22s.
+- **What it risks, given the call.** A long gap may be the room laughing about the answer, not the
+  host being slow. The numbers cannot tell those apart. A timer cuts the talk short unless
+  somebody pauses it.
+- **Recommendation.** Build answer 1 first, play a week, read the gap again from `games/`. Decide
+  this then. If built, a per-round option ("The show runs itself"), off by default.
+
+### More on a house round
+
+- **What the lobby does now.** Every setting starts from the room's last round, for the second
+  half and for Another round (`Lobby.tsx:166`, `lastDeal`). **A new room starts from fixed
+  defaults**: nothing about the round is remembered on the device from one day to the next (only
+  squad and sound are; grep `localStorage` in `Lobby.tsx`).
+- **How often the defaults are what gets played.** 15 questions is the default and 63% of rounds.
+  Ten seconds is the default and 49%: **the pace is changed on half of rounds.** The ending defaults
+  to neither stakes nor a final, and 77% of rounds had one or the other (32 with stakes, 29 with a final, of 79).
+  So most mornings the quizmaster scrolls 3.4 screens to make the same two changes.
+- **What it would be.** The device remembers the last round's settings. Above the packs, one line:
+  "15 questions · 15 seconds · The Ladder · ends on a final — Change". The pickers sit behind
+  Change. Packs come straight after the room code. About 3.4 screens to about 1.5 (estimate).
+- **What it risks.** A setting nobody can see. This repo has that scar already — Share or Shaft
+  "promised for the end and silently never played" (the same comment in `Lobby.tsx`). The summary
+  line is the answer to it: nothing is on that the line does not say.
+- **Cost.** M, about a day: one remembered value, the line, the fold, and the lobby's e2e specs.
+  No rules, no room document change.
+- **Recommendation.** Yes, after PROJ-178 and PROJ-179. It is the quizmaster's daily cost and it
+  shortens the 79-second wait a little for everyone.
+
 ## Open questions — all Greg's
+
+Asked before the answers above; kept as asked.
 
 1. The table after every question, or at the breaks (option a)?
 2. Reopen advancing on a timer inside a live round, host keeps Start and pause (option c)?
