@@ -2,10 +2,12 @@
 
 > **Owner: Greg Rothwell. Last updated: 13 November 2026. Budget: 250 lines.**
 
-**Status: built 13 November 2026, not live.** PROJ-178, branch
-`PROJ-178-question-screen`. Rows 1–3 of the ranked list in the November UI/UX
-review (PROJ-177, `ui-ux-review.md`, on PR #203 and not on this branch yet).
+**Status: live 13 November 2026**, release #206 (merge `96fde81`, gh-pages
+`8235e7b`, bundle `index-Bg-3T0nl`), from #205. PROJ-178. Rows 1–3 of the ranked
+list in the November UI/UX review ([`ui-ux-review.md`](ui-ux-review.md), PROJ-177).
 Greg, 11 November: yes to the story, and ok to the two criteria that changed.
+Greg, 13 November: "you decide on the fixes and let's go live". The three
+points under "Two things the measuring changed" were kept as built.
 
 ## The story
 
