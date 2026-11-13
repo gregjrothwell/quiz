@@ -18,6 +18,13 @@ export interface Update {
 
 export const UPDATES: readonly Update[] = [
   {
+    date: '2026-11-13',
+    lines: [
+      'The reveal holds still. Your points and your verdict now land where the clock was, instead of the whole question jumping up when the clock left, and the answers that were wrong stay readable.',
+      'A question arrives in order: the picture, then the question, then the answers one at a time.',
+    ],
+  },
+  {
     date: '2026-11-06',
     lines: [
       'A tie for a place in Share or Shaft now goes to whoever got more right, then whoever was faster, and the final says who tied and why. No more coin toss, unless they are level on those too.',
