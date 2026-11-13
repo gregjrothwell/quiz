@@ -253,6 +253,19 @@ export function QuestionScreen({
         : verdict === 'lost'
           ? LOST_LINE
           : 'You didn’t answer';
+  /*
+    The same verdict, cut to what fits where the clock was (PROJ-178). The desk
+    line above keeps the whole sentence, and is the one a screen reader gets.
+  */
+  const stampWord = telling
+    ? 'Noted'
+    : verdict === 'correct'
+      ? 'Correct'
+      : verdict === 'wrong'
+        ? 'Not this time'
+        : verdict === 'lost'
+          ? 'Didn’t arrive'
+          : 'You didn’t answer';
 
   /**
    * The verdict is worth nothing if it arrives at the same instant the clock
@@ -651,9 +664,6 @@ export function QuestionScreen({
         else setPickState({ key: callKey, index: picked });
       }}
       order={index}
-      // Your points, popped over your own lectern as the verdict lands. Only
-      // yours and only on this screen: everybody else's are the standings' job.
-      pop={settled && gotItRight && myDelta > 0 && myAnswer?.optionIndex === index ? myDelta : null}
       // Survey Says part two: what the room said in part one, on each lectern (G5).
       note={settled && question.survey?.counts ? `${question.survey.counts[index] ?? 0} said this` : null}
     />
@@ -676,22 +686,53 @@ export function QuestionScreen({
           </span>
         </div>
         {/*
-          No arc for somebody who walked in on the question. Their clock started
-          when they arrived, so it would count down a window the room does not
-          have left and then be cut off by a reveal several seconds early —
-          which reads as the round jumping rather than as arriving late.
+          One cell, there for the whole question, so nothing under the header
+          moves when the clock stops. The clock used to leave at the reveal and
+          take its cell with it: 58px of header gone in one frame, and the
+          prompt, the picture and all four answers jumping up to fill it
+          (docs/decisions/question-screen.md).
+
+          What the reveal puts there is your verdict: your points, and the word
+          under them. It lands with the desk line, once the replay has run, and
+          is hidden from a screen reader because the desk line says it already.
         */}
-        {revealed ? null : joinedMidQuestion ? (
-          <p className="muted hint">
-            You joined mid-question, so this one is scored as if you answered on the buzzer.
-          </p>
-        ) : (
-          <ArcTimer
-            secondsLeft={clock.secondsLeft}
-            remainingMs={clock.remainingMs}
-            totalMs={questionDurationMs(room)}
-          />
-        )}
+        <div className="qhead__clock">
+          {revealed ? (
+            <p
+              className={
+                settled || verdict === 'lost' ? 'qhead__verdict qhead__verdict--in' : 'qhead__verdict'
+              }
+              data-tone={telling ? 'silent' : verdict}
+              aria-hidden="true"
+            >
+              {/* Same rule as the desk: a number only where the score moved. */}
+              {!telling && (gotItRight || myDelta < 0) ? (
+                <span className="qhead__points">
+                  {myDelta < 0 ? '−' : '+'}
+                  {Math.abs(myDelta).toLocaleString('en-GB')}
+                </span>
+              ) : null}
+              <span className="qhead__word">{stampWord}</span>
+            </p>
+          ) : joinedMidQuestion ? (
+            /*
+              No arc for somebody who walked in on the question. Their clock
+              started when they arrived, so it would count down a window the
+              room does not have left and then be cut off by a reveal several
+              seconds early — which reads as the round jumping rather than as
+              arriving late.
+            */
+            <p className="muted hint">
+              You joined mid-question, so this one is scored as if you answered on the buzzer.
+            </p>
+          ) : (
+            <ArcTimer
+              secondsLeft={clock.secondsLeft}
+              remainingMs={clock.remainingMs}
+              totalMs={questionDurationMs(room)}
+            />
+          )}
+        </div>
       </header>
 
       {/*
