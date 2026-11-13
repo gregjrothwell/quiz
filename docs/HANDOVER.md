@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 7 November 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 9 November 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -41,7 +41,7 @@ Built to replace Polly in Teams.
 | **Name that Tune** clips that give it away; **the volume slider and the two autoplay gates**; **the lobby sound check**; **the Apple Music badge and Apple's terms**; **Name the Artist**; **Theme Tunes** (blind, 65, 21 swapped 2 Nov) | [`tunes-round.md`](decisions/tunes-round.md) · [`tv-themes.md`](decisions/tv-themes.md) · [`tunes-title-gate.md`](decisions/tunes-title-gate.md) · [`audio-stack.md`](decisions/audio-stack.md) · [`sound-check.md`](decisions/sound-check.md) · [`known-limits.md`](decisions/known-limits.md) · [`name-the-artist.md`](decisions/name-the-artist.md) |
 | whether an answer can change and the spam exploit; `firstMs` and the snap guess | [`answer-spam.md`](decisions/answer-spam.md) · [`first-touch.md`](decisions/first-touch.md) |
 | what a finished round left behind, and reading it back | [`decisions/game-record.md`](decisions/game-record.md) |
-| upgrading `package.json`; the studio set and lighting cues; **the game-show moments** (reveal, podium, wipe — live 21 Oct, #100) | [`dependencies.md`](decisions/dependencies.md) · [`lighting.md`](decisions/lighting.md) · [`game-show-moments.md`](decisions/game-show-moments.md) |
+| upgrading `package.json`; the studio set and lighting cues; **the game-show moments** (reveal, podium, wipe — live 21 Oct, #100); **the question header's clock cell, the verdict in it, the entrance order** (PROJ-178) | [`dependencies.md`](decisions/dependencies.md) · [`lighting.md`](decisions/lighting.md) · [`game-show-moments.md`](decisions/game-show-moments.md) · [`question-screen.md`](decisions/question-screen.md) |
 
 ## State as of 29 October 2026
 
@@ -136,9 +136,9 @@ importing `read-games` or `read-owed` breaks that, since each calls `main()` at 
 
 **The token leak is closed and the gate is on `master`**, so a CI deploy is
 safe. If rules matter: `npm run check-rules`, then `npm run sync-harness 30`.
-**PROJ-119, not live** (`cursor/PROJ-119-stale-answer-dfb1`): a previous round's
-answer is dropped when its server `at` is before this question's server
-`openedAt`. No `at` still scores. A stale beat still lets any member claim.
+**PROJ-119 live 7 Nov** (#199, gh-pages `cdad107`): a previous round's answer is
+dropped when its server `at` is before the question's `openedAt`. No `at` still
+scores. Open follow-ups are on the ticket (In Progress), not here.
 
 **Seeded 27 September** — screens, sleeves and tunes: 270 added, 1 changed (an
 id seeded earlier from an unpublished spec), read back 680/680. The seed only

@@ -78,6 +78,9 @@
   /* The question on a laptop, where it has to sit above the fold at 1280×720
      with four options under it. Its own step rather than the nearest. */
   --display-question: clamp(2.1rem, 3.4vw, 3rem);
+  /* The countdown ring, and the height its cell in the question header keeps
+     once the ring has gone (`.qhead__clock`). One number so they cannot drift. */
+  --clock-size: clamp(3.6rem, 12vw, 5.4rem);
 
   --gutter: clamp(1rem, 4vw, 3rem);
   /*
@@ -1589,6 +1592,88 @@ select.input option {
   flex-wrap: wrap;
 }
 
+/*
+ * The clock's cell, and what it holds once the clock stops (PROJ-178).
+ *
+ * The clock used to be the grid item, so when it left at the reveal the header
+ * lost 58px and the whole question jumped up to fill it. The cell is the grid
+ * item now and keeps the clock's height and a width of its own for the whole
+ * question, so the reveal changes what is in it and nothing around it.
+ *
+ * On a phone the cell is exactly the clock's size and the verdict is set small
+ * enough to fit it, a word to a line. Reserving the verdict's width there was
+ * tried and measured: at 375px it wrapped the chips and made the header 35px
+ * taller for the whole question, which is answer area a phone does not have.
+ * From 44rem up there is room, so the cell is the verdict's width from the
+ * start and the verdict is set at display size (see Desktop, below).
+ */
+.qhead__clock {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: var(--clock-size);
+  min-width: var(--clock-size);
+}
+
+/*
+ * Held invisible through the replay rather than unmounted, like the desk's
+ * `.verdict`, and landing with it. Transform and opacity only.
+ */
+.qhead__verdict {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  max-width: var(--clock-size);
+  text-align: right;
+  color: var(--ink-soft);
+  opacity: 0;
+  transform: scale(1.18);
+  transition: opacity 180ms ease, transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.qhead__verdict--in {
+  opacity: 1;
+  transform: none;
+}
+
+.qhead__points {
+  font-family: var(--shout);
+  font-size: var(--text-md);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.qhead__word {
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: var(--text-2xs);
+  line-height: 1.1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.qhead__verdict[data-tone='correct'] {
+  color: var(--correct);
+  text-shadow: 0 0 18px color-mix(in srgb, var(--correct) 55%, transparent);
+}
+
+.qhead__verdict[data-tone='wrong'] {
+  color: var(--wrong);
+}
+
+.qhead__verdict[data-tone='silent'] {
+  color: var(--ink-dim);
+}
+
+/* Amber, never red: the game did not count it. See `.verdict[data-tone='lost']`. */
+.qhead__verdict[data-tone='lost'] {
+  color: var(--amber-bright);
+}
+
 .chip {
   font-family: var(--tech);
   font-weight: 700;
@@ -2043,9 +2128,13 @@ select.input option {
   box-shadow: none;
 }
 
-/* Once the verdict lands the also-rans drop away rather than merely dimming. */
+/*
+ * Once the verdict lands the also-rans step back. Half strength, not gone: at
+ * 0.1 nobody could read what the other answers had been, at the one moment the
+ * room is talking about them (PROJ-178).
+ */
 .tile--gone {
-  opacity: 0.1;
+  opacity: 0.45;
   transform: translateY(6px) scale(0.97);
   border-color: transparent;
   box-shadow: none;
@@ -2470,52 +2559,6 @@ select.input option {
   font-variant-numeric: tabular-nums;
 }
 
-/*
-  Your points, over your own lectern as the verdict lands: up, a beat, and away.
-  The desk keeps the number; this is only the moment of getting it. `forwards`
-  because its resting state is gone, and nothing later wants it back.
-*/
-.tile__pop {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  display: grid;
-  place-items: center;
-  pointer-events: none;
-  font-family: var(--shout);
-  font-size: clamp(2rem, 5vw, 3rem);
-  line-height: 1;
-  color: var(--correct);
-  text-shadow:
-    0 0 18px color-mix(in srgb, var(--correct) 80%, transparent),
-    0 2px 0 #021a10;
-  opacity: 0;
-  animation: pop 1600ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-}
-
-@keyframes pop {
-  0% {
-    opacity: 0;
-    transform: scale(0.5);
-  }
-  18% {
-    opacity: 1;
-    transform: scale(1.15);
-  }
-  30% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  70% {
-    opacity: 1;
-    transform: translateY(-0.4rem);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-1.6rem);
-  }
-}
-
 /* Three right in a row, and on, stamped beside the verdict. */
 .streak {
   display: inline-block;
@@ -2548,12 +2591,10 @@ select.input option {
 /* ── Countdown ring ─────────────────────────────────────────────────────── */
 
 .timer {
-  grid-column: 2;
-  grid-row: 1 / span 2;
   position: relative;
   display: grid;
   place-items: center;
-  width: clamp(3.6rem, 12vw, 5.4rem);
+  width: var(--clock-size);
   aspect-ratio: 1;
   flex: 0 0 auto;
   border-radius: 50%;
@@ -3939,8 +3980,20 @@ select.input option {
   }
 }
 
+/*
+ * A question arrives in order: the picture, then the prompt, then the answers
+ * one at a time, about 0.9s in all (PROJ-178). The answers' delays are inline,
+ * per tile, from `PodiumTile`. It used to be nine-tenths done in a third of a
+ * second, with the picture simply there.
+ *
+ * `backwards` on the picture for the reason given under `.tile` below.
+ */
+.still {
+  animation: lift 360ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
 .prompt {
-  animation: lift 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation: lift 420ms cubic-bezier(0.2, 0.8, 0.2, 1) 100ms both;
 }
 
 /*
@@ -4041,6 +4094,15 @@ select.input option {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+
+  /* The rule above leaves delays alone, so a question would still arrive in
+     pieces. These three only: elsewhere a delay is the order things are told
+     in, and the podium must not name its winner first. */
+  .still,
+  .prompt,
+  .tile {
+    animation-delay: 0s !important;
+  }
 }
 
 /* ── Desktop ────────────────────────────────────────────────────────────────
@@ -4061,9 +4123,34 @@ select.input option {
     justify-content: flex-end;
   }
 
-  .timer {
+  .qhead__clock {
     grid-column: 3;
     grid-row: 1;
+    min-width: 9.5rem;
+  }
+
+  .qhead__verdict {
+    gap: 0.15rem;
+    max-width: 9.5rem;
+  }
+
+  .qhead__points {
+    font-size: var(--text-3xl);
+    line-height: 1;
+  }
+
+  .qhead__word {
+    line-height: 1.15;
+    letter-spacing: 0.14em;
+  }
+
+  /* No number to carry it, so the word is the display line. */
+  .qhead__word:only-child {
+    font-family: var(--shout);
+    font-weight: 400;
+    font-size: var(--display-inline);
+    line-height: 1;
+    letter-spacing: 0.02em;
   }
 }
 

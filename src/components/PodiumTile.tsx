@@ -3,6 +3,18 @@ import { visibleCrowd } from '../engine/crowd';
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'] as const;
 
 /**
+ * A question arrives in order: the picture, the prompt, then the answers one at
+ * a time (PROJ-178). The picture and the prompt are timed in the stylesheet
+ * (`.still`, `.prompt`); these are the answers' share. The first waits for the
+ * prompt to be mostly up, and with four answers the last is at rest 950ms in.
+ *
+ * It was `order * 70` from zero, which had the whole entrance nine-tenths done
+ * in a third of a second (docs/decisions/question-screen.md).
+ */
+const ENTRANCE_AFTER_PROMPT_MS = 300;
+const ENTRANCE_STEP_MS = 90;
+
+/**
  * `hushed` is the drum roll — every lectern but your own pick, blacked out
  * while the verdict is held back. `gone` is what the also-rans become once it
  * lands: dropped away rather than merely dimmed, so the two survivors carry the
@@ -52,8 +64,6 @@ interface PodiumTileProps {
    * while the clock is running.
    */
   arrivals?: TileArrival[];
-  /** Points to pop over this lectern, or null. Decided by the screen. */
-  pop?: number | null;
   /**
    * A line under the option, e.g. Survey Says' "2 said this". On the lectern
    * itself so it costs no height: anything stacked below the lecterns sits
@@ -116,7 +126,6 @@ export function PodiumTile({
   onPick,
   order,
   arrivals = [],
-  pop = null,
   note = null,
 }: PodiumTileProps) {
   const letter = LETTERS[index] ?? '?';
@@ -129,7 +138,7 @@ export function PodiumTile({
     <button
       type="button"
       className={tileClassName(state)}
-      style={{ animationDelay: `${order * 70}ms` }}
+      style={{ animationDelay: `${ENTRANCE_AFTER_PROMPT_MS + order * ENTRANCE_STEP_MS}ms` }}
       disabled={disabled}
       aria-pressed={state === 'picked' || state === 'held'}
       onClick={() => onPick(index)}
@@ -138,6 +147,8 @@ export function PodiumTile({
         {letter}
       </span>
       <span className="tile__text">
+        {/* Green is the only thing that says so otherwise. */}
+        {state === 'correct' ? <span className="sr-only">Right answer: </span> : null}
         {text}
         {note ? <span className="tile__note">{note}</span> : null}
       </span>
@@ -179,14 +190,6 @@ export function PodiumTile({
               +{crowd.hidden}
             </span>
           ) : null}
-        </span>
-      ) : null}
-
-      {/* Hidden from a screen reader: the verdict beside the desk says the
-          same number, once, and this one only exists to be seen land. */}
-      {pop !== null ? (
-        <span className="tile__pop" aria-hidden="true">
-          +{pop.toLocaleString('en-GB')}
         </span>
       ) : null}
 

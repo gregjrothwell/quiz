@@ -66,6 +66,59 @@ describe('PodiumTile name chips', () => {
     const { container } = show([arrival(), arrival({ uid: 'greg', name: 'Greg', elapsedMs: 4_100 })]);
 
     // #then the sentence a screen reader reads names everybody in full
-    expect(container.querySelector('.sr-only')).toHaveTextContent(`Picked by ${LONG} and Greg`);
+    expect(container.querySelector('.tile__crowd .sr-only')).toHaveTextContent(`Picked by ${LONG} and Greg`);
+  });
+});
+
+/**
+ * The reveal said which answer was right in green and nothing else, so a screen
+ * reader was never told (PROJ-178, docs/decisions/ui-ux-review.md).
+ */
+describe('PodiumTile at the reveal', () => {
+  test('the right answer is named in words', () => {
+    // #given the lectern the reveal lit green
+    const { container } = render(
+      <PodiumTile index={0} text="Metropolitan Line" state="correct" disabled onPick={noop} order={0} />,
+    );
+
+    // #then its name starts by saying so, ahead of the answer itself
+    expect(container.querySelector('button')).toHaveTextContent(/Right answer:\s*Metropolitan Line/);
+    expect(container.querySelector('.tile__text .sr-only')).toHaveTextContent('Right answer:');
+  });
+
+  test('no other lectern claims it', () => {
+    // #given every state a lectern can be in that is not the right answer
+    for (const state of ['idle', 'held', 'picked', 'wrong', 'hushed', 'gone'] as const) {
+      const { container, unmount } = render(
+        <PodiumTile index={1} text="Jubilee Line" state={state} disabled onPick={noop} order={1} />,
+      );
+
+      // #then
+      expect(container.querySelector('button')).not.toHaveTextContent('Right answer');
+      unmount();
+    }
+  });
+});
+
+/**
+ * The answers arrive after the picture and the prompt, one at a time (PROJ-178).
+ * They used to start at once, 70ms apart, and the whole entrance was nine-tenths
+ * done in a third of a second. The picture's and the prompt's share of it is in
+ * the stylesheet, and `global.test.ts` reads it there.
+ */
+describe('PodiumTile entrance', () => {
+  test('each answer waits its turn behind the prompt', () => {
+    // #given the four lecterns of one question
+    const delays = [0, 1, 2, 3].map((order) => {
+      const { container, unmount } = render(
+        <PodiumTile index={order} text="An answer" state="idle" disabled={false} onPick={noop} order={order} />,
+      );
+      const delay = container.querySelector('button')?.style.animationDelay;
+      unmount();
+      return delay;
+    });
+
+    // #then the first starts once the prompt is up, and the last 270ms after it
+    expect(delays).toEqual(['300ms', '390ms', '480ms', '570ms']);
   });
 });

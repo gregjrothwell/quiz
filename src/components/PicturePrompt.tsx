@@ -129,7 +129,10 @@ export function PicturePrompt({
   return (
     // Square and landscape want different room in the side-by-side layout:
     // width binds on a 16:9 still, height binds on a sleeve. See `.qsplit`.
-    <figure className={square ? 'still still--square' : 'still'}>
+    // Keyed on the question so the entrance in the stylesheet plays for each
+    // new picture, as the prompt's does. Two picture questions in a row would
+    // otherwise share one element, and only the first would ever arrive.
+    <figure key={questionId} className={square ? 'still still--square' : 'still'}>
       <div
         className={status === 'ready' ? 'still__frame' : 'still__frame still__frame--waiting'}
         {...(ratio ? { style: { aspectRatio: ratio } } : {})}

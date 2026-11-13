@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 7 November 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 13 November 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -23,6 +23,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
+
+## 2026-11-13 — PROJ-178 built, not live: the reveal holds still, the verdict where the clock was
+
+The clock left the header at the reveal and took its cell with it: prompt 147.4px → 89.3px at 1366×768, the review's 58px jump. The cell now stays for the whole question and holds your points and verdict; 147.4px either side, all 29 gallery scenes. The pop over the right answer is gone, also-rans fade to 0.45 not 0.1, the right answer is named for a screen reader, and a question arrives picture, prompt, then answers (last answer at rest at 966ms, was 599ms). A real round on the emulators was filmed from a player's seat: nothing moved on three reveals. On a phone the verdict is set small in the clock's own 57.6px: reserving its width cost 34.8px of header. Measurements and what is not covered: [`question-screen.md`](decisions/question-screen.md).
 
 ## 2026-11-07 — PROJ-119 built, not live: last round's answer no longer scores in this one
 
@@ -125,16 +129,10 @@ Greg: "Go live with #138 once its CI is green". Merged `a410e22` 21:47:22Z, 12 s
 
 Greg: "Go live with #136 once its CI is green". Merged `d8771be` 20:00:33Z on green; rules 20:01:34Z; gh-pages `79633da`, Pages built 20:03:59Z; `index-BK-1i2u1` and 12 files byte-identical. `check-rules` 136/0; the new `rig/` RTDB rules proved live (2 allow, 3 deny); `rank-harness` K859 on the shipped host. Measured first: `games/` (65 rounds, 934 questions, 6 repeats) can't rate what is served next, so Mr Fries plays to pack × difficulty and the fold does not fix the Ladder (HANDOVER item 8 corrected). A merge-resolution slip dropped three CSS braces; the first full e2e ran on a stale `dist/` and caught it. Open: the rig's Friday phone run; Greg to cut the Commentator lines; Wrapped opens 5 Dec. Depth: [`host-loop.md`](decisions/host-loop.md), [`beat-the-chaser.md`](decisions/beat-the-chaser.md), [`rig-in-your-hand.md`](decisions/rig-in-your-hand.md).
 
-## 2026-10-22 — Release 2026-10-22-3 live: rounds bank again, Survey Says, four audit fixes
-
-Greg: "yeah let's go live". #131 carried #121, #123–#127 and #130, each on its own merge commit; merged `8ca1cba` 15:32:33Z, 17 s after green. Rules published 15:33:24Z; gh-pages `f3c478b`, Pages built 15:34:39Z; `index-CgiLmoB3` and 12 assets byte-identical to a local build. `check-rules` **136/0** — the season full-row allow and both `asked` denies FAILed before and PASS now. B498's two lost rounds were rebanked earlier from `games/`. The built-in browser cannot pass App Check on live; Greg confirmed a real one loads. Live checks still open: the first office Survey Says round, and the first rounds banking on regulars' rows.
-
-## 2026-10-22 — Survey Says built, not live
-
-Family Fortunes with the office as the survey: five prompts told, then guessed. No vault — the host tallies part one from its own game log. Two changes after Greg approved, both flagged: part one shows no split (it would give part two away), and the results go on the lecterns, because bars below them sat under the desk on a phone. No rules change, proved by a whole round in the emulator. All 40 draft prompts kept by Greg ([`survey-says.md`](decisions/survey-says.md)).
-
 ## 2026-10-02 to 2026-10-22 — archived, one line each
 
+- **2026-10-22** — [Release 2026-10-22-3 live: rounds bank again, Survey Says, four audit fixes](recall/2026-10.md#2026-10-22--release-2026-10-22-3-live-rounds-bank-again-survey-says-four-audit-fixes)
+- **2026-10-22** — [Survey Says built, not live](recall/2026-10.md#2026-10-22--survey-says-built-not-live)
 - **2026-10-22** — [No round banked today: the season rule hit 1,000 expressions](recall/2026-10.md#2026-10-22--no-round-banked-today-the-season-rule-hit-1000-expressions)
 - **2026-10-22** — [#113 live: master ran in 1m21s on the PR's own build](recall/2026-10.md#2026-10-22--113-live-master-ran-in-1m21s-on-the-prs-own-build)
 - **2026-10-22** — [Live: #111 security sweep, #114 What's new lines (gh-pages `324a6bd`)](recall/2026-10.md#2026-10-22--live-111-security-sweep-114-whats-new-lines-gh-pages-324a6bd)
