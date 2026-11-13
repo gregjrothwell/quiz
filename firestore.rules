@@ -599,12 +599,11 @@ service cloud.firestore {
         // is what can put a season total below zero, which is why `points`
         // is bounded by `-maxPoints()` rather than 0.
         //
-        // Which question it belongs to is still not checked: that would be
-        // a second use of the room `get()` we now pay for the floor, and
-        // the engine already settles it — `isWagerQuestion` honours a stake
-        // only on the last question of a round the room agreed to play for
-        // stakes, so a wager sent on any other is ignored by every client
-        // alike.
+        // Which question it belongs to is checked against the room's current
+        // `index` (PROJ-119 follow-up 1). The room `get()` is already paid for
+        // `arrivalOk`. A stake on the wrong question is still ignored by the
+        // engine (`isWagerQuestion`); the rule now refuses the write itself
+        // when the claimed index is not the open one.
         // `at` is the server's stamp of when this write landed, optional so
         // a bundle that has never heard of it still scores. When present it
         // must be `request.time` — `serverTimestamp()` and nothing else —
@@ -623,6 +622,7 @@ service cloud.firestore {
           && request.resource.data.questionIndex is int
           && request.resource.data.questionIndex >= 0
           && request.resource.data.questionIndex < 100
+          && request.resource.data.questionIndex == answerRoom().data.index
           && (!('wager' in request.resource.data.keys())
             || (request.resource.data.wager is int
               && request.resource.data.wager >= 0

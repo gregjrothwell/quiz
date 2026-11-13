@@ -116,4 +116,22 @@ describe('resolveAnswer', () => {
 
     await expect(resolveAnswer(DB, 'ROOM', QUESTION)).resolves.toBe(3);
   });
+
+  test('emulator lock timeouts still recover a reveal that landed', async () => {
+    const aborted = Object.assign(new Error('Transaction lock timeout.'), { code: 'aborted' });
+    setDoc.mockRejectedValue(aborted);
+    getDoc.mockResolvedValue({ exists: () => true, data: () => ({ answer: 'C' }) });
+
+    await expect(resolveAnswer(DB, 'ROOM', QUESTION)).resolves.toBe(2);
+    expect(asked()).toEqual(['A', 'B', 'C', 'D']);
+  });
+
+  test('emulator lock timeouts with nothing stored are rethrown for the host ladder', async () => {
+    const aborted = Object.assign(new Error('Transaction lock timeout.'), { code: 'aborted' });
+    setDoc.mockRejectedValue(aborted);
+    getDoc.mockResolvedValue({ exists: () => false });
+
+    await expect(resolveAnswer(DB, 'ROOM', QUESTION)).rejects.toMatchObject({ code: 'aborted' });
+    expect(asked()).toEqual(['A', 'B', 'C', 'D']);
+  });
 });

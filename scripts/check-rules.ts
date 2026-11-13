@@ -722,6 +722,23 @@ function buildChecks(probes: Probes): Check[] {
     },
     {
       /*
+        The publish proof for the open-question bind (PROJ-119). The same
+        write as the allow just above, naming question 1 while LIVE_ROOM sits
+        on 0, so the bind is the only thing that can refuse it. Before the
+        rules publish it lands, is swept, and this FAILs — that FAIL is the
+        proof. After, it flips to PASS.
+      */
+      label: 'Firestore   · answer a question that is not the open one',
+      expect: 'deny',
+      hint: 'firestore.rules does not bind questionIndex to the room index — '
+        + 'a client can file answers ahead of the question. Unpublished?',
+      run: async () => {
+        await setDoc(ownAnswer, { optionIndex: 0, elapsedMs: 4000, questionIndex: 1 });
+        return deleteDoc(ownAnswer);
+      },
+    },
+    {
+      /*
         Claimed 3ms at nine seconds. Against the live ruleset this write is
         *allowed*, so the check FAILs until the paste — that FAIL is the proof
         the floor is unpublished. Deny cases that hit a missing collection
