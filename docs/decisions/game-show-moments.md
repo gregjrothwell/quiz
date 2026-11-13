@@ -26,6 +26,10 @@ bundle `index-DYv-seCH.js` byte-identical to a local build of master.
 | Lobby | Plates just there | Each drops in; the quizmaster's device pings per arrival | `Lobby.tsx`, `.plate` |
 | Phones | — | A buzz on locking an answer, on your verdict, on locking a final pick, and at the final's impact | `lib/haptics.ts` |
 
+**Changed 13 November 2026 (PROJ-178):** the pop over your lectern is gone. It
+landed on the answer's own text. Your points now land where the clock was;
+the streak stamp is unchanged ([`question-screen.md`](question-screen.md)).
+
 New cues, all synthesised like the rest (`sound.ts`): `shatter`, `chime`,
 `heartbeat`, `roll`, `join`. None louder than the loudest existing voice, and
 `join` the quietest thing in the house — `sound.test.ts`.
