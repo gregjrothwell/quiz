@@ -120,7 +120,6 @@ describe('global.css', () => {
       '.card__round',
       '.card--intro .card__round',
       '.card__topic',
-      '.tile__pop',
       '.standoff__pot-sum',
       '.award__who',
       '.riser__pos',
@@ -169,5 +168,50 @@ describe('global.css', () => {
   it('lets an answer tile’s pick drop its time under the name before cutting the name', () => {
     const pick = rules.find((r) => r.selector === '.tile__pick');
     expect(pick?.body).toMatch(/flex-wrap:\s*wrap/);
+  });
+
+  // PROJ-178. Measured in a browser; these pin what the measurements rest on.
+
+  it('keeps a wrong answer readable at the reveal', () => {
+    // It was 0.1, which is a tile nobody can read. About half strength.
+    const gone = rules.find((r) => r.selector === '.tile--gone');
+    const opacity = Number(/opacity:\s*([\d.]+)/.exec(gone?.body ?? '')?.[1]);
+    expect(opacity).toBeGreaterThanOrEqual(0.4);
+    expect(opacity).toBeLessThanOrEqual(0.6);
+  });
+
+  it('draws nothing over an answer tile', () => {
+    expect(rules.filter((r) => r.selector.includes('.tile__pop'))).toEqual([]);
+  });
+
+  it('holds the clock’s cell at the clock’s height, whatever is in it', () => {
+    // The clock leaving used to take 58px of header with it. One size, used twice.
+    const timer = rules.find((r) => r.selector === '.timer');
+    const cell = rules.find((r) => r.selector === '.qhead__clock');
+    expect(timer?.body).toMatch(/width:\s*var\(--clock-size\)/);
+    expect(cell?.body).toMatch(/min-height:\s*var\(--clock-size\)/);
+  });
+
+  it('brings a question in as picture, prompt, then answers', () => {
+    const entrance = (selector: string) =>
+      rules.find((r) => r.selector === selector && /animation:/.test(r.body) && r.at.length === 0)?.body ?? '';
+    // The picture leads and the prompt follows it. The answers' delays are
+    // inline, per tile: `PodiumTile.test.tsx`.
+    expect(entrance('.still')).toMatch(/animation:[^;]*\bbackwards\b/);
+    expect(entrance('.still')).not.toMatch(/animation:[^;]*\d+ms[^;]*\d+ms/);
+    expect(entrance('.prompt')).toMatch(/animation:[^;]*420ms[^;]*\b100ms\b/);
+    // `backwards`, never `both`, on anything with later states (gotchas.md).
+    expect(entrance('.tile')).toMatch(/animation:[^;]*\bbackwards\b/);
+  });
+
+  it('gives reduced motion the whole question at once', () => {
+    // The blanket rule collapses durations and leaves delays alone, so a
+    // staggered entrance would still arrive in pieces.
+    const still = rules.find(
+      (r) =>
+        r.at.some((a) => /prefers-reduced-motion:\s*reduce/.test(a)) &&
+        ['.still', '.prompt', '.tile'].every((s) => selectors(r).includes(s)),
+    );
+    expect(still?.body).toMatch(/animation-delay:\s*0s\s*!important/);
   });
 });
