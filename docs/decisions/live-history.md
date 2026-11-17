@@ -1,12 +1,20 @@
 # What went live, and when
 
-> **Owner: Greg Rothwell. Last updated: 30 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 13 November 2026. Budget: 250 lines.**
 
 Split out of [`HANDOVER.md`](../HANDOVER.md) on 24 October 2026, at 150 lines
 against a 150 budget. **Moved verbatim; only where it lives has changed.** The
 handover keeps the current live bundle and the checks still owed; the chain of
 bundles before it, and the release records that were sitting in its Outstanding
 list, are here. Links were relative to `docs/`, so `decisions/` is dropped from them.
+
+## `index-5KgGMvMQ`, live until 13 November 2026
+
+Verbatim from the handover when release #206 replaced it; only the links changed.
+#199 (gh-pages `cdad107`, 7 Nov) went live in between without this line being
+replaced, so it is recorded in TOTAL-RECALL and the handover's pick-up note.
+
+**Live is `index-5KgGMvMQ`** (release #190, 2 Nov, merge `5e8240c`, gh-pages `410c17a`, Pages 13:45:05Z; 28/28 files byte-identical; rules unchanged): **question cleanup** (PROJ-96) — harvested prompts that lost their quote and US-only subjects filtered, seven retired by hand ([`question-votes.md`](question-votes.md)); **Theme Tunes 21 out, 21 in, 65** (blind; numbers only in `THEMES_DROPPED`, nobody has listened — the office round is the check); **"not locked"** on the reveal for an unlocked pick (PROJ-78; Greg kept lock-in, [`lock-in.md`](lock-in.md)); PROJ-97 hook test fix. Earlier: #182 styling pass, `index-0q-ot5PS`. **Owed from #179:** the office's first locked round and a phone (`read-games`); `read-owed` after a round that follows a deploy (PROJ-77); rivals backfill re-run about 31 Oct (PROJ-73); #168 in a real room (PROJ-75); `JIRA_API_TOKEN` (PROJ-72) — CI's Jira job moves nothing until then.
 
 ## `index-DusPPoDJ`, live until 30 October 2026
 
