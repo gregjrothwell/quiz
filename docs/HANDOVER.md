@@ -69,8 +69,7 @@ after seven candidate batches, the last pre-screened; picture is **Fine Art** 49
 **What the office plays** — On the box, Sleeves and Tunes, at 4–11 seats: content binds, not
 Firebase, except at thirty ([`cost.md`](decisions/cost.md)). **Check `read-games`, not the prose.**
 
-**Otherwise:** `appcheck-probe` refuses at sign-in; reveal ~0.5s after the clock;
-scoring 500 + rank 500/400/300/200/100.
+**Otherwise:** `appcheck-probe` refuses at sign-in; reveal ~0.5s after the clock; scoring 500 + rank 500/400/300/200/100.
 
 ## Outstanding
 
@@ -134,15 +133,16 @@ importing `read-games` or `read-owed` breaks that, since each calls `main()` at 
 
 ## If you're picking this up cold
 
+**The next release is open, nothing in it is live** (Greg, 25 Nov: "we'll do more changes and go live with everything").
+In: **PROJ-179, #211**, draft and green, branch `PROJ-179-lead-in` in worktree `.claude/worktrees/question-screen`; Greg, 25 Nov:
+two seconds, tunes start with the answers, a Random Round's Catchphrases get it. Next: **PROJ-182** and **PROJ-183** (his yes on the
+draft criteria first), **PROJ-181**, **PROJ-180**. Then `release-<date>`, one merge commit each, one PR, outside playing hours.
+
 **The token leak is closed and the gate is on `master`**, so a CI deploy is
 safe. If rules matter: `npm run check-rules`, then `npm run sync-harness 30`.
 **PROJ-119 live 7 Nov** (#199, gh-pages `cdad107`): a previous round's answer is
 dropped when its server `at` is before the question's `openedAt`. No `at` still
 scores. Open follow-ups are on the ticket (In Progress), not here.
-
-**Seeded 27 September** — screens, sleeves and tunes: 270 added, 1 changed (an
-id seeded earlier from an unpublished spec), read back 680/680. The seed only
-ever adds, so anything still live keeps working.
 
 Bitten more than once: **the rules were published by hand** (CI from W2), so the repo copy
 was not what Firebase ran ([`security.md`](decisions/security.md)); **the answer

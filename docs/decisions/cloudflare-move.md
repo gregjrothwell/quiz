@@ -1,7 +1,8 @@
 # Moving to Cloudflare and a private repo — what it would cost
 
 > **Owner: Greg Rothwell. Last updated: 25 November 2026. Budget: 250 lines.**
-> **Status: PROJ-153. Greg, 25 Nov 2026: "cloudflare but no rush (analyse implications)". Analysis only, nothing changed.**
+> **Status: PROJ-153. Greg, 25 Nov 2026: "cloudflare but no rush (analyse implications)", then on this analysis: "your pick but
+> leave for now". So C first, Cloudflare with W4's own address, and neither is started. Nothing changed.**
 
 ## The short version
 
@@ -143,7 +144,7 @@ Steps 1 to 5 can be undone. Step 6 unpublishes Pages at once on Free, so it wait
 
 ## Decisions — Greg's
 
-1. **C now and A with W4, or A on its own?** Recommended: C now.
+1. **C now and A with W4, or A on its own?** Recommended: C now. **Greg, 25 Nov: C and then A, but not yet.**
 2. **If A, Pro or Free?** Pro keeps the guards and adds $6 of minutes.
 3. **If A, a custom domain?** Recommended, for the office filter and so the address never moves again.
 
