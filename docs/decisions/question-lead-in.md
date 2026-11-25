@@ -141,10 +141,10 @@ Design A, as costed: **no rules change, no new phase, no extra write.**
   90ms apart. The number, picture and prompt arrive at 0, 0.15 and 0.4s. The ring is full and still. One cue, `arrive`.
 - **A tune or a melody starts with the answers**, and its replay button and `R` wait too. The clip is fetched meanwhile.
 
-### Decided without Greg, for his eye
+### Assumed while building — 1 and 2 settled by Greg, 25 November 2026
 
-1. **Two seconds**, and **a tune starts with the answers**: recommended on 11 Nov, never ruled on.
-2. **A Catchphrase inside a Random Round gets the lead-in** (then half the answering time alone), because the rules pin one window
+1. **Two seconds**, and **a tune starts with the answers**: recommended on 11 Nov. **Greg: yes.**
+2. **Greg: ok.** **A Catchphrase inside a Random Round gets the lead-in** (then half the answering time alone), because the rules pin one window
    for a whole round. A Catchphrase round has none.
 3. **`games/` keeps answering times**, so a 15s round still reads 15s and its medians compare with every round before. A record's
    `at` less `elapsedMs` is therefore two seconds after the open.
