@@ -76,7 +76,7 @@ function fastest(log: QuestionRecord[]): Award | null {
       if (answer.elapsedMs < best) {
         best = answer.elapsedMs;
         uids = [uid];
-      } else if (answer.elapsedMs === best) {
+      } else if (answer.elapsedMs === best && !uids.includes(uid)) {
         uids.push(uid);
       }
     }
