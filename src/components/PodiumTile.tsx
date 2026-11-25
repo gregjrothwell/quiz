@@ -212,7 +212,12 @@ export function PodiumTile({
         </span>
       ) : null}
 
-      {disabled ? null : (
+      {/*
+        There while veiled, though a veiled lectern is disabled: it takes width,
+        and a lectern that gained it on landing wrapped its text and grew 9px
+        under the pointer (measured, 25 November 2026).
+      */}
+      {disabled && !veiled ? null : (
         <span className="tile__key" aria-hidden="true">
           {letter} / {index + 1}
         </span>

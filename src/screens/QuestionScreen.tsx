@@ -666,12 +666,16 @@ export function QuestionScreen({
   // Held options are dark, empty lecterns rather than no lecterns, so nothing
   // moves under a player's pointer when they light up — and empty rather than
   // merely hidden, so the words are not in the page to be read early.
+  //
+  // A veiled one keeps its words, hidden. Two seconds is too short to dig them
+  // out of the page, and a long answer that only arrived on landing would grow
+  // its lectern and push the ones below it down.
   const tiles = question.options.map((option, index) => (
     <PodiumTile
       key={`${question.id}-${index}`}
       index={index}
-      text={optionsOut ? option : ''}
-      state={optionsOut ? stateFor(index) : 'hushed'}
+      text={optionsOut || veiled ? option : ''}
+      state={optionsOut || veiled ? stateFor(index) : 'hushed'}
       arrivals={crowdFor(index)}
       // The clock closes the lecterns, not the first press. Expiry matters on
       // its own now: it used to be covered incidentally, because having answered

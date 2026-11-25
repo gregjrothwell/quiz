@@ -112,6 +112,14 @@ describe('during the lead-in', () => {
     expect(tiles(container).every((tile) => tile.disabled && tile.classList.contains('tile--veiled'))).toBe(true);
   });
 
+  test('a lectern takes the room it will need, so nothing moves when it lands', () => {
+    const inner = (container: HTMLElement): string[] => tiles(container).map((tile) => tile.innerHTML);
+    const { container, rerender } = render(screen(at(1_900)));
+    const before = inner(container);
+    rerender(screen(at(2_000)));
+    expect(inner(container)).toEqual(before);
+  });
+
   test('neither a tap nor a key picks a lectern (AC1)', () => {
     const onAnswer = vi.fn();
     const { container, rerender } = render(screen(at(500), roomWith(), { onAnswer }));
