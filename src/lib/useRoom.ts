@@ -63,6 +63,7 @@ import { warmDelayMs, WARM_EVERY_MS } from '../engine/keepWarm';
 import { createQ1Tracer, deviceFrom, type Q1Tracer, type RoundStartTiming } from '../engine/q1Trace';
 import { networkType, recordQ1Trace, refusalCode } from './q1Trace';
 import { planJoin, planSeatSquad } from '../engine/join';
+import { answeringMs, leadInMs } from '../engine/leadIn';
 import { isCall, optionsAtMs } from '../engine/optionsHold';
 import { questionPack } from '../engine/randomRound';
 import {
@@ -1107,7 +1108,8 @@ export function useRoom(): UseRoom {
       const atMs = optionsAtMs(
         questionPack(room.packId, currentQuestion(room)),
         room.index,
-        questionDurationMs(room),
+        answeringMs(room),
+        leadInMs(room),
       );
       if (held && isCall(held.elapsedMs, atMs)) return;
 

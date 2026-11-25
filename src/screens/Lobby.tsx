@@ -14,6 +14,7 @@ import {
   tapsLeft,
   type PackTally,
 } from '../engine/packVote';
+import { answeringSecs } from '../engine/leadIn';
 import { STEAL_SHARE } from '../engine/scoring';
 import { resolveHost } from '../engine/host';
 import { SQUADS } from '../engine/squad';
@@ -209,7 +210,7 @@ export function Lobby({
   // The Slop Cannon: each shot unloaded until the quizmaster loads it (B2).
   const [loaded, setLoaded] = useState<ReadonlySet<string>>(() => new Set());
   const [durationSecs, setDurationSecs] = useState<number>(
-    (DURATION_CHOICES as readonly number[]).includes(room.durationSecs) ? room.durationSecs : DEFAULT_DURATION_SECS,
+    (DURATION_CHOICES as readonly number[]).includes(answeringSecs(room)) ? answeringSecs(room) : DEFAULT_DURATION_SECS,
   );
   /*
     The way out for somebody who never got asked.

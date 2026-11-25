@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 
 import { expect, test, type Browser, type Page } from '@playwright/test';
 
+import { answersLanded } from './answers';
 import { setEmulatorFlag } from './emulators';
 import { isolateFiles } from './isolate';
 import { admin, seedVault, until } from './nodeClient';
@@ -142,7 +143,7 @@ test('the host makes the same writes, start to podium, through a Share or Shaft 
     // Everyone answers A, in the same order, a beat apart, once per question.
     if (phase === 'question' && answered !== key) {
       for (const page of [host, ann, bob]) {
-        await expect(page.locator('.podium')).toBeVisible();
+        await answersLanded(page);
         await page.keyboard.press('a');
         await page.keyboard.press('Enter');
         await page.waitForTimeout(400);

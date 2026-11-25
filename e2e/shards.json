@@ -24,7 +24,8 @@
     "e2e/node-round.spec.ts"
   ],
   [
-    "e2e/slop-cannon-double.spec.ts"
+    "e2e/slop-cannon-double.spec.ts",
+    "e2e/lead-in.spec.ts"
   ],
   [
     "e2e/host-authority.spec.ts",

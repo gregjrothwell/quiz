@@ -1,4 +1,5 @@
 import type { QuestionRecord } from './awards';
+import { answeringSecs } from './leadIn';
 import type { SurveyRef } from './survey';
 import type { Difficulty, PackId } from '../questions/types';
 import type { Answer, Player, QuizQuestion, RoomState } from './state';
@@ -312,7 +313,9 @@ export function foldGameRecord(
     roomCode: room.code,
     packId: room.packId,
     packTitle: room.packTitle,
-    durationSecs: room.durationSecs,
+    // The answering time. The log's times have the lead-in off too, so a record
+    // reads the same either side of PROJ-179 and needs no new key in the rules.
+    durationSecs: answeringSecs(room),
     wagerEnabled: room.wagerEnabled,
     stealEnabled: room.stealEnabled,
     jigsawEnabled: room.jigsawEnabled,

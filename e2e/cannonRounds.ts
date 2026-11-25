@@ -1,6 +1,7 @@
-import { expect, type Browser, type Page } from '@playwright/test';
+import type { Browser, Page } from '@playwright/test';
 
 import { isNewMode, todayIso } from '../src/questions/newRounds';
+import { answersLanded } from './answers';
 import { setEmulatorFlag } from './emulators';
 import { admin, seedVault, until } from './nodeClient';
 
@@ -73,7 +74,7 @@ export async function playToFinal(
     const key = `${room.gameId}:${String(room.index)}`;
     if (room.phase === 'question' && answered !== key) {
       for (const page of pages) {
-        await expect(page.locator('.podium')).toBeVisible();
+        await answersLanded(page);
         await page.keyboard.press('a');
         await page.keyboard.press('Enter');
       }

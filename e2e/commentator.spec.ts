@@ -1,5 +1,6 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 
+import { answersLanded } from './answers';
 import { setEmulatorFlag } from './emulators';
 import { isolateFiles } from './isolate';
 import { admin, seedVault, until } from './nodeClient';
@@ -118,7 +119,7 @@ test('the Commentator: one caption on every screen, and no voice', async ({ brow
     if (room.phase === 'question' && answered !== key) {
       const keys = room.index === 0 ? ['b', 'c', 'd'] : room.index === 1 ? ['a', 'b', 'c'] : ['a', 'a', 'a'];
       for (const [i, page] of [host, gil, hux].entries()) {
-        await expect(page.locator('.podium')).toBeVisible();
+        await answersLanded(page);
         await page.keyboard.press(keys[i] ?? 'a');
         await page.keyboard.press('Enter');
       }

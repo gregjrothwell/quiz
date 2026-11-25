@@ -12,6 +12,7 @@ import { answeredIn, nightAgainst } from './engine/rivals';
 import { testRunOf } from './engine/testRun';
 import { finalFor } from './engine/finals';
 import { formFor } from './engine/form';
+import { openRound } from './engine/leadIn';
 import { skippedIndices, streakOf } from './engine/streak';
 import { codeFromHash } from './engine/roomCode';
 import {
@@ -593,12 +594,12 @@ function Game() {
               : chaserEnabled
                 ? [{ type: 'chaserIntro' as const, at: Date.now(), durationSecs }]
                 : [
-                    {
-                      type: 'start' as const,
+                    openRound({
+                      packId,
                       at: Date.now(),
                       gameId: crypto.randomUUID(),
                       durationSecs,
-                    },
+                    }),
                   ]),
           ]);
 
@@ -719,13 +720,15 @@ function Game() {
       void dispatch({ type: 'chaserIntro', at: Date.now(), durationSecs: form.durationSecs }).catch(report);
       return;
     }
-    void dispatch({
-      type: 'start',
-      at: Date.now(),
-      gameId: crypto.randomUUID(),
-      durationSecs: form.durationSecs,
-    }).catch(report);
-  }, [form, room?.chaserEnabled, dispatch, report]);
+    void dispatch(
+      openRound({
+        packId: room?.packId ?? null,
+        at: Date.now(),
+        gameId: crypto.randomUUID(),
+        durationSecs: form.durationSecs,
+      }),
+    ).catch(report);
+  }, [form, room?.chaserEnabled, room?.packId, dispatch, report]);
 
   const { openQuestion } = host;
   const handleStartQuestion = useCallback(() => {

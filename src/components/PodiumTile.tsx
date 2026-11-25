@@ -15,6 +15,15 @@ const ENTRANCE_AFTER_PROMPT_MS = 300;
 const ENTRANCE_STEP_MS = 90;
 
 /**
+ * Where a lectern's entrance starts. After a lead-in the answers have been
+ * waited for, so the first lands on the moment they are due and the prompt's
+ * share of the delay is not spent twice (PROJ-179).
+ */
+function entranceDelayMs(order: number, led: boolean): number {
+  return (led ? 0 : ENTRANCE_AFTER_PROMPT_MS) + order * ENTRANCE_STEP_MS;
+}
+
+/**
  * `hushed` is the drum roll — every lectern but your own pick, blacked out
  * while the verdict is held back. `gone` is what the also-rans become once it
  * lands: dropped away rather than merely dimmed, so the two survivors carry the
@@ -70,6 +79,14 @@ interface PodiumTileProps {
    * under the desk on a phone.
    */
   note?: string | null;
+  /**
+   * Not on screen yet, during the lead-in. The lectern keeps its place and its
+   * words, so nothing moves when it arrives, and is invisible and out of the
+   * accessibility tree until then.
+   */
+  veiled?: boolean;
+  /** Whether this question has a lead-in at all, which sets when the lecterns come in. */
+  led?: boolean;
 }
 
 /**
@@ -127,6 +144,8 @@ export function PodiumTile({
   order,
   arrivals = [],
   note = null,
+  veiled = false,
+  led = false,
 }: PodiumTileProps) {
   const letter = LETTERS[index] ?? '?';
   // Named for the screen reader, since the chips themselves are aria-hidden and
@@ -137,8 +156,8 @@ export function PodiumTile({
   return (
     <button
       type="button"
-      className={tileClassName(state)}
-      style={{ animationDelay: `${ENTRANCE_AFTER_PROMPT_MS + order * ENTRANCE_STEP_MS}ms` }}
+      className={veiled ? `${tileClassName(state)} tile--veiled` : tileClassName(state)}
+      style={{ animationDelay: `${entranceDelayMs(order, led)}ms` }}
       disabled={disabled}
       aria-pressed={state === 'picked' || state === 'held'}
       onClick={() => onPick(index)}

@@ -1,5 +1,6 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test';
 
+import { answersLanded } from './answers';
 import { setEmulatorFlag } from './emulators';
 import { isolateFiles } from './isolate';
 import { admin, seedVault, until } from './nodeClient';
@@ -97,7 +98,7 @@ test('the host vanishes mid-question and the room carries on', async ({ browser 
 
   // #and both players answer the first question, A, which the seeded vault calls right
   for (const each of [ann, bob]) {
-    await expect(each.page.locator('.podium')).toBeVisible();
+    await answersLanded(each.page);
     await each.page.keyboard.press('a');
     await each.page.keyboard.press('Enter');
   }
@@ -168,7 +169,7 @@ test('an ordinary hosted round: the creator reveals with every answer counted (A
   await until(() => readRoom(code), (room) => room.phase === 'question');
   await seedVault(code);
 
-  await expect(ann.page.locator('.podium')).toBeVisible();
+  await answersLanded(ann.page);
   await ann.page.keyboard.press('a');
   await ann.page.keyboard.press('Enter');
 

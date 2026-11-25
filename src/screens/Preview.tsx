@@ -665,6 +665,43 @@ export function Preview() {
     },
     {
       /*
+        The lead-in (PROJ-179): the question is up, the ring is full and still,
+        and the lecterns keep their places unseen. Beside the moment the answers
+        land, because the two have to occupy exactly the same space.
+      */
+      title: 'Question · the lead-in, before the answers',
+      node: (
+        <QuestionScreen
+          room={mockRoom({ phase: 'question', questionOpenedAt: 1_000, gameId: 'lead', durationSecs: 22, leadInSecs: 2 })}
+          youUid="greg"
+          isQuizmaster
+          clock={{ elapsedMs: 1_200, remainingMs: 20_800, secondsLeft: 21, expired: false }}
+          revealed={false}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      title: 'Question · the answers have landed',
+      node: (
+        <QuestionScreen
+          room={mockRoom({ phase: 'question', questionOpenedAt: 1_000, gameId: 'landed', durationSecs: 22, leadInSecs: 2 })}
+          youUid="greg"
+          isQuizmaster
+          clock={{ elapsedMs: 3_000, remainingMs: 19_000, secondsLeft: 19, expired: false }}
+          revealed={false}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      /*
         The stake band, on the last question of a round played for stakes.
 
         Here because the gallery is what a design review actually looks at, and

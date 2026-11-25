@@ -91,6 +91,11 @@ describe('the next lobby starts from the last round', () => {
     expect(started(onStart)).toMatchObject({ wager: true, steal: true, chaser: true, durationSecs: 15 });
   });
 
+  test('the clock kept is the answering time, not the window with the lead-in on it (PROJ-179)', () => {
+    const onStart = lobby({ ...FRESH, durationSecs: 17, leadInSecs: 2 });
+    expect(started(onStart)).toMatchObject({ durationSecs: 15 });
+  });
+
   test('both on from an older room reads as Share or Shaft', () => {
     const onStart = lobby({ ...FRESH, wagerEnabled: true, standoffEnabled: true });
     expect(started(onStart)).toMatchObject({ wager: false, standoff: true });
