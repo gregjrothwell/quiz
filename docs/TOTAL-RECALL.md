@@ -24,6 +24,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
 
+## 2026-11-25 — Built, not live: PROJ-182 and PROJ-181; the lead-in's sounds heard (PROJ-179)
+
+Greg listened to PROJ-179 on a board playing the branch's own code: the cue "ok for now", a tune after two seconds "ok"; a more premium lock, gong and clock is PROJ-202. **PROJ-182** (#212, on #211): your place and movement on the reveal, one press to the next question, the table every five questions, before stakes, before a final and at the end; no rules change. The question screen now stays up between questions, so Next waits for the verdict, two buttons are keyed apart and a question opens at the top; `decisions/reveal-line.md` on that branch. **PROJ-181** (#213): one name once. PROJ-180 (rules) and PROJ-183 (the lobby) started in sessions of their own, same release.
+
 ## 2026-11-25 — Question one's slow write closed; Cloudflare costed; the handover caught up
 
 Keep-warm (#196): 0 of 118 question-one writes over 1.5s since, 10 of 105 before; Cass 13 of 13 ([`cass-q1-cold-write.md`](decisions/cass-q1-cold-write.md#the-result--25-november-2026)). A slow write in mid-round stays open (3R5J, 18 Nov). Greg on #206 after 10 rounds: "fine". PROJ-153: Greg chose Cloudflare, no rush; it makes every player a stranger (2 of 32 rows have a code) and puts CI's 3,781 minutes a month on the bill ([`cloudflare-move.md`](decisions/cloudflare-move.md)). W3's contract half has a ticket, PROJ-201: no room made since 19 Oct lacks a host. PROJ-177 and PROJ-178 moved to Done by hand. **Correction to 13 Nov's log:** a docs-only merge does not deploy (`ci-plan.sh`, #210's run skipped both publishes).
@@ -121,16 +125,10 @@ The amber line is on the reveal from the first paint, and it stays on the standi
 Greg: *"Let's build the lab - but call it slop cannon"*, then A–D as drafted. Built on `slop-cannon`: the error beacon (`clientErrors/`, `read-errors`), per-round shots on the room (`cannon`, ≤ 8 keys, all `true`), the kill switch (`config/cannon`, `npm run cannon`), Keep / Bin under the podium (`cannonVerdicts/`, create only), `read-cannon`. **Ships dark**: nothing registered, so no lobby section and no read. A test shot exists under the emulators only. Rules cannot bound a map key's length; recorded. [`slop-cannon.md`](decisions/slop-cannon.md).
 Then **E**, Keep/Bin on New-stickered lobby modes played that round (`mode-<id>` in the same map, no rules change), and **F**, the cannon fires 1.6s after the fanfare (synth boom, paper, a fading puff; no flash). After F: full e2e 41/41 locally (24.5 min), unit 2,131. **CI time to green had doubled**: the new spec put shard 0 at 677s and apt stalled 520–637s on 3 of 5 runs — fixed in `c1ee8a6`, ~9.6 min to green ([`emulators.md`](decisions/emulators.md)); the Double test on a sixth shard took it to 7m58s. **Live 20:48 GMT** (Greg: "go live with #154"): `index-B-mCNyGu`, merge `e2fab8c`, `check-rules` 147/0 — the four new allow cases FAIL → PASS.
 
-## 2026-10-25 — Release 25 Oct: The Double, Theme Tunes, Higher or Lower
+## 2026-10-02 to 2026-10-25 — archived, one line each
 
-One PR, six branches, each by its own merge commit. **The Double** ([`morning-double.md`](decisions/morning-double.md)): its halves are "first half" and "second half", since the scoreboard already calls each question "Round Two" (Greg: "Fix double and ship"). **Theme Tunes 65** ([`tv-themes.md`](decisions/tv-themes.md)) and **Higher or Lower 90** ([`higher-or-lower.md`](decisions/higher-or-lower.md)), both blind; Higher or Lower puts the price in the buttons, and found that `TWIN_KEYS` leak hidden prices. `roomStandings` ranks members only. HANDOVER split; spine archived 299 → 269. Rivals caption and giant-killer bonus not built: the first needs per-opponent fields on the season row, the second a measurement first.
-
-## 2026-10-23 — The Ladder says when it substitutes
-
-The climb is unchanged. A spent easy or hard bucket is still filled from whichever level has the most left, and the question screen says so. Re-rating is a plan, not a build ([`ladder-rerating.md`](decisions/ladder-rerating.md)).
-
-## 2026-10-02 to 2026-10-22 — archived, one line each
-
+- **2026-10-25** — [Release 25 Oct: The Double, Theme Tunes, Higher or Lower](recall/2026-10.md#2026-10-25--release-25-oct-the-double-theme-tunes-higher-or-lower)
+- **2026-10-23** — [The Ladder says when it substitutes](recall/2026-10.md#2026-10-23--the-ladder-says-when-it-substitutes)
 - **2026-10-22** — [#138 live: the Commentator's voice off, the drum roll rebuilt, the podium caption on the frozen table](recall/2026-10.md#2026-10-22--138-live-the-commentators-voice-off-the-drum-roll-rebuilt-the-podium-caption-on-the-frozen-table)
 - **2026-10-22** — [Release #136 live: the host in `src/host/`, rig check, Beat the Chaser, the Commentator, Quiz Wrapped](recall/2026-10.md#2026-10-22--release-136-live-the-host-in-srchost-rig-check-beat-the-chaser-the-commentator-quiz-wrapped)
 - **2026-10-22** — [Release 2026-10-22-3 live: rounds bank again, Survey Says, four audit fixes](recall/2026-10.md#2026-10-22--release-2026-10-22-3-live-rounds-bank-again-survey-says-four-audit-fixes)

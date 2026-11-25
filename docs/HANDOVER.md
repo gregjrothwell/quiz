@@ -133,10 +133,10 @@ importing `read-games` or `read-owed` breaks that, since each calls `main()` at 
 
 ## If you're picking this up cold
 
-**The next release is open, nothing in it is live** (Greg, 25 Nov: "we'll do more changes and go live with everything").
-In: **PROJ-179, #211**, draft and green, branch `PROJ-179-lead-in` in worktree `.claude/worktrees/question-screen`; Greg, 25 Nov:
-two seconds, tunes start with the answers, a Random Round's Catchphrases get it. Next: **PROJ-182** and **PROJ-183** (his yes on the
-draft criteria first), **PROJ-181**, **PROJ-180**. Then `release-<date>`, one merge commit each, one PR, outside playing hours.
+**The next release is open, nothing in it is live** (Greg, 25 Nov: "we'll do more changes and go live with everything"). Built, drafts:
+**PROJ-179 #211** (sounds heard, ok), **PROJ-182 #212** (on 179: your own line on the reveal, the table at the breaks; `decisions/reveal-line.md`
+on that branch), **PROJ-181 #213**. Side sessions, to end as drafts: **PROJ-180** (`PROJ-180-window-size`, **rules**) and **PROJ-183** (the lobby, off 182).
+Then `release-<date>` in the order 179, 182, 181, 180, 183, one merge commit each, one PR, outside playing hours. Steps: the 25 Nov PICK-UP log entry.
 
 **The token leak is closed and the gate is on `master`**, so a CI deploy is
 safe. If rules matter: `npm run check-rules`, then `npm run sync-harness 30`.
