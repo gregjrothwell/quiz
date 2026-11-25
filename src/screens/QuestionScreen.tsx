@@ -753,7 +753,7 @@ export function QuestionScreen({
             two · On the box"). Not where the category is the pack already.
           */}
           {room.packTitle && room.packTitle !== question.category ? (
-            <span className="chip">{room.packTitle}</span>
+            <span className="chip chip--pack">{room.packTitle}</span>
           ) : null}
           <span className="chip">{question.category}</span>
           <span className={question.difficulty === 'hard' ? 'chip chip--hard' : 'chip'}>
@@ -1160,6 +1160,7 @@ export function QuestionScreen({
           animates on a change, and a ticker that mounts already holding its
           final number just prints it.
         */}
+          <div className="said">
           <p className="tally">
             {revealed ? (
               <span
@@ -1225,6 +1226,8 @@ export function QuestionScreen({
             </p>
           ) : null}
 
+          </div>
+
           {stealLine ? (
             <p className={settled ? 'steal steal--in' : 'steal'}>{stealLine}</p>
           ) : null}
@@ -1250,7 +1253,7 @@ export function QuestionScreen({
                 wanted behind a proper permission model later.
               */}
               {revealed && offerTable ? (
-                <button type="button" className="btn btn--ghost" disabled={!nextReady} onClick={onTable}>
+                <button type="button" className="btn btn--ghost btn--small" disabled={!nextReady} onClick={onTable}>
                   Show the table
                 </button>
               ) : null}

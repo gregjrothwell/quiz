@@ -3484,6 +3484,27 @@ select.input option {
  * It appears for exactly two people in the room — the one who took the points
  * and the one who lost them — and for nobody else.
  */
+/* The verdict and your own line, side by side. */
+.said {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 1.4rem;
+}
+
+@media (max-width: 43.99rem) {
+  /* On a phone the third chip is a row of header, and the prompt pays for it. */
+  .chip--pack {
+    display: none;
+  }
+
+  /* One under the other from the start. Left to wrap, the line dropped to its own
+     row when the points counted up and the streak landed, and the desk grew. */
+  .said {
+    flex-direction: column;
+  }
+}
+
 /*
   Your own line at the reveal (PROJ-182): place and movement. Mounted for the
   whole reveal and faded in with the verdict beside it, so the desk keeps its
