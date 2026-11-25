@@ -3,6 +3,7 @@ import { expect, test, type Browser, type BrowserContext, type Page } from '@pla
 import { answersLanded } from './answers';
 import { setEmulatorFlag } from './emulators';
 import { isolateFiles } from './isolate';
+import { setRound } from './lobby';
 import { admin, seedVault, until } from './nodeClient';
 
 isolateFiles();
@@ -88,7 +89,7 @@ test('the host vanishes mid-question and the room carries on', async ({ browser 
   // Twenty seconds rather than the default ten, so the host's own reveal cannot
   // beat the tab closing on a slow runner.
   await packCard(host.page, 'General Knowledge').click();
-  await host.page.locator('button.pick', { hasText: 'Generous' }).click();
+  await setRound(host.page, { picks: ['Generous'] });
   await host.page.getByRole('button', { name: 'Start the show' }).click();
   // Nobody here has a season row, so the opening titles go up first (every
   // player a newcomer) and the round waits for the host's second press.

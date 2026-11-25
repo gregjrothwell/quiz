@@ -6,6 +6,7 @@ import type { QuizQuestion } from '../src/engine/state';
 import { answersLanded } from './answers';
 import { setEmulatorFlag } from './emulators';
 import { isolateFiles } from './isolate';
+import { setRound } from './lobby';
 import { admin, seedVault, until } from './nodeClient';
 
 isolateFiles();
@@ -66,9 +67,7 @@ test('a round against Mr Fries: his picks recompute, the room takes what it shou
   await until(() => readRoom(code), (room) => Object.keys(room.players).length === 3);
 
   await host.locator('button.pack', { has: host.locator('.pack__title', { hasText: 'General Knowledge' }) }).click();
-  await host.getByRole('button', { name: '10', exact: true }).click();
-  await host.locator('button.pick', { hasText: '10 seconds' }).click();
-  await host.locator('button.pick', { hasText: 'Against Mr Fries' }).click();
+  await setRound(host, { questions: 10, picks: ['10 seconds', 'Against Mr Fries'] });
   await host.getByRole('button', { name: 'Start the show' }).click();
   await host.getByRole('button', { name: 'Start the round' }).click();
 
