@@ -1161,71 +1161,70 @@ export function QuestionScreen({
           final number just prints it.
         */}
           <div className="said">
-          <p className="tally">
-            {revealed ? (
-              <span
-                className={settled || verdict === 'lost' ? 'verdict verdict--in' : 'verdict'}
-                data-tone={telling ? 'silent' : verdict}
-              >
-                {verdictLabel}
-                {/*
-                  A lost stake has to show its number too. The `+` used to be
-                  hardcoded next to `gotItRight`, so a player who staked half
-                  their score and got it wrong was told "Wrong" and nothing else
-                  — the largest points swing in the game, and the only one the
-                  screen stayed silent about. The ticker counts the magnitude and
-                  the sign is fixed text, so it never animates through zero.
-                */}
-                {gotItRight || myDelta < 0 ? (
-                  <>
-                    {myDelta < 0 ? ' · −' : ' · +'}
-                    <ScoreTicker value={settled ? Math.abs(myDelta) : 0} />
-                  </>
-                ) : null}
-                {settled && gotItRight && streak >= STREAK_SHOWN_FROM ? (
-                  <span className="streak">{streak} in a row</span>
-                ) : null}
-              </span>
-            ) : clock.expired ? (
-              // Before `myAnswer`, not after it. The lecterns disable on expiry
-              // (see the grid below), so a player who had answered was being told
-              // "You can still change it" next to four dead tiles — the app
-              // contradicting itself at exactly the moment the room is waiting and
-              // wondering whether something has broken.
-              'Time’s up'
-            ) : called ? (
-              // A call is final, including a wrong one. The lecterns stay shut
-              // for this player when the options arrive.
-              'Called — you can’t change it'
-            ) : myAnswer ? (
-              'Locked in'
-            ) : pending !== null ? (
-              // Said, because a pick that looks chosen but is not will otherwise
-              // be left there, and ranked last when it locks itself.
-              'Tap it again, or press Enter, to lock it in'
-            ) : !leadOver ? (
-              'Answers coming up'
-            ) : calling ? (
-              'Call it, or wait'
-            ) : (
-              'Pick an answer'
-            )}
-          </p>
-
-          {/*
-            Where you are and how that moved you, beside the points it paid. Up
-            for the whole reveal and seen when the verdict lands, as the verdict
-            is, so nothing on the desk moves when it does.
-          */}
-          {placed ? (
-            <p
-              className={settled ? 'ownline ownline--in' : 'ownline'}
-              data-dir={!placed.moved ? 'level' : placed.moved > 0 ? 'up' : 'down'}
-            >
-              {ownLineWords(placed)}
+            <p className="tally">
+              {revealed ? (
+                <span
+                  className={settled || verdict === 'lost' ? 'verdict verdict--in' : 'verdict'}
+                  data-tone={telling ? 'silent' : verdict}
+                >
+                  {verdictLabel}
+                  {/*
+                    A lost stake has to show its number too. The `+` used to be
+                    hardcoded next to `gotItRight`, so a player who staked half
+                    their score and got it wrong was told "Wrong" and nothing else
+                    — the largest points swing in the game, and the only one the
+                    screen stayed silent about. The ticker counts the magnitude and
+                    the sign is fixed text, so it never animates through zero.
+                  */}
+                  {gotItRight || myDelta < 0 ? (
+                    <>
+                      {myDelta < 0 ? ' · −' : ' · +'}
+                      <ScoreTicker value={settled ? Math.abs(myDelta) : 0} />
+                    </>
+                  ) : null}
+                  {settled && gotItRight && streak >= STREAK_SHOWN_FROM ? (
+                    <span className="streak">{streak} in a row</span>
+                  ) : null}
+                </span>
+              ) : clock.expired ? (
+                // Before `myAnswer`, not after it. The lecterns disable on expiry
+                // (see the grid below), so a player who had answered was being told
+                // "You can still change it" next to four dead tiles — the app
+                // contradicting itself at exactly the moment the room is waiting and
+                // wondering whether something has broken.
+                'Time’s up'
+              ) : called ? (
+                // A call is final, including a wrong one. The lecterns stay shut
+                // for this player when the options arrive.
+                'Called — you can’t change it'
+              ) : myAnswer ? (
+                'Locked in'
+              ) : pending !== null ? (
+                // Said, because a pick that looks chosen but is not will otherwise
+                // be left there, and ranked last when it locks itself.
+                'Tap it again, or press Enter, to lock it in'
+              ) : !leadOver ? (
+                'Answers coming up'
+              ) : calling ? (
+                'Call it, or wait'
+              ) : (
+                'Pick an answer'
+              )}
             </p>
-          ) : null}
 
+            {/*
+              Where you are and how that moved you, beside the points it paid. Up
+              for the whole reveal and seen when the verdict lands, as the verdict
+              is, so nothing on the desk moves when it does.
+            */}
+            {placed ? (
+              <p
+                className={settled ? 'ownline ownline--in' : 'ownline'}
+                data-dir={!placed.moved ? 'level' : placed.moved > 0 ? 'up' : 'down'}
+              >
+                {ownLineWords(placed)}
+              </p>
+            ) : null}
           </div>
 
           {stealLine ? (
