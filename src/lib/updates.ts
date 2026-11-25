@@ -22,6 +22,7 @@ export const UPDATES: readonly Update[] = [
     lines: [
       'A question now arrives before its answers. You see the question, then two seconds later the answers land on everybody’s screen together. The clock waits for them, so ten seconds is still ten seconds to answer, and a tune starts with the answers.',
       'Less waiting between questions. The reveal says your place and how that question moved you, and the next question opens straight from it. The full table comes round every five questions, before you stake points, before a final and at the end.',
+      'The lobby remembers how you ran your last round. One line above the packs says it, so a quizmaster can pick a pack and press Start, and everything that was under the packs is behind Change.',
     ],
   },
   {

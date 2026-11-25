@@ -35,7 +35,8 @@ mess was older:
 ## How it works now
 
 - **The next lobby starts from the last round.** Modes and the clock are read off the room, so they
-  survive a reload or a change of host. Length and level are this device's (`lastDeal` in `App.tsx`):
+  survive a reload or a change of host. Length and level are this device's (`lastDeal` in `App.tsx`;
+  since PROJ-183 `rememberedRound`, see [`house-round.md`](house-round.md)):
   they only save taps, and putting them on the room would change every host write for little. Not
   carried: the pack, The Double, the jigsaw, the Slop Cannon. Survey Says carries nothing about length.
 - **`finalistsAfterLast` (`src/engine/double.ts`) is the one answer** to "does a final follow?". The
