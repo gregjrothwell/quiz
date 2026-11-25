@@ -1153,6 +1153,8 @@ export function QuestionScreen({
               // Said, because a pick that looks chosen but is not will otherwise
               // be left there, and ranked last when it locks itself.
               'Tap it again, or press Enter, to lock it in'
+            ) : !leadOver ? (
+              'Answers coming up'
             ) : calling ? (
               'Call it, or wait'
             ) : (

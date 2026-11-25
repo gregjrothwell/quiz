@@ -110,6 +110,9 @@ describe('during the lead-in', () => {
     expect(container.textContent).toContain(QUESTION.prompt);
     expect(tiles(container)).toHaveLength(4);
     expect(tiles(container).every((tile) => tile.disabled && tile.classList.contains('tile--veiled'))).toBe(true);
+    // The desk does not ask for what is not there yet.
+    expect(container.textContent).toContain('Answers coming up');
+    expect(container.textContent).not.toContain('Pick an answer');
   });
 
   test('a lectern takes the room it will need, so nothing moves when it lands', () => {
@@ -182,7 +185,7 @@ describe('during the lead-in', () => {
 describe('once the answers have landed', () => {
   test('they light on every lectern and a tap picks one', () => {
     const { container } = render(screen(at(2_000)));
-    expect(container.textContent).toContain('Irwell');
+    expect(container.textContent).toContain('Pick an answer');
     expect(tiles(container).every((tile) => !tile.disabled && !tile.classList.contains('tile--veiled'))).toBe(true);
     fireEvent.click(tiles(container)[1] as HTMLButtonElement);
     expect(container.querySelectorAll('.tile--held')).toHaveLength(1);
