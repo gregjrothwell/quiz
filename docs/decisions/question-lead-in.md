@@ -1,7 +1,8 @@
-# A lead-in before each question — costed, not built
+# A lead-in before each question
 
-> **Owner: Greg Rothwell. Last updated: 11 November 2026. Budget: 250 lines.**
-> **Status: costing only. No story approved, no code written.** Proposal 4 of
+> **Owner: Greg Rothwell. Last updated: 25 November 2026. Budget: 250 lines.**
+> **Status: built 25 November 2026, not live.** PROJ-179, [#211](https://github.com/gregjrothwell/quiz/pull/211). Greg, 11 Nov: "add in and
+> build"; 25 Nov: start it. What was built is at the end. Above it is the costing as written on 11 Nov: proposal 4 of
 > [`ui-ux-review.md`](ui-ux-review.md), which called it "L, touches the rules" as a guess.
 
 **The answer: it does not have to touch the rules.** A lead-in can be a hold on the room's shared
@@ -123,3 +124,45 @@ runs.
 Nothing here was run. The mixed-bundle head start, the e2e time and the room-document field are
 read from code. `shared-clock.md`'s own open item still stands: ranking under the corrected clock
 has not been proved on two real devices on the office network.
+
+## What was built — 25 November 2026
+
+Design A, as costed: **no rules change, no new phase, no extra write.**
+
+- **`src/engine/leadIn.ts`** holds it all: two seconds, none on a Catchphrase round. `openRound()` is the one way the app opens a
+  round, and `openRound.test.ts` reads the source to keep it so. A harness that builds its own `start` has no lead-in, so
+  `rank-harness`, `sync-harness`, `final-harness` and the rules specs play exactly what they did. `host-room` uses `openRound`.
+- **`leadInSecs` on the room**, beside a `durationSecs` that is the choice plus two. The vault's gate, the auto-reveal and the 3s
+  hold follow with no change. A room an old tab opened has no field, so it has no lead-in. The lobby remembers the choice, not the sum.
+- **Answers stay stamped from the open** (`arrivalOk`). `answeringTimes()` takes the lead-in off where a time is kept or shown: the
+  reveal chips and "not locked", the device log (so the fastest finger), `games/` and its `durationSecs`, and the tie-break's
+  count, which adds two halves of The Double that can have different lead-ins.
+- **The lecterns are invisible until the answers land**, keeping their words and their key hint so no box changes size, then come in
+  90ms apart. The number, picture and prompt arrive at 0, 0.15 and 0.4s. The ring is full and still. One cue, `arrive`.
+- **A tune or a melody starts with the answers**, and its replay button and `R` wait too. The clip is fetched meanwhile.
+
+### Decided without Greg, for his eye
+
+1. **Two seconds**, and **a tune starts with the answers**: recommended on 11 Nov, never ruled on.
+2. **A Catchphrase inside a Random Round gets the lead-in** (then half the answering time alone), because the rules pin one window
+   for a whole round. A Catchphrase round has none.
+3. **`games/` keeps answering times**, so a 15s round still reads 15s and its medians compare with every round before. A record's
+   `at` less `elapsedMs` is therefore two seconds after the open.
+4. **Question-one traces stay raw**: "tap 5.1s of 12s" is 3.1s of 10s.
+
+### Evidence
+
+- 2,495 unit tests. **17 deliberate breaks: 16 caught, one equivalent** (`ArcTimer` clamps the ring itself). The first run of that
+  check reported all 15 caught and was wrong: its command failed on unbroken code too. It was rerun against a green baseline.
+- **Emulators, through the app and these rules:** `lead-in.spec.ts` (new), `q1-trace`, and `host-writes`, a whole round to Share or
+  Shaft. Its golden gained `durationSecs: 12, leadInSecs: 2` by hand and matched without being re-recorded.
+- **Filmed, four seats, every frame sampled** (`.cache/ux-film/179/`, not in git), question two: answers enabled at 2.000–2.017s;
+  ring at 0 offset and "10" throughout; "9" 1.0s after landing. Lectern boxes identical before and after, which the first film was
+  not (9px, fixed). Reduced motion: the same hold, all four at rest 16ms after landing.
+- **AC4, a seat held still 1.3s:** it saw question two 1.25s late, had an 0.8s lead-in, and its answers landed 48ms after the host's
+  with the full ten seconds left.
+
+### Not covered
+
+The office network and a phone. Sound was not listened to, on a tune least of all. Question one is uncorrected, so a seat that hears
+it late lands late there, as it always has. No screen reader. The mixed-bundle head start was reasoned, not run.

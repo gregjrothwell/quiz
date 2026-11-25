@@ -8,7 +8,8 @@
  * Each line ends on a reading — `late delivery` (the device saw question one
  * seconds after the server opened it), `slow write` (on time, but its answer
  * took seconds to be acknowledged), `both` or `neither`. Why it exists, and
- * what each reading would mean for a fix: docs/decisions/cass-q1.md.
+ * what each reading would mean for a fix: docs/decisions/cass-q1.md. Taps and
+ * windows are raw: since PROJ-179 both include the two-second lead-in.
  *
  * **Needs a service account**, as `read-games` does: the rules let no client
  * read `q1Traces`. Point `GOOGLE_APPLICATION_CREDENTIALS` at a key under
