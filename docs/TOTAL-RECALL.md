@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 13 November 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 25 November 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -23,6 +23,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
+
+## 2026-11-25 — Question one's slow write closed; Cloudflare costed; the handover caught up
+
+Keep-warm (#196): 0 of 118 question-one writes over 1.5s since, 10 of 105 before; Cass 13 of 13 ([`cass-q1-cold-write.md`](decisions/cass-q1-cold-write.md#the-result--25-november-2026)). A slow write in mid-round stays open (3R5J, 18 Nov). Greg on #206 after 10 rounds: "fine". PROJ-153: Greg chose Cloudflare, no rush; it makes every player a stranger (2 of 32 rows have a code) and puts CI's 3,781 minutes a month on the bill ([`cloudflare-move.md`](decisions/cloudflare-move.md)). W3's contract half has a ticket, PROJ-201: no room made since 19 Oct lacks a host. PROJ-177 and PROJ-178 moved to Done by hand. **Correction to 13 Nov's log:** a docs-only merge does not deploy (`ci-plan.sh`, #210's run skipped both publishes).
 
 ## 2026-11-13 — Release #206 live: the question screen, answers bound to the open question, the UI/UX review
 
@@ -125,12 +129,9 @@ One PR, six branches, each by its own merge commit. **The Double** ([`morning-do
 
 The climb is unchanged. A spent easy or hard bucket is still filled from whichever level has the most left, and the question screen says so. Re-rating is a plan, not a build ([`ladder-rerating.md`](decisions/ladder-rerating.md)).
 
-## 2026-10-22 — #138 live: the Commentator's voice off, the drum roll rebuilt, the podium caption on the frozen table
-
-Greg: "Go live with #138 once its CI is green". Merged `a410e22` 21:47:22Z, 12 s after green; rules 21:48:11Z (unchanged); gh-pages `4ef3623`, Pages built 21:49:36Z; `index-gzyAYqlA` and 15 assets byte-identical; `check-rules` 136/0. The "staccato" sound was the podium's drum roll: rendered offline through `sound.ts`, 1% of it was above 1kHz. Four versions by ear the same night; the fourth is "ok for now" ([`game-show-moments.md`](decisions/game-show-moments.md#the-drum-roll-rebuilt--22-october-2026)). The review of #131 and #136 found only the caption. Full e2e 32/32. Greg prefers a recorded roll: a card, not built.
-
 ## 2026-10-02 to 2026-10-22 — archived, one line each
 
+- **2026-10-22** — [#138 live: the Commentator's voice off, the drum roll rebuilt, the podium caption on the frozen table](recall/2026-10.md#2026-10-22--138-live-the-commentators-voice-off-the-drum-roll-rebuilt-the-podium-caption-on-the-frozen-table)
 - **2026-10-22** — [Release #136 live: the host in `src/host/`, rig check, Beat the Chaser, the Commentator, Quiz Wrapped](recall/2026-10.md#2026-10-22--release-136-live-the-host-in-srchost-rig-check-beat-the-chaser-the-commentator-quiz-wrapped)
 - **2026-10-22** — [Release 2026-10-22-3 live: rounds bank again, Survey Says, four audit fixes](recall/2026-10.md#2026-10-22--release-2026-10-22-3-live-rounds-bank-again-survey-says-four-audit-fixes)
 - **2026-10-22** — [Survey Says built, not live](recall/2026-10.md#2026-10-22--survey-says-built-not-live)

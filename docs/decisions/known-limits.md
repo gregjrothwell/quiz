@@ -134,6 +134,9 @@ behaviour is a bug.
   `incorrect`, and no answer strings — grepped against a known sentinel rather
   than trusted. `public/packs/` stays sealed and `seal.test.ts` still enforces it
   in both directions. The exposure is the repo, not the site.
+- **Correction, 25 November 2026: no longer two packs and 119 questions.** The hand-built packs grew into the ones
+  the office plays, and about 2,300 answer lines now sit in tracked `scripts/hand-*-data.ts` files (counted 10 Nov,
+  PROJ-153). Greg, 25 Nov: move to Cloudflare and a private repo, no rush ([`cloudflare-move.md`](cloudflare-move.md)).
 - **Accepted rather than fixed, 4 September 2026.** Moving the specs out of the
   repo makes the packs unregenerable, and losing 119 hand-built questions to a
   cleared `.cache/` is a worse failure than a colleague who goes looking for the
