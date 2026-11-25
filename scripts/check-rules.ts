@@ -222,9 +222,9 @@ async function openProbeQuestion(
  * counted answer files it (`Q1TraceDoc`, src/engine/q1Trace.ts), less the
  * server's `at`. A literal for `probeGame`'s reason below.
  */
-function probeTrace(uid: string): Q1TraceDoc {
+function probeTrace(uid: string, gameId = 'rules-check-trace'): Q1TraceDoc {
   return {
-    gameId: 'rules-check-trace',
+    gameId,
     roomCode: 'RCHK',
     uid,
     durationMs: 10_000,
@@ -233,6 +233,9 @@ function probeTrace(uid: string): Q1TraceDoc {
     writes: 1,
     device: 'mac',
     network: '4g',
+    innerWidth: 1_366,
+    innerHeight: 657,
+    pixelRatioPct: 125,
     seenAfterOpenMs: 400,
     serverOffsetMs: -150,
     visibleForMs: 60_000,
@@ -1584,6 +1587,40 @@ function buildChecks(probes: Probes): Check[] {
           at: serverTimestamp(),
         }),
     },
+    {
+      // The bundle before PROJ-180, in every tab open across the deploy.
+      label: 'Firestore   · file a trace with no window, as an old bundle does',
+      expect: 'allow',
+      hint: 'firestore.rules requires the window on q1Traces — every tab on an old bundle '
+        + 'is refused, silently',
+      run: async () => {
+        const trace = probeTrace(uid, 'rules-check-trace-old');
+        delete trace.innerWidth;
+        delete trace.innerHeight;
+        delete trace.pixelRatioPct;
+        const reference = doc(db, 'q1Traces', `rules-check-trace-old_${uid}`);
+        await setDoc(reference, { ...trace, at: serverTimestamp() });
+        return deleteDoc(reference);
+      },
+    },
+    // Its own id for each, so a write wrongly allowed cannot refuse the next.
+    ...(
+      [
+        ['a window wider than any screen', { innerWidth: 20_001 }],
+        ['a window height that is not a number', { innerHeight: '657' }],
+        ['a raw pixel ratio, not × 100', { pixelRatioPct: 1.25 }],
+      ] as const
+    ).map(([what, fault], index): Check => ({
+      label: `Firestore   · file a trace with ${what}`,
+      expect: 'deny',
+      hint: 'firestore.rules does not bound the window on q1Traces (PROJ-180)',
+      run: () =>
+        setDoc(doc(db, 'q1Traces', `rules-check-trace-${index}_${uid}`), {
+          ...probeTrace(uid, `rules-check-trace-${index}`),
+          ...fault,
+          at: serverTimestamp(),
+        }),
+    })),
     {
       label: 'Firestore   · read a trace',
       expect: 'deny',

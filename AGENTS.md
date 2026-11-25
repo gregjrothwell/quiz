@@ -31,7 +31,7 @@ React 18, TypeScript, Vite, Vitest. Firebase client SDK. Deploy is `gh-pages` fr
 | `npm run backfill-finals [-- --go]` | Finals tallies onto season-2, from `games/`, by uid. Dry run by default |
 | `npm run backfill-rivals [-- --go]` | Who you've beaten and lost to, onto season-2, from `games/`. Dry run by default |
 | `npm run read-games` / `audit-players` / `read-errors` / `read-cannon` | Kept rounds, per-player timings, errors players saw, Slop Cannon Keep/Bin. Admin SDK; the client cannot |
-| `npm run read-traces [-- --name cass]` | What each device saw of question one: seen late, or wrote slowly ([`cass-q1.md`](docs/decisions/cass-q1.md)) |
+| `npm run read-traces [-- --name cass]` | What each device saw of question one: seen late, or wrote slowly, and the window it saw it in ([`cass-q1.md`](docs/decisions/cass-q1.md)) |
 | `npm run read-owed [-- --last 40]` | The owed live checks in one print: The Double, Theme Tunes by level, Higher or Lower % right, Cass's question one. Admin SDK |
 | `npm run deploy` | `build` then `gh-pages` |
 

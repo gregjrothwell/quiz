@@ -34,6 +34,13 @@ function startLine(trace: Q1TraceDoc): string | null {
   return `start: ${steps.join(', ')}`;
 }
 
+/** `1536 × 730 @1.25`. A dash for what is missing: all of it, on a trace from before PROJ-180. */
+function windowText({ innerWidth, innerHeight, pixelRatioPct }: Q1TraceDoc): string {
+  if (innerWidth === undefined && innerHeight === undefined && pixelRatioPct === undefined) return '—';
+  const ratio = pixelRatioPct === undefined ? '—' : pixelRatioPct / 100;
+  return `${innerWidth ?? '—'} × ${innerHeight ?? '—'} @${ratio}`;
+}
+
 export function formatTrace(trace: Q1TraceDoc, name: string, when: string): string {
   const { seenLagMs, reading } = explainTrace(trace);
   const lag = seenLagMs === null ? '    —' : seconds(seenLagMs);
@@ -42,6 +49,7 @@ export function formatTrace(trace: Q1TraceDoc, name: string, when: string): stri
   return [
     `${when}  ${trace.roomCode.padEnd(4)}  ${name.slice(0, 12).padEnd(12)}`,
     `${trace.device.padEnd(7)} ${(trace.network ?? '—').padEnd(4)}`,
+    windowText(trace).padEnd(17),
     `seen late ${lag}`,
     `write ${seconds(trace.ackMs)}`,
     `tap ${seconds(trace.tapElapsedMs)} of ${trace.durationMs / 1000}s`,
