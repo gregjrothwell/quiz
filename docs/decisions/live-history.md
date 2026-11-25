@@ -1,12 +1,20 @@
 # What went live, and when
 
-> **Owner: Greg Rothwell. Last updated: 30 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 25 November 2026. Budget: 250 lines.**
 
 Split out of [`HANDOVER.md`](../HANDOVER.md) on 24 October 2026, at 150 lines
 against a 150 budget. **Moved verbatim; only where it lives has changed.** The
 handover keeps the current live bundle and the checks still owed; the chain of
 bundles before it, and the release records that were sitting in its Outstanding
 list, are here. Links were relative to `docs/`, so `decisions/` is dropped from them.
+
+## `index-5KgGMvMQ`, live until 13 November 2026
+
+Verbatim from the handover when release #206 replaced it; only the links changed.
+#199 (gh-pages `cdad107`, 7 Nov) went live in between without this line being
+replaced, so it is recorded in TOTAL-RECALL and the handover's pick-up note.
+
+**Live is `index-5KgGMvMQ`** (release #190, 2 Nov, merge `5e8240c`, gh-pages `410c17a`, Pages 13:45:05Z; 28/28 files byte-identical; rules unchanged): **question cleanup** (PROJ-96) — harvested prompts that lost their quote and US-only subjects filtered, seven retired by hand ([`question-votes.md`](question-votes.md)); **Theme Tunes 21 out, 21 in, 65** (blind; numbers only in `THEMES_DROPPED`, nobody has listened — the office round is the check); **"not locked"** on the reveal for an unlocked pick (PROJ-78; Greg kept lock-in, [`lock-in.md`](lock-in.md)); PROJ-97 hook test fix. Earlier: #182 styling pass, `index-0q-ot5PS`. **Owed from #179:** the office's first locked round and a phone (`read-games`); `read-owed` after a round that follows a deploy (PROJ-77); rivals backfill re-run about 31 Oct (PROJ-73); #168 in a real room (PROJ-75); `JIRA_API_TOKEN` (PROJ-72) — CI's Jira job moves nothing until then.
 
 ## `index-DusPPoDJ`, live until 30 October 2026
 
@@ -38,3 +46,11 @@ Before it `index-DLJOhSAP` (#94, 08:47: Random Round never ends on a sleeve or a
 16. **#67 live 6 Oct 08:15:** Catchphrase 60→90 (blind), Sleeves 168→212, On the box 296→445, Tunes 268→424; seeded 378, read back 1,171/1,171. **The first rounds played are the live check** (the harder Catchphrase batches, step 9 of [`go-live-oct-2026.md`](go-live-oct-2026.md)). Plan for Greg's feedback: [`pack-growth-plan.md`](pack-growth-plan.md). Freshness weekdays 08:12.
 17. **#69 live 6 Oct 13:05 BST** (after `RRGM`): Blankety Blank 148 (21 American out, 29 British in); **The Price Was Right**, 95 ONS prices, blind ([`price-was-right.md`](price-was-right.md)), `ordered` options; the chair seats a tie touching the podium; Bonus Catchphrase options from frame one. Seeded 124, read back 243/243; `host-room --pack prices` (`P3E9`) revealed from the vault in 0.28s. **Played `XRUE` 7 Oct (47%); 6 of 95 gave the answer away. #71 live 7 Oct: all options under today's price, 8 decoys over it, no reseed; podium ties; `npm run draw-overnight` (Greg runs it, never opens the sheets) — [`office-feedback-7-oct.md`](office-feedback-7-oct.md).** `AGENTS.md`: world-famous American is fine, needing American knowledge is not.
 18. **#94 live 21 Oct:** the lobby's two card grids shelved, show rounds first ([`lobby-shelves.md`](lobby-shelves.md), was "the category page"); Random Round never ends on a sleeve or a price ([`random-round.md`](random-round.md#20-october-2026--the-last-question-is-never-a-sleeve-or-a-price)). **#96 live 21 Oct: The Price is Right** (`tags`, blind, a picture and today's price; seeded 81/81, `host-room` revealed) — [`price-is-right.md`](price-is-right.md). **Both checked live 21 Oct:** 3U48 played The Price is Right, 8/8 answering all ten, reveals ≤0.6s, no retries; 79YX's Random Round ended on a tune. Not in Random Round until Greg says. Lint is red locally only from stale `.claude/worktrees`; `eslint . --ignore-pattern '.claude/**'` is clean.
+
+## Seeded 27 September 2026
+
+Moved verbatim from the handover on 25 November 2026.
+
+**Seeded 27 September** — screens, sleeves and tunes: 270 added, 1 changed (an
+id seeded earlier from an unpublished spec), read back 680/680. The seed only
+ever adds, so anything still live keeps working.

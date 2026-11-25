@@ -1,8 +1,8 @@
 # Question one's cold write
 
-> **Owner: Greg Rothwell. Last updated: 5 November 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 25 November 2026. Budget: 250 lines.**
 
-**Status: Greg picked on 5 Nov: keep-warm plus timing, hold stays 3s. Built on a branch, not live; see the end.** Follows [`cass-q1.md`](cass-q1.md), which is at its
+**Status: fixed and closed 25 Nov. Keep-warm plus timing, live 5 Nov (#196); hold stays 3s. The result is at the end.** Follows [`cass-q1.md`](cass-q1.md), which is at its
 budget. Read from `quiz-d686e` with the Admin SDK on 5 Nov 2026: all 112 traces in `q1Traces` (22 Oct to 5 Nov, 105 with
 a settled answer write) and the `games/` records behind them. Read-only. Stamps are UTC, which is UK time on these dates.
 
@@ -231,3 +231,19 @@ rules, and a real phone.
 | No `warmed` figure | The keep-warm is failing or the tab was hidden | Look at that first |
 
 For the facts, read the quizmaster's `start:` part: whichever of pack, history, rows or write holds the seconds is what to fix.
+
+## The result — 25 November 2026
+
+`read-traces -- --last 250`, split at 12:00 on 5 Nov. The rows before it give 105 writes and 10 slow, this file's own count.
+
+| | Writes | Over 1.5s | Slowest | At 80s or more | Slow there |
+|---|---|---|---|---|---|
+| To 5 Nov | 105 | 10 | 9.0s | 60 | 10 |
+| Since | 118 | **0** | 0.8s | 60 | **0** |
+
+**Cass: 13 of 13 at 0.1s or less**, five past 80s (119–653s), each warmed 9–39s before. The closing test asked for three, so item 12
+is closed. The quizmaster's deal took 0.2–0.5s in all but one round (1.0s, history): the slow facts did not return.
+
+**Not closed: a slow write in mid-round.** 3R5J, 18 Nov, question 7 (15s): Cass and Bret have no answer, the 3s hold ran out, and
+one device was refused 14.1s in. Cass's answers either side landed 1s and 2.3s behind the room's. A tap over 8s late is refused by
+`arrivalOk`, which fits. **Inference**: the error row names no player. #201 cost no point here: a question-6 answer arriving in question 7 never scored.

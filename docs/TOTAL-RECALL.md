@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 13 November 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 25 November 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -23,6 +23,14 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
+
+## 2026-11-25 — Question one's slow write closed; Cloudflare costed; the handover caught up
+
+Keep-warm (#196): 0 of 118 question-one writes over 1.5s since, 10 of 105 before; Cass 13 of 13 ([`cass-q1-cold-write.md`](decisions/cass-q1-cold-write.md#the-result--25-november-2026)). A slow write in mid-round stays open (3R5J, 18 Nov). Greg on #206 after 10 rounds: "fine". PROJ-153: Greg chose Cloudflare, no rush; it makes every player a stranger (2 of 32 rows have a code) and puts CI's 3,781 minutes a month on the bill ([`cloudflare-move.md`](decisions/cloudflare-move.md)). W3's contract half has a ticket, PROJ-201: no room made since 19 Oct lacks a host. PROJ-177 and PROJ-178 moved to Done by hand. **Correction to 13 Nov's log:** a docs-only merge does not deploy (`ci-plan.sh`, #210's run skipped both publishes).
+
+## 2026-11-13 — Release #206 live: the question screen, answers bound to the open question, the UI/UX review
+
+Greg: "you decide on the fixes and let's go live", with #202 and #203 beside #205; parked mid-CI on "save for pickup", then "Go live". Merged `96fde81` 14:08:40Z on green; rules 14:09:27Z; gh-pages `8235e7b`, Pages built 14:10:43Z; `index-Bg-3T0nl` and 15 assets byte-identical with a local build. `check-rules` 167/0 — the open-question deny, the one FAIL against live before, now PASS. `rank-harness` green (seven answers land in one open question), `sync-harness 10` 10/10. CI's Jira step ran with an empty `JIRA_API_TOKEN` (PROJ-72). Not yet played by the office.
 
 ## 2026-11-13 — PROJ-178 built, not live: the reveal holds still, the verdict where the clock was
 
@@ -121,16 +129,10 @@ One PR, six branches, each by its own merge commit. **The Double** ([`morning-do
 
 The climb is unchanged. A spent easy or hard bucket is still filled from whichever level has the most left, and the question screen says so. Re-rating is a plan, not a build ([`ladder-rerating.md`](decisions/ladder-rerating.md)).
 
-## 2026-10-22 — #138 live: the Commentator's voice off, the drum roll rebuilt, the podium caption on the frozen table
-
-Greg: "Go live with #138 once its CI is green". Merged `a410e22` 21:47:22Z, 12 s after green; rules 21:48:11Z (unchanged); gh-pages `4ef3623`, Pages built 21:49:36Z; `index-gzyAYqlA` and 15 assets byte-identical; `check-rules` 136/0. The "staccato" sound was the podium's drum roll: rendered offline through `sound.ts`, 1% of it was above 1kHz. Four versions by ear the same night; the fourth is "ok for now" ([`game-show-moments.md`](decisions/game-show-moments.md#the-drum-roll-rebuilt--22-october-2026)). The review of #131 and #136 found only the caption. Full e2e 32/32. Greg prefers a recorded roll: a card, not built.
-
-## 2026-10-22 — Release #136 live: the host in `src/host/`, rig check, Beat the Chaser, the Commentator, Quiz Wrapped
-
-Greg: "Go live with #136 once its CI is green". Merged `d8771be` 20:00:33Z on green; rules 20:01:34Z; gh-pages `79633da`, Pages built 20:03:59Z; `index-BK-1i2u1` and 12 files byte-identical. `check-rules` 136/0; the new `rig/` RTDB rules proved live (2 allow, 3 deny); `rank-harness` K859 on the shipped host. Measured first: `games/` (65 rounds, 934 questions, 6 repeats) can't rate what is served next, so Mr Fries plays to pack × difficulty and the fold does not fix the Ladder (HANDOVER item 8 corrected). A merge-resolution slip dropped three CSS braces; the first full e2e ran on a stale `dist/` and caught it. Open: the rig's Friday phone run; Greg to cut the Commentator lines; Wrapped opens 5 Dec. Depth: [`host-loop.md`](decisions/host-loop.md), [`beat-the-chaser.md`](decisions/beat-the-chaser.md), [`rig-in-your-hand.md`](decisions/rig-in-your-hand.md).
-
 ## 2026-10-02 to 2026-10-22 — archived, one line each
 
+- **2026-10-22** — [#138 live: the Commentator's voice off, the drum roll rebuilt, the podium caption on the frozen table](recall/2026-10.md#2026-10-22--138-live-the-commentators-voice-off-the-drum-roll-rebuilt-the-podium-caption-on-the-frozen-table)
+- **2026-10-22** — [Release #136 live: the host in `src/host/`, rig check, Beat the Chaser, the Commentator, Quiz Wrapped](recall/2026-10.md#2026-10-22--release-136-live-the-host-in-srchost-rig-check-beat-the-chaser-the-commentator-quiz-wrapped)
 - **2026-10-22** — [Release 2026-10-22-3 live: rounds bank again, Survey Says, four audit fixes](recall/2026-10.md#2026-10-22--release-2026-10-22-3-live-rounds-bank-again-survey-says-four-audit-fixes)
 - **2026-10-22** — [Survey Says built, not live](recall/2026-10.md#2026-10-22--survey-says-built-not-live)
 - **2026-10-22** — [No round banked today: the season rule hit 1,000 expressions](recall/2026-10.md#2026-10-22--no-round-banked-today-the-season-rule-hit-1000-expressions)
