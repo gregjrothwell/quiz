@@ -135,7 +135,7 @@ importing `read-games` or `read-owed` breaks that, since each calls `main()` at 
 
 **The next release is open, nothing in it is live** (Greg, 25 Nov: "we'll do more changes and go live with everything"). Built, drafts:
 **PROJ-179 #211** (sounds heard, ok), **PROJ-182 #212** (on 179: your own line on the reveal, the table at the breaks; `decisions/reveal-line.md`
-on that branch), **PROJ-181 #213**. Side sessions, to end as drafts: **PROJ-180** (`PROJ-180-window-size`, **rules**) and **PROJ-183** (the lobby, off 182).
+on that branch), **PROJ-181 #213**. Also drafts, CI not yet read: **PROJ-180 #215** (`PROJ-180-window-size`, **rules**) and **PROJ-183 #216** (the lobby, off 182).
 Then `release-<date>` in the order 179, 182, 181, 180, 183, one merge commit each, one PR, outside playing hours. Steps: the 25 Nov PICK-UP log entry.
 
 **The token leak is closed and the gate is on `master`**, so a CI deploy is

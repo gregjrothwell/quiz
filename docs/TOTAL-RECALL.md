@@ -26,7 +26,7 @@ notes, not chronology; every entry they described is still listed below by date.
 
 ## 2026-11-25 — Built, not live: PROJ-182 and PROJ-181; the lead-in's sounds heard (PROJ-179)
 
-Greg listened to PROJ-179 on a board playing the branch's own code: the cue "ok for now", a tune after two seconds "ok"; a more premium lock, gong and clock is PROJ-202. **PROJ-182** (#212, on #211): your place and movement on the reveal, one press to the next question, the table every five questions, before stakes, before a final and at the end; no rules change. The question screen now stays up between questions, so Next waits for the verdict, two buttons are keyed apart and a question opens at the top; `decisions/reveal-line.md` on that branch. **PROJ-181** (#213): one name once. PROJ-180 (rules) and PROJ-183 (the lobby) started in sessions of their own, same release.
+Greg listened to PROJ-179 on a board playing the branch's own code: the cue "ok for now", a tune after two seconds "ok"; a more premium lock, gong and clock is PROJ-202. **PROJ-182** (#212, on #211): your place and movement on the reveal, one press to the next question, the table every five questions, before stakes, before a final and at the end; no rules change. The question screen now stays up between questions, so Next waits for the verdict, two buttons are keyed apart and a question opens at the top; `decisions/reveal-line.md` on that branch. **PROJ-181** (#213): one name once. PROJ-180 (#215, rules) and PROJ-183 (#216, the lobby) were built the same evening in sessions of their own, same release.
 
 ## 2026-11-25 — Question one's slow write closed; Cloudflare costed; the handover caught up
 
