@@ -991,6 +991,7 @@ function Game() {
             onAnswer={handleAnswer}
             onReveal={() => void host.reveal().catch(report)}
             onNext={() => void dispatch({ type: 'next', at: Date.now() }).catch(report)}
+            onTable={() => void dispatch({ type: 'showTable' }).catch(report)}
             onVote={handleVote}
             streak={uid ? streakOf(gameLog, uid, skippedIndices(room)) : 0}
           />

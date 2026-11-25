@@ -121,8 +121,8 @@ describe('an answer that missed the cut-off', () => {
     expect(container.querySelector('.verdict')?.textContent).toContain(LOST_LINE);
   });
 
-  test('keeps the line on the standings, which is where Next goes', () => {
-    // #given the room after Next: same late answer, same tally, now the scoreboard
+  test('keeps the line on the standings, at a break or when somebody asks for them', () => {
+    // #given the room at the table: same late answer, same tally, now the scoreboard
     render(
       <Scoreboard
         room={lateRoom('scoreboard')}

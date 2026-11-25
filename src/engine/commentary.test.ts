@@ -57,6 +57,37 @@ describe('at the reveal', () => {
   });
 });
 
+describe('at a reveal that no table follows (PROJ-182)', () => {
+  // The scoreboard used to come next and say who had gone top. It no longer does,
+  // so the reveal says it, when it has nothing of its own to say.
+  const scores = { ann: 1_000, bob: 1_800, cass: 0, dan: 0 };
+  const lastDeltas = { bob: 1_000 };
+  const quiet = { ann: pick(0), bob: pick(0), cass: pick(1) };
+  const ten = Array.from({ length: 10 }, () => Q);
+  const reveal = (overrides: Partial<RoomState> = {}) =>
+    commentFor(room({ phase: 'reveal', scores, lastDeltas, lastPicks: quiet, questions: ten, ...overrides }), 'reveal');
+
+  test('a new leader', () => {
+    expect(reveal()?.text).toBe('Bob takes the lead.');
+    expect(reveal({ history: { bob: { played: 6, wins: 0, best: 4_000 } } })?.fact).toBe('newLeaderNeverWon');
+  });
+
+  test('gives way to what the reveal has to say for itself', () => {
+    expect(reveal({ lastPicks: { ann: pick(1), bob: pick(0), cass: pick(2) } })?.fact).toBe('lone');
+  });
+
+  test('says nothing of a lead nobody has just taken', () => {
+    expect(reveal({ lastDeltas: { bob: 100 } })).toBeNull();
+    expect(reveal({ scores: { ann: 4_000, bob: 1_000 }, lastDeltas: {} })).toBeNull();
+  });
+
+  test('leaves it to the table at a break, and to the podium on the last question', () => {
+    expect(reveal({ index: 4 })).toBeNull();
+    expect(reveal({ index: 9 })).toBeNull();
+    expect(commentFor(room({ phase: 'scoreboard', scores, lastDeltas, questions: ten, index: 4 }), 'scoreboard')?.fact).toBe('newLeader');
+  });
+});
+
 describe('at the scoreboard', () => {
   test('a new leader, and a new leader who has never won', () => {
     const scores = { ann: 1_000, bob: 1_800, cass: 0, dan: 0 };

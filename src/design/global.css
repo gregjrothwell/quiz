@@ -3484,6 +3484,37 @@ select.input option {
  * It appears for exactly two people in the room — the one who took the points
  * and the one who lost them — and for nobody else.
  */
+/*
+  Your own line at the reveal (PROJ-182): place and movement. Mounted for the
+  whole reveal and faded in with the verdict beside it, so the desk keeps its
+  height. Opacity and transform only.
+*/
+.ownline {
+  margin: 0;
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: var(--text-md);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 220ms ease 120ms, transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1) 120ms;
+}
+
+.ownline--in {
+  opacity: 1;
+  transform: none;
+}
+
+.ownline[data-dir='up'] {
+  color: var(--correct);
+}
+
+.ownline[data-dir='down'] {
+  color: var(--ink-soft);
+}
+
 .steal {
   margin: 0.2rem 0 0;
   font-family: var(--tech);

@@ -43,7 +43,9 @@ describe('between questions', () => {
   test('one press opens the next question, with nothing of the last one left on it', () => {
     const room = reveal(0, 10);
     expect(afterReveal(room)).toBe('question');
-    expect(press(room)).toMatchObject({
+    // `toEqual` on the whole room: `toMatchObject` reads `{}` as "any object".
+    expect(press(room)).toEqual({
+      ...room,
       phase: 'question',
       index: 1,
       questionOpenedAt: 9_000,
@@ -51,7 +53,6 @@ describe('between questions', () => {
       lastDeltas: {},
       lastPicks: {},
       lastSteal: null,
-      scores: { ann: 3_000, bob: 1_000 },
     });
   });
 
