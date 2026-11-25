@@ -64,7 +64,7 @@ what changed is below.
 - **B2.** In the lobby the quizmaster sees a **Slop Cannon** section under the
   round settings, listing every shot the kill switch allows, each unloaded.
   Nobody else sees the toggles; everyone sees which are loaded, on the
-  standings between questions.
+  standings between questions (at the breaks only, since PROJ-182; the shortest round is ten, so every round has one).
 - **B3.** Stored on the room as `cannon: { [id]: true }`, set by the
   `selectPack` that starts the round and fixed for it, as `wagerEnabled` is.
 - **B4.** The room rule: absent, or a map of ≤ 8 keys whose values are all
