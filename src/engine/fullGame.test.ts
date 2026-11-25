@@ -104,7 +104,7 @@ function answerAs(state: RoomState, uid: string, correct: boolean, elapsedMs: nu
   return { type: 'answer', uid, optionIndex, elapsedMs };
 }
 
-/** Advances reveal → scoreboard → next question (or finished). */
+/** Advances reveal → next question (or finished), through the table at a break. */
 function revealNow(state: RoomState): Action {
   const question = currentQuestion(state);
   if (!question) throw new Error('No open question to reveal');

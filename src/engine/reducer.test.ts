@@ -348,7 +348,6 @@ describe('the answer window', () => {
       briskRoom(10),
       revealNow,
       { type: 'next', at: 2_000 },
-      { type: 'next', at: 3_000 },
     );
 
     // #then the second question runs on the same window as the first — the
@@ -656,7 +655,6 @@ describe('reveal', () => {
       asked,
       action,
       { type: 'next', at: 0 },
-      { type: 'next', at: 1 },
     );
 
     // #then applying that answer again does nothing at all, rather than marking
@@ -711,26 +709,28 @@ describe('skip', () => {
 });
 
 describe('next', () => {
-  test('moves from reveal to the scoreboard', () => {
+  // Where a reveal leads is `afterReveal.test.ts` (PROJ-182).
+  test('opens the next question from the reveal', () => {
     // #given a revealed question
     const room = reduce(playingRoom(), revealNow(playingRoom()));
 
     // #when the quizmaster advances
     const result = reduce(room, { type: 'next', at: 6_000 });
 
-    // #then the standings are shown
-    expect(result.phase).toBe('scoreboard');
+    // #then the second question is open
+    expect({ phase: result.phase, index: result.index }).toEqual({ phase: 'question', index: 1 });
   });
 
   test('opens the next question from the scoreboard', () => {
-    // #given the scoreboard after the first question
+    // #given the table, asked for after the first question
     const room = apply(
       playingRoom(),
       revealNow,
-      { type: 'next', at: 6_000 },
+      { type: 'showTable' },
     );
+    expect(room.phase).toBe('scoreboard');
 
-    // #when the quizmaster advances again
+    // #when the quizmaster advances
     const result = reduce(room, { type: 'next', at: 7_000 });
 
     // #then the second question opens
@@ -738,14 +738,12 @@ describe('next', () => {
   });
 
   test('finishes the game after the last question', () => {
-    // #given the scoreboard following the final question
+    // #given the final question, revealed
     const room = apply(
       playingRoom(),
       revealNow,
       { type: 'next', at: 6_000 },
-      { type: 'next', at: 7_000 },
       revealNow,
-      { type: 'next', at: 9_000 },
     );
 
     // #when the quizmaster advances past the end
@@ -761,7 +759,6 @@ describe('next', () => {
       playingRoom(),
       { type: 'answer', uid: 'guest', optionIndex: 1, elapsedMs: 1000 },
       revealNow,
-      { type: 'next', at: 6_000 },
     );
 
     // #when the next question opens
@@ -1266,9 +1263,10 @@ describe('the reveal publishes the picks (W3, AC5)', () => {
     expect(Object.keys(revealed.lastPicks)).toEqual(['guest']);
 
     // #then the standings keep it, and every way out of the question drops it
-    const standings = reduce(revealed, { type: 'next', at: 2_000 });
+    const standings = reduce(revealed, { type: 'showTable' });
     expect(Object.keys(standings.lastPicks)).toEqual(['guest']);
     expect(reduce(standings, { type: 'next', at: 3_000 }).lastPicks).toEqual({});
+    expect(reduce(revealed, { type: 'next', at: 3_000 }).lastPicks).toEqual({});
     expect(reduce(revealed, { type: 'skip' }).lastPicks).toEqual({});
     expect(reduce(revealed, { type: 'reset' }).lastPicks).toEqual({});
   });
@@ -1305,7 +1303,7 @@ describe('transitions the reducer refuses', () => {
 
   test('skip from the scoreboard and settle from a question change nothing', () => {
     const room = playingRoom();
-    const board = apply(room, revealNow, { type: 'next', at: 6_000 });
+    const board = apply(room, revealNow, { type: 'showTable' });
     expect(board.phase).toBe('scoreboard');
     expect(reduce(board, { type: 'skip' })).toBe(board);
     expect(reduce(room, { type: 'settle', picks: {} })).toBe(room);

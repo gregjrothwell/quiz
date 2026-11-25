@@ -183,10 +183,10 @@ describe('a survey round through the reducer', () => {
 
   test('a guess with a tied top pays everyone on a tied option (G1)', () => {
     let state = started();
-    // Through the five tells to the first guess: reveal, scoreboard, next question.
+    // Through the five tells to the first guess: reveal, next question.
     for (let i = 0; i < SURVEY_PROMPTS_PER_ROUND; i += 1) {
       state = reduce(state, { type: 'reveal', correctIndex: 0, questionId: currentQuestion(state)?.id ?? '' });
-      state = reduce(reduce(state, { type: 'next', at: 2_000 + i }), { type: 'next', at: 2_500 + i });
+      state = reduce(state, { type: 'next', at: 2_000 + i });
     }
     const guess = currentQuestion(state);
     expect(guess?.survey?.part).toBe('guess');
@@ -209,7 +209,7 @@ describe('a survey round through the reducer', () => {
     let state = started();
     for (let i = 0; i < SURVEY_PROMPTS_PER_ROUND; i += 1) {
       state = reduce(state, { type: 'reveal', correctIndex: 0, questionId: currentQuestion(state)?.id ?? '' });
-      state = reduce(reduce(state, { type: 'next', at: 2_000 + i }), { type: 'next', at: 2_500 + i });
+      state = reduce(state, { type: 'next', at: 2_000 + i });
     }
     const guess = currentQuestion(state);
     const after = reduce(state, { type: 'reveal', correctIndex: 1, questionId: guess?.id ?? '', top: [1, 9] });

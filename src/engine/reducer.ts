@@ -1,5 +1,6 @@
 import type { Loaded } from './cannon';
 import type { PackId } from '../questions/types';
+import { afterReveal } from './afterReveal';
 import type { FormFact } from './form';
 import { carryFirstMs, firstTouchOf } from './answers';
 import { BONUS_MULTIPLIER, isBonusCatchphrase } from './catchphraseBonus';
@@ -98,6 +99,8 @@ export type Action =
   | { type: 'reveal'; correctIndex: number; questionId: string; top?: number[]; counts?: number[] }
   | { type: 'skip' }
   | { type: 'next'; at: number }
+  /** The table, between two questions, because somebody asked to see it. */
+  | { type: 'showTable' }
   /** The quizmaster ends the talking, by button or when the talk clock runs out. */
   | { type: 'openPicks' }
   /**
@@ -160,6 +163,8 @@ export function reduce(state: RoomState, action: Action): RoomState {
       return skip(state);
     case 'next':
       return next(state, action.at);
+    case 'showTable':
+      return showTable(state);
     case 'openPicks':
       return openPicks(state);
     case 'closePicks':
@@ -616,21 +621,34 @@ function toFinished(state: RoomState): RoomState {
   return { ...state, phase: 'finished', answers: {}, lastDeltas: {}, lastSteal: null, lastPicks: {} };
 }
 
+/** Opens the question after this one, leaving nothing of the last behind. */
+function openNext(state: RoomState, at: number): RoomState {
+  return {
+    ...state,
+    phase: 'question',
+    index: state.index + 1,
+    questionOpenedAt: at,
+    answers: {},
+    lastDeltas: {},
+    lastSteal: null,
+    lastPicks: {},
+  };
+}
+
 function next(state: RoomState, at: number): RoomState {
   if (state.phase === 'reveal') {
-    /*
-      The last question goes straight to the results unless a final follows. A
-      full table with the winner on top, one press before the drum roll, left the
-      podium nothing to reveal. docs/decisions/round-end.md. Before a final the
-      table stays: it is who is about to play, and for how much.
-    */
-    const isLast = state.index + 1 >= state.questions.length;
-    return isLast && !finalistsAfterLast(state) ? toFinished(state) : { ...state, phase: 'scoreboard' };
+    switch (afterReveal(state)) {
+      case 'results':
+        return toFinished(state);
+      case 'table':
+        return { ...state, phase: 'scoreboard' };
+      case 'question':
+        return openNext(state, at);
+    }
   }
 
   if (state.phase === 'scoreboard') {
-    const nextIndex = state.index + 1;
-    if (nextIndex >= state.questions.length) {
+    if (state.index + 1 >= state.questions.length) {
       // Round one of a double ends at half-time: its final, if the room chose
       // one, is played on the whole morning at the end of round two.
       const finalists = finalistsAfterLast(state);
@@ -654,16 +672,7 @@ function next(state: RoomState, at: number): RoomState {
       }
       return toFinished(state);
     }
-    return {
-      ...state,
-      phase: 'question',
-      index: nextIndex,
-      questionOpenedAt: at,
-      answers: {},
-      lastDeltas: {},
-      lastSteal: null,
-      lastPicks: {},
-    };
+    return openNext(state, at);
   }
 
   // Only once both picks are showing. Moving on from the talk or the pick would
@@ -674,6 +683,16 @@ function next(state: RoomState, at: number): RoomState {
   }
 
   return state;
+}
+
+/**
+ * The table when the room asks for it, from a reveal that would otherwise go
+ * straight to the next question. Refused on the last one: before a final the
+ * table comes anyway, and before the results it would be the podium given away.
+ */
+function showTable(state: RoomState): RoomState {
+  if (state.phase !== 'reveal' || afterReveal(state) !== 'question') return state;
+  return { ...state, phase: 'scoreboard' };
 }
 
 function openPicks(state: RoomState): RoomState {
