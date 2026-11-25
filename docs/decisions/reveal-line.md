@@ -11,13 +11,14 @@ a round, and a median 11.5s passes between one question closing and the next ope
 ## Criteria, as agreed
 
 1. At the reveal each player sees their own line: place, movement and points ("3rd · up one · +800").
-2. The full table at the breaks: **every five questions**, half-time, before a final, at the end.
+2. The full table at the breaks: **every five questions**, **before a stakes question**, half-time, before a final, at the end.
 3. Between questions the quizmaster presses once.
 4. Nothing needs sound to be understood.
 5. Played in one office round, then `games/` read for the gap against 11.5s. **Owed, after go-live.**
 
 Greg, 25 Nov, on the two open questions: every five questions too ("ok"), and the quizmaster sees the
-same reveal as everyone, with Next and a "Show the table" button ("ok").
+same reveal as everyone, with Next and a "Show the table" button ("ok"). And on the one this doc
+asked: the table before the question played for stakes, so nobody stakes blind ("ok").
 
 ## How it works
 
@@ -61,8 +62,7 @@ into the next question. Three things depended on it going:
 
 ## Not covered
 
-- **The stakes question has no table before it** unless it follows a break. A player staking sees their
-  own place, not the gap to the next one. "Show the table" is there. **For Greg: a break before a
-  stakes question?** 32 of 79 rounds had stakes.
+- **The stakes table in a browser.** Unit tests only, both halves of a double included; no spec plays a
+  round with stakes.
 - **A slow or old tab in the room.** An old quizmaster tab still stops at the table after every
   question and the rest of the room follows it there; an old player's tab has no line.

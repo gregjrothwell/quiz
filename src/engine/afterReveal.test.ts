@@ -89,6 +89,29 @@ describe('between questions', () => {
   });
 });
 
+describe('a round played for stakes', () => {
+  const tables = (count: number, overrides: Partial<RoomState> = {}): number[] =>
+    Array.from({ length: count }, (_, index) => press(reveal(index, count, overrides)).phase).flatMap((phase, index) =>
+      phase === 'scoreboard' ? [index + 1] : [],
+    );
+
+  test('shows the table before the question it is played on, so nobody stakes blind', () => {
+    expect(tables(10, { wagerEnabled: true })).toEqual([5, 9]);
+    expect(tables(15, { wagerEnabled: true })).toEqual([5, 10, 14]);
+    expect(press(press(reveal(8, 10, { wagerEnabled: true })))).toMatchObject({ phase: 'question', index: 9 });
+  });
+
+  test('in each half of a double, which stakes its own last question', () => {
+    expect(tables(10, { wagerEnabled: true, doubleEnabled: true })).toEqual([5, 9]);
+    const second = { wagerEnabled: true, doubleEnabled: true, double: { gameId: 'g0', scores: { ann: 1 } } };
+    expect(tables(10, second)).toEqual([5, 9]);
+  });
+
+  test('and only then: the same round without stakes has no table there', () => {
+    expect(tables(10)).toEqual([5]);
+  });
+});
+
 describe('the last reveal', () => {
   test('before a final it is the table, and without one the results', () => {
     expect(afterReveal(reveal(9, 10, { standoffEnabled: true }))).toBe('table');

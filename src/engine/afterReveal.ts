@@ -1,5 +1,5 @@
 import { finalistsAfterLast } from './double';
-import { currentQuestion, type RoomState } from './state';
+import { currentQuestion, isWagerQuestion, type RoomState } from './state';
 import { isTell } from './survey';
 
 /**
@@ -7,8 +7,8 @@ import { isTell } from './survey';
  * docs/decisions/reveal-line.md).
  *
  * The full table used to follow every question, fifteen times in a seven-minute
- * round. It now comes at the breaks: every fifth question, before a final, and
- * at the end. In between, each player has their own line on the reveal
+ * round. It now comes at the breaks: every fifth question, before the question
+ * played for stakes, before a final, and at the end. In between, each player has their own line on the reveal
  * (`ownLine.ts`) and one press opens the next question.
  *
  * The reducer and every button naming the next step read this one answer, so a
@@ -32,5 +32,8 @@ export function afterReveal(room: RoomState): AfterReveal {
   // scored nobody and its table would be a column of noughts.
   const question = currentQuestion(room);
   if (question && isTell(question)) return 'question';
+  // Nobody stakes blind (Greg, 25 November 2026): your own line says where you
+  // are, and only the table says by how much.
+  if (isWagerQuestion({ ...room, index: room.index + 1 })) return 'table';
   return (room.index + 1) % TABLE_EVERY === 0 ? 'table' : 'question';
 }
