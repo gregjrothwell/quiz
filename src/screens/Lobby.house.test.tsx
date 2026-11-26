@@ -310,6 +310,14 @@ describe('4 · nothing is on that the line does not say', () => {
     return names;
   };
 
+  /*
+    A whole lobby rendered once per button, twenty-odd times a test: 1.3–1.6s
+    here, 5.5–6.6s on CI's runner, so Vitest's 5s refused three of the four on
+    #216's first run (26 Nov 2026). Real work rather than a hang, so it gets
+    room rather than fewer buttons.
+  */
+  const EVERY_BUTTON_MS = 30_000;
+
   for (const [title, matcher] of [
     ['an ordinary pack', /Science/],
     ['Survey Says', /Survey Says/],
@@ -340,7 +348,7 @@ describe('4 · nothing is on that the line does not say', () => {
       }
       // Not vacuous: on every pack a good few of them do change the round.
       expect(moved).toBeGreaterThan(4);
-    });
+    }, EVERY_BUTTON_MS);
   }
 
   test('and whatever was remembered is said too', () => {
