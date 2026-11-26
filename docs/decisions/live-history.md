@@ -1,12 +1,18 @@
 # What went live, and when
 
-> **Owner: Greg Rothwell. Last updated: 25 November 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 26 November 2026. Budget: 250 lines.**
 
 Split out of [`HANDOVER.md`](../HANDOVER.md) on 24 October 2026, at 150 lines
 against a 150 budget. **Moved verbatim; only where it lives has changed.** The
 handover keeps the current live bundle and the checks still owed; the chain of
 bundles before it, and the release records that were sitting in its Outstanding
 list, are here. Links were relative to `docs/`, so `decisions/` is dropped from them.
+
+## `index-Bg-3T0nl`, live until 26 November 2026
+
+Verbatim from the handover when release #217 replaced it; only the links changed.
+
+**Live is `index-Bg-3T0nl`** (release #206, 13 Nov, merge `96fde81`, gh-pages `8235e7b`; 15/15 assets and `index.html` byte-identical; `check-rules` **167/0**; `rank-harness` green; `sync-harness 10` 10/10; unchanged by #209 / PROJ-189, CI only, 17 Nov, merge `7420191`, [run 44066609625](https://github.com/gregjrothwell/quiz/actions/runs/44066609625)): **the question screen holds still** (PROJ-178, [`question-screen.md`](question-screen.md)) — **played in 10 office rounds, 16–25 Nov, two on a 10s clock; Greg, 25 Nov: "fine"**; **answers may only name the open question** (#201, PROJ-119, ticket kept open); vault read-back under lock timeouts (#200); the November UI/UX review (PROJ-177, [`ui-ux-review.md`](ui-ux-review.md)); Playwright 1.65.1 and the hono/xml advisories in the toolchain. Earlier: #199 `cdad107`, #190 `index-5KgGMvMQ` ([`live-history.md`](live-history.md)). **Owed:** a phone (none in any trace); `read-owed` after a round that follows a deploy (PROJ-77); #168 in a real room (PROJ-75); **CI's Jira token (PROJ-76)** — on 25 Nov the `jira` environment held `JIRA_EMAIL` and no `JIRA_API_TOKEN`, so CI still moves no ticket. The token that was added on 28 Oct is the Mac's Keychain one, for the session hook.
 
 ## `index-5KgGMvMQ`, live until 13 November 2026
 

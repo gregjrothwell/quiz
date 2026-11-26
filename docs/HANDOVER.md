@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 25 November 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 26 November 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -58,7 +58,7 @@ Built to replace Polly in Teams.
 >   **Productionisation plan decided 15 Oct** (all six as recommended; D6: league owners sign in, players stay anonymous); W1, **a TMDB credit the live site
 >   lacked**; **W2, rules from CI** ([`rules-from-ci.md`](decisions/rules-from-ci.md)); **W3, host authority, expand half** ([`host-authority.md`](decisions/host-authority.md)). **All three live 15 Oct.** Next: W3's contract half (due since 14 Nov, **PROJ-201**); W4; W5 by 1 Mar 2027 — [`public-scale.md`](decisions/public-scale.md#the-plan-15-october-2026).
 
-**Live is `index-Bg-3T0nl`** (release #206, 13 Nov, merge `96fde81`, gh-pages `8235e7b`; 15/15 assets and `index.html` byte-identical; `check-rules` **167/0**; `rank-harness` green; `sync-harness 10` 10/10; unchanged by #209 / PROJ-189, CI only, 17 Nov, merge `7420191`, [run 44066609625](https://github.com/gregjrothwell/quiz/actions/runs/44066609625)): **the question screen holds still** (PROJ-178, [`question-screen.md`](decisions/question-screen.md)) — **played in 10 office rounds, 16–25 Nov, two on a 10s clock; Greg, 25 Nov: "fine"**; **answers may only name the open question** (#201, PROJ-119, ticket kept open); vault read-back under lock timeouts (#200); the November UI/UX review (PROJ-177, [`ui-ux-review.md`](decisions/ui-ux-review.md)); Playwright 1.65.1 and the hono/xml advisories in the toolchain. Earlier: #199 `cdad107`, #190 `index-5KgGMvMQ` ([`live-history.md`](decisions/live-history.md)). **Owed:** a phone (none in any trace); `read-owed` after a round that follows a deploy (PROJ-77); #168 in a real room (PROJ-75); **CI's Jira token (PROJ-76)** — on 25 Nov the `jira` environment held `JIRA_EMAIL` and no `JIRA_API_TOKEN`, so CI still moves no ticket. The token that was added on 28 Oct is the Mac's Keychain one, for the session hook.
+**Live is `index-Cnx77XAE`** (release #217, 26 Nov, merge `ab5c0b0`, gh-pages `7516601`, Pages 12:56:37Z; `index.html` and 11/11 JS/CSS byte-identical; `check-rules` **171/0**; `rank-harness` green; `sync-harness 10` 10/10): **a lead-in before each question** (PROJ-179, [`question-lead-in.md`](decisions/question-lead-in.md)); **your own line on the reveal, the table only at the breaks** (PROJ-182, [`reveal-line.md`](decisions/reveal-line.md)); **Fastest finger names each player once** (PROJ-181); **the question-one trace records the window** (PROJ-180, rules, [`window-size.md`](decisions/window-size.md)); **the lobby starts from the last round** (PROJ-183, [`house-round.md`](decisions/house-round.md)). Earlier: #206 `index-Bg-3T0nl` ([`live-history.md`](decisions/live-history.md)). **Owed, after the first office round:** `read-games` for the gap between questions against 11.5s (182's criterion 5; then whether the show runs on a timer goes back to Greg); `read-traces` for window sizes (PROJ-180 open until then); `read-owed`. **Not proven live:** the one press from a reveal into the next question (`rank-harness` plays one question); the stakes table in a browser; a phone (none in any trace); #168 in a real room (PROJ-75). **CI's Jira token (PROJ-76)** is still missing, so tickets move by hand.
 Earlier live states: [`live-history.md`](decisions/live-history.md), then TOTAL-RECALL.
 **Owed for #154:** the first round with Mr Fries or the Double → `npm run read-cannon` shows its Keep/Bin (none played since; 0 shots, 29 Oct). **The beacon is proved live** — on 28 Oct it caught a tab open across #168's deploy failing to load the share card and Season (PROJ-77: reload once on `vite:preloadError`).
 **Live checks still owed** — `npm run read-owed` prints them. Settled 29 Oct: the Double (SC46, 26 Oct); Higher or Lower 81% right, inside 55–85; Theme Tunes, four rounds by 25 Nov: easy 67%, medium 55%, hard 38%, in the right order. W3 has had 34 office rounds since 23 Oct. Still owed: #79's long name; #77's lobby reload; **#104's first final and first Catchphrase call**. **Finals backfill written 21 Oct** (12 rows, read back); re-run the dry run in a few days, since an old bundle erases its own tallies. Firebase chunk `firebase-DwYnjfYh` since #111 (Vite 8.3.5), so returning players fetch it once.
@@ -133,10 +133,10 @@ importing `read-games` or `read-owed` breaks that, since each calls `main()` at 
 
 ## If you're picking this up cold
 
-**The next release is open, nothing in it is live** (Greg, 25 Nov: "we'll do more changes and go live with everything"). Built, drafts:
-**PROJ-179 #211** (sounds heard, ok), **PROJ-182 #212** (on 179: your own line on the reveal, the table at the breaks; `decisions/reveal-line.md`
-on that branch), **PROJ-181 #213**. Also drafts, CI not yet read: **PROJ-180 #215** (`PROJ-180-window-size`, **rules**) and **PROJ-183 #216** (the lobby, off 182).
-Then `release-<date>` in the order 179, 182, 181, 180, 183, one merge commit each, one PR, outside playing hours. Steps: the 25 Nov PICK-UP log entry.
+**Release #217 is live (26 Nov)**, on Greg's "go live": PROJ-179, 182, 181 and 183 Done; **PROJ-180 stays open** until one office round
+is read with `read-traces`. After that round: `read-games` (182's gap against 11.5s), `read-traces`, `read-owed`. Next, not started: **PROJ-201**
+(W3's contract half, due since 14 Nov), **PROJ-202** (a more premium lock, gong and clock). Parked by Greg, do not start: PROJ-153, PROJ-76.
+Seen, no ticket: at 375px the volume slider sits over the clock cell. Pick-up: the 26 Nov entries of the clawd log.
 
 **The token leak is closed and the gate is on `master`**, so a CI deploy is
 safe. If rules matter: `npm run check-rules`, then `npm run sync-harness 30`.

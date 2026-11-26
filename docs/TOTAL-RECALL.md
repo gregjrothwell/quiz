@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 25 November 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 26 November 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -23,6 +23,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
+
+## 2026-11-26 — Release #217 live: the lead-in, your own line, fastest finger once, the window size, the house round
+
+Greg answered the eight open calls on one page (all "ok", Auto-fix off), then "go live". `release-2026-11-26`, one merge commit each: 179, 182, 181, 180, 183, no conflicts. #216 had been red on its first run (two specs read text now behind Change; four unit tests over 5s on CI), fixed at `4bd1a25`. Merge `ab5c0b0` 12:54:53Z; rules 12:55:32Z; gh-pages `7516601`, Pages built 12:56:37Z, 1m44s from merge; `index-Cnx77XAE`, `index.html` and 11/11 JS/CSS byte-identical; `check-rules` **171/0** (180's four new cases among them); `rank-harness` green; `sync-harness 10` 10/10. Tickets to Done by hand (no CI token). A release title naming PROJ-180 would have closed it: `jira-done.sh` reads title keys. **Owed:** 182's gap against 11.5s and 180's `read-traces`, after the first office round.
 
 ## 2026-11-25 — Built, not live: PROJ-182 and PROJ-181; the lead-in's sounds heard (PROJ-179)
 
@@ -120,13 +124,9 @@ Checked for PROJ-62, against `b37a605`. The opening titles still wait for **Star
 
 The amber line is on the reveal from the first paint, and it stays on the standings when Next is pressed. The replay's chips are the fold's picks, so a late answer does not land a name on a lectern. `IN_FLIGHT_HOLD_MS` stays 3s. [`cass-q1.md`](decisions/cass-q1.md).
 
-## 2026-10-26 — The Lab, unshelved as the Slop Cannon
+## 2026-10-02 to 2026-10-26 — archived, one line each
 
-Greg: *"Let's build the lab - but call it slop cannon"*, then A–D as drafted. Built on `slop-cannon`: the error beacon (`clientErrors/`, `read-errors`), per-round shots on the room (`cannon`, ≤ 8 keys, all `true`), the kill switch (`config/cannon`, `npm run cannon`), Keep / Bin under the podium (`cannonVerdicts/`, create only), `read-cannon`. **Ships dark**: nothing registered, so no lobby section and no read. A test shot exists under the emulators only. Rules cannot bound a map key's length; recorded. [`slop-cannon.md`](decisions/slop-cannon.md).
-Then **E**, Keep/Bin on New-stickered lobby modes played that round (`mode-<id>` in the same map, no rules change), and **F**, the cannon fires 1.6s after the fanfare (synth boom, paper, a fading puff; no flash). After F: full e2e 41/41 locally (24.5 min), unit 2,131. **CI time to green had doubled**: the new spec put shard 0 at 677s and apt stalled 520–637s on 3 of 5 runs — fixed in `c1ee8a6`, ~9.6 min to green ([`emulators.md`](decisions/emulators.md)); the Double test on a sixth shard took it to 7m58s. **Live 20:48 GMT** (Greg: "go live with #154"): `index-B-mCNyGu`, merge `e2fab8c`, `check-rules` 147/0 — the four new allow cases FAIL → PASS.
-
-## 2026-10-02 to 2026-10-25 — archived, one line each
-
+- **2026-10-26** — [The Lab, unshelved as the Slop Cannon](recall/2026-10.md#2026-10-26--the-lab-unshelved-as-the-slop-cannon)
 - **2026-10-25** — [Release 25 Oct: The Double, Theme Tunes, Higher or Lower](recall/2026-10.md#2026-10-25--release-25-oct-the-double-theme-tunes-higher-or-lower)
 - **2026-10-23** — [The Ladder says when it substitutes](recall/2026-10.md#2026-10-23--the-ladder-says-when-it-substitutes)
 - **2026-10-22** — [#138 live: the Commentator's voice off, the drum roll rebuilt, the podium caption on the frozen table](recall/2026-10.md#2026-10-22--138-live-the-commentators-voice-off-the-drum-roll-rebuilt-the-podium-caption-on-the-frozen-table)
