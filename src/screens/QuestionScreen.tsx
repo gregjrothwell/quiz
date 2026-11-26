@@ -12,6 +12,7 @@ import { QuestionVote } from '../components/QuestionVote';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { answersForReplay, replayDurationMs, replayTimeline, type Arrival } from '../engine/replay';
 import { BONUS_PROMPT, isBonusCatchphrase } from '../engine/catchphraseBonus';
+import { answeringMs, answeringTimes, leadInMs, leadInOver, sinceAnswersLanded } from '../engine/leadIn';
 import { isCall, optionsAtMs, optionsDue } from '../engine/optionsHold';
 import { isUnmatched, matchTypedAnswer } from '../engine/typedAnswer';
 import { endsAtHalfTime, finalistsAfterLast } from '../engine/double';
@@ -24,7 +25,6 @@ import { songClueAtMs, songClueDue } from '../engine/songClue';
 import {
   currentQuestion,
   isWagerQuestion,
-  questionDurationMs,
   type RoomState,
 } from '../engine/state';
 import {
@@ -306,7 +306,14 @@ export function QuestionScreen({
   // committing, so no frame is ever painted from the stale timeline.
   // Counted picks only. `room.answers` also holds a late answer, so the player
   // can be told it missed the cut-off, and that answer must not land a chip.
-  const forReplay = answersForReplay(room.answers, room.lastPicks, room.lastDeltas);
+  // In answering time: the chips say how long somebody took, and the two seconds
+  // before there was anything to answer are nobody's.
+  const leadMs = leadInMs(room);
+  const windowMs = answeringMs(room);
+  const forReplay = answeringTimes(
+    answersForReplay(room.answers, room.lastPicks, room.lastDeltas),
+    leadMs,
+  );
   if (revealed && !telling && frozen.key !== replayKey && Object.keys(forReplay).length > 0) {
     setFrozen({ key: replayKey, arrivals: replayTimeline(forReplay) });
   }
@@ -345,6 +352,9 @@ export function QuestionScreen({
   }, [revealed, reducedMotion, room.index, arrivals, heldMs]);
 
   useCue('gong', room.index, revealed);
+  // A question with no lead-in has nowhere to put it: a tune's clip starts on the
+  // same frame. Keyed with the round, so a second round's question one is a new one.
+  useCue('arrive', replayKey, leadMs > 0 && !revealed && !joinedMidQuestion);
   useCue(gotItRight ? 'correct' : 'wrong', room.index, revealed && settled && !telling);
   // Only for an answer that was given and scored: nothing buzzes for sitting
   // one out, and "your answer didn't reach the room" is not yours to feel.
@@ -380,12 +390,16 @@ export function QuestionScreen({
     bonus is decided in these seconds. See `src/engine/songClue.ts` and
     docs/decisions/sleeves-song.md.
   */
-  const songDue = songClueDue(
-    elapsedMs,
-    question ? songClueAtMs(question, questionDurationMs(room)) : null,
-  );
-  // Whether there is anything to hear yet. A melody is always out at once.
-  const tuneOut = hasMelody || songDue;
+  // The lead-in: the question is up and its answers are not (PROJ-179). On the
+  // shared clock, so they land together. Somebody who walked in mid-question sees
+  // none, as they see no Catchphrase hold, and for the same reason.
+  const leadOver = revealed || joinedMidQuestion || leadInOver(elapsedMs, leadMs);
+  const answeringElapsedMs = sinceAnswersLanded(elapsedMs, leadMs);
+  const songDue =
+    leadOver && songClueDue(answeringElapsedMs, question ? songClueAtMs(question, windowMs) : null);
+  // Whether there is anything to hear yet. It starts when the answers land, so
+  // the lead-in is not a head start for whoever knows the intro.
+  const tuneOut = leadOver && (hasMelody || songDue);
 
   /*
     A Catchphrase picture plays alone for half the clock, on the room's shared
@@ -399,8 +413,12 @@ export function QuestionScreen({
   // The room's pack on an ordinary round. On a random round, the question's
   // own source — `random` is not Catchphrase.
   const behavingAs = questionPack(room.packId, question);
-  const holdAt = optionsAtMs(behavingAs, room.index, questionDurationMs(room));
-  const optionsOut = revealed || joinedMidQuestion || optionsDue(elapsedMs, holdAt);
+  const holdAt = optionsAtMs(behavingAs, room.index, windowMs, leadMs);
+  const optionsOut = leadOver && (revealed || joinedMidQuestion || optionsDue(elapsedMs, holdAt));
+  // Not there yet, rather than dark: a lectern that arrives is the last beat of
+  // the question's entrance. A Catchphrase's stand dark and empty all through
+  // its hold, so they are up already.
+  const veiled = !leadOver && holdAt === 0;
   // The text box lives in the hold only. A Bonus Catchphrase has no hold.
   const calling = holdAt > 0 && !optionsOut;
   // Final once it has landed, including before the write comes back: a tap in
@@ -417,7 +435,7 @@ export function QuestionScreen({
   }, [revealed, hasPreview, previewUrl, songDue]);
 
   useEffect(() => {
-    if (revealed) return;
+    if (revealed || !leadOver) return;
     // Its own guard rather than the bed's: on a sleeve the bed may already be
     // running when the song lands, and the song has to be able to cut in.
     // `playPreview` stops the bed, and marking the bed started here stops it
@@ -440,6 +458,7 @@ export function QuestionScreen({
     startClock(remainingMs);
   }, [
     revealed,
+    leadOver,
     clockKey,
     remainingMs,
     hasMelody,
@@ -641,18 +660,22 @@ export function QuestionScreen({
         isYou: arrival.uid === youUid,
         firstMs: arrival.firstMs,
         snap: arrival.snap,
-        unlocked: arrival.elapsedMs >= questionDurationMs(room),
+        unlocked: arrival.elapsedMs >= windowMs,
       }));
 
   // Held options are dark, empty lecterns rather than no lecterns, so nothing
   // moves under a player's pointer when they light up — and empty rather than
   // merely hidden, so the words are not in the page to be read early.
+  //
+  // A veiled one keeps its words, hidden. Two seconds is too short to dig them
+  // out of the page, and a long answer that only arrived on landing would grow
+  // its lectern and push the ones below it down.
   const tiles = question.options.map((option, index) => (
     <PodiumTile
       key={`${question.id}-${index}`}
       index={index}
-      text={optionsOut ? option : ''}
-      state={optionsOut ? stateFor(index) : 'hushed'}
+      text={optionsOut || veiled ? option : ''}
+      state={optionsOut || veiled ? stateFor(index) : 'hushed'}
       arrivals={crowdFor(index)}
       // The clock closes the lecterns, not the first press. Expiry matters on
       // its own now: it used to be covered incidentally, because having answered
@@ -664,6 +687,8 @@ export function QuestionScreen({
         else setPickState({ key: callKey, index: picked });
       }}
       order={index}
+      veiled={veiled}
+      led={leadMs > 0 && holdAt === 0}
       // Survey Says part two: what the room said in part one, on each lectern (G5).
       note={settled && question.survey?.counts ? `${question.survey.counts[index] ?? 0} said this` : null}
     />
@@ -671,9 +696,10 @@ export function QuestionScreen({
 
   return (
     <>
-      <header className="qhead">
+      <header className={leadMs > 0 ? 'qhead qhead--led' : 'qhead'}>
         <div className="qhead__meta">
-          <p className="display display--inline">
+          {/* Keyed so its entrance replays, as the prompt's does. */}
+          <p key={question.id} className="display display--inline">
             Question {room.index + 1}
             <span className="muted"> / {room.questions.length}</span>
           </p>
@@ -727,9 +753,10 @@ export function QuestionScreen({
             </p>
           ) : (
             <ArcTimer
-              secondsLeft={clock.secondsLeft}
-              remainingMs={clock.remainingMs}
-              totalMs={questionDurationMs(room)}
+              // The answering time, full and still until the answers land.
+              secondsLeft={Math.ceil(Math.min(windowMs, clock.remainingMs) / 1000)}
+              remainingMs={Math.min(windowMs, clock.remainingMs)}
+              totalMs={windowMs}
             />
           )}
         </div>
@@ -769,7 +796,7 @@ export function QuestionScreen({
         the prompt on the clipboard.
       */}
       <div
-        className={revealed ? 'qgrid' : 'qgrid qgrid--sealed'}
+        className={['qgrid', revealed ? '' : 'qgrid--sealed', leadMs > 0 ? 'qgrid--led' : ''].filter(Boolean).join(' ')}
         onCopy={revealed ? undefined : (event) => event.preventDefault()}
         onCut={revealed ? undefined : (event) => event.preventDefault()}
       >
@@ -795,7 +822,7 @@ export function QuestionScreen({
               className="call"
               onSubmit={(event) => {
                 event.preventDefault();
-                if (called || clock.expired || draft.trim() === '') return;
+                if (!leadOver || called || clock.expired || draft.trim() === '') return;
                 const index = matchTypedAnswer(draft, question.options);
                 setLockedCall(callKey);
                 onAnswer(index, wagering ? stake : undefined);
@@ -818,14 +845,14 @@ export function QuestionScreen({
                   enterKeyHint="done"
                   maxLength={80}
                   placeholder="Type what you see"
-                  disabled={called || clock.expired}
+                  disabled={!leadOver || called || clock.expired}
                   onChange={(event) => setDraftState({ key: callKey, text: event.target.value })}
                   onFocus={(event) => event.currentTarget.scrollIntoView({ block: 'nearest' })}
                 />
                 <button
                   type="submit"
                   className="btn btn--primary"
-                  disabled={called || clock.expired || draft.trim() === ''}
+                  disabled={!leadOver || called || clock.expired || draft.trim() === ''}
                 >
                   Call it
                 </button>
@@ -867,7 +894,11 @@ export function QuestionScreen({
                   disabled={clock.expired || !tuneOut}
                   onClick={replayTune}
                 >
-                  {tuneOut ? playLabel(muted, previewBlocked) : 'Song from the album at halfway'}
+                  {tuneOut
+                    ? playLabel(muted, previewBlocked)
+                    : leadOver
+                      ? 'Song from the album at halfway'
+                      : 'Coming up'}
                 </button>
               </div>
             </div>
@@ -936,8 +967,8 @@ export function QuestionScreen({
                 bonus={bonus}
                 questionId={question.id}
                 gameId={room.gameId ?? ''}
-                elapsedMs={elapsedMs}
-                durationMs={questionDurationMs(room)}
+                elapsedMs={answeringElapsedMs}
+                durationMs={windowMs}
                 revealed={revealed}
                 {...(question.image ? { image: question.image } : {})}
                 {...(question.imageWidth !== undefined ? { imageWidth: question.imageWidth } : {})}
@@ -1122,6 +1153,8 @@ export function QuestionScreen({
               // Said, because a pick that looks chosen but is not will otherwise
               // be left there, and ranked last when it locks itself.
               'Tap it again, or press Enter, to lock it in'
+            ) : !leadOver ? (
+              'Answers coming up'
             ) : calling ? (
               'Call it, or wait'
             ) : (

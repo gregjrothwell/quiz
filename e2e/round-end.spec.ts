@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
+import { answersLanded } from './answers';
 import { readRoom, startRound, twoSeats } from './cannonRounds';
 import { isolateFiles } from './isolate';
 import { admin, until } from './nodeClient';
@@ -32,7 +33,7 @@ async function play(host: Page, pages: readonly Page[], code: string, stop: (pha
     const key = `${room.gameId}:${String(room.index)}`;
     if (room.phase === 'question' && answered !== key) {
       for (const page of pages) {
-        await expect(page.locator('.podium')).toBeVisible();
+        await answersLanded(page);
         await page.keyboard.press('a');
         await page.keyboard.press('Enter');
       }

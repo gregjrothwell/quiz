@@ -18,6 +18,12 @@ export interface Update {
 
 export const UPDATES: readonly Update[] = [
   {
+    date: '2026-11-25',
+    lines: [
+      'A question now arrives before its answers. You see the question, then two seconds later the answers land on everybody’s screen together. The clock waits for them, so ten seconds is still ten seconds to answer, and a tune starts with the answers.',
+    ],
+  },
+  {
     date: '2026-11-13',
     lines: [
       'The reveal holds still. Your points and your verdict now land where the clock was, instead of the whole question jumping up when the clock left, and the answers that were wrong stay readable.',

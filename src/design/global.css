@@ -4008,6 +4008,30 @@ select.input option {
   animation: rise 380ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
 }
 
+/*
+ * A lead-in (PROJ-179): the number, the picture, the prompt, and the lecterns
+ * only when the answers are due. A veiled lectern keeps its box, so nothing
+ * moves under a pointer, and taking the class off is what starts its entrance,
+ * because `animation: none` had never let it run. Below `.tile`, whose
+ * animation it has to beat.
+ */
+.tile--veiled {
+  visibility: hidden;
+  animation: none;
+}
+
+.qhead--led .display--inline {
+  animation: lift 360ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+.qgrid--led .still {
+  animation-delay: 150ms;
+}
+
+.qgrid--led .prompt {
+  animation-delay: 400ms;
+}
+
 .card__round,
 .card__topic {
   animation: lift 460ms cubic-bezier(0.2, 0.8, 0.2, 1) both;

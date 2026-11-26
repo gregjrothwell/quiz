@@ -1,6 +1,7 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 
 import { weekId } from '../src/engine/week';
+import { answersLanded } from './answers';
 import { setEmulatorFlag } from './emulators';
 import { isolateFiles } from './isolate';
 import { admin, seedVault, until } from './nodeClient';
@@ -61,7 +62,7 @@ test('a table of test names is kept in games/, and banks nobody', async ({ brows
     const key = `${room.gameId}:${String(room.index)}`;
     if (room.phase === 'question' && answered !== key) {
       for (const page of [host, other]) {
-        await expect(page.locator('.podium')).toBeVisible();
+        await answersLanded(page);
         await page.keyboard.press('a');
         await page.keyboard.press('Enter');
       }

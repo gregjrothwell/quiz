@@ -109,6 +109,8 @@ export function toRoomState(code: string, data: DocumentData, answers: Record<st
     // LEGACY_DURATION_SECS. Filled in here, at the one place a document becomes
     // state, so nothing downstream has to defend against a missing number.
     durationSecs: persisted.durationSecs ?? LEGACY_DURATION_SECS,
+    // Absent in every room an earlier bundle opened, which has no lead-in.
+    leadInSecs: asFiniteNumber(data['leadInSecs']) ?? 0,
     // Every room that predates the opening titles has no field at all, and
     // `undefined` is not `null`. The titles are up whenever `form` is not null
     // (`showTitles` in App.tsx), so leaving it undefined would read as "the
@@ -258,6 +260,7 @@ export function toPersisted(state: RoomState): PersistedRoom {
     questions: state.questions,
     index: state.index,
     durationSecs: state.durationSecs,
+    leadInSecs: state.leadInSecs,
     questionOpenedAt: state.questionOpenedAt,
     scores: state.scores,
     lastDeltas: state.lastDeltas,

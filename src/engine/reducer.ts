@@ -7,6 +7,7 @@ import { questionPack } from './randomRound';
 import { stealFor, tallyQuestion } from './scoring';
 import { friesPick, roomTakes } from './chaser';
 import { finalistsAfterLast, isHalfTime, morningTotals } from './double';
+import { answeringTimes, leadInMs } from './leadIn';
 import { foldRight } from './rightAnswers';
 import { settleStandoff, stakesFor, type StandoffPick } from './standoff';
 import { isTell } from './survey';
@@ -77,7 +78,7 @@ export type Action =
    * the write that opens one — and starting a round is the only such write a
    * quizmaster makes deliberately.
    */
-  | { type: 'start'; at: number; gameId: string; durationSecs: number }
+  | { type: 'start'; at: number; gameId: string; durationSecs: number; leadInSecs?: number }
   | { type: 'answer'; uid: string; optionIndex: number; elapsedMs: number; wager?: number }
   /**
    * `correctIndex` arrives from the vault, not from the room. Only the client
@@ -150,7 +151,7 @@ export function reduce(state: RoomState, action: Action): RoomState {
         action.cannon ?? {},
       );
     case 'start':
-      return start(state, action.at, action.gameId, action.durationSecs);
+      return start(state, action.at, action.gameId, action.durationSecs, action.leadInSecs ?? 0);
     case 'answer':
       return answer(state, action.uid, action.optionIndex, action.elapsedMs, action.wager);
     case 'reveal':
@@ -300,18 +301,29 @@ function showChaserIntro(state: RoomState, at: number, durationSecs: number): Ro
   return { ...state, form: null, chaserIntro: { at, durationSecs } };
 }
 
-function start(state: RoomState, at: number, gameId: string, durationSecs: number): RoomState {
+function start(
+  state: RoomState,
+  at: number,
+  gameId: string,
+  answeringSecs: number,
+  leadInSecs: number,
+): RoomState {
   if (state.phase !== 'lobby') return state;
   if (state.questions.length === 0) return state;
   // A window the rules would refuse is refused here instead, where it costs a
-  // dead Start button rather than a round that stops at its first reveal.
-  if (!isDurationAllowed(durationSecs)) return state;
+  // dead Start button rather than a round that stops at its first reveal. The
+  // answering time on its own as well as with the lead-in on it: the floor is
+  // what stops a question nobody can answer.
+  const durationSecs = answeringSecs + leadInSecs;
+  if (!isDurationAllowed(answeringSecs) || !isDurationAllowed(durationSecs)) return state;
+  if (leadInSecs < 0) return state;
 
   return {
     ...state,
     phase: 'question',
     index: 0,
     durationSecs,
+    leadInSecs,
     questionOpenedAt: at,
     gameId,
     answers: {},
@@ -525,7 +537,7 @@ function reveal(
     // Nobody is right on a tell, so it adds nothing.
     rightAnswers: telling
       ? state.rightAnswers
-      : foldRight(state.rightAnswers, eligible, (answer) =>
+      : foldRight(state.rightAnswers, answeringTimes(eligible, leadInMs(state)), (answer) =>
           top ? top.includes(answer.optionIndex) : answer.optionIndex === correctIndex,
         ),
     scores,
@@ -577,7 +589,7 @@ function skip(state: RoomState): RoomState {
     const top = question.survey?.top;
     rightAnswers = foldRight(
       rightAnswers,
-      state.lastPicks,
+      answeringTimes(state.lastPicks, leadInMs(state)),
       (answer) => (top ? top.includes(answer.optionIndex) : answer.optionIndex === question.correctIndex),
       -1,
     );

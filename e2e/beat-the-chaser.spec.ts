@@ -3,6 +3,7 @@ import { expect, test, type Browser, type Page } from '@playwright/test';
 import { chaserResult, chaserScore, friesPick } from '../src/engine/chaser';
 import { isNewMode, todayIso } from '../src/questions/newRounds';
 import type { QuizQuestion } from '../src/engine/state';
+import { answersLanded } from './answers';
 import { setEmulatorFlag } from './emulators';
 import { isolateFiles } from './isolate';
 import { admin, seedVault, until } from './nodeClient';
@@ -138,7 +139,7 @@ test('a round against Mr Fries: his picks recompute, the room takes what it shou
     const key = `${room.gameId}:${String(room.index)}`;
     if (room.phase === 'question' && answered !== key) {
       for (const [page, letter] of [[host, 'a'], [dev, 'a'], [eli, 'b']] as const) {
-        await expect(page.locator('.podium')).toBeVisible();
+        await answersLanded(page);
         await page.keyboard.press(letter);
         await page.keyboard.press('Enter');
       }

@@ -5,8 +5,10 @@
       "index": 0,
       "stage": null,
       "changed": {
+        "durationSecs": 12,
         "form": "<deleted>",
         "gameId": "<game>",
+        "leadInSecs": 2,
         "openedAt": "<time>",
         "phase": "question",
         "questionOpenedAt": "<time>",

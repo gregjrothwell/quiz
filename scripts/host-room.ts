@@ -80,6 +80,7 @@ import {
   isDurationAllowed,
   type QuizQuestion,
 } from '../src/engine/state';
+import { openRound } from '../src/engine/leadIn';
 import { randomRoomCode } from '../src/engine/roomCode';
 import type { SealedQuestion } from '../src/questions/types';
 import { readFileSync } from 'node:fs';
@@ -279,7 +280,13 @@ async function main(): Promise<void> {
   console.log(`${stamp()}  >>> WRITING start`);
   await host.dispatch([
     { type: 'selectPack', ...ROUND, wagerEnabled: false, stealEnabled: false },
-    { type: 'start', at: Date.now(), gameId: `host-${Date.now()}`, durationSecs: DURATION_SECS },
+    // The app's own opening, so a browser in the room sees the lead-in (PROJ-179).
+    openRound({
+      packId: ROUND.packId,
+      at: Date.now(),
+      gameId: `host-${Date.now()}`,
+      durationSecs: DURATION_SECS,
+    }),
   ]);
 
   // The host reveals once the clock and the vault's gate allow.

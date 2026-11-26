@@ -15,6 +15,7 @@ import { Timestamp as AdminTimestamp } from 'firebase-admin/firestore';
 import { createQ1Tracer, type Q1TraceDoc } from '../src/engine/q1Trace';
 import { EMULATOR_HOST, EMULATOR_PORTS } from '../src/lib/emulators';
 import { traceRef, writeQ1Trace } from '../src/lib/q1Trace';
+import { answersLanded } from './answers';
 import { setEmulatorFlag } from './emulators';
 import { isolateFiles } from './isolate';
 import { admin, player, seedVault, until, type Player } from './nodeClient';
@@ -220,7 +221,7 @@ test('AC1–AC4 through the app: question one leaves one trace per device', asyn
   await seedVault(code);
 
   // #when Ann answers question one and the host's device reveals it
-  await expect(ann.page.locator('.podium')).toBeVisible();
+  await answersLanded(ann.page);
   await ann.page.keyboard.press('a');
   await ann.page.keyboard.press('Enter');
   await expect(ann.page.getByText(/^Correct · \+/)).toBeVisible({ timeout: 60_000 });
