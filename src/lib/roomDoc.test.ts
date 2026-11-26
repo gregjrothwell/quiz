@@ -65,6 +65,22 @@ describe('the room document and W3', () => {
     expect(state.lastPicks).toEqual({});
   });
 
+  it('carries the lead-in, and reads none from a room an earlier bundle opened', () => {
+    const opened = { ...createRoom('ABCD'), durationSecs: 12, leadInSecs: 2 };
+    expect(toUpdate(opened, createRoom('ABCD')).leadInSecs).toBe(2);
+    expect(toRoomState('ABCD', toPersisted(opened), {}).leadInSecs).toBe(2);
+
+    const legacy = { ...toPersisted(createRoom('ABCD')) } as Record<string, unknown>;
+    delete legacy.leadInSecs;
+    expect(toRoomState('ABCD', legacy, {}).leadInSecs).toBe(0);
+    expect(toRoomState('ABCD', { ...legacy, leadInSecs: 'two' }, {}).leadInSecs).toBe(0);
+  });
+
+  it('writes a lead-in of nothing, so a Catchphrase round clears the last round\'s', () => {
+    const before = { ...createRoom('ABCD'), leadInSecs: 2 };
+    expect(toUpdate({ ...before, leadInSecs: 0 }, before).leadInSecs).toBe(0);
+  });
+
   it('reads the published picks through the answer guard', () => {
     const data = {
       ...toPersisted(createRoom('ABCD')),

@@ -881,10 +881,14 @@ service cloud.firestore {
         return request.resource.data;
       }
 
-      // An optional whole number inside [low, high].
+      // An optional whole number inside [low, high]. **Read once, into a `let`**:
+      // read four times a field, the window's three (PROJ-180) took the fullest
+      // trace past Firestore's 1,000 expressions per request, so the
+      // quizmaster's own would have been refused, silently.
+      // docs/decisions/window-size.md.
       function intIn(key, low, high) {
-        return !(key in trace().keys())
-          || (trace()[key] is int && trace()[key] >= low && trace()[key] <= high);
+        let value = trace().get(key, low);
+        return value is int && value >= low && value <= high;
       }
 
       function textUpTo(key, size) {
@@ -895,7 +899,7 @@ service cloud.firestore {
 
       allow create: if request.auth != null
         && trace().keys().hasAll(['gameId', 'roomCode', 'uid', 'durationMs', 'correctionMs', 'priorSamples', 'writes', 'device', 'at'])
-        && trace().keys().hasOnly(['gameId', 'roomCode', 'uid', 'durationMs', 'correctionMs', 'priorSamples', 'writes', 'device', 'network', 'seenAfterOpenMs', 'serverOffsetMs', 'visibleForMs', 'tapMs', 'tapElapsedMs', 'ackMs', 'refused', 'dropped', 'revealMs', 'counted', 'warmAgoMs', 'dealMs', 'packMs', 'askedMs', 'formMs', 'dealWriteMs', 'at'])
+        && trace().keys().hasOnly(['gameId', 'roomCode', 'uid', 'durationMs', 'correctionMs', 'priorSamples', 'writes', 'device', 'network', 'innerWidth', 'innerHeight', 'pixelRatioPct', 'seenAfterOpenMs', 'serverOffsetMs', 'visibleForMs', 'tapMs', 'tapElapsedMs', 'ackMs', 'refused', 'dropped', 'revealMs', 'counted', 'warmAgoMs', 'dealMs', 'packMs', 'askedMs', 'formMs', 'dealWriteMs', 'at'])
         && trace().uid == request.auth.uid
         && trace().gameId is string
         && trace().gameId.size() > 0
@@ -909,6 +913,9 @@ service cloud.firestore {
         && trace().correctionMs is int && trace().correctionMs >= 0 && trace().correctionMs <= 600000
         && trace().priorSamples is int && trace().priorSamples >= 0 && trace().priorSamples <= 1000
         && trace().writes is int && trace().writes >= 0 && trace().writes <= 1000
+        && intIn('innerWidth', 0, 20000)
+        && intIn('innerHeight', 0, 20000)
+        && intIn('pixelRatioPct', 0, 2000)
         && intIn('seenAfterOpenMs', -86400000, 86400000)
         && intIn('serverOffsetMs', -86400000, 86400000)
         && intIn('visibleForMs', 0, 86400000)

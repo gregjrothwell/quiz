@@ -1,8 +1,10 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 
 import { weekId } from '../src/engine/week';
+import { answersLanded } from './answers';
 import { setEmulatorFlag } from './emulators';
 import { isolateFiles } from './isolate';
+import { setRound } from './lobby';
 import { admin, seedVault, until } from './nodeClient';
 
 isolateFiles();
@@ -47,8 +49,7 @@ test('a table of test names is kept in games/, and banks nobody', async ({ brows
   await until(() => readRoom(code), (room) => Object.keys(room.players).length === 2);
 
   await host.locator('button.pack', { has: host.locator('.pack__title', { hasText: 'General Knowledge' }) }).click();
-  await host.getByRole('button', { name: '10', exact: true }).click();
-  await host.locator('button.pick', { hasText: '10 seconds' }).click();
+  await setRound(host, { questions: 10, picks: ['10 seconds'] });
   await host.getByRole('button', { name: 'Start the show' }).click();
   await host.getByRole('button', { name: 'Start the round' }).click();
   await until(() => readRoom(code), (room) => room.phase === 'question');
@@ -61,7 +62,7 @@ test('a table of test names is kept in games/, and banks nobody', async ({ brows
     const key = `${room.gameId}:${String(room.index)}`;
     if (room.phase === 'question' && answered !== key) {
       for (const page of [host, other]) {
-        await expect(page.locator('.podium')).toBeVisible();
+        await answersLanded(page);
         await page.keyboard.press('a');
         await page.keyboard.press('Enter');
       }

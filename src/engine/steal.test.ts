@@ -190,9 +190,7 @@ function roundWithSteal(stealEnabled: boolean): RoomState {
     opened,
     { type: 'answer', uid: 'ann', optionIndex: 0, elapsedMs: 1_000 },
     { type: 'reveal', correctIndex: 0, questionId: 'q0' },
-    // Twice: `next` is reveal -> scoreboard -> question, one phase at a time.
     { type: 'next', at: 2_000 },
-    { type: 'next', at: 2_500 },
   );
 }
 
@@ -277,7 +275,6 @@ describe('the steal through the reducer', () => {
       { type: 'answer', uid: 'bo', optionIndex: 0, elapsedMs: 900 },
       { type: 'reveal', correctIndex: 0, questionId: 'q1' },
       { type: 'next', at: 5_000 },
-      { type: 'next', at: 5_500 },
     );
     expect(state.lastSteal).toBeNull();
   });

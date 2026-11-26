@@ -55,6 +55,21 @@ describe('fastest finger', () => {
     expect(award?.uids).toEqual(['alex', 'sam']);
   });
 
+  test('names a player once however often they equal their own best', () => {
+    // #given one player whose fastest right answer came twice, as two unlocked
+    // picks stamped at the buzzer do, and another who matched it once
+    const log = [
+      record(0, 0, { sam: answer(0, 10_000), alex: answer(0, 10_000) }),
+      record(1, 1, { sam: answer(1, 10_000), alex: answer(0, 10_000) }),
+    ];
+
+    // #when the awards are worked out
+    const award = find(awardsFor(log, PLAYERS), 'fastest');
+
+    // #then each is named once: two names, not three
+    expect(award).toEqual({ id: 'fastest', uids: ['alex', 'sam'], elapsedMs: 10_000 });
+  });
+
   test('is not awarded when nobody was ever right', () => {
     // #given a round the room comprehensively lost
     const log = [record(0, 0, { greg: answer(1, 1_000), sam: answer(2, 2_000) })];

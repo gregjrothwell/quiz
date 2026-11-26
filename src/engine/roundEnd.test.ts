@@ -68,8 +68,9 @@ describe('the last reveal', () => {
 });
 
 describe('a reveal before the last', () => {
-  test('still goes to the table', () => {
-    expect(next(reveal({ index: 0 })).phase).toBe('scoreboard');
+  // It went to the table until PROJ-182; the breaks are in `afterReveal.test.ts`.
+  test('opens the next question', () => {
+    expect(next(reveal({ index: 0 })).phase).toBe('question');
   });
 });
 

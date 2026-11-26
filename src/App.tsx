@@ -12,13 +12,14 @@ import { answeredIn, nightAgainst } from './engine/rivals';
 import { testRunOf } from './engine/testRun';
 import { finalFor } from './engine/finals';
 import { formFor } from './engine/form';
+import type { RoundPlan, RoundSettings } from './engine/houseRound';
+import { openRound } from './engine/leadIn';
 import { skippedIndices, streakOf } from './engine/streak';
 import { codeFromHash } from './engine/roomCode';
 import {
   DEFAULT_QUESTION_DURATION_MS,
   currentQuestion,
   questionDurationMs,
-  type Level,
 } from './engine/state';
 import { NO_ROOM, messageOf, type ErrorContext } from './engine/clientError';
 import { firestore, isFirebaseConfigured, vaultFirestore } from './firebase';
@@ -31,7 +32,6 @@ import {
   withModes,
   type CannonVerdict,
   type KillSwitch,
-  type Loaded,
 } from './engine/cannon';
 import { isNewMode, todayIso } from './questions/newRounds';
 import { readCannonKillSwitch, recordCannonVerdict, registeredShots } from './lib/cannon';
@@ -39,6 +39,7 @@ import { BUZZ_LOCK, buzz } from './lib/haptics';
 import { playerIdFor } from './lib/identity';
 import { recordVote } from './lib/questionVotes';
 import { rememberedName } from './lib/rememberedName';
+import { rememberedRound, rememberRound } from './lib/rememberedRound';
 import {
   rememberPlayingWith,
   rememberSquad,
@@ -201,6 +202,7 @@ function Game() {
     error,
     answersError,
     isQuizmaster,
+    played,
     lamps,
     answersReady,
     presenceWorking,
@@ -242,11 +244,11 @@ function Game() {
   */
   const [seasonFrom, setSeasonFrom] = useState<{ gameId: string | null } | null>(null);
   /*
-    The length and level the host last dealt, for the next lobby. Not on the room,
-    unlike the modes, which already are: these only save a few taps, so a new host
-    or a reload starting from the defaults costs nothing.
+    How this device ran its last round, for the next lobby. Read from storage once
+    and held here, so a browser that keeps nothing still has it for the rest of
+    this tab. docs/decisions/house-round.md.
   */
-  const [lastDeal, setLastDeal] = useState<{ count: number; level: Level } | null>(null);
+  const [lastRound, setLastRound] = useState<RoundSettings | null>(rememberedRound);
   const [showUpdates, setShowUpdates] = useState(false);
 
 
@@ -487,23 +489,25 @@ function Game() {
   }, [leave, report]);
 
   const handleStart = useCallback(
-    (
-      packId: PackId,
-      count: number,
-      level: Level,
-      durationSecs: number,
-      wagerEnabled: boolean,
-      stealEnabled: boolean,
-      jigsawEnabled: boolean,
-      standoffEnabled: boolean,
-      chaserEnabled: boolean,
-      doubleEnabled: boolean,
-      cannon: Loaded,
-    ) => {
+    (packId: PackId, plan: RoundPlan, settings: RoundSettings) => {
+      const {
+        count,
+        level,
+        durationSecs,
+        wagerEnabled,
+        stealEnabled,
+        jigsawEnabled,
+        standoffEnabled,
+        chaserEnabled,
+        doubleEnabled,
+        cannon,
+      } = plan;
       setBusy(true);
       setActionError(null);
-      // Survey Says deals its own ten at no level, so it says nothing about the next round.
-      if (packId !== 'survey') setLastDeal({ count, level });
+      // What was picked rather than what the pack made of it: Theme Tunes being ten
+      // seconds is not a change of pace, and Survey Says is not a change of ending.
+      setLastRound(settings);
+      rememberRound(settings);
       // Dealing, and remembering what was dealt, is `src/host/prepare.ts`.
       const startTimer = createStartTimer(Date.now, PACK_PORTS);
       dealRound({ packId, count, level, jigsawEnabled, chaserEnabled }, startTimer.ports)
@@ -593,12 +597,12 @@ function Game() {
               : chaserEnabled
                 ? [{ type: 'chaserIntro' as const, at: Date.now(), durationSecs }]
                 : [
-                    {
-                      type: 'start' as const,
+                    openRound({
+                      packId,
                       at: Date.now(),
                       gameId: crypto.randomUUID(),
                       durationSecs,
-                    },
+                    }),
                   ]),
           ]);
 
@@ -719,13 +723,15 @@ function Game() {
       void dispatch({ type: 'chaserIntro', at: Date.now(), durationSecs: form.durationSecs }).catch(report);
       return;
     }
-    void dispatch({
-      type: 'start',
-      at: Date.now(),
-      gameId: crypto.randomUUID(),
-      durationSecs: form.durationSecs,
-    }).catch(report);
-  }, [form, room?.chaserEnabled, dispatch, report]);
+    void dispatch(
+      openRound({
+        packId: room?.packId ?? null,
+        at: Date.now(),
+        gameId: crypto.randomUUID(),
+        durationSecs: form.durationSecs,
+      }),
+    ).catch(report);
+  }, [form, room?.chaserEnabled, room?.packId, dispatch, report]);
 
   const { openQuestion } = host;
   const handleStartQuestion = useCallback(() => {
@@ -954,7 +960,8 @@ function Game() {
           busy={busy}
           autoJoined={autoJoined}
           squad={rememberedSquad()}
-          lastDeal={lastDeal}
+          played={played}
+          remembered={lastRound}
           onPickSquad={(next) => {
             rememberSquad(next);
             void writeOwnSquad(next).catch(report);
@@ -988,6 +995,7 @@ function Game() {
             onAnswer={handleAnswer}
             onReveal={() => void host.reveal().catch(report)}
             onNext={() => void dispatch({ type: 'next', at: Date.now() }).catch(report)}
+            onTable={() => void dispatch({ type: 'showTable' }).catch(report)}
             onVote={handleVote}
             streak={uid ? streakOf(gameLog, uid, skippedIndices(room)) : 0}
           />

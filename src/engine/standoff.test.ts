@@ -574,7 +574,6 @@ describe('the running count of right answers', () => {
   test('adds up over questions', () => {
     let state = revealed(answered(open(), 'a', 0, 1_200), 'q1');
     state = reduce(state, { type: 'next', at: 2 });
-    state = reduce(state, { type: 'next', at: 3 });
     state = revealed(answered(state, 'a', 0, 800), 'q2');
     expect(state.rightAnswers).toEqual({ a: { right: 2, ms: 2_000 } });
   });
@@ -587,7 +586,6 @@ describe('the running count of right answers', () => {
   test('a question thrown out takes back only that question', () => {
     let state = revealed(answered(open(), 'a', 0, 1_200), 'q1');
     state = reduce(state, { type: 'next', at: 2 });
-    state = reduce(state, { type: 'next', at: 3 });
     state = revealed(answered(state, 'a', 0, 800), 'q2');
     expect(reduce(state, { type: 'skip' }).rightAnswers).toEqual({ a: { right: 1, ms: 1_200 } });
   });

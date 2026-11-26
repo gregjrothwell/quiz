@@ -61,8 +61,9 @@ import {
 } from '../engine/roomClock';
 import { warmDelayMs, WARM_EVERY_MS } from '../engine/keepWarm';
 import { createQ1Tracer, deviceFrom, type Q1Tracer, type RoundStartTiming } from '../engine/q1Trace';
-import { networkType, recordQ1Trace, refusalCode } from './q1Trace';
+import { networkType, recordQ1Trace, refusalCode, windowSize } from './q1Trace';
 import { planJoin, planSeatSquad } from '../engine/join';
+import { answeringMs, leadInMs } from '../engine/leadIn';
 import { isCall, optionsAtMs } from '../engine/optionsHold';
 import { questionPack } from '../engine/randomRound';
 import {
@@ -124,6 +125,13 @@ export interface UseRoom {
    */
   answersError: string | null;
   isQuizmaster: boolean;
+  /**
+   * Whether a question has ever opened in this room, so its last round is what
+   * the next lobby starts from (docs/decisions/house-round.md). Off `openedAt`,
+   * which `reset` leaves alone: the modes it leaves cannot say, because a last
+   * round with everything off reads like a room nobody has played in.
+   */
+  played: boolean;
   /**
    * Who has answered the question in play, as uids: the RTDB lamps (W3), plus
    * every answer this device can read. Since W3 a player reads only their own
@@ -472,6 +480,7 @@ export function useRoom(): UseRoom {
             device: deviceFrom(navigator.userAgent),
             network: networkType(),
             lastWarmAt: warmAckedAtRef.current,
+            window: windowSize(),
           });
         }
 
@@ -1107,7 +1116,8 @@ export function useRoom(): UseRoom {
       const atMs = optionsAtMs(
         questionPack(room.packId, currentQuestion(room)),
         room.index,
-        questionDurationMs(room),
+        answeringMs(room),
+        leadInMs(room),
       );
       if (held && isCall(held.elapsedMs, atMs)) return;
 
@@ -1226,6 +1236,7 @@ export function useRoom(): UseRoom {
     error,
     answersError,
     isQuizmaster,
+    played: openedAtMillis(persisted ?? undefined) !== null,
     lamps,
     answersReady,
     presenceWorking,

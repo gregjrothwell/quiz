@@ -1,4 +1,4 @@
-import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test';
+import { expect, test, type Browser, type BrowserContext, type BrowserContextOptions, type Page } from '@playwright/test';
 import {
   connectFirestoreEmulator,
   deleteDoc,
@@ -12,9 +12,18 @@ import {
 } from 'firebase/firestore/lite';
 import { Timestamp as AdminTimestamp } from 'firebase-admin/firestore';
 
-import { createQ1Tracer, type Q1TraceDoc } from '../src/engine/q1Trace';
+import { formatTrace } from '../scripts/trace-report';
+import {
+  PIXEL_RATIO_PCT_LIMIT,
+  TRACE_KEYS,
+  WINDOW_LIMIT_PX,
+  createQ1Tracer,
+  parseTrace,
+  type Q1TraceDoc,
+} from '../src/engine/q1Trace';
 import { EMULATOR_HOST, EMULATOR_PORTS } from '../src/lib/emulators';
 import { traceRef, writeQ1Trace } from '../src/lib/q1Trace';
+import { answersLanded } from './answers';
 import { setEmulatorFlag } from './emulators';
 import { isolateFiles } from './isolate';
 import { admin, player, seedVault, until, type Player } from './nodeClient';
@@ -56,6 +65,16 @@ async function denied(attempt: Promise<unknown>): Promise<boolean> {
   }
 }
 
+/** What became of a write: `landed`, or the code it failed with. A refusal is not the only failure. */
+async function outcome(attempt: Promise<unknown>): Promise<string> {
+  try {
+    await attempt;
+    return 'landed';
+  } catch (cause) {
+    return String((cause as { code?: unknown }).code ?? cause);
+  }
+}
+
 /** A trace as the client's tracer builds it: answered at 4s, acknowledged, counted. */
 function builtTrace(uid: string, gameId: string): Q1TraceDoc {
   let clock = 1_000_000;
@@ -75,6 +94,7 @@ function builtTrace(uid: string, gameId: string): Q1TraceDoc {
     device: 'linux',
     network: '4g',
     lastWarmAt: 970_000,
+    window: { width: 1_366, height: 657, pixelRatio: 1.25 },
   });
   tracer.timedStart({ dealMs: 1_200, packMs: 800, askedMs: 300, formMs: 400, dealWriteMs: 90 });
   clock = 1_004_000;
@@ -142,8 +162,108 @@ test('AC7 deny: no second write, nobody else’s, no extra field, no reading, se
   await other.close();
 });
 
-async function seat(browser: Browser, name: string): Promise<{ context: BrowserContext; page: Page }> {
-  const context = await browser.newContext();
+const WINDOW_KEYS = ['innerWidth', 'innerHeight', 'pixelRatioPct'] as const;
+
+test('PROJ-180 allow: the window, an old bundle without it, the fullest trace and the barest', async () => {
+  const cass = await player();
+  const db = lite(cass);
+  const now = Date.now();
+
+  // As this bundle writes it. The whole of it is kept, so nothing is dropped on the way.
+  const built = builtTrace(cass.uid, `window-${now}`);
+  expect(built).toMatchObject({ innerWidth: 1_366, innerHeight: 657, pixelRatioPct: 125 });
+  expect.soft(await outcome(writeQ1Trace(db, built)), 'as built').toBe('landed');
+  expect
+    .soft((await admin().doc(`q1Traces/${built.gameId}_${cass.uid}`).get()).data(), 'as kept')
+    .toMatchObject({ innerWidth: 1_366, innerHeight: 657, pixelRatioPct: 125 });
+
+  // An old bundle: the trace this one builds, less the three fields.
+  const { innerWidth, innerHeight, pixelRatioPct, ...old } = builtTrace(cass.uid, `old-bundle-${now}`);
+  expect([innerWidth, innerHeight, pixelRatioPct]).toEqual([1_366, 657, 125]);
+  expect.soft(await outcome(writeQ1Trace(db, old)), 'old bundle').toBe('landed');
+
+  // Each figure alone: a browser may give one and not another.
+  for (const key of WINDOW_KEYS) {
+    const alone = { ...old, gameId: `alone-${key}-${now}`, [key]: 0 };
+    expect.soft(await outcome(writeQ1Trace(db, alone)), `${key} alone, at zero`).toBe('landed');
+  }
+
+  // Both ends of what the client clamps to.
+  const ends = { innerWidth: WINDOW_LIMIT_PX, innerHeight: WINDOW_LIMIT_PX, pixelRatioPct: PIXEL_RATIO_PCT_LIMIT };
+  expect.soft(await outcome(writeQ1Trace(db, { ...old, gameId: `ends-${now}`, ...ends })), 'the upper ends').toBe('landed');
+
+  // The fullest trace and the barest. The fullest is the one that meets Firestore's 1,000 expressions
+  // per request: with the window added and `intIn` as it was, it was refused (window-size.md).
+  const full: Q1TraceDoc = { ...built, gameId: `full-${now}`, refused: 'permission-denied', dropped: 'window' };
+  expect(Object.keys(full).sort()).toEqual([...TRACE_KEYS].sort());
+  expect.soft(await outcome(writeQ1Trace(db, full)), 'every key at once').toBe('landed');
+  const bare: Q1TraceDoc = {
+    gameId: `bare-${now}`,
+    roomCode: 'E2E1',
+    uid: cass.uid,
+    durationMs: 10_000,
+    correctionMs: 0,
+    priorSamples: 0,
+    writes: 0,
+    device: 'other',
+  };
+  expect.soft(await outcome(writeQ1Trace(db, bare)), 'no optional key').toBe('landed');
+
+  await cass.close();
+});
+
+test('PROJ-180 deny: a figure out of range or of the wrong type, each on its own', async () => {
+  const cass = await player();
+  const db = lite(cass);
+  const bad: (readonly [key: string, value: unknown])[] = [
+    ['innerWidth', -1],
+    ['innerWidth', WINDOW_LIMIT_PX + 1],
+    ['innerWidth', '1366'],
+    ['innerWidth', 1_366.5],
+    ['innerWidth', null],
+    ['innerHeight', -1],
+    ['innerHeight', WINDOW_LIMIT_PX + 1],
+    ['innerHeight', '657'],
+    ['innerHeight', 656.5],
+    ['innerHeight', null],
+    ['pixelRatioPct', -1],
+    ['pixelRatioPct', PIXEL_RATIO_PCT_LIMIT + 1],
+    ['pixelRatioPct', '125'],
+    // The ratio as the browser gives it, which is why it is stored × 100.
+    ['pixelRatioPct', 1.25],
+    ['pixelRatioPct', null],
+    ['pixelRatioPct', true],
+    // Not one of the three names.
+    ['pixelRatio', 125],
+    ['screenWidth', 1_920],
+    // The rule they share, on fields it already held.
+    ['seenAfterOpenMs', -86_400_001],
+    ['serverOffsetMs', 86_400_001],
+    ['tapMs', 4_000.5],
+    ['ackMs', null],
+    ['dealWriteMs', '90'],
+  ];
+
+  for (const [index, [key, value]] of bad.entries()) {
+    // Its own round, so nothing written for one case can refuse the next.
+    const trace = builtTrace(cass.uid, `window-deny-${index}-${Date.now()}`);
+    const refused = await outcome(
+      setDoc(traceRef(db, trace.gameId, cass.uid), { ...trace, [key]: value, at: serverTimestamp() }),
+    );
+    expect.soft(refused, `${key} ${String(value)}`).toBe('permission-denied');
+    // The same trace without that one fault lands under the same id, so the fault is what was refused.
+    expect.soft(await outcome(writeQ1Trace(db, trace)), `${key} ${String(value)}, put right`).toBe('landed');
+  }
+
+  await cass.close();
+});
+
+async function seat(
+  browser: Browser,
+  name: string,
+  options: BrowserContextOptions = {},
+): Promise<{ context: BrowserContext; page: Page }> {
+  const context = await browser.newContext(options);
   const page = await context.newPage();
   page.on('console', (message) => {
     if (message.type() === 'error') console.log(`[${name}:error] ${message.text()}`);
@@ -200,17 +320,19 @@ test('keep-warm deny: deleting somebody else\'s answer', async () => {
 test('AC1–AC4 through the app: question one leaves one trace per device', async ({ browser }) => {
   test.setTimeout(120_000);
 
-  const host = await seat(browser, 'Host');
+  const host = await seat(browser, 'Host', { viewport: { width: 1_440, height: 900 }, deviceScaleFactor: 2 });
   await host.page.getByRole('button', { name: 'Start a new room' }).click();
   const label = await host.page.getByLabel(/Room code [A-Z0-9]{4}/).getAttribute('aria-label');
   const code = label?.replace('Room code ', '') ?? '';
 
-  const ann = await seat(browser, 'Ann');
+  const ann = await seat(browser, 'Ann', { viewport: { width: 1_280, height: 720 }, deviceScaleFactor: 1.25 });
   await ann.page.getByPlaceholder('––––').fill(code);
   await ann.page.getByRole('button', { name: 'Join the round' }).click();
   await expect(ann.page.getByText('Vote for a set')).toBeVisible();
 
   await until(() => readRoom(code), (room) => Object.keys(room.players).length === 2);
+  // Resized in the lobby: the trace is of the window question one was seen in.
+  await ann.page.setViewportSize({ width: 1_366, height: 657 });
   await host.page
     .locator('button.pack', { has: host.page.locator('.pack__title', { hasText: 'General Knowledge' }) })
     .click();
@@ -220,7 +342,7 @@ test('AC1–AC4 through the app: question one leaves one trace per device', asyn
   await seedVault(code);
 
   // #when Ann answers question one and the host's device reveals it
-  await expect(ann.page.locator('.podium')).toBeVisible();
+  await answersLanded(ann.page);
   await ann.page.keyboard.press('a');
   await ann.page.keyboard.press('Enter');
   await expect(ann.page.getByText(/^Correct · \+/)).toBeVisible({ timeout: 60_000 });
@@ -249,6 +371,23 @@ test('AC1–AC4 through the app: question one leaves one trace per device', asyn
     expect(typeof hostTrace?.[key], key).toBe('number');
     expect(annTrace, key).not.toHaveProperty(key);
   }
+
+  // #and each carries its own window, as its own browser gives it (PROJ-180)
+  const given = (page: Page): Promise<number[]> =>
+    page.evaluate(() => [window.innerWidth, window.innerHeight, window.devicePixelRatio]);
+  expect(await given(ann.page)).toEqual([1_366, 657, 1.25]);
+  expect(await given(host.page)).toEqual([1_440, 900, 2]);
+  expect(annTrace).toMatchObject({ innerWidth: 1_366, innerHeight: 657, pixelRatioPct: 125 });
+  expect(hostTrace).toMatchObject({ innerWidth: 1_440, innerHeight: 900, pixelRatioPct: 200 });
+
+  // #and `read-traces` prints what was kept
+  const printed = (kept: unknown): string => {
+    const parsed = parseTrace(kept);
+    if (!parsed) throw new Error('read-traces would call this malformed');
+    return formatTrace(parsed, 'x', 'x');
+  };
+  expect(printed(annTrace)).toContain('1366 × 657 @1.25');
+  expect(printed(hostTrace)).toContain('1440 × 900 @2');
 
   // #and both devices had a keep-warm acknowledged before question one
   expect(typeof annTrace?.['warmAgoMs']).toBe('number');

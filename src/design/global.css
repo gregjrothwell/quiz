@@ -1554,6 +1554,86 @@ select.input option {
   font-variant-numeric: tabular-nums;
 }
 
+/* ── The house round ────────────────────────────────────────────────────────
+   One line saying how the round will be run, and the pickers behind Change
+   (docs/decisions/house-round.md).
+
+   **Nothing here may move under a pointer.** Change is above what it opens, and
+   the line keeps the rows its longest reading needs at each width, so switching
+   a picker on does not push the pickers down a row and choosing Survey Says does
+   not pull the packs up one. The rows are measured: every line the lobby can
+   write, at twenty widths, in Chrome.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.house {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 1rem;
+  row-gap: 0.35rem;
+  align-items: start;
+  padding: 0.75rem 0.9rem 0.8rem;
+  border: 1px solid var(--edge);
+  border-left: 2px solid var(--amber);
+  border-radius: 8px 8px 3px 3px;
+  background: linear-gradient(180deg, var(--panel-hi), var(--panel));
+}
+
+.house__head {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 0;
+}
+
+.house__line {
+  grid-column: 1 / -1;
+  margin: 0;
+  min-height: calc(4 * 1.4em);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 30rem) {
+  .house__line {
+    min-height: calc(3 * 1.4em);
+  }
+}
+
+@media (min-width: 44rem) {
+  .house__line {
+    min-height: calc(2 * 1.4em);
+    font-size: var(--text-md);
+  }
+}
+
+.house__change {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+/* The state is `aria-expanded`'s to say; this only draws it. The label stays
+   "Change" so the button never changes width. */
+.house__change::after {
+  content: '';
+  display: inline-block;
+  width: 0.45em;
+  height: 0.45em;
+  margin-left: 0.7em;
+  border: solid currentcolor;
+  border-width: 0 2px 2px 0;
+  transform: translateY(-0.18em) rotate(45deg);
+}
+
+.house__change[aria-expanded='true']::after {
+  transform: translateY(0.08em) rotate(-135deg);
+}
+
+.house__pickers {
+  padding-block: 0.75rem 0.5rem;
+}
+
 /* ── Question head ──────────────────────────────────────────────────────── */
 
 /*
@@ -3484,6 +3564,58 @@ select.input option {
  * It appears for exactly two people in the room — the one who took the points
  * and the one who lost them — and for nobody else.
  */
+/* The verdict and your own line, side by side. */
+.said {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 1.4rem;
+}
+
+@media (max-width: 43.99rem) {
+  /* On a phone the third chip is a row of header, and the prompt pays for it. */
+  .chip--pack {
+    display: none;
+  }
+
+  /* One under the other from the start. Left to wrap, the line dropped to its own
+     row when the points counted up and the streak landed, and the desk grew. */
+  .said {
+    flex-direction: column;
+  }
+}
+
+/*
+  Your own line at the reveal (PROJ-182): place and movement. Mounted for the
+  whole reveal and faded in with the verdict beside it, so the desk keeps its
+  height. Opacity and transform only.
+*/
+.ownline {
+  margin: 0;
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: var(--text-md);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 220ms ease 120ms, transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1) 120ms;
+}
+
+.ownline--in {
+  opacity: 1;
+  transform: none;
+}
+
+.ownline[data-dir='up'] {
+  color: var(--correct);
+}
+
+.ownline[data-dir='down'] {
+  color: var(--ink-soft);
+}
+
 .steal {
   margin: 0.2rem 0 0;
   font-family: var(--tech);
@@ -4006,6 +4138,30 @@ select.input option {
  */
 .tile {
   animation: rise 380ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+/*
+ * A lead-in (PROJ-179): the number, the picture, the prompt, and the lecterns
+ * only when the answers are due. A veiled lectern keeps its box, so nothing
+ * moves under a pointer, and taking the class off is what starts its entrance,
+ * because `animation: none` had never let it run. Below `.tile`, whose
+ * animation it has to beat.
+ */
+.tile--veiled {
+  visibility: hidden;
+  animation: none;
+}
+
+.qhead--led .display--inline {
+  animation: lift 360ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+.qgrid--led .still {
+  animation-delay: 150ms;
+}
+
+.qgrid--led .prompt {
+  animation-delay: 400ms;
 }
 
 .card__round,

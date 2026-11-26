@@ -1,3 +1,4 @@
+import { afterReveal } from './afterReveal';
 import { currentQuestion, type RoomState } from './state';
 import { roomStandings } from './scoring';
 
@@ -133,11 +134,11 @@ function revealLine(room: RoomState): Line | null {
   return null;
 }
 
-function scoreboardLine(room: RoomState): Line | null {
+/** Somebody leads alone who did not lead before this question. */
+function newLeaderLine(room: RoomState): Line | null {
   const now = roomStandings(room.players, room.scores);
   const leader = now[0];
-  const second = now[1];
-  if (!leader || !second || leader.score <= 0) return null;
+  if (!leader || now.length < 2 || leader.score <= 0) return null;
 
   // The table before this reveal: today's scores less what it paid.
   const before = Object.fromEntries(
@@ -146,14 +147,24 @@ function scoreboardLine(room: RoomState): Line | null {
   const wasLeading = roomStandings(room.players, before).filter((row) => row.position === 1).map((row) => row.uid);
   const sole = now.filter((row) => row.position === 1).length === 1;
   const name = nameOf(room, leader.uid);
+  if (!name || room.index === 0 || !sole || wasLeading.includes(leader.uid)) return null;
+
+  const history = room.history[leader.uid];
+  return history && history.played > 0 && history.wins === 0
+    ? line('newLeaderNeverWon', room, { name })
+    : line('newLeader', room, { name });
+}
+
+function scoreboardLine(room: RoomState): Line | null {
+  const now = roomStandings(room.players, room.scores);
+  const leader = now[0];
+  const second = now[1];
+  if (!leader || !second || leader.score <= 0) return null;
+  const name = nameOf(room, leader.uid);
   if (!name) return null;
 
-  if (room.index > 0 && sole && !wasLeading.includes(leader.uid)) {
-    const history = room.history[leader.uid];
-    return history && history.played > 0 && history.wins === 0
-      ? line('newLeaderNeverWon', room, { name })
-      : line('newLeader', room, { name });
-  }
+  const taken = newLeaderLine(room);
+  if (taken) return taken;
   if (leader.score - second.score <= NECK_AND_NECK) return line('neckAndNeck', room);
   if (leader.score - second.score >= RUNAWAY) return line('runaway', room, { name });
   return null;
@@ -179,7 +190,12 @@ function podiumLine(room: RoomState): Line | null {
 
 /** The line for this moment, or null when nothing is worth saying. */
 export function commentFor(room: RoomState, moment: Moment): Line | null {
-  if (moment === 'reveal') return room.phase === 'reveal' ? revealLine(room) : null;
+  // With no table to follow, a reveal says who has gone top, if it has nothing
+  // of its own to say. At a break the table says it; on the last, the podium.
+  if (moment === 'reveal') {
+    if (room.phase !== 'reveal') return null;
+    return revealLine(room) ?? (afterReveal(room) === 'question' ? newLeaderLine(room) : null);
+  }
   if (moment === 'scoreboard') return room.phase === 'scoreboard' ? scoreboardLine(room) : null;
   return room.phase === 'finished' ? podiumLine(room) : null;
 }

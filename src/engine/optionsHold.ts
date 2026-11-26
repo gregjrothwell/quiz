@@ -38,10 +38,22 @@ import { isBonusCatchphrase } from './catchphraseBonus';
  */
 export const OPTIONS_HOLD_SHARE = 0.5;
 
-/** Milliseconds into the question the options appear; zero for every other pack. */
-export function optionsAtMs(packId: PackId | null, index: number, durationMs: number): number {
+/**
+ * Milliseconds into the question the options appear; zero for every other pack.
+ *
+ * `durationMs` is the answering time, and the half is of that. `leadMs` is the
+ * room's lead-in (`leadIn.ts`), which only a Catchphrase inside a Random Round
+ * has. Every other pack's lead-in is not a hold: it has no call box, and nothing
+ * on a screen can answer before it is over.
+ */
+export function optionsAtMs(
+  packId: PackId | null,
+  index: number,
+  durationMs: number,
+  leadMs = 0,
+): number {
   if (packId !== 'catchphrase' || isBonusCatchphrase(packId, index)) return 0;
-  return durationMs * OPTIONS_HOLD_SHARE;
+  return leadMs + durationMs * OPTIONS_HOLD_SHARE;
 }
 
 export function optionsDue(elapsedMs: number, atMs: number): boolean {

@@ -1,7 +1,9 @@
-import { expect, type Browser, type Page } from '@playwright/test';
+import type { Browser, Page } from '@playwright/test';
 
 import { isNewMode, todayIso } from '../src/questions/newRounds';
+import { answersLanded } from './answers';
 import { setEmulatorFlag } from './emulators';
+import { setRound } from './lobby';
 import { admin, seedVault, until } from './nodeClient';
 
 /**
@@ -48,9 +50,7 @@ export async function twoSeats(browser: Browser): Promise<{ host: Page; other: P
 /** General Knowledge, ten questions, ten seconds, with the picks given, started. */
 export async function startRound(host: Page, code: string, picks: readonly string[]): Promise<RoomDoc> {
   await host.locator('button.pack', { has: host.locator('.pack__title', { hasText: 'General Knowledge' }) }).click();
-  await host.getByRole('button', { name: '10', exact: true }).click();
-  await host.locator('button.pick', { hasText: '10 seconds' }).click();
-  for (const pick of picks) await host.locator('button.pick', { hasText: pick }).click();
+  await setRound(host, { questions: 10, picks: ['10 seconds', ...picks] });
   await host.getByRole('button', { name: 'Start the show' }).click();
   const start = host.getByRole('button', { name: 'Start the round' });
   if (await start.waitFor({ timeout: 5_000 }).then(() => true, () => false)) await start.click();
@@ -73,7 +73,7 @@ export async function playToFinal(
     const key = `${room.gameId}:${String(room.index)}`;
     if (room.phase === 'question' && answered !== key) {
       for (const page of pages) {
-        await expect(page.locator('.podium')).toBeVisible();
+        await answersLanded(page);
         await page.keyboard.press('a');
         await page.keyboard.press('Enter');
       }

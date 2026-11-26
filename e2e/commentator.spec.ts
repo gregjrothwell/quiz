@@ -1,7 +1,9 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 
+import { answersLanded } from './answers';
 import { setEmulatorFlag } from './emulators';
 import { isolateFiles } from './isolate';
+import { setRound } from './lobby';
 import { admin, seedVault, until } from './nodeClient';
 
 isolateFiles();
@@ -102,8 +104,7 @@ test('the Commentator: one caption on every screen, and no voice', async ({ brow
   await until(() => readRoom(code), (room) => Object.keys(room.players).length === 3);
 
   await host.locator('button.pack', { has: host.locator('.pack__title', { hasText: 'General Knowledge' }) }).click();
-  await host.getByRole('button', { name: '10', exact: true }).click();
-  await host.locator('button.pick', { hasText: '10 seconds' }).click();
+  await setRound(host, { questions: 10, picks: ['10 seconds'] });
   await host.getByRole('button', { name: 'Start the show' }).click();
   await host.getByRole('button', { name: 'Start the round' }).click();
   await until(() => readRoom(code), (room) => room.phase === 'question');
@@ -118,7 +119,7 @@ test('the Commentator: one caption on every screen, and no voice', async ({ brow
     if (room.phase === 'question' && answered !== key) {
       const keys = room.index === 0 ? ['b', 'c', 'd'] : room.index === 1 ? ['a', 'b', 'c'] : ['a', 'a', 'a'];
       for (const [i, page] of [host, gil, hux].entries()) {
-        await expect(page.locator('.podium')).toBeVisible();
+        await answersLanded(page);
         await page.keyboard.press(keys[i] ?? 'a');
         await page.keyboard.press('Enter');
       }

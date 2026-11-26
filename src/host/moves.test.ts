@@ -151,6 +151,8 @@ describe('perform', () => {
     if (action.type !== 'start') return;
     expect(action.at).toBe(10);
     expect(action.durationSecs).toBe(10);
+    // The lead-in goes on here too, not only on the lobby's own start (PROJ-179).
+    expect(action.leadInSecs).toBe(2);
     expect(action.gameId).toMatch(/^[0-9a-f-]{36}$/);
   });
 

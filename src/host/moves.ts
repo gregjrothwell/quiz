@@ -1,4 +1,5 @@
 import type { QuestionRecord } from '../engine/awards';
+import { openRound } from '../engine/leadIn';
 import { REVEAL_TIMEOUT_MS } from '../engine/revealGate';
 import { reduce, type Action } from '../engine/reducer';
 import { currentQuestion, type RoomState } from '../engine/state';
@@ -112,12 +113,14 @@ export async function perform(
     case 'openQuestion':
       // `at` is this moment, not the card's. The answering clock starts here,
       // so the three seconds on the card are not taken off the question.
-      await ports.dispatch({
-        type: 'start',
-        at: ports.now(),
-        gameId: crypto.randomUUID(),
-        durationSecs: move.durationSecs,
-      });
+      await ports.dispatch(
+        openRound({
+          packId: context.room.packId,
+          at: ports.now(),
+          gameId: crypto.randomUUID(),
+          durationSecs: move.durationSecs,
+        }),
+      );
       return { kind: 'openQuestion' };
     case 'keepGame':
       return { kind: 'keepGame', outcome: await ports.keepGame(move.gameId, move.record) };

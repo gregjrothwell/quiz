@@ -2,6 +2,7 @@ import { expect, test, type Browser, type Page } from '@playwright/test';
 
 import { setEmulatorFlag } from './emulators';
 import { isolateFiles } from './isolate';
+import { openPickers } from './lobby';
 import { admin, until } from './nodeClient';
 
 isolateFiles();
@@ -53,6 +54,8 @@ test('a Survey Says round: the room is the answer, start to podium', async ({ br
   await until(() => readRoom(code), (room) => Object.keys(room.players).length === 3);
 
   await host.locator('button.pack', { has: host.locator('.pack__title', { hasText: 'Survey Says' }) }).click();
+  // The hint sits behind Change with the pickers (docs/decisions/house-round.md).
+  await openPickers(host);
   await expect(host.getByText('Survey Says is always ten questions')).toBeVisible();
   await host.getByRole('button', { name: 'Start the show' }).click();
   await host.getByRole('button', { name: 'Start the round' }).click();
