@@ -10,6 +10,7 @@ import { toPersisted } from '../src/lib/roomDoc';
 import { startNodeHost } from '../scripts/nodeHost';
 import { isolateFiles } from './isolate';
 import { admin, player, seedVault, until, type Player } from './nodeClient';
+import { onwards } from './onwards';
 
 isolateFiles();
 
@@ -90,12 +91,7 @@ test('a double: half-time banks round one, and the final stakes the whole mornin
         });
       }
       await running.until((room) => room.phase === 'reveal' && room.index === index, 30_000);
-      await running.dispatch({ type: 'next', at: Date.now() });
-      // The first half's last reveal goes straight to half-time; everything else stops at the table.
-      if (index < round.length - 1 || gameId.startsWith('double-two')) {
-        await running.until((room) => room.phase === 'scoreboard');
-        await running.dispatch({ type: 'next', at: Date.now() });
-      }
+      await onwards(running);
     }
   }
 

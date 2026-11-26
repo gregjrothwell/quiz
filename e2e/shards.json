@@ -32,7 +32,8 @@
     "e2e/host-authority-rules.spec.ts",
     "e2e/asked-history.spec.ts",
     "e2e/lobby-vote.spec.ts",
-    "e2e/season-bank.spec.ts"
+    "e2e/season-bank.spec.ts",
+    "e2e/reveal-line.spec.ts"
   ],
   [
     "e2e/round-end.spec.ts"

@@ -125,8 +125,7 @@ export function Scoreboard({ room, shots = [], youUid, isQuizmaster, onNext, tod
       {/*
         In the transport, as the question screen's controls are, so it stays on
         screen however long the table is. At thirty players it sat three
-        screens down on a 1440×900 laptop, and this screen comes round after
-        every question.
+        screens down on a 1440×900 laptop.
       */}
       {isQuizmaster ? (
         <div className="transport">

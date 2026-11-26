@@ -11,6 +11,7 @@ import { toPersisted } from '../src/lib/roomDoc';
 import { startNodeHost } from '../scripts/nodeHost';
 import { isolateFiles } from './isolate';
 import { admin, player, seedVault, until } from './nodeClient';
+import { onwards } from './onwards';
 
 isolateFiles();
 
@@ -95,9 +96,7 @@ test('the host runs a whole round from Node, final and all, with no browser', as
       }
       // #then the host reveals on its own once the clock and the gate allow
       await running.until((room) => room.phase === 'reveal' && room.index === index, 30_000);
-      await running.dispatch({ type: 'next', at: Date.now() });
-      await running.until((room) => room.phase === 'scoreboard');
-      await running.dispatch({ type: 'next', at: Date.now() });
+      await onwards(running);
     }
 
     // #and in the final the host ends the talk on its own, after its minute
@@ -259,9 +258,7 @@ test('a tie for the final goes to more right, ahead of the faster player and the
         });
       }
       await running.until((room) => room.phase === 'reveal' && room.index === index, 30_000);
-      await running.dispatch({ type: 'next', at: Date.now() });
-      await running.until((room) => room.phase === 'scoreboard');
-      await running.dispatch({ type: 'next', at: Date.now() });
+      await onwards(running);
     }
     await running.until((room) => room.phase === 'standoff');
 
@@ -355,11 +352,7 @@ test('an answer left from the last round does not score on the same question num
       await running.until((room) => room.phase === 'question' && room.index === index);
       for (const client of answerers) await answer(client, index);
       await running.until((room) => room.phase === 'reveal' && room.index === index, 30_000);
-      await running.dispatch({ type: 'next', at: Date.now() });
-      if (index < questions.length - 1) {
-        await running.until((room) => room.phase === 'scoreboard');
-        await running.dispatch({ type: 'next', at: Date.now() });
-      }
+      await onwards(running);
     }
     await running.until((room) => room.phase === 'finished');
   };

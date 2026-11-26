@@ -302,8 +302,9 @@ async function main(): Promise<void> {
   console.log(`${stamp()}      scored: ${named || 'nobody'}`);
 
   await sleep(8000);
-  console.log(`${stamp()}  >>> WRITING next (to standings)`);
-  await host.dispatch([{ type: 'next', at: Date.now() }]);
+  // By request: after question one a press of Next opens question two (PROJ-182).
+  console.log(`${stamp()}  >>> WRITING showTable (to standings)`);
+  await host.dispatch([{ type: 'showTable' }]);
 
   await sleep(8000);
   console.log(`${stamp()}  >>> WRITING next (to question 2)`);

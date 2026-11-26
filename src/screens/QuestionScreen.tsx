@@ -1,3 +1,4 @@
+import { afterReveal } from '../engine/afterReveal';
 import { chaserScore, chaserTally } from '../engine/chaser';
 import { Commentary } from '../components/Commentary';
 import { useEffect, useRef, useState } from 'react';
@@ -15,7 +16,8 @@ import { BONUS_PROMPT, isBonusCatchphrase } from '../engine/catchphraseBonus';
 import { answeringMs, answeringTimes, leadInMs, leadInOver, sinceAnswersLanded } from '../engine/leadIn';
 import { isCall, optionsAtMs, optionsDue } from '../engine/optionsHold';
 import { isUnmatched, matchTypedAnswer } from '../engine/typedAnswer';
-import { endsAtHalfTime, finalistsAfterLast } from '../engine/double';
+import { endsAtHalfTime } from '../engine/double';
+import { ownLine, ownLineWords } from '../engine/ownLine';
 import { questionPack } from '../engine/randomRound';
 import type { Verdict } from '../engine/questionVote';
 import { LOST_LINE, stakeFor, verdictFor, WAGER_SHARES } from '../engine/scoring';
@@ -107,6 +109,11 @@ interface QuestionScreenProps {
   onReveal: () => void;
   onNext: () => void;
   /**
+   * The table, between two questions, for a room that asks to see it. Offered
+   * where one press would otherwise go straight on (PROJ-182).
+   */
+  onTable?: () => void;
+  /**
    * What this player thought of the question, asked once the answer is out.
    *
    * Required rather than optional, which is worth a line. It could only ever be
@@ -141,16 +148,21 @@ function playLabel(muted: boolean, blocked: boolean): string {
 }
 
 /**
- * Where the host's button goes from a reveal, in words. The last question skips
- * the table unless a final follows (`next` in the reducer), and the button and
- * the line everyone else reads say so.
+ * Where the host's button goes from a reveal, in words: on the button, beside
+ * the Space key, and in the line everyone else reads. What the reducer will do,
+ * asked of the same function, so none of them can say otherwise.
  */
-function afterTheReveal(room: RoomState): { button: string; waiting: string } {
-  const isLast = room.index + 1 >= room.questions.length;
-  if (!isLast || finalistsAfterLast(room)) return { button: 'Standings', waiting: 'the standings' };
-  return endsAtHalfTime(room)
-    ? { button: 'Half-time', waiting: 'the half-time table' }
-    : { button: 'Final results', waiting: 'the results' };
+function afterTheReveal(room: RoomState): { button: string; key: string; waiting: string } {
+  switch (afterReveal(room)) {
+    case 'question':
+      return { button: 'Next question', key: 'next question', waiting: 'open the next question' };
+    case 'table':
+      return { button: 'Standings', key: 'standings', waiting: 'show the standings' };
+    case 'results':
+      return endsAtHalfTime(room)
+        ? { button: 'Half-time', key: 'half-time', waiting: 'show the half-time table' }
+        : { button: 'Final results', key: 'results', waiting: 'show the results' };
+  }
 }
 
 export function QuestionScreen({
@@ -165,13 +177,16 @@ export function QuestionScreen({
   onAnswer,
   onReveal,
   onNext,
+  onTable,
   onVote,
   streak = 0,
   today = todayIso(),
 }: QuestionScreenProps) {
   const question = currentQuestion(room);
   const optionCount = question?.options.length ?? 0;
-  const afterReveal = afterTheReveal(room);
+  const onwards = afterTheReveal(room);
+  const offerTable = onTable !== undefined && afterReveal(room) === 'question';
+  const placed = revealed ? ownLine(room, youUid) : null;
 
   const myAnswer = youUid ? room.answers[youUid] : undefined;
   const myDelta = youUid ? (room.lastDeltas[youUid] ?? 0) : 0;
@@ -350,6 +365,30 @@ export function QuestionScreen({
       window.clearTimeout(settle);
     };
   }, [revealed, reducedMotion, room.index, arrivals, heldMs]);
+
+  /*
+    Next is held until the verdict has landed (PROJ-182). It goes straight to the
+    next question now, and Enter is also how an answer is locked in: pressed on
+    the buzzer as the reveal arrived, it would open question six over an answer
+    nobody had seen. A table used to be in the way of that.
+
+    A timer of its own rather than `settled`, because reduced motion settles on
+    the first frame and needs the beat as much as anybody.
+  */
+  const [readyKey, setReadyKey] = useState<string | null>(null);
+  const nextReady = revealed && readyKey === replayKey;
+  useEffect(() => {
+    if (!revealed) return;
+    const timer = window.setTimeout(() => setReadyKey(replayKey), reducedMotion ? HUSH_MS : heldMs);
+    return () => window.clearTimeout(timer);
+  }, [revealed, reducedMotion, replayKey, heldMs]);
+
+  // A question opens at the top of the page. This screen stays up from one to the
+  // next, so a phone scrolled to the lecterns would keep its place and open the
+  // new one with the prompt out of sight.
+  useEffect(() => {
+    if (!revealed && window.scrollY > 0) window.scrollTo(0, 0);
+  }, [replayKey, revealed]);
 
   useCue('gong', room.index, revealed);
   // A question with no lead-in has nowhere to put it: a tune's clip starts on the
@@ -571,7 +610,9 @@ export function QuestionScreen({
       if (!isQuizmaster) return;
       if (key === ' ' || key === 'enter') {
         event.preventDefault();
-        if (revealed) onNext();
+        if (revealed) {
+          if (nextReady) onNext();
+        }
         // Matches the button: the vault will not open before the clock does.
         else if (clock.expired) onReveal();
       }
@@ -581,6 +622,7 @@ export function QuestionScreen({
     return () => window.removeEventListener('keydown', onKey);
   }, [
     revealed,
+    nextReady,
     optionCount,
     optionsOut,
     isQuizmaster,
@@ -706,6 +748,13 @@ export function QuestionScreen({
         </div>
         <div className="qhead__tags">
           {room.index === 0 && isNewRound(room.packId, today) ? <NewSticker /> : null}
+          {/*
+            The pack, which the card between questions used to say ("Question
+            two · On the box"). Not where the category is the pack already.
+          */}
+          {room.packTitle && room.packTitle !== question.category ? (
+            <span className="chip chip--pack">{room.packTitle}</span>
+          ) : null}
           <span className="chip">{question.category}</span>
           <span className={question.difficulty === 'hard' ? 'chip chip--hard' : 'chip'}>
             {question.difficulty}
@@ -1062,7 +1111,7 @@ export function QuestionScreen({
         {isQuizmaster ? (
           <span>
             <kbd>Space</kbd>
-            {revealed ? 'standings' : 'reveal'}
+            {revealed ? onwards.key : 'reveal'}
           </span>
         ) : null}
       </p>
@@ -1111,56 +1160,72 @@ export function QuestionScreen({
           animates on a change, and a ticker that mounts already holding its
           final number just prints it.
         */}
-          <p className="tally">
-            {revealed ? (
-              <span
-                className={settled || verdict === 'lost' ? 'verdict verdict--in' : 'verdict'}
-                data-tone={telling ? 'silent' : verdict}
+          <div className="said">
+            <p className="tally">
+              {revealed ? (
+                <span
+                  className={settled || verdict === 'lost' ? 'verdict verdict--in' : 'verdict'}
+                  data-tone={telling ? 'silent' : verdict}
+                >
+                  {verdictLabel}
+                  {/*
+                    A lost stake has to show its number too. The `+` used to be
+                    hardcoded next to `gotItRight`, so a player who staked half
+                    their score and got it wrong was told "Wrong" and nothing else
+                    — the largest points swing in the game, and the only one the
+                    screen stayed silent about. The ticker counts the magnitude and
+                    the sign is fixed text, so it never animates through zero.
+                  */}
+                  {gotItRight || myDelta < 0 ? (
+                    <>
+                      {myDelta < 0 ? ' · −' : ' · +'}
+                      <ScoreTicker value={settled ? Math.abs(myDelta) : 0} />
+                    </>
+                  ) : null}
+                  {settled && gotItRight && streak >= STREAK_SHOWN_FROM ? (
+                    <span className="streak">{streak} in a row</span>
+                  ) : null}
+                </span>
+              ) : clock.expired ? (
+                // Before `myAnswer`, not after it. The lecterns disable on expiry
+                // (see the grid below), so a player who had answered was being told
+                // "You can still change it" next to four dead tiles — the app
+                // contradicting itself at exactly the moment the room is waiting and
+                // wondering whether something has broken.
+                'Time’s up'
+              ) : called ? (
+                // A call is final, including a wrong one. The lecterns stay shut
+                // for this player when the options arrive.
+                'Called — you can’t change it'
+              ) : myAnswer ? (
+                'Locked in'
+              ) : pending !== null ? (
+                // Said, because a pick that looks chosen but is not will otherwise
+                // be left there, and ranked last when it locks itself.
+                'Tap it again, or press Enter, to lock it in'
+              ) : !leadOver ? (
+                'Answers coming up'
+              ) : calling ? (
+                'Call it, or wait'
+              ) : (
+                'Pick an answer'
+              )}
+            </p>
+
+            {/*
+              Where you are and how that moved you, beside the points it paid. Up
+              for the whole reveal and seen when the verdict lands, as the verdict
+              is, so nothing on the desk moves when it does.
+            */}
+            {placed ? (
+              <p
+                className={settled ? 'ownline ownline--in' : 'ownline'}
+                data-dir={!placed.moved ? 'level' : placed.moved > 0 ? 'up' : 'down'}
               >
-                {verdictLabel}
-                {/*
-                  A lost stake has to show its number too. The `+` used to be
-                  hardcoded next to `gotItRight`, so a player who staked half
-                  their score and got it wrong was told "Wrong" and nothing else
-                  — the largest points swing in the game, and the only one the
-                  screen stayed silent about. The ticker counts the magnitude and
-                  the sign is fixed text, so it never animates through zero.
-                */}
-                {gotItRight || myDelta < 0 ? (
-                  <>
-                    {myDelta < 0 ? ' · −' : ' · +'}
-                    <ScoreTicker value={settled ? Math.abs(myDelta) : 0} />
-                  </>
-                ) : null}
-                {settled && gotItRight && streak >= STREAK_SHOWN_FROM ? (
-                  <span className="streak">{streak} in a row</span>
-                ) : null}
-              </span>
-            ) : clock.expired ? (
-              // Before `myAnswer`, not after it. The lecterns disable on expiry
-              // (see the grid below), so a player who had answered was being told
-              // "You can still change it" next to four dead tiles — the app
-              // contradicting itself at exactly the moment the room is waiting and
-              // wondering whether something has broken.
-              'Time’s up'
-            ) : called ? (
-              // A call is final, including a wrong one. The lecterns stay shut
-              // for this player when the options arrive.
-              'Called — you can’t change it'
-            ) : myAnswer ? (
-              'Locked in'
-            ) : pending !== null ? (
-              // Said, because a pick that looks chosen but is not will otherwise
-              // be left there, and ranked last when it locks itself.
-              'Tap it again, or press Enter, to lock it in'
-            ) : !leadOver ? (
-              'Answers coming up'
-            ) : calling ? (
-              'Call it, or wait'
-            ) : (
-              'Pick an answer'
-            )}
-          </p>
+                {ownLineWords(placed)}
+              </p>
+            ) : null}
+          </div>
 
           {stealLine ? (
             <p className={settled ? 'steal steal--in' : 'steal'}>{stealLine}</p>
@@ -1186,9 +1251,20 @@ export function QuestionScreen({
                 room. The engine action stays (and stays tested) in case it is
                 wanted behind a proper permission model later.
               */}
+              {revealed && offerTable ? (
+                <button type="button" className="btn btn--ghost btn--small" disabled={!nextReady} onClick={onTable}>
+                  Show the table
+                </button>
+              ) : null}
+              {/*
+                Keyed apart, so the one that was pressed leaves with its focus.
+                One element for both would hold the focus and be disabled under
+                it, and a disabled button swallows the keys a question is
+                answered with.
+              */}
               {revealed ? (
-                <button type="button" className="btn btn--primary" onClick={onNext}>
-                  {afterReveal.button}
+                <button key="next" type="button" className="btn btn--primary" disabled={!nextReady} onClick={onNext}>
+                  {onwards.button}
                 </button>
               ) : (
                 /*
@@ -1200,6 +1276,7 @@ export function QuestionScreen({
                   clock running out fires one automatically.
                 */
                 <button
+                  key="reveal"
                   type="button"
                   className="btn btn--primary"
                   disabled={!clock.expired || revealing}
@@ -1215,12 +1292,12 @@ export function QuestionScreen({
             </div>
           ) : revealed ? (
             /*
-              The quizmaster's desk carries a Standings button here; without
+              The quizmaster's desk carries the button onwards here; without
               this the slot is simply empty, so the one screen where the whole
               room is waiting on one person is the only one that does not say
               so. The lobby, the scoreboard and the final screen all do.
             */
-            <p className="muted">Waiting for the quizmaster to show {afterReveal.waiting}…</p>
+            <p className="muted">Waiting for the quizmaster to {onwards.waiting}…</p>
           ) : null}
         </div>
       </div>

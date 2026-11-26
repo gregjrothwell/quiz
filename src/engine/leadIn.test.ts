@@ -77,7 +77,6 @@ describe('opening a round', () => {
     let room = opened('general-knowledge', 10);
     room = reduce(room, { type: 'reveal', correctIndex: 1, questionId: 'q1' });
     room = reduce(room, { type: 'next', at: 2_000 });
-    room = reduce(room, { type: 'next', at: 3_000 });
     expect([room.phase, room.index, room.durationSecs, room.leadInSecs]).toEqual(['question', 1, 12, 2]);
   });
 
@@ -154,7 +153,7 @@ describe('rank (AC7)', () => {
     expect(room.rightAnswers).toEqual({ ann: { right: 1, ms: 1_200 } });
 
     // A second one, thrown out after its reveal, comes off exactly as it went on.
-    room = reduce(reduce(room, { type: 'next', at: 2_000 }), { type: 'next', at: 3_000 });
+    room = reduce(room, { type: 'next', at: 2_000 });
     room = reduce(room, { type: 'answer', uid: 'ann', optionIndex: 1, elapsedMs: 4_000 });
     room = reduce(room, { type: 'reveal', correctIndex: 1, questionId: 'q2' });
     expect(room.rightAnswers).toEqual({ ann: { right: 2, ms: 3_200 } });

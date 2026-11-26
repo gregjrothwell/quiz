@@ -144,9 +144,11 @@ test('the host vanishes mid-question and the room carries on', async ({ browser 
   await expect(bob.page.locator('.tile__name', { hasText: 'Ann' })).toBeVisible();
   await expect(ann.page.locator('.tile__name', { hasText: 'Bob' })).toBeVisible();
 
-  // #and the round goes on under the new host
+  // #and the round goes on under the new host: one press, once the verdict has
+  // landed, opens the next question
+  await expect(ann.page.getByRole('button', { name: 'Next question' })).toBeEnabled();
   await ann.page.keyboard.press(' ');
-  await until(() => readRoom(code), (room) => room.phase === 'scoreboard', 10_000);
+  await until(() => readRoom(code), (room) => room.phase === 'question' && room.index === 1, 10_000);
 });
 
 test('an ordinary hosted round: the creator reveals with every answer counted (AC12)', async ({ browser }) => {

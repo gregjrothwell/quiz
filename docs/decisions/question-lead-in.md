@@ -164,5 +164,8 @@ Design A, as costed: **no rules change, no new phase, no extra write.**
 
 ### Not covered
 
-The office network and a phone. Sound was not listened to, on a tune least of all. Question one is uncorrected, so a seat that hears
+The office network and a phone. ~~Sound was not listened to, on a tune least of all.~~ **Greg listened on 25 November 2026**, on a board
+that played this branch's own `sound.ts` and `QuestionScreen`: the cue "ok for now", a tune after the two seconds "ok". Measured on it:
+songs start 2.02–2.06s after the press, the clock bed at 3.0s, the gong at 12.0s. The low synth and the clock's synth are to sound more
+premium later (PROJ-202). Question one is uncorrected, so a seat that hears
 it late lands late there, as it always has. No screen reader. The mixed-bundle head start was reasoned, not run.
