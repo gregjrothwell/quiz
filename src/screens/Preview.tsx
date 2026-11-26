@@ -2141,6 +2141,48 @@ export function Preview() {
         />
       ),
     },
+    // ── The house round ────────────────────────────────────────────────────
+    // Appended so every `#/preview/N` index above keeps pointing where it did.
+    {
+      title: 'Lobby · how this device ran its last round',
+      node: (
+        <Lobby
+          room={mockRoom({ phase: 'lobby', packVotes: LOBBY_VOTES })}
+          youUid="greg"
+          isQuizmaster
+          packs={EVERY_PACK}
+          busy={false}
+          remembered={{ count: 15, level: 'ramp', durationSecs: 15, ending: 'standoff', steal: false, chaser: false }}
+          onStart={noop}
+          onLeave={noop}
+        />
+      ),
+    },
+    {
+      title: 'Lobby · second half of The Double, everything on',
+      node: (
+        <Lobby
+          room={mockRoom({
+            phase: 'lobby',
+            durationSecs: 20,
+            wagerEnabled: true,
+            stealEnabled: true,
+            chaserEnabled: true,
+            doubleEnabled: true,
+            double: DOUBLE_FIRST,
+          })}
+          youUid="greg"
+          isQuizmaster
+          packs={EVERY_PACK}
+          busy={false}
+          played
+          remembered={{ count: 25, level: 'mixed', durationSecs: 10, ending: 'top', steal: false, chaser: false }}
+          shots={[TEST_SHOT]}
+          onStart={noop}
+          onLeave={noop}
+        />
+      ),
+    },
   ];
 
   const shown = only === null ? screens : screens.filter((_, index) => index === only);

@@ -3,6 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { answersLanded } from './answers';
 import { readRoom, startRound, twoSeats } from './cannonRounds';
 import { isolateFiles } from './isolate';
+import { houseLine } from './lobby';
 import { admin, until } from './nodeClient';
 
 isolateFiles();
@@ -72,7 +73,10 @@ test('a double through the lobby: half-time is plain, the final is not lost, the
   await host.getByRole('button', { name: 'Second half' }).click();
   await until(() => readRoom(code), (room) => room.phase === 'lobby' && room.double != null);
 
-  // #then everything picked for the first half is still picked
+  // #then everything picked for the first half is still picked, and the line says so with the pickers shut
+  await expect(houseLine(host)).toHaveText(
+    '10 questions this half · 10 seconds · The Ladder · The Double · ends on a final · first right answer steals',
+  );
   await expect(host.locator('button.pick', { hasText: 'Share or Shaft' })).toHaveAttribute('aria-pressed', 'true');
   await expect(host.locator('button.pick', { hasText: 'First right answer steals' })).toHaveAttribute('aria-pressed', 'true');
   await expect(host.locator('button.pick', { hasText: 'The Double' })).toBeDisabled();
@@ -120,7 +124,10 @@ test('a double through the lobby: half-time is plain, the final is not lost, the
   // #then the table gets out of the way: the player is back in the room to vote
   await expect(other.getByText('Vote for a set')).toBeVisible({ timeout: 15_000 });
 
-  // #and the options carry into an ordinary round, with The Double off
+  // #and the options carry into an ordinary round, with The Double off, and the line says that too
+  await expect(houseLine(host)).toHaveText(
+    '10 questions · 10 seconds · The Ladder · ends on a final · first right answer steals',
+  );
   await expect(host.locator('button.pick', { hasText: 'Share or Shaft' })).toHaveAttribute('aria-pressed', 'true');
   await expect(host.locator('button.pick', { hasText: 'The Double' })).toHaveAttribute('aria-pressed', 'false');
 });

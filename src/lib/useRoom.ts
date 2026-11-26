@@ -126,6 +126,13 @@ export interface UseRoom {
   answersError: string | null;
   isQuizmaster: boolean;
   /**
+   * Whether a question has ever opened in this room, so its last round is what
+   * the next lobby starts from (docs/decisions/house-round.md). Off `openedAt`,
+   * which `reset` leaves alone: the modes it leaves cannot say, because a last
+   * round with everything off reads like a room nobody has played in.
+   */
+  played: boolean;
+  /**
    * Who has answered the question in play, as uids: the RTDB lamps (W3), plus
    * every answer this device can read. Since W3 a player reads only their own
    * answer before the reveal, so the lamps are how they see the room commit.
@@ -1229,6 +1236,7 @@ export function useRoom(): UseRoom {
     error,
     answersError,
     isQuizmaster,
+    played: openedAtMillis(persisted ?? undefined) !== null,
     lamps,
     answersReady,
     presenceWorking,

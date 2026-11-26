@@ -1554,6 +1554,86 @@ select.input option {
   font-variant-numeric: tabular-nums;
 }
 
+/* ── The house round ────────────────────────────────────────────────────────
+   One line saying how the round will be run, and the pickers behind Change
+   (docs/decisions/house-round.md).
+
+   **Nothing here may move under a pointer.** Change is above what it opens, and
+   the line keeps the rows its longest reading needs at each width, so switching
+   a picker on does not push the pickers down a row and choosing Survey Says does
+   not pull the packs up one. The rows are measured: every line the lobby can
+   write, at twenty widths, in Chrome.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.house {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 1rem;
+  row-gap: 0.35rem;
+  align-items: start;
+  padding: 0.75rem 0.9rem 0.8rem;
+  border: 1px solid var(--edge);
+  border-left: 2px solid var(--amber);
+  border-radius: 8px 8px 3px 3px;
+  background: linear-gradient(180deg, var(--panel-hi), var(--panel));
+}
+
+.house__head {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 0;
+}
+
+.house__line {
+  grid-column: 1 / -1;
+  margin: 0;
+  min-height: calc(4 * 1.4em);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 30rem) {
+  .house__line {
+    min-height: calc(3 * 1.4em);
+  }
+}
+
+@media (min-width: 44rem) {
+  .house__line {
+    min-height: calc(2 * 1.4em);
+    font-size: var(--text-md);
+  }
+}
+
+.house__change {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+/* The state is `aria-expanded`'s to say; this only draws it. The label stays
+   "Change" so the button never changes width. */
+.house__change::after {
+  content: '';
+  display: inline-block;
+  width: 0.45em;
+  height: 0.45em;
+  margin-left: 0.7em;
+  border: solid currentcolor;
+  border-width: 0 2px 2px 0;
+  transform: translateY(-0.18em) rotate(45deg);
+}
+
+.house__change[aria-expanded='true']::after {
+  transform: translateY(0.08em) rotate(-135deg);
+}
+
+.house__pickers {
+  padding-block: 0.75rem 0.5rem;
+}
+
 /* ── Question head ──────────────────────────────────────────────────────── */
 
 /*

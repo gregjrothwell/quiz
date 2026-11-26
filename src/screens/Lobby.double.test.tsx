@@ -40,15 +40,16 @@ function lobby(room: RoomState, isQuizmaster: boolean, onStart = vi.fn()) {
       onLeave={noop}
     />,
   );
+  if (isQuizmaster) fireEvent.click(screen.getByRole('button', { name: 'Change' }));
   return onStart;
 }
 
 const doubleChoice = () => screen.queryByRole('button', { name: /^(New ?)?The Double/ });
 
-/** The tenth argument `onStart` was called with: whether the round is a double. */
+/** Whether the plan `onStart` was called with is a double. */
 function startedAsDouble(onStart: ReturnType<typeof vi.fn>): unknown {
-  const call = onStart.mock.calls.at(-1) ?? [];
-  return call.at(9);
+  const [, plan] = onStart.mock.calls.at(-1) ?? [];
+  return plan?.doubleEnabled;
 }
 
 describe('the Double in the lobby', () => {

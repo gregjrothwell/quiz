@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, test, vi } from 'vitest';
+import { HOUSE_DEFAULTS, type RoundSettings } from '../engine/houseRound';
 import { createRoom, type RoomState } from '../engine/state';
 import type { PackId, PackSummary } from '../questions/types';
 import { Lobby } from './Lobby';
@@ -26,7 +27,8 @@ const SECOND_HALF: RoomState = {
   double: { gameId: 'first-half', scores: { greg: 6_000, priya: 3_000 } },
 };
 
-function lobby(room: RoomState, lastDeal: { count: number; level: 'easy' | 'ramp' } | null = null) {
+/** The lobby with Change open, in a room that has played a round unless told otherwise. */
+function lobby(room: RoomState, remembered: RoundSettings | null = null, played = true) {
   const onStart = vi.fn();
   render(
     <Lobby
@@ -35,24 +37,25 @@ function lobby(room: RoomState, lastDeal: { count: number; level: 'easy' | 'ramp
       isQuizmaster
       packs={PACKS}
       busy={false}
-      lastDeal={lastDeal}
+      played={played}
+      remembered={remembered}
       onVote={noop}
       onStart={onStart}
       onLeave={noop}
     />,
   );
+  press(/^Change$/);
   return onStart;
 }
 
 const button = (name: RegExp) => screen.getByRole('button', { name });
 const press = (name: RegExp) => fireEvent.click(button(name));
 
-/** What `onStart` was given, by name. Positional, so the order is pinned here too. */
+/** The plan `onStart` was given. */
 function started(onStart: ReturnType<typeof vi.fn>) {
   press(/Science/);
   press(/Start the show/);
-  const [, count, level, durationSecs, wager, steal, , standoff, chaser, double] = onStart.mock.calls.at(-1) ?? [];
-  return { count, level, durationSecs, wager, steal, standoff, chaser, double };
+  return onStart.mock.calls.at(-1)?.[1];
 }
 
 describe('How it ends', () => {
@@ -61,13 +64,13 @@ describe('How it ends', () => {
     press(/^(New ?)?Share or Shaft/);
     press(/Played for stakes/);
     expect(button(/^(New ?)?Share or Shaft/)).toHaveAttribute('aria-pressed', 'false');
-    expect(started(onStart)).toMatchObject({ wager: true, standoff: false });
+    expect(started(onStart)).toMatchObject({ wagerEnabled: true, standoffEnabled: false });
   });
 
   test('a fresh room ends on the last answer, with neither', () => {
     const onStart = lobby(FRESH);
     expect(button(/On the last answer/)).toHaveAttribute('aria-pressed', 'true');
-    expect(started(onStart)).toMatchObject({ wager: false, standoff: false });
+    expect(started(onStart)).toMatchObject({ wagerEnabled: false, standoffEnabled: false });
   });
 
   test('Survey Says offers no stakes, and a stake already picked does not carry onto it', () => {
@@ -76,19 +79,19 @@ describe('How it ends', () => {
     expect(button(/Played for stakes/)).toBeDisabled();
     expect(button(/On the last answer/)).toHaveAttribute('aria-pressed', 'true');
     press(/Start the show/);
-    expect(onStart.mock.calls.at(-1)?.[4]).toBe(false);
+    expect(onStart.mock.calls.at(-1)?.[1]).toMatchObject({ wagerEnabled: false });
   });
 });
 
 describe('the next lobby starts from the last round', () => {
   test('the second half keeps Share or Shaft, untouched (the bug: it silently never played)', () => {
     const onStart = lobby({ ...SECOND_HALF, standoffEnabled: true });
-    expect(started(onStart)).toMatchObject({ standoff: true, double: true });
+    expect(started(onStart)).toMatchObject({ standoffEnabled: true, doubleEnabled: true });
   });
 
   test('stakes, steals, Mr Fries and the clock are all kept', () => {
     const onStart = lobby({ ...FRESH, wagerEnabled: true, stealEnabled: true, chaserEnabled: true, durationSecs: 15 });
-    expect(started(onStart)).toMatchObject({ wager: true, steal: true, chaser: true, durationSecs: 15 });
+    expect(started(onStart)).toMatchObject({ wagerEnabled: true, stealEnabled: true, chaserEnabled: true, durationSecs: 15 });
   });
 
   test('the clock kept is the answering time, not the window with the lead-in on it (PROJ-179)', () => {
@@ -98,22 +101,17 @@ describe('the next lobby starts from the last round', () => {
 
   test('both on from an older room reads as Share or Shaft', () => {
     const onStart = lobby({ ...FRESH, wagerEnabled: true, standoffEnabled: true });
-    expect(started(onStart)).toMatchObject({ wager: false, standoff: true });
+    expect(started(onStart)).toMatchObject({ wagerEnabled: false, standoffEnabled: true });
   });
 
   test('the length and the level this device last dealt are kept', () => {
-    const onStart = lobby(FRESH, { count: 20, level: 'easy' });
-    expect(started(onStart)).toMatchObject({ count: 20, level: 'easy' });
-  });
-
-  test('a length the buttons do not offer falls back rather than showing nothing lit', () => {
-    const onStart = lobby(FRESH, { count: 7, level: 'ramp' });
-    expect(started(onStart)).toMatchObject({ count: 15 });
+    const onStart = lobby(FRESH, { ...HOUSE_DEFAULTS, count: 20, level: 'medium' });
+    expect(started(onStart)).toMatchObject({ count: 20, level: 'medium' });
   });
 
   test('The Double itself is not carried: Another round after one is ordinary', () => {
     const onStart = lobby({ ...FRESH, standoffEnabled: true, doubleEnabled: false, double: null });
-    expect(started(onStart)).toMatchObject({ double: false });
+    expect(started(onStart)).toMatchObject({ doubleEnabled: false });
   });
 });
 

@@ -3,6 +3,7 @@ import { expect, test, type Browser, type Page } from '@playwright/test';
 import { answersLanded } from './answers';
 import { setEmulatorFlag } from './emulators';
 import { isolateFiles } from './isolate';
+import { setRound } from './lobby';
 import { admin, seedVault, until } from './nodeClient';
 
 isolateFiles();
@@ -43,7 +44,7 @@ test('the answers land together, two seconds in, and the times shown leave it ou
   await ann.getByRole('button', { name: 'Join the round' }).click();
 
   await host.locator('button.pack', { has: host.locator('.pack__title', { hasText: 'General Knowledge' }) }).click();
-  await host.locator('button.pick', { hasText: '10 seconds' }).click();
+  await setRound(host, { picks: ['10 seconds'] });
   await host.getByRole('button', { name: 'Start the show' }).click();
   await host.getByRole('button', { name: 'Start the round' }).click();
 

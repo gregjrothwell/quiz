@@ -19,6 +19,7 @@ import { writeClientError } from '../src/lib/clientErrors';
 import { toPersisted } from '../src/lib/roomDoc';
 import { chaserNew, playToFinal, readRoom, startRound, twoSeats, uidOf } from './cannonRounds';
 import { isolateFiles } from './isolate';
+import { openPickers } from './lobby';
 import { admin, player, until } from './nodeClient';
 
 isolateFiles();
@@ -166,7 +167,8 @@ test('the whole path: a shot and Mr Fries, in the lobby, on the standings, kept,
 
   const { host, other: bea, code } = await twoSeats(browser);
 
-  // B2: the quizmaster sees the section, the member does not.
+  // B2: the quizmaster sees the section, behind Change (docs/decisions/house-round.md); the member does not.
+  await openPickers(host);
   await expect(host.getByText('Slop Cannon', { exact: true })).toBeVisible();
   await expect(bea.getByText('Slop Cannon', { exact: true })).toHaveCount(0);
 
