@@ -3,8 +3,10 @@ import { resolve } from 'node:path';
 
 import { expect, test, type Browser, type Page } from '@playwright/test';
 
+import { answersLanded } from './answers';
 import { setEmulatorFlag } from './emulators';
 import { isolateFiles } from './isolate';
+import { setRound } from './lobby';
 import { admin, seedVault, until } from './nodeClient';
 
 isolateFiles();
@@ -123,9 +125,7 @@ test('the host makes the same writes, start to podium, through a Share or Shaft 
     });
 
   await host.locator('button.pack', { has: host.locator('.pack__title', { hasText: 'General Knowledge' }) }).click();
-  await host.getByRole('button', { name: '10', exact: true }).click();
-  await host.locator('button.pick', { hasText: '10 seconds' }).click();
-  await host.locator('button.pick', { hasText: 'Share or Shaft' }).click();
+  await setRound(host, { questions: 10, picks: ['10 seconds', 'Share or Shaft'] });
   await host.getByRole('button', { name: 'Start the show' }).click();
   await host.getByRole('button', { name: 'Start the round' }).click();
   await until(() => admin().doc(`rooms/${code}`).get(), (snapshot) => snapshot.get('phase') === 'question');
@@ -142,7 +142,7 @@ test('the host makes the same writes, start to podium, through a Share or Shaft 
     // Everyone answers A, in the same order, a beat apart, once per question.
     if (phase === 'question' && answered !== key) {
       for (const page of [host, ann, bob]) {
-        await expect(page.locator('.podium')).toBeVisible();
+        await answersLanded(page);
         await page.keyboard.press('a');
         await page.keyboard.press('Enter');
         await page.waitForTimeout(400);

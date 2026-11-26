@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { NewSticker } from '../components/NewSticker';
 import { QrCode } from '../components/QrCode';
 import { RoomLink } from '../components/RoomLink';
@@ -6,7 +6,17 @@ import { SoundCheck } from '../components/SoundCheck';
 import { TmdbNotice } from '../components/TmdbCredit';
 import { WhatsNewButton } from '../components/WhatsNewButton';
 import { joinLink } from '../engine/roomCode';
-import { toLoaded, type Loaded, type Shot } from '../engine/cannon';
+import type { Shot } from '../engine/cannon';
+import {
+  availableFor,
+  LEVEL_TITLE,
+  planRound,
+  ROUND_LENGTHS,
+  roundLine,
+  startingSettings,
+  type RoundPlan,
+  type RoundSettings,
+} from '../engine/houseRound';
 import {
   leadingPacks,
   nextVote,
@@ -20,21 +30,16 @@ import { SQUADS } from '../engine/squad';
 import { rememberSquad, rememberedSquad } from '../lib/rememberedSquad';
 import { play, useSound } from '../lib/sound';
 import { updatesNotice, updatesSeen, UPDATES, type UpdatesNotice } from '../lib/updates';
-import {
-  DEFAULT_DURATION_SECS,
-  DURATION_CHOICES,
-  LEVELS,
-  type Level,
-  type RoomState,
-} from '../engine/state';
+import { DURATION_CHOICES, LEVELS, type Level, type RoomState } from '../engine/state';
 import { isNewMode, isNewRound, todayIso, type LobbyMode } from '../questions/newRounds';
 import { FEATURED_PACK, shelvePacks } from '../questions/shelves';
 import { fixedDurationFor, packNeedsSound, type PackId, type PackSummary } from '../questions/types';
 
-const ROUND_LENGTHS = [10, 15, 20, 25] as const;
-
-/** How a round is decided. Stakes and Share or Shaft are the same decision to the office. */
-type Ending = 'top' | 'stakes' | 'standoff';
+/**
+ * The modes with a button behind Change on every pack, so a new one can be
+ * announced beside it. The jigsaw's button is Fine Art's alone.
+ */
+const MODES_BEHIND_CHANGE: readonly LobbyMode[] = ['ladder', 'stakes', 'standoff', 'double', 'steal', 'chaser'];
 
 /**
  * Below this multiple of the round length a level's pool is thin enough that
@@ -61,26 +66,14 @@ const DURATION_META: Record<number, { title: string; blurb: string }> = {
   20: { title: 'Generous', blurb: 'For a harder set' },
 };
 
-const LEVEL_META: Record<Level, { title: string; blurb: string }> = {
-  mixed: { title: 'As it comes', blurb: 'Whatever the pack deals' },
-  easy: { title: 'Gentle', blurb: 'Warm-up questions' },
-  medium: { title: 'Standard', blurb: 'The house level' },
-  hard: { title: 'Fiendish', blurb: 'For the specialists' },
-  ramp: { title: 'The Ladder', blurb: 'Builds across the round' },
+/** Under each level's title, which is `LEVEL_TITLE` so the line uses the same name. */
+const LEVEL_BLURB: Record<Level, string> = {
+  mixed: 'Whatever the pack deals',
+  easy: 'Warm-up questions',
+  medium: 'The house level',
+  hard: 'For the specialists',
+  ramp: 'Builds across the round',
 };
-
-/**
- * How many questions a pack can supply at a given level. `mixed` and `ramp`
- * draw on everything; a flat level is capped by its own bucket, which is what
- * stops "Fiendish, 20" quietly turning into a six-question round.
- */
-export function availableFor(pack: PackSummary, level: Level, jigsaw = false): number {
-  if (jigsaw && (level === 'mixed' || level === 'ramp') && pack.jigsawCount != null) {
-    return pack.jigsawCount;
-  }
-  if (level === 'mixed' || level === 'ramp') return pack.count;
-  return pack.counts[level];
-}
 
 interface LobbyProps {
   room: RoomState;
@@ -99,8 +92,13 @@ interface LobbyProps {
   autoJoined?: boolean;
   /** Only shown, and only alongside {@link autoJoined}. */
   squad?: string;
-  /** The length and level this device last dealt in this room, to start from. */
-  lastDeal?: { count: number; level: Level } | null;
+  /**
+   * Whether this room has played a round. Its last one then beats this device's
+   * memory for everything the room carries (docs/decisions/house-round.md).
+   */
+  played?: boolean;
+  /** How this device ran its last round, in any room. Null on a brand-new device. */
+  remembered?: RoundSettings | null;
   /**
    * Writes the pick onto this device's room entry. Storage is remembered here;
    * the room write is the caller's, because only `useRoom` can touch the seat.
@@ -110,19 +108,11 @@ interface LobbyProps {
   onVote?: (packId: PackId | null) => void;
   /** The quizmaster highlighting a pack, so the room can see it. */
   onBrowse?: (packId: PackId) => void;
-  onStart: (
-    packId: PackId,
-    count: number,
-    level: Level,
-    durationSecs: number,
-    wagerEnabled: boolean,
-    stealEnabled: boolean,
-    jigsawEnabled: boolean,
-    standoffEnabled: boolean,
-    chaserEnabled: boolean,
-    doubleEnabled: boolean,
-    cannon: Loaded,
-  ) => void;
+  /**
+   * `plan` is what will be played, and the line above the packs is made from it.
+   * `settings` is what was picked, which is what the device remembers.
+   */
+  onStart: (packId: PackId, plan: RoundPlan, settings: RoundSettings) => void;
   /**
    * The Slop Cannon's shots this device may offer: registered, and not pulled
    * by the kill switch (docs/decisions/slop-cannon.md, B2). Empty, the section
@@ -149,7 +139,8 @@ export function Lobby({
   busy,
   autoJoined = false,
   squad = '',
-  lastDeal,
+  played = false,
+  remembered = null,
   onPickSquad,
   onVote,
   onBrowse,
@@ -165,37 +156,34 @@ export function Lobby({
   const [packId, setPackId] = useState<PackId | null>(null);
   /*
     Every setting starts from the room's last round, for the second half and for
-    Another round. This component is remounted each time, so they used to reset,
-    and untouched they then overwrote the room at Start: Share or Shaft picked with
-    The Double was promised for the end and silently never played.
-    docs/decisions/round-end.md.
+    Another round, and from this device's last round in a new room
+    (`startingSettings`). This component is remounted each time, so they used to
+    reset, and untouched they then overwrote the room at Start: Share or Shaft
+    picked with The Double was promised for the end and silently never played.
+    docs/decisions/round-end.md, docs/decisions/house-round.md.
 
     Not the pack (the vote is about the next one) and not The Double (Another round
     after one is an ordinary round; morning-double.md, rule 10).
-  */
-  const [count, setCount] = useState<number>(
-    lastDeal && (ROUND_LENGTHS as readonly number[]).includes(lastDeal.count) ? lastDeal.count : 15,
-  );
-  const [level, setLevel] = useState<Level>(lastDeal?.level ?? 'ramp');
-  /*
-    One decision, so one picker. Across 75 real rounds: stakes 32, a final 26,
-    neither 17, both together never (read live, 5 Nov 2026).
 
-    Stakes and Share or Shaft are both opt-in, for the reason the answer window is
-    a choice: a good round can be lost on one question, or on a conversation, and
-    the answer is that the room agreed to it before the round started. Fixed for
-    the round once the show starts. See docs/decisions/share-or-shaft.md.
+    How it ends is one picker. Across 75 real rounds: stakes 32, a final 26, neither
+    17, both together never (read live, 5 Nov 2026). Stakes and Share or Shaft are
+    both opt-in, for the reason the answer window is a choice: a good round can be
+    lost on one question, or on a conversation, and the answer is that the room
+    agreed to it before the round started. Fixed for the round once the show starts.
+    See docs/decisions/share-or-shaft.md.
+
+    The steal is opt-in too, but it is a different kind of choice: it runs on every
+    question rather than the last, so it changes the whole round's shape rather than
+    adding a moment to the end of it.
+
+    The chaser is Beat the Chaser: the room against Mr Fries. Not on Survey Says (v1).
   */
-  const [ending, setEnding] = useState<Ending>(
-    room.standoffEnabled ? 'standoff' : room.wagerEnabled ? 'stakes' : 'top',
-  );
-  /*
-    Off by default and opt-in like the ending above, but it is a different kind of
-    choice and the room should know which: this one runs on every question rather
-    than the last, so it changes the whole round's shape rather than adding a
-    moment to the end of it.
-  */
-  const [steal, setSteal] = useState(room.stealEnabled);
+  const [settings, setSettings] = useState<RoundSettings>(() => startingSettings(room, played, remembered));
+  const { count, steal, chaser } = settings;
+  const pick = (change: Partial<RoundSettings>) => setSettings((now) => ({ ...now, ...change }));
+  // The pickers, behind Change. Shut in every lobby: the line is what says the round.
+  const [changing, setChanging] = useState(false);
+  const houseId = useId();
   /*
     The Double (docs/decisions/morning-double.md): a choice for round one,
     locked on for round two, which is a double whatever is chosen here.
@@ -203,14 +191,9 @@ export function Lobby({
   const roundTwo = room.double !== null;
   const [doubleChoice, setDoubleChoice] = useState(false);
   const double = roundTwo || doubleChoice;
-  // Beat the Chaser: the room against Mr Fries. Not on Survey Says (v1).
-  const [chaser, setChaser] = useState(room.chaserEnabled);
   const [jigsaw, setJigsaw] = useState(false);
   // The Slop Cannon: each shot unloaded until the quizmaster loads it (B2).
   const [loaded, setLoaded] = useState<ReadonlySet<string>>(() => new Set());
-  const [durationSecs, setDurationSecs] = useState<number>(
-    (DURATION_CHOICES as readonly number[]).includes(room.durationSecs) ? room.durationSecs : DEFAULT_DURATION_SECS,
-  );
   /*
     The way out for somebody who never got asked.
 
@@ -258,23 +241,100 @@ export function Lobby({
     shownSizeRef.current = roomSize;
   }, [roomSize, isQuizmaster]);
 
+  /*
+    The card that was pressed stays under the pointer. The pickers are above the
+    packs, and a pack can change their height: with them open, Survey Says takes
+    out four and the cards jumped 516px up a laptop (Chrome, 25 Nov 2026), which
+    put a different pack under the next click. Before the paint, so it is not seen.
+  */
+  const pressedRef = useRef<{ card: HTMLElement; top: number } | null>(null);
+  useLayoutEffect(() => {
+    const pressed = pressedRef.current;
+    pressedRef.current = null;
+    if (!pressed) return;
+    const moved = pressed.card.getBoundingClientRect().top - pressed.top;
+    if (moved !== 0) window.scrollBy({ top: moved, behavior: 'instant' });
+  }, [packId]);
+
   const selected = packs.find((pack) => pack.id === packId);
   // Survey Says deals its own ten and plays without stakes or steals (v1).
   const survey = packId === 'survey';
-  const wager = ending === 'stakes' && !survey;
-  const standoff = ending === 'standoff';
-  const available = selected ? availableFor(selected, level, jigsaw) : 0;
-  const effectiveCount = Math.min(count, available);
-  // A pack that fixes its own window overrides the picker without forgetting
-  // what was picked, so switching back to another pack restores it.
   const lockedDuration = packId === null ? null : fixedDurationFor(packId);
-  const effectiveDuration = lockedDuration ?? durationSecs;
+  /*
+    The round Start sends, and the only thing the line is made from. Only what is
+    still on offer is in it: a shot pulled since it was loaded is not fired.
+  */
+  const plan = planRound(settings, {
+    pack: selected ?? null,
+    jigsaw,
+    double,
+    shots: shots.filter((shot) => loaded.has(shot.id)),
+  });
+  const { wagerEnabled: wager, standoffEnabled: standoff } = plan;
   const link = joinLink(window.location.origin, import.meta.env.BASE_URL, room.code);
   const tally = tallyPackVotes(room.packVotes, room.players);
   const leading = leadingPacks(tally);
   const yourVote = youUid ? room.packVotes[youUid] : undefined;
   const voteTaps = Math.max(tapsHere, youUid ? (room.voteTaps[youUid] ?? 0) : 0);
   const votesLeft = tapsLeft(voteTaps);
+
+  /*
+    Squad and sound: a player's own, and set once. Above the vote for a player, as
+    they always were. Under the packs for the quizmaster, whose packs follow the
+    room (PROJ-183).
+  */
+  const yourSetUp = (
+    <>
+      <label className="field">
+        <span className="field__label">Your squad — for the live board</span>
+        <select
+          className="input"
+          value={pickedSquad}
+          onChange={(event) => {
+            const next = event.target.value;
+            setPickedSquad(next);
+            rememberSquad(next);
+            onPickSquad?.(next);
+          }}
+        >
+          <option value="">Not saying</option>
+          {SQUADS.map((name) => (
+            <option key={name} value={name}>
+              {name}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      {/*
+        A muted player cannot hear a melody or an iTunes preview at all. The
+        preference lives in localStorage and the AudioContext needs a gesture,
+        so this is the place that can actually fix both — a click on this
+        button unmutes and unlocks. Start is blocked while a sound pack is
+        selected and sound is still off.
+      */}
+      {muted ? (
+        <div className="stack">
+          <p className="muted hint">
+            Sound is off. Name that Tune and Classical are silent unless you turn it on,
+            and Sleeves plays a song from the album.
+          </p>
+          <div className="btn-row">
+            <button type="button" className="btn" onClick={toggle}>
+              Turn sound on
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {/*
+        For every player, whatever gets picked: nobody but the quizmaster
+        can see the pack until the round starts. See
+        docs/decisions/sound-check.md.
+      */}
+      <SoundCheck />
+    </>
+  );
 
   return (
     <>
@@ -363,58 +423,368 @@ export function Lobby({
           </div>
         ) : null}
 
-        <label className="field">
-          <span className="field__label">Your squad — for the live board</span>
-          <select
-            className="input"
-            value={pickedSquad}
-            onChange={(event) => {
-              const next = event.target.value;
-              setPickedSquad(next);
-              rememberSquad(next);
-              onPickSquad?.(next);
-            }}
-          >
-            <option value="">Not saying</option>
-            {SQUADS.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        {/*
-          A muted player cannot hear a melody or an iTunes preview at all. The
-          preference lives in localStorage and the AudioContext needs a gesture,
-          so this is the place that can actually fix both — a click on this
-          button unmutes and unlocks. Start is blocked while a sound pack is
-          selected and sound is still off.
-        */}
-        {muted ? (
-          <div className="stack">
-            <p className="muted hint">
-              Sound is off. Name that Tune and Classical are silent unless you turn it on,
-              and Sleeves plays a song from the album.
-            </p>
-            <div className="btn-row">
-              <button type="button" className="btn" onClick={toggle}>
-                Turn sound on
-              </button>
-            </div>
-          </div>
-        ) : null}
-
-        {/*
-          For every player, whatever gets picked: nobody but the quizmaster
-          can see the pack until the round starts. See
-          docs/decisions/sound-check.md.
-        */}
-        <SoundCheck />
+        {isQuizmaster ? null : yourSetUp}
       </section>
 
       {isQuizmaster ? (
         <section className="stack stack--loose">
+          <div className="stack">
+            <div className="house" role="group" aria-labelledby={`${houseId}-label`}>
+              <p className="house__head">
+                <span className="eyebrow" id={`${houseId}-label`}>
+                  This round
+                </span>
+                {MODES_BEHIND_CHANGE.some((mode) => isNewMode(mode, today)) ? <NewSticker /> : null}
+              </p>
+              {/*
+                Every setting that is on, in the words of the round Start will
+                send. Polite, because choosing a pack can change it: Survey Says
+                takes no stakes, and the picker that would show that is shut.
+              */}
+              <p className="house__line" id={`${houseId}-line`} aria-live="polite">
+                {/* A hard space before the dot, so no row of a phone's line begins with one. */}
+                {roundLine(packId, plan, shots).join('\u00a0· ')}
+              </p>
+              <button
+                type="button"
+                className="btn btn--ghost btn--small house__change"
+                aria-expanded={changing}
+                aria-controls={`${houseId}-pickers`}
+                aria-describedby={`${houseId}-line`}
+                onClick={() => setChanging((now) => !now)}
+              >
+                Change
+              </button>
+            </div>
+
+            <div id={`${houseId}-pickers`} hidden={!changing}>
+              <div className="stack stack--loose house__pickers">
+                {survey ? null : (
+                  <>
+                  <div className="stack">
+                    <p className="eyebrow">Set the level</p>
+                    <div className="picker">
+                      {LEVELS.map((option) => {
+                        const supply = selected ? availableFor(selected, option, jigsaw) : null;
+                        return (
+                          <button
+                            type="button"
+                            key={option}
+                            className="pick"
+                            aria-pressed={option === plan.level}
+                            disabled={supply === 0}
+                            onClick={() => pick({ level: option })}
+                          >
+                            {option === 'ramp' ? modeSticker('ladder', today) : null}
+                            <b>{LEVEL_TITLE[option]}</b>
+                            <span>{LEVEL_BLURB[option]}</span>
+                            {supply === null ? null : (
+                              <i>
+                                {supply < count
+                                  ? `${supply} — short of ${count}`
+                                  : supply < count * THIN_SUPPLY_MULTIPLE
+                                    ? `${supply} — expect repeats`
+                                    : `${supply.toLocaleString('en-GB')} available`}
+                              </i>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  </>
+                )}
+
+                <div className="stack">
+                  <p className="eyebrow">Time to answer</p>
+                  <div className="picker">
+                    {DURATION_CHOICES.map((option) => {
+                      const meta = DURATION_META[option];
+                      return (
+                        <button
+                          type="button"
+                          key={option}
+                          className="pick"
+                          aria-pressed={option === plan.durationSecs}
+                          disabled={lockedDuration !== null && option !== lockedDuration}
+                          onClick={() => pick({ durationSecs: option })}
+                        >
+                          <b>{meta?.title ?? `${option}s`}</b>
+                          <span>{meta?.blurb}</span>
+                          <i>{option} seconds</i>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {/*
+                    Worth saying, because it is the one thing about this game that
+                    surprises people who have played Polly: nobody can cut a question
+                    short, including the quizmaster. The answer is not on any device
+                    until the window has closed. See docs/decisions/answer-window.md.
+                  */}
+                  <p className="muted hint">
+                    {lockedDuration !== null
+                      ? `${selected?.title ?? 'This pack'} always runs at ${lockedDuration} seconds — any longer and the clips start singing their own titles. `
+                      : null}
+                    Every question runs the full {plan.durationSecs} seconds — the answer is locked away
+                    until then, so it can&rsquo;t be revealed early.
+                  </p>
+                </div>
+
+                {survey ? (
+                  <p className="muted hint">
+                    Survey Says is always ten questions: five about the room, then the same five
+                    again — what did most of you say? No stakes and no steals on this one.
+                  </p>
+                ) : (
+                  <>
+                  <div className="stack">
+                    <p className="eyebrow">Questions this round</p>
+                    <div className="btn-row">
+                      {ROUND_LENGTHS.map((option) => (
+                        <button
+                          type="button"
+                          key={option}
+                          className={option === count ? 'btn' : 'btn btn--ghost'}
+                          onClick={() => pick({ count: option })}
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                    {selected && plan.count < count ? (
+                      <p className="muted hint">
+                        {selected.title} has {plan.count} at this level, so the round will be{' '}
+                        {plan.count}.
+                      </p>
+                    ) : null}
+                  </div>
+
+                  </>
+                )}
+
+                <div className="stack">
+                  <p className="eyebrow">How it ends</p>
+                  <div className="picker">
+                    <button
+                      type="button"
+                      className="pick"
+                      aria-pressed={!wager && !standoff}
+                      onClick={() => pick({ ending: 'top' })}
+                    >
+                      <b>On the last answer</b>
+                      <span>Top of the board wins</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="pick"
+                      aria-pressed={wager}
+                      disabled={survey}
+                      onClick={() => pick({ ending: 'stakes' })}
+                    >
+                      {modeSticker('stakes', today)}
+                      <b>Played for stakes</b>
+                      <span>Bet your points on the last one</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="pick"
+                      aria-pressed={standoff}
+                      onClick={() => pick({ ending: 'standoff' })}
+                    >
+                      {modeSticker('standoff', today)}
+                      <b>Share or Shaft</b>
+                      <span>The top two play for everything</span>
+                    </button>
+                  </div>
+                  {wager ? (
+                    <p className="muted hint">
+                      Everyone picks how much of their own score to stake before they answer. Get it
+                      right and you win it; get it wrong and you lose it. A player on nothing who
+                      stakes still puts 500 on the line.
+                      {double ? ' In The Double, the last question of each half is played this way.' : ''}
+                    </p>
+                  ) : null}
+                  {standoff ? (
+                    <p className="muted hint">
+                      After the last question the top two put both their scores in one pot, talk it
+                      over, then pick in secret. Both share: half each. One shafts: they take the lot.
+                      Both shaft: both lose it all, and whoever is third wins. It counts for the season.
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="stack">
+                  <p className="eyebrow">How long</p>
+                  <div className="picker">
+                    <button
+                      type="button"
+                      className="pick"
+                      aria-pressed={!double}
+                      disabled={roundTwo}
+                      onClick={() => setDoubleChoice(false)}
+                    >
+                      <b>One round</b>
+                      <span>This round on its own</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="pick"
+                      aria-pressed={double}
+                      disabled={roundTwo}
+                      onClick={() => setDoubleChoice(true)}
+                    >
+                      {modeSticker('double', today)}
+                      <b>The Double</b>
+                      <span>Two halves, one total</span>
+                    </button>
+                  </div>
+                  {double ? (
+                    <p className="muted hint">
+                      {roundTwo
+                        ? 'This is the second half. Its scores are added to the first, and the board ranks the total.'
+                        : 'Two halves that add up. This one ends at half-time, then the second half adds to it, and Share or Shaft, if it is on, is played for the whole total at the end.'}
+                    </p>
+                  ) : null}
+                </div>
+
+                {survey ? null : (
+                  <>
+                  <div className="stack">
+                    <p className="eyebrow">Chasing the leader</p>
+                    <div className="picker">
+                      <button
+                        type="button"
+                        className="pick"
+                        aria-pressed={!steal}
+                        onClick={() => pick({ steal: false })}
+                      >
+                        <b>Nobody loses points</b>
+                        <span>You only ever score your own</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="pick"
+                        aria-pressed={steal}
+                        onClick={() => pick({ steal: true })}
+                      >
+                        {modeSticker('steal', today)}
+                        <b>First right answer steals</b>
+                        <span>Take {STEAL_SHARE}% off whoever is top</span>
+                      </button>
+                    </div>
+                    {steal ? (
+                      <p className="muted hint">
+                        Every question, whoever gets it right first takes {STEAL_SHARE}% of the leader’s
+                        score off them. The leader cannot steal from themselves, so staying in front is
+                        its own risk. Nothing is created or destroyed — the points just change hands.
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div className="stack">
+                    <p className="eyebrow">Against the house</p>
+                    <div className="picker">
+                      <button
+                        type="button"
+                        className="pick"
+                        aria-pressed={!chaser}
+                        onClick={() => pick({ chaser: false })}
+                      >
+                        <b>Just us</b>
+                        <span>The usual round</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="pick"
+                        aria-pressed={chaser}
+                        onClick={() => pick({ chaser: true })}
+                      >
+                        {modeSticker('chaser', today)}
+                        <b>Against Mr Fries 🍟</b>
+                        <span>The office versus the house</span>
+                      </button>
+                    </div>
+                    {chaser ? (
+                      <p className="muted hint">
+                        Mr Fries answers every question too, and gets it right about as often as this
+                        office does on one like it. The room takes a question when more than half of
+                        you get it right. Your own scores carry on as normal.
+                      </p>
+                    ) : null}
+                  </div>
+                  </>
+                )}
+
+                {packId === 'picture' ? (
+                  <div className="stack">
+                    <p className="eyebrow">How the pictures show</p>
+                    <div className="picker">
+                      <button
+                        type="button"
+                        className="pick"
+                        aria-pressed={!jigsaw}
+                        onClick={() => setJigsaw(false)}
+                      >
+                        <b>As stills</b>
+                        <span>The whole image from the start</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="pick"
+                        aria-pressed={jigsaw}
+                        onClick={() => setJigsaw(true)}
+                      >
+                        {modeSticker('jigsaw', today)}
+                        <b>As a 3×3 jigsaw</b>
+                        <span>Tiles settle as the clock runs</span>
+                      </button>
+                    </div>
+                    {jigsaw ? (
+                      <p className="muted hint">
+                        Same pictures, scrambled the same way on every device. Answering early is
+                        reading a more broken image — that is the rank bonus doing its job.
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {shots.length > 0 ? (
+                  <div className="stack">
+                    <p className="eyebrow">Slop Cannon</p>
+                    <p className="muted hint">
+                      Unfinished ideas, tried on this round only. Everyone gets a Keep or Bin at the end.
+                    </p>
+                    <div className="picker">
+                      {shots.map((shot) => {
+                        const on = loaded.has(shot.id);
+                        return (
+                          <button
+                            key={shot.id}
+                            type="button"
+                            className="pick"
+                            aria-pressed={on}
+                            onClick={() =>
+                              setLoaded((current) => {
+                                const next = new Set(current);
+                                if (on) next.delete(shot.id);
+                                else next.add(shot.id);
+                                return next;
+                              })
+                            }
+                          >
+                            <b>{shot.title}</b>
+                            <span>{shot.blurb}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </div>
+
           <div className="stack">
             <p className="eyebrow">Choose a set</p>
             {shelvePacks(packs).map((shelf) => (
@@ -427,7 +797,9 @@ export function Lobby({
                       key={pack.id}
                       className={packClass(pack.id, leading, null)}
                       aria-pressed={pack.id === packId}
-                      onClick={() => {
+                      onClick={(event) => {
+                        const card = event.currentTarget;
+                        pressedRef.current = { card, top: card.getBoundingClientRect().top };
                         setPackId(pack.id);
                         if (pack.id !== 'picture') setJigsaw(false);
                         onBrowse?.(pack.id);
@@ -447,329 +819,7 @@ export function Lobby({
             ))}
           </div>
 
-          {survey ? null : (
-            <>
-            <div className="stack">
-              <p className="eyebrow">Set the level</p>
-              <div className="picker">
-                {LEVELS.map((option) => {
-                  const supply = selected ? availableFor(selected, option, jigsaw) : null;
-                  const meta = LEVEL_META[option];
-                  return (
-                    <button
-                      type="button"
-                      key={option}
-                      className="pick"
-                      aria-pressed={option === level}
-                      disabled={supply === 0}
-                      onClick={() => setLevel(option)}
-                    >
-                      {option === 'ramp' ? modeSticker('ladder', today) : null}
-                      <b>{meta.title}</b>
-                      <span>{meta.blurb}</span>
-                      {supply === null ? null : (
-                        <i>
-                          {supply < count
-                            ? `${supply} — short of ${count}`
-                            : supply < count * THIN_SUPPLY_MULTIPLE
-                              ? `${supply} — expect repeats`
-                              : `${supply.toLocaleString('en-GB')} available`}
-                        </i>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            </>
-          )}
-
-          <div className="stack">
-            <p className="eyebrow">Time to answer</p>
-            <div className="picker">
-              {DURATION_CHOICES.map((option) => {
-                const meta = DURATION_META[option];
-                return (
-                  <button
-                    type="button"
-                    key={option}
-                    className="pick"
-                    aria-pressed={option === effectiveDuration}
-                    disabled={lockedDuration !== null && option !== lockedDuration}
-                    onClick={() => setDurationSecs(option)}
-                  >
-                    <b>{meta?.title ?? `${option}s`}</b>
-                    <span>{meta?.blurb}</span>
-                    <i>{option} seconds</i>
-                  </button>
-                );
-              })}
-            </div>
-            {/*
-              Worth saying, because it is the one thing about this game that
-              surprises people who have played Polly: nobody can cut a question
-              short, including the quizmaster. The answer is not on any device
-              until the window has closed. See docs/decisions/answer-window.md.
-            */}
-            <p className="muted hint">
-              {lockedDuration !== null
-                ? `${selected?.title ?? 'This pack'} always runs at ${lockedDuration} seconds — any longer and the clips start singing their own titles. `
-                : null}
-              Every question runs the full {effectiveDuration} seconds — the answer is locked away
-              until then, so it can&rsquo;t be revealed early.
-            </p>
-          </div>
-
-          {survey ? (
-            <p className="muted hint">
-              Survey Says is always ten questions: five about the room, then the same five
-              again — what did most of you say? No stakes and no steals on this one.
-            </p>
-          ) : (
-            <>
-            <div className="stack">
-              <p className="eyebrow">Questions this round</p>
-              <div className="btn-row">
-                {ROUND_LENGTHS.map((option) => (
-                  <button
-                    type="button"
-                    key={option}
-                    className={option === count ? 'btn' : 'btn btn--ghost'}
-                    onClick={() => setCount(option)}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-              {selected && available < count ? (
-                <p className="muted hint">
-                  {selected.title} has {available} at this level, so the round will be{' '}
-                  {effectiveCount}.
-                </p>
-              ) : null}
-            </div>
-
-            </>
-          )}
-
-          <div className="stack">
-            <p className="eyebrow">How it ends</p>
-            <div className="picker">
-              <button
-                type="button"
-                className="pick"
-                aria-pressed={!wager && !standoff}
-                onClick={() => setEnding('top')}
-              >
-                <b>On the last answer</b>
-                <span>Top of the board wins</span>
-              </button>
-              <button
-                type="button"
-                className="pick"
-                aria-pressed={wager}
-                disabled={survey}
-                onClick={() => setEnding('stakes')}
-              >
-                {modeSticker('stakes', today)}
-                <b>Played for stakes</b>
-                <span>Bet your points on the last one</span>
-              </button>
-              <button
-                type="button"
-                className="pick"
-                aria-pressed={standoff}
-                onClick={() => setEnding('standoff')}
-              >
-                {modeSticker('standoff', today)}
-                <b>Share or Shaft</b>
-                <span>The top two play for everything</span>
-              </button>
-            </div>
-            {wager ? (
-              <p className="muted hint">
-                Everyone picks how much of their own score to stake before they answer. Get it
-                right and you win it; get it wrong and you lose it. A player on nothing who
-                stakes still puts 500 on the line.
-                {double ? ' In The Double, the last question of each half is played this way.' : ''}
-              </p>
-            ) : null}
-            {standoff ? (
-              <p className="muted hint">
-                After the last question the top two put both their scores in one pot, talk it
-                over, then pick in secret. Both share: half each. One shafts: they take the lot.
-                Both shaft: both lose it all, and whoever is third wins. It counts for the season.
-              </p>
-            ) : null}
-          </div>
-
-          <div className="stack">
-            <p className="eyebrow">How long</p>
-            <div className="picker">
-              <button
-                type="button"
-                className="pick"
-                aria-pressed={!double}
-                disabled={roundTwo}
-                onClick={() => setDoubleChoice(false)}
-              >
-                <b>One round</b>
-                <span>This round on its own</span>
-              </button>
-              <button
-                type="button"
-                className="pick"
-                aria-pressed={double}
-                disabled={roundTwo}
-                onClick={() => setDoubleChoice(true)}
-              >
-                {modeSticker('double', today)}
-                <b>The Double</b>
-                <span>Two halves, one total</span>
-              </button>
-            </div>
-            {double ? (
-              <p className="muted hint">
-                {roundTwo
-                  ? 'This is the second half. Its scores are added to the first, and the board ranks the total.'
-                  : 'Two halves that add up. This one ends at half-time, then the second half adds to it, and Share or Shaft, if it is on, is played for the whole total at the end.'}
-              </p>
-            ) : null}
-          </div>
-
-          {survey ? null : (
-            <>
-            <div className="stack">
-              <p className="eyebrow">Chasing the leader</p>
-              <div className="picker">
-                <button
-                  type="button"
-                  className="pick"
-                  aria-pressed={!steal}
-                  onClick={() => setSteal(false)}
-                >
-                  <b>Nobody loses points</b>
-                  <span>You only ever score your own</span>
-                </button>
-                <button
-                  type="button"
-                  className="pick"
-                  aria-pressed={steal}
-                  onClick={() => setSteal(true)}
-                >
-                  {modeSticker('steal', today)}
-                  <b>First right answer steals</b>
-                  <span>Take {STEAL_SHARE}% off whoever is top</span>
-                </button>
-              </div>
-              {steal ? (
-                <p className="muted hint">
-                  Every question, whoever gets it right first takes {STEAL_SHARE}% of the leader’s
-                  score off them. The leader cannot steal from themselves, so staying in front is
-                  its own risk. Nothing is created or destroyed — the points just change hands.
-                </p>
-              ) : null}
-            </div>
-
-            <div className="stack">
-              <p className="eyebrow">Against the house</p>
-              <div className="picker">
-                <button
-                  type="button"
-                  className="pick"
-                  aria-pressed={!chaser}
-                  onClick={() => setChaser(false)}
-                >
-                  <b>Just us</b>
-                  <span>The usual round</span>
-                </button>
-                <button
-                  type="button"
-                  className="pick"
-                  aria-pressed={chaser}
-                  onClick={() => setChaser(true)}
-                >
-                  {modeSticker('chaser', today)}
-                  <b>Against Mr Fries 🍟</b>
-                  <span>The office versus the house</span>
-                </button>
-              </div>
-              {chaser ? (
-                <p className="muted hint">
-                  Mr Fries answers every question too, and gets it right about as often as this
-                  office does on one like it. The room takes a question when more than half of
-                  you get it right. Your own scores carry on as normal.
-                </p>
-              ) : null}
-            </div>
-            </>
-          )}
-
-          {packId === 'picture' ? (
-            <div className="stack">
-              <p className="eyebrow">How the pictures show</p>
-              <div className="picker">
-                <button
-                  type="button"
-                  className="pick"
-                  aria-pressed={!jigsaw}
-                  onClick={() => setJigsaw(false)}
-                >
-                  <b>As stills</b>
-                  <span>The whole image from the start</span>
-                </button>
-                <button
-                  type="button"
-                  className="pick"
-                  aria-pressed={jigsaw}
-                  onClick={() => setJigsaw(true)}
-                >
-                  {modeSticker('jigsaw', today)}
-                  <b>As a 3×3 jigsaw</b>
-                  <span>Tiles settle as the clock runs</span>
-                </button>
-              </div>
-              {jigsaw ? (
-                <p className="muted hint">
-                  Same pictures, scrambled the same way on every device. Answering early is
-                  reading a more broken image — that is the rank bonus doing its job.
-                </p>
-              ) : null}
-            </div>
-          ) : null}
-
-          {shots.length > 0 ? (
-            <div className="stack">
-              <p className="eyebrow">Slop Cannon</p>
-              <p className="muted hint">
-                Unfinished ideas, tried on this round only. Everyone gets a Keep or Bin at the end.
-              </p>
-              <div className="picker">
-                {shots.map((shot) => {
-                  const on = loaded.has(shot.id);
-                  return (
-                    <button
-                      key={shot.id}
-                      type="button"
-                      className="pick"
-                      aria-pressed={on}
-                      onClick={() =>
-                        setLoaded((current) => {
-                          const next = new Set(current);
-                          if (on) next.delete(shot.id);
-                          else next.add(shot.id);
-                          return next;
-                        })
-                      }
-                    >
-                      <b>{shot.title}</b>
-                      <span>{shot.blurb}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ) : null}
+          <div className="stack">{yourSetUp}</div>
 
           {/*
             In the transport, as the host's button is on every other screen. With
@@ -781,30 +831,13 @@ export function Lobby({
             type="button"
             className="btn btn--primary"
             disabled={
-              !packId
+              !selected
               || busy
               || playerEntries.length === 0
-              || effectiveCount === 0
+              || plan.count === 0
               || (packId !== null && packNeedsSound(packId) && muted)
             }
-            onClick={() =>
-              packId &&
-              onStart(
-                packId,
-                effectiveCount,
-                level,
-                effectiveDuration,
-                wager,
-                steal && !survey,
-                jigsaw,
-                standoff,
-                chaser && !survey,
-                double,
-                // Only what is still on offer: a shot pulled since it was
-                // loaded is not fired.
-                toLoaded(shots.filter((shot) => loaded.has(shot.id)).map((shot) => shot.id)),
-              )
-            }
+            onClick={() => packId && onStart(packId, plan, settings)}
           >
             {busy
               ? 'Loading questions…'

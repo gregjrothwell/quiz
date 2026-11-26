@@ -1,5 +1,5 @@
 import { doc, serverTimestamp, setDoc, type Firestore } from 'firebase/firestore/lite';
-import type { Q1TraceDoc } from '../engine/q1Trace';
+import type { Q1TraceDoc, WindowSize } from '../engine/q1Trace';
 
 /**
  * Where a device's question-one trace goes. See `src/engine/q1Trace.ts` for what
@@ -46,6 +46,20 @@ export function networkType(): string | null {
   if (typeof connection !== 'object' || connection === null) return null;
   const effective: unknown = Reflect.get(connection, 'effectiveType');
   return typeof effective === 'string' ? effective : null;
+}
+
+function finite(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+/** This window's size now, for the trace: what the office plays in (docs/decisions/window-size.md). */
+export function windowSize(): WindowSize {
+  if (typeof window === 'undefined') return { width: null, height: null, pixelRatio: null };
+  return {
+    width: finite(window.innerWidth),
+    height: finite(window.innerHeight),
+    pixelRatio: finite(window.devicePixelRatio),
+  };
 }
 
 /** A Firestore error's code, for the trace — `permission-denied` is the one that matters. */

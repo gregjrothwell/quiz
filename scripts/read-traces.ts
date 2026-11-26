@@ -8,7 +8,11 @@
  * Each line ends on a reading — `late delivery` (the device saw question one
  * seconds after the server opened it), `slow write` (on time, but its answer
  * took seconds to be acknowledged), `both` or `neither`. Why it exists, and
- * what each reading would mean for a fix: docs/decisions/cass-q1.md.
+ * what each reading would mean for a fix: docs/decisions/cass-q1.md. Taps and
+ * windows are raw: since PROJ-179 both include the two-second lead-in.
+ *
+ * `1536 × 730 @1.25` is the browser window in CSS pixels and its pixel ratio as
+ * question one arrived, a dash before PROJ-180 (docs/decisions/window-size.md).
  *
  * **Needs a service account**, as `read-games` does: the rules let no client
  * read `q1Traces`. Point `GOOGLE_APPLICATION_CREDENTIALS` at a key under

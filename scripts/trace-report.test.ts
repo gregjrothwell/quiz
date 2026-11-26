@@ -51,6 +51,30 @@ describe('formatTrace', () => {
     expect(line).toMatch(/→ slow write$/);
   });
 
+  test('prints the window as width × height @ratio', () => {
+    const at = (pixelRatioPct: number): string =>
+      formatTrace({ ...trace, innerWidth: 1_536, innerHeight: 730, pixelRatioPct }, 'Cass', 'x');
+
+    expect(at(125)).toContain('  1536 × 730 @1.25  ');
+    expect(at(100)).toContain('  1536 × 730 @1  ');
+    expect(at(263)).toContain('  1536 × 730 @2.63  ');
+  });
+
+  test('an old trace with no window still prints, with a dash and no figure made up', () => {
+    const line = formatTrace(trace, 'Cass', '2026-10-22 08:52');
+
+    expect(line).toContain('ios     —     —  ');
+    expect(line).not.toMatch(/undefined|NaN|×|@/);
+    expect(line).toContain('seen late  0.4s');
+    expect(line).toMatch(/→ slow write$/);
+  });
+
+  test('one figure missing leaves the others, and a zero is printed as a zero', () => {
+    expect(formatTrace({ ...trace, innerWidth: 1_536, innerHeight: 730 }, 'Cass', 'x')).toContain('1536 × 730 @—');
+    expect(formatTrace({ ...trace, innerHeight: 730, pixelRatioPct: 200 }, 'Cass', 'x')).toContain('— × 730 @2');
+    expect(formatTrace({ ...trace, innerWidth: 0, innerHeight: 0, pixelRatioPct: 0 }, 'Cass', 'x')).toContain('0 × 0 @0');
+  });
+
   test('says which outcome when there is no answer to time', () => {
     expect(formatTrace({ ...unacked, writes: 0 }, 'Host', 'x')).toContain('no tap');
     expect(formatTrace({ ...trace, refused: 'permission-denied' }, 'Cass', 'x')).toContain(

@@ -14,6 +14,7 @@ import { flushSpeechQueue } from './commentarySpeech';
 
 export type Cue =
   | 'lock'
+  | 'arrive'
   | 'gong'
   | 'correct'
   | 'wrong'
@@ -192,6 +193,14 @@ const CUES: Record<Cue, Voice[]> = {
   lock: [
     { type: 'sine', from: 320, to: 90, start: 0, duration: 0.16, gain: 1.1 },
     { type: 'square', from: 1200, start: 0, duration: 0.02, gain: 0.45, cutoff: 3000 },
+  ],
+
+  // A question arriving, at the top of its lead-in (PROJ-179). Two rising notes,
+  // over in under a third of a second and well below the lock: it says look up,
+  // and it is heard fifteen times a round.
+  arrive: [
+    { type: 'triangle', from: 440, start: 0, duration: 0.12, gain: 0.24, cutoff: 2400 },
+    { type: 'triangle', from: 660, start: 0.09, duration: 0.2, gain: 0.2, cutoff: 2400 },
   ],
 
   /*

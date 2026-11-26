@@ -261,6 +261,14 @@ export interface RoomState {
    * waiting after its own timer had run out.
    */
   durationSecs: number;
+  /**
+   * How much of {@link durationSecs} is the lead-in, before the answers land
+   * (`leadIn.ts`). Settled with it when a round starts. Zero for a Catchphrase
+   * round, and for a room an old bundle opened, which never writes it. Read it
+   * through `leadInMs`. No rules change: `wellFormed()` does not `hasOnly` the
+   * room's keys.
+   */
+  leadInSecs: number;
   /** When the current question opened, for speed scoring. Null outside 'question'. */
   questionOpenedAt: number | null;
   /** Answers to the current question only, keyed by player uid. */
@@ -480,6 +488,7 @@ export function createRoom(code: string): RoomState {
     questions: [],
     index: 0,
     durationSecs: DEFAULT_DURATION_SECS,
+    leadInSecs: 0,
     questionOpenedAt: null,
     answers: {},
     scores: {},

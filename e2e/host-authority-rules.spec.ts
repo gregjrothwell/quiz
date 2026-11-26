@@ -239,7 +239,7 @@ test('AC2/AC3 allow: the host creates, beats and drives; members seat, vote, squ
   await new Promise((resolve) => setTimeout(resolve, 6_000));
   await setDoc(doc(host.db, 'rooms', code, 'reveal', QUESTIONS[0]!.id), { answer: 'First' });
   await dispatch(host, code, [{ type: 'reveal', correctIndex: 0, questionId: QUESTIONS[0]!.id }]);
-  await dispatch(host, code, [{ type: 'next', at: Date.now() }]);
+  await dispatch(host, code, [{ type: 'showTable' }]);
   await dispatch(host, code, [{ type: 'next', at: Date.now() }]);
   await dispatch(host, code, [{ type: 'skip' }]);
   await dispatch(host, code, [{ type: 'reset' }]);
@@ -481,7 +481,7 @@ test('PROJ-119: answers may only name the open question', async () => {
   await answer(ann, code, 0, 0);
   expect((await getDoc(doc(ann.db, 'rooms', code, 'answers', ann.uid))).data()?.questionIndex).toBe(0);
 
-  // #when the host moves on to question 1 (reveal → scoreboard → next question)
+  // #when the host moves on to question 1, straight from the reveal
   await seedVault(code);
   // Age the open stamp past the window so the vault gate opens without a sleep.
   await admin()
@@ -489,7 +489,6 @@ test('PROJ-119: answers may only name the open question', async () => {
     .update({ openedAt: AdminTimestamp.fromMillis(Date.now() - 10_000) });
   await setDoc(doc(host.db, 'rooms', code, 'reveal', QUESTIONS[0]!.id), { answer: 'First' });
   await dispatch(host, code, [{ type: 'reveal', correctIndex: 0, questionId: QUESTIONS[0]!.id }]);
-  await dispatch(host, code, [{ type: 'next', at: Date.now() }]);
   await dispatch(host, code, [{ type: 'next', at: Date.now() }]);
   expect((await state(host, code)).index).toBe(1);
 

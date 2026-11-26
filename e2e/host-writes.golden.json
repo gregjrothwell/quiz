@@ -5,8 +5,10 @@
       "index": 0,
       "stage": null,
       "changed": {
+        "durationSecs": 12,
         "form": "<deleted>",
         "gameId": "<game>",
+        "leadInSecs": 2,
         "openedAt": "<time>",
         "phase": "question",
         "questionOpenedAt": "<time>",
@@ -65,14 +67,6 @@
           "<Hal>": 1000,
           "<Ivy>": 900
         }
-      }
-    },
-    {
-      "phase": "scoreboard",
-      "index": 0,
-      "stage": null,
-      "changed": {
-        "phase": "scoreboard"
       }
     },
     {
@@ -142,14 +136,6 @@
       }
     },
     {
-      "phase": "scoreboard",
-      "index": 1,
-      "stage": null,
-      "changed": {
-        "phase": "scoreboard"
-      }
-    },
-    {
       "phase": "question",
       "index": 2,
       "stage": null,
@@ -216,14 +202,6 @@
       }
     },
     {
-      "phase": "scoreboard",
-      "index": 2,
-      "stage": null,
-      "changed": {
-        "phase": "scoreboard"
-      }
-    },
-    {
       "phase": "question",
       "index": 3,
       "stage": null,
@@ -287,14 +265,6 @@
           "<Hal>": 4000,
           "<Ivy>": 3600
         }
-      }
-    },
-    {
-      "phase": "scoreboard",
-      "index": 3,
-      "stage": null,
-      "changed": {
-        "phase": "scoreboard"
       }
     },
     {
@@ -438,14 +408,6 @@
       }
     },
     {
-      "phase": "scoreboard",
-      "index": 5,
-      "stage": null,
-      "changed": {
-        "phase": "scoreboard"
-      }
-    },
-    {
       "phase": "question",
       "index": 6,
       "stage": null,
@@ -509,14 +471,6 @@
           "<Hal>": 7000,
           "<Ivy>": 6300
         }
-      }
-    },
-    {
-      "phase": "scoreboard",
-      "index": 6,
-      "stage": null,
-      "changed": {
-        "phase": "scoreboard"
       }
     },
     {
@@ -586,14 +540,6 @@
       }
     },
     {
-      "phase": "scoreboard",
-      "index": 7,
-      "stage": null,
-      "changed": {
-        "phase": "scoreboard"
-      }
-    },
-    {
       "phase": "question",
       "index": 8,
       "stage": null,
@@ -657,14 +603,6 @@
           "<Hal>": 9000,
           "<Ivy>": 8100
         }
-      }
-    },
-    {
-      "phase": "scoreboard",
-      "index": 8,
-      "stage": null,
-      "changed": {
-        "phase": "scoreboard"
       }
     },
     {

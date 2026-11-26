@@ -665,6 +665,43 @@ export function Preview() {
     },
     {
       /*
+        The lead-in (PROJ-179): the question is up, the ring is full and still,
+        and the lecterns keep their places unseen. Beside the moment the answers
+        land, because the two have to occupy exactly the same space.
+      */
+      title: 'Question · the lead-in, before the answers',
+      node: (
+        <QuestionScreen
+          room={mockRoom({ phase: 'question', questionOpenedAt: 1_000, gameId: 'lead', durationSecs: 22, leadInSecs: 2 })}
+          youUid="greg"
+          isQuizmaster
+          clock={{ elapsedMs: 1_200, remainingMs: 20_800, secondsLeft: 21, expired: false }}
+          revealed={false}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      title: 'Question · the answers have landed',
+      node: (
+        <QuestionScreen
+          room={mockRoom({ phase: 'question', questionOpenedAt: 1_000, gameId: 'landed', durationSecs: 22, leadInSecs: 2 })}
+          youUid="greg"
+          isQuizmaster
+          clock={{ elapsedMs: 3_000, remainingMs: 19_000, secondsLeft: 19, expired: false }}
+          revealed={false}
+          onAnswer={noop}
+          onReveal={noop}
+          onNext={noop}
+          onVote={noop}
+        />
+      ),
+    },
+    {
+      /*
         The stake band, on the last question of a round played for stakes.
 
         Here because the gallery is what a design review actually looks at, and
@@ -2101,6 +2138,48 @@ export function Preview() {
           youUid="greg"
           isQuizmaster={false}
           onNext={noop}
+        />
+      ),
+    },
+    // ── The house round ────────────────────────────────────────────────────
+    // Appended so every `#/preview/N` index above keeps pointing where it did.
+    {
+      title: 'Lobby · how this device ran its last round',
+      node: (
+        <Lobby
+          room={mockRoom({ phase: 'lobby', packVotes: LOBBY_VOTES })}
+          youUid="greg"
+          isQuizmaster
+          packs={EVERY_PACK}
+          busy={false}
+          remembered={{ count: 15, level: 'ramp', durationSecs: 15, ending: 'standoff', steal: false, chaser: false }}
+          onStart={noop}
+          onLeave={noop}
+        />
+      ),
+    },
+    {
+      title: 'Lobby · second half of The Double, everything on',
+      node: (
+        <Lobby
+          room={mockRoom({
+            phase: 'lobby',
+            durationSecs: 20,
+            wagerEnabled: true,
+            stealEnabled: true,
+            chaserEnabled: true,
+            doubleEnabled: true,
+            double: DOUBLE_FIRST,
+          })}
+          youUid="greg"
+          isQuizmaster
+          packs={EVERY_PACK}
+          busy={false}
+          played
+          remembered={{ count: 25, level: 'mixed', durationSecs: 10, ending: 'top', steal: false, chaser: false }}
+          shots={[TEST_SHOT]}
+          onStart={noop}
+          onLeave={noop}
         />
       ),
     },

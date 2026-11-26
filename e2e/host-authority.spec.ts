@@ -1,7 +1,9 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test';
 
+import { answersLanded } from './answers';
 import { setEmulatorFlag } from './emulators';
 import { isolateFiles } from './isolate';
+import { setRound } from './lobby';
 import { admin, seedVault, until } from './nodeClient';
 
 isolateFiles();
@@ -87,7 +89,7 @@ test('the host vanishes mid-question and the room carries on', async ({ browser 
   // Twenty seconds rather than the default ten, so the host's own reveal cannot
   // beat the tab closing on a slow runner.
   await packCard(host.page, 'General Knowledge').click();
-  await host.page.locator('button.pick', { hasText: 'Generous' }).click();
+  await setRound(host.page, { picks: ['Generous'] });
   await host.page.getByRole('button', { name: 'Start the show' }).click();
   // Nobody here has a season row, so the opening titles go up first (every
   // player a newcomer) and the round waits for the host's second press.
@@ -97,7 +99,7 @@ test('the host vanishes mid-question and the room carries on', async ({ browser 
 
   // #and both players answer the first question, A, which the seeded vault calls right
   for (const each of [ann, bob]) {
-    await expect(each.page.locator('.podium')).toBeVisible();
+    await answersLanded(each.page);
     await each.page.keyboard.press('a');
     await each.page.keyboard.press('Enter');
   }
@@ -143,9 +145,11 @@ test('the host vanishes mid-question and the room carries on', async ({ browser 
   await expect(bob.page.locator('.tile__name', { hasText: 'Ann' })).toBeVisible();
   await expect(ann.page.locator('.tile__name', { hasText: 'Bob' })).toBeVisible();
 
-  // #and the round goes on under the new host
+  // #and the round goes on under the new host: one press, once the verdict has
+  // landed, opens the next question
+  await expect(ann.page.getByRole('button', { name: 'Next question' })).toBeEnabled();
   await ann.page.keyboard.press(' ');
-  await until(() => readRoom(code), (room) => room.phase === 'scoreboard', 10_000);
+  await until(() => readRoom(code), (room) => room.phase === 'question' && room.index === 1, 10_000);
 });
 
 test('an ordinary hosted round: the creator reveals with every answer counted (AC12)', async ({ browser }) => {
@@ -168,7 +172,7 @@ test('an ordinary hosted round: the creator reveals with every answer counted (A
   await until(() => readRoom(code), (room) => room.phase === 'question');
   await seedVault(code);
 
-  await expect(ann.page.locator('.podium')).toBeVisible();
+  await answersLanded(ann.page);
   await ann.page.keyboard.press('a');
   await ann.page.keyboard.press('Enter');
 

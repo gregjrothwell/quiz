@@ -74,6 +74,11 @@ export interface Q1TraceDoc {
   device: TraceDevice;
   /** `navigator.connection.effectiveType`, where the browser has it. Safari does not. */
   network?: string;
+  /** The window as question one arrived, in CSS pixels. Absent: an old bundle, or not given. */
+  innerWidth?: number;
+  innerHeight?: number;
+  /** `devicePixelRatio` × 100, so 1.25 is 125: the rules hold whole numbers. Zoom is in it. */
+  pixelRatioPct?: number;
   /** Local arrival − `openedAt`: this device's clock skew plus the delivery delay. */
   seenAfterOpenMs?: number;
   /** The RTDB's `.info/serverTimeOffset`: local + this = server. With the above, the delay alone. */
@@ -113,6 +118,9 @@ export const TRACE_KEYS = [
   'writes',
   'device',
   'network',
+  'innerWidth',
+  'innerHeight',
+  'pixelRatioPct',
   'seenAfterOpenMs',
   'serverOffsetMs',
   'visibleForMs',
@@ -137,6 +145,15 @@ const SPAN_LIMIT_MS = 600_000;
 const COUNT_LIMIT = 1_000;
 const NETWORK_LIMIT = 16;
 const REFUSED_LIMIT = 40;
+export const WINDOW_LIMIT_PX = 20_000;
+export const PIXEL_RATIO_PCT_LIMIT = 2_000;
+
+/** The browser's own figures, each null where it would not give a finite number. */
+export interface WindowSize {
+  width: number | null;
+  height: number | null;
+  pixelRatio: number | null;
+}
 
 /** The first server-confirmed snapshot of a question, as `useRoom` hears it. */
 export interface SeenQuestion {
@@ -156,6 +173,7 @@ export interface SeenQuestion {
   network: string | null;
   /** When this device last had a keep-warm acknowledged, or null if it never has. */
   lastWarmAt: number | null;
+  window: WindowSize;
 }
 
 /** Any snapshot of the room: where it has got to, and who the last reveal scored. */
@@ -176,6 +194,7 @@ interface Observation {
   priorSamples: number;
   device: TraceDevice;
   network: string | null;
+  window: WindowSize;
   seenAfterOpenMs: number | null;
   serverOffsetMs: number | null;
   visibleForMs: number | null;
@@ -228,6 +247,10 @@ export function toTraceDoc(seen: Observation): Q1TraceDoc {
     device: seen.device,
   };
   if (seen.network !== null) trace.network = seen.network.slice(0, NETWORK_LIMIT);
+  const { width, height, pixelRatio } = seen.window;
+  if (width !== null) trace.innerWidth = clamp(width, 0, WINDOW_LIMIT_PX);
+  if (height !== null) trace.innerHeight = clamp(height, 0, WINDOW_LIMIT_PX);
+  if (pixelRatio !== null) trace.pixelRatioPct = clamp(pixelRatio * 100, 0, PIXEL_RATIO_PCT_LIMIT);
   if (seen.seenAfterOpenMs !== null) {
     trace.seenAfterOpenMs = clamp(seen.seenAfterOpenMs, -SKEW_LIMIT_MS, SKEW_LIMIT_MS);
   }
@@ -307,6 +330,7 @@ export function createQ1Tracer({
         priorSamples: Object.keys(seen.priorDeltas).filter((held) => held !== key).length,
         device: seen.device,
         network: seen.network,
+        window: seen.window,
         seenAfterOpenMs: delta,
         serverOffsetMs: seen.serverOffsetMs,
         visibleForMs: seen.visibleSince === null ? null : seen.arrivedAt - seen.visibleSince,
@@ -440,7 +464,7 @@ export function parseTrace(data: unknown): Q1TraceDoc | null {
     writes,
     device: knownDevice,
   };
-  for (const key of ['seenAfterOpenMs', 'serverOffsetMs', 'visibleForMs', 'tapMs', 'tapElapsedMs', 'ackMs', 'revealMs', 'warmAgoMs', ...START_KEYS] as const) {
+  for (const key of ['innerWidth', 'innerHeight', 'pixelRatioPct', 'seenAfterOpenMs', 'serverOffsetMs', 'visibleForMs', 'tapMs', 'tapElapsedMs', 'ackMs', 'revealMs', 'warmAgoMs', ...START_KEYS] as const) {
     const value = raw[key];
     if (value === undefined) continue;
     if (!isInt(value)) return null;

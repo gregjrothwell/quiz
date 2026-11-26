@@ -12,7 +12,7 @@ keeping it one function.
 
 Squads did nothing until the board *after* the game, which is most of the way to
 not having squads at all: the point of a side is watching it win or lose in the
-room. `SquadScore` shows it under the standings between questions.
+room. `SquadScore` shows it under the standings (at the breaks only, since PROJ-182).
 
 ### It ranks on the average, and the first version did not
 

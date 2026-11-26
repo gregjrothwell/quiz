@@ -1,6 +1,6 @@
 # Cass loses question one
 
-> **Owner: Greg Rothwell. Last updated: 5 November 2026. Budget: 250 lines. Continues in [`cass-q1-cold-write.md`](cass-q1-cold-write.md).**
+> **Owner: Greg Rothwell. Last updated: 25 November 2026. Budget: 250 lines. Continues in [`cass-q1-cold-write.md`](cass-q1-cold-write.md); the window size the trace carries (PROJ-180) is in [`window-size.md`](window-size.md).**
 
 Follows [`office-feedback-9-oct.md`](office-feedback-9-oct.md) §1 and §5, whose leading
 hypothesis this replaces. Read off live `games/` with the Admin SDK on 21 October 2026, every

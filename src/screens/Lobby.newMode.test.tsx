@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, test } from 'vitest';
 import { createRoom } from '../engine/state';
@@ -27,7 +27,7 @@ function pack(id: PackId, title: string): PackSummary {
 }
 
 function show(today: string, isQuizmaster: boolean) {
-  return render(
+  render(
     <Lobby
       room={{
         ...createRoom('HKQ7'),
@@ -47,6 +47,7 @@ function show(today: string, isQuizmaster: boolean) {
       today={today}
     />,
   );
+  if (isQuizmaster) fireEvent.click(screen.getByRole('button', { name: 'Change' }));
 }
 
 describe('lobby mode stickers', () => {

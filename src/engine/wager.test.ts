@@ -166,6 +166,8 @@ function onTheLastQuestion(wagerEnabled: boolean): RoomState {
     { type: 'answer', uid: 'ann', optionIndex: 0, elapsedMs: 1_000 },
     { type: 'answer', uid: 'bo', optionIndex: 0, elapsedMs: 2_000 },
     { type: 'reveal', correctIndex: 0, questionId: 'q0' },
+    // Twice where the next question is the one played for stakes: the table
+    // comes before it. Without stakes the second press changes nothing.
     { type: 'next', at: 2_000 },
     { type: 'next', at: 3_000 },
   );
