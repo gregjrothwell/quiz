@@ -1,7 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import {
+  PIXEL_RATIO_PCT_LIMIT,
   TRACE_KEYS,
+  WINDOW_LIMIT_PX,
   createQ1Tracer,
   deviceFrom,
   explainTrace,
@@ -39,6 +41,7 @@ function seen(overrides: Partial<SeenQuestion> = {}): SeenQuestion {
     device: 'ios',
     network: '4g',
     lastWarmAt: null,
+    window: { width: 1_366, height: 657, pixelRatio: 1.25 },
     ...overrides,
   };
 }
@@ -72,6 +75,9 @@ describe('createQ1Tracer', () => {
         writes: 1,
         device: 'ios',
         network: '4g',
+        innerWidth: 1_366,
+        innerHeight: 657,
+        pixelRatioPct: 125,
         seenAfterOpenMs: 500,
         serverOffsetMs: 200,
         visibleForMs: 60_000,
@@ -415,6 +421,78 @@ describe('whether the write path was warm', () => {
   });
 });
 
+describe('the window question one was seen in (PROJ-180)', () => {
+  /** The trace a device leaves with this window. */
+  function traced(window: SeenQuestion['window']): Q1TraceDoc {
+    const h = harness();
+    h.tracer.sawQuestion(seen({ window }));
+    h.tracer.sawRoom({ ...REVEAL, scoredUids: [] });
+    const [trace] = h.written;
+    if (!trace) throw new Error('the tracer wrote nothing');
+    return trace;
+  }
+
+  test.each([
+    [1, 100],
+    [1.25, 125],
+    [1.5, 150],
+    [2, 200],
+    [2.625, 263],
+    // 110% zoom on a 125% screen: 137.5, so it is rounded rather than refused.
+    [1.375, 138],
+    [0.9, 90],
+  ])('a ratio of %s is kept as the whole number %s', (pixelRatio, kept) => {
+    expect(traced({ width: 1_536, height: 730, pixelRatio })).toMatchObject({
+      innerWidth: 1_536,
+      innerHeight: 730,
+      pixelRatioPct: kept,
+    });
+  });
+
+  test('a figure the browser would not give is absent, and the others are kept', () => {
+    const trace = traced({ width: 1_536, height: null, pixelRatio: null });
+
+    expect(trace.innerWidth).toBe(1_536);
+    expect(trace).not.toHaveProperty('innerHeight');
+    expect(trace).not.toHaveProperty('pixelRatioPct');
+  });
+
+  test('zero is a reading, not a missing one', () => {
+    expect(traced({ width: 0, height: 0, pixelRatio: 0 })).toMatchObject({
+      innerWidth: 0,
+      innerHeight: 0,
+      pixelRatioPct: 0,
+    });
+  });
+
+  test('a strange reading is clamped to what the rules accept, and stays a whole number', () => {
+    expect(traced({ width: 9e6, height: -40, pixelRatio: 400 })).toMatchObject({
+      innerWidth: WINDOW_LIMIT_PX,
+      innerHeight: 0,
+      pixelRatioPct: PIXEL_RATIO_PCT_LIMIT,
+    });
+    expect(traced({ width: 1_365.6, height: 656.4, pixelRatio: 1 })).toMatchObject({
+      innerWidth: 1_366,
+      innerHeight: 656,
+    });
+  });
+
+  test('parseTrace keeps them, keeps a zero, still reads an old trace, and refuses a non-number', () => {
+    const { innerWidth, innerHeight, pixelRatioPct, ...old } = traced({ width: 1_366, height: 657, pixelRatio: 1.25 });
+
+    expect(parseTrace({ ...old, innerWidth, innerHeight, pixelRatioPct })).toEqual({
+      ...old,
+      innerWidth,
+      innerHeight,
+      pixelRatioPct,
+    });
+    expect(parseTrace({ ...old, innerWidth: 0 })).toEqual({ ...old, innerWidth: 0 });
+    expect(parseTrace(old)).toEqual(old);
+    expect(parseTrace({ ...old, innerWidth: '1366' })).toBeNull();
+    expect(parseTrace({ ...old, pixelRatioPct: 1.25 })).toBeNull();
+  });
+});
+
 describe('the rules and the trace agree', () => {
   // Offline, so drift fails in the run that caused it — the same reason the
   // duration tests in state.test.ts read the rules file.
@@ -425,5 +503,21 @@ describe('the rules and the trace agree', () => {
     const keys = listed.split(',').map((key) => key.trim().replace(/'/g, ''));
 
     expect(keys.sort()).toEqual([...TRACE_KEYS, 'at'].sort());
+  });
+
+  test('the window\'s bounds are the ones the client clamps to, and none of it is required', () => {
+    const rules = readFileSync('firestore.rules', 'utf8');
+    const block = rules.slice(rules.indexOf('match /q1Traces/{traceId}'), rules.indexOf('match /clientErrors/'));
+    const required = /hasAll\(\[([^\]]+)\]\)/.exec(block)?.[1] ?? '';
+
+    expect(required).toContain("'gameId'");
+    for (const [key, high] of [
+      ['innerWidth', WINDOW_LIMIT_PX],
+      ['innerHeight', WINDOW_LIMIT_PX],
+      ['pixelRatioPct', PIXEL_RATIO_PCT_LIMIT],
+    ] as const) {
+      expect(block).toContain(`&& intIn('${key}', 0, ${high})`);
+      expect(required).not.toContain(key);
+    }
   });
 });

@@ -61,7 +61,7 @@ import {
 } from '../engine/roomClock';
 import { warmDelayMs, WARM_EVERY_MS } from '../engine/keepWarm';
 import { createQ1Tracer, deviceFrom, type Q1Tracer, type RoundStartTiming } from '../engine/q1Trace';
-import { networkType, recordQ1Trace, refusalCode } from './q1Trace';
+import { networkType, recordQ1Trace, refusalCode, windowSize } from './q1Trace';
 import { planJoin, planSeatSquad } from '../engine/join';
 import { answeringMs, leadInMs } from '../engine/leadIn';
 import { isCall, optionsAtMs } from '../engine/optionsHold';
@@ -473,6 +473,7 @@ export function useRoom(): UseRoom {
             device: deviceFrom(navigator.userAgent),
             network: networkType(),
             lastWarmAt: warmAckedAtRef.current,
+            window: windowSize(),
           });
         }
 

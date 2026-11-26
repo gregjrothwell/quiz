@@ -11,6 +11,9 @@
  * what each reading would mean for a fix: docs/decisions/cass-q1.md. Taps and
  * windows are raw: since PROJ-179 both include the two-second lead-in.
  *
+ * `1536 × 730 @1.25` is the browser window in CSS pixels and its pixel ratio as
+ * question one arrived, a dash before PROJ-180 (docs/decisions/window-size.md).
+ *
  * **Needs a service account**, as `read-games` does: the rules let no client
  * read `q1Traces`. Point `GOOGLE_APPLICATION_CREDENTIALS` at a key under
  * `.secrets/`. Names come from `games/{gameId}`, one read per round shown; a
