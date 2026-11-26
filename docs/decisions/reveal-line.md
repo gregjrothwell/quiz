@@ -1,7 +1,7 @@
 # Your own line on the reveal, and the table at the breaks
 
-> **Owner: Greg Rothwell. Last updated: 25 November 2026. Budget: 250 lines.**
-> **Status: built 25 November 2026, not live.** PROJ-182, on top of PROJ-179 ([`question-lead-in.md`](question-lead-in.md)).
+> **Owner: Greg Rothwell. Last updated: 26 November 2026. Budget: 250 lines.**
+> **Status: built 25 November 2026, not live; in `release-2026-11-26`.** PROJ-182, on top of PROJ-179 ([`question-lead-in.md`](question-lead-in.md)).
 > Finding 1 of [`ui-ux-review-the-show.md`](ui-ux-review-the-show.md). Greg, 11 Nov: yes; 25 Nov: criteria ok.
 
 The full table followed every question, fifteen times in a seven-minute round, and the quizmaster
@@ -34,6 +34,9 @@ asked: the table before the question played for stakes, so nobody stakes blind (
   totals, so the line and the table cannot disagree, in the second half of a Double included.
 
 ## Decided while building — for Greg to overrule
+
+**Greg, 26 Nov 2026: 2–6 "ok"**, each answered on its own on the release calls page. 1 was not put
+to him separately; it is what the reveal pictures he approved showed.
 
 1. **The line sits beside the points, not instead of them**: "Correct · +800", then "3rd, up one".
    Nobody's place moves on question one ("3rd", not "3rd, down two"), and a board on nothing has none.

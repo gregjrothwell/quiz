@@ -1,9 +1,10 @@
 # A house round — the lobby starts from the last one, and says it in one line
 
-> **Owner: Greg Rothwell. Last updated: 25 November 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 26 November 2026. Budget: 250 lines.**
 
 **Status: built 25 November 2026, PROJ-183, as a draft pull request. Not live.** Based on #212
-(PROJ-182); it goes live with that release, on Greg's words.
+(PROJ-182); it goes live with that release, on Greg's words. **Greg, 26 Nov 2026:** the look "ok"
+(before and after at 1366×768, shut and open), and the squad and sound check under the packs "ok".
 
 ## Story
 
@@ -51,7 +52,7 @@ they are **treated as approved**. No separate yes to each one is on record.
 | Survey Says | Ten questions, no level, no stakes, steals or Mr Fries, and the line says so | As before, now said |
 | The ending when nothing is picked | "ends on the last answer" is said: the ending is changed most often | Claude |
 | In The Double | "10 questions this half" | Claude |
-| "The packs follow the room code" | Read as: the code, the link and **who is in the room**, then the packs. The quizmaster's squad and sound check move under the packs | Claude, **for Greg** |
+| "The packs follow the room code" | Read as: the code, the link and **who is in the room**, then the packs. The quizmaster's squad and sound check move under the packs | Claude; Greg "ok", 26 Nov |
 | A new mode's sticker | Shown beside This round too, or the fold would hide it | Claude |
 
 **Assumed, not asked:** a player who is not the quizmaster sees exactly what they saw. Every screen but
@@ -92,7 +93,7 @@ measured 3,639px on 11 November with more hints showing, so the gallery is not t
 
 ## Not covered
 
-- **Nobody has used it.** Greg judges the look.
+- **Nobody has used it.** Greg has seen the pictures (26 Nov, "ok"), not a live lobby.
 - `e2e/house-round.spec.ts` had **not been run when it was committed**; CI's first run of it is on the pull
   request. Locally only `asked-history`, `beat-the-chaser` and `commentator` ran, and passed.
 - After Name that Tune the same room's next lobby starts at ten seconds, as it does today.
