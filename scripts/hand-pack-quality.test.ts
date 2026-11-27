@@ -7,7 +7,7 @@ import { SCREEN_SPECS } from './hand-screens-data';
 import { SLEEVE_SPECS } from './hand-sleeves-data';
 import { artistSlug } from './artists-core';
 import { TUNE_SPECS, TUNES_MIN_PACK } from './hand-tunes-data';
-import { AMERICAN_THEMES, THEME_SPECS, THEMES_MIN_PACK } from './hand-themes-data';
+import { AMERICAN_THEMES, THEME_SPECS, THEMES_DROPPED, THEMES_MIN_PACK } from './hand-themes-data';
 
 function assertPlayable(
   specs: { slug: string; correct: string; incorrect: string[] }[],
@@ -81,6 +81,38 @@ describe('hand-built media specs', () => {
     const slugs = new Set(THEME_SPECS.map((spec) => spec.slug));
     for (const slug of AMERICAN_THEMES) expect(slugs.has(slug)).toBe(true);
     expect(AMERICAN_THEMES.length * 6).toBeLessThanOrEqual(THEME_SPECS.length);
+  });
+
+  /*
+    The two above count every spec, dropped ones included, and a dropped spec
+    never ships. Before batch 2 (PROJ-203, 27 November 2026) that hid a lean:
+    11 of the 65 that shipped were American, just over one in six, while the
+    spec list read 12 of 93. These two count what the pack actually holds.
+  */
+  const shipped = THEME_SPECS.filter((spec) => !THEMES_DROPPED.has(spec.slug));
+
+  test('what ships of theme tunes holds enough of every difficulty for a Ladder round', () => {
+    for (const level of ['easy', 'medium', 'hard'] as const) {
+      expect(shipped.filter((spec) => spec.difficulty === level).length).toBeGreaterThanOrEqual(10);
+    }
+  });
+
+  test('what ships of theme tunes does not lean American: at most one in six', () => {
+    const live = new Set(shipped.map((spec) => spec.slug));
+    const american = AMERICAN_THEMES.filter((slug) => live.has(slug)).length;
+    expect(american * 6).toBeLessThanOrEqual(live.size);
+  });
+
+  test('theme numbers are never reused: batch 2 starts above everything batch 1 numbered', () => {
+    // A dropped number keeps its spec, so a new theme can never take its slug
+    // and inherit its vault answer. Batch 2 numbers from 129 upward.
+    const numbers = THEME_SPECS.map((spec) => Number(spec.slug.slice('theme-'.length)));
+    const batchOne = numbers.filter((n) => n < 129);
+    const batchTwo = numbers.filter((n) => n >= 129);
+    expect(Math.max(...batchOne)).toBeLessThan(129);
+    expect(batchTwo.length).toBeGreaterThanOrEqual(35);
+    expect([...THEMES_DROPPED].filter((slug) => Number(slug.slice('theme-'.length)) >= 129)).toEqual([]);
+    expect(numbers).toEqual([...numbers].sort((a, b) => a - b));
   });
 
   test('flags cover three default rounds, unique slugs, four distinct options', () => {
