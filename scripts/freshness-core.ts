@@ -8,6 +8,8 @@
  * stopped being picked. docs/decisions/pack-freshness.md.
  */
 
+import { RANDOM_SOURCES, quotasFor } from '../src/engine/randomRound';
+
 /** A published pack: its id, its title, and the ids of every question in it. */
 export interface PackIds {
   id: string;
@@ -15,7 +17,11 @@ export interface PackIds {
   ids: string[];
 }
 
-/** One kept round, as `games/` holds it. */
+/**
+ * One kept round, as `games/` holds it. A Random Round is `packId: random`
+ * with no source on its questions, so what it took from each pack is worked
+ * out from its length ({@link takenBy}).
+ */
 export interface PlayedRound {
   packId: string;
   finishedAt: number;
@@ -29,12 +35,21 @@ export interface FreshnessRow {
   /** Asked this season *and still in the pack*. */
   asked: number;
   unseen: number;
-  /** The median of this pack's recent rounds, or {@link DEFAULT_ROUND}. */
+  /**
+   * The median of this pack's own recent rounds, or {@link DEFAULT_ROUND}. A
+   * Random Round's share is not a round of this pack, so it is left out.
+   */
   roundLength: number;
   /** Unseen over round length, to one decimal place. */
   freshRounds: number;
-  /** Rounds of this pack in the window. */
+  /** Rounds in the window that took from this pack: its own, and Random Rounds that dealt from it. */
   played: number;
+  /** Of {@link played}, the Random Rounds. */
+  playedRandom: number;
+  /** Questions taken a week over the window, own rounds and Random shares together. One decimal place. */
+  perWeek: number;
+  /** Unseen over {@link perWeek}, to one decimal place; null when nothing takes from it. */
+  weeksLeft: number | null;
   low: boolean;
 }
 
@@ -53,6 +68,34 @@ function median(values: number[]): number | null {
   return sorted.length % 2 === 1 || lower === undefined ? upper : Math.round((lower + upper) / 2);
 }
 
+/** What one round took, pack by pack. */
+export interface Taken {
+  pack: string;
+  questions: number;
+  /** Dealt as a Random Round's share, not as a round of this pack. */
+  random: boolean;
+}
+
+const floorTenth = (value: number) => Math.floor(value * 10) / 10;
+
+/**
+ * What one round took from each pack: all of it from its own pack, or, for a
+ * Random Round, each source's share.
+ *
+ * **The share is the engine's own {@link quotasFor} over {@link RANDOM_SOURCES}**,
+ * so a change to the deal changes this too: 15 is 3,3,3,2,2,2 and 10 is
+ * 2,2,2,2,1,1. It is what the deal asks of each source; one that ran short
+ * would have supplied less, which the record cannot show.
+ */
+export function takenBy(round: PlayedRound): Taken[] {
+  if (round.packId !== 'random') return [{ pack: round.packId, questions: round.questions, random: false }];
+  const quotas = quotasFor(round.questions, RANDOM_SOURCES.length);
+  return RANDOM_SOURCES.flatMap((source, index) => {
+    const share = quotas[index] ?? 0;
+    return share > 0 ? [{ pack: source, questions: share, random: true }] : [];
+  });
+}
+
 /**
  * One row per pack, lowest first.
  *
@@ -62,7 +105,14 @@ function median(values: number[]): number | null {
  * call that pack overdrawn rather than empty.
  *
  * **Only a pack played in the window can be low.** The growth rule goes by
- * what the office plays; a pack nobody picks running dry is not news.
+ * what the office plays; a pack nobody picks running dry is not news. Played
+ * includes Random Rounds that dealt from it (PROJ-204): Sleeves read "played
+ * 0" for a fortnight while Random Round took about seven a week from it.
+ *
+ * **Fresh rounds stay in this pack's own rounds; per week is what counts the
+ * share.** A Random Round takes two or three from a source, and a median over
+ * those and the pack's own rounds of 15 would call a round two questions long,
+ * multiplying a pack's fresh rounds five times or more and silencing its alarm.
  */
 export function freshness(input: {
   packs: PackIds[];
@@ -74,16 +124,19 @@ export function freshness(input: {
 }): FreshnessRow[] {
   const { packs, asked, rounds, now, windowDays = WINDOW_DAYS, lowBelow = LOW_BELOW } = input;
   const since = now - windowDays * 86_400_000;
-  const recent = rounds.filter((round) => round.finishedAt >= since);
+  const taken = rounds.filter((round) => round.finishedAt >= since).flatMap(takenBy);
+  const weeks = windowDays / 7;
 
   return packs
     .map((pack): FreshnessRow => {
       const seen = new Set(asked[pack.id] ?? []);
       const askedHere = pack.ids.filter((id) => seen.has(id)).length;
       const unseen = pack.ids.length - askedHere;
-      const mine = recent.filter((round) => round.packId === pack.id);
-      const roundLength = median(mine.map((round) => round.questions)) ?? DEFAULT_ROUND;
-      const freshRounds = Math.floor((unseen / roundLength) * 10) / 10;
+      const mine = taken.filter((entry) => entry.pack === pack.id);
+      const own = mine.filter((entry) => !entry.random);
+      const roundLength = median(own.map((entry) => entry.questions)) ?? DEFAULT_ROUND;
+      const freshRounds = floorTenth(unseen / roundLength);
+      const rate = mine.reduce((sum, entry) => sum + entry.questions, 0) / weeks;
       return {
         pack: pack.id,
         title: pack.title,
@@ -93,6 +146,9 @@ export function freshness(input: {
         roundLength,
         freshRounds,
         played: mine.length,
+        playedRandom: mine.length - own.length,
+        perWeek: Math.round(rate * 10) / 10,
+        weeksLeft: rate > 0 ? floorTenth(unseen / rate) : null,
         low: mine.length > 0 && unseen / roundLength < lowBelow,
       };
     })

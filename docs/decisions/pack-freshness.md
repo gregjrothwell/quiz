@@ -1,6 +1,6 @@
 # Pack freshness — knowing before a round is all repeats
 
-> **Owner: Greg Rothwell. Last updated: 5 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 27 November 2026. Budget: 250 lines.**
 
 **Greg, 5 October 2026:** "we need a regular check for if question packs are
 exhausted to keep them fresh." On that day Catchphrase (30 of 30 asked) and
@@ -76,3 +76,41 @@ costs a little usage every weekday.
 the branch, the check called Sleeves fresh while the live site still served the 104 the
 office had run through. It now fetches the live site's packs; `--local` reads the
 checkout. Shown both ways: live Sleeves 104 / 0.8 LOW, local 168 / 5.0.
+
+## Random Round's share — 27 November 2026 (PROJ-204)
+
+**Blind until now.** A Random Round is kept as `packId: random`, with no source on its
+questions, and no pack row is called `random`, so the check counted it against nothing.
+Random Round is the office's most played round, so the 08:00 alarm could not flag a pack
+drawn on only through it: Sleeves read "played 0". `asked` was already right, because the
+host records asked ids per source (`src/host/prepare.ts`); only `played` and the rate were
+missing.
+
+**Now** each Random Round in the window gives every source its quota, from the engine's own
+`quotasFor` over `RANDOM_SOURCES` (15 is 3,3,3,2,2,2; 10 is 2,2,2,2,1,1). `played` reads
+`own+random`, and two columns are new: **per week** (questions taken both ways) and
+**weeks left** (unseen over per week). A pack outside `RANDOM_SOURCES` (Fine Art, Theme
+Tunes, Classical, Flags) gets nothing from them; tested. The quota is what the deal asks
+of a source: one that ran short supplied less, which the record cannot show.
+
+**Why a per-week column and not the share in the median.** A share is 2 or 3 questions
+and a pack's own rounds are 10 to 20, so a median over both is the share. Measured on the
+live fortnight: Catchphrase's own rounds were 10 and 20, its three shares 2 each; the
+median of the five is 2, which would read **22.0 fresh rounds instead of 2.9**, and the
+alarm would wait for fewer than 4 unseen. Fresh rounds stay "rounds of this pack alone";
+per week and weeks left carry the real rate.
+
+**The LOW rule is unchanged** (played, and under two fresh rounds). What changed is that
+played now includes Random Rounds, so a pack used only that way can be flagged.
+
+**Live, 27 November 2026, 20:46 before and 20:48 after**, `season-2`, the last 14 days
+(11 kept rounds, 3 of them Random: 10, 15, 10):
+
+| Pack | Unseen | Fresh rounds | Played (before → after) | Per week | Weeks left | LOW |
+|---|---|---|---|---|---|---|
+| Sleeves | 42 | 2.8 | 0 → 0+3 | 3.5 | 12.0 | no |
+| Catchphrase | 44 | 2.9 | 2 → 2+3 | 18.0 | 2.4 | no |
+
+Nothing else changed LOW: Fine Art (own rounds only) is LOW before and after. This
+fortnight held three Random Rounds; the four-week hand count behind PROJ-203 had ten, so
+per week moves with the window (Sleeves read about 7 a week there, 3.5 here).
