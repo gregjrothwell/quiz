@@ -1,12 +1,18 @@
 # What went live, and when
 
-> **Owner: Greg Rothwell. Last updated: 26 November 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 27 November 2026. Budget: 250 lines.**
 
 Split out of [`HANDOVER.md`](../HANDOVER.md) on 24 October 2026, at 150 lines
 against a 150 budget. **Moved verbatim; only where it lives has changed.** The
 handover keeps the current live bundle and the checks still owed; the chain of
 bundles before it, and the release records that were sitting in its Outstanding
 list, are here. Links were relative to `docs/`, so `decisions/` is dropped from them.
+
+## `index-Cnx77XAE`, live until 27 November 2026
+
+Verbatim from the handover when release #218 replaced it; only the links changed.
+
+**Live is `index-Cnx77XAE`** (release #217, 26 Nov, merge `ab5c0b0`, gh-pages `7516601`, Pages 12:56:37Z; `index.html` and 11/11 JS/CSS byte-identical; `check-rules` **171/0**; `rank-harness` green; `sync-harness 10` 10/10): **a lead-in before each question** (PROJ-179, [`question-lead-in.md`](question-lead-in.md)); **your own line on the reveal, the table only at the breaks** (PROJ-182, [`reveal-line.md`](reveal-line.md)); **Fastest finger names each player once** (PROJ-181); **the question-one trace records the window** (PROJ-180, rules, [`window-size.md`](window-size.md)); **the lobby starts from the last round** (PROJ-183, [`house-round.md`](house-round.md)). Earlier: #206 `index-Bg-3T0nl` ([`live-history.md`](live-history.md)). **Owed, after the first office round:** `read-games` for the gap between questions against 11.5s (182's criterion 5; then whether the show runs on a timer goes back to Greg); `read-traces` for window sizes (PROJ-180 open until then); `read-owed`. **Not proven live:** the one press from a reveal into the next question (`rank-harness` plays one question); the stakes table in a browser; a phone (none in any trace); #168 in a real room (PROJ-75). **CI's Jira token (PROJ-76)** is still missing, so tickets move by hand.
 
 ## `index-Bg-3T0nl`, live until 26 November 2026
 
