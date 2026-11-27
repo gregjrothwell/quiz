@@ -18,6 +18,12 @@ export interface Update {
 
 export const UPDATES: readonly Update[] = [
   {
+    date: '2026-11-27',
+    lines: [
+      'More Theme Tunes and more Catchphrase. Theme Tunes now has 109 themes, up from 65, and Catchphrase has 284 puzzles, up from 233.',
+    ],
+  },
+  {
     date: '2026-11-26',
     lines: [
       'A question now arrives before its answers. You see the question, then two seconds later the answers land on everybody’s screen together. The clock waits for them, so ten seconds is still ten seconds to answer, and a tune starts with the answers.',

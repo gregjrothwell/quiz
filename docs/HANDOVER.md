@@ -1,6 +1,6 @@
 # Handover — Vibe Quiz
 
-> **Owner: Greg Rothwell. Last updated: 26 November 2026. Budget: 150 lines.**
+> **Owner: Greg Rothwell. Last updated: 27 November 2026. Budget: 150 lines.**
 
 Real-time office quiz. Static site on GitHub Pages, Firebase for live rooms.
 Built to replace Polly in Teams.
@@ -133,7 +133,7 @@ importing `read-games` or `read-owed` breaks that, since each calls `main()` at 
 
 ## If you're picking this up cold
 
-**Release #217 is live (26 Nov)**, on Greg's "go live": PROJ-179, 182, 181 and 183 Done; **PROJ-180 stays open** until one office round
+**Not live yet: `release-2026-11-27` (PROJ-203)**, with Theme Tunes 65 → 109 and Catchphrase 233 → 284, both seeded; it goes live on Greg's words, and its first rounds are the check (`read-games`). **Release #217 is live (26 Nov)**, on Greg's "go live": PROJ-179, 182, 181 and 183 Done; **PROJ-180 stays open** until one office round
 is read with `read-traces`. After that round: `read-games` (182's gap against 11.5s), `read-traces`, `read-owed`. Next, not started: **PROJ-201**
 (W3's contract half, due since 14 Nov), **PROJ-202** (a more premium lock, gong and clock). Parked by Greg, do not start: PROJ-153, PROJ-76.
 Seen, no ticket: at 375px the volume slider sits over the clock cell. Pick-up: the 26 Nov entries of the clawd log.

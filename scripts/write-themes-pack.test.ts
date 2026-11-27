@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import type { ThemeSpec } from './hand-themes-data';
 import { buildThemesPack, pickThemeRecording, themeSearchUrl } from './write-themes-pack';
@@ -119,5 +121,45 @@ describe('the themes Greg took out', () => {
     const ids = new Set(pack.questions.map((question) => question.id));
     expect([...THEMES_DROPPED].filter((slug) => ids.has(stableId(slug)))).toEqual([]);
     expect(pack.questions).toHaveLength(THEME_SPECS.length - THEMES_DROPPED.size);
+  });
+});
+
+describe('the committed pack', () => {
+  /*
+    Batch 2 (PROJ-203, 27 November 2026) appended theme-129 upward. A spec
+    that resolved when the pack was written but is missing from the file, or a
+    question the file holds that no spec ships, is a pack nobody rebuilt.
+    Question ids are hashes of the slug, so a failure prints hashes, never a
+    programme.
+  */
+  const shipped = THEME_SPECS.filter((spec) => !THEMES_DROPPED.has(spec.slug));
+  const pack = JSON.parse(
+    readFileSync(join(import.meta.dirname, '..', 'public', 'packs', 'themes.json'), 'utf8'),
+  ) as { questions: { id: string; difficulty: string; previewStart?: number; previewSeconds?: number }[] };
+
+  test('is every spec that ships, in spec order, at the spec’s difficulty', () => {
+    expect(pack.questions.map((question) => question.id)).toEqual(shipped.map((spec) => stableId(spec.slug)));
+    expect(pack.questions.map((question) => question.difficulty)).toEqual(shipped.map((spec) => spec.difficulty));
+  });
+
+  test('carries every clip offset the title audit wrote into the specs', () => {
+    const offsets = (spec: ThemeSpec): [number | undefined, number | undefined] => [
+      spec.previewStart,
+      spec.previewSeconds,
+    ];
+    expect(pack.questions.map((question) => [question.previewStart, question.previewSeconds])).toEqual(
+      shipped.map(offsets),
+    );
+  });
+
+  test('matches its row in the pack index', () => {
+    const index = JSON.parse(
+      readFileSync(join(import.meta.dirname, '..', 'public', 'packs', 'index.json'), 'utf8'),
+    ) as { id: string; count: number; counts: Record<string, number> }[];
+    const row = index.find((entry) => entry.id === 'themes');
+    expect(row?.count).toBe(shipped.length);
+    for (const level of ['easy', 'medium', 'hard'] as const) {
+      expect(row?.counts[level]).toBe(shipped.filter((spec) => spec.difficulty === level).length);
+    }
   });
 });

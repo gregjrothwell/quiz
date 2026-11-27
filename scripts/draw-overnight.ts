@@ -49,8 +49,8 @@ import { CATCHPHRASE_SPECS, type CatchphraseSpec } from './hand-catchphrase-data
 
 const execFileAsync = promisify(execFile);
 
-/** Pause the batch below this charge, between puzzles. */
-export const PAUSE_BELOW = 30;
+/** Pause the batch below this charge, between puzzles. 30 until Greg, 27 Nov 2026: "change threshold to 20%". */
+export const PAUSE_BELOW = 20;
 /** Resume once back at this charge, on the charger. */
 export const RESUME_AT = 50;
 /** How often a paused batch looks at the battery again. */

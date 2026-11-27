@@ -1,6 +1,6 @@
 # TOTAL-RECALL
 
-> **Owner: Greg Rothwell. Last updated: 26 November 2026. Budget: 300 lines.**
+> **Owner: Greg Rothwell. Last updated: 27 November 2026. Budget: 300 lines.**
 
 The dated spine. Newest first, a few lines per entry. When one needs more room
 than that it moves to `decisions/<topic>.md` and the entry here keeps a pointer —
@@ -23,6 +23,10 @@ down breaks every relative link in it**: fourteen were, repaired 21 September.
 
 *Six paragraphs of split history condensed to this on 21 September — process
 notes, not chronology; every entry they described is still listed below by date.*
+
+## 2026-11-27 — Built, not live: Theme Tunes 65 → 109, Catchphrase 233 → 284 (PROJ-203)
+
+Greg: "refresh question packs, prioritising the lowest". Weeks left, Random Round's draw counted (`freshness` counts only direct rounds, which hides most of what Sleeves and a third of what Catchphrase serve): Theme Tunes 2.4, Catchphrase 3.4, Fine Art 5.6, Sleeves 5.8, the rest 14+. Greg chose the top two, both blind, written by subagents, counts only. **Theme Tunes +44** (theme-129 up; 48 originals from 103 new candidates, since the famous themes were already in and 45 exist only as covers). Unseen is now 10 easy / 16 medium / 42 hard, so a mixed round runs about 46% right against 55% (Greg: "ok"). The live pack was over one in six American (11 of 65); it is now 15 of 109, and a test holds it. **Catchphrase batch 7**: 60 specs written harder (Greg: "keep harder"), 51 shipped. The draw paused when the MacBook came off the charger. Moving it to the Mini without Greg's OK was wrong: the Mini has crashed on draws. It was stopped two minutes in. `PAUSE_BELOW` 30 → 20 (Greg). [`tv-themes.md`](decisions/tv-themes.md) · [`catchphrase-batch-7.md`](decisions/catchphrase-batch-7.md).
 
 ## 2026-11-26 — Release #217 live: the lead-in, your own line, fastest finger once, the window size, the house round
 
@@ -100,32 +104,14 @@ Review of #160: joining seeds a score of 0, so a late joiner who never answered 
 
 PROJ-60 and PROJ-61 went live in #140 and sat at To Do for five days; 2 of the 40 PRs before today named a ticket. Plan now prints `ticket=`, and Verify (required) fails when no `PROJ-<n>` is in the title, branch, description or a commit. `Ticket: none — <why>` waives it. Docs-only PRs and Dependabot are exempt. Proved on probe #164 (refused, then passed on the waiver), and in production on Dependabot #165 (step skipped). #163, `60706b2`; the site bundle is unchanged. AGENTS.md carries the rule for cloud agents. Whoever takes a PR live moves its tickets to Done (Greg, 28 Oct).
 
-## 2026-10-27 — The lobby vote moves onto the Realtime Database
+## 2026-10-02 to 2026-10-27 — archived, one line each
 
-PROJ-34. A tap no longer rewrites the room document. `lobbyVote/{code}/{voteGen}` on the RTDB; `start` and `reset` mint `voteGen` in the phase write, and the old tree is left unread because the rule cannot see the host. No paste: CI publishes `database.rules.json` before the site. [`lobby-vote.md`](decisions/lobby-vote.md).
-
-## 2026-10-27 — Rivals backfill, from games/
-
-Greg asked for the history the same day. `npm run backfill-rivals` replays `games/` onto season-2, dry run until `--go`, and never lowers a count. Rounds before the record existed (8 Sep) and a round two whose first half is missing are not in the caption. [`rivals.md`](decisions/rivals.md).
-
-## 2026-10-27 — Rivals: who you've beaten or lost to most
-
-A season caption, from a `rivals` map on the row: who you finished strictly ahead of, and behind. A tie is neither; a tie for the lead names everyone. Shown on the season table and under the podium. No scoring change, no giant-killer bonus, no backfill. Rules cap the map at 40 and do not walk it. [`rivals.md`](decisions/rivals.md).
-
-## 2026-10-27 — Greg decided the cards
-
-The stumper card is titled **A question nobody got**. Tonight's field stays tap-only; a vanished host waiting out the chair is accepted, and no timer goes back. Rosettes ignore a thrown-out question, and the season row banks from that same set. Round-title cards and Share or Shaft stay as long as they are. [`form-and-awards.md`](decisions/form-and-awards.md).
-
-## 2026-10-27 — Opening titles and the cards after a round
-
-Checked for PROJ-62, against `b37a605`. The opening titles still wait for **Start the round** (since `31c04ed`); they do not start the round. Mr Fries's card is the one on a timer: the host opens question one after 3s. The stumper card was naming a thrown-out question, and a tied Survey Says answer as if only the lowest option were right. Both fixed. Wording, and whether the cards still earn their place, left for Greg. [`form-and-awards.md`](decisions/form-and-awards.md), [`review-replay.md`](decisions/review-replay.md).
-
-## 2026-10-27 — A missed cut-off stays visible
-
-The amber line is on the reveal from the first paint, and it stays on the standings when Next is pressed. The replay's chips are the fold's picks, so a late answer does not land a name on a lectern. `IN_FLIGHT_HOLD_MS` stays 3s. [`cass-q1.md`](decisions/cass-q1.md).
-
-## 2026-10-02 to 2026-10-26 — archived, one line each
-
+- **2026-10-27** — [The lobby vote moves onto the Realtime Database](recall/2026-10.md#2026-10-27--the-lobby-vote-moves-onto-the-realtime-database)
+- **2026-10-27** — [Rivals backfill, from games/](recall/2026-10.md#2026-10-27--rivals-backfill-from-games)
+- **2026-10-27** — [Rivals: who you've beaten or lost to most](recall/2026-10.md#2026-10-27--rivals-who-youve-beaten-or-lost-to-most)
+- **2026-10-27** — [Greg decided the cards](recall/2026-10.md#2026-10-27--greg-decided-the-cards)
+- **2026-10-27** — [Opening titles and the cards after a round](recall/2026-10.md#2026-10-27--opening-titles-and-the-cards-after-a-round)
+- **2026-10-27** — [A missed cut-off stays visible](recall/2026-10.md#2026-10-27--a-missed-cut-off-stays-visible)
 - **2026-10-26** — [The Lab, unshelved as the Slop Cannon](recall/2026-10.md#2026-10-26--the-lab-unshelved-as-the-slop-cannon)
 - **2026-10-25** — [Release 25 Oct: The Double, Theme Tunes, Higher or Lower](recall/2026-10.md#2026-10-25--release-25-oct-the-double-theme-tunes-higher-or-lower)
 - **2026-10-23** — [The Ladder says when it substitutes](recall/2026-10.md#2026-10-23--the-ladder-says-when-it-substitutes)

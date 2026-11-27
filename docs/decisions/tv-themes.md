@@ -1,8 +1,10 @@
 # TV themes — a Name that Tune for the telly
 
-> **Owner: Greg Rothwell. Last updated: 24 October 2026. Budget: 250 lines.**
+> **Owner: Greg Rothwell. Last updated: 27 November 2026. Budget: 250 lines.**
 
 **Status: built 24 October 2026 on branch `tv-themes`, not live, not seeded.**
+*Correction, 27 November:* live since the 25 October release, 65 questions;
+batch 2 (below) is built on `PROJ-203-themes`, not live, not seeded.
 Approved by Greg the same day with the recommended answers: "originals only,
 locked at ten seconds, not in Random Round, call it Theme Tunes". From the 24
 October ideas list (`read-games -- --last 40`), where it was idea 4.
@@ -153,6 +155,81 @@ round, Theme Tunes: name the programme from its theme. 65 questions."; `NEW_UNTI
 --pack themes`, then `host-room --pack themes` on the last two ids (anchored
 lines only). No e2e spec drives a music pack, so there was no Tunes e2e path
 to re-run (AC15 as written); the lobby check above is the browser evidence.
+
+## Batch 2 — 27 November 2026
+
+**PROJ-203, branch `PROJ-203-themes`.** The same pipeline under the same rules:
+D1 originals only, numbers only. Scripts and data: `.cache/tv-themes/b2/`.
+
+**Candidates.** 199 rows written by Claude, British first. 96 were not new: 71
+are specs already (live or dropped), 2 the same recording as a spec, 1 a batch-1
+original the title audit cut, and 22 batch 1 had measured under the same credit
+as re-recordings only. **103 new candidates**, `theme-129` to `theme-231`: 93
+British, 9 American, 1 Australian.
+
+**Coverage**, with batch 1's client, searches and classification
+(`b2/measure2.ts`), and the writer's own pick alongside:
+
+| | Themes |
+|---|---|
+| **The original recording has a GB preview** | **48** |
+| Only a re-recording by someone else | 45 |
+| Nothing | 10 |
+
+32 of the 48 match the credit exactly, 16 on a partial credit; the writer picks
+all 48. **The instrument was checked first:** a live spec classifies as
+*original* from the cache, the first Name that Tune song as *original* on a
+fresh search, and an invented programme by an invented artist as *nothing*.
+
+**Vetted before the audit** (`b2/vet.ts`, booleans and numbers only). 4 cut: 133
+and 154, whose only GB recording is live (two other searches found nothing
+else); 151, a concert version by a symphony orchestra; 222, credited to an
+orchestra known for re-recordings. **44 specs**, numbers 134 to 231.
+
+**The title audit**, `tune-audit -- --pack themes`, 15s window, medium.en, over
+the 44 new clips: **44 clean, 0 shifted, 0 trimmed, 0 cut.** 39 came back thin
+on the first pass (batch 1: 65 of 95) and went through the forced pass. 24 had
+words heard, none of them the title. A stricter blind check (`b2/partial.ts`),
+any single word of the title of 4+ letters inside 15s, also found none; it does
+catch 005's known mention, so the zero means something. **20 transcribed to no
+words** even with the silence detector off, so nothing was looked at in them.
+Over the whole pack: 108 clean, 1 shifted (005, which already has its offset).
+
+**Wrong options:** where a candidate's options held another theme by the same
+composer in the same style, one was swapped (`b2/overrides.json`), as AC4 asks.
+
+**Shipped: 44** — easy 1 / medium 7 / hard 36. The pack goes from 65 to
+109 (easy 23 / medium 30 / hard 56). The 65 earlier questions are
+byte-identical and in place: the old file is a byte prefix of the new one, and a
+rebuild from the cache reproduces the file exactly.
+
+**It leans hard, and the labels say so.** 71 of the candidates were already in
+the pack: the famous themes are taken, and what is left is older or less known.
+Each label is the hit rate expected of an office (measured live, 25 November:
+easy 67%, medium 55%, hard 38%), not a third each; every bucket holds 10+. By kind,
+drama dominates (26 of the 44 specs); no quiz or soap theme survived coverage.
+
+**American share:** 4 of the 44; 15 of the 109 that ship. **Before batch 2 the
+live pack leaned:** 11 of the 65 that shipped were American, just over one in
+six. The test counted every spec, dropped ones included (12 of 93), so it never
+saw it. Two tests in `hand-pack-quality.test.ts` now count what ships.
+
+**Wants an ear**, by number:
+- Partial credit (composer with an orchestra, or a co-credit), as batch 1's ten
+  were: 147, 156, 166, 167, 169, 176, 177, 180, 181, 191, 193, 201, 207, 231.
+- Recordings over 4½ minutes, where Apple's 30 seconds may miss the theme: 167,
+  209, 228.
+- No words heard: 134, 144, 147, 149, 155, 156, 159, 169, 176, 177, 180, 181,
+  183, 188, 198, 201, 202, 212, 221, 228. As in batch 1, the first office
+  round's hit rate is the check (see Risks).
+
+**Found on the way:** the writer's `NOT_ORIGINAL` does not refuse a live
+recording, so 133 and 154 would have shipped live. They were cut by hand and
+the writer is unchanged, so no batch-1 pick could move. A guard is worth adding
+before batch 3.
+
+**Left for the release:** a What's new line; `seed-vault -- --pack themes`, then
+`host-room --pack themes` on the last two ids (anchored lines only).
 
 ## Not in version one
 
