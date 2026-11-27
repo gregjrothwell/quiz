@@ -9,9 +9,9 @@ round blind**, so this file holds the batch's shape only; the puzzles live in
 
 ## Why — 27 November 2026
 
-- **Asked for in this work's brief:** sixty specs, measured against play first. Specs only.
+- **Asked for in this work's brief:** sixty specs, measured against play first; then the
+  draw, the pick and the pack. Written by a subagent, as batches 3 to 6 were.
 - **Batch 6 went live 17 October, 21:34 BST** (#91: 55 in, 5 dropped, pack 233).
-- **Written by a subagent** whose working Greg does not see, as batches 3 to 6 were.
 
 ### Measured — read-only, 27 November 2026
 
@@ -53,17 +53,15 @@ sound-alike together 110 of 123, 89%. Of its 29 questions, 13 went 100% and 4 un
 
 What it says, and what it cannot:
 
-- **Silence is gone.** 96% of seats answered, against 36% in `MNXU`, the one direct round
-  batch 6 measured. The misses now are seats answering wrong.
+- **Silence is gone:** 96% of seats answered (36% in `MNXU`). The misses are wrong answers.
 - **Batch 6 came out easier than 4 and 5** on the same mix: 78% against 69%.
 - **Sound-alike is the outlier, both ways.** 49% across all batches, 10 of its 19 questions
   under 50%, and 53% right of answered: players pick, and pick wrong. The other three kinds
   ran 81–85% across all batches and 86–94% in batch 6.
 - **The labels separate a little now:** medium 77%, hard 71% (batch 6: 88% and 75%).
-- **Bonus slots, 92% over six questions.** Too thin to read.
 - **Not the same game as batch 6 measured:** *call it* went live on 21 October, so every
   round but the first (`EE77`, 19 October) let a player type a call before the options.
-- **n is 65 questions across 18 rounds, 29 of them batch 6's.** Thin below the whole.
+- **n is 65 questions in 18 rounds, 29 of them batch 6's; bonus slots six.** Thin below the whole.
 
 ### The mix — Claude's assumption, for Greg to overrule
 
@@ -80,13 +78,11 @@ ease off; above ~78%, push harder; too thin, keep the mix.
 - **Sound-alike, at 49%, is below the ease-off line, so it is not pushed.** It keeps its
   count (16) and its labels (all hard), and is written to land: every pun rests on things
   that are easy to name aloud and easy to draw, and no wrong option also sounds like it.
-- **The kind mix is batch 6's, count for count.** Moving puzzles into sound-alike would push
-  the batch harder on paper and leave the round split between near-certain and near-hopeless.
+- **The kind mix is batch 6's, count for count**: more sound-alikes would split the round.
 
 ## Built — 27 November 2026, specs only
 
-**240 → 300 specs; the pack still ships 233.** Not drawn, not picked, not written, not
-seeded.
+**240 → 300 specs.** Specs first; drawn, picked and written the same day. Not seeded.
 
 | Kind | Count | Hard | Mr Fries |
 |---|---|---|---|
@@ -96,19 +92,16 @@ seeded.
 | Sound-alike | 16 | 16 | 14 |
 | **Total** | **60** | **48** | **49** |
 
-- **48 hard, 12 medium, no easy:** 80%, against 70% in batches 5 and 6.
-- **Literal scenes: 12 of 60**, a fifth. The cap is a third.
-- **12 carry lettering**, all of them the lettered kind, and every lettered puzzle does
-  (tested, new). None of it is the answer (tested).
-- **Five double as titles**; the rest are sayings and everyday phrases.
+- **48 hard, 12 medium, no easy:** 80%, against 70% in batches 5 and 6. **Literal scenes: 12.**
+- **12 carry lettering**, all the lettered kind (tested, new); none of it is the answer. Five
+  answers double as titles.
 - **Mr Fries in 49 of 60**, batch 6's count. Left out of 11, where another figure or object
   is the clue, or where he would stand beside a cast that the model might draw as more of him.
 - **Batch 6's lessons, applied to all sixty:** in every scene that puts another figure beside
   him, that figure is described first; the 3 numbers that act say so first; 23 scenes say
   their object carries no writing (or only the asked-for mark), 6 of them lettered; piles
   are described by their look.
-- **Order in the file as batch 6:** sound-alike, rebus, lettered, scene (241–256, 257–276,
-  277–288, 289–300).
+- **Order in the file as batch 6:** sound-alike 241–256, rebus –276, lettered –288, scene –300.
 
 ## Checks before drawing
 
@@ -130,29 +123,29 @@ files only; nothing touched live Firebase except the read-only game reads above.
   as `blankClashes`). **None is the right answer in another pack**: `.cache/vault.json`
   (15,969 ids) and `.cache/hand-vault.json` (2,544 ids), both dated 2 November, and the hand
   packs' data. *Not re-read from the live vault.* No wrong option holds an answer.
+  *Correction, at the pick:* other work rewrote `hand-vault.json` at 13:00 the same day, to
+  2,588 entries. The sixty were checked again against it: still clean.
 - **Kept, as batches 4 to 6 did:** 1 answer and 4 wrong options appear as an option in
   another published pack, never its right answer.
-- **Earlier Quiz chats:** 538 text files (Claude Code under `~/.claude/projects/*Quiz*`,
-  Cursor's agent transcripts), every file modified today excluded. A hit counts against an
-  option when the same message also mentions Catchphrase work; batch 6 judged each hit by
-  hand, which a blind check cannot. **No answer appears in any earlier chat at all.** 7 wrong
-  options appear only in messages about other things; kept.
-- **No prompt names its answer** and **no lettering is its answer**: the existing tests, and
-  the same check run on every draft first. Clean on the first run.
-- **Slugs:** none used by any hand pack, and no new question id is already in either vault
-  cache.
+- **Earlier Quiz chats:** 538 text files (Claude Code and Cursor), today's excluded. A hit
+  counts when the same message also mentions Catchphrase work; batch 6 judged each by hand,
+  which a blind check cannot. **No answer appears in any earlier chat.** 7 wrong options
+  appear only in messages about other things; kept.
+- **No prompt names its answer, no lettering is its answer** (clean on the first run); no
+  slug is used by any hand pack, and no new id is already in either vault cache.
 
-**For Greg to decide, from this session's tool results** (counts and numbers only):
+**Put to Greg from this session's tool results, and his answers** (27 November 2026):
 
-1. **Push harder, or keep?** The batch is written to the push-harder reading. Keeping would
-   mean relabelling and rewriting about six of the hard scene, rebus and lettered puzzles.
+1. **Push harder, or keep?** The batch was written to the push-harder reading. Greg: **"Keep
+   harder."** It stays at 48 hard and 12 medium, with nothing relabelled.
 2. **Spec 1 was printed whole, and spec 2's slug, into one early tool result:** a redaction
-   script misread a regular expression. Both shipped in the first thirty. Leave them, or
-   retire or rewrite them at the next pick.
+   script misread a regular expression. Both shipped in the first thirty. Greg: **"no
+   worries."** Both are left as they are, with no retire or rewrite.
 3. **The first check of the answer pool printed its reasons per candidate.** Read beside the
    pool in the same transcript, it marks 120 of those phrases as already in the pack, as an
    answer or a wrong option, and 21 as on the 2 October list; it names no puzzle or picture.
    Every later check printed one merged result per candidate, or the positions to swap.
+   Nothing to do.
 
 ## Tests
 
@@ -168,48 +161,88 @@ files only; nothing touched live Firebase except the read-only game reads above.
   harder kind used; Mr Fries in more than half of this batch alone; no option the pack
   already uses; no Blankety Blank phrase; **only the lettered kind carries lettering, and
   every lettered puzzle does** (new); seeds absent or 1–3.
-- **Deny and allow cases:** the repeat check, from the sixth batch's last puzzle: a wrong
-  option re-cased, quoted and punctuated is caught, its answer is caught, the same answer
-  against only the first 180 is *not* caught, a clean fixture passes. The Blankety Blank
-  check from the *last* long phrase (the sixth's test takes the first): re-cased, inside a
-  longer option, clean. The lettering check: lettering on a scene, a lettered puzzle without
-  it, and a clean lettered fixture.
+- **Deny and allow cases:** the repeat check from the sixth's last puzzle (a wrong option
+  re-cased and punctuated, its answer, the same answer against only the first 180, a clean
+  fixture); the Blankety Blank check from the *last* long phrase; the lettering check
+  (lettering on a scene, a lettered puzzle without it, a clean lettered fixture).
 - **Proved on the data:** taking the lettering off spec 288 turned the new lettering test red
   (`expected [ 288 ] to deeply equal []`); the file restored byte for byte, green again.
-- **Blind by construction:** every assertion in the new block reports counts or spec
-  numbers, never a slug or an option.
+- **Blind by construction:** every new assertion reports counts or spec numbers only.
+  `catchphrase-gate.test.ts` needed no change.
 
-`catchphrase-gate.test.ts` — **no change.** Its waiting tail was always any length, so the
-sixty unpicked at the end (241–300) pass, and a hole before a picked spec still fails.
+## Drawn — 27 November 2026
 
-## Drawn — not yet
+**60 puzzles, 180 versions, all on the MacBook, 0 failed, 0 pauses:** 19 earlier, then 41 in
+one run, 16:38–20:20 (median 5.4 min a puzzle). 260 was started on the Mini and stopped two
+minutes in. `draw.log` and `run.json` carry no slug (counted); mflux's console names each file,
+which is the slug, so it went to a file never printed.
 
-**To draw: 60, spec numbers 241–300, contiguous.** All 240 earlier specs have their three
-versions on disk, so `draw-overnight` draws these sixty and nothing else.
+## Picked — 27 November 2026
 
-- MacBook: `npm run draw-overnight` from this branch's worktree, its console sent to a file
-  that is never printed. `draw.log`, `run.json` and the notification carry numbers only;
-  **mflux's own console output names each file it saves, and the filename is the slug.**
-- Mac Mini: `npm run draw-on-mini -- start`, then `-- status` (the last lines of `draw.log`).
-  The Mini's console goes to `.cache/catchphrase/mini.out`, which holds the same filenames.
-- At batch 6's MacBook median, 5.3 min a puzzle, about 5.3 hours; at the Mini's ~16 min a
-  puzzle, about 16 hours.
+From the 15 sheets (`key.json`, number to slug), then every picked version again at full size,
+copied to numbered files first so that no path named a slug. **The four checks, as batches 3
+to 6.** **Where no version passed, the puzzle was dropped, not redrawn.**
 
-## Picked — not yet
+| Specs 241–300 | Count |
+|---|---|
+| **Shipped** | **51** |
+| Version 1 / 2 / 3 | 25 / 13 / 13 |
+| Redrawn | 0 |
+| Dropped, `misdrawn` | 9: numbers 242, 258, 266, 277, 279, 289, 294, 295, 297 |
+| Dropped, `spoiled` | 0 |
 
-## Written — not yet
+**Drops, by the check no version passed:**
+
+- **Reads as the phrase: 7** (242, 266, 279, 289, 294, 295, 297). In every version the one
+  detail the puzzle turns on was missing, and a wrong option described the picture as well or
+  better. In 279 a lettered puzzle lost its number in all three versions.
+- **Only the asked-for lettering: 1** (258). Every version put a mark or numeral on an object
+  the scene said was plain.
+- **No look-alike: 1** (277). All three versions resemble a famous cartoon character.
+- **Mr Fries on model: 0** drops. **Accepted once, off model:** in 256 every version gives him
+  a small nose, and the reading does not rest on him.
+
+**Versions set aside where another passed**, where that decided the pick: lettering 5 in 3
+puzzles (three on Vision's read alone); Mr Fries 6 in 4; look-alike 0; the rest on reading.
+
+**Weaker than written, shipped: 7** (247, 250, 267, 278, 288, 293, 299). A detail the scene
+asked for is missing or changed, but the picture still supports the answer over the wrong
+options; 278 is lettered and shows none. The first to relabel or retire once played.
+
+**By kind, shipped:** scene 8 of 12, rebus 18 of 20, lettered 10 of 12, sound-alike 15 of 16;
+40 hard and 11 medium; Mr Fries in 42.
+
+**Vision, and a look by eye, on the 51 shipped:**
+
+- **10 lettered:** 5 read only their asked-for characters; 1 (280) read letters where only its
+  numbers are (checked by eye: no other writing); 4 read nothing. **41 unlettered:** all nothing.
+- **None names its answer** (`write-catchphrase-pack` refuses one that does;
+  `catchphrase-gate.test.ts` holds it offline). Every shipped version was looked at whole for
+  writing Vision missed: lines and a cross mark only, no characters.
+
+## Written — 27 November 2026
+
+- **Published Catchphrase: 233 → 284** (8 easy, 105 medium, 171 hard). 51 new stills, 90–159
+  KB. **The 233 earlier questions are byte-identical and in the same order**, stills unchanged.
+  `index.json` changed only Catchphrase's count and split; `ATTRIBUTION.md` not at all.
+- **Sealed:** no question carries an answer field; `src/questions/seal.test.ts` passes.
+- **`.cache/hand-vault.json`: 2,588 → 2,639 entries**: 51 added, one per new published id;
+  none removed or changed. **Not seeded.**
+- **`hand-catchphrase-data.test.ts`:** the seventh batch's **60 prompts pinned by hash**
+  (`SEVENTH_END`), the nine dropped included. **Proved:** one character added to the scene of
+  spec 270 turned it red (a hash mismatch, which prints hashes only); green again once the file
+  was restored byte for byte. `added` stays open, so an eighth batch trips *is sixty puzzles*.
+  `catchphrase-gate.test.ts` unchanged and green: a dropped spec is not a hole, and nothing waits.
 
 ## Go-live, not done
 
-1. Draw the sixty, as above.
-2. Pick from the sheets: the four checks, as batches 3 to 6. Set `seed`, or `dropped`.
-3. `npm run write-catchphrase-pack`, then pin the seventh batch's prompts by hash
-   (`SEVENTH_END`) and bound its checks when an eighth goes on.
-4. `seed-vault -- --pack catchphrase`, then `host-room -- 10 --pack catchphrase`.
-5. Ships in that day's release PR (CLAUDE.md). Merging deploys: Greg's words.
+1. `seed-vault -- --pack catchphrase`, then `host-room -- 10 --pack catchphrase`.
+2. Ships in that day's release PR (CLAUDE.md). Merging deploys: Greg's words.
 
 ## Evidence — 27 November 2026
 
-- **Specs:** `npm run typecheck` and `npm run lint` clean; `npm test` **186 files, 2,661
-  passed**, 12 of them new. The measurement read Firestore through `read-games` only and
-  wrote nothing.
+- **Specs:** typecheck and lint clean; `npm test` **186 files, 2,661 passed** (12 new). The
+  measurement read Firestore through `read-games` only and wrote nothing.
+- **Pick:** typecheck, lint, `build` clean; `npm test` **186 files, 2,662 passed** (1 new).
+  `check-bundle` clean: 978 files, 0 secrets to grep (no debug token in this worktree). No live
+  Firebase read or written.
