@@ -129,18 +129,28 @@ async function recentRounds(db: FirebaseFirestore.Firestore, now: number): Promi
   });
 }
 
+/** Own rounds, then `+N` for the Random Rounds that dealt from it. */
+function playedCell(row: FreshnessRow): string {
+  const own = row.played - row.playedRandom;
+  return row.playedRandom > 0 ? `${own}+${row.playedRandom}` : String(own);
+}
+
 function table(rows: FreshnessRow[], season: string, at: Date): string {
   const lines = [
     `Pack freshness, ${at.toLocaleString('en-GB')} — ${season}, rounds from the last ${WINDOW_DAYS} days`,
     '',
-    '  pack                 size  asked  unseen  round  fresh rounds  played',
+    '  pack                 size  asked  unseen  round  fresh rounds  played  per week  weeks left',
     ...rows.map(
       (row) =>
         `  ${row.title.padEnd(19)}${String(row.size).padStart(6)}${String(row.asked).padStart(7)}`
         + `${String(row.unseen).padStart(8)}${String(row.roundLength).padStart(7)}`
-        + `${row.freshRounds.toFixed(1).padStart(14)}${String(row.played).padStart(8)}`
+        + `${row.freshRounds.toFixed(1).padStart(14)}${playedCell(row).padStart(8)}`
+        + `${row.perWeek.toFixed(1).padStart(10)}${(row.weeksLeft === null ? '—' : row.weeksLeft.toFixed(1)).padStart(12)}`
         + (row.low ? '  LOW' : ''),
     ),
+    '',
+    '  round and fresh rounds: this pack\'s own rounds. played: own + Random Rounds that dealt from it.',
+    '  per week: questions taken both ways; Random Round\'s share is its quota (PROJ-204).',
   ];
   return `${lines.join('\n')}\n`;
 }
