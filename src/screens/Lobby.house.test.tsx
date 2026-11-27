@@ -69,6 +69,10 @@ function lobby({ room = FRESH, played = false, remembered = null, isQuizmaster =
       onVote={noop}
       onStart={onStart}
       onLeave={noop}
+      // What's new is not this file's subject: its teaser is a button whose text
+      // can name a pack (27 Nov 2026, "More Theme Tunes…"), and `choose` finds
+      // pack cards by name. Lobby.newMode.test.tsx pins it the same way.
+      notice={{ unseen: false, teaser: null }}
       {...(today === undefined ? {} : { today })}
     />,
   );
